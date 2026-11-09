@@ -2057,6 +2057,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/settings',
+    id: 'heart-amount',
+    image: 'settings-heart-amount.png',
+    visual: 'state-settings-heart-amount',
+    needle: "shotScreen(page, 'state-settings-heart-amount')",
+  },
+  {
+    route: '/settings',
     id: 'notification-level-gifted',
     image: 'settings-notification-level-gifted.png',
     visual: 'state-settings-notification-level-gifted',
@@ -5740,6 +5747,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/members/[accountId]',
+    id: 'replies-open-hearts',
+    image: 'members-replies-open-hearts.png',
+    visual: 'state-members-replies-open-hearts',
+    needle: "shotScreen(page, 'state-members-replies-open-hearts')",
+  },
+  {
+    route: '/members/[accountId]',
     id: 'shops-open',
     image: 'members-shops-open.png',
     visual: 'state-members-shops-open',
@@ -9283,6 +9297,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/welcome',
+    id: 'expanded-hearts',
+    image: 'welcome-expanded-hearts.png',
+    visual: 'state-welcome-expanded-hearts',
+    needle: "shotScreen(page, 'state-welcome-expanded-hearts')",
+  },
+  {
+    route: '/welcome',
     id: 'expanded-gifts',
     image: 'welcome-expanded-gifts.png',
     visual: 'state-welcome-expanded-gifts',
@@ -11576,6 +11597,13 @@ export const SCREEN_VARIANTS = [
     image: 'messages-id-reply.png',
     visual: 'state-messages-id-reply',
     needle: 'state-messages-id-reply',
+  },
+  {
+    route: '/messages/[id]',
+    id: 'reply-hearts',
+    image: 'messages-id-reply-hearts.png',
+    visual: 'state-messages-id-reply-hearts',
+    needle: "shotScreen(page, 'state-messages-id-reply-hearts')",
   },
   {
     route: '/messages/[id]',

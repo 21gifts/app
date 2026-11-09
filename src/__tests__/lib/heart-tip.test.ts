@@ -108,6 +108,7 @@ const BASE = {
   balanceSats: 21,
   needsWalletSetup: false,
   canUnlockWallet: true,
+  heartSats: 1,
 };
 
 /** A loaded spot, so a heart can store the price of its 1 sat. */
@@ -154,6 +155,95 @@ describe('sendHeartTip', () => {
       'heart_sent',
       { messageId: 'm1', amountSats: 1 },
       'sess',
+    );
+  });
+
+  it('requests and sends a 21-sat heart with the stored amount', async () => {
+    const send = vi.fn(async () => ({ kind: 'paid' as const }));
+    vi.mocked(postMessageInvoice).mockResolvedValue({
+      pr: 'lnbc21',
+      amountSats: 21,
+      sparkInvoice: 'spark21heart',
+    });
+    vi.mocked(payFromWallet).mockResolvedValue({
+      kind: 'confirm',
+      amountSats: 21,
+      feeSats: 0,
+      method: 'spark',
+      send,
+    });
+    await expect(sendHeartTip({ ...BASE, heartSats: 21, rateDay: HEART_RATE })).resolves.toEqual({
+      kind: 'paid',
+    });
+    expect(postMessageInvoice).toHaveBeenCalledWith(
+      'sess',
+      'm1',
+      21,
+      undefined,
+      shownFiatForSats(21, HEART_RATE),
+      true,
+    );
+    expect(send).toHaveBeenCalledTimes(1);
+    expect(logInteraction).toHaveBeenCalledWith(
+      'heart_sent',
+      { messageId: 'm1', amountSats: 21 },
+      'sess',
+    );
+  });
+
+  it('stops before invoicing when a ready balance of 10 cannot cover a 21-sat heart', async () => {
+    await expect(sendHeartTip({ ...BASE, heartSats: 21, balanceSats: 10 })).resolves.toEqual({
+      kind: 'failed',
+      reason: 'no_balance',
+    });
+    expect(postMessageInvoice).not.toHaveBeenCalled();
+  });
+
+  it('stops with insufficient_balance when the live wallet has 10 for a 21-sat heart', async () => {
+    const send = vi.fn(async () => ({ kind: 'paid' as const }));
+    useWalletStore.setState({ status: 'ready', balanceSats: 10, identityPubkey: null });
+    vi.mocked(postMessageInvoice).mockResolvedValue({
+      pr: 'lnbc21',
+      amountSats: 21,
+      sparkInvoice: 'spark21heart',
+    });
+    vi.mocked(payFromWallet).mockResolvedValue({
+      kind: 'confirm',
+      amountSats: 21,
+      feeSats: 0,
+      method: 'spark',
+      send,
+    });
+    await expect(sendHeartTip({ ...BASE, heartSats: 21 })).resolves.toEqual({
+      kind: 'failed',
+      reason: 'insufficient_balance',
+    });
+    expect(send).not.toHaveBeenCalled();
+  });
+
+  it('refuses a prepared payment whose amount differs from the 21-sat heart', async () => {
+    const send = vi.fn(async () => ({ kind: 'paid' as const }));
+    vi.mocked(postMessageInvoice).mockResolvedValue({
+      pr: 'lnbc21',
+      amountSats: 21,
+      sparkInvoice: 'spark21heart',
+    });
+    vi.mocked(payFromWallet).mockResolvedValue({
+      kind: 'confirm',
+      amountSats: 1,
+      feeSats: 0,
+      method: 'spark',
+      send,
+    });
+    await expect(sendHeartTip({ ...BASE, heartSats: 21 })).resolves.toEqual({
+      kind: 'failed',
+      reason: 'heart_unavailable',
+    });
+    expect(send).not.toHaveBeenCalled();
+    expect(reportPaymentFailure).toHaveBeenCalledWith(
+      expect.objectContaining({ reason: 'amount_mismatch', amountSats: 21 }),
+      'heart',
+      expect.anything(),
     );
   });
 
@@ -1220,6 +1310,56 @@ describe('useHeartTip', () => {
     } finally {
       delete document.documentElement.dataset['localSunday'];
     }
+  });
+
+  it('shows +1 and pays 21 sats from the account without adding 21 to the count', async () => {
+    useAuthStore.setState({ session: 'sess', account: { ...HEART_ACCOUNT, heartSats: 21 } });
+    vi.mocked(postMessageInvoice).mockResolvedValue({
+      pr: 'lnbc21',
+      amountSats: 21,
+      sparkInvoice: 'spark21heart',
+    });
+    vi.mocked(payFromWallet).mockResolvedValue({
+      kind: 'confirm',
+      amountSats: 21,
+      feeSats: 0,
+      method: 'spark',
+      send: vi.fn(async () => ({ kind: 'paid' as const })),
+    });
+    const { result } = renderHook(() => useHeartTip({ readOnly: false, heartCounts: { m1: 4 } }));
+    await clickHeart(result);
+    expect(result.current.heartTipViews['m1']).toEqual({
+      pressed: true,
+      plusOne: true,
+      needsBalance: false,
+      extra: 1,
+    });
+    expect(postMessageInvoice).toHaveBeenCalledWith('sess', 'm1', 21, undefined, undefined, true);
+    expect(logInteraction).toHaveBeenCalledWith(
+      'heart_sent',
+      { messageId: 'm1', amountSats: 21 },
+      'sess',
+    );
+  });
+
+  it('calls onPaid only after a heart paid', async () => {
+    const onPaid = vi.fn();
+    vi.mocked(postMessageInvoice).mockRejectedValue(new Error('HEART_UNAVAILABLE'));
+    const { result } = renderHook(() => useHeartTip({ readOnly: false, onPaid }));
+    await clickHeart(result);
+    expect(onPaid).not.toHaveBeenCalled();
+
+    vi.mocked(postMessageInvoice).mockResolvedValue(HEART_INVOICE);
+    vi.mocked(payFromWallet).mockResolvedValue({
+      kind: 'confirm',
+      amountSats: 1,
+      feeSats: 0,
+      method: 'spark',
+      send: vi.fn(async () => ({ kind: 'paid' as const })),
+    });
+    await clickHeart(result);
+    expect(onPaid).toHaveBeenCalledTimes(1);
+    expect(onPaid).toHaveBeenCalledWith('m1');
   });
 
   it('shows only the balance line, without vibrate, press, or +1, when the ready wallet is empty', async () => {

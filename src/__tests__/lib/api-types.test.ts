@@ -2,6 +2,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   accountNotificationLevel,
+  accountHeartSats,
   accountActivitySchema,
   accountSchema,
   CONTACT_MESSAGE_MAX_LENGTH,
@@ -1915,6 +1916,66 @@ describe('accountNotificationLevel', () => {
         notificationLevel: 'mentions',
       }),
     ).toBe('mentions');
+  });
+});
+
+describe('accountHeartSats', () => {
+  it('defaults a missing heartSats to 1 and keeps a stored amount', () => {
+    expect(accountHeartSats(accountSchema.parse(account))).toBe(1);
+    expect(accountHeartSats(accountSchema.parse({ ...account, heartSats: 21 }))).toBe(21);
+    expect(accountHeartSats(null)).toBe(1);
+  });
+});
+
+describe('forumRepliesSchema', () => {
+  const message = {
+    id: 'm1',
+    name: 'Ada',
+    text: 'Hello',
+    createdAt: '2026-08-28T12:00:00.000Z',
+    sats: 0,
+    payable: false,
+    hasPhoto: false,
+  };
+  const heart = {
+    accountId: 'acc_grace',
+    name: 'Grace',
+    sats: 21,
+    createdAt: '2026-08-28T12:01:00.000Z',
+    amountUsd: '0.02',
+    amountChf: null,
+    amountEur: '0.02',
+    amountPhp: null,
+  };
+
+  it('defaults missing hearts to an empty list and keeps heart order', () => {
+    expect(forumRepliesSchema.parse({ messages: [message] }).hearts).toEqual([]);
+    expect(
+      forumRepliesSchema.parse({
+        messages: [],
+        hearts: [
+          {
+            ...heart,
+            amountUsd: undefined,
+            amountChf: undefined,
+            amountEur: undefined,
+            amountPhp: undefined,
+          },
+        ],
+      }).hearts[0],
+    ).toEqual({ ...heart, amountUsd: null, amountChf: null, amountEur: null, amountPhp: null });
+    expect(forumRepliesSchema.parse({ messages: [message], hearts: [heart] }).hearts).toEqual([
+      heart,
+    ]);
+  });
+
+  it('rejects a zero or fractional heart amount', () => {
+    expect(() =>
+      forumRepliesSchema.parse({ messages: [], hearts: [{ ...heart, sats: 0 }] }),
+    ).toThrow();
+    expect(() =>
+      forumRepliesSchema.parse({ messages: [], hearts: [{ ...heart, sats: 1.5 }] }),
+    ).toThrow();
   });
 });
 

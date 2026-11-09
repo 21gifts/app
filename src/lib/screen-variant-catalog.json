@@ -1698,6 +1698,12 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/settings:heart-amount",
+    "label": "/settings heart-amount",
+    "visual": "state-settings-heart-amount",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/settings:notification-level-gifted",
     "label": "/settings notification-level-gifted",
     "visual": "state-settings-notification-level-gifted",
@@ -4854,6 +4860,12 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/members/[accountId]:replies-open-hearts",
+    "label": "/members/[accountId] replies-open-hearts",
+    "visual": "state-members-replies-open-hearts",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/members/[accountId]:shops-open",
     "label": "/members/[accountId] shops-open",
     "visual": "state-members-shops-open",
@@ -7890,6 +7902,12 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/welcome:expanded-hearts",
+    "label": "/welcome expanded-hearts",
+    "visual": "state-welcome-expanded-hearts",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/welcome:expanded-gifts",
     "label": "/welcome expanded-gifts",
     "visual": "state-welcome-expanded-gifts",
@@ -9855,6 +9873,12 @@
     "id": "/messages/[id]:reply",
     "label": "/messages/[id] reply",
     "visual": "state-messages-id-reply",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/messages/[id]:reply-hearts",
+    "label": "/messages/[id] reply-hearts",
+    "visual": "state-messages-id-reply-hearts",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {

@@ -2,7 +2,7 @@ import { cleanup, fireEvent, screen, waitFor } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { PublicMessageLoader } from '@/components/PublicMessageLoader';
-import type { ForumMessage } from '@/lib/api-types';
+import type { ForumMessage, ForumReplies } from '@/lib/api-types';
 import { useAuthStore } from '@/stores/auth-store';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
 
@@ -982,6 +982,41 @@ describe('PublicMessageLoader', () => {
     expect(screen.getByText('Carol')).toBeTruthy();
     expect(document.querySelector('[data-permalink-target="true"]')).toBeNull();
     expect(fetchRepliesPublic).toHaveBeenCalledWith(MESSAGE_ID);
+  });
+
+  it('shows the hearts section under an unsigned thread', async () => {
+    vi.mocked(fetchFxSpot).mockResolvedValue({
+      asOf: '2026-10-07T00:00:00.000Z',
+      source: 'test',
+      rates: { USD: '100000.00', CHF: '80000.00', EUR: '90000.00', PHP: '5600000.00' },
+    });
+    fetchMessage.mockResolvedValue(sample);
+    fetchRepliesPublic.mockResolvedValue(
+      Object.assign([] as ForumMessage[], {
+        hearts: [
+          {
+            accountId: 'acc_grace',
+            name: 'Grace',
+            role: 'moderator' as const,
+            sats: 21,
+            createdAt: '2026-08-28T12:02:00.000Z',
+            amountUsd: '0.02',
+            amountChf: null,
+            amountEur: null,
+            amountPhp: null,
+          },
+        ],
+      }) as ForumReplies,
+    );
+    renderWithLocale(<PublicMessageLoader id={MESSAGE_ID} />);
+    expect(await screen.findByRole('heading', { name: 'Hearts (1)' })).toBeTruthy();
+    const hearts = screen.getByRole('region', { name: 'Hearts (1)' });
+    expect(hearts.textContent).toContain('Grace');
+    expect(hearts.textContent).toContain('₿21');
+    expect(hearts.textContent).toContain('$0.02');
+    expect(screen.getByRole('link', { name: 'Grace' }).getAttribute('href')).toBe(
+      '/members/acc_grace',
+    );
   });
 
   it('keeps only the first two cards first still eager', async () => {

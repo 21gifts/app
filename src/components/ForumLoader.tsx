@@ -58,6 +58,7 @@ import {
   type AmountUnit,
   type ForumGoalCurrency,
   type ForumMessage,
+  type HeartSender,
   type ForumPlacePin,
 } from '@/lib/api-types';
 import { bumpUnreadAppBadgeEpoch, refreshUnreadAppBadge } from '@/lib/app-badge';
@@ -586,6 +587,7 @@ export function ForumLoader({
   expandedIdRef.current = expandedId;
   const prevExpandedIdRef = useRef<string | null>(null);
   const [replies, setReplies] = useState<ForumMessage[] | null>(null);
+  const [replyHearts, setReplyHearts] = useState<HeartSender[]>([]);
   const repliesRef = useRef(replies);
   repliesRef.current = replies;
   const heartCounts = useMemo(() => {
@@ -612,6 +614,11 @@ export function ForumLoader({
   const { onHeartTip, heartTipViews } = useHeartTip({
     readOnly: session === null,
     heartCounts,
+    onPaid: () => {
+      if (expandedIdRef.current !== null) {
+        setRepliesAttempt((n) => n + 1);
+      }
+    },
   });
   const [repliesLoading, setRepliesLoading] = useState(false);
   const [repliesError, setRepliesError] = useState(false);
@@ -1323,6 +1330,7 @@ export function ForumLoader({
     setRepliesError(false);
     if (expandedChanged) {
       setReplies(null);
+      setReplyHearts([]);
     }
     void (async () => {
       try {
@@ -1336,6 +1344,7 @@ export function ForumLoader({
           }
           const filtered = next.filter((row) => !deletedIds.current.has(row.id));
           setReplies(filtered);
+          setReplyHearts(next.hearts ?? []);
           const hiddenForThread = hiddenReplyCounts.current.get(expandedId);
           if (hiddenForThread !== undefined && hiddenForThread > 0) {
             setMessages((prev) => {
@@ -2388,6 +2397,7 @@ export function ForumLoader({
     if (expandedId === messageId) {
       setExpandedId(null);
       setReplies(null);
+      setReplyHearts([]);
       setRepliesError(false);
       setRepliesLoading(false);
       setReplyDraft('');
@@ -2400,6 +2410,7 @@ export function ForumLoader({
     }
     setExpandedId(messageId);
     setReplies(null);
+    setReplyHearts([]);
     setRepliesLoading(true);
     setRepliesError(false);
     setReplyDraft('');
@@ -3152,6 +3163,7 @@ export function ForumLoader({
           expandedId={expandedId}
           onToggleExpand={onToggleExpand}
           replies={expandedId === null ? null : replies}
+          replyHearts={expandedId === null ? [] : replyHearts}
           repliesLoading={expandedId !== null && repliesLoading}
           repliesError={expandedId !== null && repliesError}
           onRetryReplies={() => {

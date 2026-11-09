@@ -1,11 +1,12 @@
-import { act, cleanup, fireEvent, screen, within } from '@testing-library/react';
+import { act, cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { SettingsScreen } from '@/components/SettingsScreen';
 import { saveAmountUnit } from '@/lib/amount-unit';
-import { fetchPreviousWallets, setUsername } from '@/lib/api';
+import { fetchPreviousWallets, setHeartSats, setUsername } from '@/lib/api';
 import type { Account } from '@/lib/api-types';
 import { useAuthStore } from '@/stores/auth-store';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
+import { fetchFxSpot } from '@/lib/api';
 
 vi.mock('next/navigation', () => ({
   useRouter: () => ({ push: vi.fn(), replace: vi.fn(), refresh: vi.fn(), back: vi.fn() }),
@@ -37,6 +38,8 @@ vi.mock('@/lib/api', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@/lib/api')>()),
   setUsername: vi.fn(),
   fetchPreviousWallets: vi.fn(),
+  setHeartSats: vi.fn(),
+  fetchFxSpot: vi.fn(),
 }));
 
 const account: Account = {
@@ -66,6 +69,7 @@ const ADD_HINT =
 beforeEach(() => {
   vi.stubEnv('NEXT_PUBLIC_APP_VERSION', '42');
   vi.mocked(fetchPreviousWallets).mockReset().mockResolvedValue([]);
+  vi.mocked(setHeartSats).mockReset();
   useAuthStore.setState({ session: 'sess', account });
 });
 
@@ -110,6 +114,7 @@ describe('SettingsScreen', () => {
     expect(Array.from(section.children).map((node) => node.id)).toEqual([
       'wallet-heading',
       'address',
+      '',
       '',
     ]);
     for (const name of [
@@ -174,9 +179,12 @@ describe('SettingsScreen', () => {
     renderWithLocale(<SettingsScreen />);
     expect(screen.getByText('Set a username first.')).toBeTruthy();
     expect(screen.queryByRole('button', { name: 'Copy 21.gifts address' })).toBeNull();
-    fireEvent.change(screen.getByRole('textbox'), { target: { value: 'grace' } });
+    const address = within(document.getElementById('address') as HTMLElement);
+    fireEvent.change(address.getByRole('textbox', { name: 'Your 21.gifts name' }), {
+      target: { value: 'grace' },
+    });
     await act(async () => {
-      fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+      fireEvent.click(address.getByRole('button', { name: 'Continue' }));
       await Promise.resolve();
     });
     expect(setUsername).toHaveBeenCalledWith('sess', 'grace', 'enforce');
@@ -204,6 +212,121 @@ describe('SettingsScreen', () => {
     expect(within(group).getByRole('button', { name: 'USD' }).getAttribute('aria-pressed')).toBe(
       'true',
     );
+  });
+
+  it('shows a default heart amount of ₿1 and the stored amount', () => {
+    vi.mocked(fetchFxSpot).mockResolvedValue({
+      asOf: '2026-08-28T12:00:00.000Z',
+      source: 'test',
+      rates: { USD: '100000.00', CHF: '80000.00', EUR: '90000.00', PHP: '5600000.00' },
+    });
+    renderWithLocale(<SettingsScreen />);
+    const wallet = screen.getByRole('region', { name: 'Wallet' });
+    expect(within(wallet).getAllByText('Heart amount').length).toBeGreaterThan(0);
+    expect(within(wallet).getByText('₿1')).toBeTruthy();
+    expect((within(wallet).getByLabelText('Heart amount') as HTMLInputElement).value).toBe('1');
+    expect(
+      within(wallet).getByText(
+        'Each heart you tap sends this much. The post still counts as only one heart.',
+      ),
+    ).toBeTruthy();
+    expect(within(wallet).getByRole('group', { name: 'Bitcoin or fiat' })).toBeTruthy();
+    expect(within(wallet).getByText('No exchange rate yet')).toBeTruthy();
+    cleanup();
+    useAuthStore.setState({ session: 'sess', account: { ...account, heartSats: 21 } });
+    renderWithLocale(<SettingsScreen />);
+    const storedWallet = screen.getByRole('region', { name: 'Wallet' });
+    expect((within(storedWallet).getByLabelText('Heart amount') as HTMLInputElement).value).toBe(
+      '21',
+    );
+    expect(within(storedWallet).getByText('₿21')).toBeTruthy();
+  });
+
+  it('converts a stored whole-sat heart amount after the fiat rate arrives', async () => {
+    vi.mocked(fetchFxSpot).mockResolvedValue({
+      asOf: '2026-08-28T12:00:00.000Z',
+      source: 'test',
+      rates: { USD: '100000.00', CHF: '80000.00', EUR: '90000.00', PHP: '5600000.00' },
+    });
+    useAuthStore.setState({
+      session: 'sess',
+      account: { ...account, amountUnit: 'fiat', heartSats: 21 },
+    });
+    renderWithLocale(<SettingsScreen />, 'en', 'ch', 'USD');
+    const wallet = screen.getByRole('region', { name: 'Wallet' });
+    await waitFor(() => {
+      expect((within(wallet).getByLabelText('Heart amount') as HTMLInputElement).value).toBe(
+        '0.021',
+      );
+    });
+    expect(within(wallet).getAllByText(/₿21/).length).toBeGreaterThan(0);
+  });
+
+  it('keeps the fiat draft in step when the stored whole-sat amount changes', async () => {
+    vi.mocked(fetchFxSpot).mockResolvedValue({
+      asOf: '2026-08-28T12:00:00.000Z',
+      source: 'test',
+      rates: { USD: '100000.00', CHF: '80000.00', EUR: '90000.00', PHP: '5600000.00' },
+    });
+    useAuthStore.setState({
+      session: 'sess',
+      account: { ...account, amountUnit: 'fiat', heartSats: 21 },
+    });
+    renderWithLocale(<SettingsScreen />, 'en', 'ch', 'USD');
+    const wallet = screen.getByRole('region', { name: 'Wallet' });
+    await waitFor(() => {
+      expect((within(wallet).getByLabelText('Heart amount') as HTMLInputElement).value).toBe(
+        '0.021',
+      );
+    });
+    expect(within(wallet).getByText('$0.02')).toBeTruthy();
+    act(() => {
+      useAuthStore.setState({
+        session: 'sess',
+        account: { ...account, amountUnit: 'fiat', heartSats: 42 },
+      });
+    });
+    await waitFor(() => {
+      expect((within(wallet).getByLabelText('Heart amount') as HTMLInputElement).value).toBe(
+        '0.042',
+      );
+    });
+  });
+
+  it('saves a whole heart amount and confirms it', async () => {
+    vi.mocked(setHeartSats).mockResolvedValue({ ...account, heartSats: 21 });
+    renderWithLocale(<SettingsScreen />);
+    const wallet = screen.getByRole('region', { name: 'Wallet' });
+    const field = within(wallet).getByLabelText('Heart amount');
+    fireEvent.change(field, { target: { value: '21' } });
+    await act(async () => {
+      fireEvent.click(within(wallet).getByRole('button', { name: 'Save' }));
+      await Promise.resolve();
+    });
+    expect(setHeartSats).toHaveBeenCalledWith('sess', 21);
+    expect(within(wallet).getByText('Saved: ₿21 per heart.')).toBeTruthy();
+  });
+
+  it.each(['', '0', '1.5', '10000001'])('keeps the invalid heart amount %p local', (value) => {
+    renderWithLocale(<SettingsScreen />);
+    const wallet = screen.getByRole('region', { name: 'Wallet' });
+    fireEvent.change(within(wallet).getByLabelText('Heart amount'), { target: { value } });
+    fireEvent.click(within(wallet).getByRole('button', { name: 'Save' }));
+    expect(setHeartSats).not.toHaveBeenCalled();
+    expect(within(wallet).getByText('Enter a whole number from 1 to 10,000,000.')).toBeTruthy();
+  });
+
+  it('shows the server error and rolls back when saving the heart amount fails', async () => {
+    vi.mocked(setHeartSats).mockRejectedValue(new Error('offline'));
+    renderWithLocale(<SettingsScreen />);
+    const wallet = screen.getByRole('region', { name: 'Wallet' });
+    fireEvent.change(within(wallet).getByLabelText('Heart amount'), { target: { value: '21' } });
+    await act(async () => {
+      fireEvent.click(within(wallet).getByRole('button', { name: 'Save' }));
+      await Promise.resolve();
+    });
+    expect(within(wallet).getByText('Could not save the heart amount.')).toBeTruthy();
+    expect(useAuthStore.getState().account?.heartSats).toBe(1);
   });
 
   it('holds language, theme, fiat, and number format under Display, saved-on-device notes under theme and number format', () => {

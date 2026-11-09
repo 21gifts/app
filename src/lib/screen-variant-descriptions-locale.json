@@ -1560,19 +1560,19 @@
     "fil": "Tarheta ng pagkakakilanlan ng miyembro na may pilula ng tungkulin Na-verify at, sa tabi nito, isang pindutan ng programa ng tulong na icon lang kapag ang fundingReviewedAt ay isang numero. Ang pangalang pantulong ay Kasali sa programa ng tulong ng 21.gifts mula noong {date}, o ang parehong pangungusap na may sinuri ni {name} kapag nagpadala ang API ng fundingReviewedByName. Ang tarheta ng miyembro at ang sariling profile ay pinangalanan ang taong tumanggap sa kanila kapag ipinadala ng API ang pangalang iyon. Hindi nakikita ang pangungusap hangga't hindi pinipindot ang icon. Ang kuha sa pahinga ay hindi tinatakpan ang pindot."
   },
   "/members/[accountId]:heart-cannot-receive": {
-    "de": "Ada auf Carols Profil, Beiträge geöffnet, nach ?visual=heart-cannot-receive (nur Playwright-Builds) und Klick auf ₿1 senden bei Carols Notiz: die API lehnte das Herz ab, weil der Autor nicht empfangen kann (cannot_receive). Der Tipp wird zurückgenommen und unter dem Herz steht Die Wallet des Autors kann diese Bitcoin-Zahlung nicht empfangen, an der Stelle der Guthaben-Zeile.",
-    "es": "Ada en el perfil de Carol, publicaciones abiertas, tras ?visual=heart-cannot-receive (solo builds de Playwright) y pulsar Enviar ₿1 en la nota de Carol: la API rechazó el corazón porque el autor no puede recibir (cannot_receive). El toque se deshace y bajo el corazón aparece La wallet del autor no puede recibir este pago en Bitcoin, en el lugar de la línea de saldo.",
-    "fil": "Si Ada sa profile ni Carol, bukas ang mga post, matapos ang ?visual=heart-cannot-receive (Playwright build lang) at i-click ang Magpadala ng ₿1 sa tala ni Carol: tinanggihan ng API ang puso dahil hindi makatanggap ang may-akda (cannot_receive). Binabawi ang tap at lumalabas sa ilalim ng puso ang Hindi matanggap ng wallet ng may-akda ang Bitcoin payment na ito, sa puwesto ng linya ng balanse."
+    "de": "Ada auf Carols Profil, Beiträge geöffnet, nach ?visual=heart-cannot-receive (nur Playwright-Builds) und Klick auf Herz senden bei Carols Notiz: die API lehnte das Herz ab, weil der Autor nicht empfangen kann (cannot_receive). Der Tipp wird zurückgenommen und unter dem Herz steht Die Wallet des Autors kann diese Bitcoin-Zahlung nicht empfangen, an der Stelle der Guthaben-Zeile.",
+    "es": "Ada en el perfil de Carol, publicaciones abiertas, tras ?visual=heart-cannot-receive (solo builds de Playwright) y pulsar Enviar un corazón en la nota de Carol: la API rechazó el corazón porque el autor no puede recibir (cannot_receive). El toque se deshace y bajo el corazón aparece La wallet del autor no puede recibir este pago en Bitcoin, en el lugar de la línea de saldo.",
+    "fil": "Si Ada sa profile ni Carol, bukas ang mga post, matapos ang ?visual=heart-cannot-receive (Playwright build lang) at i-click ang Magpadala ng puso sa tala ni Carol: tinanggihan ng API ang puso dahil hindi makatanggap ang may-akda (cannot_receive). Binabawi ang tap at lumalabas sa ilalim ng puso ang Hindi matanggap ng wallet ng may-akda ang Bitcoin payment na ito, sa puwesto ng linya ng balanse."
   },
   "/members/[accountId]:heart-needs-balance": {
-    "de": "Derselbe deutsche Beitrag im Beitragsfeed nach dem Öffnen von ?visual=heart-needs-balance (bereite Wallet unter 1 Sat) und dem Klick auf ₿1 senden. Kein Drücken und kein +1; nichts wird gesendet. Text Dafür ist ein Bitcoin-Guthaben nötig.",
-    "es": "La misma publicación en alemán en el feed de publicaciones tras abrir ?visual=heart-needs-balance (billetera lista con menos de 1 sat) y pulsar Enviar ₿1. Sin pulsación ni +1; no se envía nada. Texto Para esto hace falta saldo de Bitcoin.",
-    "fil": "Parehong post sa German sa feed ng mga post pagkatapos buksan ang ?visual=heart-needs-balance (handang wallet na kulang sa 1 sat) at pindutin ang Magpadala ng ₿1. Walang pindot at walang +1; walang naipapadala. Sipi Kailangan ng Bitcoin balance para dito."
+    "de": "Derselbe deutsche Beitrag im Beitragsfeed nach dem Öffnen von ?visual=heart-needs-balance (bereite Wallet unter dem gespeicherten Herz-Betrag) und dem Klick auf Herz senden. Kein Drücken und kein +1; nichts wird gesendet. Text Dafür ist ein Bitcoin-Guthaben nötig.",
+    "es": "La misma publicación en alemán en el feed de publicaciones tras abrir ?visual=heart-needs-balance (billetera lista con menos saldo que el importe guardado del corazón) y pulsar Enviar un corazón. Sin pulsación ni +1; no se envía nada. Texto Para esto hace falta saldo de Bitcoin.",
+    "fil": "Parehong post sa German sa feed ng mga post pagkatapos buksan ang ?visual=heart-needs-balance (handang wallet na kulang sa naka-save na halaga ng puso) at pindutin ang Magpadala ng puso. Walang pindot at walang +1; walang naipapadala. Sipi Kailangan ng Bitcoin balance para dito."
   },
   "/members/[accountId]:heart-paid": {
-    "de": "Derselbe deutsche Beitrag nach dem Öffnen von ?visual=heart-paid und dem Klick auf ₿1 senden. Das gefüllte Herz und das +1, das jedes Tippen zeigt, bleiben für die Aufnahme stehen.",
-    "es": "La misma publicación en alemán tras abrir ?visual=heart-paid y pulsar Enviar ₿1. El corazón relleno y el +1 que muestra cada toque se mantienen para la captura.",
-    "fil": "Parehong post sa German pagkatapos buksan ang ?visual=heart-paid at pindutin ang Magpadala ng ₿1. Nananatili para sa kuha ang punong puso at ang +1 na ipinapakita ng bawat pindot."
+    "de": "Derselbe deutsche Beitrag nach dem Öffnen von ?visual=heart-paid und dem Klick auf Herz senden. Das gefüllte Herz und das +1, das jedes Tippen zeigt, bleiben für die Aufnahme stehen.",
+    "es": "La misma publicación en alemán tras abrir ?visual=heart-paid y pulsar Enviar un corazón. El corazón relleno y el +1 que muestra cada toque se mantienen para la captura.",
+    "fil": "Parehong post sa German pagkatapos buksan ang ?visual=heart-paid at pindutin ang Magpadala ng puso. Nananatili para sa kuha ang punong puso at ang +1 na ipinapakita ng bawat pindot."
   },
   "/members/[accountId]:images": {
     "de": "Mitgliedskarte mit beiden öffentlichen Bildern über der Überschrift: das breite Bild und das runde Profilfoto, das den unteren Rand überlappt. Keines ist das Über-mich-Foto. Keine Hinzufügen-Schaltflächen.",
@@ -1773,6 +1773,11 @@
     "de": "Identitätskarte; Antworten gedrückt; keine angeheftete Profilnotiz-Karte; Antwortkarte A reply from Carol.",
     "es": "Tarjeta de identidad; respuestas pulsadas; ninguna tarjeta de nota de perfil fijada; tarjeta de respuesta A reply from Carol.",
     "fil": "Kard ng pagkakakilanlan; pinindot ang mga sagot; walang nakaangkla na kard ng tala sa pagkakakilanlan; kard ng sagot A reply from Carol."
+  },
+  "/members/[accountId]:replies-open-hearts": {
+    "de": "Im Mitgliederprofil sind die Reaktionen geöffnet. Unter der Antwortkarte steht Herzen (2): Grace mit dem Rollen-Pill Verifiziert und ₿21, dann ein gelöschtes Konto mit dem Platzhalter und ₿1'000, jeweils mit Zeit und neueste zuerst.",
+    "es": "En el perfil del miembro, las reacciones están abiertas. Bajo la tarjeta de respuesta aparece Corazones (2): Grace con la pastilla Verificado y ₿21, después una cuenta eliminada con el marcador y ₿1'000, cada una con su hora y la más reciente primero.",
+    "fil": "Sa profile ng miyembro, bukas ang mga reaksyon. Sa ilalim ng kard ng sagot ang Mga puso (2): si Grace na may pildorang Beripikado at ₿21, pagkatapos ang natanggal na account na may placeholder at ₿1'000, bawat isa may oras at pinakabago muna."
   },
   "/members/[accountId]:replies-truncated": {
     "de": "Identitätskarte; Antworten-Zähler 3 gedrückt; eine aufgeführte Antwort; gedämpftes Zeigt die neuesten 1 von 3.; keine angeheftete Profilnotiz-Karte.",
@@ -2315,19 +2320,19 @@
     "fil": "Hindi naka-sign-in na permalink ng isang Ingles na tala na tinukoy bilang $1.50 na may frozen na ₿1'000 at label na 0%. Walang pangalawang halaga sa dolyar. Tumutugma ang tala sa wika ng UI, kaya hindi nag-aalok ang kard ng Isalin. Ang natanggap na halaga ay ₿0 · $0.00. Walang Hiling sa pambuo."
   },
   "/messages/[id]:heart-cannot-receive": {
-    "de": "Angemeldeter Permalink der Notiz eines anderen Mitglieds nach ?visual=heart-cannot-receive (nur Playwright-Builds) und Klick auf ₿1 senden: die API lehnte das Herz ab, weil der Autor nicht empfangen kann (cannot_receive). Der Tipp wird zurückgenommen und unter dem Herz steht Die Wallet des Autors kann diese Bitcoin-Zahlung nicht empfangen, an der Stelle der Guthaben-Zeile.",
-    "es": "Permalink con sesión iniciada de la nota de otro miembro tras ?visual=heart-cannot-receive (solo builds de Playwright) y pulsar Enviar ₿1: la API rechazó el corazón porque el autor no puede recibir (cannot_receive). El toque se deshace y bajo el corazón aparece La wallet del autor no puede recibir este pago en Bitcoin, en el lugar de la línea de saldo.",
-    "fil": "Naka-sign na permalink ng tala ng ibang miyembro, matapos ang ?visual=heart-cannot-receive (Playwright build lang) at i-click ang Magpadala ng ₿1: tinanggihan ng API ang puso dahil hindi makatanggap ang may-akda (cannot_receive). Binabawi ang tap at lumalabas sa ilalim ng puso ang Hindi matanggap ng wallet ng may-akda ang Bitcoin payment na ito, sa puwesto ng linya ng balanse."
+    "de": "Angemeldeter Permalink der Notiz eines anderen Mitglieds nach ?visual=heart-cannot-receive (nur Playwright-Builds) und Klick auf Herz senden: die API lehnte das Herz ab, weil der Autor nicht empfangen kann (cannot_receive). Der Tipp wird zurückgenommen und unter dem Herz steht Die Wallet des Autors kann diese Bitcoin-Zahlung nicht empfangen, an der Stelle der Guthaben-Zeile.",
+    "es": "Permalink con sesión iniciada de la nota de otro miembro tras ?visual=heart-cannot-receive (solo builds de Playwright) y pulsar Enviar un corazón: la API rechazó el corazón porque el autor no puede recibir (cannot_receive). El toque se deshace y bajo el corazón aparece La wallet del autor no puede recibir este pago en Bitcoin, en el lugar de la línea de saldo.",
+    "fil": "Naka-sign na permalink ng tala ng ibang miyembro, matapos ang ?visual=heart-cannot-receive (Playwright build lang) at i-click ang Magpadala ng puso: tinanggihan ng API ang puso dahil hindi makatanggap ang may-akda (cannot_receive). Binabawi ang tap at lumalabas sa ilalim ng puso ang Hindi matanggap ng wallet ng may-akda ang Bitcoin payment na ito, sa puwesto ng linya ng balanse."
   },
   "/messages/[id]:heart-needs-balance": {
-    "de": "Derselbe angemeldete öffentliche Thread nach dem Öffnen von ?visual=heart-needs-balance (bereite Wallet unter 1 Sat) und dem Klick auf ₿1 senden. Kein Drücken und kein +1; nichts wird gesendet. Text Dafür ist ein Bitcoin-Guthaben nötig.",
-    "es": "El mismo hilo público con sesión iniciada tras abrir ?visual=heart-needs-balance (billetera lista con menos de 1 sat) y pulsar Enviar ₿1. Sin pulsación ni +1; no se envía nada. Texto Para esto hace falta saldo de Bitcoin.",
-    "fil": "Parehong naka-sign-in na pampublikong thread pagkatapos buksan ang ?visual=heart-needs-balance (handang wallet na kulang sa 1 sat) at pindutin ang Magpadala ng ₿1. Walang pindot at walang +1; walang naipapadala. Sipi Kailangan ng Bitcoin balance para dito."
+    "de": "Derselbe angemeldete öffentliche Thread nach dem Öffnen von ?visual=heart-needs-balance (bereite Wallet unter dem gespeicherten Herz-Betrag) und dem Klick auf Herz senden. Kein Drücken und kein +1; nichts wird gesendet. Text Dafür ist ein Bitcoin-Guthaben nötig.",
+    "es": "El mismo hilo público con sesión iniciada tras abrir ?visual=heart-needs-balance (billetera lista con menos saldo que el importe guardado del corazón) y pulsar Enviar un corazón. Sin pulsación ni +1; no se envía nada. Texto Para esto hace falta saldo de Bitcoin.",
+    "fil": "Parehong naka-sign-in na pampublikong thread pagkatapos buksan ang ?visual=heart-needs-balance (handang wallet na kulang sa naka-save na halaga ng puso) at pindutin ang Magpadala ng puso. Walang pindot at walang +1; walang naipapadala. Sipi Kailangan ng Bitcoin balance para dito."
   },
   "/messages/[id]:heart-paid": {
-    "de": "Derselbe angemeldete öffentliche Thread nach dem Öffnen von ?visual=heart-paid und dem Klick auf ₿1 senden. Das gefüllte Herz und das +1, das jedes Tippen zeigt, bleiben für die Aufnahme stehen.",
-    "es": "El mismo hilo público con sesión iniciada tras abrir ?visual=heart-paid y pulsar Enviar ₿1. El corazón relleno y el +1 que muestra cada toque se mantienen para la captura.",
-    "fil": "Parehong naka-sign-in na pampublikong thread pagkatapos buksan ang ?visual=heart-paid at pindutin ang Magpadala ng ₿1. Nananatili para sa kuha ang punong puso at ang +1 na ipinapakita ng bawat pindot."
+    "de": "Derselbe angemeldete öffentliche Thread nach dem Öffnen von ?visual=heart-paid und dem Klick auf Herz senden. Das gefüllte Herz und das +1, das jedes Tippen zeigt, bleiben für die Aufnahme stehen.",
+    "es": "El mismo hilo público con sesión iniciada tras abrir ?visual=heart-paid y pulsar Enviar un corazón. El corazón relleno y el +1 que muestra cada toque se mantienen para la captura.",
+    "fil": "Parehong naka-sign-in na pampublikong thread pagkatapos buksan ang ?visual=heart-paid at pindutin ang Magpadala ng puso. Nananatili para sa kuha ang punong puso at ang +1 na ipinapakita ng bawat pindot."
   },
   "/messages/[id]:hidden": {
     "de": "Hydrierte Gründer- oder Moderatorsitzung bei einer weich ausgeblendeten Notiz. Der Verlauf zeigt den Originaltext plus Diese Notiz wurde von {name} am {time} ausgeblendet. Reagieren, Schenken, Löschen und das Antwortfeld fehlen.",
@@ -2428,6 +2433,11 @@
     "de": "Derselbe Verlauf geöffnet auf der Antwort-UUID. Übergeordnet + Geschenk; Permalink-Zielring (data-permalink-target=\"true\", ring-1 ring-app-fg) auf der Geschenk-Antwort.",
     "es": "El mismo hilo abierto en el UUID de la respuesta. Superior + regalo; anillo de destino del enlace permanente (data-permalink-target=\"true\", ring-1 ring-app-fg) en la respuesta-regalo.",
     "fil": "Parehong usapan na binuksan sa UUID ng sagot. Magulang + regalo; singsing ng target ng permalink (data-permalink-target=\"true\", ring-1 ring-app-fg) sa sagot-regalo."
+  },
+  "/messages/[id]:reply-hearts": {
+    "de": "Der öffentliche Beitrag ist geöffnet und die Reaktionen sind aufgeklappt. Unter den Antworten steht die Sektion Herzen mit dem Namen Grace als Profil-Link, dem Rollen-Pill Moderator, dem exakten Betrag ₿21 und dem Zeitstempel; darunter ein gelöschtes Konto mit dem übersetzten Platzhalter und ₿1'000.",
+    "es": "La publicación pública está abierta y las reacciones están desplegadas. Bajo las respuestas aparece la sección Corazones con Grace enlazada a su perfil, la pastilla Moderador, el importe exacto ₿21 y la hora; debajo, una cuenta eliminada con el marcador traducido y ₿1'000.",
+    "fil": "Bukas ang pampublikong post at naka-expand ang mga reaksyon. Sa ilalim ng mga sagot ang seksyong Mga puso na may Grace na naka-link sa profile, ang pildorang Moderator, ang eksaktong ₿21 at oras; sa ibaba ang natanggal na account na may isinaling placeholder at ₿1'000."
   },
   "/messages/[id]:reply-rate-loading": {
     "de": "Angemeldeter Verlauf. Der Reaktionsbetrag ist 1.00 USD, und Senden wurde gedrückt, während der Kurs des Geschenktags noch lädt. Der Eingabebereich zeigt Der Wechselkurs für USD wird noch geladen. Senden ist deaktiviert.",
@@ -4314,6 +4324,11 @@
     "es": "Tras pulsar el código fiat bajo Importe predeterminado: queda pulsado en lugar de ₿ y los campos de importe empiezan ahora en fiat.",
     "fil": "Pagkatapos pindutin ang fiat code sa ilalim ng Default na halaga: ito na ang nakapindot sa halip na ₿, at nagsisimula na sa fiat ang mga field ng halaga."
   },
+  "/settings:heart-amount": {
+    "de": "Einstellungen mit der Wallet-Sektion: unter Standardbetrag steht Herz-Betrag. Das Feld zeigt den gespeicherten Wert 21, darüber ₿21 mit der Fiat-Umrechnung, darunter der Hinweis, dass jedes gedrückte Herz diesen Betrag sendet, der Beitrag aber nur ein Herz zählt, und Speichern.",
+    "es": "Ajustes con la sección Wallet: bajo Importe predeterminado aparece Importe del corazón. El campo muestra el valor guardado 21, encima ₿21 con la conversión a fiat, debajo la nota de que cada corazón pulsado envía ese importe aunque la publicación cuente solo un corazón, y Guardar.",
+    "fil": "Mga setting na may seksyong Wallet: sa ilalim ng Default na halaga ang Halaga ng puso. Ipinapakita ng field ang naka-save na 21, sa itaas ang ₿21 kasama ang fiat na conversion, sa ibaba ang paalala na ganoon kalaking halaga ang ipinapadala ng bawat pusong pinindot kahit isang puso lang ang bilang sa post, at I-save."
+  },
   "/settings:heart-notify-error": {
     "de": "Abschnitt Benachrichtigungen mit Speicherfehler role=\"alert\" nach dem Stubben von POST /me/heart-notifications auf 500 und dem Klick auf Aus in Herzen. Text Die Herzen-Einstellung konnte nicht gespeichert werden.",
     "es": "Sección de notificaciones con error de guardado role=\"alert\" tras simular POST /me/heart-notifications a 500 y pulsar Desactivado dentro de Corazones. Texto No se pudo guardar el ajuste de corazones.",
@@ -4845,9 +4860,9 @@
     "fil": "Hindi ma-load ang mga mensahe. Subukan ulit. at Subukan ulit."
   },
   "/shops:heart-cannot-receive": {
-    "de": "Angemeldete Shop-Notiz eines anderen Mitglieds nach ?visual=heart-cannot-receive (nur Playwright-Builds) und Klick auf ₿1 senden: die API lehnte das Herz ab, weil der Autor nicht empfangen kann (cannot_receive). Der Tipp wird zurückgenommen und unter dem Herz steht Die Wallet des Autors kann diese Bitcoin-Zahlung nicht empfangen, an der Stelle der Guthaben-Zeile.",
-    "es": "Nota de tienda de otro miembro con sesión iniciada tras ?visual=heart-cannot-receive (solo builds de Playwright) y pulsar Enviar ₿1: la API rechazó el corazón porque el autor no puede recibir (cannot_receive). El toque se deshace y bajo el corazón aparece La wallet del autor no puede recibir este pago en Bitcoin, en el lugar de la línea de saldo.",
-    "fil": "Shop note ng ibang miyembro habang naka-sign in, matapos ang ?visual=heart-cannot-receive (Playwright build lang) at i-click ang Magpadala ng ₿1: tinanggihan ng API ang puso dahil hindi makatanggap ang may-akda (cannot_receive). Binabawi ang tap at lumalabas sa ilalim ng puso ang Hindi matanggap ng wallet ng may-akda ang Bitcoin payment na ito, sa puwesto ng linya ng balanse."
+    "de": "Angemeldete Shop-Notiz eines anderen Mitglieds nach ?visual=heart-cannot-receive (nur Playwright-Builds) und Klick auf Herz senden: die API lehnte das Herz ab, weil der Autor nicht empfangen kann (cannot_receive). Der Tipp wird zurückgenommen und unter dem Herz steht Die Wallet des Autors kann diese Bitcoin-Zahlung nicht empfangen, an der Stelle der Guthaben-Zeile.",
+    "es": "Nota de tienda de otro miembro con sesión iniciada tras ?visual=heart-cannot-receive (solo builds de Playwright) y pulsar Enviar un corazón: la API rechazó el corazón porque el autor no puede recibir (cannot_receive). El toque se deshace y bajo el corazón aparece La wallet del autor no puede recibir este pago en Bitcoin, en el lugar de la línea de saldo.",
+    "fil": "Shop note ng ibang miyembro habang naka-sign in, matapos ang ?visual=heart-cannot-receive (Playwright build lang) at i-click ang Magpadala ng puso: tinanggihan ng API ang puso dahil hindi makatanggap ang may-akda (cannot_receive). Binabawi ang tap at lumalabas sa ilalim ng puso ang Hindi matanggap ng wallet ng may-akda ang Bitcoin payment na ito, sa puwesto ng linya ng balanse."
   },
   "/shops:heart-cannot-receive-older-api": {
     "de": "Der Zustand heart-cannot-receive auf einer Shop-Notiz, aktualisiert von einer älteren API, die payable: false ohne authorCanReceive sendet. Das Herz fehlt, es gibt kein Kann noch nicht empfangen, und die Zeile Die Wallet des Autors kann diese Bitcoin-Zahlung nicht empfangen bleibt bis zum nächsten Tippen.",
@@ -4860,14 +4875,14 @@
     "fil": "Ang kalagayang heart-cannot-receive sa isang shop note. Pagkatapos ng tinanggihang puso, sinasabi ng pag-refresh na hindi pa makatanggap ang may-akda (authorCanReceive: false). Naka-disable ang puso at ang bilang nito kasama ang Hindi pa makatanggap, at nananatili sa ilalim ng puso ang linyang Hindi matanggap ng wallet ng may-akda ang Bitcoin payment na ito hanggang sa susunod na tap."
   },
   "/shops:heart-needs-balance": {
-    "de": "Shop-Beitragsfeed mit Cafe Luna nach dem Öffnen von ?visual=heart-needs-balance (bereite Wallet unter 1 Sat) und dem Klick auf ₿1 senden. Kein Drücken und kein +1; nichts wird gesendet. Text Dafür ist ein Bitcoin-Guthaben nötig.",
-    "es": "Feed de publicaciones de tienda con Cafe Luna tras abrir ?visual=heart-needs-balance (billetera lista con menos de 1 sat) y pulsar Enviar ₿1. Sin pulsación ni +1; no se envía nada. Texto Para esto hace falta saldo de Bitcoin.",
-    "fil": "Feed ng post ng tindahan na may Cafe Luna pagkatapos buksan ang ?visual=heart-needs-balance (handang wallet na kulang sa 1 sat) at pindutin ang Magpadala ng ₿1. Walang pindot at walang +1; walang naipapadala. Sipi Kailangan ng Bitcoin balance para dito."
+    "de": "Shop-Beitragsfeed mit Cafe Luna nach dem Öffnen von ?visual=heart-needs-balance (bereite Wallet unter dem gespeicherten Herz-Betrag) und dem Klick auf Herz senden. Kein Drücken und kein +1; nichts wird gesendet. Text Dafür ist ein Bitcoin-Guthaben nötig.",
+    "es": "Feed de publicaciones de tienda con Cafe Luna tras abrir ?visual=heart-needs-balance (billetera lista con menos saldo que el importe guardado del corazón) y pulsar Enviar un corazón. Sin pulsación ni +1; no se envía nada. Texto Para esto hace falta saldo de Bitcoin.",
+    "fil": "Feed ng post ng tindahan na may Cafe Luna pagkatapos buksan ang ?visual=heart-needs-balance (handang wallet na kulang sa naka-save na halaga ng puso) at pindutin ang Magpadala ng puso. Walang pindot at walang +1; walang naipapadala. Sipi Kailangan ng Bitcoin balance para dito."
   },
   "/shops:heart-paid": {
-    "de": "Dieselbe Cafe-Luna-Notiz nach dem Öffnen von ?visual=heart-paid und dem Klick auf ₿1 senden. Das gefüllte Herz und das +1, das jedes Tippen zeigt, bleiben für die Aufnahme stehen.",
-    "es": "La misma publicación de Cafe Luna tras abrir ?visual=heart-paid y pulsar Enviar ₿1. El corazón relleno y el +1 que muestra cada toque se mantienen para la captura.",
-    "fil": "Parehong post ng Cafe Luna pagkatapos buksan ang ?visual=heart-paid at pindutin ang Magpadala ng ₿1. Nananatili para sa kuha ang punong puso at ang +1 na ipinapakita ng bawat pindot."
+    "de": "Dieselbe Cafe-Luna-Notiz nach dem Öffnen von ?visual=heart-paid und dem Klick auf Herz senden. Das gefüllte Herz und das +1, das jedes Tippen zeigt, bleiben für die Aufnahme stehen.",
+    "es": "La misma publicación de Cafe Luna tras abrir ?visual=heart-paid y pulsar Enviar un corazón. El corazón relleno y el +1 que muestra cada toque se mantienen para la captura.",
+    "fil": "Parehong post ng Cafe Luna pagkatapos buksan ang ?visual=heart-paid at pindutin ang Magpadala ng puso. Nananatili para sa kuha ang punong puso at ang +1 na ipinapakita ng bawat pindot."
   },
   "/shops:list-empty": {
     "de": "Liste ist ausgewählt und es gibt keine Shops. Leerer Text Noch keine Shops — fügen Sie den ersten hinzu. Der Eingabebereich ist weg.",
@@ -7069,6 +7084,11 @@
     "es": "En Todos, Mostrar reacciones está pulsado en una nota — el importe ₿ de la nota y el texto del recuento de reacciones también se despliegan — la tarjeta se despliega (aria-expanded), la lista de respuestas carga vía fetchReplies, y el cuadro de redacción de respuesta dentro de la tarjeta muestra Escribe una reacción más un campo Importe sats. Las respuestas solo de regalo se muestran como envía ₿… más la misma preferred-fiat · opcional que las notas (una cadena guardada tal cual, el tipo de cambio actual cuando ese campo guardado es null o falta); una respuesta con texto y un regalo muestra ambos. Los autores de respuesta muestran las mismas pastillas Fundador / Moderador / Iniciador / Verificado que las notas (basis no tiene ninguna); pulsar una pastilla alterna la misma explicación breve. Texto de respuesta vacío y un importe vacío factura 21 sats (predeterminado de la hoja de pago) y abre la hoja de pago; una respuesta con texto y un importe vacío queda impagada para un miembro verificado, de lo contrario 1 sat a 21.gifts; un importe de 0 se cobra como 1 sat.",
     "fil": "Sa Lahat, napindot ang Ipakita ang mga reaksyon sa isang tala — ang halagang ₿ ng tala at ang teksto ng bilang ng reaksyon ay bumubuka rin — bumubuka ang kard (aria-expanded), naglo-load ang listahan ng sagot sa pamamagitan ng fetchReplies, at ang kahon ng pagsulat ng sagot sa loob ng kard ay nagpapakita ng Sumulat ng reaksyon plus isang field na Halaga sats. Ang mga sagot na regalo lang ay ipinapakita bilang magpadala ng ₿… plus ang parehong opsyonal na preferred-fiat · tulad ng mga tala (isang naka-imbak na string kung ano, ang kasalukuyang rate kapag null o wala ang naka-imbak na field); ang sagot na may teksto at regalo ay nagpapakita ng dalawa. Ang mga may-akda ng sagot ay nagpapakita ng parehong mga pildoras Tagapagtatag / Tagapamagitan / Tagapagsimula / Beripikado tulad ng mga tala (wala ang basis); ang pagpindot sa isang pildoras ay nagpapalit ng parehong maikling paliwanag. Walang laman na teksto ng sagot at walang laman na halaga ay singil ng 21 sats (default ng panel ng bayad) at nagbubukas ng panel ng bayad; ang sagot na may teksto at walang laman na halaga ay hindi pa bayad para sa beripikadong miyembro, kung hindi 1 sat sa 21.gifts; ang halagang 0 ay sinisingil bilang 1 sat."
   },
+  "/welcome:expanded-hearts": {
+    "de": "Im Forum ist die Notiz von Ada aufgeklappt. Unter den Antworten steht die Sektion Herzen (2) mit Grace, ihrer Rolle Moderator und ₿21 sowie einem gelöschten Konto mit ₿1'000; jede Zeile zeigt Name, exakten Betrag und Zeit, neueste zuerst.",
+    "es": "En el foro, la nota de Ada está expandida. Bajo las respuestas aparece la sección Corazones (2) con Grace, su rol Moderador y ₿21, y una cuenta eliminada con ₿1'000; cada fila muestra nombre, importe exacto y hora, la más reciente primero.",
+    "fil": "Sa forum, naka-expand ang tala ni Ada. Sa ilalim ng mga sagot ang seksyong Mga puso (2) na may Grace, ang role niyang Moderator at ₿21, at isang natanggal na account na may ₿1'000; ipinapakita ng bawat hilera ang pangalan, eksaktong halaga at oras, pinakabago muna."
+  },
   "/welcome:expanded-donated": {
     "de": "Adas Notiz ist aufgeklappt. Cyrills Antwort hat keinen Text. Sie zeigt senden ₿21'000 · $18.14 und keine Empfangen-Zeile. Die Notizfußzeile ist ₿21'000 · $18.14, dasselbe Geschenk, keine zweite Zahlung. Nichts an dieser Antwort wird in ₿21'100 eingerechnet.",
     "es": "La nota de Ada está desplegada. La respuesta de Cyrill no tiene texto. Muestra enviar ₿21'000 · $18.14 y ninguna línea de recibido. El pie de la nota es ₿21'000 · $18.14, el mismo regalo, no un segundo pago. Nada de esta respuesta se suma a ₿21'100.",
@@ -7140,9 +7160,9 @@
     "fil": "Sa Lahat: isang pangunahing tala sa Ingles na tinukoy bilang ₱200.00, na may nagyeyelong ₿1'000. Ang default na fiat ng tumitingin ay USD, hindi piso, kaya ipinapakita rin ng bar ang dolyar na naka-imbak para sa tumitinging iyon, $1.50. Label 0%. Tumutugma ang tala sa wika ng UI, kaya hindi nag-aalok ang kard ng Isalin. Ang natanggap na halaga ay ₿0 · $0.00."
   },
   "/welcome:heart-cannot-receive": {
-    "de": "Angemeldete Notiz eines anderen Mitglieds nach dem Öffnen von ?visual=heart-cannot-receive (nur Playwright-Builds) und Klick auf ₿1 senden. Die API lehnte das Herz ab, weil der Autor nicht empfangen kann (cannot_receive). Der Tipp wird zurückgenommen und unter dem Herz steht Die Wallet des Autors kann diese Bitcoin-Zahlung nicht empfangen, an der Stelle der Guthaben-Zeile.",
-    "es": "Nota de otro miembro con sesión iniciada tras abrir ?visual=heart-cannot-receive (solo builds de Playwright) y pulsar Enviar ₿1. La API rechazó el corazón porque el autor no puede recibir (cannot_receive). El toque se deshace y bajo el corazón aparece La wallet del autor no puede recibir este pago en Bitcoin, en el lugar de la línea de saldo.",
-    "fil": "Tala ng ibang miyembro habang naka-sign in, matapos buksan ang ?visual=heart-cannot-receive (Playwright build lang) at i-click ang Magpadala ng ₿1. Tinanggihan ng API ang puso dahil hindi makatanggap ang may-akda (cannot_receive). Binabawi ang tap at lumalabas sa ilalim ng puso ang Hindi matanggap ng wallet ng may-akda ang Bitcoin payment na ito, sa puwesto ng linya ng balanse."
+    "de": "Angemeldete Notiz eines anderen Mitglieds nach dem Öffnen von ?visual=heart-cannot-receive (nur Playwright-Builds) und Klick auf Herz senden. Die API lehnte das Herz ab, weil der Autor nicht empfangen kann (cannot_receive). Der Tipp wird zurückgenommen und unter dem Herz steht Die Wallet des Autors kann diese Bitcoin-Zahlung nicht empfangen, an der Stelle der Guthaben-Zeile.",
+    "es": "Nota de otro miembro con sesión iniciada tras abrir ?visual=heart-cannot-receive (solo builds de Playwright) y pulsar Enviar un corazón. La API rechazó el corazón porque el autor no puede recibir (cannot_receive). El toque se deshace y bajo el corazón aparece La wallet del autor no puede recibir este pago en Bitcoin, en el lugar de la línea de saldo.",
+    "fil": "Tala ng ibang miyembro habang naka-sign in, matapos buksan ang ?visual=heart-cannot-receive (Playwright build lang) at i-click ang Magpadala ng puso. Tinanggihan ng API ang puso dahil hindi makatanggap ang may-akda (cannot_receive). Binabawi ang tap at lumalabas sa ilalim ng puso ang Hindi matanggap ng wallet ng may-akda ang Bitcoin payment na ito, sa puwesto ng linya ng balanse."
   },
   "/welcome:heart-cannot-receive-older-api": {
     "de": "Der Zustand heart-cannot-receive auf Erins Notiz, aktualisiert von einer älteren API, die payable: false ohne authorCanReceive sendet. Das Herz fehlt, es gibt kein Kann noch nicht empfangen, und die Zeile Die Wallet des Autors kann diese Bitcoin-Zahlung nicht empfangen bleibt bis zum nächsten Tippen.",
@@ -7155,14 +7175,14 @@
     "fil": "Ang kalagayang heart-cannot-receive sa tala ni Erin. Pagkatapos ng tinanggihang puso, sinasabi ng pag-refresh na hindi pa makatanggap ang may-akda (authorCanReceive: false). Naka-disable ang puso at ang bilang nito kasama ang Hindi pa makatanggap, at nananatili sa ilalim ng puso ang linyang Hindi matanggap ng wallet ng may-akda ang Bitcoin payment na ito hanggang sa susunod na tap."
   },
   "/welcome:heart-needs-balance": {
-    "de": "Dieselbe angemeldete deutsche Notiz nach dem Öffnen von ?visual=heart-needs-balance (bereite Wallet unter 1 Sat) und dem Klick auf ₿1 senden. Kein Drücken und kein +1; nichts wird gesendet. Text Dafür ist ein Bitcoin-Guthaben nötig.",
-    "es": "La misma nota en alemán con sesión iniciada tras abrir ?visual=heart-needs-balance (billetera lista con menos de 1 sat) y pulsar Enviar ₿1. Sin pulsación ni +1; no se envía nada. Texto Para esto hace falta saldo de Bitcoin.",
-    "fil": "Parehong naka-sign-in na notang Aleman pagkatapos buksan ang ?visual=heart-needs-balance (handang wallet na kulang sa 1 sat) at pindutin ang Magpadala ng ₿1. Walang pindot at walang +1; walang naipapadala. Sipi Kailangan ng Bitcoin balance para dito."
+    "de": "Dieselbe angemeldete deutsche Notiz nach dem Öffnen von ?visual=heart-needs-balance (bereite Wallet unter dem gespeicherten Herz-Betrag) und dem Klick auf Herz senden. Kein Drücken und kein +1; nichts wird gesendet. Text Dafür ist ein Bitcoin-Guthaben nötig.",
+    "es": "La misma nota en alemán con sesión iniciada tras abrir ?visual=heart-needs-balance (billetera lista con menos saldo que el importe guardado del corazón) y pulsar Enviar un corazón. Sin pulsación ni +1; no se envía nada. Texto Para esto hace falta saldo de Bitcoin.",
+    "fil": "Parehong naka-sign-in na notang Aleman pagkatapos buksan ang ?visual=heart-needs-balance (handang wallet na kulang sa naka-save na halaga ng puso) at pindutin ang Magpadala ng puso. Walang pindot at walang +1; walang naipapadala. Sipi Kailangan ng Bitcoin balance para dito."
   },
   "/welcome:heart-paid": {
-    "de": "Dieselbe angemeldete deutsche Notiz nach dem Öffnen von ?visual=heart-paid und dem Klick auf ₿1 senden. Das gefüllte Herz und das +1, das jedes Tippen zeigt, bleiben für die Aufnahme stehen.",
-    "es": "La misma nota en alemán con sesión iniciada tras abrir ?visual=heart-paid y pulsar Enviar ₿1. El corazón relleno y el +1 que muestra cada toque se mantienen para la captura.",
-    "fil": "Parehong naka-sign-in na notang Aleman pagkatapos buksan ang ?visual=heart-paid at pindutin ang Magpadala ng ₿1. Nananatili para sa kuha ang punong puso at ang +1 na ipinapakita ng bawat pindot."
+    "de": "Dieselbe angemeldete deutsche Notiz nach dem Öffnen von ?visual=heart-paid und dem Klick auf Herz senden. Das gefüllte Herz und das +1, das jedes Tippen zeigt, bleiben für die Aufnahme stehen.",
+    "es": "La misma nota en alemán con sesión iniciada tras abrir ?visual=heart-paid y pulsar Enviar un corazón. El corazón relleno y el +1 que muestra cada toque se mantienen para la captura.",
+    "fil": "Parehong naka-sign-in na notang Aleman pagkatapos buksan ang ?visual=heart-paid at pindutin ang Magpadala ng puso. Nananatili para sa kuha ang punong puso at ang +1 na ipinapakita ng bawat pindot."
   },
   "/welcome:held-session": {
     "de": "Ein angemeldetes Mitglied hat die Seite neu geladen (fixiert mit ?visual=held-session, nur Playwright-Builds): Die gespeicherte Sitzung wird zurückgehalten, bis die Wallet wieder offen ist, also zeigt die Forum-Startseite die Anmeldekarte anstelle des Feeds, nicht die Gastansicht. Die Karte grüßt Willkommen zurück, Ada über Mit Ihrem Gerät anmelden, mit der gedämpften Zeile Bestätigen Sie, um Ihre Wallet zu öffnen über Anmelden, Neu bei 21.gifts? und Ein neues Konto eröffnen, und ohne Abmelden. Oben rechts steht weder Anmelden noch das Menü. Ein Tipp auf Anmelden, eine Passkey-Abfrage, und das Mitglied ist zurück auf /welcome, angemeldet und mit offener Wallet. Ein Besucher ohne gespeicherte Sitzung sieht weiterhin das Gast-Forum mit Anmelden oben rechts.",

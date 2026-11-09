@@ -21,7 +21,12 @@ import {
   setName,
   WalletRequiredError,
 } from '@/lib/api';
-import { FORUM_MESSAGE_MAX_LENGTH, type Account, type ForumMessage } from '@/lib/api-types';
+import {
+  FORUM_MESSAGE_MAX_LENGTH,
+  type Account,
+  type ForumMessage,
+  type ForumReplies,
+} from '@/lib/api-types';
 import { MissingRequirementsError } from '@/lib/missing-requirements';
 import { useAuthStore } from '@/stores/auth-store';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
@@ -141,6 +146,19 @@ const giftReply: ForumMessage = {
   sats: 3000,
   payable: false,
   replyCount: 0,
+};
+
+const HEART_SENDER = {
+  accountId: 'acc_grace',
+  name: 'Grace',
+  username: 'grace',
+  role: 'moderator' as const,
+  sats: 21,
+  createdAt: '2026-08-28T12:02:00.000Z',
+  amountUsd: '0.02',
+  amountChf: null,
+  amountEur: null,
+  amountPhp: null,
 };
 
 const payableNested: ForumMessage = {
@@ -1317,7 +1335,11 @@ describe('PublicMessageThread', () => {
   it('invoices 1 sat when an unpaid reply on a note without accountId is 403', async () => {
     signIn();
     vi.mocked(postMessage).mockRejectedValue(new Error('A reply needs a Bitcoin payment'));
-    vi.mocked(postMessageInvoice).mockResolvedValue({ pr: 'lnbc1', amountSats: 1 });
+    vi.mocked(postMessageInvoice).mockResolvedValue({
+      pr: 'lnbc1',
+      amountSats: 1,
+      sparkInvoice: SPARK_INVOICE,
+    });
     renderThread({ root: { ...root, accountId: undefined } });
     await screen.findByPlaceholderText('Write a reaction');
     fireEvent.change(screen.getByLabelText('Your reaction'), { target: { value: 'thanks' } });
@@ -1402,7 +1424,7 @@ describe('PublicMessageThread', () => {
     signIn();
     renderThread();
     await screen.findByPlaceholderText('Write a reaction');
-    expect(screen.getByText('₿21')).toBeTruthy();
+    expect(screen.getAllByText('₿21').length).toBeGreaterThan(0);
   });
 
   it('rejects a non-numeric reply amount', async () => {
@@ -1894,6 +1916,51 @@ describe('PublicMessageThread', () => {
     await waitFor(() => {
       expect(screen.getByText('Hidden reply')).toBeTruthy();
     });
+  });
+
+  it('shows the hearts section under the replies with exact sats and reloads after a heart', async () => {
+    signIn();
+    setWalletUsable('ready');
+    vi.mocked(payFromWallet).mockReset().mockResolvedValue(confirmResult(undefined, 1));
+    vi.mocked(postMessageInvoice).mockResolvedValue({
+      pr: 'lnbc1',
+      amountSats: 1,
+      sparkInvoice: 'spark1heart',
+    });
+    vi.mocked(fetchReplies).mockResolvedValue(
+      Object.assign([payableNested], { hearts: [HEART_SENDER] }) as ForumReplies,
+    );
+    renderThread();
+    expect(await screen.findByRole('heading', { name: 'Hearts (1)' })).toBeTruthy();
+    const hearts = screen.getByRole('region', { name: 'Hearts (1)' });
+    expect(within(hearts).getByRole('link', { name: 'Grace' }).getAttribute('href')).toBe(
+      '/members/acc_grace',
+    );
+    const row = within(within(hearts).getByRole('list')).getByRole('listitem');
+    expect(row.textContent).toContain('₿21');
+    expect(row.textContent).toContain('$0.02');
+    const loads = vi.mocked(fetchReplies).mock.calls.length;
+    const rootCard = document.querySelector(`[data-message-id="${MESSAGE_ID}"]`) as HTMLElement;
+    const rootHeart = within(rootCard).getAllByRole('button', { name: 'Send a heart' })[0];
+    if (rootHeart === undefined) {
+      throw new Error('root heart missing');
+    }
+    await act(async () => {
+      fireEvent.click(rootHeart);
+      for (let tick = 0; tick < 12; tick += 1) {
+        await Promise.resolve();
+      }
+    });
+    expect(vi.mocked(fetchReplies).mock.calls.length).toBeGreaterThan(loads);
+    resetWallet();
+  });
+
+  it('does not render a hearts section when the replies carry none', async () => {
+    signIn();
+    vi.mocked(fetchReplies).mockResolvedValue([payableNested]);
+    renderThread();
+    expect(await screen.findByText('A payable reply')).toBeTruthy();
+    expect(screen.queryByRole('heading', { name: /^Hearts/ })).toBeNull();
   });
 
   it('does not append a seed without deletedAt', async () => {

@@ -52,6 +52,7 @@ import {
   FORUM_MESSAGE_MAX_LENGTH,
   type AmountUnit,
   type ForumMessage,
+  type HeartSender,
   type AccountActivity,
   type MemberProfile,
 } from '@/lib/api-types';
@@ -373,8 +374,10 @@ export function MemberProfileScreen({
   expandedIdRef.current = expandedId;
   const expandGen = useRef(0);
   const [replies, setReplies] = useState<ForumMessage[] | null>(null);
+  const [replyHearts, setReplyHearts] = useState<HeartSender[]>([]);
   const repliesRef = useRef(replies);
   repliesRef.current = replies;
+  const reloadRepliesRef = useRef<() => void>(() => undefined);
   const [repliesLoading, setRepliesLoading] = useState(false);
   const [repliesError, setRepliesError] = useState(false);
   const [replyDraft, setReplyDraft] = useState('');
@@ -433,6 +436,9 @@ export function MemberProfileScreen({
   const { onHeartTip, heartTipViews } = useHeartTip({
     readOnly: session === null,
     heartCounts,
+    onPaid: () => {
+      reloadRepliesRef.current();
+    },
   });
   const postsLoadGen = useRef(0);
   const repliesLoadGen = useRef(0);
@@ -823,6 +829,7 @@ export function MemberProfileScreen({
                   const repliesNext = await fetchReplies(current.session, threadId);
                   if (expandGen.current === gen) {
                     setReplies(repliesNext);
+                    setReplyHearts(repliesNext.hearts ?? []);
                   }
                 } catch {
                   if (expandGen.current === gen) {
@@ -1347,6 +1354,7 @@ export function MemberProfileScreen({
       ++expandGen.current;
       setExpandedId(null);
       setReplies(null);
+      setReplyHearts([]);
       setRepliesError(false);
       setRepliesLoading(false);
       setReplyDraft('');
@@ -1357,6 +1365,7 @@ export function MemberProfileScreen({
     const gen = ++expandGen.current;
     setExpandedId(messageId);
     setReplies(null);
+    setReplyHearts([]);
     setRepliesLoading(true);
     setRepliesError(false);
     setReplyDraft('');
@@ -1373,6 +1382,7 @@ export function MemberProfileScreen({
         const next = await fetchReplies(session, messageId);
         if (expandGen.current === gen) {
           setReplies(next);
+          setReplyHearts(next.hearts ?? []);
         }
       } catch {
         if (expandGen.current === gen) {
@@ -1490,6 +1500,7 @@ export function MemberProfileScreen({
         const next = await fetchReplies(session, messageId);
         if (expandGen.current === gen) {
           setReplies(next);
+          setReplyHearts(next.hearts ?? []);
         }
       } catch {
         if (expandGen.current === gen) {
@@ -1502,6 +1513,8 @@ export function MemberProfileScreen({
       }
     })();
   };
+
+  reloadRepliesRef.current = handleRetryReplies;
 
   const replyAmountProblem = replyDraftProblem(
     replyUnit,
@@ -1562,6 +1575,7 @@ export function MemberProfileScreen({
     expandedId,
     onToggleExpand: handleToggleExpand,
     replies: expandedId === null ? null : replies,
+    replyHearts: expandedId === null ? [] : replyHearts,
     repliesLoading: expandedId !== null && repliesLoading,
     repliesError: expandedId !== null && repliesError,
     replyDraft,

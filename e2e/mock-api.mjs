@@ -338,6 +338,7 @@ function newAccount(linkingKey) {
     setup: 'name',
     walletRequired: true,
     walletBackupSeenAt: null,
+    heartSats: 1,
     missing: ['name', 'username', 'lightning-address', 'rules'],
   };
   return account;
@@ -444,6 +445,32 @@ const E2E_MEMBER_REPLIES = [
     role: 'verified',
     replyCount: 0,
     parentId: '55555555-5555-4555-8555-555555555555',
+  },
+];
+
+/** Paid hearts returned with the canned member's replies, newest first. */
+const E2E_MEMBER_REPLY_HEARTS = [
+  {
+    accountId: 'acc_grace',
+    name: 'Grace',
+    username: 'grace',
+    role: 'moderator',
+    sats: 21,
+    createdAt: '2026-08-03T10:02:00.000Z',
+    amountUsd: '0.02',
+    amountChf: '0.02',
+    amountEur: '0.02',
+    amountPhp: '1.18',
+  },
+  {
+    accountId: 'acc_deleted',
+    name: '',
+    sats: 1000,
+    createdAt: '2026-08-03T10:01:00.000Z',
+    amountUsd: null,
+    amountChf: null,
+    amountEur: null,
+    amountPhp: null,
   },
 ];
 
@@ -992,6 +1019,9 @@ const server = http.createServer(async (req, res) => {
       payable: false,
       hasPhoto,
       role: account.role,
+      ...(typeof parsed?.inReplyTo === 'string' && parsed.inReplyTo !== ''
+        ? { inReplyTo: parsed.inReplyTo }
+        : {}),
     };
     if (parsed?.place !== undefined && parsed?.place !== null) {
       created.place = parsed.place;
@@ -1724,6 +1754,51 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
+  const repliesMatch = pathName.match(/^\/messages\/([^/]+)\/replies$/);
+  if (method === 'GET' && repliesMatch) {
+    const parentId = decodeURIComponent(repliesMatch[1]);
+    const token = bearer(req);
+    if (token === null || !byToken.has(token)) {
+      json(res, 401, { error: 'Unauthorized' });
+      return;
+    }
+    json(res, 200, {
+      messages: forumMessages
+        .filter(
+          (message) =>
+            (message.inReplyTo === parentId || message.parent === parentId) &&
+            message.deletedAt === undefined,
+        )
+        .map((message) => ({
+          ...message,
+          parentId,
+          shopNpub: message.shopNpub ?? null,
+        })),
+      hearts: parentId === E2E_MEMBER_PROFILE.profileMessage.id ? E2E_MEMBER_REPLY_HEARTS : [],
+    });
+    return;
+  }
+
+  const publicRepliesMatch = pathName.match(/^\/public-messages\/([^/]+)\/replies$/);
+  if (method === 'GET' && publicRepliesMatch) {
+    const parentId = decodeURIComponent(publicRepliesMatch[1]);
+    json(res, 200, {
+      messages: forumMessages
+        .filter(
+          (message) =>
+            (message.inReplyTo === parentId || message.parent === parentId) &&
+            message.deletedAt === undefined,
+        )
+        .map((message) => ({
+          ...message,
+          parentId,
+          shopNpub: message.shopNpub ?? null,
+        })),
+      hearts: parentId === E2E_MEMBER_PROFILE.profileMessage.id ? E2E_MEMBER_REPLY_HEARTS : [],
+    });
+    return;
+  }
+
   if (method === 'GET' && pathName === '/me') {
     const token = bearer(req);
     const account = token === null ? undefined : byToken.get(token);
@@ -1731,6 +1806,29 @@ const server = http.createServer(async (req, res) => {
       json(res, 401, { error: 'Unauthorized' });
       return;
     }
+    json(res, 200, account);
+    return;
+  }
+
+  if (method === 'POST' && pathName === '/me/heart-sats') {
+    const token = bearer(req);
+    const account = token === null ? undefined : byToken.get(token);
+    if (!account) {
+      json(res, 401, { error: 'Unauthorized' });
+      return;
+    }
+    let parsed;
+    try {
+      parsed = JSON.parse(rawBody);
+    } catch {
+      json(res, 400, { error: 'Expected a JSON body with a whole "sats" amount' });
+      return;
+    }
+    if (!Number.isInteger(parsed?.sats) || parsed.sats < 1 || parsed.sats > 10_000_000) {
+      json(res, 400, { error: 'Expected a JSON body with a whole "sats" amount' });
+      return;
+    }
+    account.heartSats = parsed.sats;
     json(res, 200, account);
     return;
   }
@@ -1940,7 +2038,7 @@ const server = http.createServer(async (req, res) => {
     }
     const id = decodeURIComponent(memberRepliesMatch[1]);
     if (id === E2E_MEMBER_ID) {
-      json(res, 200, { messages: E2E_MEMBER_REPLIES });
+      json(res, 200, { messages: E2E_MEMBER_REPLIES, hearts: E2E_MEMBER_REPLY_HEARTS });
       return;
     }
     if (id === account.id) {

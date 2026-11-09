@@ -43,6 +43,7 @@ import {
   proxyMeForumLawsDismissedPost,
   proxyMeWalletIntroSeenPost,
   proxyMeAmountUnitPost,
+  proxyMeHeartSatsPost,
   proxyMeFiatPost,
   proxyMeLocalePost,
   proxyMeNotificationLevelPost,
@@ -732,6 +733,13 @@ describe('api proxy wrappers', () => {
     await proxyMeAmountUnitPost(new Request('http://localhost/me/amount-unit', { method: 'POST' }));
     expect((fetchMock.mock.calls[0]?.[1] as RequestInit).method).toBe('POST');
     expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/me/amount-unit');
+  });
+
+  it('proxyMeHeartSatsPost hits POST /me/heart-sats', async () => {
+    const fetchMock = stubApi();
+    await proxyMeHeartSatsPost(new Request('http://localhost/me/heart-sats', { method: 'POST' }));
+    expect((fetchMock.mock.calls[0]?.[1] as RequestInit).method).toBe('POST');
+    expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/me/heart-sats');
   });
 
   it('proxyMeLocalePost hits POST /me/locale', async () => {

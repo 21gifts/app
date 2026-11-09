@@ -54,6 +54,7 @@ import { PAY_SHEET_HOLD_MS, usePaySheetHold } from '@/components/PaySheet';
 import { ForumPhotoGallery } from '@/components/ForumPhotoGallery';
 import { ForumReplyPayPage } from '@/components/ForumReplyPayPage';
 import { ReplyDirectionAmounts } from '@/components/ReplyDirectionAmounts';
+import { ReplyHeartSenders } from '@/components/ReplyHeartSenders';
 import { ForumVideo } from '@/components/ForumVideo';
 import { useTranslations } from '@/components/LocaleProvider';
 import { PlaceField } from '@/components/PlaceField';
@@ -70,6 +71,7 @@ import {
   FORUM_MESSAGE_MAX_LENGTH,
   type AmountUnit,
   type ForumMessage,
+  type HeartSender,
   type ForumPlacePin,
 } from '@/lib/api-types';
 import { composerTextProblem, shownEntryProblem } from '@/lib/entry-text';
@@ -100,7 +102,7 @@ import { forumVideoSrc, type ForumVideoPayload } from '@/lib/forum-video';
 import { shortResourceUrl } from '@/lib/short-link';
 import { formatForumTime } from '@/lib/forum-time';
 import type { HeartTipView } from '@/lib/heart-tip';
-import type { MessageKey } from '@/lib/messages';
+import { ForumRoleHint, ForumRoleTag, forumTaggedRole } from '@/components/ForumRoleTag';
 import { authorCannotReceive, isOwnNote, verifiedChipHiddenByStaffTag } from '@/lib/roles';
 import { useFiatPreference } from '@/components/FiatPreferenceProvider';
 import { formatBitcoin, type FiatRateDay } from '@/lib/stats-money';
@@ -199,31 +201,6 @@ function deadStillKey(messageId: string, photoIndex: number, version: string | u
   return version === undefined
     ? `${messageId}:${photoIndex}`
     : `${messageId}:${photoIndex}:${version}`;
-}
-
-/** Roles that show a clickable tag beside the author name. */
-type ForumTaggedRole = 'founder' | 'moderator' | 'initiator' | 'verified';
-
-/** Catalog keys for a tagged role's label and explanation. */
-const ROLE_TAG_KEYS: Record<ForumTaggedRole, { label: MessageKey; hint: MessageKey }> = {
-  founder: { label: 'forum.role.founder', hint: 'forum.role.founderHint' },
-  moderator: { label: 'forum.role.moderator', hint: 'forum.role.moderatorHint' },
-  initiator: { label: 'forum.role.initiator', hint: 'forum.role.initiatorHint' },
-  verified: { label: 'forum.role.verified', hint: 'forum.role.verifiedHint' },
-};
-
-function isForumTaggedRole(role: string): role is ForumTaggedRole {
-  return role in ROLE_TAG_KEYS;
-}
-
-/**
- * Role that shows a forum tag, or `null` for basis / missing.
- *
- * @param role - Live account role from the api, if present.
- * @returns Tagged role or `null`.
- */
-function forumTaggedRole(role: string): ForumTaggedRole | null {
-  return isForumTaggedRole(role) ? role : null;
 }
 
 const COPY_RESET_MS = 1200;
@@ -417,6 +394,8 @@ export interface ForumBoardProps {
   onToggleExpand: (messageId: string) => void;
   /** Replies for the expanded note (oldest-first), or `null` when not ready. */
   replies: ForumMessage[] | null;
+  /** Paid hearts on the expanded note, newest first. Default `[]`. */
+  replyHearts?: readonly HeartSender[];
   /** True while replies are loading for the expanded note. */
   repliesLoading: boolean;
   /** True when the latest replies fetch failed. */
@@ -502,13 +481,13 @@ export interface ForumBoardProps {
   /** Apply a saved shop-note body to the listed row. */
   onShopNoteUpdated?: (message: ForumMessage) => void;
   /**
-   * Signed-in account id, used to hide the 1-sat heart on the viewer's own
+   * Signed-in account id, used to hide the heart on the viewer's own
    * note. Default null. Only {@link ForumHeartControl} reads it.
    */
   heartViewerId?: string | null;
   /**
-   * Sends a 1-sat heart. Omit to hide the heart on every note, as on a board
-   * that cannot pay one.
+   * Sends a heart at the member's stored amount. Omit to hide the heart on
+   * every note, as on a board that cannot pay one.
    */
   onHeartTip?: (messageId: string) => void;
   /** Per-message heart visuals from `useHeartTip`. Default none. */
@@ -555,7 +534,7 @@ function fallbackCopy(text: string): boolean {
 }
 
 /**
- * 1-sat heart in a note or reply action row. Hidden on a deleted note, on the
+ * heart in a note or reply action row. Hidden on a deleted note, on the
  * viewer's own note, on a note that is not payable, and on a board without a
  * heart handler. When the author cannot receive yet (`cannotReceive`), the
  * heart and its count show disabled instead, so nobody taps a heart that can
@@ -788,7 +767,7 @@ function replyFormElement(field: HTMLTextAreaElement | null): HTMLFormElement | 
  * and the two lines share a left rule. The amounts are not added),
  * copy-link control, `ForumGoalBar` on a top-level note
  * with `goalSats`, React control on posts (`forum.react`, lucide Reply;
- * expands the reply composer; omitted when `deletedAt` is set), a 1-sat heart
+ * expands the reply composer; omitted when `deletedAt` is set), a heart
  * (`forum.heart`, lucide Heart) on a non-deleted post and a non-deleted reply
  * when `onHeartTip` is set, `payable` is true, and `heartViewerId !== accountId`
  * (shown disabled instead when the author cannot receive yet,
@@ -917,6 +896,7 @@ export function ForumBoard({
   expandedId,
   onToggleExpand: onToggleExpandProp,
   replies,
+  replyHearts = [],
   repliesLoading,
   repliesError,
   onRetryReplies,
@@ -1543,9 +1523,8 @@ export function ForumBoard({
             message.hasVideo && !deadVideoIds.has(message.id)
               ? (videoUrls[message.id] ?? forumVideoSrc(message.id, message.videoContentType))
               : undefined;
-          const taggedRole = forumTaggedRole(message.role);
           const hideVerified = verifiedChipHiddenByStaffTag(message.role, message.staffTag);
-          const roleKeys = taggedRole === null || hideVerified ? null : ROLE_TAG_KEYS[taggedRole];
+          const hasRoleTag = forumTaggedRole(message.role) !== null && !hideVerified;
           const roleHintOpen = openRoleMessageId === message.id;
           const expanded = expandedId === message.id;
           const cannotReceive = authorCannotReceive(message, viewerAccountId);
@@ -1661,18 +1640,16 @@ export function ForumBoard({
                       ) : (
                         <span className="text-sm font-medium text-app-fg">{message.name}</span>
                       )}
-                      {roleKeys !== null ? (
-                        <button
-                          type="button"
-                          aria-expanded={roleHintOpen}
-                          onClick={(event) => {
+                      {hasRoleTag ? (
+                        <ForumRoleTag
+                          role={message.role}
+                          staffTag={message.staffTag}
+                          expanded={roleHintOpen}
+                          onToggle={(event) => {
                             stopCardToggle(event);
                             setOpenRoleMessageId(roleHintOpen ? null : message.id);
                           }}
-                          className="rounded-full border border-app-border-strong px-2 py-0.5 text-xs font-medium text-app-muted"
-                        >
-                          {t(roleKeys.label)}
-                        </button>
+                        />
                       ) : message.via === 'nostr' && !hideVerified ? (
                         <button
                           type="button"
@@ -1696,9 +1673,9 @@ export function ForumBoard({
                       {formatForumTime(message.createdAt, locale)}
                     </time>
                   </div>
-                  {roleHintOpen && roleKeys !== null ? (
+                  {roleHintOpen && hasRoleTag && !hideVerified ? (
                     <p role="status" className="mt-1 text-xs text-app-muted">
-                      {t(roleKeys.hint)}
+                      <ForumRoleHint role={message.role} staffTag={message.staffTag} />
                     </p>
                   ) : roleHintOpen && message.via === 'nostr' ? (
                     <p role="status" className="mt-1 text-xs text-app-muted">
@@ -2066,16 +2043,13 @@ export function ForumBoard({
                     {replies !== null && !repliesError ? (
                       <ul className="flex flex-col gap-3">
                         {(Array.isArray(replies) ? replies : []).map((reply) => {
-                          const replyTaggedRole = forumTaggedRole(reply.role);
                           const replyCannotReceive = authorCannotReceive(reply, viewerAccountId);
                           const hideReplyVerified = verifiedChipHiddenByStaffTag(
                             reply.role,
                             reply.staffTag,
                           );
-                          const replyRoleKeys =
-                            replyTaggedRole === null || hideReplyVerified
-                              ? null
-                              : ROLE_TAG_KEYS[replyTaggedRole];
+                          const hasReplyRoleTag =
+                            forumTaggedRole(reply.role) !== null && !hideReplyVerified;
                           const replyHintOpen = openRoleMessageId === reply.id;
                           return (
                             <li
@@ -2123,18 +2097,16 @@ export function ForumBoard({
                                       {reply.name}
                                     </span>
                                   )}
-                                  {replyRoleKeys !== null ? (
-                                    <button
-                                      type="button"
-                                      aria-expanded={replyHintOpen}
-                                      onClick={(event) => {
+                                  {hasReplyRoleTag ? (
+                                    <ForumRoleTag
+                                      role={reply.role}
+                                      staffTag={reply.staffTag}
+                                      expanded={replyHintOpen}
+                                      onToggle={(event) => {
                                         stopCardToggle(event);
                                         setOpenRoleMessageId(replyHintOpen ? null : reply.id);
                                       }}
-                                      className="rounded-full border border-app-border-strong px-2 py-0.5 text-xs font-medium text-app-muted"
-                                    >
-                                      {t(replyRoleKeys.label)}
-                                    </button>
+                                    />
                                   ) : reply.via === 'nostr' && !hideReplyVerified ? (
                                     <button
                                       type="button"
@@ -2161,9 +2133,9 @@ export function ForumBoard({
                                   {formatForumTime(reply.createdAt, locale)}
                                 </time>
                               </div>
-                              {replyHintOpen && replyRoleKeys !== null ? (
+                              {replyHintOpen && hasReplyRoleTag && !hideReplyVerified ? (
                                 <p role="status" className="mt-1 text-xs text-app-muted">
-                                  {t(replyRoleKeys.hint)}
+                                  <ForumRoleHint role={reply.role} staffTag={reply.staffTag} />
                                 </p>
                               ) : replyHintOpen && reply.via === 'nostr' ? (
                                 <p role="status" className="mt-1 text-xs text-app-muted">
@@ -2331,6 +2303,13 @@ export function ForumBoard({
                           );
                         })}
                       </ul>
+                    ) : null}
+                    {replies !== null && !repliesError ? (
+                      <ReplyHeartSenders
+                        hearts={replyHearts}
+                        rateDay={rateDay ?? null}
+                        fiat={fiat}
+                      />
                     ) : null}
                     {!readOnly && message.deletedAt === undefined ? (
                       // The form's own height box: a glide of the replies block around it (a reply above

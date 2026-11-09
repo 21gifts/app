@@ -2,26 +2,13 @@
 
 import { HandHeart } from 'lucide-react';
 import { useState, type ReactElement, type ReactNode } from 'react';
+import { ForumRoleHint, ForumRoleTag, forumTaggedRole } from '@/components/ForumRoleTag';
 import { useTranslations } from '@/components/LocaleProvider';
 import { IconButton } from '@/components/ui';
 import type { MemberProfile } from '@/lib/api-types';
 import { formatForumTimeFromMs } from '@/lib/forum-time';
 import type { MessageKey } from '@/lib/messages';
 import { verifiedChipHiddenByStaffTag } from '@/lib/roles';
-
-/** Roles that show a clickable tag beside the author name. */
-type MemberTaggedRole = 'founder' | 'moderator' | 'initiator' | 'verified';
-
-const ROLE_TAG_KEYS: Record<MemberTaggedRole, { label: MessageKey; hint: MessageKey }> = {
-  founder: { label: 'forum.role.founder', hint: 'forum.role.founderHint' },
-  moderator: { label: 'forum.role.moderator', hint: 'forum.role.moderatorHint' },
-  initiator: { label: 'forum.role.initiator', hint: 'forum.role.initiatorHint' },
-  verified: { label: 'forum.role.verified', hint: 'forum.role.verifiedHint' },
-};
-
-function isMemberTaggedRole(role: string): role is MemberTaggedRole {
-  return role in ROLE_TAG_KEYS;
-}
 
 function fundingParticipationLabel(
   t: (key: MessageKey, vars?: Record<string, string | number>) => string,
@@ -86,30 +73,27 @@ export function MemberIdentityPills({
   if (profile === null) {
     return children(null, null);
   }
-  const tagged = isMemberTaggedRole(profile.role) ? profile.role : null;
-  const roleKeys =
-    tagged !== null && !verifiedChipHiddenByStaffTag(profile.role, profile.staffTag)
-      ? ROLE_TAG_KEYS[tagged]
-      : null;
+  const hasRoleTag =
+    forumTaggedRole(profile.role) !== null &&
+    !verifiedChipHiddenByStaffTag(profile.role, profile.staffTag);
+  const roleTag = (
+    <ForumRoleTag
+      role={profile.role}
+      staffTag={profile.staffTag}
+      expanded={roleHintOpen}
+      onToggle={() => {
+        setRoleHintOpen((open) => !open);
+      }}
+    />
+  );
   const fundingReviewedAt = profile.fundingReviewedAt;
   const showMarks =
-    roleKeys !== null ||
+    hasRoleTag ||
     typeof fundingReviewedAt === 'number' ||
     profile.staffTag === 'software_developer';
   const marks = showMarks ? (
     <>
-      {roleKeys !== null ? (
-        <button
-          type="button"
-          aria-expanded={roleHintOpen}
-          onClick={() => {
-            setRoleHintOpen((open) => !open);
-          }}
-          className="rounded-full border border-app-border-strong px-2 py-0.5 text-xs font-medium text-app-muted"
-        >
-          {t(roleKeys.label)}
-        </button>
-      ) : null}
+      {roleTag}
       {profile.staffTag === 'software_developer' ? (
         <span className="rounded-full border border-app-border-strong px-2 py-0.5 text-xs font-medium text-app-muted">
           {t('forum.staff.softwareDeveloper')}
@@ -127,9 +111,9 @@ export function MemberIdentityPills({
   ) : null;
   const hints = (
     <>
-      {roleHintOpen && roleKeys !== null ? (
+      {roleHintOpen && hasRoleTag ? (
         <p role="status" className="text-center text-xs text-app-muted">
-          {t(roleKeys.hint)}
+          <ForumRoleHint role={profile.role} staffTag={profile.staffTag} />
         </p>
       ) : null}
       {fundingHintOpen && typeof fundingReviewedAt === 'number' ? (

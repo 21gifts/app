@@ -515,6 +515,7 @@ async function openSignedInMenu(page: Page): Promise<void> {
 async function seedAdaSession(
   page: Page,
   role: 'basis' | 'verified' | 'moderator' | 'founder' = 'basis',
+  heartSats = 1,
 ): Promise<void> {
   await page.addInitScript(() => {
     localStorage.setItem('21gifts.session', 'sess-e2e');
@@ -546,6 +547,7 @@ async function seedAdaSession(
         missing: [],
         locale: typeof body.locale === 'string' ? body.locale : null,
         fiat: typeof body.fiat === 'string' ? body.fiat : null,
+        heartSats,
       }),
     });
   });
@@ -569,6 +571,7 @@ async function seedAdaSession(
         aboutMe: null,
         setup: null,
         missing: [],
+        heartSats,
       }),
     });
   });
@@ -3490,6 +3493,23 @@ test('Function: proxyMeAmountUnitPost — POST /me/amount-unit without bearer is
   expect((await request.post('/me/amount-unit')).status()).toBe(401);
 });
 
+test('Function: proxyMeHeartSatsPost — POST /me/heart-sats without bearer is 401', async ({
+  request,
+}) => {
+  expect((await request.post('/me/heart-sats')).status()).toBe(401);
+});
+
+test('Function: setHeartSats — POST /me/heart-sats stores 21 on the account', async ({
+  request,
+}) => {
+  const token = await loginHttp(request);
+  const stored = await request.post('/me/heart-sats', {
+    headers: { authorization: `Bearer ${token}` },
+    data: { sats: 21 },
+  });
+  expect(stored.status()).toBe(200);
+  expect(((await stored.json()) as { heartSats: number }).heartSats).toBe(21);
+});
 test('Function: proxyMeLocalePost — POST /me/locale stores de', async ({ request }) => {
   const token = await loginHttp(request);
   const res = await request.post('/me/locale', {
@@ -13829,7 +13849,7 @@ test('Function: sendHeartTip — signed-out heart does not mint', async ({ page 
       invoiced = true;
     }
   });
-  await page.getByRole('button', { name: 'Send ₿1' }).first().click();
+  await page.getByRole('button', { name: 'Send a heart' }).first().click();
   expect(invoiced).toBe(false);
   await expect(page.getByText('+1', { exact: true })).toHaveCount(0);
   await expect(
@@ -13873,10 +13893,10 @@ test('Function: useHeartTip — signed-out board shows the heart', async ({ page
   await page.goto('/welcome');
   await expect(page.getByRole('heading', { name: 'Welcome', exact: true })).toBeVisible();
   await expect(page.getByText('Hello from the active list.')).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Send ₿1' }).first()).toBeVisible();
-  await page.getByRole('button', { name: 'Send ₿1' }).first().click();
+  await expect(page.getByRole('button', { name: 'Send a heart' }).first()).toBeVisible();
+  await page.getByRole('button', { name: 'Send a heart' }).first().click();
   await expect(page).toHaveURL(/\/welcome/);
-  await expect(page.getByRole('button', { name: 'Send ₿1' }).first()).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Send a heart' }).first()).toBeVisible();
   await expect(page.getByText('+1', { exact: true })).toHaveCount(0);
 });
 
@@ -13942,7 +13962,7 @@ test('Function: useHeartTip — the +1 shows on the tap while the payment is sti
   await page.goto('/welcome');
   await expect(page.getByText('Hello from the heart list.')).toBeVisible();
   const invoiced = page.waitForRequest(/\/messages\/[^/]+\/invoice/);
-  await page.getByRole('button', { name: 'Send ₿1' }).click();
+  await page.getByRole('button', { name: 'Send a heart' }).click();
   await expect(page.getByText('+1', { exact: true })).toBeVisible({ timeout: 100 });
   await invoiced;
   expect(answered).toBe(false);
@@ -13970,7 +13990,7 @@ test('Function: heartFailureView — a heart refused with cannot_receive keeps t
   });
   await page.goto('/welcome');
   await expect(page.getByText('Hello from the heart list.')).toBeVisible();
-  await page.getByRole('button', { name: 'Send ₿1' }).click();
+  await page.getByRole('button', { name: 'Send a heart' }).click();
   const line = page
     .locator('li', { hasText: 'Hello from the heart list.' })
     .getByText("The author's wallet cannot receive this Bitcoin payment");
@@ -13991,10 +14011,10 @@ test('Function: endHeartPlusOne — the +1 leaves after the press window', async
   });
   await page.goto('/welcome');
   await expect(page.getByText('Hello from the heart list.')).toBeVisible();
-  await page.getByRole('button', { name: 'Send ₿1' }).click();
+  await page.getByRole('button', { name: 'Send a heart' }).click();
   await expect(page.getByText('+1', { exact: true })).toBeVisible();
   await expect(page.getByText('+1', { exact: true })).toHaveCount(0);
-  await expect(page.getByRole('button', { name: 'Send ₿1' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Send a heart' })).toBeVisible();
 });
 
 test('Function: sendHeartTip — a 503 HEART_UNAVAILABLE shows no sentence under the heart', async ({
@@ -14012,7 +14032,7 @@ test('Function: sendHeartTip — a 503 HEART_UNAVAILABLE shows no sentence under
   await page.goto('/welcome');
   await expect(page.getByText('Hello from the heart list.')).toBeVisible();
   const answered = page.waitForResponse(/\/messages\/[^/]+\/invoice/);
-  await page.getByRole('button', { name: 'Send ₿1' }).click();
+  await page.getByRole('button', { name: 'Send a heart' }).click();
   await expect(page.getByText('+1', { exact: true })).toBeVisible();
   await answered;
   await expect(page.getByText('+1', { exact: true })).toHaveCount(0);
@@ -14037,12 +14057,149 @@ test('Function: sendHeartTip — an invoice without a Spark invoice is not paid'
   });
   await page.goto('/welcome');
   const answered = page.waitForResponse(/\/messages\/[^/]+\/invoice/);
-  await page.getByRole('button', { name: 'Send ₿1' }).click();
+  await page.getByRole('button', { name: 'Send a heart' }).click();
   await answered;
   expect(heartBody).toEqual({ sats: 1, heart: true });
   await expect(page.getByText('+1', { exact: true })).toHaveCount(0);
   await expect(
     page.locator('li', { hasText: 'Hello from the heart list.' }).getByRole('alert'),
+  ).toHaveCount(0);
+});
+
+test('Function: sendHeartTip — the account heart amount sends 21 sats and counts +1', async ({
+  page,
+}) => {
+  await seedAdaSession(page, 'basis', 21);
+  await routeHeartNote(page, true);
+  let heartBody: unknown = null;
+  await page.route(/\/messages\/[^/]+\/invoice/, async (route) => {
+    heartBody = route.request().postDataJSON();
+    await route.fulfill({
+      status: 503,
+      contentType: 'application/json',
+      body: JSON.stringify({ error: 'HEART_UNAVAILABLE' }),
+    });
+  });
+  await page.goto('/welcome');
+  await expect(page.getByText('Hello from the heart list.')).toBeVisible();
+  const answered = page.waitForResponse(/\/messages\/[^/]+\/invoice/);
+  await page.getByRole('button', { name: 'Send a heart' }).click();
+  await expect(page.getByText('+1', { exact: true })).toBeVisible();
+  await answered;
+  expect(heartBody).toEqual({ sats: 21, heart: true });
+});
+
+test('Function: accountHeartSats — GET /me carries the default heart amount', async ({
+  request,
+}) => {
+  const token = await loginHttp(request);
+  const me = await request.get('/me', { headers: { authorization: `Bearer ${token}` } });
+  expect(((await me.json()) as { heartSats: number }).heartSats).toBe(1);
+});
+
+test('Function: ReplyHeartSenders — expanded replies show the paid hearts section', async ({
+  page,
+}) => {
+  await seedAdaSession(page);
+  await routeHeartNote(page, true);
+  await page.route('**/forum/messages/**/replies', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        messages: [],
+        hearts: [
+          {
+            accountId: 'acc_grace',
+            name: 'Grace',
+            role: 'moderator',
+            sats: 21,
+            createdAt: '2026-08-01T10:02:00.000Z',
+            amountUsd: '0.02',
+            amountChf: null,
+            amountEur: null,
+            amountPhp: null,
+          },
+        ],
+      }),
+    });
+  });
+  await page.goto('/welcome');
+  await page.getByText('Hello from the heart list.').click();
+  await expect(page.getByRole('heading', { name: 'Hearts (1)' })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Grace' })).toBeVisible();
+});
+
+test('Function: ForumRoleTag — a note shows its shared role pill', async ({ page }) => {
+  await seedAdaSession(page);
+  await page.route(/\/forum\/messages/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        messages: [
+          {
+            id: '44444444-4444-4444-8444-444444444444',
+            accountId: 'acc-bob',
+            name: 'Bob',
+            text: 'A moderated note.',
+            createdAt: '2026-08-01T10:00:00.000Z',
+            sats: 0,
+            payable: false,
+            hasPhoto: false,
+            hasVideo: false,
+            videoContentType: null,
+            role: 'moderator',
+            replyCount: 0,
+          },
+        ],
+      }),
+    });
+  });
+  await page.goto('/welcome');
+  await expect(page.getByRole('button', { name: 'Moderator' })).toBeVisible();
+});
+
+test('Function: ForumRoleHint — pressing the shared role pill explains it', async ({ page }) => {
+  await seedAdaSession(page);
+  await page.route(/\/forum\/messages/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        messages: [
+          {
+            id: '44444444-4444-4444-8444-444444444444',
+            accountId: 'acc-bob',
+            name: 'Bob',
+            text: 'A moderated note.',
+            createdAt: '2026-08-01T10:00:00.000Z',
+            sats: 0,
+            payable: false,
+            hasPhoto: false,
+            hasVideo: false,
+            videoContentType: null,
+            role: 'moderator',
+            replyCount: 0,
+          },
+        ],
+      }),
+    });
+  });
+  await page.goto('/welcome');
+  await page.getByRole('button', { name: 'Moderator' }).click();
+  await expect(page.getByRole('status')).toHaveText(
+    'This person helps keep the living room in order.',
+  );
+});
+
+test('Function: forumTaggedRole — untagged notes show no role pill', async ({ page }) => {
+  await seedAdaSession(page);
+  await routeHeartNote(page, false);
+  await page.goto('/welcome');
+  await expect(page.getByText('Hello from the heart list.')).toBeVisible();
+  await expect(
+    page.getByRole('button', { name: /^(?:Founder|Moderator|Initiator|Verified)$/ }),
   ).toHaveCount(0);
 });
 
@@ -14052,7 +14209,7 @@ test('Function: ForumBoard — no heart on a note whose author cannot receive', 
   await page.goto('/welcome');
   await expect(page.getByText('Hello from the heart list.')).toBeVisible();
   await expect(page.getByRole('button', { name: 'React' }).first()).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Send ₿1' })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Send a heart' })).toHaveCount(0);
 });
 
 test('Function: ExternalAuthorProfile — the read-only feed shows no heart', async ({ page }) => {
@@ -14086,7 +14243,7 @@ test('Function: ExternalAuthorProfile — the read-only feed shows no heart', as
   await page.goto('/messages/11111111-1111-4111-8111-111111111111/author?name=Robin');
   await page.getByRole('button', { name: '1 post' }).click();
   await expect(page.getByText('Robin wrote a payable note')).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Send ₿1' })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Send a heart' })).toHaveCount(0);
 });
 
 test('Function: accountNotificationLevel — settings selects All when the field is omitted', async ({

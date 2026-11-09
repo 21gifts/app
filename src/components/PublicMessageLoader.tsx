@@ -15,6 +15,7 @@ import { ForumQuotedBody } from '@/components/QuotedForumNote';
 import { useNumberFormat } from '@/components/NumberFormatProvider';
 import { preferredFiatSuffix } from '@/components/PreferredFiatSuffix';
 import { ReplyDirectionAmounts } from '@/components/ReplyDirectionAmounts';
+import { ReplyHeartSenders } from '@/components/ReplyHeartSenders';
 import { PublicMessageThread } from '@/components/PublicMessageThread';
 import { Button, Card } from '@/components/ui';
 import { useHydrateSession } from '@/hooks/useHydrateSession';
@@ -27,7 +28,7 @@ import {
   fetchReplies,
   markNotificationsReadForMessage,
 } from '@/lib/api';
-import type { ForumMessage } from '@/lib/api-types';
+import type { ForumMessage, HeartSender } from '@/lib/api-types';
 import { forumPhotoSrc } from '@/lib/forum-photo';
 import { formatPlacePinText } from '@/lib/forum-shop';
 import { formatForumTime } from '@/lib/forum-time';
@@ -294,16 +295,19 @@ export function PublicMessageLoader({ id }: { id: string }): ReactElement {
   );
   const [root, setRoot] = useState<ForumMessage | null>(null);
   const [replies, setReplies] = useState<ForumMessage[]>([]);
+  const [hearts, setHearts] = useState<HeartSender[]>([]);
   const [highlightId, setHighlightId] = useState<string | null>(null);
   const [attempt, setAttempt] = useState(0);
   const rateDay = useSpotRate(MESSAGE_ID_RE.test(id));
   const markedRootStampRef = useRef<string | null>(null);
 
   useEffect(() => {
+    setHearts([]);
     if (!MESSAGE_ID_RE.test(id)) {
       setStatus('missing');
       setRoot(null);
       setReplies([]);
+      setHearts([]);
       setHighlightId(null);
       return;
     }
@@ -316,6 +320,7 @@ export function PublicMessageLoader({ id }: { id: string }): ReactElement {
     setStatus('loading');
     setRoot(null);
     setReplies([]);
+    setHearts([]);
     setHighlightId(null);
 
     const sessionToken = session;
@@ -362,6 +367,7 @@ export function PublicMessageLoader({ id }: { id: string }): ReactElement {
             : nextReplies;
         setRoot(rootNote);
         setReplies(replies);
+        setHearts(nextReplies.hearts ?? []);
         setHighlightId(highlight);
         setStatus('ready');
         if (authed) {
@@ -446,6 +452,7 @@ export function PublicMessageLoader({ id }: { id: string }): ReactElement {
             setStatus('missing');
             setRoot(null);
             setReplies([]);
+            setHearts([]);
           }}
         />
       ) : (
@@ -471,6 +478,7 @@ export function PublicMessageLoader({ id }: { id: string }): ReactElement {
               cardIndex={replyIndex + 1}
             />
           ))}
+          <ReplyHeartSenders hearts={hearts} rateDay={rateDay} fiat={fiat} />
         </>
       )}
       {ready ? (

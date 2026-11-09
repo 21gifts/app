@@ -843,7 +843,7 @@ describe('ExternalAuthorProfile', () => {
     await waitFor(() => {
       expect(screen.getByText(FEED_NOTE.text)).toBeTruthy();
     });
-    expect(screen.queryByRole('button', { name: 'Send ₿1' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Send a heart' })).toBeNull();
   });
 
   it('omits the truncated status line when the loaded list is not shorter than the count', async () => {

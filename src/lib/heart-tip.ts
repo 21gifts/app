@@ -4,6 +4,7 @@ import { captureMessage } from '@sentry/nextjs';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useSpotRate } from '@/hooks/useSpotRate';
 import { CannotReceiveError, postMessageInvoice, WalletRequiredError } from '@/lib/api';
+import { accountHeartSats } from '@/lib/api-types';
 import { shownFiatForSats, type FiatRateDay } from '@/lib/stats-money';
 import { logInteraction } from '@/lib/interaction-log';
 import { visualPin } from '@/lib/visual-pin';
@@ -224,6 +225,8 @@ export type HeartTipInput = {
   canUnlockWallet: boolean;
   /** Spot at the click, or missing when that price is not loaded. */
   rateDay?: FiatRateDay | null;
+  /** Whole sats this heart sends, read from `account.heartSats ?? 1` at the click. */
+  heartSats: number;
 };
 
 /**
@@ -284,7 +287,7 @@ function mapInvoiceError(err: unknown): HeartTipFailure {
 
 /**
  * True when the wallet snapshot already shows that the balance cannot cover
- * a 1-sat heart: the wallet is ready with less than 1 sat. In a Playwright
+ * this heart: the wallet is ready with less than `input.heartSats`. In a Playwright
  * build, `?visual=heart-needs-balance` (via {@link visualPin}) forces it for
  * the screenshot; production ignores that pin.
  *
@@ -296,7 +299,9 @@ function lacksHeartBalance(input: HeartTipInput): boolean {
     return true;
   }
   return (
-    input.walletStatus === 'ready' && typeof input.balanceSats === 'number' && input.balanceSats < 1
+    input.walletStatus === 'ready' &&
+    typeof input.balanceSats === 'number' &&
+    input.balanceSats < input.heartSats
   );
 }
 
@@ -318,18 +323,20 @@ function reportHeartFailure(messageId: string, reason: HeartTipFailure): void {
 }
 
 /**
- * True when the live wallet is ready with a confirmed zero balance.
+ * True when the live wallet is ready with a confirmed balance below the
+ * amount this heart needs.
  *
+ * @param heartSats - Whole sats the click sends.
  * @returns Whether a heart must stop with `insufficient_balance`.
  */
-function liveReadyBalanceIsZero(): boolean {
+function liveBalanceBelow(heartSats: number): boolean {
   const { status, balanceSats } = useWalletStore.getState();
-  return status === 'ready' && balanceSats === 0;
+  return status === 'ready' && typeof balanceSats === 'number' && balanceSats < heartSats;
 }
 
 /**
  * Records a heart payment that did not go out as the member event
- * `payment_failed` (flow `heart`, 1 sat). Hearts are not sent to error
+ * `payment_failed` (flow `heart`, the click's `heartSats`). Hearts are not sent to error
  * reporting as `Payment failed`: {@link sendHeartTip} reports them as
  * `Heart not sent`.
  *
@@ -342,7 +349,7 @@ function recordHeartPaymentFailure(
   input: HeartTipInput,
   sentLate?: Promise<boolean>,
 ): void {
-  reportPaymentFailure({ ...failure, amountSats: 1 }, 'heart', {
+  reportPaymentFailure({ ...failure, amountSats: input.heartSats }, 'heart', {
     session: input.sessionToken,
     sentLate,
   });
@@ -350,15 +357,16 @@ function recordHeartPaymentFailure(
 
 /**
  * Pays a prepared heart invoice. `confirm` sends at once, but only when the
- * prepared payment is exactly 1 sat with a fee of ₿0; anything else is
- * `heart_unavailable` and nothing is sent. `insufficient` or a ready zero
- * balance is `insufficient_balance`. A sent heart is recorded as `heart_sent` under the session
- * of the click, also when the SDK finishes a send the app stopped waiting for.
+ * prepared payment is exactly `input.heartSats` with a fee of ₿0; anything else is
+ * `heart_unavailable` and nothing is sent. `insufficient` or a ready balance
+ * below `input.heartSats` is `insufficient_balance`. A sent heart is recorded
+ * as `heart_sent` under the session of the click, also when the SDK finishes
+ * a send the app stopped waiting for.
  * A send that timed out (`sentLate`) is remembered for this note until its
  * outcome is known, so a retap waits instead of paying again: `sentLate`
  * `true` marks it sent, `false` forgets it. Every outcome that is not paid is
  * also recorded as `payment_failed` (see {@link recordHeartPaymentFailure}),
- * a prepared heart that is not 1 sat at ₿0 as `amount_mismatch`.
+ * a prepared heart that is not `input.heartSats` at ₿0 as `amount_mismatch`.
  *
  * @param result - Outcome of {@link payFromWallet}.
  * @param input - Click snapshot: the message id and the session.
@@ -375,31 +383,31 @@ async function finishPreparedPay(
     return {
       kind: 'failed',
       reason:
-        result.kind === 'insufficient' || liveReadyBalanceIsZero()
+        result.kind === 'insufficient' || liveBalanceBelow(input.heartSats)
           ? 'insufficient_balance'
           : 'payment_failed',
     };
   }
-  if (liveReadyBalanceIsZero()) {
+  if (liveBalanceBelow(input.heartSats)) {
     recordHeartPaymentFailure(
       {
         stage: 'prepare',
         reason: 'insufficient',
         method: result.method,
-        amountSats: 1,
+        amountSats: input.heartSats,
         feeSats: result.feeSats,
       },
       input,
     );
     return { kind: 'failed', reason: 'insufficient_balance' };
   }
-  if (result.amountSats !== 1 || result.feeSats > 0) {
+  if (result.amountSats !== input.heartSats || result.feeSats > 0) {
     recordHeartPaymentFailure(
       {
         stage: 'prepare',
         reason: 'amount_mismatch',
         method: result.method,
-        amountSats: 1,
+        amountSats: input.heartSats,
         feeSats: result.feeSats,
       },
       input,
@@ -408,7 +416,11 @@ async function finishPreparedPay(
   }
   const sent = await result.send();
   const recordHeart = (): void => {
-    logInteraction('heart_sent', { messageId: input.messageId, amountSats: 1 }, input.sessionToken);
+    logInteraction(
+      'heart_sent',
+      { messageId: input.messageId, amountSats: input.heartSats },
+      input.sessionToken,
+    );
   };
   if (sent.kind === 'paid') {
     recordHeart();
@@ -511,10 +523,10 @@ async function payHeartInvoice(
 }
 
 /**
- * Sends a 1-sat heart on a forum note or reply. No amount dialog, no gift
+ * Sends a heart of `input.heartSats` on a forum note or reply. No amount dialog, no gift
  * sheet, no comment text. A missing session or a read-only board is silent.
  * A heart is paid only through the api's fee-free Spark invoice, for exactly
- * 1 sat and a fee of ₿0: without a Spark invoice, or when the prepared payment
+ * `input.heartSats` and a fee of ₿0: without a Spark invoice, or when the prepared payment
  * differs, nothing is sent and the reason is `heart_unavailable` (never the
  * Lightning `pr`). While an earlier heart on the same note timed out and its
  * outcome is not known, nothing is invoiced and the reason is
@@ -603,8 +615,15 @@ async function invoiceAndPayHeart(
     const shown =
       input.rateDay === undefined || input.rateDay === null
         ? undefined
-        : shownFiatForSats(1, input.rateDay);
-    invoice = await postMessageInvoice(sessionToken, messageId, 1, undefined, shown, true);
+        : shownFiatForSats(input.heartSats, input.rateDay);
+    invoice = await postMessageInvoice(
+      sessionToken,
+      messageId,
+      input.heartSats,
+      undefined,
+      shown,
+      true,
+    );
   } catch (err) {
     return { kind: 'failed', reason: mapInvoiceError(err) };
   }
@@ -798,16 +817,18 @@ export function heartFailureView(
  *
  * @param options - `readOnly` matches the board (`true` when signed out).
  *   `heartCounts` maps shown note ids to the server heart count; omit for `{}`.
+ *   `onPaid` runs after this click's payment succeeded, with its message id.
  * @returns Click handler and the per-id views to pass to the forum board.
  */
 export function useHeartTip(options: {
   readOnly: boolean;
   heartCounts?: Readonly<Record<string, number>>;
+  onPaid?: (messageId: string) => void;
 }): {
   onHeartTip: (messageId: string) => void;
   heartTipViews: Readonly<Record<string, HeartTipView>>;
 } {
-  const { readOnly } = options;
+  const { readOnly, onPaid } = options;
   const rateDay = useSpotRate();
   const heartCounts = options.heartCounts ?? {};
   const [heartTipViews, setHeartTipViews] = useState<Record<string, HeartTipView>>({});
@@ -865,6 +886,7 @@ export function useHeartTip(options: {
         needsWalletSetup: needsWalletSetup(account),
         canUnlockWallet: canUnlockWallet(account),
         rateDay,
+        heartSats: accountHeartSats(account),
       };
       const existingTimer = timersRef.current.get(messageId);
       if (existingTimer !== undefined) {
@@ -926,6 +948,7 @@ export function useHeartTip(options: {
       }
       void sendHeartTip(input).then((outcome) => {
         if (outcome.kind === 'paid') {
+          onPaid?.(messageId);
           return;
         }
         const sent = sentRef.current;
@@ -949,7 +972,7 @@ export function useHeartTip(options: {
         }));
       });
     },
-    [readOnly, rateDay],
+    [onPaid, readOnly, rateDay],
   );
 
   return { onHeartTip, heartTipViews };
