@@ -29,14 +29,13 @@ vi.mock('next/link', () => ({
   ),
 }));
 
-const nav = vi.hoisted(() => ({ pathname: '/', search: '' }));
 vi.mock('next/navigation', () => ({
   useRouter: (): { push: typeof push; replace: typeof push } => ({
     push,
     replace: push,
   }),
-  usePathname: (): string => nav.pathname,
-  useSearchParams: (): URLSearchParams => new URLSearchParams(nav.search),
+  usePathname: (): string => '/',
+  useSearchParams: (): URLSearchParams => new URLSearchParams(),
 }));
 
 const walletOpen = vi.hoisted(() => ({ value: true }));
@@ -189,10 +188,10 @@ describe('PublicMessageLoader', () => {
     expect(screen.queryByRole('button', { name: 'Send a private message' })).toBeNull();
   });
 
-  it('carries the note path on the Log in link so a login returns to it', async () => {
-    nav.pathname = `/messages/${MESSAGE_ID}`;
+  it('carries the raw note path and query on the Log in link so a login returns to it', async () => {
     fetchMessage.mockResolvedValue(sample);
     try {
+      window.history.replaceState(null, '', `/messages/${MESSAGE_ID}`);
       const { unmount } = renderWithLocale(<PublicMessageLoader id={MESSAGE_ID} />);
       await waitFor(() => {
         expect(screen.getByText('Hello from Ada')).toBeTruthy();
@@ -201,16 +200,17 @@ describe('PublicMessageLoader', () => {
         `/login?next=%2Fmessages%2F${MESSAGE_ID}`,
       );
       unmount();
-      nav.search = 'ref=share';
+      // The query stays as the view stack records it (`%20`, not `+`), so the
+      // login can step back onto this view instead of adding a second copy.
+      window.history.replaceState(null, '', `/messages/${MESSAGE_ID}?ref=a%20b`);
       renderWithLocale(<PublicMessageLoader id={MESSAGE_ID} />);
       await waitFor(() => {
         expect(screen.getByRole('link', { name: 'Log in' }).getAttribute('href')).toBe(
-          `/login?next=%2Fmessages%2F${MESSAGE_ID}%3Fref%3Dshare`,
+          `/login?next=${encodeURIComponent(`/messages/${MESSAGE_ID}?ref=a%20b`)}`,
         );
       });
     } finally {
-      nav.pathname = '/';
-      nav.search = '';
+      window.history.replaceState(null, '', '/');
     }
   });
 

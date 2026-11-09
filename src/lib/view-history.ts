@@ -468,14 +468,22 @@ export function resetViewHistory(): void {
 
 /**
  * True when `path` may be opened after login: a safe in-app path (one leading
- * `/`, not `//` or a backslash, no scheme, `..`, hash, or whitespace) that is not
- * `/login` itself, with or without a query or subpath.
+ * `/`, not `//` or a backslash, no scheme, `..`, hash, or whitespace) without a
+ * `.` path segment, that is not `/login` itself, with or without a query or
+ * subpath.
  *
  * @param path - Candidate pathname, optionally with a query string.
  * @returns Whether a login may return to it.
  */
 function isLoginReturnPath(path: string): boolean {
   if (!isSafeViewPath(path)) {
+    return false;
+  }
+  // A `.` segment (`/./login`) would slip past the `/login` check below and
+  // only reach `/login` once the router normalises it.
+  const query = path.indexOf('?');
+  const pathname = query === -1 ? path : path.slice(0, query);
+  if (/(?:^|\/)\.(?:\/|$)/.test(pathname)) {
     return false;
   }
   return !(path === '/login' || path.startsWith('/login?') || path.startsWith('/login/'));

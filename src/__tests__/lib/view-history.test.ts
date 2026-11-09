@@ -1058,6 +1058,7 @@ describe('loginHref', () => {
     expect(loginHref('/login')).toBe('/login');
     expect(loginHref('/login?next=%2Fwallet')).toBe('/login');
     expect(loginHref('//evil.com')).toBe('/login');
+    expect(loginHref('/./login')).toBe('/login');
     expect(loginHref('')).toBe('/login');
   });
 });
@@ -1070,6 +1071,9 @@ describe('loginReturnPath', () => {
     expect(loginReturnPath(next(post))).toBe(post);
     expect(loginReturnPath(next(`${post}?ref=share`))).toBe(`${post}?ref=share`);
     expect(loginReturnPath(`next=${encodeURIComponent('/habit-tracker')}`)).toBe('/habit-tracker');
+    // A dot inside a segment or in the query is not a `.` segment.
+    expect(loginReturnPath(next('/messages/a.b?v=1.2'))).toBe('/messages/a.b?v=1.2');
+    expect(loginReturnPath(next('/messages/abc?x=.y'))).toBe('/messages/abc?x=.y');
   });
 
   it.each([
@@ -1084,6 +1088,10 @@ describe('loginReturnPath', () => {
     ['relative', 'messages/abc'],
     ['dot segments', '/messages/../wallet'],
     ['hash', '/messages/abc#x'],
+    ['dot segment before login', '/./login'],
+    ['dot segment before login with next', '/./login?next=%2Fwallet'],
+    ['dot segment inside a path', '/messages/./abc'],
+    ['trailing dot segment', '/messages/.'],
   ])('rejects a %s next', (_label, value) => {
     expect(loginReturnPath(next(value))).toBeNull();
   });

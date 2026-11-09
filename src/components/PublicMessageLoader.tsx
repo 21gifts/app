@@ -285,8 +285,10 @@ export function PublicMessageLoader({ id }: { id: string }): ReactElement {
   // signed-in fetch and no notification marked read until it is open.
   const session = useActiveSession();
   const account = useAuthStore((state) => state.account);
-  const pathname = usePathname();
-  const query = useSearchParams().toString();
+  // Re-render when the URL changes. The Log in href reads the raw location,
+  // which is the form the view stack records, so the login can step back here.
+  usePathname();
+  useSearchParams();
   const [status, setStatus] = useState<'loading' | 'missing' | 'error' | 'ready'>(() =>
     MESSAGE_ID_RE.test(id) ? 'loading' : 'missing',
   );
@@ -474,7 +476,7 @@ export function PublicMessageLoader({ id }: { id: string }): ReactElement {
       {ready ? (
         account === null ? (
           <Link
-            href={loginHref(query === '' ? pathname : `${pathname}?${query}`)}
+            href={loginHref(`${window.location.pathname}${window.location.search}`)}
             className="text-sm font-medium text-app-fg underline underline-offset-2"
           >
             {t('login.submit')}
