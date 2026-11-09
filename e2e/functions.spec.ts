@@ -15513,6 +15513,7 @@ test('Function: paySatsFromDraft — a blank pay amount is 21 sats', async ({ pa
   await page.getByRole('button', { name: 'Show reactions' }).click();
   const reply = page.locator('[data-reply-id="r-pay"]');
   await reply.getByRole('button', { name: 'Send Bitcoin' }).click();
+  await motionSettled(page);
   const invoice = page.waitForRequest(
     (req) => req.method() === 'POST' && req.url().includes('/messages/r-pay/invoice'),
   );
