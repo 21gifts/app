@@ -13267,6 +13267,75 @@ test('Function: loanValue — USD toggle shows the debt and credit chart in USD'
   await expect(page.getByLabel('Debt and credit in USD')).toBeVisible();
 });
 
+test('Function: fiatUnsummable — loan days with null fiat show an em dash on the USD chart', async ({
+  page,
+}) => {
+  await seedAdaSession(page);
+  await stubAccountActivity(page, {
+    ...EMPTY_ACTIVITY,
+    owedSats: -40,
+    owedOverTime: [
+      {
+        day: '2026-06-01',
+        sats: 60,
+        cumulativeSats: 60,
+        btc: '0.00000060',
+        cumulativeBtc: '0.00000060',
+        usd: null,
+        cumulativeUsd: null,
+        chf: null,
+        eur: null,
+        php: null,
+        cumulativeChf: null,
+        cumulativeEur: null,
+        cumulativePhp: null,
+      },
+      {
+        day: '2026-06-02',
+        sats: -100,
+        cumulativeSats: -40,
+        btc: '-0.00000100',
+        cumulativeBtc: '-0.00000040',
+        usd: null,
+        cumulativeUsd: null,
+        chf: null,
+        eur: null,
+        php: null,
+        cumulativeChf: null,
+        cumulativeEur: null,
+        cumulativePhp: null,
+      },
+    ],
+    creditOverTime: [
+      {
+        day: '2026-06-01',
+        sats: 50,
+        cumulativeSats: 50,
+        btc: '0.00000050',
+        cumulativeBtc: '0.00000050',
+        usd: null,
+        cumulativeUsd: null,
+        chf: null,
+        eur: null,
+        php: null,
+        cumulativeChf: null,
+        cumulativeEur: null,
+        cumulativePhp: null,
+      },
+    ],
+  });
+  await page.goto('/profile');
+  await expect(page.getByText('No gifts yet.')).toBeVisible();
+  await expect(page.getByText('Could not load loans.')).toHaveCount(0);
+  await page
+    .getByRole('group', { name: 'Debt and credit' })
+    .getByRole('button', { name: 'USD' })
+    .click();
+  const chart = page.getByLabel('Debt and credit in USD');
+  await expect(chart).toBeVisible();
+  await expect(chart.getByText('\u2014')).toHaveCount(1);
+});
+
 test('Function: loanAxis — negative debt tick keeps the minus on the profile chart', async ({
   page,
 }) => {

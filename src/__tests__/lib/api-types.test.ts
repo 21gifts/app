@@ -2413,6 +2413,114 @@ describe('accountActivitySchema', () => {
     expect(parsed.owedOverTime?.[0]?.usd).toBe('-0.06');
     expect(parsed.owedOverTime?.[0]?.chf).toBeNull();
   });
+
+  it('accepts loan days whose fiat fields are all null', () => {
+    const activity = {
+      donatedSats: 2100,
+      receivedSats: 0,
+      donatedOverTime: [
+        {
+          day: '2026-06-01',
+          giftCount: 1,
+          sats: 2100,
+          cumulativeSats: 2100,
+          btc: '0.00002100',
+          cumulativeBtc: '0.00002100',
+          usd: '2.10',
+          cumulativeUsd: '2.10',
+          chf: '1.70',
+          eur: '1.90',
+          php: '120.00',
+          cumulativeChf: '1.70',
+          cumulativeEur: '1.90',
+          cumulativePhp: '120.00',
+        },
+      ],
+      receivedOverTime: [],
+      owedSats: -40000,
+      creditSats: 0,
+      owedOverTime: [
+        {
+          day: '2026-06-02',
+          sats: 60000,
+          cumulativeSats: 60000,
+          btc: '0.00060000',
+          cumulativeBtc: '0.00060000',
+          usd: null,
+          cumulativeUsd: null,
+          chf: null,
+          eur: null,
+          php: null,
+          cumulativeChf: null,
+          cumulativeEur: null,
+          cumulativePhp: null,
+        },
+        {
+          day: '2026-06-05',
+          sats: -100000,
+          cumulativeSats: -40000,
+          btc: '-0.00100000',
+          cumulativeBtc: '-0.00040000',
+          usd: null,
+          cumulativeUsd: null,
+          chf: null,
+          eur: null,
+          php: null,
+          cumulativeChf: null,
+          cumulativeEur: null,
+          cumulativePhp: null,
+        },
+      ],
+      creditOverTime: [
+        {
+          day: '2026-06-02',
+          sats: 50000,
+          cumulativeSats: 50000,
+          btc: '0.00050000',
+          cumulativeBtc: '0.00050000',
+          usd: null,
+          cumulativeUsd: null,
+          chf: null,
+          eur: null,
+          php: null,
+          cumulativeChf: null,
+          cumulativeEur: null,
+          cumulativePhp: null,
+        },
+        {
+          day: '2026-06-05',
+          sats: -50000,
+          cumulativeSats: 0,
+          btc: '-0.00050000',
+          cumulativeBtc: '0.00000000',
+          usd: null,
+          cumulativeUsd: null,
+          chf: null,
+          eur: null,
+          php: null,
+          cumulativeChf: null,
+          cumulativeEur: null,
+          cumulativePhp: null,
+        },
+      ],
+      fx: {
+        quote: 'BTC-USD' as const,
+        dayBasis: 'utc' as const,
+        source: 'coinbase-exchange-daily-close' as const,
+        quotes: [
+          { code: 'USD' as const, pair: 'BTC-USD', source: 'coinbase-exchange-daily-close' },
+          { code: 'CHF' as const, pair: 'USD-CHF', source: 'ecb-daily' },
+          { code: 'EUR' as const, pair: 'USD-EUR', source: 'ecb-daily' },
+          { code: 'PHP' as const, pair: 'USD-PHP', source: 'ecb-daily' },
+        ],
+      },
+    };
+    const parsed = accountActivitySchema.parse(activity);
+    expect(parsed).toEqual(activity);
+    expect(parsed.owedOverTime?.[1]?.cumulativeSats).toBe(-40000);
+    expect(parsed.owedOverTime?.[1]?.usd).toBeNull();
+    expect(parsed.creditOverTime?.[1]?.cumulativeUsd).toBeNull();
+  });
 });
 
 describe('lnurlPayRequestSchema', () => {

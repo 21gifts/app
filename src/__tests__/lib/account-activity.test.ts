@@ -5,6 +5,7 @@ import {
   activityValue,
   alignActivitySeries,
   alignLoanSeries,
+  fiatUnsummable,
   loanAxis,
   loanValue,
   type ActivityPoint,
@@ -294,7 +295,12 @@ describe('activityValue', () => {
   });
 });
 
-function loanDay(day: string, cumulativeSats: number, cumulativeUsd: string, sats = 0): LoanDay {
+function loanDay(
+  day: string,
+  cumulativeSats: number,
+  cumulativeUsd: string | null,
+  sats = 0,
+): LoanDay {
   const absBtc = Math.abs(cumulativeSats) / 1e8;
   const btcSign = cumulativeSats < 0 ? '-' : '';
   const cumulativeBtc = `${btcSign}${absBtc.toFixed(8)}`;
@@ -429,6 +435,47 @@ describe('alignLoanSeries', () => {
     expect(first?.cumulativeOwedChf).toBe(0);
     expect(first?.cumulativeOwedEur).toBe(0);
     expect(first?.cumulativeOwedPhp).toBe(0);
+  });
+
+  it('maps all-null loan fiat, USD included, to 0 and keeps negative sats', () => {
+    const owed = [loanDay('2026-06-01', 60, null, 60), loanDay('2026-06-02', -40, null, -100)];
+    const credit = [loanDay('2026-06-01', 50, null, 50)];
+    expect(alignLoanSeries(owed, credit)).toEqual([
+      {
+        day: '2026-06-01',
+        cumulativeOwedSats: 60,
+        cumulativeCreditSats: 50,
+        cumulativeOwedUsd: 0,
+        cumulativeCreditUsd: 0,
+        ...ZERO_LOAN_FIAT,
+      },
+      {
+        day: '2026-06-02',
+        cumulativeOwedSats: -40,
+        cumulativeCreditSats: 50,
+        cumulativeOwedUsd: 0,
+        cumulativeCreditUsd: 0,
+        ...ZERO_LOAN_FIAT,
+      },
+    ]);
+  });
+});
+
+describe('fiatUnsummable', () => {
+  it('flags USD when any cumulativeUsd is null', () => {
+    expect(
+      fiatUnsummable([loanDay('2026-06-01', 1, '0.01'), loanDay('2026-06-02', 1, null)], 'USD'),
+    ).toBe(true);
+    expect(fiatUnsummable([loanDay('2026-06-01', 1, '0.01')], 'USD')).toBe(false);
+  });
+
+  it('flags a non-USD code only when every cumulative is null or missing', () => {
+    const missing = { cumulativeUsd: '0.01' };
+    expect(fiatUnsummable([loanDay('2026-06-01', 1, null), missing], 'CHF')).toBe(true);
+    expect(
+      fiatUnsummable([loanDay('2026-06-01', 1, null), loanDay('2026-06-02', 1, '0.02')], 'EUR'),
+    ).toBe(false);
+    expect(fiatUnsummable([loanDay('2026-06-01', 1, '0.01')], 'PHP')).toBe(false);
   });
 });
 

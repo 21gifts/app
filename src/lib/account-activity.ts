@@ -189,6 +189,44 @@ export function activityMaxY(
   return max === 0 ? 1 : max;
 }
 
+/** Raw cumulative fiat fields shared by gift-activity and loan days. */
+export interface FiatCumulativeDay {
+  /** Cumulative USD, or `null` when unsummed. */
+  cumulativeUsd: string | null;
+  /** Cumulative CHF, `null` when unsummed, or absent on older api bodies. */
+  cumulativeChf?: string | null | undefined;
+  /** Cumulative EUR, `null` when unsummed, or absent on older api bodies. */
+  cumulativeEur?: string | null | undefined;
+  /** Cumulative PHP, `null` when unsummed, or absent on older api bodies. */
+  cumulativePhp?: string | null | undefined;
+}
+
+const NON_USD_CUMULATIVE: Record<
+  Exclude<FiatCode, 'USD'>,
+  'cumulativeChf' | 'cumulativeEur' | 'cumulativePhp'
+> = {
+  CHF: 'cumulativeChf',
+  EUR: 'cumulativeEur',
+  PHP: 'cumulativePhp',
+};
+
+/**
+ * True when y-ticks for `fiat` should be an em dash instead of an amount.
+ * USD is unsummable when any raw `cumulativeUsd` is `null`. Other codes are
+ * unsummable when every source cumulative is `null` or missing.
+ *
+ * @param days - Raw days of every series the chart draws.
+ * @param fiat - Selected fiat.
+ * @returns Whether y-ticks should be an em dash instead of a fiat amount.
+ */
+export function fiatUnsummable(days: readonly FiatCumulativeDay[], fiat: FiatCode): boolean {
+  if (fiat === 'USD') {
+    return days.some((day) => day.cumulativeUsd === null);
+  }
+  const key = NON_USD_CUMULATIVE[fiat];
+  return days.every((day) => day[key] === null || day[key] === undefined);
+}
+
 /** One aligned UTC day on the dual Debt/Credit loan series. */
 export interface LoanPoint {
   /** Calendar day `YYYY-MM-DD`. */
@@ -197,9 +235,9 @@ export interface LoanPoint {
   cumulativeOwedSats: number;
   /** Cumulative credit sats through this day (may be negative). */
   cumulativeCreditSats: number;
-  /** Cumulative owed USD through this day (parsed from `cumulativeUsd`). */
+  /** Cumulative owed USD through this day (`null` source → `0`). */
   cumulativeOwedUsd: number;
-  /** Cumulative credit USD through this day. */
+  /** Cumulative credit USD through this day (`null` source → `0`). */
   cumulativeCreditUsd: number;
   /** Cumulative owed CHF through this day (`null` source → `0`). */
   cumulativeOwedChf: number;
@@ -248,8 +286,8 @@ function loanCumulativeForFiat(
  * Empty credit → credit cumulatives are 0 on every owed day (same days, no fake
  * extra calendar). Empty owed and empty credit → `[]`. When both series are
  * non-empty, days are the sorted union; cumulatives step-hold on gap days.
- * CHF/EUR/PHP `null` strings become `0` for scale. Negative `cumulativeSats`
- * and `cumulativeUsd` are kept as-is.
+ * USD/CHF/EUR/PHP `null` strings become `0` for scale. Negative
+ * `cumulativeSats` and fiat strings are kept as-is.
  *
  * @param owed - Cumulative debt series (`owedOverTime`).
  * @param credit - Cumulative credit series (`creditOverTime`); pass `[]` when none.
@@ -282,14 +320,14 @@ export function alignLoanSeries(
     const creditPoint = creditByDay.get(day);
     if (owedPoint !== undefined) {
       cumulativeOwedSats = owedPoint.cumulativeSats;
-      cumulativeOwedUsd = Number(owedPoint.cumulativeUsd);
+      cumulativeOwedUsd = parseOptionalFiat(owedPoint.cumulativeUsd);
       cumulativeOwedChf = parseOptionalFiat(owedPoint.cumulativeChf);
       cumulativeOwedEur = parseOptionalFiat(owedPoint.cumulativeEur);
       cumulativeOwedPhp = parseOptionalFiat(owedPoint.cumulativePhp);
     }
     if (creditPoint !== undefined) {
       cumulativeCreditSats = creditPoint.cumulativeSats;
-      cumulativeCreditUsd = Number(creditPoint.cumulativeUsd);
+      cumulativeCreditUsd = parseOptionalFiat(creditPoint.cumulativeUsd);
       cumulativeCreditChf = parseOptionalFiat(creditPoint.cumulativeChf);
       cumulativeCreditEur = parseOptionalFiat(creditPoint.cumulativeEur);
       cumulativeCreditPhp = parseOptionalFiat(creditPoint.cumulativePhp);
