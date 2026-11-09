@@ -2,6 +2,7 @@ import { cleanup, fireEvent, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
 import { ReplyHeartSenders } from '@/components/ReplyHeartSenders';
 import type { HeartSender } from '@/lib/api-types';
+import { formatForumTime } from '@/lib/forum-time';
 import type { FiatRateDay } from '@/lib/stats-money';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
 
@@ -110,7 +111,7 @@ describe('ReplyHeartSenders', () => {
   it('shows bitcoin alone when there is no frozen string and no spot rate', () => {
     renderWithLocale(<ReplyHeartSenders hearts={hearts} rateDay={null} fiat="EUR" />);
     expect(screen.getAllByRole('listitem')[0]?.textContent).toBe(
-      'GraceModerator₿21Aug 28, 2026, 2:02 PM',
+      `GraceModerator₿21${formatForumTime(hearts[0]!.createdAt, 'en')}`,
     );
   });
 
