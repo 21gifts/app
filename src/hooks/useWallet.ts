@@ -81,6 +81,8 @@ function visualStatus(reopened: boolean): WalletViewStatus | null {
     case 'history-error':
     case 'wallet-received':
     case 'move-arrived':
+    case 'move-minting':
+    case 'move-invoice':
     // A balance too low to pay is a ready wallet, so the forum home shows its Receive for Add Bitcoin.
     case 'wallet-pay-insufficient':
       return 'ready';
@@ -106,8 +108,8 @@ function visualStatus(reopened: boolean): WalletViewStatus | null {
  * page is never reloaded. Visual pins (`?visual=balance-…`,
  * `?visual=history-…` including `history-heart` and `history-heart-pending`,
  * `?visual=heart-payment` and `?visual=heart-payment-pending`,
- * `?visual=wallet-received`, `?visual=move-arrived` and
- * `?visual=wallet-pay-insufficient` as ready,
+ * `?visual=wallet-received`, `?visual=move-arrived`, `?visual=move-minting`,
+ * `?visual=move-invoice` and `?visual=wallet-pay-insufficient` as ready,
  * `?visual=setup-pending` as connecting, `?visual=balance-downloading` as
  * connecting with `downloading`, and the `?visual=send-…` pins as ready,
  * and `?visual=balance-reopening` as a failed open with `retrying` that turns

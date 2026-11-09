@@ -4941,11 +4941,15 @@ test.describe('screen baselines', () => {
 
   test('wallet move-address', async ({ page }) => {
     await seedWalletSend(page);
-    await page.goto('/wallet?move=1&visual=balance-ready');
+    // A phone combo shows Open my other wallet with its invoice ready.
+    await page.goto('/wallet?move=1&visual=move-invoice');
     await page.getByRole('button', { name: 'Start' }).click();
     const sheet = page.getByRole('dialog', { name: 'Send to your 21.gifts address' });
     await expect(sheet.getByText('ada@21.gifts')).toBeVisible();
     await expect(sheet.getByRole('button', { name: 'Copy my address' })).toBeVisible();
+    if (test.info().project.name.startsWith('mobile')) {
+      await expect(sheet.getByRole('button', { name: 'Open my other wallet' })).toBeEnabled();
+    }
     await shotScreen(page, 'state-wallet-move-address');
   });
 
@@ -4953,7 +4957,7 @@ test.describe('screen baselines', () => {
     await context.grantPermissions(['clipboard-read', 'clipboard-write']);
     await seedWalletSend(page);
     await page.clock.install();
-    await page.goto('/wallet?move=1&visual=balance-ready');
+    await page.goto('/wallet?move=1&visual=move-invoice');
     await page.getByRole('button', { name: 'Start' }).click();
     const sheet = page.getByRole('dialog', { name: 'Send to your 21.gifts address' });
     await expect(sheet.getByText('ada@21.gifts')).toBeVisible();
@@ -4961,7 +4965,47 @@ test.describe('screen baselines', () => {
     await page.clock.pauseAt(now + 1_000);
     await sheet.getByRole('button', { name: 'Copy my address' }).click();
     await expect(sheet.getByRole('button', { name: 'Copied' })).toBeVisible();
+    if (test.info().project.name.startsWith('mobile')) {
+      await expect(sheet.getByRole('button', { name: 'Open my other wallet' })).toBeEnabled();
+    }
     await shotScreen(page, 'state-wallet-move-address-copied');
+  });
+
+  test('wallet move-address-minting', async ({ page }) => {
+    // The button is smartphone-only; every combo shoots it on a phone UA.
+    await page.addInitScript(() => {
+      Object.defineProperty(Navigator.prototype, 'userAgent', {
+        configurable: true,
+        get: () =>
+          'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1',
+      });
+    });
+    await seedWalletSend(page);
+    await page.goto('/wallet?move=1&visual=move-minting');
+    await page.getByRole('button', { name: 'Start' }).click();
+    const sheet = page.getByRole('dialog', { name: 'Send to your 21.gifts address' });
+    // The invoice is minted as the step opens and never answers under this pin.
+    await expect(sheet.getByRole('button', { name: 'Open my other wallet' })).toBeDisabled();
+    await shotScreen(page, 'state-wallet-move-address-minting');
+  });
+
+  test('wallet move-address-error', async ({ page }) => {
+    // The button and its error are smartphone-only; every combo shoots them on a phone UA.
+    await page.addInitScript(() => {
+      Object.defineProperty(Navigator.prototype, 'userAgent', {
+        configurable: true,
+        get: () =>
+          'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1',
+      });
+    });
+    await seedWalletSend(page);
+    await page.goto('/wallet?move=1&visual=balance-ready');
+    await page.getByRole('button', { name: 'Start' }).click();
+    const sheet = page.getByRole('dialog', { name: 'Send to your 21.gifts address' });
+    // Without a wallet the invoice minted as the step opens fails at once.
+    await expect(sheet.getByRole('alert')).toBeVisible();
+    await expect(sheet.getByRole('button', { name: 'Try again' })).toBeVisible();
+    await shotScreen(page, 'state-wallet-move-address-error');
   });
 
   test('wallet move-waiting', async ({ page }) => {

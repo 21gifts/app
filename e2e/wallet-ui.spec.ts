@@ -285,7 +285,7 @@ test('Function: requestMoveFunds — a move link opened signed out opens the flo
   await expect(page.getByRole('dialog', { name: 'Bring your Bitcoin here' })).toBeVisible();
 });
 
-test('Function: MoveFundsSheet — steps, the top-left arrow steps back, copy, and no other wallet app', async ({
+test('Function: MoveFundsSheet — steps, the top-left arrow steps back, copy, and on a desktop no other wallet app', async ({
   page,
   context,
 }) => {
@@ -297,6 +297,8 @@ test('Function: MoveFundsSheet — steps, the top-left arrow steps back, copy, a
   await expect(sheet).toContainText('ada@');
   await expect(sheet).toContainText('Step 2 of 4');
   await expect(sheet.locator('a[href^="lightning:"]')).toHaveCount(0);
+  // A desktop gets the QR and copy only.
+  await expect(sheet.getByRole('button', { name: 'Open my other wallet' })).toHaveCount(0);
   await sheet.getByRole('button', { name: 'Copy my address' }).click();
   await expect(sheet.getByRole('button', { name: 'Copied' })).toBeVisible();
   await sheet.getByRole('button', { name: 'I sent it' }).click();
@@ -310,6 +312,89 @@ test('Function: MoveFundsSheet — steps, the top-left arrow steps back, copy, a
   await page.keyboard.press('Escape');
   await expect(page.getByRole('dialog')).toHaveCount(0);
   await expect(page).toHaveURL(/\/wallet\?visual=balance-ready$/);
+});
+
+const IPHONE_UA =
+  'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1';
+
+const walletHrefsByPage = new WeakMap<Page, string[]>();
+
+/**
+ * Makes the page a smartphone and records every `lightning:` navigation it
+ * asks for (Chromium reports it through CDP and does not leave the page for
+ * an unknown scheme).
+ */
+async function phoneRecordingWalletHrefs(page: Page): Promise<void> {
+  await page.addInitScript((userAgent) => {
+    Object.defineProperty(Navigator.prototype, 'userAgent', {
+      configurable: true,
+      get: () => userAgent,
+    });
+  }, IPHONE_UA);
+  const hrefs: string[] = [];
+  walletHrefsByPage.set(page, hrefs);
+  const cdp = await page.context().newCDPSession(page);
+  await cdp.send('Page.enable');
+  cdp.on('Page.frameRequestedNavigation', (event: { url?: string }) => {
+    if (event.url?.startsWith('lightning:') === true) {
+      hrefs.push(event.url);
+    }
+  });
+}
+
+function walletHrefs(page: Page): string[] {
+  return walletHrefsByPage.get(page) ?? [];
+}
+
+test('Function: MoveFundsSheet — on a phone, Open my other wallet hands a lightning: invoice to the wallet app and waits', async ({
+  page,
+}) => {
+  await phoneRecordingWalletHrefs(page);
+  await signIn(page);
+  await page.goto('/wallet?move=1&visual=move-invoice');
+  await page.getByRole('button', { name: 'Start' }).click();
+  const sheet = page.getByRole('dialog', { name: 'Send to your 21.gifts address' });
+  await expect(sheet.getByRole('button', { name: 'Copy my address' })).toBeVisible();
+  await expect(sheet.getByRole('img', { name: /QR/i })).toHaveCount(0);
+  expect(walletHrefs(page)).toEqual([]);
+  await sheet.getByRole('button', { name: 'Open my other wallet' }).click();
+  await expect(page.getByRole('dialog', { name: 'Waiting for your Bitcoin…' })).toBeVisible();
+  await expect.poll(() => walletHrefs(page)).toEqual(['lightning:lnbc1pmovefundsvisual']);
+  await page.getByRole('button', { name: 'Back' }).click();
+  await expect(
+    page.getByRole('dialog', { name: 'Send to your 21.gifts address' }).getByRole('button', {
+      name: 'Open my other wallet',
+    }),
+  ).toBeEnabled();
+});
+
+test('Function: receiveWalletInvoice — on a phone without an open wallet the step says the request failed, keeps Copy, and Try again asks again', async ({
+  page,
+  context,
+}) => {
+  await context.grantPermissions(['clipboard-read', 'clipboard-write']);
+  await phoneRecordingWalletHrefs(page);
+  await signIn(page);
+  const urls: string[] = [];
+  page.on('request', (request) => {
+    urls.push(request.url());
+  });
+  await page.goto('/wallet?move=1&visual=balance-ready');
+  await page.getByRole('button', { name: 'Start' }).click();
+  const sheet = page.getByRole('dialog', { name: 'Send to your 21.gifts address' });
+  // The invoice is minted as the step opens; without a wallet that fails at once.
+  await expect(sheet.getByRole('alert')).toHaveText(
+    'Your 21.gifts wallet could not create a payment request. Try again, or copy your address.',
+  );
+  await expect(sheet.getByRole('button', { name: 'Open my other wallet' })).toHaveCount(0);
+  await sheet.getByRole('button', { name: 'Copy my address' }).click();
+  await expect(sheet.getByRole('button', { name: 'Copied' })).toBeVisible();
+  expect(await page.evaluate(() => navigator.clipboard.readText())).toContain('ada@');
+  await sheet.getByRole('button', { name: 'Try again' }).click();
+  await expect(sheet.getByRole('alert')).toBeVisible();
+  await expect(sheet.getByRole('button', { name: 'I sent it' })).toBeVisible();
+  expect(walletHrefs(page)).toEqual([]);
+  expect(urls.some((url) => url.endsWith('.wasm'))).toBe(false);
 });
 
 test('Function: MoveFundsBack — the top-left arrow steps the open flow back and closes it on the first step', async ({

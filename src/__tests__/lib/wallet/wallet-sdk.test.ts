@@ -803,6 +803,7 @@ describe('social recovery', () => {
     authorizeLightningAddressTransfer: vi.fn(),
     claimLightningAddressTransfer: vi.fn(),
     receivePayment: vi.fn(),
+    parse: vi.fn(),
     prepareSendPayment: vi.fn(),
     sendPayment: vi.fn(),
   };
@@ -900,6 +901,31 @@ describe('social recovery', () => {
     expect(sdkRecovery.receivePayment).toHaveBeenCalledWith({
       paymentMethod: { type: 'sparkAddress' },
     });
+  });
+
+  it('receiveLightningInvoice asks for a BOLT11 invoice with the note and no amount, and reads its expiry', async () => {
+    sdkRecovery.receivePayment.mockResolvedValue({ paymentRequest: 'lnbc1pxyz', fee: 0n });
+    sdkRecovery.parse.mockResolvedValue({
+      type: 'bolt11Invoice',
+      invoice: { bolt11: 'lnbc1pxyz' },
+      timestamp: 1_800_000_000,
+      expiry: 3_600,
+    });
+    const conn = await connection();
+    await expect(
+      conn.receiveLightningInvoice('Transfer to your 21.gifts account'),
+    ).resolves.toEqual({ invoice: 'lnbc1pxyz', expiresAtMs: 1_800_003_600_000 });
+    expect(sdkRecovery.receivePayment).toHaveBeenCalledWith({
+      paymentMethod: { type: 'bolt11Invoice', description: 'Transfer to your 21.gifts account' },
+    });
+    expect(sdkRecovery.parse).toHaveBeenCalledWith('lnbc1pxyz');
+  });
+
+  it('receiveLightningInvoice refuses a request the SDK does not read back as a BOLT11 invoice', async () => {
+    sdkRecovery.receivePayment.mockResolvedValue({ paymentRequest: 'spark1x', fee: 0n });
+    sdkRecovery.parse.mockResolvedValue({ type: 'sparkAddress', address: 'spark1x' });
+    const conn = await connection();
+    await expect(conn.receiveLightningInvoice('note')).rejects.toThrow('Not a Lightning invoice');
   });
 
   it('sendToSparkAddress sends exactly the amount with the idempotency key', async () => {
