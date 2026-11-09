@@ -11757,9 +11757,7 @@ test.describe('onboarding screens', () => {
     await expect(page.getByText('Software Developer')).toBeVisible();
     const profileCard = page.getByRole('heading', { name: 'Profile' }).locator('..');
     const profileNameRow = profileCard.getByText('Ada', { exact: true }).locator('..');
-    await expect(
-      profileNameRow.getByRole('button', { name: 'Software Developer' }),
-    ).toHaveCount(1);
+    await expect(profileNameRow.getByRole('button', { name: 'Software Developer' })).toHaveCount(1);
     await expect(profileNameRow.getByRole('button', { name: 'Moderator' })).toHaveCount(0);
     await expect(profileNameRow.getByRole('button', { name: 'Verified' })).toHaveCount(0);
     await shotScreen(page, 'state-profile-software-developer');
@@ -14105,9 +14103,7 @@ test.describe('onboarding screens', () => {
     await expect(page.getByText('Software Developer')).toBeVisible();
     const memberCard = page.getByRole('heading', { name: 'Profile' }).locator('..');
     const memberNameRow = memberCard.getByText('Carol', { exact: true }).locator('..');
-    await expect(
-      memberNameRow.getByRole('button', { name: 'Software Developer' }),
-    ).toHaveCount(1);
+    await expect(memberNameRow.getByRole('button', { name: 'Software Developer' })).toHaveCount(1);
     await expect(memberNameRow.getByRole('button', { name: 'Moderator' })).toHaveCount(0);
     await expect(memberNameRow.getByRole('button', { name: 'Verified' })).toHaveCount(0);
     await shotScreen(page, 'state-members-accountId-software-developer');

@@ -1166,8 +1166,7 @@ const en = {
   'forum.role.verified': 'Verified',
   'forum.role.founderHint': 'This person founded 21.gifts.',
   'forum.role.moderatorHint': 'This person helps keep the living room in order.',
-  'forum.role.softwareDeveloperHint':
-    'This person builds 21.gifts and moderates the living room.',
+  'forum.role.softwareDeveloperHint': 'This person builds 21.gifts and moderates the living room.',
   'forum.role.initiatorHint': 'This person was named an initiator.',
   'forum.role.verifiedHint':
     'A moderator has met this person in real life and confirmed they are real.',
@@ -4773,8 +4772,7 @@ const es = {
   'forum.role.verified': 'Verificado',
   'forum.role.founderHint': 'Esta persona fundó 21.gifts.',
   'forum.role.moderatorHint': 'Esta persona ayuda a mantener el salón en orden.',
-  'forum.role.softwareDeveloperHint':
-    'Esta persona desarrolla 21.gifts y modera el salón.',
+  'forum.role.softwareDeveloperHint': 'Esta persona desarrolla 21.gifts y modera el salón.',
   'forum.role.initiatorHint': 'Esta persona fue nombrada iniciadora.',
   'forum.role.verifiedHint':
     'Un moderador ha conocido a esta persona en la vida real y ha confirmado que es real.',
