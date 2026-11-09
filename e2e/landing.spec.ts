@@ -161,7 +161,7 @@ function shopPlaces(): Record<string, unknown> {
         lat: -1.29,
         lon: 36.82,
         techProvider: '21.gifts',
-        coverPhoto: { url: 'https://api.opencryptopay.io/map/photos/sample.jpg' },
+        coverPhoto: { url: 'https://dev-api.opencryptopay.io/map/photos/sample.jpg' },
         supports: [{ blockchain: 'Bitcoin', asset: 'BTC' }],
       },
       {
@@ -228,7 +228,7 @@ function identicalShopPlaces(): Record<string, unknown> {
         lat: -1.29,
         lon: 36.82,
         techProvider: '21.gifts',
-        coverPhoto: { url: 'https://api.opencryptopay.io/map/photos/ann.jpg' },
+        coverPhoto: { url: 'https://dev-api.opencryptopay.io/map/photos/ann.jpg' },
         supports: [{ blockchain: 'Bitcoin', asset: 'BTC' }],
       },
       {
@@ -274,7 +274,7 @@ async function stubPublicMap(page: Page): Promise<void> {
   );
   await page.route(
     (url) =>
-      url.origin === 'https://api.opencryptopay.io' && url.pathname.startsWith('/map/photos/'),
+      url.origin === 'https://dev-api.opencryptopay.io' && url.pathname.startsWith('/map/photos/'),
     async (route) => {
       await route.fulfill({
         status: 200,
@@ -530,7 +530,7 @@ test('Function: HomeShops shows only filters and options the shops distinguish',
   await expect(page.getByRole('listbox', { name: 'Name' }).getByRole('option')).toHaveText([
     'All',
     'SPAR',
-    'others',
+    'Others',
   ]);
   await page.keyboard.press('Escape');
   await page.getByRole('combobox', { name: 'Blockchain', exact: true }).click();

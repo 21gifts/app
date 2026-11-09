@@ -3,10 +3,12 @@
 Every page and route response the middleware matches carries a
 Content-Security-Policy (the `/map` redirect does not). The
 middleware (`src/middleware.ts`) builds it per request with a fresh nonce
-(`buildCsp` in `src/lib/csp.ts`); the sources live in `CSP_SOURCES` in the
-same file. This page lists every source and why the app needs it.
-`src/__tests__/lib/csp.test.ts` fails when a source in `CSP_SOURCES` has no
-row here.
+(`buildCsp` in `src/lib/csp.ts`); common sources live in `CSP_SOURCES` in the
+same file. `placesOrigin` selects the OpenCryptoPay image source from the
+request hostname: `21.gifts` and `www.21.gifts` use the production origin;
+every other hostname uses the development origin. The homepage places endpoint
+and photo filter use that same selection. This page lists every source and
+why the app needs it; `src/__tests__/lib/csp.test.ts` checks the rows.
 
 ## Mode
 

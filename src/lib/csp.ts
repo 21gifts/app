@@ -5,7 +5,7 @@
  * reads that nonce from the request header and puts it on its own scripts;
  * the root layout puts it on its inline bootstrap scripts. `'strict-dynamic'`
  * lets those scripts load the next chunks, the wallet SDK, and the map
- * script. Every other source is listed in {@link CSP_SOURCES}, and
+ * script. Common sources are listed in {@link CSP_SOURCES}, and
  * `docs/csp.md` says why each one is needed.
  *
  * `CSP_MODE=enforce` sends the policy as `Content-Security-Policy`. Unset or
@@ -46,8 +46,6 @@ export const CSP_SOURCES: Readonly<Record<string, readonly string[]>> = {
     'https://*.googleapis.com',
     'https://*.gstatic.com',
     'https://*.ggpht.com',
-    'https://api.opencryptopay.io',
-    'https://dev-api.opencryptopay.io',
   ],
   'font-src': ["'self'", 'https://fonts.gstatic.com'],
   // Video previews before upload.
@@ -70,6 +68,18 @@ export const CSP_SOURCES: Readonly<Record<string, readonly string[]>> = {
   'form-action': ["'self'"],
   'frame-ancestors': ["'none'"],
 };
+
+/**
+ * OpenCryptoPay origin selected for the host serving the page.
+ *
+ * @param hostname - Hostname of the page or request.
+ * @returns Production origin for the two production hosts, otherwise development.
+ */
+export function placesOrigin(hostname: string): string {
+  return hostname === '21.gifts' || hostname === 'www.21.gifts'
+    ? 'https://api.opencryptopay.io'
+    : 'https://dev-api.opencryptopay.io';
+}
 
 /**
  * Mode from `CSP_MODE`, read on every request so the same image can switch
@@ -105,12 +115,15 @@ export function createCspNonce(): string {
  * The policy text.
  *
  * @param nonce - Nonce of this response.
- * @returns Directives from {@link CSP_SOURCES}, the nonce on `script-src`,
- * and `report-uri` plus `report-to`.
+ * @param hostname - Hostname of the request.
+ * @returns Directives from {@link CSP_SOURCES}, the host's photo origin, the
+ * nonce on `script-src`, and `report-uri` plus `report-to`.
  */
-export function buildCsp(nonce: string): string {
+export function buildCsp(nonce: string, hostname: string): string {
   const directives = Object.entries(CSP_SOURCES).map(([name, sources]) => {
-    const list = name === 'script-src' ? [`'nonce-${nonce}'`, ...sources] : sources;
+    let list = sources;
+    if (name === 'script-src') list = [`'nonce-${nonce}'`, ...sources];
+    if (name === 'img-src') list = [...sources, placesOrigin(hostname)];
     return `${name} ${list.join(' ')}`;
   });
   directives.push(`report-uri ${CSP_REPORT_PATH}`, `report-to ${CSP_REPORT_GROUP}`);

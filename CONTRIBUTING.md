@@ -1225,7 +1225,7 @@ Rules:
   not run and need none.
 - No `eval`, `new Function`, or string timers.
 - A new external origin (script, image, font, frame, socket) needs a source in
-  `CSP_SOURCES` and a row in `docs/csp.md` in the same PR; the unit test fails
+  `CSP_SOURCES` (or the host-dependent OpenCryptoPay selector) and a row in `docs/csp.md` in the same PR; the unit test fails
   otherwise.
 - The Playwright server starts with `CSP_MODE=enforce` (CI always starts it
   fresh), so a spec fails when the policy blocks something the app needs.

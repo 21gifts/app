@@ -1295,7 +1295,7 @@ const SHOP_PHOTO_PNG = Buffer.from(
 async function stubShopPhoto(page: Page): Promise<void> {
   await page.route(
     (url) =>
-      url.origin === 'https://api.opencryptopay.io' && url.pathname.startsWith('/map/photos/'),
+      url.origin === 'https://dev-api.opencryptopay.io' && url.pathname.startsWith('/map/photos/'),
     async (route) => {
       await route.fulfill({
         status: 200,
@@ -2465,7 +2465,7 @@ function variedHomePlaces(): Record<string, unknown> {
         lat: -1.29,
         lon: 36.82,
         techProvider: '21.gifts',
-        coverPhoto: { url: 'https://api.opencryptopay.io/map/photos/sample.jpg' },
+        coverPhoto: { url: 'https://dev-api.opencryptopay.io/map/photos/sample.jpg' },
         supports: [{ blockchain: 'Bitcoin', asset: 'BTC' }],
       },
       {
@@ -2532,7 +2532,7 @@ function identicalHomePlaces(): Record<string, unknown> {
         lat: -1.29,
         lon: 36.82,
         techProvider: '21.gifts',
-        coverPhoto: { url: 'https://api.opencryptopay.io/map/photos/ann.jpg' },
+        coverPhoto: { url: 'https://dev-api.opencryptopay.io/map/photos/ann.jpg' },
         supports: [{ blockchain: 'Bitcoin', asset: 'BTC' }],
       },
       {
@@ -2711,7 +2711,7 @@ test.describe('screen baselines', () => {
     await stubHomeMap(page);
     await page.goto('/');
     await page.getByRole('combobox', { name: 'Name', exact: true }).click();
-    await expect(page.getByRole('option', { name: 'others' })).toBeVisible();
+    await expect(page.getByRole('option', { name: 'Others' })).toBeVisible();
     await expect(page.getByRole('option', { name: 'SPAR' })).toBeVisible();
     await hideMapTiles(page);
     await shotScreen(page, 'state-root-shops-name-open');

@@ -11,6 +11,7 @@ import {
   CSP_SOURCES,
   cspHeaderName,
   getCspMode,
+  placesOrigin,
 } from '@/lib/csp';
 
 afterEach(() => {
@@ -72,24 +73,31 @@ describe('createCspNonce', () => {
 });
 
 describe('buildCsp', () => {
-  it('allows both OpenCryptoPay photo origins', () => {
-    const images = directives(buildCsp('n')).get('img-src');
-    expect(images).toContain('https://api.opencryptopay.io');
-    expect(images).toContain('https://dev-api.opencryptopay.io');
+  it.each([
+    ['21.gifts', 'https://api.opencryptopay.io', 'https://dev-api.opencryptopay.io'],
+    ['www.21.gifts', 'https://api.opencryptopay.io', 'https://dev-api.opencryptopay.io'],
+    ['preview.example', 'https://dev-api.opencryptopay.io', 'https://api.opencryptopay.io'],
+  ])('allows only the OpenCryptoPay origin for %s', (host, allowed, disallowed) => {
+    expect(placesOrigin(host)).toBe(allowed);
+    const images = directives(buildCsp('n', host)).get('img-src');
+    expect(images).toContain(allowed);
+    expect(images).not.toContain(disallowed);
   });
 
   it('puts the nonce first on script-src and nowhere else', () => {
-    const policy = buildCsp('abc123==');
+    const policy = buildCsp('abc123==', '21.gifts');
     const parsed = directives(policy);
     expect(parsed.get('script-src')?.[0]).toBe("'nonce-abc123=='");
     expect(policy.match(/nonce-/g)).toHaveLength(1);
   });
 
   it('lists every directive of CSP_SOURCES in order, then the report directives', () => {
-    const parsed = directives(buildCsp('n'));
+    const parsed = directives(buildCsp('n', '21.gifts'));
     expect([...parsed.keys()]).toEqual([...Object.keys(CSP_SOURCES), 'report-uri', 'report-to']);
     for (const [name, sources] of Object.entries(CSP_SOURCES)) {
-      const expected = name === 'script-src' ? ["'nonce-n'", ...sources] : sources;
+      let expected = sources;
+      if (name === 'script-src') expected = ["'nonce-n'", ...sources];
+      if (name === 'img-src') expected = [...sources, 'https://api.opencryptopay.io'];
       expect(parsed.get(name)).toEqual(expected);
     }
     expect(parsed.get('report-uri')).toEqual([CSP_REPORT_PATH]);
@@ -97,7 +105,7 @@ describe('buildCsp', () => {
   });
 
   it('allows wasm compile, not eval or inline scripts', () => {
-    const script = directives(buildCsp('n')).get('script-src');
+    const script = directives(buildCsp('n', '21.gifts')).get('script-src');
     expect(script).toContain("'wasm-unsafe-eval'");
     expect(script).toContain("'strict-dynamic'");
     expect(script).not.toContain("'unsafe-eval'");
@@ -105,7 +113,7 @@ describe('buildCsp', () => {
   });
 
   it('blocks plugins, base rewrites, and framing', () => {
-    const parsed = directives(buildCsp('n'));
+    const parsed = directives(buildCsp('n', '21.gifts'));
     expect(parsed.get('object-src')).toEqual(["'none'"]);
     expect(parsed.get('base-uri')).toEqual(["'none'"]);
     expect(parsed.get('frame-ancestors')).toEqual(["'none'"]);
@@ -125,9 +133,11 @@ describe('docs/csp.md', () => {
     const rows = [...sources.matchAll(/^\| `([a-z-]+)` +\| `([^`]+)` +\|/gm)].map(
       ([, name, source]) => `${name} ${source}`,
     );
-    const policy = Object.entries(CSP_SOURCES).flatMap(([name, sources]) =>
-      sources.map((source) => `${name} ${source}`),
-    );
+    const policy = Object.entries(CSP_SOURCES).flatMap(([name, sources]) => {
+      const all =
+        name === 'img-src' ? [...sources, placesOrigin('21.gifts'), placesOrigin('dev')] : sources;
+      return all.map((source) => `${name} ${source}`);
+    });
     expect(rows).toEqual(policy);
   });
 });

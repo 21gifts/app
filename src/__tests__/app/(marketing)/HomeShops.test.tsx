@@ -2373,7 +2373,7 @@ describe('HomeShops', () => {
         giftsPlace('Linked', {
           id: npub('p'),
           category: 'Cafe',
-          coverPhoto: { url: 'https://api.opencryptopay.io/map/photos/cover.jpg' },
+          coverPhoto: { url: 'https://dev-api.opencryptopay.io/map/photos/cover.jpg' },
         }),
         giftsPlace('Plain', {
           id: 'https://opencryptopay.io/plain',
@@ -2381,7 +2381,7 @@ describe('HomeShops', () => {
         }),
         giftsPlace('Other', { coverPhoto: { url: 'https://images.example/other.jpg' } }),
         giftsPlace('Dev', {
-          coverPhoto: { url: 'https://dev-api.opencryptopay.io/map/photos/dev.jpg' },
+          coverPhoto: { url: 'https://api.opencryptopay.io/map/photos/dev.jpg' },
         }),
         giftsPlace('Malformed', { coverPhoto: { url: 'not a url' } }),
         giftsPlace('NonString', { coverPhoto: { url: 42 } }),
@@ -2436,7 +2436,9 @@ describe('HomeShops', () => {
     expect(linked.content.querySelector('.shop-popup-chip')?.textContent).toContain(copy.daily);
     expect(linked.content.querySelector('p')).toBeNull();
     const image = linked.content.querySelector('img');
-    expect(image?.getAttribute('src')).toBe('https://api.opencryptopay.io/map/photos/cover.jpg');
+    expect(image?.getAttribute('src')).toBe(
+      'https://dev-api.opencryptopay.io/map/photos/cover.jpg',
+    );
     expect(image?.getAttribute('alt')).toBe('');
     expect(image?.getAttribute('loading')).toBe('lazy');
     expect(image?.getAttribute('referrerpolicy')).toBe('no-referrer');
@@ -2449,9 +2451,7 @@ describe('HomeShops', () => {
     expect(plain.content.querySelector('.shop-popup-category')).toBeNull();
     expect(plain.content.innerHTML).not.toContain('opencryptopay.io');
     expect(other?.content?.querySelector('img')).toBeNull();
-    expect(dev?.content?.querySelector('img')?.getAttribute('src')).toBe(
-      'https://dev-api.opencryptopay.io/map/photos/dev.jpg',
-    );
+    expect(dev?.content?.querySelector('img')).toBeNull();
     expect(malformed?.content?.querySelector('img')).toBeNull();
     expect(nonString?.content?.querySelector('img')).toBeNull();
     view.unmount();
@@ -2464,7 +2464,7 @@ describe('HomeShops', () => {
 
   it('renders only HTTPS photos matching exact or subdomain image CSP sources', async () => {
     const photos = [
-      { url: 'https://api.opencryptopay.io/map/photos/shop.jpg', allowed: true },
+      { url: 'https://api.opencryptopay.io/map/photos/shop.jpg', allowed: false },
       { url: 'https://dev-api.opencryptopay.io/map/photos/shop.jpg', allowed: true },
       { url: 'https://lh3.ggpht.com/shop.jpg', allowed: true },
       { url: 'https://a.b.ggpht.com/shop.jpg', allowed: true },
@@ -2499,6 +2499,34 @@ describe('HomeShops', () => {
         photo.allowed ? photo.url : null,
       );
     }
+  });
+
+  it.each([
+    ['21.gifts', 'https://api.opencryptopay.io', 'https://dev-api.opencryptopay.io'],
+    ['www.21.gifts', 'https://api.opencryptopay.io', 'https://dev-api.opencryptopay.io'],
+    ['preview.example', 'https://dev-api.opencryptopay.io', 'https://api.opencryptopay.io'],
+  ])('filters popup photos for %s', async (host, allowed, disallowed) => {
+    setHostname(host);
+    const lib = installMapLibre();
+    renderShops();
+    await resolveLatest(
+      basicFilters({}),
+      placesBody([
+        giftsPlace('Allowed', { coverPhoto: { url: `${allowed}/photo.jpg` } }),
+        giftsPlace('Blocked', { coverPhoto: { url: `${disallowed}/photo.jpg` } }),
+      ]),
+    );
+    await fireScript('load');
+    const allowedPopup = lib.popups.find(
+      (popup) => popup.content?.querySelector('.shop-popup-name')?.textContent === 'Allowed',
+    );
+    const blockedPopup = lib.popups.find(
+      (popup) => popup.content?.querySelector('.shop-popup-name')?.textContent === 'Blocked',
+    );
+    expect(allowedPopup?.content?.querySelector('img')?.getAttribute('src')).toBe(
+      `${allowed}/photo.jpg`,
+    );
+    expect(blockedPopup?.content?.querySelector('img')).toBeNull();
   });
 
   it('removes popup portals when markers are redrawn', async () => {
@@ -3665,7 +3693,7 @@ describe('HomeShops', () => {
     mapHandler(handlers, 'moveend')();
 
     const replacement = clusterButton('is-daily');
-    expect(replacement).not.toBe(cluster);
+    expect(replacement).toBe(cluster);
     expect(document.activeElement).toBe(replacement);
     expect(cancel).not.toHaveBeenCalled();
 
@@ -3680,7 +3708,7 @@ describe('HomeShops', () => {
     expect(document.activeElement).toBe(clusterButton('is-daily'));
   });
 
-  it('focuses the replacement cluster after a move repaint', async () => {
+  it('retains the focused cluster after a move repaint', async () => {
     const { handlers } = await setupClusterFocus();
     const cluster = clusterButton('is-daily');
     cluster.focus();
@@ -3690,13 +3718,64 @@ describe('HomeShops', () => {
     });
 
     const replacement = clusterButton('is-daily');
-    expect(replacement).not.toBe(cluster);
+    expect(replacement).toBe(cluster);
     expect(document.activeElement).toBe(replacement);
+  });
+
+  it('reuses cluster buttons and markers through multiple movement frames', async () => {
+    const { handlers, lib, map } = await setupClusterFocus();
+    const button = clusterButton('is-weekly');
+    const marker = clusterMarker(lib, 'is-weekly');
+    const markerCount = lib.markers.length;
+    button.focus();
+    const focus = vi.spyOn(button, 'focus');
+    Object.assign(map, {
+      project: (position: [number, number]) => ({
+        x: position[0] * 10 + 20,
+        y: position[1] * 10,
+      }),
+    });
+    for (let frame = 0; frame < 3; frame += 1) {
+      await act(async () => {
+        mapHandler(handlers, 'move')();
+      });
+      expect(clusterButton('is-weekly')).toBe(button);
+    }
+    expect(lib.markers).toHaveLength(markerCount);
+    expect(marker.remove).not.toHaveBeenCalled();
+    expect(marker.setLngLat).toHaveBeenLastCalledWith([121, 146]);
+    expect(focus).not.toHaveBeenCalled();
+    map.cameraForBounds?.mockReturnValue(undefined);
+    fireEvent.click(button);
+    expect(map.easeTo).toHaveBeenLastCalledWith(expect.objectContaining({ center: [121, 146] }));
+  });
+
+  it('replaces only the marker whose pin membership changes', async () => {
+    const { handlers, lib, map } = await setupClusterFocus();
+    const old = clusterButton('is-daily');
+    const oldMarker = clusterMarker(lib, 'is-daily');
+    const unchanged = clusterButton('is-weekly');
+    const markerCount = lib.markers.length;
+    Object.assign(map, {
+      project: (position: [number, number]) =>
+        position[0] === 180 ? { x: 1211, y: 146 } : { x: position[0] * 10, y: position[1] * 10 },
+    });
+    await act(async () => {
+      mapHandler(handlers, 'move')();
+    });
+    expect(clusterButton('is-daily')).not.toBe(old);
+    expect(clusterButton('is-daily').textContent).toBe('4');
+    expect(oldMarker.remove).toHaveBeenCalledTimes(1);
+    expect(old.isConnected).toBe(false);
+    expect(clusterButton('is-weekly')).toBe(unchanged);
+    expect(lib.markers).toHaveLength(markerCount + 1);
   });
 
   it('focuses the first pin when a focused cluster splits on zoom', async () => {
     const { handlers, map } = await setupClusterFocus();
     clusterButton('is-daily').focus();
+    const pin = pinByName('Ann');
+    const focus = vi.spyOn(pin, 'focus');
     map.transform.zoom = 18;
 
     await act(async () => {
@@ -3704,7 +3783,13 @@ describe('HomeShops', () => {
     });
 
     expect(pinByName('Ann').classList.contains('is-clustered')).toBe(false);
-    expect(document.activeElement).toBe(pinByName('Ann'));
+    expect(document.activeElement).toBe(pin);
+    expect(focus).toHaveBeenCalledWith({ preventScroll: true });
+    focus.mockClear();
+    await act(async () => {
+      mapHandler(handlers, 'move')();
+    });
+    expect(focus).not.toHaveBeenCalled();
   });
 
   it('restores the focused second pin after keyboard activation splits its cluster', async () => {
@@ -3789,7 +3874,7 @@ describe('HomeShops', () => {
       mapHandler(handlers, 'move')();
     });
     const currentCluster = clusterButton('is-monthly');
-    expect(currentCluster).not.toBe(oldCluster);
+    expect(currentCluster).toBe(oldCluster);
     expect(document.activeElement).toBe(close);
     fireEvent.click(close);
     expect(document.activeElement).toBe(currentCluster);
@@ -3885,7 +3970,7 @@ describe('HomeShops', () => {
       mapHandler(handlers, 'move')();
     });
 
-    expect(clusterButton('is-weekly')).not.toBe(previous);
+    expect(clusterButton('is-weekly')).toBe(previous);
     expect(document.activeElement).toBe(document.body);
     expect(focus).not.toHaveBeenCalled();
   });
@@ -3903,7 +3988,7 @@ describe('HomeShops', () => {
     });
     mapHandler(handlers, 'moveend')();
 
-    expect(clusterButton('is-weekly')).not.toBe(weekly);
+    expect(clusterButton('is-weekly')).toBe(weekly);
     expect(document.activeElement).toBe(clusterButton('is-weekly'));
   });
 
@@ -3918,7 +4003,7 @@ describe('HomeShops', () => {
       mapHandler(handlers, 'move')();
     });
 
-    expect(clusterButton('is-daily')).not.toBe(cluster);
+    expect(clusterButton('is-daily')).toBe(cluster);
     expect(document.activeElement).toBe(elsewhere);
   });
 
@@ -4600,6 +4685,32 @@ describe('HomeShops', () => {
     expect(clusterButton('is-daily').textContent).toBe('3');
   });
 
+  it('joins earlier components through a later pin across cell boundaries', async () => {
+    await paintProjected([
+      giftsPlace('Ann', { lat: 0, lon: -2 }),
+      giftsPlace('Bea', { lat: 0, lon: 6 }),
+      giftsPlace('Cara', { lat: 0, lon: 2 }),
+      giftsPlace('Dean', { lat: 0, lon: 10.4 }),
+    ]);
+    expect(document.querySelectorAll('.shop-cluster')).toHaveLength(1);
+    expect(clusterButton('is-daily').textContent).toBe('3');
+    expect(pinByName('Dean').classList.contains('is-clustered')).toBe(false);
+  });
+
+  it('groups 300 pins into 150 separated pairs', async () => {
+    const places: Place[] = [];
+    for (let index = 0; index < 150; index += 1) {
+      const lon = (index % 15) * 5;
+      const lat = Math.floor(index / 15) * 5;
+      places.push(giftsPlace(`A${index}`, { lat, lon }));
+      places.push(giftsPlace(`B${index}`, { lat, lon: lon + 0.05 }));
+    }
+    await paintProjected(places);
+    const clusters = document.querySelectorAll('.shop-cluster');
+    expect(clusters).toHaveLength(150);
+    for (const cluster of clusters) expect(cluster.textContent).toBe('2');
+  });
+
   it('does not pull a farther pin into a cluster through the centroid', async () => {
     await paintProjected([
       giftsPlace('Ann', { lat: 0, lon: 0 }),
@@ -4760,7 +4871,7 @@ describe('HomeShops', () => {
         giftsPlace('Ann', {
           shopName: null,
           category: 'shopping',
-          coverPhoto: { url: 'https://api.opencryptopay.io/map/photos/ann.jpg' },
+          coverPhoto: { url: 'https://dev-api.opencryptopay.io/map/photos/ann.jpg' },
           street: 'One',
         }),
         giftsPlace('Bea', {
@@ -4790,7 +4901,7 @@ describe('HomeShops', () => {
       throw new Error('missing popup');
     }
     expect(ann.content.querySelector('.shop-popup-photo')?.getAttribute('src')).toBe(
-      'https://api.opencryptopay.io/map/photos/ann.jpg',
+      'https://dev-api.opencryptopay.io/map/photos/ann.jpg',
     );
     expect(ann.content.querySelector('.shop-popup-category')).toBeNull();
     expect(bea.content.querySelector('.shop-popup-photo')).toBeNull();

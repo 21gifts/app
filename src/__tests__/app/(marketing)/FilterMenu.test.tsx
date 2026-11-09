@@ -210,6 +210,9 @@ describe('FilterMenu', () => {
     const bitcoin = within(listbox).getByRole('option', { name: 'Bitcoin' });
     const daily = within(listbox).getByRole('option', { name: 'Daily' });
     expect(button.getAttribute('aria-activedescendant')).toBe(all.id);
+    fireEvent.keyDown(button, { key: 'ArrowRight' });
+    fireEvent.keyDown(button, { key: 'ArrowLeft' });
+    expect(button.getAttribute('aria-activedescendant')).toBe(all.id);
     fireEvent.keyDown(button, { key: 'ArrowDown' });
     expect(button.getAttribute('aria-activedescendant')).toBe(bitcoin.id);
     expect(bitcoin.className).toContain('is-active');
@@ -231,6 +234,71 @@ describe('FilterMenu', () => {
     expect(active).toBe(daily);
     expect(all.getAttribute('aria-selected')).toBe('true');
     expect(daily.getAttribute('aria-selected')).toBe('false');
+  });
+
+  it.each([
+    [10, 2],
+    [17, 3],
+  ])('moves through a %i-option menu in %i columns', (count, columns) => {
+    const choices: MenuOption[] = [{ value: '', label: 'All', swatch: null }];
+    for (let index = 1; index < count; index += 1) {
+      choices.push({ value: `v${index}`, label: `Option ${index}`, swatch: null });
+    }
+    render(
+      <FilterMenu
+        label="Blockchain"
+        value="v1"
+        allLabel="All"
+        options={choices}
+        onChange={vi.fn()}
+      />,
+    );
+    const button = trigger();
+    fireEvent.click(button);
+    const list = screen.getByRole('listbox');
+    expect(list.querySelector('.grid')?.className).toContain(`grid-cols-${columns}`);
+    const nodes = within(list).getAllByRole('option');
+    const expectActive = (index: number): void => {
+      expect(button.getAttribute('aria-activedescendant')).toBe(nodes[index]?.id);
+    };
+    expectActive(1);
+    fireEvent.keyDown(button, { key: 'ArrowLeft' });
+    expectActive(1);
+    fireEvent.keyDown(button, { key: 'ArrowRight' });
+    expectActive(2);
+    fireEvent.keyDown(list, { key: 'ArrowDown' });
+    expectActive(2 + columns);
+    fireEvent.keyDown(list, { key: 'ArrowUp' });
+    expectActive(2);
+    fireEvent.keyDown(button, { key: 'ArrowLeft' });
+    expectActive(1);
+    for (let index = 1; index < columns; index += 1) {
+      fireEvent.keyDown(button, { key: 'ArrowRight' });
+    }
+    fireEvent.keyDown(button, { key: 'ArrowRight' });
+    expectActive(columns);
+    fireEvent.keyDown(list, { key: 'End' });
+    expectActive(count - 1);
+    fireEvent.keyDown(list, { key: 'ArrowDown' });
+    expectActive(count - 1);
+    fireEvent.keyDown(list, { key: 'Home' });
+    expectActive(0);
+    fireEvent.keyDown(button, { key: 'ArrowUp' });
+    expectActive(0);
+    fireEvent.keyDown(button, { key: 'ArrowRight' });
+    expectActive(0);
+    fireEvent.keyDown(button, { key: 'ArrowLeft' });
+    expectActive(0);
+    fireEvent.keyDown(button, { key: 'ArrowDown' });
+    expectActive(1);
+    fireEvent.keyDown(button, { key: 'ArrowUp' });
+    expectActive(0);
+    fireEvent.keyDown(button, { key: 'End' });
+    fireEvent.keyDown(button, { key: 'ArrowUp' });
+    expectActive(count - 1 - columns);
+    fireEvent.keyDown(button, { key: 'ArrowRight' });
+    fireEvent.keyDown(button, { key: 'ArrowDown' });
+    expectActive(count - 1);
   });
 
   it('keeps ArrowUp on the first option and opens a closed menu on the current option', () => {

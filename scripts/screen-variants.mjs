@@ -195,7 +195,7 @@ export const SCREEN_VARIANTS = [
     id: 'shops-name-open',
     image: 'root-shops-name-open.png',
     visual: 'state-root-shops-name-open',
-    needle: "getByRole('option', { name: 'others' })",
+    needle: "getByRole('option', { name: 'Others' })",
   },
   {
     route: '/',

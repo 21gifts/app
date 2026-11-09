@@ -165,8 +165,9 @@ function triggerOutsideWindow(trigger: HTMLElement): boolean {
  * stays on the pill. A scroll or resize closes a pinned list when the pill is
  * outside the window; an unpinned list is not measured again. A pinned list
  * that is taller than the window scrolls its options on the active scrollport.
- * Opening reveals the selected option, and Arrow, Home, and End reveal the
- * active option there. Focus moving outside the menu closes it without moving focus.
+ * Opening reveals the selected option. Up and Down move by one row; Left
+ * and Right move within a row. Arrow, Home, and End reveal the active option.
+ * Focus moving outside the menu closes it without moving focus.
  * Country, name, blockchain, asset, and activity all use it.
  *
  * @param props - Visible label, committed value, All label, options, and change handler.
@@ -402,14 +403,24 @@ export function FilterMenu({
     revealActive(next);
   }
 
-  function onTriggerKeyDown(event: ReactKeyboardEvent<HTMLButtonElement>): void {
-    if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+  function onTriggerKeyDown(event: ReactKeyboardEvent<HTMLElement>): void {
+    if (
+      event.key === 'ArrowDown' ||
+      event.key === 'ArrowUp' ||
+      (columns > 1 && (event.key === 'ArrowLeft' || event.key === 'ArrowRight'))
+    ) {
       event.preventDefault();
       if (!open) {
         openAtCurrent();
         return;
       }
-      move(event.key === 'ArrowDown' ? 1 : -1);
+      if (event.key === 'ArrowDown') move(activeIndex === 0 ? 1 : columns);
+      else if (event.key === 'ArrowUp') move(-columns);
+      else if (event.key === 'ArrowRight') {
+        move(activeIndex === 0 || (activeIndex - 1) % columns === columns - 1 ? 0 : 1);
+      } else {
+        move(activeIndex === 0 || (activeIndex - 1) % columns === 0 ? 0 : -1);
+      }
       return;
     }
     if (event.key === 'Home' || event.key === 'End') {
@@ -498,6 +509,11 @@ export function FilterMenu({
         <div
           ref={panelRef}
           role="listbox"
+          onKeyDown={(event) => {
+            if (event.key.startsWith('Arrow') || event.key === 'Home' || event.key === 'End') {
+              onTriggerKeyDown(event);
+            }
+          }}
           id={listboxId}
           aria-labelledby={labelId}
           className={`shop-menu-in z-30 flex ${pin === null ? 'min-w-[max(100%,14.5rem)]' : ''} flex-col gap-1 rounded-xl border border-ink/10 bg-paper p-1.5 shadow-lg ${placed} max-w-[18rem] sm:max-w-[36rem] md:max-w-[44rem]`}

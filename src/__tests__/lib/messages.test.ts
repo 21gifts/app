@@ -3,6 +3,10 @@ import { LOCALES } from '@/lib/locale';
 import { catalogs, getCatalog } from '@/lib/messages';
 
 describe('getCatalog', () => {
+  it('capitalizes the English shop filter label', () => {
+    expect(getCatalog('en')['homeShops.otherShops']).toBe('Others');
+  });
+
   it('keeps the same key set in every locale catalog', () => {
     const englishKeys = Object.keys(catalogs.en).sort();
     for (const locale of LOCALES) {

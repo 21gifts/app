@@ -14,6 +14,16 @@ const ENFORCED = 'content-security-policy';
 /** Header the default mode sends instead. */
 const REPORT_ONLY = 'content-security-policy-report-only';
 
+test('Function: placesOrigin — the local page policy permits its development photo origin', async ({
+  request,
+}) => {
+  const response = await request.get('/');
+  const policy = response.headers()[ENFORCED] ?? '';
+  const images = policy.split('; ').find((part) => part.startsWith('img-src '));
+  expect(images?.split(' ')).toContain('https://dev-api.opencryptopay.io');
+  expect(images?.split(' ')).not.toContain('https://api.opencryptopay.io');
+});
+
 /**
  * Routes without a URL parameter that a signed-out visitor can open, and the
  * not-found screen.

@@ -1743,7 +1743,7 @@ const en = {
   'homeShops.closePopup': 'Close popup',
   'homeShops.mapTitle': 'Map',
   'homeShops.clusterCount': '{count, plural, one {# shop} other {# shops}}',
-  'homeShops.otherShops': 'others',
+  'homeShops.otherShops': 'Others',
 } as const;
 
 /** Flat dotted catalog key shared by every locale. */
