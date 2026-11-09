@@ -333,12 +333,12 @@
 - **Used by:** `postWalletReport` (from `reportWallet`).
 - **Auth:** Bearer.
 
-## Endpoint: POST /me/wallet/senders
+## Endpoint: POST /me/wallet/counterparties
 
 - **Purpose:** Resolve the sender of a received wallet payment through the same-origin api proxy.
-- **Inputs:** Bearer session and a `payments` array of payment ids, invoices and hashes.
-- **Returns:** The upstream `senders` response or its error status.
-- **Used by:** `fetchPaymentSenders` on the payment details screen.
+- **Inputs:** Bearer session and a `payments` array of ids, `in`/`out` directions, invoices and hashes.
+- **Returns:** The upstream `counterparties` response or its error status.
+- **Used by:** `fetchPaymentCounterparties` on the payment details screen.
 
 ## Endpoint: POST /me/wallet/hearts
 

@@ -298,7 +298,39 @@ async function routeRepayments(page: Page): Promise<{ hashes: string[] }> {
   });
   return seen;
 }
-test.describe('POST /me/wallet/senders', () => {
+
+test.describe('POST /me/wallet/counterparties', () => {
+  test('Function: SENT_TO_MEMBER_PAYMENT — the pin shows the sent payment', async ({ page }) => {
+    await stubHeartLookupWallet(page);
+    await page.goto(
+      '/wallet/payment?id=ab12ce00-1545-4000-8000-000000000015&visual=sent-to-member',
+    );
+    await expect(page.getByRole('link', { name: 'bob@21.gifts' })).toBeVisible();
+  });
+
+  test('Function: SENT_TO_MEMBER_COUNTERPARTY — the pin links to Bob', async ({ page }) => {
+    await stubHeartLookupWallet(page);
+    await page.goto(
+      '/wallet/payment?id=ab12ce00-1545-4000-8000-000000000015&visual=sent-to-member',
+    );
+    await expect(page.getByRole('link', { name: 'bob@21.gifts' })).toHaveAttribute(
+      'href',
+      '/members/acc_bob',
+    );
+  });
+
+  test('Function: isSparkPaymentRequest — hides the Spark request for a known member', async ({
+    page,
+  }) => {
+    await stubHeartLookupWallet(page);
+    await page.goto(
+      '/wallet/payment?id=ab12ce00-1545-4000-8000-000000000015&visual=sent-to-member',
+    );
+    await page.getByRole('button', { name: 'Details' }).click();
+    await expect(page.getByText('Payment ID')).toBeVisible();
+    await expect(page.getByText('Payment request')).toHaveCount(0);
+  });
+
   test('Function: RECEIVED_FROM_MEMBER_PAYMENT — the pin shows a received payment', async ({
     page,
   }) => {
@@ -320,27 +352,37 @@ test.describe('POST /me/wallet/senders', () => {
     );
   });
 
-  test('Function: proxyMeWalletSendersPost — forwards sender lookup', async ({ request }) => {
-    expect((await request.post('/me/wallet/senders', { data: { payments: [] } })).status()).toBe(
-      401,
-    );
+  test('Function: proxyMeWalletCounterpartiesPost — forwards counterparty lookup', async ({
+    request,
+  }) => {
+    expect(
+      (await request.post('/me/wallet/counterparties', { data: { payments: [] } })).status(),
+    ).toBe(401);
     const token = await newMember(request);
-    const res = await request.post('/me/wallet/senders', {
+    const res = await request.post('/me/wallet/counterparties', {
       headers: { authorization: `Bearer ${token}` },
-      data: { payments: [{ id: 'payment-1', invoice: 'spark-test-sender', paymentHash: null }] },
+      data: {
+        payments: [
+          { id: 'payment-1', direction: 'in', invoice: 'spark-test-sender', paymentHash: null },
+        ],
+      },
     });
     expect(await res.json()).toEqual({
-      senders: [{ id: 'payment-1', accountId: 'acc_e2e', username: 'alice' }],
+      counterparties: [{ id: 'payment-1', accountId: 'acc_e2e', username: 'alice' }],
     });
   });
 
-  test('Function: fetchPaymentSenders — resolves the incoming payment', async ({ page }) => {
+  test('Function: fetchPaymentCounterparties — resolves the incoming payment', async ({ page }) => {
     await stubHeartLookupWallet(page);
-    await page.route('**/me/wallet/senders', async (route) => {
+    await page.route('**/me/wallet/counterparties', async (route) => {
       const body = route.request().postDataJSON() as { payments: { id: string }[] };
       await route.fulfill({
         json: {
-          senders: body.payments.map(({ id }) => ({ id, accountId: 'acc_e2e', username: 'alice' })),
+          counterparties: body.payments.map(({ id }) => ({
+            id,
+            accountId: 'acc_e2e',
+            username: 'alice',
+          })),
         },
       });
     });
@@ -351,12 +393,12 @@ test.describe('POST /me/wallet/senders', () => {
     );
   });
 
-  test('Function: usePaymentSender — shows no sender for an unmatched incoming payment', async ({
+  test('Function: usePaymentCounterparty — shows no sender for an unmatched incoming payment', async ({
     page,
   }) => {
     await stubHeartLookupWallet(page);
-    await page.route('**/me/wallet/senders', async (route) => {
-      await route.fulfill({ json: { senders: [] } });
+    await page.route('**/me/wallet/counterparties', async (route) => {
+      await route.fulfill({ json: { counterparties: [] } });
     });
     await page.goto('/wallet/payment?id=6a6c3f1f-5841-415b-b8a6-f21d3e513bae&visual=history-rows');
     await expect(page.getByText('Coffee & croissant')).toBeVisible();

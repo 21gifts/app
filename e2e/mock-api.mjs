@@ -3476,7 +3476,7 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
-  if (method === 'POST' && pathName === '/me/wallet/senders') {
+  if (method === 'POST' && pathName === '/me/wallet/counterparties') {
     const token = bearer(req);
     const account = token === null ? undefined : byToken.get(token);
     if (!account) {
@@ -3490,12 +3490,12 @@ const server = http.createServer(async (req, res) => {
       json(res, 400, { error: 'Invalid JSON' });
       return;
     }
-    const senders = Array.isArray(body?.payments)
+    const counterparties = Array.isArray(body?.payments)
       ? body.payments
           .filter((payment) => payment?.invoice === 'spark-test-sender')
           .map((payment) => ({ id: payment.id, accountId: 'acc_e2e', username: 'alice' }))
       : [];
-    json(res, 200, { senders });
+    json(res, 200, { counterparties });
     return;
   }
 

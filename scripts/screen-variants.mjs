@@ -1398,6 +1398,20 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/wallet/payment',
+    id: 'sent-to-member',
+    image: 'wallet-payment-sent-to-member.png',
+    visual: 'state-wallet-payment-sent-to-member',
+    needle: "shotScreen(page, 'state-wallet-payment-sent-to-member')",
+  },
+  {
+    route: '/wallet/payment',
+    id: 'sent-to-member-open',
+    image: 'wallet-payment-sent-to-member-open.png',
+    visual: 'state-wallet-payment-sent-to-member-open',
+    needle: "shotScreen(page, 'state-wallet-payment-sent-to-member-open')",
+  },
+  {
+    route: '/wallet/payment',
     id: 'heart-payment-pending',
     image: 'wallet-payment-heart-pending.png',
     visual: 'state-wallet-payment-heart-pending',

@@ -7,6 +7,7 @@ import {
   REPAYMENT_BORROWER_VISUAL_PAYMENT,
   REPAYMENT_GIVER_VISUAL_PAYMENT,
   RECEIVED_FROM_MEMBER_PAYMENT,
+  SENT_TO_MEMBER_PAYMENT,
   SHOP_SUM_VISUAL_PAYMENT,
   toFixturePayment,
   WALLET_PAYMENT_FIXTURES,
@@ -51,6 +52,11 @@ function pinnedPayment(id: string | null): WalletPaymentState | null {
   if (pin === 'received-from-member') {
     return id === RECEIVED_FROM_MEMBER_PAYMENT.id
       ? { status: 'ready', payment: toFixturePayment(RECEIVED_FROM_MEMBER_PAYMENT) }
+      : { status: 'missing' };
+  }
+  if (pin === 'sent-to-member') {
+    return id === SENT_TO_MEMBER_PAYMENT.id
+      ? { status: 'ready', payment: toFixturePayment(SENT_TO_MEMBER_PAYMENT) }
       : { status: 'missing' };
   }
   if (pin === 'heart-payment' || pin === 'heart-payment-pending') {

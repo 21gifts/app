@@ -21,7 +21,7 @@ import { preferredFiatSuffix } from '@/components/PreferredFiatSuffix';
 import { WalletBalance } from '@/components/WalletBalance';
 import { Button, Card, IconButton } from '@/components/ui';
 import { useHeartContext } from '@/hooks/useHeartContext';
-import { usePaymentSender } from '@/hooks/usePaymentSender';
+import { usePaymentCounterparty } from '@/hooks/usePaymentCounterparty';
 import { useShopChargeFigure } from '@/hooks/useShopChargeFigure';
 import { useSpotRate } from '@/hooks/useSpotRate';
 import { useWallet } from '@/hooks/useWallet';
@@ -38,6 +38,7 @@ import {
   satsToFiatAmount,
 } from '@/lib/stats-money';
 import { paymentLookupHash, paymentMessage, paymentTitle } from '@/lib/wallet/payment-display';
+import { isSparkPaymentRequest } from '@/lib/wallet/payment-counterparty';
 import type { WalletPayment } from '@/lib/wallet/wallet-sdk';
 
 /**
@@ -135,7 +136,7 @@ function PaymentView(props: { payment: WalletPayment }): ReactElement {
   const [leaving, setLeaving] = useState(false);
   const [open, setOpen] = useState(false);
   const received = payment.direction === 'received';
-  const sender = usePaymentSender(payment);
+  const sender = usePaymentCounterparty(payment);
   const host = typeof window === 'undefined' ? '21.gifts' : window.location.hostname;
   const senderAddress = sender === null ? null : giftsLightningAddress(sender.username, host);
   const Icon = received ? ArrowDownLeft : ArrowUpRight;
@@ -312,8 +313,21 @@ function PaymentView(props: { payment: WalletPayment }): ReactElement {
       <dl className="divide-y divide-app-border rounded-2xl border border-app-border px-4">
         <Row label={t('wallet.payment.date')}>{date}</Row>
         <Row label={t('wallet.payment.type')}>{t(METHOD_KEY[payment.method])}</Row>
-        {sender === null || senderAddress === null ? null : (
+        {!received || sender === null || senderAddress === null ? null : (
           <Row label={t('wallet.payment.from')}>
+            <Link
+              href={`/members/${sender.accountId}`}
+              className="break-all text-app-fg font-medium underline underline-offset-2"
+            >
+              {senderAddress}
+            </Link>
+          </Row>
+        )}
+        {received ||
+        info.lnAddress !== undefined ||
+        sender === null ||
+        senderAddress === null ? null : (
+          <Row label={t('wallet.payment.to')}>
             <Link
               href={`/members/${sender.accountId}`}
               className="break-all text-app-fg font-medium underline underline-offset-2"
@@ -401,7 +415,8 @@ function PaymentView(props: { payment: WalletPayment }): ReactElement {
             {info.vout === undefined ? null : (
               <CopyRow label={t('wallet.payment.output')} value={String(info.vout)} />
             )}
-            {info.invoice === undefined ? null : (
+            {info.invoice === undefined ||
+            (senderAddress !== null && isSparkPaymentRequest(info.invoice)) ? null : (
               <CopyRow label={t('wallet.payment.invoice')} value={info.invoice} />
             )}
             {info.paymentHash === undefined ? null : (

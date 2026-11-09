@@ -6,7 +6,7 @@ import { LocaleProvider } from '@/components/LocaleProvider';
 import { NumberFormatProvider } from '@/components/NumberFormatProvider';
 import { WalletPaymentDetails } from '@/components/WalletPaymentDetails';
 import { useShopChargeFigure } from '@/hooks/useShopChargeFigure';
-import { usePaymentSender } from '@/hooks/usePaymentSender';
+import { usePaymentCounterparty } from '@/hooks/usePaymentCounterparty';
 import { useSpotRateState } from '@/hooks/useSpotRate';
 import { useWallet, type UseWalletResult } from '@/hooks/useWallet';
 import { useWalletPayment, type WalletPaymentState } from '@/hooks/useWalletPayment';
@@ -42,7 +42,7 @@ vi.mock('@/hooks/useShopChargeFigure', () => ({
   useShopChargeFigure: vi.fn(() => ({ pending: false, figure: null })),
 }));
 vi.mock('@/hooks/useWalletPayment', () => ({ useWalletPayment: vi.fn() }));
-vi.mock('@/hooks/usePaymentSender', () => ({ usePaymentSender: vi.fn() }));
+vi.mock('@/hooks/usePaymentCounterparty', () => ({ usePaymentCounterparty: vi.fn() }));
 vi.mock('@/lib/in-app-browser', () => ({ openInSystemBrowser: vi.fn() }));
 vi.mock('@/hooks/useWallet', () => ({ useWallet: vi.fn() }));
 vi.mock('@/components/WalletBalance', () => ({
@@ -111,7 +111,7 @@ function openDetails(): void {
 }
 
 beforeEach(() => {
-  vi.mocked(usePaymentSender).mockReset().mockReturnValue(null);
+  vi.mocked(usePaymentCounterparty).mockReset().mockReturnValue(null);
   vi.mocked(useShopChargeFigure).mockReset();
   vi.mocked(useShopChargeFigure).mockReturnValue({ pending: false, figure: null });
   vi.mocked(useSpotRateState).mockReset().mockReturnValue({ rateDay: RATE_DAY, loading: false });
@@ -129,8 +129,52 @@ afterEach(() => {
 });
 
 describe('WalletPaymentDetails', () => {
+  it('shows the recipient for a sent payment without an existing address', () => {
+    vi.mocked(usePaymentCounterparty).mockReturnValue({
+      id: 'p1',
+      accountId: 'acc_bob',
+      username: 'bob',
+    });
+    showPayment({ ...fixture(SPARK_SEND), info: { invoice: 'spark1abc' } });
+    expect(screen.getByRole('link', { name: 'bob@21.gifts' }).getAttribute('href')).toBe(
+      '/members/acc_bob',
+    );
+    expect(screen.getAllByText('To', { selector: 'dt' })).toHaveLength(1);
+    openDetails();
+    expect(screen.queryByText('Payment request')).toBeNull();
+  });
+
+  it('keeps the existing To row when the counterparty is known', () => {
+    vi.mocked(usePaymentCounterparty).mockReturnValue({
+      id: 'p1',
+      accountId: 'acc_bob',
+      username: 'bob',
+    });
+    showPayment(fixture(ADDRESS_SEND));
+    expect(screen.getAllByText('To', { selector: 'dt' })).toHaveLength(1);
+    expect(screen.queryByRole('link', { name: 'bob@21.gifts' })).toBeNull();
+    openDetails();
+    expect(screen.getByText('Payment request')).toBeTruthy();
+  });
+
+  it('keeps a Spark request for an unknown counterparty', () => {
+    showPayment({ ...fixture(SPARK_SEND), info: { invoice: 'spark1abc' } });
+    openDetails();
+    expect(screen.getByText('Payment request')).toBeTruthy();
+  });
+
+  it('hides a Spark request for a known incoming counterparty', () => {
+    vi.mocked(usePaymentCounterparty).mockReturnValue({
+      id: 'p1',
+      accountId: 'acc_e2e',
+      username: 'alice',
+    });
+    showPayment({ ...fixture(NOTE_RECEIVE), info: { invoice: 'spark1abc' } });
+    openDetails();
+    expect(screen.queryByText('Payment request')).toBeNull();
+  });
   it('uses the 21.gifts host during server rendering', () => {
-    vi.mocked(usePaymentSender).mockReturnValue({
+    vi.mocked(usePaymentCounterparty).mockReturnValue({
       id: 'p1',
       accountId: 'acc_e2e',
       username: 'alice',
@@ -158,7 +202,7 @@ describe('WalletPaymentDetails', () => {
   });
 
   it('shows a known sender as a member link on an incoming payment', () => {
-    vi.mocked(usePaymentSender).mockReturnValue({
+    vi.mocked(usePaymentCounterparty).mockReturnValue({
       id: 'p1',
       accountId: 'acc_e2e',
       username: 'alice',
@@ -171,7 +215,7 @@ describe('WalletPaymentDetails', () => {
   });
 
   it('labels the sender in German', () => {
-    vi.mocked(usePaymentSender).mockReturnValue({
+    vi.mocked(usePaymentCounterparty).mockReturnValue({
       id: 'p1',
       accountId: 'acc_e2e',
       username: 'alice',
@@ -191,7 +235,11 @@ describe('WalletPaymentDetails', () => {
     showPayment(fixture(NOTE_RECEIVE));
     expect(screen.queryByText('From', { selector: 'dt' })).toBeNull();
     cleanup();
-    vi.mocked(usePaymentSender).mockReturnValue({ id: 'p1', accountId: 'acc_e2e', username: '' });
+    vi.mocked(usePaymentCounterparty).mockReturnValue({
+      id: 'p1',
+      accountId: 'acc_e2e',
+      username: '',
+    });
     showPayment(fixture(NOTE_RECEIVE));
     expect(screen.queryByText('From', { selector: 'dt' })).toBeNull();
   });

@@ -3970,7 +3970,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 ## Function: POST
 
-The `/me/wallet/senders` route re-exports `proxyMeWalletSendersPost` for the received-payment sender lookup.
+The `/me/wallet/counterparties` route re-exports `proxyMeWalletCounterpartiesPost` for the payment counterparty lookup.
 
 - **Purpose:** Shared App Router POST export name. `/me/name` re-exports `proxyMeNamePost`; `/me/location` re-exports `proxyMeLocationPost`; `/me/forum-laws-dismissed` re-exports `proxyMeForumLawsDismissedPost`; `/me/wallet-intro-seen` re-exports `proxyMeWalletIntroSeenPost`; `/me/notification-level` re-exports `proxyMeNotificationLevelPost`; `/me/heart-notifications` re-exports `proxyMeHeartNotificationsPost`; `/me/rules-agreement` re-exports `proxyMeRulesAgreementPost`; `/me/push-subscriptions` re-exports `proxyMePushSubscriptionsPost`; `/me/wallet-backup-seen` re-exports `proxyMeWalletBackupSeenPost`; `/me/wallet/report` re-exports `proxyMeWalletReportPost`; `/me/wallet/hearts` re-exports `proxyMeWalletHeartsPost`; `/me/events` re-exports `proxyMeEventsPost`; `/lnurlpay/[pubkey]` calls `proxyLnurlpayRegisterPost` and `/lnurlpay/[pubkey]/recover` calls `proxyLnurlpayRecoverPost` with the async `pubkey`; `/me/passkey-renew/report` re-exports `proxyMePasskeyRenewReportPost`; `/me/passkey-renew/ack` re-exports `proxyMePasskeyRenewAckPost`; `/auth/passkey/{register,authenticate,replace,seed,recovery}/{begin,finish}` re-export the ten passkey proxy POSTs; `/lnurlpay/[pubkey]/transfer` calls `proxyLnurlpayTransferPost` with the async `pubkey`; `/forum/messages` re-exports `proxyMessagesPost`; `/messages/[id]/invoice` re-exports `proxyMessagesInvoicePost`; `/messages/[id]/repayment` re-exports `proxyMessagesRepaymentPost`; `/messages/[id]/repayment/due` re-exports `proxyMessagesRepaymentDuePost`; `/conversations` re-exports `proxyConversationsPost`; `/conversations/[id]` re-exports `proxyConversationPost`; `/conversations/[id]/invoice` re-exports `proxyConversationInvoicePost`; `/conversations/[id]/read` re-exports `proxyConversationReadPost`; `/forum/notifications/read-all` re-exports `proxyNotificationsReadAllPost`; `/forum/notifications/read-by-message` re-exports `proxyNotificationsReadByMessagePost`; `/forum/notifications/read-visible` re-exports `proxyNotificationsReadVisiblePost`; `/forum/notifications/[id]/read` re-exports `proxyNotificationReadPost`; `/contact/submit` re-exports `proxyContactPost`; `/lnurl/pay-request` re-exports `proxyLnurlPayRequestPost`; `/lnurl/invoice` re-exports `proxyLnurlInvoicePost`; `/translate` re-exports `proxyTranslateNotePost` with JSON `{ messageId, target }`; `/conversations/[id]/messages/[messageId]/translate` re-exports `proxyTranslateConversationMessagePost` with JSON `{ target }`; `/trust/verify` re-exports `proxyTrustVerifyPost`; `/trust/propose-moderator` re-exports `proxyTrustProposeModeratorPost`; `/trust/confirm-moderator` re-exports `proxyTrustConfirmModeratorPost`; `/trust/reject-moderator` re-exports `proxyTrustRejectModeratorPost`; `/trust/appoint-moderator` re-exports `proxyTrustAppointModeratorPost`; `/funding/apply` re-exports `proxyFundingApplyPost`; `/funding/trial` re-exports `proxyFundingTrialPost`; `/funding/admit` re-exports `proxyFundingAdmitPost`; `/funding/reject` re-exports `proxyFundingRejectPost`; `/funding/daily-roster/comment` re-exports `proxyFundingDailyRosterCommentPost`; `/funding/daily-roster/payments` re-exports `proxyFundingDailyRosterPaymentsPost`; `/funding/daily-roster/recipients` re-exports `proxyFundingDailyRosterRecipientsPost`; `/funding/daily-roster/recipients/update` re-exports `proxyFundingDailyRosterRecipientsUpdatePost`; `/funding/daily-roster/recipients/delete` re-exports `proxyFundingDailyRosterRecipientsDeletePost`. `/pos/charge` re-exports `proxyPosPost`. HTML `/pos` is the till page, not a POST proxy. HTML `/messages` is the inbox page, not a POST proxy.
 - **Inputs:** Incoming `Request`.
@@ -5475,28 +5475,49 @@ The `/me/wallet/senders` route re-exports `proxyMeWalletSendersPost` for the rec
 - **Purpose:** Provide the sender associated with the screenshot payment.
 - **Inputs:** None; the fixture is fixed.
 - **Returns:** Payment id, account id and username for Alice.
-- **Used by:** `usePaymentSender` under the Playwright pin.
+- **Used by:** `usePaymentCounterparty` under the Playwright pin.
 
-## Function: fetchPaymentSenders
+## Function: SENT_TO_MEMBER_PAYMENT
 
-- **Purpose:** Look up senders for received wallet payments.
-- **Inputs:** A session and payment identifiers.
-- **Returns:** Valid sender rows, or an empty list on failure or invalid response.
-- **Used by:** `usePaymentSender`.
+- **Purpose:** Provide a completed outgoing Spark payment for screenshots.
+- **Inputs:** None.
+- **Returns:** A synthetic SDK payment of ₿200 with no fee.
+- **Used by:** `useWalletPayment` under the Playwright pin.
 
-## Function: usePaymentSender
+## Function: SENT_TO_MEMBER_COUNTERPARTY
 
-- **Purpose:** Resolve the sender of a completed incoming payment and retain the result within its session.
-- **Inputs:** One wallet payment.
-- **Returns:** Its sender or null; the screenshot pin returns the fixture without a request.
+- **Purpose:** Provide Bob as the screenshot payment's counterparty.
+- **Inputs:** None.
+- **Returns:** Payment id, account id and username.
+- **Used by:** `usePaymentCounterparty` under the Playwright pin.
+
+## Function: isSparkPaymentRequest
+
+- **Purpose:** Recognize Spark invoice and address prefixes.
+- **Inputs:** A payment request string.
+- **Returns:** Whether it begins with a Spark prefix.
 - **Used by:** `WalletPaymentDetails`.
 
-## Function: proxyMeWalletSendersPost
+## Function: fetchPaymentCounterparties
 
-- **Purpose:** Forward the sender lookup to the api.
+- **Purpose:** Look up counterparties for wallet payments.
+- **Inputs:** A session, payment identifiers, and incoming or outgoing direction.
+- **Returns:** Valid counterparty rows, or an empty list on failure or invalid response.
+- **Used by:** `usePaymentCounterparty`.
+
+## Function: usePaymentCounterparty
+
+- **Purpose:** Resolve the counterparty of a completed payment and retain the result within its session.
+- **Inputs:** One wallet payment.
+- **Returns:** Its counterparty or null; the screenshot pins return fixtures without a request.
+- **Used by:** `WalletPaymentDetails`.
+
+## Function: proxyMeWalletCounterpartiesPost
+
+- **Purpose:** Forward the counterparty lookup to the api.
 - **Inputs:** A POST request with bearer session and payment identifiers.
 - **Returns:** The upstream response.
-- **Used by:** `POST /me/wallet/senders`.
+- **Used by:** `POST /me/wallet/counterparties`.
 
 ## Function: fetchHeartPosts
 

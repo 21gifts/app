@@ -1052,9 +1052,21 @@ Pinned with `?visual=received-from-member` and id `ab12ce00-1545-4000-8000-00000
 
 ### Variant: received-from-member-open
 
-The same received payment after pressing **Details**: the payment request and payment ID are visible, and there is no payment hash. **Received**, `+₿200` with fiat, **Completed**, and the **Date**, **Type**, **From**, and **Amount** rows stay visible. **From** alice@21.gifts remains a link to `/members/acc_e2e`; there is no **Fee**, **Total**, or **To** row.
+The same received payment after pressing **Details**: the payment ID is visible; the Spark payment request is hidden and there is no payment hash. **Received**, `+₿200` with fiat, **Completed**, and the **Date**, **Type**, **From**, and **Amount** rows stay visible. **From** alice@21.gifts remains a link to `/members/acc_e2e`; there is no **Fee**, **Total**, or **To** row.
 
 ![21.gifts received payment from a member with details](images/wallet-payment-received-from-member-open.png)
+
+### Variant: sent-to-member
+
+Pinned with `?visual=sent-to-member` and id `ab12ce00-1545-4000-8000-000000000015`. The title is **Sent**, the amount is `−₿200` with fiat, and the status is **Completed**. The summary shows **Date**, **Type** Wallet transfer, **To** bob@21.gifts linking to `/members/acc_bob`, **Amount** with fiat, and **Fee** Free. There is no **From** or **Total** row. **Details** is closed and the payment ID is hidden.
+
+![21.gifts sent payment to a member](images/wallet-payment-sent-to-member.png)
+
+### Variant: sent-to-member-open
+
+The same sent payment after pressing **Details**: the payment ID is visible, the Spark payment request is hidden, and there is no payment hash. **Sent**, `−₿200` with fiat, **Completed**, and the **Date**, **Type**, **To**, **Amount**, and **Fee** rows remain visible. **To** bob@21.gifts remains a member link; there is no **From** or **Total** row.
+
+![21.gifts sent payment to a member with details](images/wallet-payment-sent-to-member-open.png)
 
 ### Variant: heart-payment-pending
 
