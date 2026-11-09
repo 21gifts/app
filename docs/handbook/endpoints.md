@@ -333,6 +333,13 @@
 - **Used by:** `postWalletReport` (from `reportWallet`).
 - **Auth:** Bearer.
 
+## Endpoint: POST /me/wallet/senders
+
+- **Purpose:** Resolve the sender of a received wallet payment through the same-origin api proxy.
+- **Inputs:** Bearer session and a `payments` array of payment ids, invoices and hashes.
+- **Returns:** The upstream `senders` response or its error status.
+- **Used by:** `fetchPaymentSenders` on the payment details screen.
+
 ## Endpoint: POST /me/wallet/hearts
 
 - **Purpose:** Same-origin proxy of api `POST /me/wallet/hearts`. Looks up the forum posts attached to 1–32 lowercase Spark payment hashes for the signed-in member, and the credit notes of the ones that are loan repayments.

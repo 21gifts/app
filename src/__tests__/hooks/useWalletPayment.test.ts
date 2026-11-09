@@ -161,6 +161,28 @@ describe('useWalletPayment', () => {
     });
   });
 
+  it('shows the received member fixture only in a Playwright build', async () => {
+    const { RECEIVED_FROM_MEMBER_PAYMENT } = await import('@/lib/wallet/payment-fixtures');
+    window.history.replaceState({}, '', '/wallet/payment?visual=received-from-member');
+    process.env.NEXT_PUBLIC_E2E_NOW = '2026-01-07T12:00:00.000Z';
+    expect(
+      renderHook(() => useWalletPayment(RECEIVED_FROM_MEMBER_PAYMENT.id)).result.current,
+    ).toEqual({
+      status: 'ready',
+      payment: toFixturePayment(RECEIVED_FROM_MEMBER_PAYMENT),
+    });
+    expect(renderHook(() => useWalletPayment('nope')).result.current).toEqual({
+      status: 'missing',
+    });
+    cleanup();
+    delete process.env.NEXT_PUBLIC_E2E_NOW;
+    vi.mocked(getWalletPayment).mockReturnValue(new Promise(() => undefined));
+    expect(
+      renderHook(() => useWalletPayment(RECEIVED_FROM_MEMBER_PAYMENT.id)).result.current,
+    ).toEqual({ status: 'loading' });
+    expect(getWalletPayment).toHaveBeenCalledWith(RECEIVED_FROM_MEMBER_PAYMENT.id);
+  });
+
   it.each(['heart-payment', 'heart-payment-pending'])(
     'shows only the heart fixture under the %s pin in a Playwright build',
     (pin) => {

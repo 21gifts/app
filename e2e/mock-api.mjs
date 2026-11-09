@@ -3476,6 +3476,29 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
+  if (method === 'POST' && pathName === '/me/wallet/senders') {
+    const token = bearer(req);
+    const account = token === null ? undefined : byToken.get(token);
+    if (!account) {
+      json(res, 401, { error: 'Unauthorized' });
+      return;
+    }
+    let body;
+    try {
+      body = JSON.parse(rawBody);
+    } catch {
+      json(res, 400, { error: 'Invalid JSON' });
+      return;
+    }
+    const senders = Array.isArray(body?.payments)
+      ? body.payments
+          .filter((payment) => payment?.invoice === 'spark-test-sender')
+          .map((payment) => ({ id: payment.id, accountId: 'acc_e2e', username: 'alice' }))
+      : [];
+    json(res, 200, { senders });
+    return;
+  }
+
   if (method === 'POST' && pathName === '/me/wallet/hearts') {
     const token = bearer(req);
     const account = token === null ? undefined : byToken.get(token);

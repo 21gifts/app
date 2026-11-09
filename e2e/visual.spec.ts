@@ -4903,6 +4903,30 @@ test.describe('screen baselines', () => {
     await shotScreen(page, 'state-wallet-payment-heart-open');
   });
 
+  test('state-wallet-payment-received-from-member', async ({ page }) => {
+    await stubWalletSetupAccount(page, { sparkWalletVerified: true });
+    await fulfillRateDay(page);
+    await page.goto(
+      '/wallet/payment?id=ab12ce00-1545-4000-8000-000000000014&visual=received-from-member',
+    );
+    await expect(page.getByRole('link', { name: 'alice@21.gifts' })).toHaveAttribute(
+      'href',
+      '/members/acc_e2e',
+    );
+    await shotScreen(page, 'state-wallet-payment-received-from-member');
+  });
+
+  test('state-wallet-payment-received-from-member-open', async ({ page }) => {
+    await stubWalletSetupAccount(page, { sparkWalletVerified: true });
+    await fulfillRateDay(page);
+    await page.goto(
+      '/wallet/payment?id=ab12ce00-1545-4000-8000-000000000014&visual=received-from-member',
+    );
+    await page.getByRole('button', { name: 'Details' }).click();
+    await expect(page.getByText('Payment request')).toBeVisible();
+    await shotScreen(page, 'state-wallet-payment-received-from-member-open');
+  });
+
   test('state-wallet-payment-heart-pending', async ({ page }) => {
     await stubWalletSetupAccount(page, { sparkWalletVerified: true });
     await fulfillRateDay(page);

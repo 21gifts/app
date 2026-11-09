@@ -74,6 +74,7 @@ const PINS = [
   ['heart-payment-pending', 'ready', WALLET_VISUAL_FIXTURE_SATS],
   ['history-repayment', 'ready', WALLET_VISUAL_FIXTURE_SATS],
   ['repayment-payment', 'ready', WALLET_VISUAL_FIXTURE_SATS],
+  ['received-from-member', 'ready', WALLET_VISUAL_FIXTURE_SATS],
   ['history-error', 'ready', WALLET_VISUAL_FIXTURE_SATS],
   ['wallet-received', 'ready', WALLET_VISUAL_FIXTURE_SATS],
   ['move-arrived', 'ready', WALLET_VISUAL_FIXTURE_SATS],

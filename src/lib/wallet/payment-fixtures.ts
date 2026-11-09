@@ -2,6 +2,31 @@ import type { Payment } from '@breeztech/breez-sdk-spark';
 import type { RepaymentContext } from '@/lib/wallet/heart-context';
 import { toWalletPayment, type WalletPayment } from '@/lib/wallet/wallet-sdk';
 
+/** Sender for the received-payment screenshot. */
+export const RECEIVED_FROM_MEMBER_SENDER = {
+  id: 'ab12ce00-1545-4000-8000-000000000014',
+  accountId: 'acc_e2e',
+  username: 'alice',
+};
+
+/** Received Spark payment for the sender screenshot, excluded from history. */
+export const RECEIVED_FROM_MEMBER_PAYMENT: Payment = {
+  id: RECEIVED_FROM_MEMBER_SENDER.id,
+  paymentType: 'receive',
+  status: 'completed',
+  amount: BigInt(200),
+  fees: BigInt(0),
+  timestamp: 1767765600,
+  method: 'spark',
+  details: {
+    type: 'spark',
+    invoiceDetails: {
+      invoice:
+        'spark1ce8w2tue0ms76rl8y7ht73mpfs857kguqml4d62ftgv25retfp4vvnh997vhac0dplnj0t4lgas5cr60tywqdl6ka9y45x92pu45s6kxfmjjlxt7u8kslee846l5wc2vpa84j8qxlatwjj26rz4q726gdgra7hw4',
+    },
+  },
+};
+
 /**
  * Person a fixture payment was sent to, when the SDK record has no address.
  * The sent gift is to the member alice, and the sent heart is to the member ada.

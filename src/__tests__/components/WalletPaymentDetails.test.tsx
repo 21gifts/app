@@ -1,11 +1,17 @@
 import { act, cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react';
+import { renderToString } from 'react-dom/server';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { FiatPreferenceProvider } from '@/components/FiatPreferenceProvider';
+import { LocaleProvider } from '@/components/LocaleProvider';
+import { NumberFormatProvider } from '@/components/NumberFormatProvider';
 import { WalletPaymentDetails } from '@/components/WalletPaymentDetails';
 import { useShopChargeFigure } from '@/hooks/useShopChargeFigure';
+import { usePaymentSender } from '@/hooks/usePaymentSender';
 import { useSpotRateState } from '@/hooks/useSpotRate';
 import { useWallet, type UseWalletResult } from '@/hooks/useWallet';
 import { useWalletPayment, type WalletPaymentState } from '@/hooks/useWalletPayment';
 import { openInSystemBrowser } from '@/lib/in-app-browser';
+import { getCatalog } from '@/lib/messages';
 import type { FiatRateDay } from '@/lib/stats-money';
 import {
   REPAYMENT_BORROWER_VISUAL_HASH,
@@ -36,6 +42,7 @@ vi.mock('@/hooks/useShopChargeFigure', () => ({
   useShopChargeFigure: vi.fn(() => ({ pending: false, figure: null })),
 }));
 vi.mock('@/hooks/useWalletPayment', () => ({ useWalletPayment: vi.fn() }));
+vi.mock('@/hooks/usePaymentSender', () => ({ usePaymentSender: vi.fn() }));
 vi.mock('@/lib/in-app-browser', () => ({ openInSystemBrowser: vi.fn() }));
 vi.mock('@/hooks/useWallet', () => ({ useWallet: vi.fn() }));
 vi.mock('@/components/WalletBalance', () => ({
@@ -104,6 +111,7 @@ function openDetails(): void {
 }
 
 beforeEach(() => {
+  vi.mocked(usePaymentSender).mockReset().mockReturnValue(null);
   vi.mocked(useShopChargeFigure).mockReset();
   vi.mocked(useShopChargeFigure).mockReturnValue({ pending: false, figure: null });
   vi.mocked(useSpotRateState).mockReset().mockReturnValue({ rateDay: RATE_DAY, loading: false });
@@ -121,6 +129,77 @@ afterEach(() => {
 });
 
 describe('WalletPaymentDetails', () => {
+  it('uses the 21.gifts host during server rendering', () => {
+    vi.mocked(usePaymentSender).mockReturnValue({
+      id: 'p1',
+      accountId: 'acc_e2e',
+      username: 'alice',
+    });
+    vi.mocked(useWalletPayment).mockReturnValue({
+      status: 'ready',
+      payment: fixture(NOTE_RECEIVE),
+    });
+    vi.stubGlobal('window', undefined);
+    try {
+      const html = renderToString(
+        <LocaleProvider locale="en" messages={getCatalog('en')}>
+          <NumberFormatProvider initial="ch">
+            <FiatPreferenceProvider initial="USD">
+              <WalletPaymentDetails />
+            </FiatPreferenceProvider>
+          </NumberFormatProvider>
+        </LocaleProvider>,
+      );
+      expect(html).toContain('alice@21.gifts');
+      expect(html).toContain('/members/acc_e2e');
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
+  it('shows a known sender as a member link on an incoming payment', () => {
+    vi.mocked(usePaymentSender).mockReturnValue({
+      id: 'p1',
+      accountId: 'acc_e2e',
+      username: 'alice',
+    });
+    showPayment(fixture(NOTE_RECEIVE));
+    expect(screen.getByText('From', { selector: 'dt' })).toBeTruthy();
+    expect(screen.getByRole('link', { name: 'alice@21.gifts' }).getAttribute('href')).toBe(
+      '/members/acc_e2e',
+    );
+  });
+
+  it('labels the sender in German', () => {
+    vi.mocked(usePaymentSender).mockReturnValue({
+      id: 'p1',
+      accountId: 'acc_e2e',
+      username: 'alice',
+    });
+    vi.mocked(useWalletPayment).mockReturnValue({
+      status: 'ready',
+      payment: fixture(NOTE_RECEIVE),
+    });
+    renderWithLocale(<WalletPaymentDetails />, 'de');
+    expect(screen.getByText('Von', { selector: 'dt' })).toBeTruthy();
+    expect(screen.getByRole('link', { name: 'alice@21.gifts' }).getAttribute('href')).toBe(
+      '/members/acc_e2e',
+    );
+  });
+
+  it('does not show a sender when lookup has no match or an empty username', () => {
+    showPayment(fixture(NOTE_RECEIVE));
+    expect(screen.queryByText('From', { selector: 'dt' })).toBeNull();
+    cleanup();
+    vi.mocked(usePaymentSender).mockReturnValue({ id: 'p1', accountId: 'acc_e2e', username: '' });
+    showPayment(fixture(NOTE_RECEIVE));
+    expect(screen.queryByText('From', { selector: 'dt' })).toBeNull();
+  });
+
+  it('does not show a sender for a sent payment without a lookup match', () => {
+    showPayment(fixture(SPARK_SEND));
+    expect(screen.queryByText('From', { selector: 'dt' })).toBeNull();
+  });
   it('reads the id from the address and shows nothing while loading', () => {
     show({ status: 'loading' });
     expect(useWalletPayment).toHaveBeenCalledWith('p1');

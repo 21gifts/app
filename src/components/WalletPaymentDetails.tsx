@@ -21,12 +21,14 @@ import { preferredFiatSuffix } from '@/components/PreferredFiatSuffix';
 import { WalletBalance } from '@/components/WalletBalance';
 import { Button, Card, IconButton } from '@/components/ui';
 import { useHeartContext } from '@/hooks/useHeartContext';
+import { usePaymentSender } from '@/hooks/usePaymentSender';
 import { useShopChargeFigure } from '@/hooks/useShopChargeFigure';
 import { useSpotRate } from '@/hooks/useSpotRate';
 import { useWallet } from '@/hooks/useWallet';
 import { useWalletPayment } from '@/hooks/useWalletPayment';
 import type { FiatCode } from '@/lib/committed-fiat';
 import { formatDefinedGoalAmount } from '@/lib/forum-goal';
+import { giftsLightningAddress } from '@/lib/gifts-address';
 import { openInSystemBrowser } from '@/lib/in-app-browser';
 import type { MessageKey } from '@/lib/messages';
 import {
@@ -133,6 +135,9 @@ function PaymentView(props: { payment: WalletPayment }): ReactElement {
   const [leaving, setLeaving] = useState(false);
   const [open, setOpen] = useState(false);
   const received = payment.direction === 'received';
+  const sender = usePaymentSender(payment);
+  const host = typeof window === 'undefined' ? '21.gifts' : window.location.hostname;
+  const senderAddress = sender === null ? null : giftsLightningAddress(sender.username, host);
   const Icon = received ? ArrowDownLeft : ArrowUpRight;
   const title = paymentTitle(payment);
   const { info } = payment;
@@ -307,6 +312,16 @@ function PaymentView(props: { payment: WalletPayment }): ReactElement {
       <dl className="divide-y divide-app-border rounded-2xl border border-app-border px-4">
         <Row label={t('wallet.payment.date')}>{date}</Row>
         <Row label={t('wallet.payment.type')}>{t(METHOD_KEY[payment.method])}</Row>
+        {sender === null || senderAddress === null ? null : (
+          <Row label={t('wallet.payment.from')}>
+            <Link
+              href={`/members/${sender.accountId}`}
+              className="break-all text-app-fg font-medium underline underline-offset-2"
+            >
+              {senderAddress}
+            </Link>
+          </Row>
+        )}
         {info.lnAddress === undefined ? null : (
           <Row label={t('wallet.payment.to')}>
             {info.memberAccountId === undefined ? (

@@ -14,6 +14,7 @@ import {
   proxyAuthPasskeySeedFinishPost,
   proxyMeWalletBackupSeenPost,
   proxyMeWalletHeartsPost,
+  proxyMeWalletSendersPost,
   proxyMeWalletReportPost,
   proxyMeEventsPost,
   proxyMeWalletPut,
@@ -197,6 +198,22 @@ describe('api proxy wrappers', () => {
     );
     const [url, init] = fetchMock.mock.calls[0] as [URL, RequestInit];
     expect(url.pathname).toBe('/me/wallet/report');
+    expect(new TextDecoder().decode(init.body as ArrayBuffer)).toBe(body);
+    expect((init.headers as Headers).get('authorization')).toBe('Bearer sess');
+  });
+
+  it('proxyMeWalletSendersPost forwards the body and bearer', async () => {
+    const fetchMock = stubApi();
+    const body = JSON.stringify({ payments: [{ id: 'p1', invoice: 'spark1', paymentHash: null }] });
+    await proxyMeWalletSendersPost(
+      new Request('http://localhost/me/wallet/senders', {
+        method: 'POST',
+        headers: { authorization: 'Bearer sess', 'content-type': 'application/json' },
+        body,
+      }),
+    );
+    const [url, init] = fetchMock.mock.calls[0] as [URL, RequestInit];
+    expect(url.pathname).toBe('/me/wallet/senders');
     expect(new TextDecoder().decode(init.body as ArrayBuffer)).toBe(body);
     expect((init.headers as Headers).get('authorization')).toBe('Bearer sess');
   });

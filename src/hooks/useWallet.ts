@@ -80,6 +80,7 @@ function visualStatus(reopened: boolean): WalletViewStatus | null {
     case 'heart-payment-pending':
     case 'history-repayment':
     case 'repayment-payment':
+    case 'received-from-member':
     case 'history-error':
     case 'wallet-received':
     case 'move-arrived':

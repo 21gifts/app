@@ -1044,6 +1044,18 @@ The same heart as heart-payment after pressing **Details**, so the payment reque
 
 ![21.gifts wallet payment heart open](images/wallet-payment-heart-open.png)
 
+### Variant: received-from-member
+
+Pinned with `?visual=received-from-member` and id `ab12ce00-1545-4000-8000-000000000014`. The incoming payment shows the title **Received**, `+₿200` with its fiat figure, and the **Completed** status. The summary has **Date**, **Type** Wallet transfer, **From** alice@21.gifts linking to `/members/acc_e2e`, and **Amount** with bitcoin and fiat. There is no **Fee**, **Total**, or **To** row. **Details** is closed, so the payment request and payment ID are hidden; this payment has no payment hash.
+
+![21.gifts received payment from a member](images/wallet-payment-received-from-member.png)
+
+### Variant: received-from-member-open
+
+The same received payment after pressing **Details**: the payment request and payment ID are visible, and there is no payment hash. **Received**, `+₿200` with fiat, **Completed**, and the **Date**, **Type**, **From**, and **Amount** rows stay visible. **From** alice@21.gifts remains a link to `/members/acc_e2e`; there is no **Fee**, **Total**, or **To** row.
+
+![21.gifts received payment from a member with details](images/wallet-payment-received-from-member-open.png)
+
 ### Variant: heart-payment-pending
 
 Pinned with `?visual=heart-payment-pending` and id `b7e4a1c0-6f28-4a55-9c31-0d5e8a7b6c42`. The post lookup has not returned: the direction badge stays, the **Gift** title stays, and there is no post card. The amount is `−₿1`, **Type** is Wallet transfer, **To** @ada is a link to that member's profile, and **Fee** is Free. **Details** is closed, so the payment request, the payment hash, and the payment id are not on this screen.

@@ -298,6 +298,71 @@ async function routeRepayments(page: Page): Promise<{ hashes: string[] }> {
   });
   return seen;
 }
+test.describe('POST /me/wallet/senders', () => {
+  test('Function: RECEIVED_FROM_MEMBER_PAYMENT — the pin shows a received payment', async ({
+    page,
+  }) => {
+    await stubHeartLookupWallet(page);
+    await page.goto(
+      '/wallet/payment?id=ab12ce00-1545-4000-8000-000000000014&visual=received-from-member',
+    );
+    await expect(page.getByRole('link', { name: 'alice@21.gifts' })).toBeVisible();
+  });
+
+  test('Function: RECEIVED_FROM_MEMBER_SENDER — the pin links to Alice', async ({ page }) => {
+    await stubHeartLookupWallet(page);
+    await page.goto(
+      '/wallet/payment?id=ab12ce00-1545-4000-8000-000000000014&visual=received-from-member',
+    );
+    await expect(page.getByRole('link', { name: 'alice@21.gifts' })).toHaveAttribute(
+      'href',
+      '/members/acc_e2e',
+    );
+  });
+
+  test('Function: proxyMeWalletSendersPost — forwards sender lookup', async ({ request }) => {
+    expect((await request.post('/me/wallet/senders', { data: { payments: [] } })).status()).toBe(
+      401,
+    );
+    const token = await newMember(request);
+    const res = await request.post('/me/wallet/senders', {
+      headers: { authorization: `Bearer ${token}` },
+      data: { payments: [{ id: 'payment-1', invoice: 'spark-test-sender', paymentHash: null }] },
+    });
+    expect(await res.json()).toEqual({
+      senders: [{ id: 'payment-1', accountId: 'acc_e2e', username: 'alice' }],
+    });
+  });
+
+  test('Function: fetchPaymentSenders — resolves the incoming payment', async ({ page }) => {
+    await stubHeartLookupWallet(page);
+    await page.route('**/me/wallet/senders', async (route) => {
+      const body = route.request().postDataJSON() as { payments: { id: string }[] };
+      await route.fulfill({
+        json: {
+          senders: body.payments.map(({ id }) => ({ id, accountId: 'acc_e2e', username: 'alice' })),
+        },
+      });
+    });
+    await page.goto('/wallet/payment?id=6a6c3f1f-5841-415b-b8a6-f21d3e513bae&visual=history-rows');
+    await expect(page.getByRole('link', { name: 'alice@21.gifts' })).toHaveAttribute(
+      'href',
+      '/members/acc_e2e',
+    );
+  });
+
+  test('Function: usePaymentSender — shows no sender for an unmatched incoming payment', async ({
+    page,
+  }) => {
+    await stubHeartLookupWallet(page);
+    await page.route('**/me/wallet/senders', async (route) => {
+      await route.fulfill({ json: { senders: [] } });
+    });
+    await page.goto('/wallet/payment?id=6a6c3f1f-5841-415b-b8a6-f21d3e513bae&visual=history-rows');
+    await expect(page.getByText('Coffee & croissant')).toBeVisible();
+    await expect(page.getByText('From', { exact: true })).toHaveCount(0);
+  });
+});
 
 test.describe('POST /me/wallet/hearts', () => {
   test('Function: proxyMeWalletHeartsPost — 401 without a session', async ({ request }) => {

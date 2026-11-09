@@ -424,6 +424,16 @@ export async function proxyMeWalletHeartsPost(request: Request): Promise<Respons
 }
 
 /**
+ * Proxies the signed-in member's payment sender lookup to the api.
+ *
+ * @param request - Incoming request with session and payment identifiers.
+ * @returns The upstream response.
+ */
+export async function proxyMeWalletSendersPost(request: Request): Promise<Response> {
+  return proxyApiRequest(request, '/me/wallet/senders');
+}
+
+/**
  * Proxies POST /me/events (interaction log batch) to the 21.gifts api.
  *
  * @param request - Incoming App Router request (Bearer session + JSON `{ events }`).
