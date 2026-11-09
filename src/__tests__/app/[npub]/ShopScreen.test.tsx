@@ -113,6 +113,7 @@ describe('ShopScreen', () => {
     expect(screen.queryByText('Shop')).toBeNull();
     expect(screen.getByText('Coffee, gifts, and moonlight.')).toBeTruthy();
     const photo = screen.getByAltText('Photo from Cafe Luna');
+    expect(photo.getAttribute('src')).toBe('/messages/111/photo.jpg');
     expect(screen.getByText('Old Town')).toBeTruthy();
     expect(screen.getByText('Moon Street 21')).toBeTruthy();
     expect(screen.getByText('8000 Zurich')).toBeTruthy();
@@ -236,6 +237,7 @@ describe('ShopScreen', () => {
             { url: 'javascript:alert(1)', width: null, height: null },
             { url: 'http://api.21.gifts/one.jpg', width: null, height: null },
             { url: 'https://api.21.gifts/two.jpg', width: null, height: null },
+            { url: 'https://api.21.gifts/messages/111/photo.png', width: 4, height: 5 },
           ],
         }}
       />,
@@ -244,8 +246,9 @@ describe('ShopScreen', () => {
     expect(stills.map((node) => node.getAttribute('src'))).toEqual([
       'http://api.21.gifts/one.jpg',
       'https://api.21.gifts/two.jpg',
+      '/messages/111/photo.jpg',
     ]);
-    expect(stills.map((node) => node.getAttribute('data-photo-index'))).toEqual(['0', '1']);
+    expect(stills.map((node) => node.getAttribute('data-photo-index'))).toEqual(['0', '1', '2']);
     expect(await screen.findByRole('img', { name: 'Open CryptoPay QR code' })).toBeTruthy();
   });
 

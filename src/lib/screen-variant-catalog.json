@@ -180,6 +180,12 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/terms:default",
+    "label": "/terms default",
+    "visual": "screen-terms",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/about:default",
     "label": "/about default",
     "visual": "screen-about",
@@ -201,6 +207,12 @@
     "id": "/login:error",
     "label": "/login error",
     "visual": "state-login-error",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/login:prf-unsupported",
+    "label": "/login prf-unsupported",
+    "visual": "state-login-prf-unsupported",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
@@ -252,6 +264,18 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/login:closed",
+    "label": "/login closed",
+    "visual": "state-login-closed",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/login:outdated",
+    "label": "/login outdated",
+    "visual": "state-login-outdated",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/login:in-app",
     "label": "/login in-app",
     "visual": "state-login-in-app",
@@ -261,6 +285,24 @@
     "id": "/login:language-open",
     "label": "/login language-open",
     "visual": "state-login-language",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/login:held-session",
+    "label": "/login held-session",
+    "visual": "state-login-held-session",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/login:held-session-passkey-missed",
+    "label": "/login held-session-passkey-missed",
+    "visual": "state-login-held-session-passkey-missed",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/login:recovery-pending",
+    "label": "/login recovery-pending",
+    "visual": "state-login-recovery-pending",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
@@ -288,18 +330,6 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
-    "id": "/pl:rate-loading",
-    "label": "/pl rate-loading",
-    "visual": "state-pl-rate-loading",
-    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
-  },
-  {
-    "id": "/pl:no-rate",
-    "label": "/pl no-rate",
-    "visual": "state-pl-no-rate",
-    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
-  },
-  {
     "id": "/pl:invalid",
     "label": "/pl invalid",
     "visual": "state-pl-invalid",
@@ -324,21 +354,1155 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/pl:shop",
+    "label": "/pl shop",
+    "visual": "state-pl-shop",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/pl:lightning-only",
+    "label": "/pl lightning-only",
+    "visual": "state-pl-lightning-only",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/pl:shop-invoice-failed",
+    "label": "/pl shop-invoice-failed",
+    "visual": "state-pl-shop-invoice-failed",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/pl:shop-invoice-loading",
+    "label": "/pl shop-invoice-loading",
+    "visual": "state-pl-shop-invoice-loading",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/pl:shop-awaiting",
+    "label": "/pl shop-awaiting",
+    "visual": "state-pl-shop-awaiting",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/pl:shop-window-passed",
+    "label": "/pl shop-window-passed",
+    "visual": "state-pl-shop-window-passed",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/pl:shop-typed-fiat",
+    "label": "/pl shop-typed-fiat",
+    "visual": "state-pl-shop-typed-fiat",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/pl:on-its-way",
+    "label": "/pl on-its-way",
+    "visual": "state-pl-on-its-way",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/pl:paid",
+    "label": "/pl paid",
+    "visual": "state-pl-paid",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/pl:ended",
+    "label": "/pl ended",
+    "visual": "state-pl-ended",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/pl:start-failed",
+    "label": "/pl start-failed",
+    "visual": "state-pl-start-failed",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/pl:start-waiting",
+    "label": "/pl start-waiting",
+    "visual": "state-pl-start-waiting",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/pl:replaced",
+    "label": "/pl replaced",
+    "visual": "state-pl-replaced",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/wallet:default",
     "label": "/wallet default",
     "visual": "screen-wallet",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
-    "id": "/wallet:reveal",
-    "label": "/wallet reveal",
-    "visual": "state-wallet-reveal",
+    "id": "/wallet:balance-locked",
+    "label": "/wallet balance-locked",
+    "visual": "state-wallet-balance-locked",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
-    "id": "/wallet:reveal-open",
-    "label": "/wallet reveal-open",
-    "visual": "state-wallet-reveal-open",
+    "id": "/wallet:balance-locked-prf-unsupported",
+    "label": "/wallet balance-locked-prf-unsupported",
+    "visual": "state-wallet-balance-locked-prf-unsupported",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/wallet:balance-locked-error",
+    "label": "/wallet balance-locked-error",
+    "visual": "state-wallet-balance-locked-error",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/wallet:balance-locked-closed",
+    "label": "/wallet balance-locked-closed",
+    "visual": "state-wallet-balance-locked-closed",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/wallet:balance-locked-outdated",
+    "label": "/wallet balance-locked-outdated",
+    "visual": "state-wallet-balance-locked-outdated",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/wallet:balance-locked-passkey-missed",
+    "label": "/wallet balance-locked-passkey-missed",
+    "visual": "state-wallet-balance-locked-passkey-missed",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/wallet:balance-connecting",
+    "label": "/wallet balance-connecting",
+    "visual": "state-wallet-balance-connecting",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/wallet:balance-downloading",
+    "label": "/wallet balance-downloading",
+    "visual": "state-wallet-balance-downloading",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/wallet:balance-ready",
+    "label": "/wallet balance-ready",
+    "visual": "state-wallet-balance-ready",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/wallet:balance-ready-no-rate",
+    "label": "/wallet balance-ready-no-rate",
+    "visual": "state-wallet-balance-ready-no-rate",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/wallet:balance-fiat",
+    "label": "/wallet balance-fiat",
+    "visual": "state-wallet-balance-fiat",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/wallet:receive",
+    "label": "/wallet receive",
+    "visual": "state-wallet-receive",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/wallet:receive-copied",
+    "label": "/wallet receive-copied",
+    "visual": "state-wallet-receive-copied",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/wallet:receive-no-username",
+    "label": "/wallet receive-no-username",
+    "visual": "state-wallet-receive-no-username",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/wallet:receive-opening",
+    "label": "/wallet receive-opening",
+    "visual": "state-wallet-receive-opening",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/wallet:receive-setup-failed",
+    "label": "/wallet receive-setup-failed",
+    "visual": "state-wallet-receive-setup-failed",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/wallet:balance-error",
+    "label": "/wallet balance-error",
+    "visual": "state-wallet-balance-error",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/wallet:balance-reopening",
+    "label": "/wallet balance-reopening",
+    "visual": "state-wallet-balance-reopening",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/wallet:setup-failed",
+    "label": "/wallet setup-failed",
+    "visual": "state-wallet-setup-failed",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/wallet:setup-pending",
+    "label": "/wallet setup-pending",
+    "visual": "state-wallet-setup-pending",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/wallet:history-empty",
+    "label": "/wallet history-empty",
+    "visual": "state-wallet-history-empty",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/wallet:history-rows",
+    "label": "/wallet history-rows",
+    "visual": "state-wallet-history-rows",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/wallet:history-heart",
+    "label": "/wallet history-heart",
+    "visual": "state-wallet-history-heart",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/wallet:history-heart-pending",
+    "label": "/wallet history-heart-pending",
+    "visual": "state-wallet-history-heart-pending",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/wallet:history-error",
+    "label": "/wallet history-error",
+    "visual": "state-wallet-history-error",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/wallet:send-input",
+    "label": "/wallet send-input",
+    "visual": "state-wallet-send-input",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/wallet:send-manual",
+    "label": "/wallet send-manual",
+    "visual": "state-wallet-send-manual",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/wallet:send-manual-alert",
+    "label": "/wallet send-manual-alert",
+    "visual": "state-wallet-send-manual-alert",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/wallet:send-manual-busy",
+    "label": "/wallet send-manual-busy",
+    "visual": "state-wallet-send-manual-busy",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/wallet:send-paste-denied",
+    "label": "/wallet send-paste-denied",
+    "visual": "state-wallet-send-paste-denied",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/wallet:send-paste-empty",
+    "label": "/wallet send-paste-empty",
+    "visual": "state-wallet-send-paste-empty",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/wallet:send-camera-denied",
+    "label": "/wallet send-camera-denied",
+    "visual": "state-wallet-send-camera-denied",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/wallet:send-camera-unavailable",
+    "label": "/wallet send-camera-unavailable",
+    "visual": "state-wallet-send-camera-unavailable",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/wallet:send-camera-paused",
+    "label": "/wallet send-camera-paused",
+    "visual": "state-wallet-send-camera-paused",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/wallet:send-amount",
+    "label": "/wallet send-amount",
+    "visual": "state-wallet-send-amount",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/wallet:send-amount-fiat",
+    "label": "/wallet send-amount-fiat",
+    "visual": "state-wallet-send-amount-fiat",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/wallet:send-confirm",
+    "label": "/wallet send-confirm",
+    "visual": "state-wallet-send-confirm",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/wallet:send-sent",
+    "label": "/wallet send-sent",
+    "visual": "state-wallet-send-sent",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/wallet:send-amount-onchain",
+    "label": "/wallet send-amount-onchain",
+    "visual": "state-wallet-send-amount-onchain",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/wallet:send-amount-onchain-min",
+    "label": "/wallet send-amount-onchain-min",
+    "visual": "state-wallet-send-amount-onchain-min",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/wallet:send-confirm-onchain",
+    "label": "/wallet send-confirm-onchain",
+    "visual": "state-wallet-send-confirm-onchain",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/wallet:send-confirm-onchain-fast",
+    "label": "/wallet send-confirm-onchain-fast",
+    "visual": "state-wallet-send-confirm-onchain-fast",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/wallet:send-confirm-onchain-slow",
+    "label": "/wallet send-confirm-onchain-slow",
+    "visual": "state-wallet-send-confirm-onchain-slow",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/wallet:send-confirm-onchain-low",
+    "label": "/wallet send-confirm-onchain-low",
+    "visual": "state-wallet-send-confirm-onchain-low",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/wallet:send-confirm-onchain-renewed",
+    "label": "/wallet send-confirm-onchain-renewed",
+    "visual": "state-wallet-send-confirm-onchain-renewed",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/wallet:send-confirm-onchain-renewing",
+    "label": "/wallet send-confirm-onchain-renewing",
+    "visual": "state-wallet-send-confirm-onchain-renewing",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/wallet:send-confirm-onchain-sending",
+    "label": "/wallet send-confirm-onchain-sending",
+    "visual": "state-wallet-send-confirm-onchain-sending",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/wallet:send-error",
+    "label": "/wallet send-error",
+    "visual": "state-wallet-send-error",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/wallet:send-unsupported",
+    "label": "/wallet send-unsupported",
+    "visual": "state-wallet-send-unsupported",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/wallet:send-invalid",
+    "label": "/wallet send-invalid",
+    "visual": "state-wallet-send-invalid",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/wallet:send-failed",
+    "label": "/wallet send-failed",
+    "visual": "state-wallet-send-failed",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/wallet:send-insufficient",
+    "label": "/wallet send-insufficient",
+    "visual": "state-wallet-send-insufficient",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/wallet:send-amount-error",
+    "label": "/wallet send-amount-error",
+    "visual": "state-wallet-send-amount-error",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/wallet:send-amount-request",
+    "label": "/wallet send-amount-request",
+    "visual": "state-wallet-send-amount-request",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/wallet:send-amount-no-comment",
+    "label": "/wallet send-amount-no-comment",
+    "visual": "state-wallet-send-amount-no-comment",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/wallet:send-amount-min",
+    "label": "/wallet send-amount-min",
+    "visual": "state-wallet-send-amount-min",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/wallet:send-confirm-sending",
+    "label": "/wallet send-confirm-sending",
+    "visual": "state-wallet-send-confirm-sending",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/wallet:send-confirm-fixed",
+    "label": "/wallet send-confirm-fixed",
+    "visual": "state-wallet-send-confirm-fixed",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/wallet:send-confirm-shop",
+    "label": "/wallet send-confirm-shop",
+    "visual": "state-wallet-send-confirm-shop",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/wallet:send-confirm-member",
+    "label": "/wallet send-confirm-member",
+    "visual": "state-wallet-send-confirm-member",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/wallet:send-input-busy",
+    "label": "/wallet send-input-busy",
+    "visual": "state-wallet-send-input-busy",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/wallet:send-amount-busy",
+    "label": "/wallet send-amount-busy",
+    "visual": "state-wallet-send-amount-busy",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/wallet:send-not-payable",
+    "label": "/wallet send-not-payable",
+    "visual": "state-wallet-send-not-payable",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/wallet:send-not-found",
+    "label": "/wallet send-not-found",
+    "visual": "state-wallet-send-not-found",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/wallet:send-relay-unreachable",
+    "label": "/wallet send-relay-unreachable",
+    "visual": "state-wallet-send-relay-unreachable",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/wallet:send-unreadable",
+    "label": "/wallet send-unreadable",
+    "visual": "state-wallet-send-unreadable",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/wallet:send-unavailable",
+    "label": "/wallet send-unavailable",
+    "visual": "state-wallet-send-unavailable",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/wallet:send-input-opening",
+    "label": "/wallet send-input-opening",
+    "visual": "state-wallet-send-input-opening",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/wallet:send-input-wallet-error",
+    "label": "/wallet send-input-wallet-error",
+    "visual": "state-wallet-send-input-wallet-error",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/wallet:send-confirm-opening",
+    "label": "/wallet send-confirm-opening",
+    "visual": "state-wallet-send-confirm-opening",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/wallet:send-confirm-wallet-error",
+    "label": "/wallet send-confirm-wallet-error",
+    "visual": "state-wallet-send-confirm-wallet-error",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/wallet:send-comment-long",
+    "label": "/wallet send-comment-long",
+    "visual": "state-wallet-send-comment-long",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/wallet:loans",
+    "label": "/wallet loans",
+    "visual": "state-wallet-loans",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/wallet:loans-open",
+    "label": "/wallet loans-open",
+    "visual": "state-wallet-loans-open",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/wallet:loans-waiting-all",
+    "label": "/wallet loans-waiting-all",
+    "visual": "state-wallet-loans-waiting-all",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/wallet:loans-waiting-all-open",
+    "label": "/wallet loans-waiting-all-open",
+    "visual": "state-wallet-loans-waiting-all-open",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/wallet:loans-waiting-fiat",
+    "label": "/wallet loans-waiting-fiat",
+    "visual": "state-wallet-loans-waiting-fiat",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/wallet:loans-waiting-fiat-open",
+    "label": "/wallet loans-waiting-fiat-open",
+    "visual": "state-wallet-loans-waiting-fiat-open",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/wallet:received",
+    "label": "/wallet received",
+    "visual": "state-wallet-received",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/wallet:received-banner",
+    "label": "/wallet received-banner",
+    "visual": "state-wallet-received-banner",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/wallet:received-bump",
+    "label": "/wallet received-bump",
+    "visual": "state-wallet-received-bump",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/wallet:receive-move",
+    "label": "/wallet receive-move",
+    "visual": "state-wallet-receive-move",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/wallet:move-intro",
+    "label": "/wallet move-intro",
+    "visual": "state-wallet-move-intro",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/wallet:move-intro-receive",
+    "label": "/wallet move-intro-receive",
+    "visual": "state-wallet-move-intro-receive",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/wallet:move-address",
+    "label": "/wallet move-address",
+    "visual": "state-wallet-move-address",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/wallet:move-address-copied",
+    "label": "/wallet move-address-copied",
+    "visual": "state-wallet-move-address-copied",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/wallet:move-waiting",
+    "label": "/wallet move-waiting",
+    "visual": "state-wallet-move-waiting",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/wallet:move-arrived",
+    "label": "/wallet move-arrived",
+    "visual": "state-wallet-move-arrived",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/wallet/payment:default",
+    "label": "/wallet/payment default",
+    "visual": "screen-wallet-payment",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/wallet/payment:default-open",
+    "label": "/wallet/payment default-open",
+    "visual": "state-wallet-payment-default-open",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/wallet/payment:address-send",
+    "label": "/wallet/payment address-send",
+    "visual": "state-wallet-payment-address-send",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/wallet/payment:address-send-open",
+    "label": "/wallet/payment address-send-open",
+    "visual": "state-wallet-payment-address-send-open",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/wallet/payment:spark-send",
+    "label": "/wallet/payment spark-send",
+    "visual": "state-wallet-payment-spark-send",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/wallet/payment:details-open",
+    "label": "/wallet/payment details-open",
+    "visual": "state-wallet-payment-details-open",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/wallet/payment:shop",
+    "label": "/wallet/payment shop",
+    "visual": "state-wallet-payment-shop",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/wallet/payment:shop-open",
+    "label": "/wallet/payment shop-open",
+    "visual": "state-wallet-payment-shop-open",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/wallet/payment:heart-payment",
+    "label": "/wallet/payment heart-payment",
+    "visual": "state-wallet-payment-heart",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/wallet/payment:heart-payment-open",
+    "label": "/wallet/payment heart-payment-open",
+    "visual": "state-wallet-payment-heart-open",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/wallet/payment:heart-payment-pending",
+    "label": "/wallet/payment heart-payment-pending",
+    "visual": "state-wallet-payment-heart-pending",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/wallet/payment:heart-payment-pending-open",
+    "label": "/wallet/payment heart-payment-pending-open",
+    "visual": "state-wallet-payment-heart-pending-open",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/wallet/payment:pending",
+    "label": "/wallet/payment pending",
+    "visual": "state-wallet-payment-pending",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/wallet/payment:pending-open",
+    "label": "/wallet/payment pending-open",
+    "visual": "state-wallet-payment-pending-open",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/wallet/payment:failed",
+    "label": "/wallet/payment failed",
+    "visual": "state-wallet-payment-failed",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/wallet/payment:failed-open",
+    "label": "/wallet/payment failed-open",
+    "visual": "state-wallet-payment-failed-open",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/wallet/payment:deposit",
+    "label": "/wallet/payment deposit",
+    "visual": "state-wallet-payment-deposit",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/wallet/payment:deposit-open",
+    "label": "/wallet/payment deposit-open",
+    "visual": "state-wallet-payment-deposit-open",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/wallet/payment:withdraw",
+    "label": "/wallet/payment withdraw",
+    "visual": "state-wallet-payment-withdraw",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/wallet/payment:withdraw-open",
+    "label": "/wallet/payment withdraw-open",
+    "visual": "state-wallet-payment-withdraw-open",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/wallet/payment:missing",
+    "label": "/wallet/payment missing",
+    "visual": "state-wallet-payment-missing",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/wallet/payment:load-error",
+    "label": "/wallet/payment load-error",
+    "visual": "state-wallet-payment-load-error",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/wallet/payment:copied",
+    "label": "/wallet/payment copied",
+    "visual": "state-wallet-payment-copied",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/wallet/payment:external-link",
+    "label": "/wallet/payment external-link",
+    "visual": "state-wallet-payment-external-link",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/wallet/payment:loading",
+    "label": "/wallet/payment loading",
+    "visual": "state-wallet-payment-loading",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/wallet/payment:locked",
+    "label": "/wallet/payment locked",
+    "visual": "state-wallet-payment-locked",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/wallet/payment:connecting",
+    "label": "/wallet/payment connecting",
+    "visual": "state-wallet-payment-connecting",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/wallet/payment:downloading",
+    "label": "/wallet/payment downloading",
+    "visual": "state-wallet-payment-downloading",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/wallet/payment:error",
+    "label": "/wallet/payment error",
+    "visual": "state-wallet-payment-error",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/wallet/payment:prf-unsupported",
+    "label": "/wallet/payment prf-unsupported",
+    "visual": "state-wallet-payment-prf-unsupported",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/wallet/payment:locked-error",
+    "label": "/wallet/payment locked-error",
+    "visual": "state-wallet-payment-locked-error",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/wallet/payment:locked-passkey-missed",
+    "label": "/wallet/payment locked-passkey-missed",
+    "visual": "state-wallet-payment-locked-passkey-missed",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/wallet/payment:setup-failed",
+    "label": "/wallet/payment setup-failed",
+    "visual": "state-wallet-payment-setup-failed",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/loans/repay:default",
+    "label": "/loans/repay default",
+    "visual": "screen-loans-repay",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/loans/repay:who-open",
+    "label": "/loans/repay who-open",
+    "visual": "state-loans-repay-who-open",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/loans/repay:ledger-loading",
+    "label": "/loans/repay ledger-loading",
+    "visual": "state-loans-repay-ledger-loading",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/loans/repay:ledger-loading-who-open",
+    "label": "/loans/repay ledger-loading-who-open",
+    "visual": "state-loans-repay-ledger-loading-who-open",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/loans/repay:ledger-error",
+    "label": "/loans/repay ledger-error",
+    "visual": "state-loans-repay-ledger-error",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/loans/repay:ledger-error-who-open",
+    "label": "/loans/repay ledger-error-who-open",
+    "visual": "state-loans-repay-ledger-error-who-open",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/loans/repay:unavailable",
+    "label": "/loans/repay unavailable",
+    "visual": "state-loans-repay-unavailable",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/loans/repay:unavailable-who-open",
+    "label": "/loans/repay unavailable-who-open",
+    "visual": "state-loans-repay-unavailable-who-open",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/loans/repay:connecting",
+    "label": "/loans/repay connecting",
+    "visual": "state-loans-repay-connecting",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/loans/repay:connecting-who-open",
+    "label": "/loans/repay connecting-who-open",
+    "visual": "state-loans-repay-connecting-who-open",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/loans/repay:setup-failed",
+    "label": "/loans/repay setup-failed",
+    "visual": "state-loans-repay-setup-failed",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/loans/repay:setup-failed-who-open",
+    "label": "/loans/repay setup-failed-who-open",
+    "visual": "state-loans-repay-setup-failed-who-open",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/loans/repay:loading",
+    "label": "/loans/repay loading",
+    "visual": "state-loans-repay-loading",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/loans/repay:multi",
+    "label": "/loans/repay multi",
+    "visual": "state-loans-repay-multi",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/loans/repay:multi-who-open",
+    "label": "/loans/repay multi-who-open",
+    "visual": "state-loans-repay-multi-who-open",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/loans/repay:fiat",
+    "label": "/loans/repay fiat",
+    "visual": "state-loans-repay-fiat",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/loans/repay:fiat-who-open",
+    "label": "/loans/repay fiat-who-open",
+    "visual": "state-loans-repay-fiat-who-open",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/loans/repay:waiting-fiat",
+    "label": "/loans/repay waiting-fiat",
+    "visual": "state-loans-repay-waiting-fiat",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/loans/repay:waiting-fiat-who-open",
+    "label": "/loans/repay waiting-fiat-who-open",
+    "visual": "state-loans-repay-waiting-fiat-who-open",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/loans/repay:behind",
+    "label": "/loans/repay behind",
+    "visual": "state-loans-repay-behind",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/loans/repay:behind-who-open",
+    "label": "/loans/repay behind-who-open",
+    "visual": "state-loans-repay-behind-who-open",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/loans/repay:waiting",
+    "label": "/loans/repay waiting",
+    "visual": "state-loans-repay-waiting",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/loans/repay:waiting-who-open",
+    "label": "/loans/repay waiting-who-open",
+    "visual": "state-loans-repay-waiting-who-open",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/loans/repay:waiting-all",
+    "label": "/loans/repay waiting-all",
+    "visual": "state-loans-repay-waiting-all",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/loans/repay:waiting-all-who-open",
+    "label": "/loans/repay waiting-all-who-open",
+    "visual": "state-loans-repay-waiting-all-who-open",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/loans/repay:short",
+    "label": "/loans/repay short",
+    "visual": "state-loans-repay-short",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/loans/repay:short-who-open",
+    "label": "/loans/repay short-who-open",
+    "visual": "state-loans-repay-short-who-open",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/loans/repay:fee-gap",
+    "label": "/loans/repay fee-gap",
+    "visual": "state-loans-repay-fee-gap",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/loans/repay:fee-gap-who-open",
+    "label": "/loans/repay fee-gap-who-open",
+    "visual": "state-loans-repay-fee-gap-who-open",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/loans/repay:fee-gap-topup",
+    "label": "/loans/repay fee-gap-topup",
+    "visual": "state-loans-repay-fee-gap-topup",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/loans/repay:fee-gap-topup-who-open",
+    "label": "/loans/repay fee-gap-topup-who-open",
+    "visual": "state-loans-repay-fee-gap-topup-who-open",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/loans/repay:fee-gap-topup-copied",
+    "label": "/loans/repay fee-gap-topup-copied",
+    "visual": "state-loans-repay-fee-gap-topup-copied",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/loans/repay:fee-gap-topup-copied-who-open",
+    "label": "/loans/repay fee-gap-topup-copied-who-open",
+    "visual": "state-loans-repay-fee-gap-topup-copied-who-open",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/loans/repay:topup",
+    "label": "/loans/repay topup",
+    "visual": "state-loans-repay-topup",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/loans/repay:topup-who-open",
+    "label": "/loans/repay topup-who-open",
+    "visual": "state-loans-repay-topup-who-open",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/loans/repay:topup-copied",
+    "label": "/loans/repay topup-copied",
+    "visual": "state-loans-repay-topup-copied",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/loans/repay:topup-copied-who-open",
+    "label": "/loans/repay topup-copied-who-open",
+    "visual": "state-loans-repay-topup-copied-who-open",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/loans/repay:sending",
+    "label": "/loans/repay sending",
+    "visual": "state-loans-repay-sending",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/loans/repay:sending-who-open",
+    "label": "/loans/repay sending-who-open",
+    "visual": "state-loans-repay-sending-who-open",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/loans/repay:partial",
+    "label": "/loans/repay partial",
+    "visual": "state-loans-repay-partial",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/loans/repay:partial-who-open",
+    "label": "/loans/repay partial-who-open",
+    "visual": "state-loans-repay-partial-who-open",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/loans/repay:repaid",
+    "label": "/loans/repay repaid",
+    "visual": "state-loans-repay-repaid",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/loans/repay:last-due",
+    "label": "/loans/repay last-due",
+    "visual": "state-loans-repay-last-due",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/loans/repay:last-due-who-open",
+    "label": "/loans/repay last-due-who-open",
+    "visual": "state-loans-repay-last-due-who-open",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/loans/repay:last",
+    "label": "/loans/repay last",
+    "visual": "state-loans-repay-last",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/loans/repay:last-multi",
+    "label": "/loans/repay last-multi",
+    "visual": "state-loans-repay-last-multi",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/loans/repay:nothing-due",
+    "label": "/loans/repay nothing-due",
+    "visual": "state-loans-repay-nothing-due",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/loans/repay:sunday",
+    "label": "/loans/repay sunday",
+    "visual": "state-loans-repay-sunday",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/loans/repay:unconfirmed",
+    "label": "/loans/repay unconfirmed",
+    "visual": "state-loans-repay-unconfirmed",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/loans/repay:unconfirmed-who-open",
+    "label": "/loans/repay unconfirmed-who-open",
+    "visual": "state-loans-repay-unconfirmed-who-open",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/loans/repay:failed",
+    "label": "/loans/repay failed",
+    "visual": "state-loans-repay-failed",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/loans/repay:failed-who-open",
+    "label": "/loans/repay failed-who-open",
+    "visual": "state-loans-repay-failed-who-open",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/loans/repay:failed-cannot-receive",
+    "label": "/loans/repay failed-cannot-receive",
+    "visual": "state-loans-repay-failed-cannot-receive",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/loans/repay:failed-cannot-receive-who-open",
+    "label": "/loans/repay failed-cannot-receive-who-open",
+    "visual": "state-loans-repay-failed-cannot-receive-who-open",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/loans/repay:collecting",
+    "label": "/loans/repay collecting",
+    "visual": "state-loans-repay-collecting",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/loans/repay:none",
+    "label": "/loans/repay none",
+    "visual": "state-loans-repay-none",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/loans/repay:load-error",
+    "label": "/loans/repay load-error",
+    "visual": "state-loans-repay-load-error",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
@@ -378,6 +1542,696 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/security:default",
+    "label": "/security default",
+    "visual": "screen-security",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/security:no-phrase",
+    "label": "/security no-phrase",
+    "visual": "state-security-no-phrase",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/security:social-recovery-off",
+    "label": "/security social-recovery-off",
+    "visual": "state-security-social-recovery-off",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/security:social-recovery-on",
+    "label": "/security social-recovery-on",
+    "visual": "state-security-social-recovery-on",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/security:previous-wallets",
+    "label": "/security previous-wallets",
+    "visual": "state-security-previous-wallets",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/security:previous-wallets-error",
+    "label": "/security previous-wallets-error",
+    "visual": "state-security-previous-wallets-error",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/settings:default",
+    "label": "/settings default",
+    "visual": "screen-settings",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/settings:menu-header-account-loading",
+    "label": "/settings menu-header-account-loading",
+    "visual": "state-settings-menu-header-account-loading",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/settings:no-username",
+    "label": "/settings no-username",
+    "visual": "state-settings-no-username",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/settings:address-copied",
+    "label": "/settings address-copied",
+    "visual": "state-settings-address-copied",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/settings:default-amount-fiat",
+    "label": "/settings default-amount-fiat",
+    "visual": "state-settings-default-amount-fiat",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/settings:notification-level-gifted",
+    "label": "/settings notification-level-gifted",
+    "visual": "state-settings-notification-level-gifted",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/settings:notification-level-error",
+    "label": "/settings notification-level-error",
+    "visual": "state-settings-notification-level-error",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/settings:heart-notify-error",
+    "label": "/settings heart-notify-error",
+    "visual": "state-settings-heart-notify-error",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/settings:push-enable-error",
+    "label": "/settings push-enable-error",
+    "visual": "state-settings-push-enable-error",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/settings/held-shares:default",
+    "label": "/settings/held-shares default",
+    "visual": "screen-settings-held-shares",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/settings/held-shares:unlock",
+    "label": "/settings/held-shares unlock",
+    "visual": "state-held-shares-unlock",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/settings/held-shares:unlock-error",
+    "label": "/settings/held-shares unlock-error",
+    "visual": "state-held-shares-unlock-error",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/settings/held-shares:unlock-timeout",
+    "label": "/settings/held-shares unlock-timeout",
+    "visual": "state-held-shares-unlock-timeout",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/settings/held-shares:unlock-prf-unsupported",
+    "label": "/settings/held-shares unlock-prf-unsupported",
+    "visual": "state-held-shares-unlock-prf-unsupported",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/settings/held-shares:unlock-busy",
+    "label": "/settings/held-shares unlock-busy",
+    "visual": "state-held-shares-unlock-busy",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/settings/held-shares:opening",
+    "label": "/settings/held-shares opening",
+    "visual": "state-held-shares-opening",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/settings/held-shares:load-error",
+    "label": "/settings/held-shares load-error",
+    "visual": "state-held-shares-load-error",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/settings/held-shares:list",
+    "label": "/settings/held-shares list",
+    "visual": "state-held-shares-list",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/settings/held-shares:locked",
+    "label": "/settings/held-shares locked",
+    "visual": "state-held-shares-locked",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/settings/held-shares:locked-delete-confirm",
+    "label": "/settings/held-shares locked-delete-confirm",
+    "visual": "state-held-shares-locked-delete-confirm",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/settings/held-shares:scan",
+    "label": "/settings/held-shares scan",
+    "visual": "state-held-shares-scan",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/settings/held-shares:saving",
+    "label": "/settings/held-shares saving",
+    "visual": "state-held-shares-saving",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/settings/held-shares:stored",
+    "label": "/settings/held-shares stored",
+    "visual": "state-held-shares-stored",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/settings/held-shares:refused-own",
+    "label": "/settings/held-shares refused-own",
+    "visual": "state-held-shares-refused-own",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/settings/held-shares:refused-duplicate",
+    "label": "/settings/held-shares refused-duplicate",
+    "visual": "state-held-shares-refused-duplicate",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/settings/held-shares:save-error",
+    "label": "/settings/held-shares save-error",
+    "visual": "state-held-shares-save-error",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/settings/held-shares:delete-error",
+    "label": "/settings/held-shares delete-error",
+    "visual": "state-held-shares-delete-error",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/settings/held-shares:locked-delete-error",
+    "label": "/settings/held-shares locked-delete-error",
+    "visual": "state-held-shares-locked-delete-error",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/settings/held-shares:invalid",
+    "label": "/settings/held-shares invalid",
+    "visual": "state-held-shares-invalid",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/settings/held-shares:qr",
+    "label": "/settings/held-shares qr",
+    "visual": "state-held-shares-qr",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/settings/held-shares:delete-confirm",
+    "label": "/settings/held-shares delete-confirm",
+    "visual": "state-held-shares-delete-confirm",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/settings/held-shares:camera-denied",
+    "label": "/settings/held-shares camera-denied",
+    "visual": "state-held-shares-camera-denied",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/settings/held-shares:camera-unavailable",
+    "label": "/settings/held-shares camera-unavailable",
+    "visual": "state-held-shares-camera-unavailable",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/settings/social-recovery:default",
+    "label": "/settings/social-recovery default",
+    "visual": "screen-settings-social-recovery",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/settings/social-recovery:intro-renew",
+    "label": "/settings/social-recovery intro-renew",
+    "visual": "state-social-recovery-intro-renew",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/settings/social-recovery:checking",
+    "label": "/settings/social-recovery checking",
+    "visual": "state-social-recovery-checking",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/settings/social-recovery:share-1",
+    "label": "/settings/social-recovery share-1",
+    "visual": "state-social-recovery-share-1",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/settings/social-recovery:share-2",
+    "label": "/settings/social-recovery share-2",
+    "visual": "state-social-recovery-share-2",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/settings/social-recovery:saving",
+    "label": "/settings/social-recovery saving",
+    "visual": "state-social-recovery-saving",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/settings/social-recovery:done",
+    "label": "/settings/social-recovery done",
+    "visual": "state-social-recovery-done",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/settings/social-recovery:wallet-mismatch",
+    "label": "/settings/social-recovery wallet-mismatch",
+    "visual": "state-social-recovery-wallet-mismatch",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/settings/social-recovery:wallet-error",
+    "label": "/settings/social-recovery wallet-error",
+    "visual": "state-social-recovery-wallet-error",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/settings/social-recovery:save-error",
+    "label": "/settings/social-recovery save-error",
+    "visual": "state-social-recovery-save-error",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/settings/social-recovery:wallet-changed",
+    "label": "/settings/social-recovery wallet-changed",
+    "visual": "state-social-recovery-wallet-changed",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/recover:default",
+    "label": "/recover default",
+    "visual": "screen-recover",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/recover:scan",
+    "label": "/recover scan",
+    "visual": "state-recover-scan",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/recover:scan-second",
+    "label": "/recover scan-second",
+    "visual": "state-recover-scan-second",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/recover:scan-second-camera",
+    "label": "/recover scan-second-camera",
+    "visual": "state-recover-scan-second-camera",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/recover:code-invalid",
+    "label": "/recover code-invalid",
+    "visual": "state-recover-code-invalid",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/recover:code-same",
+    "label": "/recover code-same",
+    "visual": "state-recover-code-same",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/recover:code-other-set",
+    "label": "/recover code-other-set",
+    "visual": "state-recover-code-other-set",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/recover:camera-denied",
+    "label": "/recover camera-denied",
+    "visual": "state-recover-camera-denied",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/recover:camera-unavailable",
+    "label": "/recover camera-unavailable",
+    "visual": "state-recover-camera-unavailable",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/recover:type",
+    "label": "/recover type",
+    "visual": "state-recover-type",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/recover:words-invalid",
+    "label": "/recover words-invalid",
+    "visual": "state-recover-words-invalid",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/recover:no-wallet",
+    "label": "/recover no-wallet",
+    "visual": "state-recover-no-wallet",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/recover:opening",
+    "label": "/recover opening",
+    "visual": "state-recover-opening",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/recover:opening-wait",
+    "label": "/recover opening-wait",
+    "visual": "state-recover-opening-wait",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/recover:blocked-closed",
+    "label": "/recover blocked-closed",
+    "visual": "state-recover-blocked-closed",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/recover:blocked-outdated",
+    "label": "/recover blocked-outdated",
+    "visual": "state-recover-blocked-outdated",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/recover:not-found",
+    "label": "/recover not-found",
+    "visual": "state-recover-not-found",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/recover:already-done",
+    "label": "/recover already-done",
+    "visual": "state-recover-already-done",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/recover:operator",
+    "label": "/recover operator",
+    "visual": "state-recover-operator",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/recover:other-account",
+    "label": "/recover other-account",
+    "visual": "state-recover-other-account",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/recover:unavailable",
+    "label": "/recover unavailable",
+    "visual": "state-recover-unavailable",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/recover:wallet-error",
+    "label": "/recover wallet-error",
+    "visual": "state-recover-wallet-error",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/recover:found",
+    "label": "/recover found",
+    "visual": "state-recover-found",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/recover:found-busy",
+    "label": "/recover found-busy",
+    "visual": "state-recover-found-busy",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/recover:restart",
+    "label": "/recover restart",
+    "visual": "state-recover-restart",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/recover:passkey-cancelled",
+    "label": "/recover passkey-cancelled",
+    "visual": "state-recover-passkey-cancelled",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/recover:passkey-timeout",
+    "label": "/recover passkey-timeout",
+    "visual": "state-recover-passkey-timeout",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/recover:prf-unsupported",
+    "label": "/recover prf-unsupported",
+    "visual": "state-recover-prf-unsupported",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/recover:new-wallet-error",
+    "label": "/recover new-wallet-error",
+    "visual": "state-recover-new-wallet-error",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/recover:transfer",
+    "label": "/recover transfer",
+    "visual": "state-recover-transfer",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/recover:transfer-busy",
+    "label": "/recover transfer-busy",
+    "visual": "state-recover-transfer-busy",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/recover:transfer-progress",
+    "label": "/recover transfer-progress",
+    "visual": "state-recover-transfer-progress",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/recover:transfer-error",
+    "label": "/recover transfer-error",
+    "visual": "state-recover-transfer-error",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/recover:balance-error",
+    "label": "/recover balance-error",
+    "visual": "state-recover-balance-error",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/recover:done",
+    "label": "/recover done",
+    "visual": "state-recover-done",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/recover:done-balance-missing",
+    "label": "/recover done-balance-missing",
+    "visual": "state-recover-done-balance-missing",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/recover:done-warning",
+    "label": "/recover done-warning",
+    "visual": "state-recover-done-warning",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/settings/previous-wallets/[sparkPubkey]:default",
+    "label": "/settings/previous-wallets/[sparkPubkey] default",
+    "visual": "screen-settings-previous-wallets-sparkPubkey",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/settings/previous-wallets/[sparkPubkey]:not-found",
+    "label": "/settings/previous-wallets/[sparkPubkey] not-found",
+    "visual": "state-previous-wallet-not-found",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/settings/previous-wallets/[sparkPubkey]:load-error",
+    "label": "/settings/previous-wallets/[sparkPubkey] load-error",
+    "visual": "state-previous-wallet-load-error",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/settings/previous-wallets/[sparkPubkey]:scan",
+    "label": "/settings/previous-wallets/[sparkPubkey] scan",
+    "visual": "state-previous-wallet-scan",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/settings/previous-wallets/[sparkPubkey]:scan-second",
+    "label": "/settings/previous-wallets/[sparkPubkey] scan-second",
+    "visual": "state-previous-wallet-scan-second",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/settings/previous-wallets/[sparkPubkey]:scan-second-camera",
+    "label": "/settings/previous-wallets/[sparkPubkey] scan-second-camera",
+    "visual": "state-previous-wallet-scan-second-camera",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/settings/previous-wallets/[sparkPubkey]:code-invalid",
+    "label": "/settings/previous-wallets/[sparkPubkey] code-invalid",
+    "visual": "state-previous-wallet-code-invalid",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/settings/previous-wallets/[sparkPubkey]:code-same",
+    "label": "/settings/previous-wallets/[sparkPubkey] code-same",
+    "visual": "state-previous-wallet-code-same",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/settings/previous-wallets/[sparkPubkey]:code-other-set",
+    "label": "/settings/previous-wallets/[sparkPubkey] code-other-set",
+    "visual": "state-previous-wallet-code-other-set",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/settings/previous-wallets/[sparkPubkey]:code-other-account",
+    "label": "/settings/previous-wallets/[sparkPubkey] code-other-account",
+    "visual": "state-previous-wallet-code-other-account",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/settings/previous-wallets/[sparkPubkey]:camera-denied",
+    "label": "/settings/previous-wallets/[sparkPubkey] camera-denied",
+    "visual": "state-previous-wallet-camera-denied",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/settings/previous-wallets/[sparkPubkey]:camera-unavailable",
+    "label": "/settings/previous-wallets/[sparkPubkey] camera-unavailable",
+    "visual": "state-previous-wallet-camera-unavailable",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/settings/previous-wallets/[sparkPubkey]:type",
+    "label": "/settings/previous-wallets/[sparkPubkey] type",
+    "visual": "state-previous-wallet-type",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/settings/previous-wallets/[sparkPubkey]:words-invalid",
+    "label": "/settings/previous-wallets/[sparkPubkey] words-invalid",
+    "visual": "state-previous-wallet-words-invalid",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/settings/previous-wallets/[sparkPubkey]:opening",
+    "label": "/settings/previous-wallets/[sparkPubkey] opening",
+    "visual": "state-previous-wallet-opening",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/settings/previous-wallets/[sparkPubkey]:mismatch",
+    "label": "/settings/previous-wallets/[sparkPubkey] mismatch",
+    "visual": "state-previous-wallet-mismatch",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/settings/previous-wallets/[sparkPubkey]:wallet-error",
+    "label": "/settings/previous-wallets/[sparkPubkey] wallet-error",
+    "visual": "state-previous-wallet-wallet-error",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/settings/previous-wallets/[sparkPubkey]:balance",
+    "label": "/settings/previous-wallets/[sparkPubkey] balance",
+    "visual": "state-previous-wallet-balance",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/settings/previous-wallets/[sparkPubkey]:sending",
+    "label": "/settings/previous-wallets/[sparkPubkey] sending",
+    "visual": "state-previous-wallet-sending",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/settings/previous-wallets/[sparkPubkey]:error",
+    "label": "/settings/previous-wallets/[sparkPubkey] error",
+    "visual": "state-previous-wallet-error",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/settings/previous-wallets/[sparkPubkey]:empty",
+    "label": "/settings/previous-wallets/[sparkPubkey] empty",
+    "visual": "state-previous-wallet-empty",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/settings/previous-wallets/[sparkPubkey]:remove-confirm",
+    "label": "/settings/previous-wallets/[sparkPubkey] remove-confirm",
+    "visual": "state-previous-wallet-remove-confirm",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/settings/previous-wallets/[sparkPubkey]:removing",
+    "label": "/settings/previous-wallets/[sparkPubkey] removing",
+    "visual": "state-previous-wallet-removing",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/settings/previous-wallets/[sparkPubkey]:remove-error",
+    "label": "/settings/previous-wallets/[sparkPubkey] remove-error",
+    "visual": "state-previous-wallet-remove-error",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/settings/previous-wallets/[sparkPubkey]:done",
+    "label": "/settings/previous-wallets/[sparkPubkey] done",
+    "visual": "state-previous-wallet-done",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/settings/previous-wallets/[sparkPubkey]:done-remove-confirm",
+    "label": "/settings/previous-wallets/[sparkPubkey] done-remove-confirm",
+    "visual": "state-previous-wallet-done-remove-confirm",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/settings/previous-wallets/[sparkPubkey]:done-removing",
+    "label": "/settings/previous-wallets/[sparkPubkey] done-removing",
+    "visual": "state-previous-wallet-done-removing",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/settings/previous-wallets/[sparkPubkey]:done-remove-error",
+    "label": "/settings/previous-wallets/[sparkPubkey] done-remove-error",
+    "visual": "state-previous-wallet-done-remove-error",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/setup/name:default",
     "label": "/setup/name default",
     "visual": "screen-setup-name",
@@ -414,6 +2268,12 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/setup/username:username-frozen",
+    "label": "/setup/username username-frozen",
+    "visual": "state-setup-username-frozen",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/setup/username:empty",
     "label": "/setup/username empty",
     "visual": "state-setup-username-empty",
@@ -435,54 +2295,6 @@
     "id": "/setup/username:request",
     "label": "/setup/username request",
     "visual": "state-setup-username-request",
-    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
-  },
-  {
-    "id": "/setup/address:default",
-    "label": "/setup/address default",
-    "visual": "screen-setup-address",
-    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
-  },
-  {
-    "id": "/setup/address:empty",
-    "label": "/setup/address empty",
-    "visual": "state-setup-address-empty",
-    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
-  },
-  {
-    "id": "/setup/address:long",
-    "label": "/setup/address long",
-    "visual": "state-setup-address-long",
-    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
-  },
-  {
-    "id": "/setup/address:format",
-    "label": "/setup/address format",
-    "visual": "state-setup-address-format",
-    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
-  },
-  {
-    "id": "/setup/address:taken",
-    "label": "/setup/address taken",
-    "visual": "state-setup-address-taken",
-    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
-  },
-  {
-    "id": "/setup/address:not-found",
-    "label": "/setup/address not-found",
-    "visual": "state-setup-address-not-found",
-    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
-  },
-  {
-    "id": "/setup/address:not-zap",
-    "label": "/setup/address not-zap",
-    "visual": "state-setup-address-not-zap",
-    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
-  },
-  {
-    "id": "/setup/address:request",
-    "label": "/setup/address request",
-    "visual": "state-setup-address-request",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
@@ -564,15 +2376,375 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
-    "id": "/welcome:daily-payout-stopped",
-    "label": "/welcome daily-payout-stopped",
-    "visual": "state-welcome-daily-payout-stopped",
+    "id": "/welcome:held-session",
+    "label": "/welcome held-session",
+    "visual": "state-welcome-held-session",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
-    "id": "/welcome:daily-payout-stopped-apply",
-    "label": "/welcome daily-payout-stopped-apply",
-    "visual": "state-welcome-daily-payout-stopped-apply",
+    "id": "/welcome:held-session-closed",
+    "label": "/welcome held-session-closed",
+    "visual": "state-welcome-held-session-closed",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:held-session-outdated",
+    "label": "/welcome held-session-outdated",
+    "visual": "state-welcome-held-session-outdated",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:held-session-recovery-pending",
+    "label": "/welcome held-session-recovery-pending",
+    "visual": "state-welcome-held-session-recovery-pending",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:held-session-passkey-missed",
+    "label": "/welcome held-session-passkey-missed",
+    "visual": "state-welcome-held-session-passkey-missed",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:wallet-buttons",
+    "label": "/welcome wallet-buttons",
+    "visual": "state-welcome-wallet-buttons",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:wallet-buttons-slim",
+    "label": "/welcome wallet-buttons-slim",
+    "visual": "state-welcome-wallet-buttons-slim",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:reaction-form",
+    "label": "/welcome reaction-form",
+    "visual": "state-welcome-reaction-form",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:reaction-open",
+    "label": "/welcome reaction-open",
+    "visual": "state-welcome-reaction-open",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:wallet-setup-pending",
+    "label": "/welcome wallet-setup-pending",
+    "visual": "state-welcome-wallet-setup-pending",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:wallet-receive",
+    "label": "/welcome wallet-receive",
+    "visual": "state-welcome-wallet-receive",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:wallet-receive-opening",
+    "label": "/welcome wallet-receive-opening",
+    "visual": "state-welcome-wallet-receive-opening",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:wallet-receive-setup-failed",
+    "label": "/welcome wallet-receive-setup-failed",
+    "visual": "state-welcome-wallet-receive-setup-failed",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:wallet-send-camera",
+    "label": "/welcome wallet-send-camera",
+    "visual": "state-welcome-wallet-send-camera",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:wallet-send-camera-denied",
+    "label": "/welcome wallet-send-camera-denied",
+    "visual": "state-welcome-wallet-send-camera-denied",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:wallet-send-manual",
+    "label": "/welcome wallet-send-manual",
+    "visual": "state-welcome-wallet-send-manual",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:wallet-send-manual-alert",
+    "label": "/welcome wallet-send-manual-alert",
+    "visual": "state-welcome-wallet-send-manual-alert",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:wallet-send-manual-busy",
+    "label": "/welcome wallet-send-manual-busy",
+    "visual": "state-welcome-wallet-send-manual-busy",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:wallet-send-paste-denied",
+    "label": "/welcome wallet-send-paste-denied",
+    "visual": "state-welcome-wallet-send-paste-denied",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:wallet-send-paste-empty",
+    "label": "/welcome wallet-send-paste-empty",
+    "visual": "state-welcome-wallet-send-paste-empty",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:wallet-send-camera-unavailable",
+    "label": "/welcome wallet-send-camera-unavailable",
+    "visual": "state-welcome-wallet-send-camera-unavailable",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:wallet-send-camera-paused",
+    "label": "/welcome wallet-send-camera-paused",
+    "visual": "state-welcome-wallet-send-camera-paused",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:wallet-send-amount",
+    "label": "/welcome wallet-send-amount",
+    "visual": "state-welcome-wallet-send-amount",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:wallet-send-amount-fiat",
+    "label": "/welcome wallet-send-amount-fiat",
+    "visual": "state-welcome-wallet-send-amount-fiat",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:wallet-send-confirm",
+    "label": "/welcome wallet-send-confirm",
+    "visual": "state-welcome-wallet-send-confirm",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:wallet-send-sent",
+    "label": "/welcome wallet-send-sent",
+    "visual": "state-welcome-wallet-send-sent",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:wallet-send-unsupported",
+    "label": "/welcome wallet-send-unsupported",
+    "visual": "state-welcome-wallet-send-unsupported",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:wallet-send-unreadable",
+    "label": "/welcome wallet-send-unreadable",
+    "visual": "state-welcome-wallet-send-unreadable",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:wallet-send-input-opening",
+    "label": "/welcome wallet-send-input-opening",
+    "visual": "state-welcome-wallet-send-input-opening",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:wallet-send-input-wallet-error",
+    "label": "/welcome wallet-send-input-wallet-error",
+    "visual": "state-welcome-wallet-send-input-wallet-error",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:wallet-send-confirm-opening",
+    "label": "/welcome wallet-send-confirm-opening",
+    "visual": "state-welcome-wallet-send-confirm-opening",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:wallet-send-confirm-wallet-error",
+    "label": "/welcome wallet-send-confirm-wallet-error",
+    "visual": "state-welcome-wallet-send-confirm-wallet-error",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:wallet-send-invalid",
+    "label": "/welcome wallet-send-invalid",
+    "visual": "state-welcome-wallet-send-invalid",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:wallet-send-failed",
+    "label": "/welcome wallet-send-failed",
+    "visual": "state-welcome-wallet-send-failed",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:wallet-send-insufficient",
+    "label": "/welcome wallet-send-insufficient",
+    "visual": "state-welcome-wallet-send-insufficient",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:wallet-send-amount-error",
+    "label": "/welcome wallet-send-amount-error",
+    "visual": "state-welcome-wallet-send-amount-error",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:wallet-send-amount-request",
+    "label": "/welcome wallet-send-amount-request",
+    "visual": "state-welcome-wallet-send-amount-request",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:wallet-send-amount-no-comment",
+    "label": "/welcome wallet-send-amount-no-comment",
+    "visual": "state-welcome-wallet-send-amount-no-comment",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:wallet-send-amount-min",
+    "label": "/welcome wallet-send-amount-min",
+    "visual": "state-welcome-wallet-send-amount-min",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:wallet-send-confirm-sending",
+    "label": "/welcome wallet-send-confirm-sending",
+    "visual": "state-welcome-wallet-send-confirm-sending",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:wallet-send-confirm-fixed",
+    "label": "/welcome wallet-send-confirm-fixed",
+    "visual": "state-welcome-wallet-send-confirm-fixed",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:wallet-send-confirm-shop",
+    "label": "/welcome wallet-send-confirm-shop",
+    "visual": "state-welcome-wallet-send-confirm-shop",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:wallet-send-confirm-member",
+    "label": "/welcome wallet-send-confirm-member",
+    "visual": "state-welcome-wallet-send-confirm-member",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:wallet-send-amount-onchain",
+    "label": "/welcome wallet-send-amount-onchain",
+    "visual": "state-welcome-wallet-send-amount-onchain",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:wallet-send-amount-onchain-min",
+    "label": "/welcome wallet-send-amount-onchain-min",
+    "visual": "state-welcome-wallet-send-amount-onchain-min",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:wallet-send-confirm-onchain",
+    "label": "/welcome wallet-send-confirm-onchain",
+    "visual": "state-welcome-wallet-send-confirm-onchain",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:wallet-send-confirm-onchain-fast",
+    "label": "/welcome wallet-send-confirm-onchain-fast",
+    "visual": "state-welcome-wallet-send-confirm-onchain-fast",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:wallet-send-confirm-onchain-slow",
+    "label": "/welcome wallet-send-confirm-onchain-slow",
+    "visual": "state-welcome-wallet-send-confirm-onchain-slow",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:wallet-send-confirm-onchain-low",
+    "label": "/welcome wallet-send-confirm-onchain-low",
+    "visual": "state-welcome-wallet-send-confirm-onchain-low",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:wallet-send-confirm-onchain-renewed",
+    "label": "/welcome wallet-send-confirm-onchain-renewed",
+    "visual": "state-welcome-wallet-send-confirm-onchain-renewed",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:wallet-send-confirm-onchain-renewing",
+    "label": "/welcome wallet-send-confirm-onchain-renewing",
+    "visual": "state-welcome-wallet-send-confirm-onchain-renewing",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:wallet-send-confirm-onchain-sending",
+    "label": "/welcome wallet-send-confirm-onchain-sending",
+    "visual": "state-welcome-wallet-send-confirm-onchain-sending",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:wallet-send-input-busy",
+    "label": "/welcome wallet-send-input-busy",
+    "visual": "state-welcome-wallet-send-input-busy",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:wallet-send-amount-busy",
+    "label": "/welcome wallet-send-amount-busy",
+    "visual": "state-welcome-wallet-send-amount-busy",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:wallet-send-error",
+    "label": "/welcome wallet-send-error",
+    "visual": "state-welcome-wallet-send-error",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:wallet-send-not-payable",
+    "label": "/welcome wallet-send-not-payable",
+    "visual": "state-welcome-wallet-send-not-payable",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:wallet-send-not-found",
+    "label": "/welcome wallet-send-not-found",
+    "visual": "state-welcome-wallet-send-not-found",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:wallet-send-relay-unreachable",
+    "label": "/welcome wallet-send-relay-unreachable",
+    "visual": "state-welcome-wallet-send-relay-unreachable",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:wallet-send-comment-long",
+    "label": "/welcome wallet-send-comment-long",
+    "visual": "state-welcome-wallet-send-comment-long",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:wallet-receive-copied",
+    "label": "/welcome wallet-receive-copied",
+    "visual": "state-welcome-wallet-receive-copied",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:home-from-menu",
+    "label": "/welcome home-from-menu",
+    "visual": "state-welcome-home-from-menu",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:daily-payout-stopped",
+    "label": "/welcome daily-payout-stopped",
+    "visual": "state-welcome-daily-payout-stopped",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
@@ -666,6 +2838,12 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/welcome:first-post-free",
+    "label": "/welcome first-post-free",
+    "visual": "state-welcome-first-post-free",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/welcome:moderation",
     "label": "/welcome moderation",
     "visual": "state-welcome-moderation",
@@ -699,6 +2877,12 @@
     "id": "/welcome:reply-moderation",
     "label": "/welcome reply-moderation",
     "visual": "state-welcome-reply-moderation",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:reply-own-note",
+    "label": "/welcome reply-own-note",
+    "visual": "state-welcome-reply-own-note",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
@@ -780,15 +2964,159 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
-    "id": "/welcome:repay-today-error",
-    "label": "/welcome repay-today-error",
-    "visual": "state-welcome-repay-today-error",
+    "id": "/welcome:loan-lend",
+    "label": "/welcome loan-lend",
+    "visual": "state-welcome-loan-lend",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
-    "id": "/welcome:repay-today-invoice",
-    "label": "/welcome repay-today-invoice",
-    "visual": "state-welcome-repay-today-invoice",
+    "id": "/welcome:loan-lend-cannot-receive",
+    "label": "/welcome loan-lend-cannot-receive",
+    "visual": "state-welcome-loan-lend-cannot-receive",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:loan-pay",
+    "label": "/welcome loan-pay",
+    "visual": "state-welcome-loan-pay",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:loan-pay-full",
+    "label": "/welcome loan-pay-full",
+    "visual": "state-welcome-loan-pay-full",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:loans-collecting",
+    "label": "/welcome loans-collecting",
+    "visual": "state-welcome-loans-collecting",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:loans-collecting-open",
+    "label": "/welcome loans-collecting-open",
+    "visual": "state-welcome-loans-collecting-open",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:loans-due",
+    "label": "/welcome loans-due",
+    "visual": "state-welcome-loans-due",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:loans-open",
+    "label": "/welcome loans-open",
+    "visual": "state-welcome-loans-open",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:loans-behind",
+    "label": "/welcome loans-behind",
+    "visual": "state-welcome-loans-behind",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:loans-behind-open",
+    "label": "/welcome loans-behind-open",
+    "visual": "state-welcome-loans-behind-open",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:loans-nothing-due",
+    "label": "/welcome loans-nothing-due",
+    "visual": "state-welcome-loans-nothing-due",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:loans-nothing-due-open",
+    "label": "/welcome loans-nothing-due-open",
+    "visual": "state-welcome-loans-nothing-due-open",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:loans-waiting-all",
+    "label": "/welcome loans-waiting-all",
+    "visual": "state-welcome-loans-waiting-all",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:loans-waiting-all-open",
+    "label": "/welcome loans-waiting-all-open",
+    "visual": "state-welcome-loans-waiting-all-open",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:loans-waiting",
+    "label": "/welcome loans-waiting",
+    "visual": "state-welcome-loans-waiting",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:loans-waiting-open",
+    "label": "/welcome loans-waiting-open",
+    "visual": "state-welcome-loans-waiting-open",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:lender-waiting",
+    "label": "/welcome lender-waiting",
+    "visual": "state-welcome-lender-waiting",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:lender-waiting-unpriced",
+    "label": "/welcome lender-waiting-unpriced",
+    "visual": "state-welcome-lender-waiting-unpriced",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:loans-lender-waiting",
+    "label": "/welcome loans-lender-waiting",
+    "visual": "state-welcome-loans-lender-waiting",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:loans-lender-waiting-open",
+    "label": "/welcome loans-lender-waiting-open",
+    "visual": "state-welcome-loans-lender-waiting-open",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:loans-sunday",
+    "label": "/welcome loans-sunday",
+    "visual": "state-welcome-loans-sunday",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:loans-sunday-open",
+    "label": "/welcome loans-sunday-open",
+    "visual": "state-welcome-loans-sunday-open",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:loans-multi",
+    "label": "/welcome loans-multi",
+    "visual": "state-welcome-loans-multi",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:loans-multi-open",
+    "label": "/welcome loans-multi-open",
+    "visual": "state-welcome-loans-multi-open",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:menu-loan-due",
+    "label": "/welcome menu-loan-due",
+    "visual": "state-welcome-menu-loan-due",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:menu-loan-behind",
+    "label": "/welcome menu-loan-behind",
+    "visual": "state-welcome-menu-loan-behind",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
@@ -1290,6 +3618,30 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/welcome:writer",
+    "label": "/welcome writer",
+    "visual": "state-welcome-writer",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:writer-ask",
+    "label": "/welcome writer-ask",
+    "visual": "state-welcome-writer-ask",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:writer-validation-error",
+    "label": "/welcome writer-validation-error",
+    "visual": "state-welcome-writer-validation-error",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:writer-place-open",
+    "label": "/welcome writer-place-open",
+    "visual": "state-welcome-writer-place-open",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/welcome:composer-photo",
     "label": "/welcome composer-photo",
     "visual": "state-welcome-composer-photo",
@@ -1458,6 +3810,42 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/welcome:composer-wallet-pay-preparing",
+    "label": "/welcome composer-wallet-pay-preparing",
+    "visual": "state-welcome-composer-wallet-pay-preparing",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:composer-wallet-pay-confirm",
+    "label": "/welcome composer-wallet-pay-confirm",
+    "visual": "state-welcome-composer-wallet-pay-confirm",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:composer-wallet-pay-paying",
+    "label": "/welcome composer-wallet-pay-paying",
+    "visual": "state-welcome-composer-wallet-pay-paying",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:composer-wallet-pay-insufficient",
+    "label": "/welcome composer-wallet-pay-insufficient",
+    "visual": "state-welcome-composer-wallet-pay-insufficient",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:composer-wallet-pay-unconfirmed",
+    "label": "/welcome composer-wallet-pay-unconfirmed",
+    "visual": "state-welcome-composer-wallet-pay-unconfirmed",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:pay-sheet-success",
+    "label": "/welcome pay-sheet-success",
+    "visual": "state-welcome-pay-sheet-success",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/welcome:error-too-large-with-text",
     "label": "/welcome error-too-large-with-text",
     "visual": "state-welcome-error-too-large-with-text",
@@ -1500,6 +3888,36 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/welcome:menu-header-balance",
+    "label": "/welcome menu-header-balance",
+    "visual": "state-welcome-menu-header-balance",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:menu-header-no-rate",
+    "label": "/welcome menu-header-no-rate",
+    "visual": "state-welcome-menu-header-no-rate",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:menu-header-connecting",
+    "label": "/welcome menu-header-connecting",
+    "visual": "state-welcome-menu-header-connecting",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:menu-header-photo",
+    "label": "/welcome menu-header-photo",
+    "visual": "state-welcome-menu-header-photo",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:menu-sheet-end",
+    "label": "/welcome menu-sheet-end",
+    "visual": "state-welcome-menu-sheet-end",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/welcome:menu-unread",
     "label": "/welcome menu-unread",
     "visual": "state-welcome-menu-unread",
@@ -1530,6 +3948,12 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/welcome:wallet-pay-unavailable",
+    "label": "/welcome wallet-pay-unavailable",
+    "visual": "state-welcome-wallet-pay-unavailable",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/welcome:pay-rate-loading",
     "label": "/welcome pay-rate-loading",
     "visual": "state-welcome-pay-rate-loading",
@@ -1542,21 +3966,63 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
-    "id": "/welcome:pay-qr",
-    "label": "/welcome pay-qr",
-    "visual": "state-welcome-pay-qr",
+    "id": "/welcome:wallet-pay-preparing",
+    "label": "/welcome wallet-pay-preparing",
+    "visual": "state-welcome-wallet-pay-preparing",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
-    "id": "/welcome:pay-smartphone",
-    "label": "/welcome pay-smartphone",
-    "visual": "state-welcome-pay-smartphone",
+    "id": "/welcome:wallet-pay-confirm",
+    "label": "/welcome wallet-pay-confirm",
+    "visual": "state-welcome-wallet-pay-confirm",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:wallet-pay-paying",
+    "label": "/welcome wallet-pay-paying",
+    "visual": "state-welcome-wallet-pay-paying",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:wallet-pay-insufficient",
+    "label": "/welcome wallet-pay-insufficient",
+    "visual": "state-welcome-wallet-pay-insufficient",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:wallet-pay-failed",
+    "label": "/welcome wallet-pay-failed",
+    "visual": "state-welcome-wallet-pay-failed",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:wallet-pay-setup-failed",
+    "label": "/welcome wallet-pay-setup-failed",
+    "visual": "state-welcome-wallet-pay-setup-failed",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:wallet-pay-unconfirmed",
+    "label": "/welcome wallet-pay-unconfirmed",
+    "visual": "state-welcome-wallet-pay-unconfirmed",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
     "id": "/welcome:pay-author-wallet",
     "label": "/welcome pay-author-wallet",
     "visual": "state-welcome-pay-author-wallet",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:author-cannot-receive",
+    "label": "/welcome author-cannot-receive",
+    "visual": "state-welcome-author-cannot-receive",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:author-cannot-receive-open",
+    "label": "/welcome author-cannot-receive-open",
+    "visual": "state-welcome-author-cannot-receive-open",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
@@ -1572,9 +4038,9 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
-    "id": "/welcome:overlay-address",
-    "label": "/welcome overlay-address",
-    "visual": "state-welcome-overlay-address",
+    "id": "/welcome:overlay-wallet",
+    "label": "/welcome overlay-wallet",
+    "visual": "state-welcome-overlay-wallet",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
@@ -1587,6 +4053,12 @@
     "id": "/welcome:overlay-introduce",
     "label": "/welcome overlay-introduce",
     "visual": "state-welcome-overlay-introduce",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:overlay-social-recovery",
+    "label": "/welcome overlay-social-recovery",
+    "visual": "state-welcome-overlay-social-recovery",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
@@ -1725,6 +4197,18 @@
     "id": "/habit-tracker:donate-author-wallet",
     "label": "/habit-tracker donate-author-wallet",
     "visual": "state-habit-tracker-donate-author-wallet",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/habit-tracker:comment-cannot-receive",
+    "label": "/habit-tracker comment-cannot-receive",
+    "visual": "state-habit-tracker-comment-cannot-receive",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/habit-tracker:comment-cannot-receive-sunday",
+    "label": "/habit-tracker comment-cannot-receive-sunday",
+    "visual": "state-habit-tracker-comment-cannot-receive-sunday",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
@@ -1872,9 +4356,21 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/profile:cannot-receive",
+    "label": "/profile cannot-receive",
+    "visual": "state-profile-cannot-receive",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/profile:funding-program-press",
     "label": "/profile funding-program-press",
     "visual": "state-profile-funding-program-press",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/profile:software-developer",
+    "label": "/profile software-developer",
+    "visual": "state-profile-software-developer",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
@@ -1887,6 +4383,66 @@
     "id": "/pos:open",
     "label": "/pos open",
     "visual": "state-pos-open",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/pos:cancelled",
+    "label": "/pos cancelled",
+    "visual": "state-pos-cancelled",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/pos:open-cancel-failed",
+    "label": "/pos open-cancel-failed",
+    "visual": "state-pos-open-cancel-failed",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/pos:cancelled-read-failed",
+    "label": "/pos cancelled-read-failed",
+    "visual": "state-pos-cancelled-read-failed",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/pos:open-spot",
+    "label": "/pos open-spot",
+    "visual": "state-pos-open-spot",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/pos:cancelled-spot",
+    "label": "/pos cancelled-spot",
+    "visual": "state-pos-cancelled-spot",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/pos:paid",
+    "label": "/pos paid",
+    "visual": "state-pos-paid",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/pos:paid-closed",
+    "label": "/pos paid-closed",
+    "visual": "state-pos-paid-closed",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/pos:paid-fiat",
+    "label": "/pos paid-fiat",
+    "visual": "state-pos-paid-fiat",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/pos:paid-fiat-closed",
+    "label": "/pos paid-fiat-closed",
+    "visual": "state-pos-paid-fiat-closed",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/pos:history",
+    "label": "/pos history",
+    "visual": "state-pos-history",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
@@ -1926,15 +4482,21 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
-    "id": "/pos/amount:rate-loading",
-    "label": "/pos/amount rate-loading",
-    "visual": "state-pos-rate-loading",
+    "id": "/pos/amount:fiat",
+    "label": "/pos/amount fiat",
+    "visual": "state-pos-amount-fiat",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
-    "id": "/pos/amount:no-rate",
-    "label": "/pos/amount no-rate",
-    "visual": "state-pos-no-rate",
+    "id": "/pos/amount:fiat-no-rate",
+    "label": "/pos/amount fiat-no-rate",
+    "visual": "state-pos-amount-fiat-no-rate",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/pos/amount:cannot-convert",
+    "label": "/pos/amount cannot-convert",
+    "visual": "state-pos-cannot-convert",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
@@ -1956,6 +4518,18 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/pos/amount:create-wallet-required",
+    "label": "/pos/amount create-wallet-required",
+    "visual": "state-pos-create-wallet-required",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/pos/amount:create-cannot-receive",
+    "label": "/pos/amount create-cannot-receive",
+    "visual": "state-pos-create-cannot-receive",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/pos:cancel-failed",
     "label": "/pos cancel-failed",
     "visual": "state-pos-cancel-failed",
@@ -1974,15 +4548,21 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
-    "id": "/pos:need-address",
-    "label": "/pos need-address",
-    "visual": "state-pos-need-address",
+    "id": "/pos:need-wallet",
+    "label": "/pos need-wallet",
+    "visual": "state-pos-need-wallet",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
-    "id": "/profile:fiat",
-    "label": "/profile fiat",
-    "visual": "state-profile-fiat",
+    "id": "/pos:setup-pending",
+    "label": "/pos setup-pending",
+    "visual": "state-pos-setup-pending",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/pos:setup-failed",
+    "label": "/pos setup-failed",
+    "visual": "state-pos-setup-failed",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
@@ -2028,6 +4608,18 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/profile:shops-open",
+    "label": "/profile shops-open",
+    "visual": "state-profile-shops-open",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/profile:credits-open",
+    "label": "/profile credits-open",
+    "visual": "state-profile-credits-open",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/members/[accountId]:default",
     "label": "/members/[accountId] default",
     "visual": "screen-members-accountId",
@@ -2037,6 +4629,24 @@
     "id": "/members/[accountId]:software-developer",
     "label": "/members/[accountId] software-developer",
     "visual": "state-members-accountId-software-developer",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/members/[accountId]:images",
+    "label": "/members/[accountId] images",
+    "visual": "state-members-images",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/members/[accountId]:photo-only",
+    "label": "/members/[accountId] photo-only",
+    "visual": "state-members-photo-only",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/members/[accountId]:banner-only",
+    "label": "/members/[accountId] banner-only",
+    "visual": "state-members-banner-only",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
@@ -2094,21 +4704,39 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/members/[accountId]:posts-open-loan-lend",
+    "label": "/members/[accountId] posts-open-loan-lend",
+    "visual": "state-members-posts-open-loan-lend",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/members/[accountId]:posts-open-loan-lend-cannot-receive",
+    "label": "/members/[accountId] posts-open-loan-lend-cannot-receive",
+    "visual": "state-members-posts-open-loan-lend-cannot-receive",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/members/[accountId]:posts-open-loan-pay",
+    "label": "/members/[accountId] posts-open-loan-pay",
+    "visual": "state-members-posts-open-loan-pay",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/members/[accountId]:posts-open-loan-pay-full",
+    "label": "/members/[accountId] posts-open-loan-pay-full",
+    "visual": "state-members-posts-open-loan-pay-full",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/members/[accountId]:posts-open-loan-lent",
+    "label": "/members/[accountId] posts-open-loan-lent",
+    "visual": "state-members-posts-open-loan-lent",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/members/[accountId]:posts-open-repay-today",
     "label": "/members/[accountId] posts-open-repay-today",
     "visual": "state-members-posts-open-repay-today",
-    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
-  },
-  {
-    "id": "/members/[accountId]:posts-open-repay-today-error",
-    "label": "/members/[accountId] posts-open-repay-today-error",
-    "visual": "state-members-posts-open-repay-today-error",
-    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
-  },
-  {
-    "id": "/members/[accountId]:posts-open-repay-today-invoice",
-    "label": "/members/[accountId] posts-open-repay-today-invoice",
-    "visual": "state-members-posts-open-repay-today-invoice",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
@@ -2136,6 +4764,18 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/members/[accountId]:shops-open",
+    "label": "/members/[accountId] shops-open",
+    "visual": "state-members-shops-open",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/members/[accountId]:credits-open",
+    "label": "/members/[accountId] credits-open",
+    "visual": "state-members-credits-open",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/members/[accountId]:posts-loading",
     "label": "/members/[accountId] posts-loading",
     "visual": "state-members-posts-loading",
@@ -2145,6 +4785,18 @@
     "id": "/members/[accountId]:replies-loading",
     "label": "/members/[accountId] replies-loading",
     "visual": "state-members-replies-loading",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/members/[accountId]:shops-loading",
+    "label": "/members/[accountId] shops-loading",
+    "visual": "state-members-shops-loading",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/members/[accountId]:credits-loading",
+    "label": "/members/[accountId] credits-loading",
+    "visual": "state-members-credits-loading",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
@@ -2160,6 +4812,18 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/members/[accountId]:shops-error",
+    "label": "/members/[accountId] shops-error",
+    "visual": "state-members-shops-error",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/members/[accountId]:credits-error",
+    "label": "/members/[accountId] credits-error",
+    "visual": "state-members-credits-error",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/members/[accountId]:posts-truncated",
     "label": "/members/[accountId] posts-truncated",
     "visual": "state-members-posts-truncated",
@@ -2169,6 +4833,18 @@
     "id": "/members/[accountId]:replies-truncated",
     "label": "/members/[accountId] replies-truncated",
     "visual": "state-members-replies-truncated",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/members/[accountId]:shops-truncated",
+    "label": "/members/[accountId] shops-truncated",
+    "visual": "state-members-shops-truncated",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/members/[accountId]:credits-truncated",
+    "label": "/members/[accountId] credits-truncated",
+    "visual": "state-members-credits-truncated",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
@@ -2196,9 +4872,9 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
-    "id": "/members/[accountId]:overlay-address",
-    "label": "/members/[accountId] overlay-address",
-    "visual": "state-members-overlay-address",
+    "id": "/members/[accountId]:overlay-wallet",
+    "label": "/members/[accountId] overlay-wallet",
+    "visual": "state-members-overlay-wallet",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
@@ -2235,6 +4911,42 @@
     "id": "/members/[accountId]:translate-error",
     "label": "/members/[accountId] translate-error",
     "visual": "state-members-translate-error",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/members/[accountId]:heart-needs-balance",
+    "label": "/members/[accountId] heart-needs-balance",
+    "visual": "state-members-heart-needs-balance",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/members/[accountId]:heart-cannot-receive",
+    "label": "/members/[accountId] heart-cannot-receive",
+    "visual": "state-members-heart-cannot-receive",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/members/[accountId]:posts-open-cannot-receive",
+    "label": "/members/[accountId] posts-open-cannot-receive",
+    "visual": "state-members-posts-open-cannot-receive",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/members/[accountId]:posts-open-cannot-receive-reactions",
+    "label": "/members/[accountId] posts-open-cannot-receive-reactions",
+    "visual": "state-members-posts-open-cannot-receive-reactions",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/members/[accountId]:cannot-receive",
+    "label": "/members/[accountId] cannot-receive",
+    "visual": "state-members-cannot-receive",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/members/[accountId]:heart-paid",
+    "label": "/members/[accountId] heart-paid",
+    "visual": "state-members-heart-paid",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
@@ -2451,6 +5163,138 @@
     "id": "/members/[accountId]:shop-edit-summary",
     "label": "/members/[accountId] shop-edit-summary",
     "visual": "state-members-shop-edit-summary",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/members/[accountId]:shop-edit-photo-busy",
+    "label": "/members/[accountId] shop-edit-photo-busy",
+    "visual": "state-members-shop-edit-photo-busy",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/members/[accountId]:shop-edit-photo-unsupported",
+    "label": "/members/[accountId] shop-edit-photo-unsupported",
+    "visual": "state-members-shop-edit-photo-unsupported",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/members/[accountId]:shop-edit-photo-too-large",
+    "label": "/members/[accountId] shop-edit-photo-too-large",
+    "visual": "state-members-shop-edit-photo-too-large",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/members/[accountId]:shop-edit-photo-too-many",
+    "label": "/members/[accountId] shop-edit-photo-too-many",
+    "visual": "state-members-shop-edit-photo-too-many",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/members/[accountId]:banner-not-wide",
+    "label": "/members/[accountId] banner-not-wide",
+    "visual": "state-members-banner-not-wide",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/members/[accountId]:banner-crop-saving",
+    "label": "/members/[accountId] banner-crop-saving",
+    "visual": "state-members-banner-crop-saving",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/members/[accountId]:banner-crop-save-error",
+    "label": "/members/[accountId] banner-crop-save-error",
+    "visual": "state-members-banner-crop-save-error",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/members/[accountId]:banner-crop-too-large",
+    "label": "/members/[accountId] banner-crop-too-large",
+    "visual": "state-members-banner-crop-too-large",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/members/[accountId]:picture-unsupported",
+    "label": "/members/[accountId] picture-unsupported",
+    "visual": "state-members-picture-unsupported",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/members/[accountId]:picture-too-large",
+    "label": "/members/[accountId] picture-too-large",
+    "visual": "state-members-picture-too-large",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/members/[accountId]:picture-save-error",
+    "label": "/members/[accountId] picture-save-error",
+    "visual": "state-members-picture-save-error",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/members/[accountId]:picture-saving",
+    "label": "/members/[accountId] picture-saving",
+    "visual": "state-members-picture-saving",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/members/[accountId]:images-editing",
+    "label": "/members/[accountId] images-editing",
+    "visual": "state-members-images-editing",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/members/[accountId]:about-editing",
+    "label": "/members/[accountId] about-editing",
+    "visual": "state-members-about-editing",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/members/[accountId]:about-banner-crop",
+    "label": "/members/[accountId] about-banner-crop",
+    "visual": "state-members-about-banner-crop",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/members/[accountId]:about-banner-crop-saving",
+    "label": "/members/[accountId] about-banner-crop-saving",
+    "visual": "state-members-about-banner-crop-saving",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/members/[accountId]:about-banner-crop-save-error",
+    "label": "/members/[accountId] about-banner-crop-save-error",
+    "visual": "state-members-about-banner-crop-save-error",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/members/[accountId]:about-banner-crop-too-large",
+    "label": "/members/[accountId] about-banner-crop-too-large",
+    "visual": "state-members-about-banner-crop-too-large",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/members/[accountId]:about-save-error",
+    "label": "/members/[accountId] about-save-error",
+    "visual": "state-members-about-save-error",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/members/[accountId]:name-editing",
+    "label": "/members/[accountId] name-editing",
+    "visual": "state-members-name-editing",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/members/[accountId]:location-editing",
+    "label": "/members/[accountId] location-editing",
+    "visual": "state-members-location-editing",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/members/[accountId]:role-open",
+    "label": "/members/[accountId] role-open",
+    "visual": "state-members-role-open",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
@@ -2778,15 +5622,21 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
-    "id": "/profile:notification-level-error",
-    "label": "/profile notification-level-error",
-    "visual": "state-profile-notification-level-error",
+    "id": "/profile:name-editing",
+    "label": "/profile name-editing",
+    "visual": "state-profile-name-editing",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
-    "id": "/profile:push-enable-error",
-    "label": "/profile push-enable-error",
-    "visual": "state-profile-push-enable-error",
+    "id": "/profile:location-editing",
+    "label": "/profile location-editing",
+    "visual": "state-profile-location-editing",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/profile:role-open",
+    "label": "/profile role-open",
+    "visual": "state-profile-role-open",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
@@ -2838,57 +5688,27 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
-    "id": "/profile:address-empty",
-    "label": "/profile address-empty",
-    "visual": "state-profile-address-empty",
-    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
-  },
-  {
-    "id": "/profile:address-long",
-    "label": "/profile address-long",
-    "visual": "state-profile-address-long",
-    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
-  },
-  {
-    "id": "/profile:address-format",
-    "label": "/profile address-format",
-    "visual": "state-profile-address-format",
-    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
-  },
-  {
-    "id": "/profile:address-taken",
-    "label": "/profile address-taken",
-    "visual": "state-profile-address-taken",
-    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
-  },
-  {
-    "id": "/profile:address-not-found",
-    "label": "/profile address-not-found",
-    "visual": "state-profile-address-not-found",
-    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
-  },
-  {
-    "id": "/profile:address-not-zap",
-    "label": "/profile address-not-zap",
-    "visual": "state-profile-address-not-zap",
-    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
-  },
-  {
-    "id": "/profile:address-request",
-    "label": "/profile address-request",
-    "visual": "state-profile-address-request",
-    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
-  },
-  {
     "id": "/grants:default",
     "label": "/grants default",
     "visual": "screen-grants",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
-    "id": "/grants:funding-apply",
-    "label": "/grants funding-apply",
-    "visual": "state-grants-funding-apply",
+    "id": "/grants:places-full",
+    "label": "/grants places-full",
+    "visual": "state-grants-places-full",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/grants:places-error",
+    "label": "/grants places-error",
+    "visual": "state-grants-places-error",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/grants:places-loading",
+    "label": "/grants places-loading",
+    "visual": "state-grants-places-loading",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
@@ -2967,6 +5787,24 @@
     "id": "/grants/goals:error",
     "label": "/grants/goals error",
     "visual": "state-grants-goals-error",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/grants/goals:places-full",
+    "label": "/grants/goals places-full",
+    "visual": "state-grants-goals-places-full",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/grants/goals:places-error",
+    "label": "/grants/goals places-error",
+    "visual": "state-grants-goals-places-error",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/grants/goals:places-loading",
+    "label": "/grants/goals places-loading",
+    "visual": "state-grants-goals-places-loading",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
@@ -3138,6 +5976,120 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/grants/payments/moderators:default",
+    "label": "/grants/payments/moderators default",
+    "visual": "screen-grants-payments-moderators",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/grants/payments/moderators:empty",
+    "label": "/grants/payments/moderators empty",
+    "visual": "state-grants-payments-moderators-empty",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/grants/payments/moderators:loading",
+    "label": "/grants/payments/moderators loading",
+    "visual": "state-grants-payments-moderators-loading",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/grants/payments/moderators:error",
+    "label": "/grants/payments/moderators error",
+    "visual": "state-grants-payments-moderators-error",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/grants/payments/moderators:forbidden",
+    "label": "/grants/payments/moderators forbidden",
+    "visual": "state-grants-payments-moderators-forbidden",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/grants/payments/moderators:invalid",
+    "label": "/grants/payments/moderators invalid",
+    "visual": "state-grants-payments-moderators-invalid",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/grants/payments/moderators:off",
+    "label": "/grants/payments/moderators off",
+    "visual": "state-grants-payments-moderators-off",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/grants/payments/moderators:invalid-switch",
+    "label": "/grants/payments/moderators invalid-switch",
+    "visual": "state-grants-payments-moderators-invalid-switch",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/grants/payments/moderators:duplicate",
+    "label": "/grants/payments/moderators duplicate",
+    "visual": "state-grants-payments-moderators-duplicate",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/grants/payments/moderators:unknown",
+    "label": "/grants/payments/moderators unknown",
+    "visual": "state-grants-payments-moderators-unknown",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/grants/payments/moderators:save-error",
+    "label": "/grants/payments/moderators save-error",
+    "visual": "state-grants-payments-moderators-save-error",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/grants/payments/moderators:pending",
+    "label": "/grants/payments/moderators pending",
+    "visual": "state-grants-payments-moderators-pending",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/grants/payments/moderators:editing",
+    "label": "/grants/payments/moderators editing",
+    "visual": "state-grants-payments-moderators-editing",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/grants/payments/moderators:suggest",
+    "label": "/grants/payments/moderators suggest",
+    "visual": "state-grants-payments-moderators-suggest",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/grants/payments/moderators:chosen",
+    "label": "/grants/payments/moderators chosen",
+    "visual": "state-grants-payments-moderators-chosen",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/grants/payments/moderators:pick-person",
+    "label": "/grants/payments/moderators pick-person",
+    "visual": "state-grants-payments-moderators-pick-person",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/grants/payments/moderators:invalid-person",
+    "label": "/grants/payments/moderators invalid-person",
+    "visual": "state-grants-payments-moderators-invalid-person",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/grants/payments/moderators:unknown-person",
+    "label": "/grants/payments/moderators unknown-person",
+    "visual": "state-grants-payments-moderators-unknown-person",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/grants/payments/moderators:no-lightning",
+    "label": "/grants/payments/moderators no-lightning",
+    "visual": "state-grants-payments-moderators-no-lightning",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/profile/apply:redirect",
     "label": "/profile/apply redirect",
     "visual": "screen-profile-apply",
@@ -3147,12 +6099,6 @@
     "id": "/grants/apply:default",
     "label": "/grants/apply default",
     "visual": "screen-grants-apply",
-    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
-  },
-  {
-    "id": "/grants/apply:about",
-    "label": "/grants/apply about",
-    "visual": "state-grants-apply-about",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
@@ -3318,6 +6264,12 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/view/[viewKey]:cannot-receive",
+    "label": "/view/[viewKey] cannot-receive",
+    "visual": "state-view-cannot-receive",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/view/[viewKey]:about-filled",
     "label": "/view/[viewKey] about-filled",
     "visual": "state-view-about-filled",
@@ -3360,6 +6312,24 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/view/[viewKey]:images",
+    "label": "/view/[viewKey] images",
+    "visual": "state-view-images",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/view/[viewKey]:photo-only",
+    "label": "/view/[viewKey] photo-only",
+    "visual": "state-view-photo-only",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/view/[viewKey]:banner-only",
+    "label": "/view/[viewKey] banner-only",
+    "visual": "state-view-banner-only",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/view/[viewKey]:missing",
     "label": "/view/[viewKey] missing",
     "visual": "state-view-missing",
@@ -3384,9 +6354,147 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/view/[viewKey]:claim-prf-unsupported",
+    "label": "/view/[viewKey] claim-prf-unsupported",
+    "visual": "state-view-claim-prf-unsupported",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/view/[viewKey]:claim-closed",
+    "label": "/view/[viewKey] claim-closed",
+    "visual": "state-view-claim-closed",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/view/[viewKey]:claim-outdated",
+    "label": "/view/[viewKey] claim-outdated",
+    "visual": "state-view-claim-outdated",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/view/[viewKey]:in-app",
     "label": "/view/[viewKey] in-app",
     "visual": "state-view-in-app",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/view/[viewKey]:banner-not-wide",
+    "label": "/view/[viewKey] banner-not-wide",
+    "visual": "state-view-banner-not-wide",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/view/[viewKey]:banner-crop-saving",
+    "label": "/view/[viewKey] banner-crop-saving",
+    "visual": "state-view-banner-crop-saving",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/view/[viewKey]:banner-crop-save-error",
+    "label": "/view/[viewKey] banner-crop-save-error",
+    "visual": "state-view-banner-crop-save-error",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/view/[viewKey]:banner-crop-too-large",
+    "label": "/view/[viewKey] banner-crop-too-large",
+    "visual": "state-view-banner-crop-too-large",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/view/[viewKey]:picture-unsupported",
+    "label": "/view/[viewKey] picture-unsupported",
+    "visual": "state-view-picture-unsupported",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/view/[viewKey]:picture-too-large",
+    "label": "/view/[viewKey] picture-too-large",
+    "visual": "state-view-picture-too-large",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/view/[viewKey]:picture-save-error",
+    "label": "/view/[viewKey] picture-save-error",
+    "visual": "state-view-picture-save-error",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/view/[viewKey]:picture-saving",
+    "label": "/view/[viewKey] picture-saving",
+    "visual": "state-view-picture-saving",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/view/[viewKey]:images-editing",
+    "label": "/view/[viewKey] images-editing",
+    "visual": "state-view-images-editing",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/view/[viewKey]:about-editing",
+    "label": "/view/[viewKey] about-editing",
+    "visual": "state-view-about-editing",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/view/[viewKey]:about-banner-crop",
+    "label": "/view/[viewKey] about-banner-crop",
+    "visual": "state-view-about-banner-crop",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/view/[viewKey]:about-banner-crop-saving",
+    "label": "/view/[viewKey] about-banner-crop-saving",
+    "visual": "state-view-about-banner-crop-saving",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/view/[viewKey]:about-banner-crop-save-error",
+    "label": "/view/[viewKey] about-banner-crop-save-error",
+    "visual": "state-view-about-banner-crop-save-error",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/view/[viewKey]:about-banner-crop-too-large",
+    "label": "/view/[viewKey] about-banner-crop-too-large",
+    "visual": "state-view-about-banner-crop-too-large",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/view/[viewKey]:about-save-error",
+    "label": "/view/[viewKey] about-save-error",
+    "visual": "state-view-about-save-error",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/view/[viewKey]:name-editing",
+    "label": "/view/[viewKey] name-editing",
+    "visual": "state-view-name-editing",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/view/[viewKey]:location-editing",
+    "label": "/view/[viewKey] location-editing",
+    "visual": "state-view-location-editing",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/view/[viewKey]:software-developer",
+    "label": "/view/[viewKey] software-developer",
+    "visual": "state-view-software-developer",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/view/[viewKey]:funding-program-open",
+    "label": "/view/[viewKey] funding-program-open",
+    "visual": "state-view-funding-program-open",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/view/[viewKey]:role-open",
+    "label": "/view/[viewKey] role-open",
+    "visual": "state-view-role-open",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
@@ -3540,6 +6648,12 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/messages:thread-cannot-receive",
+    "label": "/messages thread-cannot-receive",
+    "visual": "state-messages-thread-cannot-receive",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/messages:thread-send-empty",
     "label": "/messages thread-send-empty",
     "visual": "state-messages-thread-send-empty",
@@ -3594,9 +6708,51 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
-    "id": "/messages:thread-pay-qr",
-    "label": "/messages thread-pay-qr",
-    "visual": "state-messages-thread-pay-qr",
+    "id": "/messages:thread-pay-sheet",
+    "label": "/messages thread-pay-sheet",
+    "visual": "state-messages-thread-pay-sheet",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/messages:thread-wallet-pay-preparing",
+    "label": "/messages thread-wallet-pay-preparing",
+    "visual": "state-messages-thread-wallet-pay-preparing",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/messages:thread-wallet-pay-confirm",
+    "label": "/messages thread-wallet-pay-confirm",
+    "visual": "state-messages-thread-wallet-pay-confirm",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/messages:thread-wallet-pay-paying",
+    "label": "/messages thread-wallet-pay-paying",
+    "visual": "state-messages-thread-wallet-pay-paying",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/messages:thread-wallet-pay-insufficient",
+    "label": "/messages thread-wallet-pay-insufficient",
+    "visual": "state-messages-thread-wallet-pay-insufficient",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/messages:thread-wallet-pay-unconfirmed",
+    "label": "/messages thread-wallet-pay-unconfirmed",
+    "visual": "state-messages-thread-wallet-pay-unconfirmed",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/messages:thread-pay-sheet-success",
+    "label": "/messages thread-pay-sheet-success",
+    "visual": "state-messages-thread-pay-sheet-success",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/messages:thread-wallet-required",
+    "label": "/messages thread-wallet-required",
+    "visual": "state-messages-thread-wallet-required",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
@@ -4074,6 +7230,12 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/grants/applications/[accountId]:decide-full",
+    "label": "/grants/applications/[accountId] decide-full",
+    "visual": "state-moderate-applications-accountId-decide-full",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/grants/applications/[accountId]:deciding",
     "label": "/grants/applications/[accountId] deciding",
     "visual": "state-moderate-applications-accountId-deciding",
@@ -4308,6 +7470,42 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/messages/[id]:loan-repaid",
+    "label": "/messages/[id] loan-repaid",
+    "visual": "state-messages-id-loan-repaid",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/messages/[id]:loan-lend",
+    "label": "/messages/[id] loan-lend",
+    "visual": "state-messages-id-loan-lend",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/messages/[id]:loan-lend-cannot-receive",
+    "label": "/messages/[id] loan-lend-cannot-receive",
+    "visual": "state-messages-id-loan-lend-cannot-receive",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/messages/[id]:loan-pay",
+    "label": "/messages/[id] loan-pay",
+    "visual": "state-messages-id-loan-pay",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/messages/[id]:loan-pay-full",
+    "label": "/messages/[id] loan-pay-full",
+    "visual": "state-messages-id-loan-pay-full",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/messages/[id]:loan-lent",
+    "label": "/messages/[id] loan-lent",
+    "visual": "state-messages-id-loan-lent",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/messages/[id]:photos",
     "label": "/messages/[id] photos",
     "visual": "state-messages-id-photos",
@@ -4467,6 +7665,30 @@
     "id": "/messages/[id]:shop-edit-summary",
     "label": "/messages/[id] shop-edit-summary",
     "visual": "state-messages-id-shop-edit-summary",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/messages/[id]:shop-edit-photo-busy",
+    "label": "/messages/[id] shop-edit-photo-busy",
+    "visual": "state-messages-id-shop-edit-photo-busy",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/messages/[id]:shop-edit-photo-unsupported",
+    "label": "/messages/[id] shop-edit-photo-unsupported",
+    "visual": "state-messages-id-shop-edit-photo-unsupported",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/messages/[id]:shop-edit-photo-too-large",
+    "label": "/messages/[id] shop-edit-photo-too-large",
+    "visual": "state-messages-id-shop-edit-photo-too-large",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/messages/[id]:shop-edit-photo-too-many",
+    "label": "/messages/[id] shop-edit-photo-too-many",
+    "visual": "state-messages-id-shop-edit-photo-too-many",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
@@ -4638,6 +7860,36 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/welcome:reaction-wallet-pay-preparing",
+    "label": "/welcome reaction-wallet-pay-preparing",
+    "visual": "state-welcome-reaction-wallet-pay-preparing",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:reaction-wallet-pay-confirm",
+    "label": "/welcome reaction-wallet-pay-confirm",
+    "visual": "state-welcome-reaction-wallet-pay-confirm",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:reaction-wallet-pay-paying",
+    "label": "/welcome reaction-wallet-pay-paying",
+    "visual": "state-welcome-reaction-wallet-pay-paying",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:reaction-wallet-pay-insufficient",
+    "label": "/welcome reaction-wallet-pay-insufficient",
+    "visual": "state-welcome-reaction-wallet-pay-insufficient",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:reaction-wallet-pay-unconfirmed",
+    "label": "/welcome reaction-wallet-pay-unconfirmed",
+    "visual": "state-welcome-reaction-wallet-pay-unconfirmed",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/welcome:reaction-pay-kept",
     "label": "/welcome reaction-pay-kept",
     "visual": "state-welcome-reaction-pay-kept",
@@ -4659,6 +7911,12 @@
     "id": "/welcome:reaction-rate-limit",
     "label": "/welcome reaction-rate-limit",
     "visual": "state-welcome-reaction-rate-limit",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:reaction-author-wallet",
+    "label": "/welcome reaction-author-wallet",
+    "visual": "state-welcome-reaction-author-wallet",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
@@ -4713,6 +7971,36 @@
     "id": "/welcome:translate-error",
     "label": "/welcome translate-error",
     "visual": "state-welcome-translate-error",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:heart-needs-balance",
+    "label": "/welcome heart-needs-balance",
+    "visual": "state-welcome-heart-needs-balance",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:heart-cannot-receive",
+    "label": "/welcome heart-cannot-receive",
+    "visual": "state-welcome-heart-cannot-receive",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:heart-cannot-receive-refreshed",
+    "label": "/welcome heart-cannot-receive-refreshed",
+    "visual": "state-welcome-heart-cannot-receive-refreshed",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:heart-cannot-receive-older-api",
+    "label": "/welcome heart-cannot-receive-older-api",
+    "visual": "state-welcome-heart-cannot-receive-older-api",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:heart-paid",
+    "label": "/welcome heart-paid",
+    "visual": "state-welcome-heart-paid",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
@@ -4896,6 +8184,66 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/welcome:shop-edit-photo-busy",
+    "label": "/welcome shop-edit-photo-busy",
+    "visual": "state-welcome-shop-edit-photo-busy",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:shop-edit-photo-unsupported",
+    "label": "/welcome shop-edit-photo-unsupported",
+    "visual": "state-welcome-shop-edit-photo-unsupported",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:shop-edit-photo-too-large",
+    "label": "/welcome shop-edit-photo-too-large",
+    "visual": "state-welcome-shop-edit-photo-too-large",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:shop-edit-photo-too-many",
+    "label": "/welcome shop-edit-photo-too-many",
+    "visual": "state-welcome-shop-edit-photo-too-many",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:wallet-tour-balance",
+    "label": "/welcome wallet-tour-balance",
+    "visual": "state-welcome-wallet-tour-balance",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:wallet-tour-receive",
+    "label": "/welcome wallet-tour-receive",
+    "visual": "state-welcome-wallet-tour-receive",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:wallet-tour-send",
+    "label": "/welcome wallet-tour-send",
+    "visual": "state-welcome-wallet-tour-send",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:wallet-tour-menu",
+    "label": "/welcome wallet-tour-menu",
+    "visual": "state-welcome-wallet-tour-menu",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:wallet-tour-short",
+    "label": "/welcome wallet-tour-short",
+    "visual": "state-welcome-wallet-tour-short",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:wallet-tour-error",
+    "label": "/welcome wallet-tour-error",
+    "visual": "state-welcome-wallet-tour-error",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/welcome:shop-edit-save-rejected",
     "label": "/welcome shop-edit-save-rejected",
     "visual": "state-welcome-shop-edit-save-rejected",
@@ -5046,6 +8394,48 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/shops:heart-needs-balance",
+    "label": "/shops heart-needs-balance",
+    "visual": "state-shops-heart-needs-balance",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/shops:heart-cannot-receive",
+    "label": "/shops heart-cannot-receive",
+    "visual": "state-shops-heart-cannot-receive",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/shops:heart-cannot-receive-refreshed",
+    "label": "/shops heart-cannot-receive-refreshed",
+    "visual": "state-shops-heart-cannot-receive-refreshed",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/shops:heart-cannot-receive-older-api",
+    "label": "/shops heart-cannot-receive-older-api",
+    "visual": "state-shops-heart-cannot-receive-older-api",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/shops:author-cannot-receive",
+    "label": "/shops author-cannot-receive",
+    "visual": "state-shops-author-cannot-receive",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/shops:author-cannot-receive-open",
+    "label": "/shops author-cannot-receive-open",
+    "visual": "state-shops-author-cannot-receive-open",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/shops:heart-paid",
+    "label": "/shops heart-paid",
+    "visual": "state-shops-heart-paid",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/shops:no-pin",
     "label": "/shops no-pin",
     "visual": "state-shops-no-pin",
@@ -5079,6 +8469,42 @@
     "id": "/shops:sunday",
     "label": "/shops sunday",
     "visual": "state-shops-sunday",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/shops:country-open",
+    "label": "/shops country-open",
+    "visual": "state-shops-country-open",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/shops:country",
+    "label": "/shops country",
+    "visual": "state-shops-country",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/shops:country-empty",
+    "label": "/shops country-empty",
+    "visual": "state-shops-country-empty",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/shops:country-loading",
+    "label": "/shops country-loading",
+    "visual": "state-shops-country-loading",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/shops:country-post",
+    "label": "/shops country-post",
+    "visual": "state-shops-country-post",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/shops:country-map",
+    "label": "/shops country-map",
+    "visual": "state-shops-country-map",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
@@ -5211,6 +8637,30 @@
     "id": "/shops:map-edit-summary",
     "label": "/shops map-edit-summary",
     "visual": "state-shops-map-edit-summary",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/shops:map-edit-photo-busy",
+    "label": "/shops map-edit-photo-busy",
+    "visual": "state-shops-map-edit-photo-busy",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/shops:map-edit-photo-unsupported",
+    "label": "/shops map-edit-photo-unsupported",
+    "visual": "state-shops-map-edit-photo-unsupported",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/shops:map-edit-photo-too-large",
+    "label": "/shops map-edit-photo-too-large",
+    "visual": "state-shops-map-edit-photo-too-large",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/shops:map-edit-photo-too-many",
+    "label": "/shops map-edit-photo-too-many",
+    "visual": "state-shops-map-edit-photo-too-many",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
@@ -5463,6 +8913,30 @@
     "id": "/shops:table-edit-summary",
     "label": "/shops table-edit-summary",
     "visual": "state-shops-table-edit-summary",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/shops:table-edit-photo-busy",
+    "label": "/shops table-edit-photo-busy",
+    "visual": "state-shops-table-edit-photo-busy",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/shops:table-edit-photo-unsupported",
+    "label": "/shops table-edit-photo-unsupported",
+    "visual": "state-shops-table-edit-photo-unsupported",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/shops:table-edit-photo-too-large",
+    "label": "/shops table-edit-photo-too-large",
+    "visual": "state-shops-table-edit-photo-too-large",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/shops:table-edit-photo-too-many",
+    "label": "/shops table-edit-photo-too-many",
+    "visual": "state-shops-table-edit-photo-too-many",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
@@ -5982,6 +9456,30 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/shops:edit-photo-busy",
+    "label": "/shops edit-photo-busy",
+    "visual": "state-shops-edit-photo-busy",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/shops:edit-photo-unsupported",
+    "label": "/shops edit-photo-unsupported",
+    "visual": "state-shops-edit-photo-unsupported",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/shops:edit-photo-too-large",
+    "label": "/shops edit-photo-too-large",
+    "visual": "state-shops-edit-photo-too-large",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/shops:edit-photo-too-many",
+    "label": "/shops edit-photo-too-many",
+    "visual": "state-shops-edit-photo-too-many",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/shops:edit-save-error",
     "label": "/shops edit-save-error",
     "visual": "state-shops-edit-save-error",
@@ -6222,6 +9720,30 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/messages/[id]:heart-needs-balance",
+    "label": "/messages/[id] heart-needs-balance",
+    "visual": "state-messages-id-heart-needs-balance",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/messages/[id]:heart-cannot-receive",
+    "label": "/messages/[id] heart-cannot-receive",
+    "visual": "state-messages-id-heart-cannot-receive",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/messages/[id]:author-cannot-receive",
+    "label": "/messages/[id] author-cannot-receive",
+    "visual": "state-messages-id-author-cannot-receive",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/messages/[id]:heart-paid",
+    "label": "/messages/[id] heart-paid",
+    "visual": "state-messages-id-heart-paid",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/messages/[id]:thread",
     "label": "/messages/[id] thread",
     "visual": "state-messages-id-thread",
@@ -6276,6 +9798,24 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/messages/[id]/repayment-list:overview",
+    "label": "/messages/[id]/repayment-list overview",
+    "visual": "state-messages-id-repayment-list-overview",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/messages/[id]/repayment-list:waiting",
+    "label": "/messages/[id]/repayment-list waiting",
+    "visual": "state-messages-id-repayment-list-waiting",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/messages/[id]/repayment-list:waiting-long",
+    "label": "/messages/[id]/repayment-list waiting-long",
+    "visual": "state-messages-id-repayment-list-waiting-long",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/messages/[id]/author:default",
     "label": "/messages/[id]/author default",
     "visual": "screen-messages-id-author",
@@ -6306,6 +9846,18 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/messages/[id]/author:shops-open",
+    "label": "/messages/[id]/author shops-open",
+    "visual": "state-messages-id-author-shops-open",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/messages/[id]/author:credits-open",
+    "label": "/messages/[id]/author credits-open",
+    "visual": "state-messages-id-author-credits-open",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/messages/[id]/author:posts-loading",
     "label": "/messages/[id]/author posts-loading",
     "visual": "state-messages-id-author-posts-loading",
@@ -6315,6 +9867,18 @@
     "id": "/messages/[id]/author:replies-loading",
     "label": "/messages/[id]/author replies-loading",
     "visual": "state-messages-id-author-replies-loading",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/messages/[id]/author:shops-loading",
+    "label": "/messages/[id]/author shops-loading",
+    "visual": "state-messages-id-author-shops-loading",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/messages/[id]/author:credits-loading",
+    "label": "/messages/[id]/author credits-loading",
+    "visual": "state-messages-id-author-credits-loading",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
@@ -6330,6 +9894,18 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/messages/[id]/author:shops-error",
+    "label": "/messages/[id]/author shops-error",
+    "visual": "state-messages-id-author-shops-error",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/messages/[id]/author:credits-error",
+    "label": "/messages/[id]/author credits-error",
+    "visual": "state-messages-id-author-credits-error",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/messages/[id]/author:posts-truncated",
     "label": "/messages/[id]/author posts-truncated",
     "visual": "state-messages-id-author-posts-truncated",
@@ -6339,6 +9915,18 @@
     "id": "/messages/[id]/author:replies-truncated",
     "label": "/messages/[id]/author replies-truncated",
     "visual": "state-messages-id-author-replies-truncated",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/messages/[id]/author:shops-truncated",
+    "label": "/messages/[id]/author shops-truncated",
+    "visual": "state-messages-id-author-shops-truncated",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/messages/[id]/author:credits-truncated",
+    "label": "/messages/[id]/author credits-truncated",
+    "visual": "state-messages-id-author-credits-truncated",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {

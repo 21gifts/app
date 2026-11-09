@@ -6,7 +6,7 @@ const E2E_ACCOUNT = {
   role: 'basis' as const,
   name: 'Ada',
   location: null,
-  lightningAddress: 'alice@walletofsatoshi.com',
+  lightningAddress: null,
   lightningAddressVerified: false,
   forumLawsDismissed: false,
   createdAt: 1_700_000_000,
@@ -340,6 +340,7 @@ test('Function: PlacePinChip — confirmed composer place stays in flow and can 
     });
   });
   await page.goto('/welcome');
+  await page.getByRole('button', { name: 'Write a post' }).click();
   await page.getByRole('button', { name: 'Add a place' }).click();
   await page.locator('.h-64').click();
   await page.getByLabel('Place name').fill('Stall');

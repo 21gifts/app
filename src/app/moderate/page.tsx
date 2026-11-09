@@ -9,7 +9,7 @@ import { SignedInChrome } from '@/components/SignedInChrome';
  * `/moderate` — signed-in moderation hub for moderators.
  *
  * `/moderate` is the hub; `/moderate/hidden` is the hidden-notes list. Requires
- * name + address + living-room rules agreement via {@link OnboardingGate}
+ * name + username + living-room rules agreement via {@link OnboardingGate}
  * `screen="welcome"`. There is no `route.ts` beside this page (Next.js forbids
  * that); hidden-note HTTP lives under `/forum/messages/hidden`.
  *

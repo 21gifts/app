@@ -1,11 +1,17 @@
 'use client';
 
-import { HandHeart, Loader2, Mail } from 'lucide-react';
+import { Loader2, Mail } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { useEffect, useRef, useState, type ReactElement } from 'react';
+import { useEffect, useMemo, useRef, useState, type ReactElement } from 'react';
 import { AboutMeSection } from '@/components/AboutMeSection';
 import { AccountActivityChart } from '@/components/AccountActivityChart';
+import { CannotReceiveLabel } from '@/components/CannotReceiveLabel';
+import { LoanBalanceChart } from '@/components/LoanBalanceChart';
+import { LocationForm } from '@/components/LocationForm';
+import { MemberIdentityPills } from '@/components/MemberIdentityPills';
 import { MemberTrustActions } from '@/components/MemberTrustActions';
+import { NameForm } from '@/components/NameForm';
+import { ProfileImages } from '@/components/ProfileImages';
 import {
   ForumBoard,
   type ForumFormError,
@@ -17,22 +23,30 @@ import { useTranslations } from '@/components/LocaleProvider';
 import { QrCode } from '@/components/QrCode';
 import { RequirementsOverlay } from '@/components/RequirementsOverlay';
 import { ShopStickerOverlay } from '@/components/ShopStickerOverlay';
-import { Button, Card, IconButton } from '@/components/ui';
+import { Button, Card } from '@/components/ui';
 import {
+  CannotReceiveError,
+  fetchAboutMePhoto,
   fetchComposeTarget,
-  fetchGiftStats,
   fetchMemberPosts,
   fetchMemberReplies,
+  fetchMemberShops,
+  fetchMemberCredits,
   fetchMessagePhoto,
+  fetchProfilePhoto,
   fetchPublicMessage,
   fetchPublicMessagePhoto,
   fetchReplies,
+  fetchWideBanner,
+  putAboutMe,
+  putProfilePhoto,
+  putWideBanner,
   markNotificationsReadForMessage,
-  openConversation,
   NoteDeletedError,
+  openConversation,
   postMessage,
   postMessageInvoice,
-  postRepaymentInvoice,
+  WalletRequiredError,
 } from '@/lib/api';
 import {
   FORUM_MESSAGE_MAX_LENGTH,
@@ -41,30 +55,30 @@ import {
   type AccountActivity,
   type MemberProfile,
 } from '@/lib/api-types';
-import type { MessageKey } from '@/lib/messages';
 import { MissingRequirementsError, nextPostRequirement } from '@/lib/missing-requirements';
 import { giftsLightningAddress, openCryptoPayQrValue } from '@/lib/gifts-address';
+import { useHeartTip } from '@/lib/heart-tip';
 import { profileQrLogo } from '@/lib/profile-qr-logo';
 import { shopStickerLangFromLocation } from '@/lib/shop-sticker';
 import { shortResourceUrl } from '@/lib/short-link';
-import { isReplyPaymentExempt, roleAtLeast, verifiedChipHiddenByStaffTag } from '@/lib/roles';
 import { replyTextIsTooLong } from '@/lib/entry-text';
-import { formatForumTimeFromMs } from '@/lib/forum-time';
+import { authorCannotReceive, isOwnNote, isReplyPaymentExempt, roleAtLeast } from '@/lib/roles';
 import { useFiatPreference } from '@/components/FiatPreferenceProvider';
+import { useSpotRateState } from '@/hooks/useSpotRate';
 import {
-  latestRateDayFor,
+  attachTypedFigure,
   payDraftProblem,
   paySatsFromDraft,
+  draftUnit,
   replyDraftProblem,
   replySatsFromDraft,
   shownFiatForSats,
   shownPaySheetError,
-  type FiatRateDay,
+  typedFiatFigure,
 } from '@/lib/stats-money';
+import { returnToView } from '@/lib/view-history';
 import { useAuthStore } from '@/stores/auth-store';
-
-/** Delay between pay polls (ms). */
-const PAY_POLL_MS = 2000;
+import { PAY_POLL_MS } from '@/lib/payment-link';
 
 /** Default invoice amount when the pay or gift-only reply amount field is empty or whitespace-only. */
 const DEFAULT_FORUM_PAY_SATS = 21;
@@ -98,31 +112,135 @@ function isRateLimitError(err: unknown): boolean {
 }
 
 /**
- * True when the author's wallet rejected the zap invoice.
+ * True when a thrown value is the api answer that the receiving wallet
+ * cannot take this payment: a {@link CannotReceiveError}, recognised by the
+ * api's `code` only.
  *
  * @param err - Caught rejection.
- * @returns Whether the message looks like an author's-wallet error.
+ * @returns Whether the receiver's wallet refused the payment.
  */
 function isAuthorWalletError(err: unknown): boolean {
-  /* v8 ignore next 3 -- non-Error throw is defensive; pay path always rejects with Error */
-  if (!(err instanceof Error)) {
-    return false;
-  }
-  return /author's wallet cannot receive this Bitcoin payment/i.test(err.message);
+  return err instanceof CannotReceiveError;
 }
 
-/** Roles that show a clickable tag beside the author name. */
-type MemberTaggedRole = 'founder' | 'moderator' | 'initiator' | 'verified';
+/**
+ * Loads the public round photo and wide image for a visitor card.
+ *
+ * A missing slot stays null, so the card draws nothing for it. Not the
+ * About me note photo. Disabled on the owner facts card, which loads
+ * `/pictures/me` and `/banners/me` itself.
+ *
+ * @param accountId - Member id. The same-origin routes are `/pictures/:id` and `/banners/:id`.
+ * @param enabled - When false, no request is made.
+ * @returns Object URLs, or null while missing.
+ */
+function useVisitorProfileImages(
+  accountId: string,
+  enabled: boolean,
+): { pictureUrl: string | null; bannerUrl: string | null } {
+  const [pictureUrl, setPictureUrl] = useState<string | null>(null);
+  const [bannerUrl, setBannerUrl] = useState<string | null>(null);
 
-const ROLE_TAG_KEYS: Record<MemberTaggedRole, { label: MessageKey; hint: MessageKey }> = {
-  founder: { label: 'forum.role.founder', hint: 'forum.role.founderHint' },
-  moderator: { label: 'forum.role.moderator', hint: 'forum.role.moderatorHint' },
-  initiator: { label: 'forum.role.initiator', hint: 'forum.role.initiatorHint' },
-  verified: { label: 'forum.role.verified', hint: 'forum.role.verifiedHint' },
-};
+  useEffect(() => {
+    if (!enabled) {
+      return;
+    }
+    let cancelled = false;
+    const created: string[] = [];
+    const load = async (slot: 'pictures' | 'banners'): Promise<string | null> => {
+      try {
+        const response = await fetch(`/${slot}/${accountId}`);
+        if (!response.ok) {
+          return null;
+        }
+        const blob = await response.blob();
+        if (!blob.type.startsWith('image/') || blob.size === 0) {
+          return null;
+        }
+        const url = URL.createObjectURL(blob);
+        created.push(url);
+        return url;
+      } catch {
+        return null;
+      }
+    };
+    void (async () => {
+      const [picture, banner] = await Promise.all([load('pictures'), load('banners')]);
+      if (cancelled) {
+        for (const url of created) {
+          URL.revokeObjectURL(url);
+        }
+        return;
+      }
+      if (picture !== null) {
+        setPictureUrl(picture);
+      }
+      if (banner !== null) {
+        setBannerUrl(banner);
+      }
+    })();
+    return () => {
+      cancelled = true;
+      for (const url of created) {
+        URL.revokeObjectURL(url);
+      }
+    };
+  }, [accountId, enabled]);
 
-function isMemberTaggedRole(role: string): role is MemberTaggedRole {
-  return role in ROLE_TAG_KEYS;
+  return { pictureUrl, bannerUrl };
+}
+
+/**
+ * Resting public header: the wide image and the round photo visitors see.
+ * Neither is the About me note photo. A missing slot is absent, not an add button.
+ *
+ * @param props - Object URLs. Both null renders nothing.
+ * @returns The header, or null.
+ */
+function PublicProfileHeader({
+  pictureUrl,
+  bannerUrl,
+}: {
+  pictureUrl: string | null;
+  bannerUrl: string | null;
+}): ReactElement | null {
+  const { t } = useTranslations();
+  if (bannerUrl !== null) {
+    const overlapped = pictureUrl !== null;
+    return (
+      <div className="flex w-full flex-col items-center gap-4">
+        <div className={`relative w-full${overlapped ? ' mb-8' : ''}`}>
+          {/* eslint-disable-next-line @next/next/no-img-element -- object URL from the public wide image */}
+          <img
+            src={bannerUrl}
+            alt={t('profile.about.bannerAlt')}
+            className="aspect-[5/2] w-full rounded-2xl object-cover"
+          />
+          {pictureUrl !== null ? (
+            // eslint-disable-next-line @next/next/no-img-element -- object URL from the public profile photo
+            <img
+              src={pictureUrl}
+              alt={t('profile.about.portraitAlt')}
+              className="absolute bottom-0 left-1/2 h-16 w-16 -translate-x-1/2 translate-y-1/2 rounded-full object-cover ring-4 ring-app-card"
+            />
+          ) : null}
+        </div>
+      </div>
+    );
+  }
+  if (pictureUrl !== null) {
+    return (
+      <div className="flex w-full flex-col items-center gap-4">
+        {/* eslint-disable-next-line @next/next/no-img-element -- object URL from the public profile photo */}
+        <img
+          src={pictureUrl}
+          alt={t('profile.about.portraitAlt')}
+          className="mx-auto h-16 w-16 rounded-full object-cover"
+        />
+      </div>
+    );
+  }
+  return null;
 }
 
 /* v8 ignore start -- ForumBoard defaults for on-demand member feeds */
@@ -142,7 +260,6 @@ const IDLE_BOARD = {
   payBusy: false,
   payError: null as ForumPayError,
   payInvoice: null as ForumPayInvoice | null,
-  payWaiting: false,
   onPayOpen: (): void => undefined,
   onPayDraftChange: (): void => undefined,
   onPaySubmit: (): void => undefined,
@@ -171,79 +288,74 @@ const IDLE_BOARD = {
 };
 /* v8 ignore stop */
 
-function fundingParticipationLabel(
-  t: (key: MessageKey, vars?: Record<string, string | number>) => string,
-  locale: string,
-  admittedAt: number,
-  reviewerName: string | null | undefined,
-): string {
-  const name = (reviewerName ?? '').trim();
-  const date = formatForumTimeFromMs(admittedAt, locale);
-  if (name !== '') {
-    return t('funding.participatesSinceBy', { date, name });
-  }
-  return t('funding.participatesSince', { date });
-}
-
-function FundingProgramMark({
-  admittedAt,
-  reviewerName = null,
-  expanded,
-  onToggle,
-}: {
-  admittedAt: number;
-  reviewerName?: string | null;
-  expanded: boolean;
-  onToggle: () => void;
-}): ReactElement {
-  const { t, locale } = useTranslations();
-  const label = fundingParticipationLabel(t, locale, admittedAt, reviewerName);
-  return (
-    <IconButton
-      size="sm"
-      variant="secondary"
-      aria-label={label}
-      aria-expanded={expanded}
-      onClick={onToggle}
-    >
-      <HandHeart aria-hidden="true" className="h-3.5 w-3.5" />
-    </IconButton>
-  );
-}
-
 /**
  * Signed-in member identity card: chart, About me, name, location, Lightning
  * Address, role pill, optional funding-program icon-only button (HandHeart;
  * accessible name is participation since the date; pressing it reveals that
  * sentence; the resting shot does not cover the press) when `fundingReviewedAt`
- * is a number, copy-profile-link, optional Message, post/reply counts, stacked
- * activity feeds, and staff Trust Chain actions when the viewer is
- * a moderator and the subject is someone else. About me is not a forum post.
+ * is a number, copy-profile-link, optional Message, post/reply counts, optional
+ * positive shop and credit counts, stacked activity feeds, and staff Trust Chain actions
+ * when the viewer is a moderator, the subject is someone else, and the card is
+ * not the public share payload (`loadPublicList` unset). About me is
+ * not a forum post. When the member cannot receive yet (`lightningAddress`
+ * null), the gifts block shows a "Can't receive yet" label instead of the
+ * address, QR, and shop sticker.
  *
- * @param props - Member profile and both activity series for the chart.
+ * @param props - Member profile and gift/loan activity series for the charts.
  *   `factsOnly` (default false) keeps every hook and returns only the public
- *   pills, gifts block, post/reaction counts, and activity feed.
- *   `activityFailed` (default false) is passed to the chart as `failed`.
+ *   pills, gifts block, post/reaction/shop/credit counts, and activity feed.
+ *   `omitPills` (default false) hides those pills. The routed pages do not
+ *   use either flag. When the signed-in account id equals this profile, the
+ *   full card shows the owner photo, About me, name, and location editors.
+ *   The role, staff, and funding marks stay beside the name. Visitor images
+ *   load only when `factsOnly` is false and the viewer is not the owner. A
+ *   missing public photo or wide image draws nothing. `activityFailed`
+ *   (default false) is passed to both charts as `failed`. `loadPublicList`
+ *   loads the four feeds without a session (the share link). `loadAboutPhoto`
+ *   loads the About me photo on that link when the card has no profile-note id.
+ *   `shareViewKey`, when set, is the route key the copy button writes, including
+ *   when the signed-in account is the owner. `/profile` passes the owner view
+ *   key. `/view/:viewKey` passes the open key. Without it, the button writes
+ *   the short `/l/` link, including for the owner on `/members/:id`.
  * @returns The presentational member profile.
  */
 export function MemberProfileScreen({
   profile,
   received,
   donated = [],
+  owed = [],
+  credit = [],
   factsOnly = false,
+  omitPills = false,
   activityFailed = false,
+  loadPublicList,
+  loadAboutPhoto,
+  shareViewKey,
 }: {
   profile: MemberProfile;
   received: AccountActivity['receivedOverTime'];
   donated?: AccountActivity['donatedOverTime'];
+  owed?: NonNullable<AccountActivity['owedOverTime']>;
+  credit?: NonNullable<AccountActivity['creditOverTime']>;
   factsOnly?: boolean;
+  omitPills?: boolean;
   activityFailed?: boolean;
+  loadPublicList?: (kind: 'posts' | 'replies' | 'shops' | 'credits') => Promise<ForumMessage[]>;
+  loadAboutPhoto?: () => Promise<Blob>;
+  shareViewKey?: string;
 }): ReactElement {
-  const { t, locale } = useTranslations();
+  const { t } = useTranslations();
   const router = useRouter();
   const session = useAuthStore((state) => state.session);
   const account = useAuthStore((state) => state.account);
+  const owner =
+    session !== null && account !== null && account.id === profile.id ? { session, account } : null;
   const { fiat } = useFiatPreference();
+  const visitorImages = useVisitorProfileImages(
+    profile.id,
+    !factsOnly && owner === null && profile.id !== '',
+  );
+  const [imageEpoch, setImageEpoch] = useState(0);
   const amountUnit = account?.amountUnit ?? 'btc';
   const [payShownUnit, setPayShownUnit] = useState<AmountUnit>(amountUnit);
   const [replyShownUnit, setReplyShownUnit] = useState<AmountUnit>(amountUnit);
@@ -252,12 +364,7 @@ export function MemberProfileScreen({
   const [payDraft, setPayDraft] = useState('');
   const [payBusy, setPayBusy] = useState(false);
   const [payError, setPayError] = useState<ForumPayError>(null);
-  const [repayNotice, setRepayNotice] = useState<{
-    messageId: string;
-    error: Exclude<ForumPayError, null> | null;
-  } | null>(null);
   const [payInvoice, setPayInvoice] = useState<ForumPayInvoice | null>(null);
-  const [payWaiting, setPayWaiting] = useState(false);
   const [payHost, setPayHost] = useState<'composer' | 'card' | null>(null);
   const payPollAbortRef = useRef<AbortController | null>(null);
   const payPollGeneration = useRef(0);
@@ -272,28 +379,71 @@ export function MemberProfileScreen({
   const [repliesError, setRepliesError] = useState(false);
   const [replyDraft, setReplyDraft] = useState('');
   const [replyAmountDraft, setReplyAmountDraft] = useState('');
+  const payUnit = draftUnit(payShownUnit, amountUnit, payDraft);
+  const replyUnit = draftUnit(replyShownUnit, amountUnit, replyAmountDraft);
+  // A paid reaction's text while its pay sheet is open: the form keeps it, disabled, behind the sheet.
+  const [replyPayPreview, setReplyPayPreview] = useState<string | null>(null);
   const [replyPosting, setReplyPosting] = useState(false);
   const [replyFormError, setReplyFormError] = useState<ForumReplyFormError>(null);
   const [overlayRequirement, setOverlayRequirement] = useState<
-    'name' | 'username' | 'rules' | 'lightning-address' | null
+    'name' | 'username' | 'rules' | 'wallet' | null
   >(null);
   const pendingPostRef = useRef<(() => Promise<void>) | null>(null);
-  const startRepaymentRef = useRef<(messageId: string) => void>(() => undefined);
   const pendingComposeTextRef = useRef<string | null>(null);
   const [listedProfile, setListedProfile] = useState(profile);
-  const [activity, setActivity] = useState<null | 'posts' | 'replies'>(null);
+  useEffect(() => {
+    setListedProfile(profile);
+  }, [profile]);
+  const [activity, setActivity] = useState<null | 'posts' | 'replies' | 'shops' | 'credits'>(null);
   const [posts, setPosts] = useState<ForumMessage[] | null>(null);
   const [postsLoading, setPostsLoading] = useState(false);
   const [postsError, setPostsError] = useState(false);
   const [activityReplies, setActivityReplies] = useState<ForumMessage[] | null>(null);
   const [activityRepliesLoading, setActivityRepliesLoading] = useState(false);
   const [activityRepliesError, setActivityRepliesError] = useState(false);
+  const [shops, setShops] = useState<ForumMessage[] | null>(null);
+  const [shopsLoading, setShopsLoading] = useState(false);
+  const [shopsError, setShopsError] = useState(false);
+  const [credits, setCredits] = useState<ForumMessage[] | null>(null);
+  const [creditsLoading, setCreditsLoading] = useState(false);
+  const [creditsError, setCreditsError] = useState(false);
+  const heartCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    const shown =
+      activity === 'posts'
+        ? (posts ?? [])
+        : activity === 'replies'
+          ? (activityReplies ?? [])
+          : activity === 'shops'
+            ? (shops ?? [])
+            : activity === 'credits'
+              ? (credits ?? [])
+              : [];
+    for (const message of shown) {
+      counts[message.id] = message.heartCount;
+    }
+    const boardReplies = expandedId === null ? null : replies;
+    if (boardReplies !== null) {
+      for (const message of boardReplies) {
+        counts[message.id] = message.heartCount;
+      }
+    }
+    return counts;
+  }, [activity, posts, activityReplies, shops, credits, expandedId, replies]);
+  const { onHeartTip, heartTipViews } = useHeartTip({
+    readOnly: session === null,
+    heartCounts,
+  });
   const postsLoadGen = useRef(0);
   const repliesLoadGen = useRef(0);
+  const shopsLoadGen = useRef(0);
+  const creditsLoadGen = useRef(0);
   /* v8 ignore next -- SSR: no window */
   const host = typeof window === 'undefined' ? '21.gifts' : window.location.hostname;
-  const address = giftsLightningAddress(listedProfile.username, host);
-  const qr = openCryptoPayQrValue(listedProfile.username, host);
+  // The api sends `lightningAddress: null` when this member cannot receive yet.
+  const cannotReceive = listedProfile.lightningAddress === null;
+  const address = cannotReceive ? null : giftsLightningAddress(listedProfile.username, host);
+  const qr = cannotReceive ? null : openCryptoPayQrValue(listedProfile.username, host);
   const [showQr, setShowQr] = useState(false);
   const [stickerOpen, setStickerOpen] = useState(false);
   const kikambaStickerOpened = useRef(false);
@@ -310,119 +460,11 @@ export function MemberProfileScreen({
     setStickerOpen(true);
   }, [qr, address]);
 
-  const [rateSeries, setRateSeries] = useState<readonly FiatRateDay[] | null>(null);
-  const rateDay = rateSeries === null ? null : latestRateDayFor(rateSeries, fiat);
-  const rateDayRef = useRef(rateDay);
-  rateDayRef.current = rateDay;
-  const [photoUrls, setPhotoUrls] = useState<Record<string, string>>({});
-  const photoUrlsRef = useRef(photoUrls);
-  photoUrlsRef.current = photoUrls;
-  const [photoEpoch, setPhotoEpoch] = useState(0);
-
-  const photoSource: ForumMessage[] = [];
-  if (activity === 'posts' && posts !== null) {
-    photoSource.push(...posts);
-  }
-  if (activity === 'replies' && activityReplies !== null) {
-    photoSource.push(...activityReplies);
-  }
-  if (replies !== null) {
-    photoSource.push(...replies);
-  }
-  const photoSourceRef = useRef(photoSource);
-  photoSourceRef.current = photoSource;
-  const photoIdsKey = photoSource
-    .map((message) => ({
-      id: message.id,
-      count: message.photoCount ?? (message.hasPhoto ? 1 : 0),
-    }))
-    .filter(({ count }) => count > 0)
-    .map(({ id, count }) => `${id}:${count}`)
-    .sort()
-    .join('\0');
-
-  useEffect(() => {
-    let cancelled = false;
-    void fetchGiftStats()
-      .then((stats) => {
-        if (!cancelled) {
-          setRateSeries(stats.spendOverTime);
-        }
-      })
-      .catch(() => {
-        if (!cancelled) {
-          setRateSeries([]);
-        }
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
-  useEffect(() => {
-    if (session === null || photoIdsKey === '') {
-      return;
-    }
-    const listed = photoSourceRef.current;
-    let cancelled = false;
-    const missing = listed.flatMap((message) => {
-      const count = message.photoCount ?? (message.hasPhoto ? 1 : 0);
-      return Array.from({ length: count }, (_, index) => ({
-        id: message.id,
-        index,
-        key: `${message.id}:${index}`,
-      })).filter(({ key }) => photoUrlsRef.current[key] === undefined);
-    });
-    if (missing.length === 0) {
-      return;
-    }
-    void (async () => {
-      for (const photo of missing) {
-        /* v8 ignore start -- skip ids filled while earlier fetches in this loop ran */
-        if (photoUrlsRef.current[photo.key] !== undefined) {
-          continue;
-        }
-        /* v8 ignore stop */
-        let blob: Blob;
-        try {
-          blob = await fetchMessagePhoto(session, photo.id, photo.index);
-        } catch {
-          if (cancelled) {
-            return;
-          }
-          try {
-            blob = await fetchMessagePhoto(session, photo.id, photo.index);
-          } catch {
-            if (cancelled) {
-              return;
-            }
-            // Leave the row text-only when the photo cannot load.
-            continue;
-          }
-        }
-        if (cancelled) {
-          return;
-        }
-        const url = URL.createObjectURL(blob);
-        if (cancelled) {
-          URL.revokeObjectURL(url);
-          return;
-        }
-        setPhotoUrls((prev) => {
-          /* v8 ignore start -- race if the same id was filled while the fetch was in flight */
-          if (prev[photo.key] !== undefined) {
-            URL.revokeObjectURL(url);
-            return prev;
-          }
-          /* v8 ignore stop */
-          return { ...prev, [photo.key]: url };
-        });
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [photoEpoch, photoIdsKey, session]);
+  const { rateDay, loading: rateLoading } = useSpotRateState();
+  const rateSettled = !rateLoading;
+  /** The rate the last reply amount was read with, so a retry stores fiat from that same rate. */
+  const replyRateRef = useRef(rateDay);
+  const [photoVersions, setPhotoVersions] = useState<Record<string, string>>({});
 
   const bumpPayPollGeneration = (): number => {
     payPollAbortRef.current?.abort();
@@ -433,35 +475,73 @@ export function MemberProfileScreen({
 
   useEffect(() => {
     return () => {
-      for (const url of Object.values(photoUrlsRef.current)) {
-        URL.revokeObjectURL(url);
-      }
       bumpPayPollGeneration();
     };
   }, []);
 
-  const loadActivityFeed = async (kind: 'posts' | 'replies'): Promise<void> => {
-    const setLoading = kind === 'posts' ? setPostsLoading : setActivityRepliesLoading;
-    const setError = kind === 'posts' ? setPostsError : setActivityRepliesError;
-    const setList = kind === 'posts' ? setPosts : setActivityReplies;
-    const fetchFn = kind === 'posts' ? fetchMemberPosts : fetchMemberReplies;
-    const loadGen = kind === 'posts' ? postsLoadGen : repliesLoadGen;
+  const loadActivityFeed = async (
+    kind: 'posts' | 'replies' | 'shops' | 'credits',
+  ): Promise<void> => {
+    const setLoading =
+      kind === 'posts'
+        ? setPostsLoading
+        : kind === 'replies'
+          ? setActivityRepliesLoading
+          : kind === 'credits'
+            ? setCreditsLoading
+            : setShopsLoading;
+    const setError =
+      kind === 'posts'
+        ? setPostsError
+        : kind === 'replies'
+          ? setActivityRepliesError
+          : kind === 'credits'
+            ? setCreditsError
+            : setShopsError;
+    const setList =
+      kind === 'posts'
+        ? setPosts
+        : kind === 'replies'
+          ? setActivityReplies
+          : kind === 'credits'
+            ? setCredits
+            : setShops;
+    const fetchFn =
+      kind === 'posts'
+        ? fetchMemberPosts
+        : kind === 'replies'
+          ? fetchMemberReplies
+          : kind === 'credits'
+            ? fetchMemberCredits
+            : fetchMemberShops;
+    const loadGen =
+      kind === 'posts'
+        ? postsLoadGen
+        : kind === 'replies'
+          ? repliesLoadGen
+          : kind === 'credits'
+            ? creditsLoadGen
+            : shopsLoadGen;
     const gen = ++loadGen.current;
     setLoading(true);
     setError(false);
-    if (session === null) {
-      setLoading(false);
-      setError(true);
-      return;
-    }
+    const token = session;
     try {
-      const next = await fetchFn(session, profile.id);
+      let next: ForumMessage[];
+      if (loadPublicList !== undefined) {
+        next = await loadPublicList(kind);
+      } else if (token === null) {
+        setError(true);
+        return;
+      } else {
+        next = await fetchFn(token, profile.id);
+      }
       if (loadGen.current === gen) {
         setList(next);
       }
     } catch (err) {
       if (err instanceof MissingRequirementsError) {
-        router.replace('/setup/rules');
+        returnToView('/setup/rules', router);
         return;
       }
       if (loadGen.current === gen) {
@@ -481,12 +561,16 @@ export function MemberProfileScreen({
     setPayError(null);
     setPayInvoice(null);
     setPayBusy(false);
-    setPayWaiting(false);
     setPayHost(null);
+    setReplyPayPreview(null);
     setReplyPosting(false);
   };
 
-  const openActivity = (next: 'posts' | 'replies'): void => {
+  const openActivity = (next: 'posts' | 'replies' | 'shops' | 'credits'): void => {
+    // A paid reaction's sheet is open over a card: the feeds stay as they are until the sheet closes.
+    if (replyPayPreview !== null) {
+      return;
+    }
     if (
       payMessageId !== null &&
       ((replies !== null && replies.some((row) => row.id === payMessageId)) ||
@@ -505,8 +589,20 @@ export function MemberProfileScreen({
       }
       return;
     }
-    if ((activityReplies === null || activityRepliesError) && !activityRepliesLoading) {
-      void loadActivityFeed('replies');
+    if (next === 'replies') {
+      if ((activityReplies === null || activityRepliesError) && !activityRepliesLoading) {
+        void loadActivityFeed('replies');
+      }
+      return;
+    }
+    if (next === 'credits') {
+      if ((credits === null || creditsError) && !creditsLoading) {
+        void loadActivityFeed('credits');
+      }
+      return;
+    }
+    if ((shops === null || shopsError) && !shopsLoading) {
+      void loadActivityFeed('shops');
     }
   };
 
@@ -521,6 +617,7 @@ export function MemberProfileScreen({
     baselineSats: number,
     replyParentId: string | null = null,
     baselineReceivedSats?: number,
+    clearReplyDraft = false,
   ): void => {
     const generation = bumpPayPollGeneration();
     const controller = payPollAbortRef.current;
@@ -529,7 +626,6 @@ export function MemberProfileScreen({
       return;
     }
     const signal = controller.signal;
-    setPayWaiting(true);
     void (async () => {
       const composePay = replyParentId !== null;
       const countOwn = async (): Promise<number> => {
@@ -547,11 +643,10 @@ export function MemberProfileScreen({
       if (composePay) {
         try {
           baselineOwn = await countOwn();
-          /* v8 ignore start -- a failed baseline count is retried after sats rise */
         } catch {
+          // Without a baseline, any own row with this text after the sats rise is the new one.
           baselineOwn = null;
         }
-        /* v8 ignore stop */
       }
       for (;;) {
         try {
@@ -573,9 +668,7 @@ export function MemberProfileScreen({
             let ownContent = !composePay;
             if (composePay) {
               try {
-                if (baselineOwn !== null) {
-                  ownContent = (await countOwn()) > baselineOwn;
-                }
+                ownContent = (await countOwn()) > (baselineOwn ?? 0);
                 /* v8 ignore start -- a failed own-content lookup keeps the poll waiting */
               } catch {
                 ownContent = false;
@@ -586,6 +679,36 @@ export function MemberProfileScreen({
               pendingComposeTextRef.current = null;
               setPosts((prev) => {
                 /* v8 ignore next 3 -- pay poll starts from a listed posts-feed card */
+                if (prev === null) {
+                  return prev;
+                }
+                return prev.map((row) =>
+                  row.id === next.id
+                    ? {
+                        ...row,
+                        ...next,
+                        replyCount: Math.max(row.replyCount, next.replyCount),
+                      }
+                    : row,
+                );
+              });
+              setShops((prev) => {
+                /* v8 ignore next 3 -- shops list is null until that feed opens */
+                if (prev === null) {
+                  return prev;
+                }
+                return prev.map((row) =>
+                  row.id === next.id
+                    ? {
+                        ...row,
+                        ...next,
+                        replyCount: Math.max(row.replyCount, next.replyCount),
+                      }
+                    : row,
+                );
+              });
+              setCredits((prev) => {
+                /* v8 ignore next 3 -- credits list is null until that feed opens */
                 if (prev === null) {
                   return prev;
                 }
@@ -611,13 +734,18 @@ export function MemberProfileScreen({
                 }
                 return prev.map((row) => (row.id === next.id ? { ...row, ...next } : row));
               });
-              setPayWaiting(false);
               setPayInvoice(null);
               setPayMessageId(null);
               setPayHost(null);
               setPayDraft('');
               setPayError(null);
               setReplyPosting(false);
+              // The paid reaction went out: its text and amount leave the form with the sheet.
+              if (clearReplyDraft) {
+                setReplyDraft('');
+                setReplyAmountDraft('');
+              }
+              setReplyPayPreview(null);
               const current = useAuthStore.getState();
               if (current.session !== session) {
                 return;
@@ -640,6 +768,34 @@ export function MemberProfileScreen({
                     return { ...row, replyCount: row.replyCount + 1 };
                   });
                 });
+                /* v8 ignore stop */
+                setShops((prev) => {
+                  /* v8 ignore next 3 -- shops list is null until that feed opens */
+                  if (prev === null) {
+                    return prev;
+                  }
+                  return prev.map((row) => {
+                    /* v8 ignore next 3 -- other listed shop notes keep their counts */
+                    if (row.id !== replyParentId) {
+                      return row;
+                    }
+                    return { ...row, replyCount: row.replyCount + 1 };
+                  });
+                });
+                setCredits((prev) => {
+                  /* v8 ignore next 3 -- credits list is null until that feed opens */
+                  if (prev === null) {
+                    return prev;
+                  }
+                  return prev.map((row) => {
+                    /* v8 ignore next 3 -- other listed credit notes keep their counts */
+                    if (row.id !== replyParentId) {
+                      return row;
+                    }
+                    return { ...row, replyCount: row.replyCount + 1 };
+                  });
+                });
+                /* v8 ignore start -- compose-pay reply increment is asserted in tests; identity/empty-activity arms are fixture-only */
                 setActivityReplies((prev) => {
                   /* v8 ignore next 8 -- activity replies feed is empty on the posts-card path */
                   if (prev === null) {
@@ -706,70 +862,12 @@ export function MemberProfileScreen({
     return true;
   };
 
-  startRepaymentRef.current = (messageId: string): void => {
-    if (session === null) {
-      return;
-    }
-    const generation = bumpPayPollGeneration();
-    setPayMessageId(null);
-    setPayHost(null);
-    setPayDraft('');
-    setPayInvoice(null);
-    setPayWaiting(false);
-    setPayError(null);
-    setRepayNotice({ messageId, error: null });
-    setPayBusy(true);
-    void postRepaymentInvoice(session, messageId)
-      .then((invoice) => {
-        if (generation !== payPollGeneration.current) {
-          return;
-        }
-        setRepayNotice(null);
-        setPayHost('card');
-        setPayMessageId(messageId);
-        setPayInvoice({
-          messageId,
-          pr: invoice.pr,
-          amountSats: invoice.amountSats,
-        });
-      })
-      .catch((err: unknown) => {
-        if (generation !== payPollGeneration.current) {
-          return;
-        }
-        if (err instanceof MissingRequirementsError) {
-          if (openOverlayForMissing(err.missing)) {
-            pendingPostRef.current = () => {
-              startRepaymentRef.current(messageId);
-              return Promise.resolve();
-            };
-            return;
-          }
-          setRepayNotice({ messageId, error: 'request' });
-          return;
-        }
-        setRepayNotice({
-          messageId,
-          error: isRateLimitError(err)
-            ? 'rateLimit'
-            : isAuthorWalletError(err)
-              ? 'authorWallet'
-              : 'request',
-        });
-      })
-      .finally(() => {
-        if (generation !== payPollGeneration.current) {
-          return;
-        }
-        setPayBusy(false);
-      });
-  };
-
   const runReplyPost = async (
     token: string,
     trimmed: string,
     parentId: string,
     isRetry: boolean,
+    ownNote = false,
   ): Promise<void> => {
     setReplyPosting(true);
     setReplyFormError(null);
@@ -803,6 +901,38 @@ export function MemberProfileScreen({
               : message,
           );
         });
+        setShops((prev) => {
+          /* v8 ignore next 3 -- shops list is null until that feed opens */
+          if (prev === null) {
+            return prev;
+          }
+          return prev.map((message) => {
+            /* v8 ignore next 3 -- other listed shop notes keep their counts */
+            if (message.id !== parentId) {
+              return message;
+            }
+            return {
+              ...message,
+              replyCount: Math.max(message.replyCount, message.replyCount + 1),
+            };
+          });
+        });
+        setCredits((prev) => {
+          /* v8 ignore next 3 -- credits list is null until that feed opens */
+          if (prev === null) {
+            return prev;
+          }
+          return prev.map((message) => {
+            /* v8 ignore next 3 -- other listed credit notes keep their counts */
+            if (message.id !== parentId) {
+              return message;
+            }
+            return {
+              ...message,
+              replyCount: Math.max(message.replyCount, message.replyCount + 1),
+            };
+          });
+        });
       }
       setReplyAmountDraft('');
       pendingPostRef.current = null;
@@ -814,7 +944,7 @@ export function MemberProfileScreen({
     } catch (err) {
       if (err instanceof MissingRequirementsError) {
         if (!isRetry && openOverlayForMissing(err.missing)) {
-          pendingPostRef.current = () => runReplyPost(token, trimmed, parentId, true);
+          pendingPostRef.current = () => runReplyPost(token, trimmed, parentId, true, ownNote);
           return;
         }
         if (expandedIdRef.current === parentId) {
@@ -823,6 +953,11 @@ export function MemberProfileScreen({
         return;
       }
       if (isReplyPaymentError(err)) {
+        // A reply on your own note is never paid; the api owes it unpaid.
+        if (ownNote) {
+          setReplyFormError('request');
+          return;
+        }
         await runComposePay(token, trimmed, parentId, 1, isRetry);
         return;
       }
@@ -864,7 +999,8 @@ export function MemberProfileScreen({
         target.messageId,
         sats,
         `inReplyTo:${parentId}\n${trimmed}`,
-        shownFiatForSats(sats, rateDayRef.current),
+        // The 1-sat posting fee is not the typed reply. Store only the spot.
+        shownFiatForSats(sats, replyRateRef.current),
       );
       /* v8 ignore next 3 -- pay sheet closed while the compose invoice was minting */
       if (generation !== payPollGeneration.current) {
@@ -876,6 +1012,8 @@ export function MemberProfileScreen({
         messageId: target.messageId,
         pr: invoice.pr,
         amountSats: invoice.amountSats,
+        sparkInvoice: invoice.sparkInvoice,
+        postsOnPay: true,
       });
       setPayHost('composer');
       setReplyDraft('');
@@ -890,6 +1028,10 @@ export function MemberProfileScreen({
         return;
       }
       /* v8 ignore stop */
+      if (err instanceof WalletRequiredError) {
+        setOverlayRequirement('wallet');
+        return;
+      }
       if (err instanceof MissingRequirementsError) {
         if (!isRetry && openOverlayForMissing(err.missing)) {
           pendingPostRef.current = () => runComposePay(token, trimmed, parentId, sats, true);
@@ -927,33 +1069,52 @@ export function MemberProfileScreen({
               parentId,
               sats,
               undefined,
-              shownFiatForSats(sats, rateDayRef.current),
+              shownFiatForSats(
+                sats,
+                replyRateRef.current,
+                typedFiatFigure(replyUnit, replyAmountDraft, fiat),
+              ),
             )
           : await postMessageInvoice(
               token,
               parentId,
               sats,
               trimmed,
-              shownFiatForSats(sats, rateDayRef.current),
+              shownFiatForSats(
+                sats,
+                replyRateRef.current,
+                typedFiatFigure(replyUnit, replyAmountDraft, fiat),
+              ),
             );
       if (generation !== payPollGeneration.current) {
         return;
       }
       setPayMessageId(parentId);
       setPayError(null);
-      setPayInvoice({
-        messageId: parentId,
-        pr: invoice.pr,
-        amountSats: invoice.amountSats,
-      });
+      setPayInvoice(
+        attachTypedFigure(
+          {
+            messageId: parentId,
+            pr: invoice.pr,
+            amountSats: invoice.amountSats,
+            sparkInvoice: invoice.sparkInvoice,
+          },
+          replyUnit,
+          replyAmountDraft,
+          fiat,
+        ),
+      );
       setPayHost('card');
-      setReplyDraft('');
-      setReplyAmountDraft('');
+      setReplyPayPreview(trimmed);
       pendingPostRef.current = null;
       setReplyPosting(false);
-      startPayPoll(parentId, baselineSats);
+      startPayPoll(parentId, baselineSats, null, undefined, true);
     } catch (err) {
       if (generation !== payPollGeneration.current) {
+        return;
+      }
+      if (err instanceof WalletRequiredError) {
+        setOverlayRequirement('wallet');
         return;
       }
       if (err instanceof MissingRequirementsError) {
@@ -969,8 +1130,15 @@ export function MemberProfileScreen({
         setReplyFormError('deleted');
         return;
       }
-      // This invoice was sent only after the draft fit the stored limit.
-      setReplyFormError(isRateLimitError(err) ? 'rateLimit' : 'request');
+      setReplyFormError(
+        err instanceof Error && /1[-–]8000 characters/i.test(err.message)
+          ? 'tooLong'
+          : isRateLimitError(err)
+            ? 'rateLimit'
+            : isAuthorWalletError(err)
+              ? 'authorWallet'
+              : 'request',
+      );
     } finally {
       setReplyPosting(false);
     }
@@ -999,20 +1167,17 @@ export function MemberProfileScreen({
   /* v8 ignore next -- SSR: no window */
   const [origin, setOrigin] = useState(typeof window === 'undefined' ? '' : window.location.origin);
   const [pmBusy, setPmBusy] = useState(false);
-  const [roleHintOpen, setRoleHintOpen] = useState(false);
-  const [fundingHintOpen, setFundingHintOpen] = useState(false);
-  const tagged = isMemberTaggedRole(listedProfile.role) ? listedProfile.role : null;
-  const roleKeys =
-    tagged !== null && !verifiedChipHiddenByStaffTag(listedProfile.role, listedProfile.staffTag)
-      ? ROLE_TAG_KEYS[tagged]
-      : null;
-  const fundingReviewedAt = listedProfile.fundingReviewedAt;
-  const showFundingReviewed = typeof fundingReviewedAt === 'number';
   const showMessage =
     session !== null && account?.id !== profile.id && profile.profileMessage !== null;
   const memberPath = `/members/${profile.id}`;
-  /* v8 ignore next -- SSR first paint: origin empty until client */
-  const profileUrl = origin !== '' ? shortResourceUrl(origin, profile.id, memberPath) : '';
+  let profileUrl =
+    shareViewKey !== undefined
+      ? `${origin}/view/${shareViewKey}`
+      : shortResourceUrl(origin, profile.id, memberPath);
+  /* v8 ignore next 3 -- SSR first paint: origin is empty until the client effect */
+  if (origin === '') {
+    profileUrl = '';
+  }
 
   useEffect(() => {
     setOrigin(window.location.origin);
@@ -1047,7 +1212,7 @@ export function MemberProfileScreen({
     setPayDraft('');
     setPayError(null);
     setPayInvoice(null);
-    setPayWaiting(false);
+    setReplyPayPreview(null);
     setPayBusy(false);
   };
 
@@ -1057,10 +1222,10 @@ export function MemberProfileScreen({
       return;
     }
     /* v8 ignore next 3 -- the pay sheet returns before this handler while its error is loading */
-    if (payError === 'loading' && rateSeries === null) {
+    if (payError === 'loading' && !rateSettled) {
       return;
     }
-    const payProblem = payDraftProblem(payShownUnit, payDraft, rateDay, fiat, rateSeries !== null);
+    const payProblem = payDraftProblem(payUnit, payDraft, rateDay, fiat, rateSettled);
     if (payProblem === 'quiet') {
       setPayError('loading');
       return;
@@ -1069,7 +1234,9 @@ export function MemberProfileScreen({
       setPayError('noRate');
       return;
     }
-    const sats = paySatsFromDraft(payDraft, payShownUnit, rateDay, fiat);
+    const sats = paySatsFromDraft(payDraft, payUnit, rateDay, fiat);
+    // The fiat stored with the invoice uses the same rate as these sats, also on a retry.
+    const payRate = rateDay;
     if (sats === 'invalid') {
       setPayError('amount');
       return;
@@ -1095,16 +1262,22 @@ export function MemberProfileScreen({
             messageId,
             sats,
             undefined,
-            shownFiatForSats(sats, rateDayRef.current),
+            shownFiatForSats(sats, payRate, typedFiatFigure(payUnit, payDraft, fiat)),
           );
           if (generation !== payPollGeneration.current) {
             return null;
           }
-          minted = {
-            messageId,
-            pr: invoice.pr,
-            amountSats: invoice.amountSats,
-          };
+          minted = attachTypedFigure(
+            {
+              messageId,
+              pr: invoice.pr,
+              amountSats: invoice.amountSats,
+              sparkInvoice: invoice.sparkInvoice,
+            },
+            payUnit,
+            payDraft,
+            fiat,
+          );
           setPayInvoice(minted);
           setPayBusy(false);
           if (listed.parentId) {
@@ -1126,6 +1299,11 @@ export function MemberProfileScreen({
           }
           if (err instanceof NoteDeletedError) {
             setPayError('deleted');
+            return null;
+          }
+          if (err instanceof WalletRequiredError) {
+            setPayError(null);
+            setOverlayRequirement('wallet');
             return null;
           }
           setPayError(
@@ -1152,6 +1330,10 @@ export function MemberProfileScreen({
 
   const handleToggleExpand = (messageId: string): void => {
     if (replyPosting) {
+      return;
+    }
+    // A paid reaction's sheet is open over this card: its form stays as it is until the sheet closes.
+    if (replyPayPreview !== null) {
       return;
     }
     if (
@@ -1208,17 +1390,21 @@ export function MemberProfileScreen({
     if (session === null || expandedId === null || replyPosting) {
       return;
     }
-    if (replyFormError === 'loading' && rateSeries === null) {
+    if (replyFormError === 'loading' && !rateSettled) {
       return;
     }
     const trimmed = replyDraft.trim();
-    const parsed = replySatsFromDraft(replyAmountDraft, replyShownUnit, rateDay, fiat);
+    const parsed = replySatsFromDraft(replyAmountDraft, replyUnit, rateDay, fiat);
+    replyRateRef.current = rateDay;
     const token = session;
     const parentId = expandedId;
-    const parentRow = posts?.find((message) => message.id === parentId);
+    const parentList = activity === 'credits' ? credits : activity === 'shops' ? shops : posts;
+    const parentRow = parentList?.find((message) => message.id === parentId);
     const parentAccountId = parentRow?.accountId;
+    const own = isOwnNote(account?.id, parentAccountId);
     const exempt = isReplyPaymentExempt(account, parentAccountId);
     const authorUnknown = parentAccountId === undefined;
+    const blocked = parentRow !== undefined && authorCannotReceive(parentRow, account?.id);
     if (
       replyTextIsTooLong(
         replyDraft,
@@ -1230,13 +1416,7 @@ export function MemberProfileScreen({
       setReplyFormError('tooLong');
       return;
     }
-    const replyProblem = replyDraftProblem(
-      replyShownUnit,
-      replyAmountDraft,
-      rateDay,
-      fiat,
-      rateSeries !== null,
-    );
+    const replyProblem = replyDraftProblem(replyUnit, replyAmountDraft, rateDay, fiat, rateSettled);
     // A fiat amount with no settled rate is not "at least 1 sat".
     if (replyProblem === 'quiet') {
       setReplyFormError('loading');
@@ -1246,6 +1426,25 @@ export function MemberProfileScreen({
       return;
     }
     const continueReply = (isRetry: boolean): Promise<void> => {
+      // Your own note shows no amount field: the reply is posted without a payment.
+      if (own) {
+        if (trimmed === '') {
+          setReplyFormError('empty');
+          return Promise.resolve();
+        }
+        return runReplyPost(token, trimmed, parentId, isRetry, true);
+      }
+      // The author cannot receive yet: the amount field is disabled, so the
+      // reply never invoices a gift to the author.
+      if (blocked) {
+        if (trimmed === '') {
+          setReplyFormError('empty');
+          return Promise.resolve();
+        }
+        return exempt
+          ? runReplyPost(token, trimmed, parentId, isRetry)
+          : runComposePay(token, trimmed, parentId, 1, isRetry);
+      }
       if (parsed === 'invalid') {
         setReplyFormError('amount');
         return Promise.resolve();
@@ -1304,15 +1503,14 @@ export function MemberProfileScreen({
     })();
   };
 
-  const rateSettled = rateSeries !== null;
   const replyAmountProblem = replyDraftProblem(
-    replyShownUnit,
+    replyUnit,
     replyAmountDraft,
     rateDay,
     fiat,
     rateSettled,
   );
-  const livePayProblem = payDraftProblem(payShownUnit, payDraft, rateDay, fiat, rateSettled);
+  const livePayProblem = payDraftProblem(payUnit, payDraft, rateDay, fiat, rateSettled);
   const shownPayError = shownPaySheetError(
     payError,
     livePayProblem,
@@ -1336,16 +1534,16 @@ export function MemberProfileScreen({
     replyParentAccountId = activityReplies?.find((message) => message.id === expandedId)?.accountId;
   }
   const sharedForumProps = {
-    photoUrls,
+    photoUrls: {},
+    photoVersions,
     rateDay,
     payMessageId,
     payHost,
     payDraft,
     payBusy,
     payError: shownPayError,
-    repayNotice,
     payInvoice,
-    payWaiting,
+    replyPayPreview,
     onPayOpen: handlePayOpen,
     onPayDraftChange: (value: string): void => {
       setPayDraft(value);
@@ -1359,9 +1557,7 @@ export function MemberProfileScreen({
     ...(factsOnly
       ? {}
       : {
-          onRepay: (messageId: string): void => {
-            startRepaymentRef.current(messageId);
-          },
+          repayLink: true,
         }),
     expandedId,
     onToggleExpand: handleToggleExpand,
@@ -1384,7 +1580,7 @@ export function MemberProfileScreen({
       replyDraft,
       expandedId,
       isReplyPaymentExempt(account, replyParentAccountId),
-      replySatsFromDraft(replyAmountDraft, replyShownUnit, rateDay, fiat) === 'empty' &&
+      replySatsFromDraft(replyAmountDraft, replyUnit, rateDay, fiat) === 'empty' &&
         !isReplyPaymentExempt(account, replyParentAccountId) &&
         replyParentAccountId !== undefined,
     ),
@@ -1392,23 +1588,65 @@ export function MemberProfileScreen({
     replyAmountInvalid: shownReplyFormError !== 'loading' && replyAmountProblem === 'invalid',
     onReplyPost: handleReplyPost,
     onRetryReplies: handleRetryReplies,
+    heartViewerId: account?.id ?? null,
+    onHeartTip,
+    heartTipViews,
   };
 
-  const activityMessages = activity === 'posts' ? (posts ?? []) : (activityReplies ?? []);
-  const activityCount = activity === 'posts' ? profile.postCount : profile.replyCount;
-  const activityLoading = activity === 'posts' ? postsLoading : activityRepliesLoading;
-  const activityError = activity === 'posts' ? postsError : activityRepliesError;
+  const creditCount = typeof profile.creditCount === 'number' ? profile.creditCount : 0;
+  const activityMessages =
+    activity === 'posts'
+      ? (posts ?? [])
+      : activity === 'replies'
+        ? (activityReplies ?? [])
+        : activity === 'credits'
+          ? (credits ?? [])
+          : (shops ?? []);
+  const activityCount =
+    activity === 'posts'
+      ? profile.postCount
+      : activity === 'replies'
+        ? profile.replyCount
+        : activity === 'credits'
+          ? creditCount
+          : (profile.shopCount ?? 0);
+  const activityLoading =
+    activity === 'posts'
+      ? postsLoading
+      : activity === 'replies'
+        ? activityRepliesLoading
+        : activity === 'credits'
+          ? creditsLoading
+          : shopsLoading;
+  const activityError =
+    activity === 'posts'
+      ? postsError
+      : activity === 'replies'
+        ? activityRepliesError
+        : activity === 'credits'
+          ? creditsError
+          : shopsError;
   const profileMessagePhotoId =
     profile.profileMessage !== null && profile.profileMessage.hasPhoto
       ? profile.profileMessage.id
       : undefined;
+  const publicAboutMessageId =
+    profile.profileMessage !== null && profile.profileMessage.id !== ''
+      ? profile.profileMessage.id
+      : typeof profile.aboutMessageId === 'string' && profile.aboutMessageId !== ''
+        ? profile.aboutMessageId
+        : undefined;
 
   const giftsBlock = (
     <div className="flex w-full flex-col items-stretch gap-3 border-t border-app-border pt-6">
       <p className="text-center text-xs tracking-widest text-app-subtle uppercase">
         {t('profile.giftsHeading')}
       </p>
-      {address !== null && address.trim() !== '' ? (
+      {cannotReceive ? (
+        <p className="text-center">
+          <CannotReceiveLabel />
+        </p>
+      ) : address !== null && address.trim() !== '' ? (
         <p className="min-w-0 truncate text-center font-mono text-sm text-app-fg">{address}</p>
       ) : (
         <p className="min-w-0 truncate text-center text-sm text-app-fg">
@@ -1461,10 +1699,35 @@ export function MemberProfileScreen({
       >
         {t('profile.replyCount', { count: String(profile.replyCount) })}
       </Button>
+      {typeof profile.shopCount === 'number' && profile.shopCount > 0 ? (
+        <Button
+          type="button"
+          size="sm"
+          variant={activity === 'shops' ? 'primary' : 'secondary'}
+          aria-pressed={activity === 'shops'}
+          onClick={() => openActivity('shops')}
+        >
+          {t('profile.shopCount', { count: String(profile.shopCount) })}
+        </Button>
+      ) : null}
+      {creditCount > 0 ? (
+        <Button
+          type="button"
+          size="sm"
+          variant={activity === 'credits' ? 'primary' : 'secondary'}
+          aria-pressed={activity === 'credits'}
+          onClick={() => openActivity('credits')}
+        >
+          {t('profile.creditCount', { count: String(creditCount) })}
+        </Button>
+      ) : null}
     </div>
   );
   const activityFeed =
-    activity === 'posts' || activity === 'replies' ? (
+    activity === 'posts' ||
+    activity === 'replies' ||
+    activity === 'shops' ||
+    activity === 'credits' ? (
       activityLoading ? (
         <p className="text-center text-sm text-app-muted">{t('forum.loading')}</p>
       ) : activityError ? (
@@ -1478,31 +1741,21 @@ export function MemberProfileScreen({
         </div>
       ) : (
         <>
-          {activity === 'posts' ? (
+          {activity === 'posts' || activity === 'shops' || activity === 'credits' ? (
             <ForumBoard
               {...IDLE_BOARD}
               messages={activityMessages}
               {...sharedForumProps}
-              {...(account !== null && roleAtLeast(account.role, 'moderator')
+              {...(activity !== 'credits' &&
+              account !== null &&
+              roleAtLeast(account.role, 'moderator')
                 ? {
                     shopNoteEdit: true as const,
                     onShopNoteUpdated: (updated: ForumMessage) => {
-                      setPhotoUrls((prev) => {
-                        const prefix = `${updated.id}:`;
-                        let changed = false;
-                        const next = { ...prev };
-                        for (const [key, url] of Object.entries(next)) {
-                          if (!key.startsWith(prefix)) {
-                            continue;
-                          }
-                          URL.revokeObjectURL(url);
-                          delete next[key];
-                          changed = true;
-                        }
-                        return changed ? next : prev;
-                      });
-                      setPhotoEpoch((n) => n + 1);
-                      setPosts((prev) => {
+                      setPhotoVersions((prev) => ({ ...prev, [updated.id]: String(Date.now()) }));
+                      const applyShopEdit = (
+                        prev: ForumMessage[] | null,
+                      ): ForumMessage[] | null => {
                         /* v8 ignore next 3 -- the pencil mounts only after the post list has loaded */
                         if (prev === null) {
                           return prev;
@@ -1530,7 +1783,9 @@ export function MemberProfileScreen({
                           }
                           return next;
                         });
-                      });
+                      };
+                      setPosts(applyShopEdit);
+                      setShops(applyShopEdit);
                     },
                   }
                 : {})}
@@ -1578,52 +1833,20 @@ export function MemberProfileScreen({
     return (
       <>
         {requirementOverlay}
-        {roleKeys !== null ||
-        showFundingReviewed ||
-        listedProfile.staffTag === 'software_developer' ? (
-          <div className="flex w-full flex-wrap items-center justify-center gap-2">
-            {roleKeys !== null ? (
-              <button
-                type="button"
-                aria-expanded={roleHintOpen}
-                onClick={() => {
-                  setRoleHintOpen((open) => !open);
-                }}
-                className="rounded-full border border-app-border-strong px-2 py-0.5 text-xs font-medium text-app-muted"
-              >
-                {t(roleKeys.label)}
-              </button>
-            ) : null}
-            {listedProfile.staffTag === 'software_developer' ? (
-              <span className="rounded-full border border-app-border-strong px-2 py-0.5 text-xs font-medium text-app-muted">
-                {t('forum.staff.softwareDeveloper')}
-              </span>
-            ) : null}
-            {typeof fundingReviewedAt === 'number' ? (
-              <FundingProgramMark
-                admittedAt={fundingReviewedAt}
-                reviewerName={listedProfile.fundingReviewedByName ?? null}
-                expanded={fundingHintOpen}
-                onToggle={() => setFundingHintOpen((open) => !open)}
-              />
-            ) : null}
-          </div>
-        ) : null}
-        {roleHintOpen && roleKeys !== null ? (
-          <p role="status" className="text-center text-xs text-app-muted">
-            {t(roleKeys.hint)}
-          </p>
-        ) : null}
-        {fundingHintOpen && typeof fundingReviewedAt === 'number' ? (
-          <p role="status" className="text-center text-xs text-app-muted">
-            {fundingParticipationLabel(
-              t,
-              locale,
-              fundingReviewedAt,
-              listedProfile.fundingReviewedByName,
+        {omitPills ? null : (
+          <MemberIdentityPills profile={listedProfile}>
+            {(marks, hints) => (
+              <>
+                {marks !== null ? (
+                  <div className="flex w-full flex-wrap items-center justify-center gap-2">
+                    {marks}
+                  </div>
+                ) : null}
+                {hints}
+              </>
             )}
-          </p>
-        ) : null}
+          </MemberIdentityPills>
+        )}
         {giftsBlock}
         {countButtons}
         {activityFeed}
@@ -1636,31 +1859,120 @@ export function MemberProfileScreen({
       {requirementOverlay}
       <div className="flex w-full max-w-sm flex-col items-center gap-6">
         <Card surface={false}>
+          {owner !== null ? (
+            <ProfileImages
+              key={owner.session}
+              imageEpoch={imageEpoch}
+              loadPicture={() => fetchProfilePhoto(owner.session)}
+              loadBanner={() => fetchWideBanner(owner.session)}
+              onSavePicture={async (photo) => {
+                await putProfilePhoto(owner.session, photo);
+                setImageEpoch((epoch) => epoch + 1);
+              }}
+              onSaveBanner={async (photo) => {
+                await putWideBanner(owner.session, photo);
+                setImageEpoch((epoch) => epoch + 1);
+              }}
+            />
+          ) : (
+            <PublicProfileHeader
+              pictureUrl={visitorImages.pictureUrl}
+              bannerUrl={visitorImages.bannerUrl}
+            />
+          )}
           <h1 className="text-center text-2xl font-semibold tracking-tight sm:text-3xl">
             {t('profile.title')}
           </h1>
           <AccountActivityChart received={received} donated={donated} failed={activityFailed} />
-          <AboutMeSection
-            mode="public"
-            aboutMe={profile.aboutMe}
-            name={profile.name}
-            {...(profile.aboutMe !== null &&
-            profile.profileMessage !== null &&
-            profile.profileMessage.id !== ''
-              ? { messageId: profile.profileMessage.id }
-              : {})}
-            hasPhoto={profile.aboutMeHasPhoto === true || profile.profileMessage?.hasPhoto === true}
-            {...(profileMessagePhotoId !== undefined
-              ? {
-                  loadPhoto: () =>
-                    session !== null
-                      ? fetchMessagePhoto(session, profileMessagePhotoId)
-                      : fetchPublicMessagePhoto(profileMessagePhotoId),
+          <LoanBalanceChart owed={owed} credit={credit} failed={activityFailed} />
+          {owner !== null ? (
+            <AboutMeSection
+              mode="owner"
+              aboutMe={owner.account.aboutMe}
+              name={owner.account.name}
+              {...(typeof owner.account.aboutMessageId === 'string' &&
+              owner.account.aboutMessageId !== ''
+                ? { messageId: owner.account.aboutMessageId }
+                : {})}
+              hasPhoto={owner.account.aboutMeHasPhoto === true}
+              loadPhoto={() => fetchAboutMePhoto(owner.session)}
+              loadPicture={() => fetchProfilePhoto(owner.session)}
+              onSavePicture={async (photo) => {
+                await putProfilePhoto(owner.session, photo);
+                setImageEpoch((epoch) => epoch + 1);
+              }}
+              loadBanner={() => fetchWideBanner(owner.session)}
+              onSaveBanner={async (photo) => {
+                await putWideBanner(owner.session, photo);
+                setImageEpoch((epoch) => epoch + 1);
+              }}
+              omitEmptySlotAdds
+              imageEpoch={imageEpoch}
+              /* v8 ignore next -- SSR first paint: origin empty so no copy URL */
+              {...(profileUrl !== '' ? { profileUrl } : {})}
+              onSave={async (text, photo) => {
+                const token = owner.session;
+                try {
+                  const updated =
+                    photo === undefined
+                      ? await putAboutMe(token, text)
+                      : await putAboutMe(token, text, photo);
+                  if (useAuthStore.getState().session !== token) {
+                    return false;
+                  }
+                  const current = useAuthStore.getState().account;
+                  if (current === null) {
+                    return false;
+                  }
+                  const nextAboutId = updated.aboutMessageId;
+                  setAccount({
+                    ...current,
+                    aboutMe: updated.aboutMe,
+                    aboutMeHasPhoto: updated.aboutMeHasPhoto,
+                    ...(nextAboutId === undefined || nextAboutId === ''
+                      ? {}
+                      : { aboutMessageId: nextAboutId }),
+                  });
+                } catch (err) {
+                  if (useAuthStore.getState().session !== token) {
+                    return false;
+                  }
+                  if (err instanceof MissingRequirementsError) {
+                    if (err.missing.includes('rules')) {
+                      returnToView('/setup/rules', router);
+                      return;
+                    }
+                    throw err;
+                  }
+                  throw err;
                 }
-              : {})}
-            /* v8 ignore next -- SSR first paint: origin empty so no copy URL */
-            {...(profileUrl !== '' ? { profileUrl } : {})}
-          />
+              }}
+            />
+          ) : (
+            <AboutMeSection
+              mode="public"
+              aboutMe={profile.aboutMe}
+              name={profile.name}
+              {...(profile.aboutMe !== null && publicAboutMessageId !== undefined
+                ? { messageId: publicAboutMessageId }
+                : {})}
+              hasPhoto={
+                profile.aboutMeHasPhoto === true || profile.profileMessage?.hasPhoto === true
+              }
+              {...(profileMessagePhotoId !== undefined
+                ? {
+                    loadPhoto: () =>
+                      session !== null
+                        ? fetchMessagePhoto(session, profileMessagePhotoId)
+                        : fetchPublicMessagePhoto(profileMessagePhotoId),
+                  }
+                : loadAboutPhoto !== undefined
+                  ? { loadPhoto: loadAboutPhoto }
+                  : {})}
+              /* v8 ignore next -- SSR first paint: origin empty so no copy URL */
+              {...(profileUrl !== '' ? { profileUrl } : {})}
+            />
+          )}
           {showMessage ? (
             <Button
               type="button"
@@ -1679,69 +1991,49 @@ export function MemberProfileScreen({
               {t('profile.message')}
             </Button>
           ) : null}
-          <div className="flex w-full flex-col items-stretch gap-3 border-t border-app-border pt-6">
-            <p className="text-center text-xs tracking-widest text-app-subtle uppercase">
-              {t('name.heading')}
-            </p>
-            <div className="flex flex-wrap items-center justify-center gap-2">
-              <p className="min-w-0 truncate text-sm text-app-fg">
-                {listedProfile.name ?? t('view.unnamed')}
-              </p>
-              {roleKeys !== null ? (
-                <button
-                  type="button"
-                  aria-expanded={roleHintOpen}
-                  onClick={() => {
-                    setRoleHintOpen((open) => !open);
-                  }}
-                  className="rounded-full border border-app-border-strong px-2 py-0.5 text-xs font-medium text-app-muted"
-                >
-                  {t(roleKeys.label)}
-                </button>
-              ) : null}
-              {listedProfile.staffTag === 'software_developer' ? (
-                <span className="rounded-full border border-app-border-strong px-2 py-0.5 text-xs font-medium text-app-muted">
-                  {t('forum.staff.softwareDeveloper')}
-                </span>
-              ) : null}
-              {typeof fundingReviewedAt === 'number' ? (
-                <FundingProgramMark
-                  admittedAt={fundingReviewedAt}
-                  reviewerName={listedProfile.fundingReviewedByName ?? null}
-                  expanded={fundingHintOpen}
-                  onToggle={() => setFundingHintOpen((open) => !open)}
-                />
-              ) : null}
-            </div>
-            {roleHintOpen && roleKeys !== null ? (
-              <p role="status" className="text-center text-xs text-app-muted">
-                {t(roleKeys.hint)}
-              </p>
-            ) : null}
-            {fundingHintOpen && typeof fundingReviewedAt === 'number' ? (
-              <p role="status" className="text-center text-xs text-app-muted">
-                {fundingParticipationLabel(
-                  t,
-                  locale,
-                  fundingReviewedAt,
-                  listedProfile.fundingReviewedByName,
+          {owner !== null ? (
+            <MemberIdentityPills profile={listedProfile}>
+              {(marks, hints) => (
+                <>
+                  <NameForm variant="profile" besideName={marks} belowName={hints} />
+                  <LocationForm />
+                </>
+              )}
+            </MemberIdentityPills>
+          ) : (
+            <>
+              <MemberIdentityPills profile={listedProfile}>
+                {(marks, hints) => (
+                  <div className="flex w-full flex-col items-stretch gap-3 border-t border-app-border pt-6">
+                    <p className="text-center text-xs tracking-widest text-app-subtle uppercase">
+                      {t('name.heading')}
+                    </p>
+                    <div className="flex flex-wrap items-center justify-center gap-2">
+                      <p className="min-w-0 truncate text-sm text-app-fg">
+                        {listedProfile.name ?? t('view.unnamed')}
+                      </p>
+                      {marks}
+                    </div>
+                    {hints}
+                  </div>
                 )}
-              </p>
-            ) : null}
-          </div>
-          <div className="flex w-full flex-col items-stretch gap-3 border-t border-app-border pt-6">
-            <p className="text-center text-xs tracking-widest text-app-subtle uppercase">
-              {t('location.heading')}
-            </p>
-            <p className="min-w-0 truncate text-center text-sm text-app-fg">
-              {profile.location !== null && profile.location.trim() !== ''
-                ? profile.location
-                : t('location.unset')}
-            </p>
-          </div>
+              </MemberIdentityPills>
+              <div className="flex w-full flex-col items-stretch gap-3 border-t border-app-border pt-6">
+                <p className="text-center text-xs tracking-widest text-app-subtle uppercase">
+                  {t('location.heading')}
+                </p>
+                <p className="min-w-0 truncate text-center text-sm text-app-fg">
+                  {profile.location !== null && profile.location.trim() !== ''
+                    ? profile.location
+                    : t('location.unset')}
+                </p>
+              </div>
+            </>
+          )}
           {giftsBlock}
           {countButtons}
           {account !== null &&
+          loadPublicList === undefined &&
           roleAtLeast(account.role, 'moderator') &&
           listedProfile.id !== account.id ? (
             <MemberTrustActions profile={listedProfile} onUpdated={setListedProfile} />

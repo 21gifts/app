@@ -89,6 +89,16 @@ function Probe(): ReactElement {
   );
 }
 
+/** Mounts loan fields from {@link useAccountTotals} without changing {@link Probe}. */
+function LoanProbe(): ReactElement {
+  const { owedSats, creditSats, owedOverTime, creditOverTime, loading, failed } =
+    useAccountTotals();
+  const state = loading ? 'loading' : 'ready';
+  return (
+    <p data-testid="loan-probe">{`${state}:${owedSats}:${creditSats}:${owedOverTime.length}:${creditOverTime.length}:${failed ? '1' : '0'}`}</p>
+  );
+}
+
 beforeEach(() => {
   fetchMock.mockReset();
   useAuthStore.setState({
@@ -99,7 +109,7 @@ beforeEach(() => {
       role: 'basis',
       name: 'Ada',
       location: null,
-      lightningAddress: 'alice@walletofsatoshi.com',
+      lightningAddress: null,
       lightningAddressVerified: false,
       forumLawsDismissed: false,
       createdAt: 1,
@@ -128,7 +138,7 @@ describe('useAccountTotals', () => {
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
-  it('fetches activity when the Lightning Address is blank', async () => {
+  it('fetches activity when the wallet is not verified', async () => {
     fetchMock.mockResolvedValue(ACTIVITY);
     useAuthStore.setState({
       session: 'tok',
@@ -138,8 +148,9 @@ describe('useAccountTotals', () => {
         role: 'basis',
         name: 'Ada',
         location: null,
-        lightningAddress: '   ',
+        lightningAddress: null,
         lightningAddressVerified: false,
+        sparkWalletVerified: false,
         forumLawsDismissed: false,
         createdAt: 1,
         rulesAgreedAt: null,
@@ -157,7 +168,7 @@ describe('useAccountTotals', () => {
     expect(fetchMock).toHaveBeenCalledWith('tok');
   });
 
-  it('fetches activity when the Lightning Address is null', async () => {
+  it('fetches activity when the account has no wallet flag', async () => {
     fetchMock.mockResolvedValue(ACTIVITY);
     useAuthStore.setState({
       session: 'tok',
@@ -212,10 +223,7 @@ describe('useAccountTotals', () => {
     });
     await act(async () => {
       useAuthStore.setState((state) => ({
-        account:
-          state.account === null
-            ? null
-            : { ...state.account, lightningAddress: 'bob@walletofsatoshi.com' },
+        account: state.account === null ? null : { ...state.account, sparkWalletVerified: true },
       }));
     });
     await waitFor(() => {
@@ -272,7 +280,22 @@ describe('useAccountTotals', () => {
     expect(fetchMock).toHaveBeenCalledWith('tok2');
   });
 
-  it('refetches when the Lightning Address changes on the same session', async () => {
+  it('does not refetch when another account field changes on the same session', async () => {
+    fetchMock.mockResolvedValue(ACTIVITY);
+    renderWithLocale(<Probe />);
+    await waitFor(() => {
+      expect(screen.getByText('ready:2100:1000:1:1:0')).toBeTruthy();
+    });
+    await act(async () => {
+      useAuthStore.setState((state) => ({
+        account: state.account === null ? null : { ...state.account, name: 'Bea' },
+      }));
+    });
+    expect(screen.getByText('ready:2100:1000:1:1:0')).toBeTruthy();
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('refetches when the wallet turns verified on the same session', async () => {
     fetchMock.mockResolvedValueOnce(ACTIVITY);
     fetchMock.mockResolvedValueOnce(OTHER_ACTIVITY);
     renderWithLocale(<Probe />);
@@ -281,10 +304,7 @@ describe('useAccountTotals', () => {
     });
     await act(async () => {
       useAuthStore.setState((state) => ({
-        account:
-          state.account === null
-            ? null
-            : { ...state.account, lightningAddress: 'bob@walletofsatoshi.com' },
+        account: state.account === null ? null : { ...state.account, sparkWalletVerified: true },
       }));
     });
     await waitFor(() => {
@@ -358,5 +378,60 @@ describe('useAccountTotals', () => {
 
     expect(screen.getByText('ready:0:0:0:0:0')).toBeTruthy();
     expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('sets loan totals and series from a payload that includes them', async () => {
+    const withLoans: AccountActivity = {
+      ...ACTIVITY,
+      owedSats: -60,
+      creditSats: 40,
+      owedOverTime: [
+        {
+          day: '2026-06-01',
+          sats: -60,
+          cumulativeSats: -60,
+          btc: '-0.00000060',
+          cumulativeBtc: '-0.00000060',
+          usd: '-0.06',
+          cumulativeUsd: '-0.06',
+          chf: null,
+          eur: null,
+          php: null,
+          cumulativeChf: null,
+          cumulativeEur: null,
+          cumulativePhp: null,
+        },
+      ],
+      creditOverTime: [
+        {
+          day: '2026-06-02',
+          sats: 40,
+          cumulativeSats: 40,
+          btc: '0.00000040',
+          cumulativeBtc: '0.00000040',
+          usd: '0.04',
+          cumulativeUsd: '0.04',
+          chf: '0.03',
+          eur: '0.04',
+          php: '2.20',
+          cumulativeChf: '0.03',
+          cumulativeEur: '0.04',
+          cumulativePhp: '2.20',
+        },
+      ],
+    };
+    fetchMock.mockResolvedValue(withLoans);
+    renderWithLocale(<LoanProbe />);
+    await waitFor(() => {
+      expect(screen.getByTestId('loan-probe').textContent).toBe('ready:-60:40:1:1:0');
+    });
+  });
+
+  it('defaults missing loan fields to zero and empty series', async () => {
+    fetchMock.mockResolvedValue(ACTIVITY);
+    renderWithLocale(<LoanProbe />);
+    await waitFor(() => {
+      expect(screen.getByTestId('loan-probe').textContent).toBe('ready:0:0:0:0:0');
+    });
   });
 });

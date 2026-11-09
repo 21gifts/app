@@ -50,12 +50,13 @@ const SCALE_8 = 100000000n;
 
 /**
  * Scale a decimal string to 8 fraction digits as a BigInt.
- * Integer part times 10^8 plus the fraction padded right with zeros.
+ * Integer part times 10^8 plus the fraction padded right with zeros, so a
+ * bitcoin amount (`0.00238093`) becomes its exact sats (`238093n`).
  *
  * @param raw - Digits with an optional fraction of 1–8 places.
  * @returns Scaled integer, or `null` when `raw` is not that shape.
  */
-function scaleDecimalTo8(raw: string): bigint | null {
+export function scaleDecimalTo8(raw: string): bigint | null {
   if (!GOAL_AMOUNT_RE.test(raw)) {
     return null;
   }
@@ -94,6 +95,48 @@ export function forumFiatGoalPercent(
     return Number.MAX_SAFE_INTEGER;
   }
   return Number(quotient);
+}
+
+/** Collected and asked amounts of a top-level note, as the api sends them. */
+export interface ForumAskProgress {
+  sats: number;
+  goalSats: number;
+  goalCurrency?: string | undefined;
+  goalAmount?: string | undefined;
+  amountUsd?: string | null | undefined;
+  amountChf?: string | null | undefined;
+  amountEur?: string | null | undefined;
+  amountPhp?: string | null | undefined;
+}
+
+const COLLECTED_BY_CODE = {
+  USD: 'amountUsd',
+  CHF: 'amountChf',
+  EUR: 'amountEur',
+  PHP: 'amountPhp',
+} as const;
+
+/**
+ * Integer percent of a note's Ask, in the unit it was defined in. Uncapped.
+ *
+ * A fiat Ask (USD, CHF, EUR, or PHP with a usable `goalAmount`) uses
+ * {@link forumFiatGoalPercent} of the payment snapshot in that code; every
+ * other Ask uses {@link forumGoalPercent} of the sats.
+ *
+ * @param note - Collected sats, goal, definition, and payment snapshots.
+ * @returns Floored percent for the label and the bar. Whether a loan is funded follows the sats
+ *   (`sats >= goalSats`), not this percent.
+ */
+export function forumAskPercent(note: ForumAskProgress): number {
+  const code = note.goalCurrency;
+  if (
+    (code === 'USD' || code === 'CHF' || code === 'EUR' || code === 'PHP') &&
+    typeof note.goalAmount === 'string' &&
+    GOAL_AMOUNT_RE.test(note.goalAmount)
+  ) {
+    return forumFiatGoalPercent(note[COLLECTED_BY_CODE[code]], note.goalAmount);
+  }
+  return forumGoalPercent(note.sats, note.goalSats);
 }
 
 function groupIntegerDigits(digits: string, grouping: string): string {
@@ -160,7 +203,7 @@ export function formatDefinedGoalAmount(
  *
  * @param raw - Field value.
  * @param unit - `btc` or `fiat`.
- * @param day - Gift day for fiat, or `null`.
+ * @param day - Spot rate for fiat, or `null`.
  * @param code - Preferred fiat.
  * @returns Whole sats in range, or `null`.
  */

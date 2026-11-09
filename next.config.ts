@@ -1,8 +1,15 @@
+import { withSentryConfig } from '@sentry/nextjs/config';
 import type { NextConfig } from 'next';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const appRoot = path.dirname(fileURLToPath(import.meta.url));
+
+/** Build id the app sends as `X-App-Build` (the deployed commit); unset or empty → `dev`. */
+function buildIdForBuild(): string {
+  const raw = process.env.NEXT_PUBLIC_BUILD_ID ?? 'dev';
+  return raw === '' ? 'dev' : raw;
+}
 
 function appVersionForBuild(): string {
   const raw = process.env.NEXT_PUBLIC_APP_VERSION ?? process.env.APP_VERSION ?? 'dev';
@@ -15,10 +22,21 @@ function appVersionForBuild(): string {
  * under `.next/standalone` — that is what the Dockerfile runtime stage ships.
  * `outputFileTracingRoot` pins that layout to this package even when a parent
  * directory also has a lockfile (Next would otherwise nest standalone).
+ *
+ * Actions already runs `tsc --noEmit` in the check job, and Lint is its own job.
+ * Repeating both inside `next build` makes that job miss its 10-minute limit.
+ * Actions sets `GITHUB_ACTIONS`. The image build does not, so it still
+ * typechecks and lints.
  */
+function skipRepeatedBuildChecks(): boolean {
+  return process.env['GITHUB_ACTIONS'] === 'true';
+}
+
 const nextConfig: NextConfig = {
   output: 'standalone',
   outputFileTracingRoot: appRoot,
+  eslint: { ignoreDuringBuilds: skipRepeatedBuildChecks() },
+  typescript: { ignoreBuildErrors: skipRepeatedBuildChecks() },
   outputFileTracingIncludes: {
     '/handbook': ['./docs/handbook/**/*'],
     '/handbook/screens': ['./docs/handbook/**/*', './scripts/screen-variants.mjs'],
@@ -27,6 +45,7 @@ const nextConfig: NextConfig = {
   },
   env: {
     NEXT_PUBLIC_APP_VERSION: appVersionForBuild(),
+    NEXT_PUBLIC_BUILD_ID: buildIdForBuild(),
   },
   async redirects() {
     return [
@@ -65,4 +84,27 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default nextConfig;
+/**
+ * Error reporting build step. Nothing Sentry-specific is configured here: the
+ * DSN and environment come from the container at start (see `src/lib/sentry.ts`).
+ * No source maps are uploaded and no release is created, so the build needs no
+ * token and makes no network calls. Tracing code stays in the bundle for the
+ * browser's sampled performance traces (`src/lib/sentry.ts`); the server
+ * samples none. Both the server-side auto-wrapping and the build-time
+ * instrumentation of server dependencies are off; `onRequestError` in
+ * `src/instrumentation.ts` reports request errors. The SDK's `tunnelRoute` is not used because it only
+ * rewrites to sentry.io hosts; `/monitoring` is the app's own tunnel.
+ */
+export default withSentryConfig(nextConfig, {
+  silent: true,
+  telemetry: false,
+  buildTimeInstrumentation: false,
+  sourcemaps: { disable: true },
+  release: { create: false, finalize: false },
+  webpack: {
+    autoInstrumentServerFunctions: false,
+    autoInstrumentMiddleware: false,
+    autoInstrumentAppDirectory: false,
+    treeshake: { removeDebugLogging: true, removeTracing: false },
+  },
+});

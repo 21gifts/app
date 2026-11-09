@@ -10,6 +10,7 @@ import {
   type ChangeEvent,
   type ReactElement,
 } from 'react';
+import { CameraPhotoButton } from '@/components/CameraPhotoButton';
 import { LinkedText } from '@/components/LinkedText';
 import { SundayWritingGate } from '@/components/SundayWritingGate';
 import { useTranslations } from '@/components/LocaleProvider';
@@ -450,7 +451,15 @@ export function AboutMeSection({
     setPreparingPhoto(true);
     void (async () => {
       try {
-        const result = await prepareForumPhoto(file);
+        let result: Awaited<ReturnType<typeof prepareForumPhoto>>;
+        try {
+          result = await prepareForumPhoto(file);
+        } catch {
+          if (generation === photoGeneration.current) {
+            setError(t('profile.about.errorUnsupported'));
+          }
+          return;
+        }
         if (generation !== photoGeneration.current) {
           return;
         }
@@ -635,6 +644,11 @@ export function AboutMeSection({
           <div className="flex flex-col items-stretch gap-3">
             <div className="flex flex-col gap-2">
               <div className="flex flex-wrap items-start gap-2">
+                <CameraPhotoButton
+                  label={t('camera.takePhoto')}
+                  disabled={saving || preparingPhoto}
+                  onChange={handleFileChange}
+                />
                 <IconButton
                   type="button"
                   variant="secondary"
@@ -658,6 +672,12 @@ export function AboutMeSection({
                 />
                 {onSavePicture !== undefined && !(omitEmptySlotAdds && pictureUrl === null) ? (
                   <>
+                    <CameraPhotoButton
+                      label={t('profile.about.portraitCamera')}
+                      facing="user"
+                      disabled={saving || preparingPhoto}
+                      onChange={handlePictureChange}
+                    />
                     <IconButton
                       type="button"
                       variant="secondary"
@@ -683,6 +703,11 @@ export function AboutMeSection({
                 ) : null}
                 {onSaveBanner !== undefined && !(omitEmptySlotAdds && bannerUrl === null) ? (
                   <>
+                    <CameraPhotoButton
+                      label={t('profile.about.bannerCamera')}
+                      disabled={saving || preparingPhoto}
+                      onChange={handleBannerChange}
+                    />
                     <IconButton
                       type="button"
                       variant="secondary"

@@ -1,6 +1,8 @@
 'use client';
 
 import { ArrowLeft, Loader2 } from 'lucide-react';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import {
   useEffect,
   useLayoutEffect,
@@ -17,12 +19,19 @@ import { goToPreviousView, previousViewPath } from '@/lib/view-history';
 import { useAuthStore } from '@/stores/auth-store';
 
 /**
+ * Chapter to reopen when this screen mounts again after its Terms of Use link. Module memory of
+ * this tab only, so a reload starts at the first chapter.
+ */
+let resumeChapterIndex: number | null = null;
+
+/**
  * Third post-login screen: one living-room rules chapter at a time.
  *
  * Intermediate **Continue** clicks only advance the chapter index. The last
- * chapter’s **I agree to these rules** POSTs `agreeToRules` and merges
+ * chapter shows “By continuing you accept the Terms of Use.” with a link to `/terms`; returning
+ * from there reopens that chapter. Its **I agree to these rules** POSTs `agreeToRules` and merges
  * `rulesAgreedAt`, `setup`, and `missing` into the auth-store account
- * so concurrent name or address writes are not overwritten. Renders nothing
+ * so concurrent name or location writes are not overwritten. Renders nothing
  * without a session token or when `chapters` is empty.
  *
  * @param props - Server-rendered {@link RulesDocument} chapters in order.
@@ -30,12 +39,15 @@ import { useAuthStore } from '@/stores/auth-store';
  */
 export function RulesSetup({ chapters }: { chapters: ReactElement[] }): ReactElement | null {
   const { t } = useTranslations();
+  const router = useRouter();
   const account = useAuthStore((state) => state.account);
   const session = useAuthStore((state) => state.session);
   const setAccount = useAuthStore((state) => state.setAccount);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(false);
-  const [index, setIndex] = useState(0);
+  const [index, setIndex] = useState(() =>
+    Math.max(0, Math.min(resumeChapterIndex ?? 0, chapters.length - 1)),
+  );
   const [chapter0Label, setChapter0Label] = useState(t('profile.back'));
   const stepLock = useRef(false);
   const bodyRef = useRef<HTMLElement>(null);
@@ -43,6 +55,10 @@ export function RulesSetup({ chapters }: { chapters: ReactElement[] }): ReactEle
   useLayoutEffect(() => {
     setChapter0Label(previousViewPath() !== null ? t('nav.back') : t('profile.back'));
   });
+
+  useEffect(() => {
+    resumeChapterIndex = null;
+  }, []);
 
   useEffect(() => {
     stepLock.current = false;
@@ -128,8 +144,11 @@ export function RulesSetup({ chapters }: { chapters: ReactElement[] }): ReactEle
               variant="ghost"
               size="md"
               aria-label={chapter0Label}
-              onClick={() => {
-                goToPreviousView();
+              onClick={(event) => {
+                if (event.detail > 1) {
+                  return;
+                }
+                goToPreviousView(router);
               }}
             >
               <ArrowLeft aria-hidden="true" className="h-5 w-5" />
@@ -161,6 +180,21 @@ export function RulesSetup({ chapters }: { chapters: ReactElement[] }): ReactEle
       </section>
       <AppShellFooter>
         <div className="mx-auto w-full max-w-3xl">
+          {lastChapter ? (
+            <p className="mb-3 text-center text-sm text-app-muted">
+              {t('setup.termsBefore')}{' '}
+              <Link
+                className="text-accent underline underline-offset-2"
+                href="/terms"
+                onClick={() => {
+                  resumeChapterIndex = index;
+                }}
+              >
+                {t('nav.terms')}
+              </Link>
+              {t('setup.termsAfter')}
+            </p>
+          ) : null}
           <Button
             type="button"
             size="lg"

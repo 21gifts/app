@@ -1,6 +1,6 @@
-import { act, cleanup, fireEvent, screen, waitFor } from '@testing-library/react';
+import { act, cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { AppShell } from '@/components/AppShell';
+import { AppShell, AppShellContext } from '@/components/AppShell';
 import { SignedInChrome } from '@/components/SignedInChrome';
 import { usePasskeyLogin } from '@/hooks/usePasskeyLogin';
 import {
@@ -12,7 +12,9 @@ import {
 } from '@/lib/api';
 import { isInAppBrowser } from '@/lib/in-app-browser';
 import { shouldOfferIosInstall } from '@/lib/pwa-install';
+import { loadSession } from '@/lib/session-storage';
 import { enablePush, isStandaloneDisplay, resyncPushSubscription } from '@/lib/push';
+import { previousViewPath, recordCurrentView, resetViewHistory } from '@/lib/view-history';
 import { useAuthStore } from '@/stores/auth-store';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
 import {
@@ -54,6 +56,21 @@ vi.mock('next/link', () => ({
   ),
 }));
 vi.mock('@/hooks/usePasskeyLogin', () => ({ usePasskeyLogin: vi.fn() }));
+vi.mock('@/components/MenuAccountHeader', () => ({
+  MenuAccountHeader: ({ tight, onNavigate }: { tight: boolean; onNavigate: () => void }) => (
+    <button type="button" onClick={onNavigate}>
+      {tight ? 'Account header tight' : 'Account header'}
+    </button>
+  ),
+}));
+/** The open-state callback the chrome gave the move-funds sheet. */
+const moveSheet = vi.hoisted(() => ({ onOpenChange: null as ((open: boolean) => void) | null }));
+vi.mock('@/components/MoveFundsSheet', () => ({
+  MoveFundsSheet: ({ onOpenChange }: { onOpenChange?: (open: boolean) => void }) => {
+    moveSheet.onOpenChange = onOpenChange ?? null;
+    return null;
+  },
+}));
 vi.mock('@/lib/session-storage', () => ({
   loadSession: vi.fn(),
   saveSession: vi.fn(),
@@ -62,6 +79,8 @@ vi.mock('@/lib/session-storage', () => ({
 vi.mock('@/lib/pwa-install', () => ({
   shouldOfferIosInstall: vi.fn(() => false),
 }));
+const walletOpen = vi.hoisted(() => ({ value: true }));
+vi.mock('@/hooks/useWalletOpen', () => ({ useWalletOpen: () => walletOpen.value }));
 vi.mock('@/lib/push', () => ({
   isIosSafari: vi.fn(() => false),
   isStandaloneDisplay: vi.fn(() => false),
@@ -71,7 +90,11 @@ vi.mock('@/lib/push', () => ({
 vi.mock('@/lib/in-app-browser', () => ({
   isInAppBrowser: vi.fn(() => false),
 }));
-vi.mock('@/lib/config', () => ({ getAppVersion: vi.fn(() => '74') }));
+vi.mock('@/lib/config', () => ({
+  getAppVersion: vi.fn(() => '74'),
+  getBreezApiKey: vi.fn(() => null),
+  getE2eNow: vi.fn(() => null),
+}));
 const EMPTY_FX = {
   quote: 'BTC-USD' as const,
   dayBasis: 'utc' as const,
@@ -150,21 +173,25 @@ beforeEach(() => {
     register: vi.fn(),
     submitName: vi.fn(),
     authenticate: vi.fn(),
+    authenticateHeld: vi.fn(),
     retry: vi.fn(),
     cancel,
     error: null,
+    recoveryPending: false,
+    walletPasskeyMissed: false,
     clearNameError: vi.fn(),
     nameError: null,
   });
   useAuthStore.setState({
     session: 'tok',
+    lockedSession: null,
     account: {
       id: 'acc_1',
       linkingKey: null,
       role: 'basis',
       name: 'Ada',
       location: null,
-      lightningAddress: 'alice@walletofsatoshi.com',
+      lightningAddress: null,
       lightningAddressVerified: false,
       forumLawsDismissed: false,
       createdAt: 1,
@@ -180,7 +207,9 @@ beforeEach(() => {
 
 afterEach(() => {
   cleanup();
+  vi.mocked(loadSession).mockReset();
   delete document.documentElement.dataset['menuSheet'];
+  resetViewHistory();
 });
 
 function stubMatchMedia(matches: boolean): () => void {
@@ -229,7 +258,95 @@ function trackScrollTop(
   return { read: () => top, log };
 }
 
+function follows(earlier: Node, later: Node): boolean {
+  return (earlier.compareDocumentPosition(later) & Node.DOCUMENT_POSITION_FOLLOWING) !== 0;
+}
+
 describe('SignedInChrome', () => {
+  it('renders no Menu, and reads nothing, while the wallet is not open yet', () => {
+    walletOpen.value = false;
+    try {
+      const { container } = renderWithLocale(<SignedInChrome />);
+      expect(container.innerHTML).toBe('');
+      expect(resyncPushSubscription).not.toHaveBeenCalled();
+    } finally {
+      walletOpen.value = true;
+    }
+  });
+
+  it('renders no Menu while a session is held back', () => {
+    useAuthStore.setState({ session: null, account: null, lockedSession: 'stored' });
+    const { container } = renderWithLocale(<SignedInChrome />);
+    expect(container.innerHTML).toBe('');
+    expect(screen.queryByRole('button', { name: /Menu/ })).toBeNull();
+  });
+
+  it('shows no wallet control outside the Menu', () => {
+    renderWithLocale(<SignedInChrome />);
+    expect(screen.queryAllByRole('link').filter((link) => !menuPanel().contains(link))).toEqual([]);
+  });
+
+  it('starts the Menu with the account header and a divider, mounted while closed, and its link closes the Menu', () => {
+    renderWithLocale(<SignedInChrome />);
+    const header = screen.getByRole('button', { name: 'Account header', hidden: true });
+    expect(menuPanel().firstElementChild).toBe(header);
+    expect((header.nextElementSibling as HTMLElement).className).toContain('border-t');
+    fireEvent.click(screen.getByRole('button', { name: 'Menu' }));
+    expectMenuOpen();
+    fireEvent.click(screen.getByRole('button', { name: 'Account header' }));
+    expectMenuClosed();
+  });
+
+  it('takes the Menu out of reach, also by keyboard, while the move-funds sheet is open', () => {
+    renderWithLocale(<SignedInChrome />);
+    const trigger = screen.getByRole('button', { name: 'Menu' });
+    const host = trigger.parentElement as HTMLElement;
+    expect(host.hasAttribute('inert')).toBe(false);
+    fireEvent.click(trigger);
+    expectMenuOpen();
+    act(() => {
+      moveSheet.onOpenChange?.(true);
+    });
+    expect(host.hasAttribute('inert')).toBe(true);
+    expectMenuClosed();
+    act(() => {
+      moveSheet.onOpenChange?.(false);
+    });
+    expect(host.hasAttribute('inert')).toBe(false);
+  });
+
+  it('leaves the account header out when signed out', () => {
+    useAuthStore.setState({ session: null, account: null });
+    vi.mocked(loadSession).mockReturnValue(null);
+    renderWithLocale(<SignedInChrome />);
+    expect(screen.queryByRole('button', { name: 'Account header', hidden: true })).toBeNull();
+  });
+
+  it('keeps the account header and its divider while a stored session is still being checked', () => {
+    useAuthStore.setState({ session: null, account: null });
+    vi.mocked(loadSession).mockReturnValue('sess-stored');
+    renderWithLocale(<SignedInChrome />);
+    const header = screen.getByRole('button', { name: 'Account header', hidden: true });
+    expect(menuPanel().firstElementChild).toBe(header);
+    expect((header.nextElementSibling as HTMLElement).className).toContain('border-t');
+    vi.mocked(loadSession).mockReturnValue(null);
+    act(() => {
+      useAuthStore.getState().clearAuth();
+    });
+    expect(screen.queryByRole('button', { name: 'Account header', hidden: true })).toBeNull();
+  });
+
+  it('shows the Menu trigger as an icon only, with Menu as its accessible name', () => {
+    renderWithLocale(<SignedInChrome />);
+    const trigger = screen.getByRole('button', { name: 'Menu' });
+    expect(screen.queryByText('Menu')).toBeNull();
+    expect(trigger.textContent).toBe('');
+    expect(trigger.querySelector('svg')?.getAttribute('class')).toContain('h-6 w-6');
+    expect(trigger.className).toContain('min-h-11 min-w-11');
+    expect(trigger.className).toContain('text-app-fg');
+    expect(trigger.className).not.toContain('text-app-muted');
+  });
+
   it('shows Menu while Log out stays hidden', () => {
     renderWithLocale(<SignedInChrome />);
     expect(screen.getByRole('button', { name: 'Menu' })).toBeTruthy();
@@ -265,7 +382,25 @@ describe('SignedInChrome', () => {
     expectMenuClosed();
     expect(screen.getByRole('link', { name: /Profile/ }).getAttribute('href')).toBe('/profile');
     expect(screen.getByRole('link', { name: 'Grants' }).getAttribute('href')).toBe('/grants');
-    expect(screen.getByRole('link', { name: 'Wallet' }).getAttribute('href')).toBe('/wallet');
+    expect(screen.getByRole('link', { name: 'Balance' }).getAttribute('href')).toBe('/wallet');
+    expect(screen.queryByRole('link', { name: 'Wallet' })).toBeNull();
+    expect(screen.getByRole('link', { name: 'Settings' }).getAttribute('href')).toBe('/settings');
+    const security = screen.getByRole('link', { name: 'Account security' });
+    expect(security.getAttribute('href')).toBe('/security');
+    expect(screen.getByRole('link', { name: 'Grants' }).nextElementSibling).toBe(security);
+    expect(security.nextElementSibling).toBe(screen.getByRole('link', { name: 'Settings' }));
+    expect(screen.getByRole('link', { name: 'Home' }).nextElementSibling).toBe(
+      screen.getByRole('link', { name: 'Balance' }),
+    );
+    expect(screen.getByRole('link', { name: 'Balance' }).nextElementSibling).toBe(
+      screen.getByRole('link', { name: 'Shops' }),
+    );
+    expect(
+      follows(
+        screen.getByRole('link', { name: 'Settings' }),
+        screen.getByRole('link', { name: 'Living room rules' }),
+      ),
+    ).toBe(true);
     expect(screen.getByRole('link', { name: 'Living room rules' }).getAttribute('href')).toBe(
       '/rules',
     );
@@ -410,7 +545,7 @@ describe('SignedInChrome', () => {
     cleanup();
     vi.mocked(enablePush).mockClear();
     vi.mocked(resyncPushSubscription).mockClear();
-    useAuthStore.setState({ session: null, account: null });
+    useAuthStore.setState({ session: null, account: null, lockedSession: null });
     renderWithLocale(<SignedInChrome />);
     fireEvent.click(screen.getByRole('button', { name: 'Menu' }));
     expect(screen.queryByRole('link', { name: 'Statistics' })).toBeNull();
@@ -569,12 +704,89 @@ describe('SignedInChrome', () => {
     expectMenuClosed();
   });
 
+  it('clears the view stack in memory and storage on a plain Home click', () => {
+    navigation.pathname = '/notifications';
+    recordCurrentView('/shops');
+    recordCurrentView('/notifications');
+    expect(previousViewPath()).toBe('/shops');
+    expect(sessionStorage.getItem('21gifts.viewHistory')).not.toBeNull();
+    renderWithLocale(<SignedInChrome />);
+    fireEvent.click(screen.getByRole('button', { name: 'Menu' }));
+
+    const clickCompleted = fireEvent.click(screen.getByRole('link', { name: 'Home' }));
+
+    expect(clickCompleted).toBe(true);
+    expect(push).not.toHaveBeenCalled();
+    expect(previousViewPath()).toBeNull();
+    expect(sessionStorage.getItem('21gifts.viewHistory')).toBeNull();
+    recordCurrentView('/welcome');
+    recordCurrentView('/shops');
+    expect(previousViewPath()).toBe('/welcome');
+  });
+
+  it.each([
+    ['metaKey', { metaKey: true }],
+    ['ctrlKey', { ctrlKey: true }],
+    ['shiftKey', { shiftKey: true }],
+    ['altKey', { altKey: true }],
+    ['a middle button', { button: 1 }],
+  ])('keeps the view stack on a Home click with %s', (_label, init) => {
+    navigation.pathname = '/notifications';
+    recordCurrentView('/shops');
+    recordCurrentView('/notifications');
+    renderWithLocale(<SignedInChrome />);
+    fireEvent.click(screen.getByRole('button', { name: 'Menu' }));
+
+    fireEvent.click(screen.getByRole('link', { name: 'Home' }), init);
+
+    expect(previousViewPath()).toBe('/shops');
+    expect(sessionStorage.getItem('21gifts.viewHistory')).not.toBeNull();
+  });
+
+  it('leaves the forum home as the only view on a plain Home click on /welcome', () => {
+    navigation.pathname = '/welcome';
+    window.history.pushState(null, '', '/shops');
+    recordCurrentView('/shops');
+    window.history.pushState(null, '', '/welcome');
+    recordCurrentView('/welcome');
+    expect(previousViewPath()).toBe('/shops');
+    renderWithLocale(<SignedInChrome />);
+    fireEvent.click(screen.getByRole('button', { name: 'Menu' }));
+
+    const clickCompleted = fireEvent.click(screen.getByRole('link', { name: 'Home' }));
+
+    expect(clickCompleted).toBe(false);
+    expect(previousViewPath()).toBeNull();
+    expect(JSON.parse(sessionStorage.getItem('21gifts.viewHistory') ?? 'null')).toEqual({
+      stack: ['/welcome'],
+      cursor: 0,
+    });
+    recordCurrentView('/shops');
+    expect(previousViewPath()).toBe('/welcome');
+  });
+
+  it('keeps the view stack on a modified Home click on /welcome', () => {
+    navigation.pathname = '/welcome';
+    window.history.pushState(null, '', '/shops');
+    recordCurrentView('/shops');
+    window.history.pushState(null, '', '/welcome');
+    recordCurrentView('/welcome');
+    renderWithLocale(<SignedInChrome />);
+    fireEvent.click(screen.getByRole('button', { name: 'Menu' }));
+
+    fireEvent.click(screen.getByRole('link', { name: 'Home' }), { metaKey: true });
+
+    expect(previousViewPath()).toBe('/shops');
+  });
+
   it('closes the menu when Profile is clicked', () => {
     renderWithLocale(<SignedInChrome />);
     fireEvent.click(screen.getByRole('button', { name: 'Menu' }));
     expectMenuOpen();
     expect(screen.getByRole('button', { name: /log out/i })).toBeTruthy();
-    fireEvent.click(screen.getByRole('link', { name: 'Wallet' }));
+    fireEvent.click(screen.getByRole('link', { name: 'Balance' }));
+    expectMenuClosed();
+    fireEvent.click(screen.getByRole('button', { name: 'Menu' }));
     fireEvent.click(screen.getByRole('link', { name: /Profile/ }));
     expectMenuClosed();
   });
@@ -584,6 +796,22 @@ describe('SignedInChrome', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Menu' }));
     expectMenuOpen();
     fireEvent.click(screen.getByRole('link', { name: 'Grants' }));
+    expectMenuClosed();
+  });
+
+  it('closes the menu when Account security is clicked', () => {
+    renderWithLocale(<SignedInChrome />);
+    fireEvent.click(screen.getByRole('button', { name: 'Menu' }));
+    expectMenuOpen();
+    fireEvent.click(screen.getByRole('link', { name: 'Account security' }));
+    expectMenuClosed();
+  });
+
+  it('closes the menu when Settings is clicked', () => {
+    renderWithLocale(<SignedInChrome />);
+    fireEvent.click(screen.getByRole('button', { name: 'Menu' }));
+    expectMenuOpen();
+    fireEvent.click(screen.getByRole('link', { name: 'Settings' }));
     expectMenuClosed();
   });
 
@@ -789,7 +1017,55 @@ describe('SignedInChrome', () => {
     }
   });
 
-  it('shows the introduce overlay when onboarding is done and hasPosted is false', () => {
+  it('keeps the iOS install sheet when a tall wide menu closes', async () => {
+    vi.mocked(shouldOfferIosInstall).mockReturnValue(true);
+    const previousInnerHeight = Object.getOwnPropertyDescriptor(window, 'innerHeight');
+    const previousRect = HTMLElement.prototype.getBoundingClientRect;
+    Object.defineProperty(window, 'innerHeight', { configurable: true, value: 720 });
+    HTMLElement.prototype.getBoundingClientRect = function getBoundingClientRect(): DOMRect {
+      return {
+        x: 0,
+        y: 0,
+        top: 0,
+        left: 0,
+        right: 0,
+        width: 0,
+        height: 0,
+        bottom: 751,
+        toJSON() {
+          return {};
+        },
+      } as DOMRect;
+    };
+    try {
+      renderWithLocale(
+        <AppShell mode="fill" topRight={<SignedInChrome />}>
+          <p>Note</p>
+        </AppShell>,
+      );
+      fireEvent.click(screen.getByRole('button', { name: 'Menu' }));
+      const panel = menuPanel();
+      expect(document.querySelector('[data-menu-sheet-host]')?.contains(panel)).toBe(true);
+      fireEvent.click(await screen.findByRole('button', { name: 'Install app' }));
+      expectMenuClosed();
+      expect(screen.getByRole('dialog', { name: 'Add 21.gifts to your Home Screen' })).toBeTruthy();
+      expect(menuPanel()).toBe(panel);
+      expect(document.querySelector('[data-menu-sheet-host]')?.contains(panel)).toBe(true);
+      fireEvent.click(screen.getByRole('button', { name: 'Close' }));
+      expect(screen.queryByRole('dialog', { name: 'Add 21.gifts to your Home Screen' })).toBeNull();
+      expect(document.querySelector('[data-menu-sheet-host]')?.contains(menuPanel())).toBe(false);
+    } finally {
+      if (previousInnerHeight === undefined) {
+        delete (window as { innerHeight?: number }).innerHeight;
+      } else {
+        Object.defineProperty(window, 'innerHeight', previousInnerHeight);
+      }
+      HTMLElement.prototype.getBoundingClientRect = previousRect;
+    }
+  });
+
+  it('shows the introduce overlay on /welcome when onboarding is done and hasPosted is false', () => {
+    navigation.pathname = '/welcome';
     const account = useAuthStore.getState().account;
     if (account === null) {
       throw new Error('expected account');
@@ -825,7 +1101,33 @@ describe('SignedInChrome', () => {
     expect(screen.queryByRole('dialog', { name: 'Introduce yourself' })).toBeNull();
   });
 
+  it.each([
+    '/wallet',
+    '/wallet/phrase',
+    '/pos',
+    '/pos/amount',
+    '/profile',
+    '/messages',
+    '/messages/msg-1',
+    '/setup/name',
+    '/setup/username',
+    '/setup/rules',
+    '/notifications',
+    '/shops',
+  ])('never shows the introduce overlay over %s', (path) => {
+    navigation.pathname = path;
+    const account = useAuthStore.getState().account;
+    if (account === null) {
+      throw new Error('expected account');
+    }
+    useAuthStore.setState({ account: { ...account, hasPosted: false } });
+    renderWithLocale(<SignedInChrome />);
+    expect(screen.queryByRole('dialog', { name: 'Introduce yourself' })).toBeNull();
+    expect(screen.getByRole('button', { name: 'Menu' })).toBeTruthy();
+  });
+
   it('dismisses the introduce overlay for this mount', () => {
+    navigation.pathname = '/welcome';
     const account = useAuthStore.getState().account;
     if (account === null) {
       throw new Error('expected account');
@@ -852,6 +1154,7 @@ describe('SignedInChrome', () => {
   });
 
   it('does not show the introduce overlay after requestForumCompose on a fresh mount', () => {
+    navigation.pathname = '/welcome';
     const account = useAuthStore.getState().account;
     if (account === null) {
       throw new Error('expected account');
@@ -860,6 +1163,124 @@ describe('SignedInChrome', () => {
     requestForumCompose();
     renderWithLocale(<SignedInChrome />);
     expect(screen.queryByRole('dialog', { name: 'Introduce yourself' })).toBeNull();
+  });
+
+  /** The effective grant object of an owner account, with the given status. */
+  function grant(status: 'none' | 'pending' | 'trial' | 'admitted' | 'rejected'): {
+    status: typeof status;
+    trialUtcDate: string | null;
+    admittedAt: number | null;
+    reviewedByName: string | null;
+  } {
+    return {
+      status,
+      trialUtcDate: status === 'trial' ? '2026-01-07' : null,
+      admittedAt: status === 'admitted' ? 1_700_000_000_000 : null,
+      reviewedByName: null,
+    };
+  }
+
+  /**
+   * Seeds the signed-in account on `/welcome` with grant and recovery fields.
+   *
+   * @param extra - Account fields to set.
+   */
+  function welcomeAccount(extra: Record<string, unknown>): void {
+    navigation.pathname = '/welcome';
+    const account = useAuthStore.getState().account;
+    if (account === null) {
+      throw new Error('expected account');
+    }
+    useAuthStore.setState({ account: { ...account, hasPosted: true, ...extra } });
+  }
+
+  it.each(['admitted', 'trial'] as const)(
+    'shows the Social Recovery prompt on /welcome for a %s grant member without it',
+    (status) => {
+      welcomeAccount({ funding: grant(status), socialRecoverySetUp: false });
+      renderWithLocale(<SignedInChrome />);
+      const dialog = screen.getByRole('dialog', { name: 'Social Recovery for your grant' });
+      expect(dialog.getAttribute('aria-modal')).toBe('true');
+      expect(screen.getByRole('button', { name: 'Secure my account' })).toBeTruthy();
+      expect(screen.queryByRole('dialog', { name: 'Introduce yourself' })).toBeNull();
+    },
+  );
+
+  it.each([
+    ['a pending application', { funding: grant('pending'), socialRecoverySetUp: false }],
+    ['no grant', { funding: grant('none'), socialRecoverySetUp: false }],
+    ['a rejected application', { funding: grant('rejected'), socialRecoverySetUp: false }],
+    ['a basis member', { funding: null, socialRecoverySetUp: false }],
+    ['an older api without funding', { socialRecoverySetUp: false }],
+    ['Social Recovery set up', { funding: grant('admitted'), socialRecoverySetUp: true }],
+    ['an older api without the field', { funding: grant('admitted') }],
+    [
+      'setup still running',
+      { funding: grant('admitted'), socialRecoverySetUp: false, setup: 'rules' },
+    ],
+  ])('does not show the Social Recovery prompt for %s', (_label, extra) => {
+    welcomeAccount(extra);
+    renderWithLocale(<SignedInChrome />);
+    expect(screen.queryByRole('dialog', { name: 'Social Recovery for your grant' })).toBeNull();
+  });
+
+  it.each(['/wallet', '/settings', '/profile', '/grants', '/messages', '/setup/rules'])(
+    'never shows the Social Recovery prompt over %s',
+    (path) => {
+      welcomeAccount({ funding: grant('admitted'), socialRecoverySetUp: false });
+      navigation.pathname = path;
+      renderWithLocale(<SignedInChrome />);
+      expect(screen.queryByRole('dialog', { name: 'Social Recovery for your grant' })).toBeNull();
+      expect(screen.getByRole('button', { name: 'Menu' })).toBeTruthy();
+    },
+  );
+
+  it('shows Introduce yourself first and the Social Recovery prompt once it is closed', () => {
+    welcomeAccount({ funding: grant('admitted'), socialRecoverySetUp: false, hasPosted: false });
+    renderWithLocale(<SignedInChrome />);
+    expect(screen.getByRole('dialog', { name: 'Introduce yourself' })).toBeTruthy();
+    expect(screen.queryByRole('dialog', { name: 'Social Recovery for your grant' })).toBeNull();
+    fireEvent.click(
+      within(screen.getByRole('dialog', { name: 'Introduce yourself' })).getByRole('button', {
+        name: 'Close',
+      }),
+    );
+    expect(screen.queryByRole('dialog', { name: 'Introduce yourself' })).toBeNull();
+    expect(screen.getByRole('dialog', { name: 'Social Recovery for your grant' })).toBeTruthy();
+  });
+
+  it('shows the Social Recovery prompt in the same visit after Write an introduction', () => {
+    welcomeAccount({ funding: grant('admitted'), socialRecoverySetUp: false, hasPosted: false });
+    const first = renderWithLocale(<SignedInChrome />);
+    fireEvent.click(screen.getByRole('button', { name: 'Write an introduction' }));
+    expect(screen.queryByRole('dialog', { name: 'Introduce yourself' })).toBeNull();
+    expect(screen.getByRole('dialog', { name: 'Social Recovery for your grant' })).toBeTruthy();
+    first.unmount();
+    renderWithLocale(<SignedInChrome />);
+    expect(screen.queryByRole('dialog', { name: 'Introduce yourself' })).toBeNull();
+    expect(screen.getByRole('dialog', { name: 'Social Recovery for your grant' })).toBeTruthy();
+  });
+
+  it('closes the Social Recovery prompt for this mount, and the next mount shows it again', () => {
+    welcomeAccount({ funding: grant('trial'), socialRecoverySetUp: false });
+    const first = renderWithLocale(<SignedInChrome />);
+    const close = within(
+      screen.getByRole('dialog', { name: 'Social Recovery for your grant' }),
+    ).getByRole('button', { name: 'Close' });
+    expect(screen.queryByText('Close')).toBeNull();
+    fireEvent.click(close);
+    expect(screen.queryByRole('dialog', { name: 'Social Recovery for your grant' })).toBeNull();
+    first.unmount();
+    renderWithLocale(<SignedInChrome />);
+    expect(screen.getByRole('dialog', { name: 'Social Recovery for your grant' })).toBeTruthy();
+  });
+
+  it('opens Secure my account from the Social Recovery prompt', () => {
+    welcomeAccount({ funding: grant('admitted'), socialRecoverySetUp: false });
+    renderWithLocale(<SignedInChrome />);
+    fireEvent.click(screen.getByRole('button', { name: 'Secure my account' }));
+    expect(push).toHaveBeenCalledWith('/settings/social-recovery');
+    expect(screen.queryByRole('dialog', { name: 'Social Recovery for your grant' })).toBeNull();
   });
 
   it('opens a full-width sheet without a shell scroller when the viewport is narrow', () => {
@@ -895,7 +1316,10 @@ describe('SignedInChrome', () => {
       fireEvent.click(screen.getByRole('button', { name: 'Menu' }));
       const panel = menuPanel();
       expect(document.querySelector('[data-menu-sheet-host]')?.contains(panel)).toBe(true);
-      expect(document.querySelector('[data-menu-sheet-host]')?.className).toContain('px-8');
+      expect(document.querySelector('[data-menu-sheet-host]')?.className).toContain('px-5');
+      expect(panel.hasAttribute('data-scrollport')).toBe(true);
+      expect(panel.hasAttribute('data-scroll-active')).toBe(true);
+      expect(scroller.hasAttribute('data-scroll-active')).toBe(false);
       expect(panel.className).toContain('w-full');
       expect(panel.className).not.toContain('absolute');
       expect(document.documentElement.dataset['menuSheet']).toBe('1');
@@ -908,6 +1332,9 @@ describe('SignedInChrome', () => {
       expect(scroll.read()).toBe(80);
       expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Menu' }));
       expect(menuPanel()).toBe(panel);
+      expect(panel.hasAttribute('data-scrollport')).toBe(false);
+      expect(panel.hasAttribute('data-scroll-active')).toBe(false);
+      expect(scroller.hasAttribute('data-scroll-active')).toBe(true);
       expect(document.querySelector('[data-menu-sheet-host]')?.contains(panel)).toBe(true);
       expect(panel.className).toContain('hidden');
       expect(panel.className).toContain('w-full');
@@ -1019,6 +1446,49 @@ describe('SignedInChrome', () => {
       } else {
         Object.defineProperty(HTMLElement.prototype, 'clientWidth', widthDescriptor);
       }
+    }
+  });
+
+  it('keeps the sheet bound as the scrollport when an open tall wide menu crosses to narrow', () => {
+    const previousInnerHeight = Object.getOwnPropertyDescriptor(window, 'innerHeight');
+    const previousRect = HTMLElement.prototype.getBoundingClientRect;
+    Object.defineProperty(window, 'innerHeight', { configurable: true, value: 720 });
+    HTMLElement.prototype.getBoundingClientRect = function getBoundingClientRect(): DOMRect {
+      return { top: 0, bottom: 751, toJSON: () => ({}) } as DOMRect;
+    };
+    const host = document.createElement('div');
+    host.setAttribute('data-menu-sheet-host', '');
+    document.body.append(host);
+    const shell = (frameWidth: number): React.ReactElement => (
+      <AppShellContext.Provider
+        value={
+          { frameWidth, scrollerEl: null } as unknown as NonNullable<
+            React.ContextType<typeof AppShellContext>
+          >
+        }
+      >
+        <SignedInChrome />
+      </AppShellContext.Provider>
+    );
+    try {
+      const { rerender } = renderWithLocale(shell(800));
+      fireEvent.click(screen.getByRole('button', { name: 'Menu' }));
+      // A wide menu that does not fit even lifted is the sheet, bound as the scrollport.
+      const wide = menuPanel();
+      expect(host.contains(wide)).toBe(true);
+      expect(wide.hasAttribute('data-scroll-active')).toBe(true);
+      rerender(shell(400));
+      const sheet = menuPanel();
+      expect(host.contains(sheet)).toBe(true);
+      expect(sheet.hasAttribute('data-scroll-active')).toBe(true);
+    } finally {
+      host.remove();
+      if (previousInnerHeight === undefined) {
+        delete (window as { innerHeight?: number }).innerHeight;
+      } else {
+        Object.defineProperty(window, 'innerHeight', previousInnerHeight);
+      }
+      HTMLElement.prototype.getBoundingClientRect = previousRect;
     }
   });
 

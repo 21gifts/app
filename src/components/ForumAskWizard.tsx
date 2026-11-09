@@ -12,6 +12,7 @@ import {
   type ReactElement,
 } from 'react';
 import { AmountEntry } from '@/components/AmountEntry';
+import { CameraPhotoButton } from '@/components/CameraPhotoButton';
 import { MentionTextarea } from '@/components/MentionTextarea';
 import { useFiatPreference } from '@/components/FiatPreferenceProvider';
 import { ForumGoalBar } from '@/components/ForumGoalBar';
@@ -146,15 +147,28 @@ export function ForumAskWizard({
   const bitcoinAsk = draftUnit !== 'fiat';
   const currencyCode: ForumGoalCurrency = bitcoinAsk ? 'BTC' : fiat;
   const plan = creditPlanFor(askDraft, bitcoinAsk, termDays);
+  const satTotal = parsedAsk === null ? null : BigInt(parsedAsk);
+  const satPlan =
+    bitcoinAsk || satTotal === null || termDays === null
+      ? null
+      : splitCreditPlan(satTotal, termDays);
   const planText =
     plan === null
       ? ''
-      : creditPlanText(plan, bitcoinAsk, currencyCode, numberFormat, rateDay, fiat, t);
+      : creditPlanText(plan, satPlan, bitcoinAsk, currencyCode, numberFormat, rateDay, fiat, t);
   const owedUnits = creditSmallestUnits(askDraft, bitcoinAsk);
   const owedText =
     owedUnits === null
       ? ''
-      : formatPlanUnits(owedUnits, bitcoinAsk, currencyCode, numberFormat, rateDay, fiat);
+      : formatPlanUnits(
+          owedUnits,
+          bitcoinAsk,
+          currencyCode,
+          numberFormat,
+          rateDay,
+          fiat,
+          bitcoinAsk ? null : satTotal,
+        );
   useEffect(() => {
     onCreditTermDays?.(askObligation === 'credit' ? termDays : null);
   }, [askObligation, onCreditTermDays, termDays]);
@@ -318,6 +332,12 @@ export function ForumAskWizard({
       {step === 2 ? (
         <>
           <div className="flex items-center gap-2">
+            <CameraPhotoButton
+              label={t('camera.takePhoto')}
+              size="lg"
+              disabled={posting}
+              onChange={handleFiles}
+            />
             <IconButton
               type="button"
               size="lg"
@@ -601,6 +621,7 @@ function formatPlanUnits(
   style: Parameters<typeof formatBitcoin>[1],
   rateDay: FiatRateDay | null,
   visitorFiat: FiatCode,
+  satUnits: bigint | null,
 ): string {
   if (bitcoin || code === 'BTC') {
     const btc = formatBitcoin(Number(units), style);
@@ -612,11 +633,13 @@ function formatPlanUnits(
   }
   const whole = units / 100n;
   const frac = (units % 100n).toString().padStart(2, '0');
-  return formatFiatDisplay(`${whole.toString()}.${frac}`, code as FiatCode, style);
+  const defined = formatFiatDisplay(`${whole.toString()}.${frac}`, code as FiatCode, style);
+  return satUnits === null ? defined : `${defined} · ${formatBitcoin(Number(satUnits), style)}`;
 }
 
 function creditPlanText(
   plan: NonNullable<ReturnType<typeof splitCreditPlan>>,
+  satPlan: ReturnType<typeof splitCreditPlan>,
   bitcoin: boolean,
   code: ForumGoalCurrency,
   style: Parameters<typeof formatBitcoin>[1],
@@ -627,14 +650,32 @@ function creditPlanText(
     values: Record<string, string | number>,
   ) => string,
 ): string {
-  const amount = formatPlanUnits(plan.perDay, bitcoin, code, style, rateDay, visitorFiat);
-  if (plan.remainder === 0n) {
+  const amount = formatPlanUnits(
+    plan.perDay,
+    bitcoin,
+    code,
+    style,
+    rateDay,
+    visitorFiat,
+    satPlan?.perDay ?? null,
+  );
+  // Only this plan's own remainder names a last day. A bitcoin remainder keeps the even sentence.
+  const uneven = plan.remainder !== 0n;
+  if (!uneven) {
     return t('forum.creditPlanEven', { amount, days: plan.days });
   }
   return t('forum.creditPlanLast', {
     amount,
     earlier: plan.days - 1,
-    last: formatPlanUnits(plan.last, bitcoin, code, style, rateDay, visitorFiat),
+    last: formatPlanUnits(
+      plan.last,
+      bitcoin,
+      code,
+      style,
+      rateDay,
+      visitorFiat,
+      satPlan?.last ?? null,
+    ),
   });
 }
 

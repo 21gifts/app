@@ -19,6 +19,10 @@ vi.mock('@/components/SignedInChrome', () => ({
   SignedInChrome: () => <div data-testid="signed-in-chrome" />,
 }));
 
+vi.mock('@/components/ProfileChromeLeft', () => ({
+  ProfileChromeLeft: () => <div data-testid="profile-chrome-left" />,
+}));
+
 vi.mock('@/components/RulesDocument', () => ({
   RulesDocument: () => <div data-testid="rules-document" />,
 }));
@@ -34,6 +38,8 @@ describe('RulesSetupPage', () => {
     renderWithLocale(await RulesSetupPage());
     expect(screen.getByTestId('rules-setup')).toBeTruthy();
     expect(screen.getByTestId('signed-in-chrome')).toBeTruthy();
+    // The page-level arrow is the fallback while the login card replaces RulesSetup.
+    expect(screen.getByTestId('profile-chrome-left')).toBeTruthy();
     expect(screen.getAllByTestId('rules-document')).toHaveLength(RULES_CHAPTER_IDS.length);
   });
 });

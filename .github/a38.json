@@ -31,6 +31,11 @@
     },
     {
       "workflow": ".github/workflows/ci.yaml",
+      "job": "screenshots",
+      "reason": "This job checks screenshot baselines with npm run screenshot:check on a GitHub-hosted runner. A release can change thousands of baselines, so that work stays out of the coverage job and is not measured locally."
+    },
+    {
+      "workflow": ".github/workflows/ci.yaml",
       "job": "e2e",
       "reason": "This job runs Playwright end-to-end behavior tests as three GitHub-hosted matrix shards (1/3, 2/3, 3/3) inside the mcr.microsoft.com/playwright:v1.61.1-noble container against Linux Chromium baselines and is not measured locally as an A38 author report."
     },
@@ -73,6 +78,11 @@
       "workflow": ".github/workflows/a38-guard.yml",
       "job": "guard",
       "reason": "This job is the A38 guard itself, which audits the author report rather than being part of it."
+    },
+    {
+      "workflow": ".github/workflows/visual-baselines.yaml",
+      "job": "update",
+      "reason": "This job regenerates Linux Chromium visual baselines on manual dispatch only (workflow_dispatch or a push to the workflow file itself); it uploads snapshots for review, never gates a pull request, and performs no author-measurable testing."
     }
   ]
 }

@@ -89,6 +89,7 @@ async function installFakeWebAuthn(page: Page, options: FakeWebAuthnOptions = {}
       __passkeyUserId?: string;
     };
     capture.__passkeyCreateCount = 0;
+    let created = false;
     Object.defineProperty(navigator, 'credentials', {
       configurable: true,
       value: {
@@ -106,6 +107,7 @@ async function installFakeWebAuthn(page: Page, options: FakeWebAuthnOptions = {}
           if (!publicKey || !isBytes(publicKey.challenge) || !isBytes(publicKey.user?.id)) {
             throw new Error('invalid creation options');
           }
+          created = true;
           return attestation;
         },
         get: async (options?: CredentialRequestOptions) => {
@@ -113,7 +115,7 @@ async function installFakeWebAuthn(page: Page, options: FakeWebAuthnOptions = {}
           if (!publicKey || !isBytes(publicKey.challenge)) {
             throw new Error('invalid request options');
           }
-          if (opts.getSucceeds !== true) {
+          if (opts.getSucceeds !== true && !created) {
             throw new DOMException('No credentials', 'NotAllowedError');
           }
           return assertion;
@@ -177,8 +179,8 @@ test('passkey name mixed-case unique handle is user.name not user.id', async ({ 
   expect(finishBody.account.id).toBe(capture.userId);
   expect(finishBody.account.name).toBe(name);
   expect(finishBody.account.username).toBe(name);
-  expect(finishBody.account.setup).toBe('lightning-address');
-  await expect(page).toHaveURL(/\/setup\/address/, { timeout: 10_000 });
+  expect(finishBody.account.setup).toBe('rules');
+  await expect(page).toHaveURL(/\/setup\/rules/, { timeout: 10_000 });
 });
 
 test('passkey name taken handle stays on the form without create', async ({ page, browser }) => {
@@ -187,7 +189,7 @@ test('passkey name taken handle stays on the form without create', async ({ page
   await openNameForm(page);
   await page.getByRole('textbox', { name: 'Name' }).fill(mixed);
   await page.getByRole('button', { name: 'Continue' }).click();
-  await expect(page).toHaveURL(/\/setup\/address/, { timeout: 10_000 });
+  await expect(page).toHaveURL(/\/setup\/rules/, { timeout: 10_000 });
 
   const secondContext = await browser.newContext({
     baseURL: 'http://localhost:3000',

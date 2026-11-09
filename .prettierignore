@@ -6,3 +6,4 @@ playwright-report
 test-results
 package-lock.json
 next-env.d.ts
+src/__tests__/lib/slip39-vectors.json

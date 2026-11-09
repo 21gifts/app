@@ -17,6 +17,7 @@ function renderSelect(
     options?: readonly ForumModeSelectOption<'active' | 'unpaid' | 'all' | 'popular'>[];
     onChange?: (value: 'active' | 'unpaid' | 'all' | 'popular') => void;
     ariaLabel?: string;
+    variant?: 'field' | 'chip';
   } = {},
 ): ReturnType<typeof render> {
   return render(
@@ -25,6 +26,7 @@ function renderSelect(
       options={props.options ?? OPTIONS}
       onChange={props.onChange ?? (() => undefined)}
       ariaLabel={props.ariaLabel ?? 'Forum view'}
+      variant={props.variant ?? 'field'}
     />,
   );
 }
@@ -47,6 +49,22 @@ describe('ForumModeSelect', () => {
     fireEvent.click(trigger);
     expect(screen.queryByRole('listbox')).toBeNull();
     expect(trigger.getAttribute('aria-expanded')).toBe('false');
+  });
+
+  it('opens the chip listbox as the absolute fallback without an AppShell', () => {
+    renderSelect({ variant: 'chip', value: 'popular' });
+    const trigger = screen.getByRole('combobox', { name: 'Forum view' });
+    const label = trigger.querySelector('.truncate');
+    expect(label?.textContent).toBe('Most popular');
+    expect(trigger.querySelector('svg.lucide-globe')).not.toBeNull();
+    expect(label?.className).toContain('hidden');
+    expect(label?.className).toContain('sm:inline');
+    fireEvent.click(trigger);
+    const listbox = screen.getByRole('listbox');
+    expect(listbox.className).toContain('absolute');
+    expect(listbox.className).toContain('w-80');
+    expect(listbox.closest('.fixed')).toBeNull();
+    expect(listbox.hasAttribute('style')).toBe(false);
   });
 
   it('selecting a different option calls onChange, closes, and focuses the trigger', () => {

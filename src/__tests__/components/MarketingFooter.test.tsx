@@ -40,6 +40,11 @@ describe('MarketingFooter', () => {
     );
   });
 
+  it('links Terms of Use to /terms', async () => {
+    render(await MarketingFooter());
+    expect(screen.getByRole('link', { name: 'Terms of Use' }).getAttribute('href')).toBe('/terms');
+  });
+
   it('links Living room rules to /en/rules', async () => {
     render(await MarketingFooter());
     expect(screen.getByRole('link', { name: 'Living room rules' }).getAttribute('href')).toBe(

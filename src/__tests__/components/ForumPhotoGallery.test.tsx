@@ -14,6 +14,35 @@ describe('ForumPhotoGallery', () => {
     vi.restoreAllMocks();
   });
 
+  it('defaults loading and fetchPriority when the item omits them', () => {
+    renderWithLocale(<ForumPhotoGallery photos={PHOTOS} alt="Photo from Ada" />);
+    const photos = screen.getAllByAltText('Photo from Ada');
+    expect(photos[0]?.getAttribute('loading')).toBe('lazy');
+    expect(photos[0]?.getAttribute('fetchpriority')).toBe('low');
+    expect(photos[0]?.getAttribute('decoding')).toBe('async');
+    fireEvent.error(photos[0] as HTMLElement);
+  });
+
+  it('sets loading, fetchPriority, and reports img error', () => {
+    const onPhotoError = vi.fn();
+    renderWithLocale(
+      <ForumPhotoGallery
+        photos={[
+          { index: 0, url: 'blob:g0', loading: 'eager', fetchPriority: 'high' },
+          { index: 1, url: 'blob:g1', loading: 'lazy', fetchPriority: 'auto' },
+        ]}
+        alt="Photo from Ada"
+        onPhotoError={onPhotoError}
+      />,
+    );
+    const photos = screen.getAllByAltText('Photo from Ada');
+    expect(photos[0]?.getAttribute('loading')).toBe('eager');
+    expect(photos[0]?.getAttribute('fetchpriority')).toBe('high');
+    expect(photos[1]?.getAttribute('fetchpriority')).toBe('auto');
+    fireEvent.error(photos[1] as HTMLElement);
+    expect(onPhotoError).toHaveBeenCalledWith(1);
+  });
+
   it('returns null when there are no stills', () => {
     const { container } = renderWithLocale(<ForumPhotoGallery photos={[]} alt="Photo from Ada" />);
     expect(container.querySelector('img')).toBeNull();
@@ -225,5 +254,97 @@ describe('ForumPhotoGallery', () => {
     const photos = screen.getAllByAltText('Photo from Ada');
     fireEvent.click(photos[0] as HTMLElement);
     expect(onPhotoClick).toHaveBeenCalled();
+  });
+
+  it('clamps the chip when photos shrinks below the active index', () => {
+    const view = renderWithLocale(<ForumPhotoGallery photos={PHOTOS} alt="Photo from Ada" />);
+    fireEvent.click(screen.getByRole('button', { name: 'Photo 2 of 2' }));
+    expect(screen.getByText('2/2')).toBeTruthy();
+    view.rerender(
+      <ForumPhotoGallery photos={[{ index: 0, url: 'blob:g0' }]} alt="Photo from Ada" />,
+    );
+    expect(screen.getByText('1/1')).toBeTruthy();
+    expect(screen.queryByText('2/1')).toBeNull();
+  });
+
+  it('keeps the chip on the same photo index when an earlier still disappears', () => {
+    const view = renderWithLocale(
+      <ForumPhotoGallery
+        photos={[
+          { index: 0, url: 'blob:g0' },
+          { index: 1, url: 'blob:g1' },
+          { index: 2, url: 'blob:g2' },
+        ]}
+        alt="Photo from Ada"
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Photo 2 of 3' }));
+    expect(screen.getByText('2/3')).toBeTruthy();
+    view.rerender(
+      <ForumPhotoGallery
+        photos={[
+          { index: 1, url: 'blob:g1' },
+          { index: 2, url: 'blob:g2' },
+        ]}
+        alt="Photo from Ada"
+      />,
+    );
+    expect(screen.getByText('1/2')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Photo 1 of 2' }).getAttribute('aria-current')).toBe(
+      'true',
+    );
+    expect(
+      screen.getByRole('button', { name: 'Photo 2 of 2' }).getAttribute('aria-current'),
+    ).toBeNull();
+    expect(screen.queryByText('2/2')).toBeNull();
+    const photos = screen.getAllByAltText('Photo from Ada');
+    expect(photos[0]?.getAttribute('data-photo-index')).toBe('1');
+    expect(photos[1]?.getAttribute('data-photo-index')).toBe('2');
+  });
+
+  it('scrolls the row onto the same still when an earlier photo disappears', () => {
+    vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockReturnValue({
+      width: 200,
+      height: 10,
+      top: 0,
+      left: 0,
+      bottom: 10,
+      right: 200,
+      x: 0,
+      y: 0,
+      toJSON: () => undefined,
+    });
+    const three = [
+      { index: 0, url: 'blob:g0' },
+      { index: 1, url: 'blob:g1' },
+      { index: 2, url: 'blob:g2' },
+    ];
+    const view = renderWithLocale(<ForumPhotoGallery photos={three} alt="Photo from Ada" />);
+    const scroller = screen.getAllByAltText('Photo from Ada')[0]?.parentElement
+      ?.parentElement as HTMLElement;
+    expect(scroller.scrollLeft).toBe(0);
+    fireEvent.click(screen.getByRole('button', { name: 'Photo 2 of 3' }));
+    view.rerender(
+      <ForumPhotoGallery
+        photos={[
+          { index: 1, url: 'blob:g1' },
+          { index: 2, url: 'blob:g2' },
+        ]}
+        alt="Photo from Ada"
+      />,
+    );
+    expect(scroller.scrollLeft).toBe(0);
+    expect(screen.getByText('1/2')).toBeTruthy();
+    view.rerender(
+      <ForumPhotoGallery
+        photos={[
+          { index: 0, url: 'blob:g0' },
+          { index: 2, url: 'blob:g2' },
+        ]}
+        alt="Photo from Ada"
+      />,
+    );
+    expect(scroller.scrollLeft).toBe(200);
+    expect(screen.getByText('2/2')).toBeTruthy();
   });
 });
