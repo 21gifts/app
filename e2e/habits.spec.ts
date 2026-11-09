@@ -1,5 +1,4 @@
 import { expect, test, type Page } from '@playwright/test';
-import { motionSettled } from './motion';
 
 const PUBLIC_HABIT = {
   id: 'h-ada',
@@ -350,7 +349,6 @@ test('screen /habit-tracker donate-invoice', async ({ page }) => {
   });
   await page.goto('/habit-tracker');
   await page.getByRole('button', { name: 'Send Bitcoin' }).click();
-  await motionSettled(page);
   await page.getByRole('button', { name: 'Continue' }).click();
   await expect(
     page.getByText('Your 21.gifts wallet is not available here, so this cannot be paid.'),
@@ -950,7 +948,6 @@ test('Function: ForumPaySheet — a habit comment uses the forum pay sheet', asy
   });
   await page.goto('/habit-tracker');
   await page.getByRole('button', { name: 'Send Bitcoin' }).click();
-  await motionSettled(page);
   await page.getByRole('button', { name: 'Continue' }).click();
   const sheet = page.getByRole('dialog', { name: 'Send to Bea' });
   await expect(sheet.getByText('₿21', { exact: true })).toBeVisible();
@@ -1281,7 +1278,6 @@ test('Function: useReceiveLink — Add Bitcoin away from the forum home opens th
   });
   await page.goto('/habit-tracker?visual=wallet-pay-insufficient');
   await page.getByRole('button', { name: 'Send Bitcoin' }).click();
-  await motionSettled(page);
   await page.getByRole('button', { name: 'Continue' }).click();
   const sheet = page.getByRole('dialog', { name: 'Send to Bea' });
   await sheet.getByRole('button', { name: 'Add Bitcoin' }).click();
