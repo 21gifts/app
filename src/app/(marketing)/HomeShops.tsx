@@ -7,7 +7,7 @@ import { ArrowRight, CircleHelp, X } from 'lucide-react';
 import Link from 'next/link';
 import { SHOP_NPUB_RE } from '@/lib/api-types';
 import { countryDisplayName } from '@/lib/countries';
-import { CSP_SOURCES, placesOrigin } from '@/lib/csp';
+import { imageCspSources, placesOrigin } from '@/lib/csp';
 import type { Locale } from '@/lib/locale';
 import { getCatalog } from '@/lib/messages';
 import { translate } from '@/lib/translate';
@@ -528,9 +528,7 @@ function coverPhotoUrl(place: Record<string, unknown>): string | null {
   try {
     const photo = new URL(url);
     if (photo.protocol !== 'https:') return null;
-    /* v8 ignore next -- CSP_SOURCES always defines img-src */
-    const imageSources = CSP_SOURCES['img-src'] ?? [];
-    const allowed = [...imageSources, placesOrigin(window.location.hostname)].some((source) => {
+    const allowed = imageCspSources(window.location.hostname).some((source) => {
       if (!source.startsWith('https://')) return false;
       if (source.startsWith('https://*.')) {
         return photo.origin.endsWith(source.slice('https://*'.length));

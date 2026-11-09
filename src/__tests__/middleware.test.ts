@@ -1,5 +1,6 @@
 import { NextRequest } from 'next/server';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { CSP_SOURCES } from '@/lib/csp';
 import { config, middleware } from '@/middleware';
 
 afterEach(() => {
@@ -300,6 +301,9 @@ describe('map redirect', () => {
     const images = policy?.split('; ').find((directive) => directive.startsWith('img-src '));
     expect(images?.split(' ')).toContain(allowed);
     expect(images?.split(' ')).not.toContain(disallowed);
+    expect(images?.split(' ').slice(1)).toEqual(
+      CSP_SOURCES['img-src']?.filter((source) => source !== disallowed),
+    );
     expect(response.headers.get('x-middleware-request-content-security-policy-report-only')).toBe(
       policy,
     );

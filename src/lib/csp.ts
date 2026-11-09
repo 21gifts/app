@@ -25,6 +25,9 @@ export const CSP_NONCE_HEADER = 'x-nonce';
 /** Report-only or enforced. */
 export type CspMode = 'report-only' | 'enforce';
 
+const PLACES_PRODUCTION = 'https://api.opencryptopay.io';
+const PLACES_DEVELOPMENT = 'https://dev-api.opencryptopay.io';
+
 /**
  * Sources per directive, without the nonce and without the report
  * directives. Order is kept in the header. `docs/csp.md` gives the reason
@@ -46,6 +49,8 @@ export const CSP_SOURCES: Readonly<Record<string, readonly string[]>> = {
     'https://*.googleapis.com',
     'https://*.gstatic.com',
     'https://*.ggpht.com',
+    PLACES_PRODUCTION,
+    PLACES_DEVELOPMENT,
   ],
   'font-src': ["'self'", 'https://fonts.gstatic.com'],
   // Video previews before upload.
@@ -77,8 +82,24 @@ export const CSP_SOURCES: Readonly<Record<string, readonly string[]>> = {
  */
 export function placesOrigin(hostname: string): string {
   return hostname === '21.gifts' || hostname === 'www.21.gifts'
-    ? 'https://api.opencryptopay.io'
-    : 'https://dev-api.opencryptopay.io';
+    ? PLACES_PRODUCTION
+    : PLACES_DEVELOPMENT;
+}
+
+/**
+ * Image sources allowed for a page hostname.
+ *
+ * @param hostname - Hostname of the page or request.
+ * @returns The image sources with only that host's OpenCryptoPay origin.
+ */
+export function imageCspSources(hostname: string): readonly string[] {
+  const selected = placesOrigin(hostname);
+  /* v8 ignore next -- CSP_SOURCES always defines img-src */
+  const sources = CSP_SOURCES['img-src'] ?? [];
+  return sources.filter(
+    (source) =>
+      (source !== PLACES_PRODUCTION && source !== PLACES_DEVELOPMENT) || source === selected,
+  );
 }
 
 /**
@@ -123,7 +144,7 @@ export function buildCsp(nonce: string, hostname: string): string {
   const directives = Object.entries(CSP_SOURCES).map(([name, sources]) => {
     let list = sources;
     if (name === 'script-src') list = [`'nonce-${nonce}'`, ...sources];
-    if (name === 'img-src') list = [...sources, placesOrigin(hostname)];
+    if (name === 'img-src') list = imageCspSources(hostname);
     return `${name} ${list.join(' ')}`;
   });
   directives.push(`report-uri ${CSP_REPORT_PATH}`, `report-to ${CSP_REPORT_GROUP}`);

@@ -158,6 +158,19 @@ describe('FilterMenu', () => {
     expect(screen.getByRole('listbox')).toBeTruthy();
   });
 
+  it('does not move the trigger highlight when an option receives an arrow key', () => {
+    const { onChange } = renderMenu('');
+    const button = trigger();
+    fireEvent.click(button);
+    const option = screen.getByRole('option', { name: 'Bitcoin' });
+    const active = button.getAttribute('aria-activedescendant');
+    act(() => option.focus());
+    fireEvent.keyDown(option, { key: 'ArrowDown' });
+    expect(button.getAttribute('aria-activedescendant')).toBe(active);
+    fireEvent.click(option);
+    expect(onChange).toHaveBeenCalledWith('Bitcoin');
+  });
+
   it('opens from ArrowDown on the selected option', () => {
     renderMenu('');
     const button = trigger();
@@ -266,9 +279,9 @@ describe('FilterMenu', () => {
     expectActive(1);
     fireEvent.keyDown(button, { key: 'ArrowRight' });
     expectActive(2);
-    fireEvent.keyDown(list, { key: 'ArrowDown' });
+    fireEvent.keyDown(button, { key: 'ArrowDown' });
     expectActive(2 + columns);
-    fireEvent.keyDown(list, { key: 'ArrowUp' });
+    fireEvent.keyDown(button, { key: 'ArrowUp' });
     expectActive(2);
     fireEvent.keyDown(button, { key: 'ArrowLeft' });
     expectActive(1);
@@ -277,11 +290,11 @@ describe('FilterMenu', () => {
     }
     fireEvent.keyDown(button, { key: 'ArrowRight' });
     expectActive(columns);
-    fireEvent.keyDown(list, { key: 'End' });
+    fireEvent.keyDown(button, { key: 'End' });
     expectActive(count - 1);
-    fireEvent.keyDown(list, { key: 'ArrowDown' });
+    fireEvent.keyDown(button, { key: 'ArrowDown' });
     expectActive(count - 1);
-    fireEvent.keyDown(list, { key: 'Home' });
+    fireEvent.keyDown(button, { key: 'Home' });
     expectActive(0);
     fireEvent.keyDown(button, { key: 'ArrowUp' });
     expectActive(0);

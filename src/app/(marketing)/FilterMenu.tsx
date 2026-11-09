@@ -403,7 +403,7 @@ export function FilterMenu({
     revealActive(next);
   }
 
-  function onTriggerKeyDown(event: ReactKeyboardEvent<HTMLElement>): void {
+  function onTriggerKeyDown(event: ReactKeyboardEvent<HTMLButtonElement>): void {
     if (
       event.key === 'ArrowDown' ||
       event.key === 'ArrowUp' ||
@@ -509,11 +509,6 @@ export function FilterMenu({
         <div
           ref={panelRef}
           role="listbox"
-          onKeyDown={(event) => {
-            if (event.key.startsWith('Arrow') || event.key === 'Home' || event.key === 'End') {
-              onTriggerKeyDown(event);
-            }
-          }}
           id={listboxId}
           aria-labelledby={labelId}
           className={`shop-menu-in z-30 flex ${pin === null ? 'min-w-[max(100%,14.5rem)]' : ''} flex-col gap-1 rounded-xl border border-ink/10 bg-paper p-1.5 shadow-lg ${placed} max-w-[18rem] sm:max-w-[36rem] md:max-w-[44rem]`}

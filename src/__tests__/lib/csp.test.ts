@@ -11,6 +11,7 @@ import {
   CSP_SOURCES,
   cspHeaderName,
   getCspMode,
+  imageCspSources,
   placesOrigin,
 } from '@/lib/csp';
 
@@ -80,8 +81,11 @@ describe('buildCsp', () => {
   ])('allows only the OpenCryptoPay origin for %s', (host, allowed, disallowed) => {
     expect(placesOrigin(host)).toBe(allowed);
     const images = directives(buildCsp('n', host)).get('img-src');
+    expect(imageCspSources(host)).toEqual(images);
     expect(images).toContain(allowed);
     expect(images).not.toContain(disallowed);
+    expect(CSP_SOURCES['img-src']).toContain(allowed);
+    expect(CSP_SOURCES['img-src']).toContain(disallowed);
   });
 
   it('puts the nonce first on script-src and nowhere else', () => {
@@ -97,7 +101,9 @@ describe('buildCsp', () => {
     for (const [name, sources] of Object.entries(CSP_SOURCES)) {
       let expected = sources;
       if (name === 'script-src') expected = ["'nonce-n'", ...sources];
-      if (name === 'img-src') expected = [...sources, 'https://api.opencryptopay.io'];
+      if (name === 'img-src') {
+        expected = sources.filter((source) => source !== 'https://dev-api.opencryptopay.io');
+      }
       expect(parsed.get(name)).toEqual(expected);
     }
     expect(parsed.get('report-uri')).toEqual([CSP_REPORT_PATH]);
@@ -133,11 +139,9 @@ describe('docs/csp.md', () => {
     const rows = [...sources.matchAll(/^\| `([a-z-]+)` +\| `([^`]+)` +\|/gm)].map(
       ([, name, source]) => `${name} ${source}`,
     );
-    const policy = Object.entries(CSP_SOURCES).flatMap(([name, sources]) => {
-      const all =
-        name === 'img-src' ? [...sources, placesOrigin('21.gifts'), placesOrigin('dev')] : sources;
-      return all.map((source) => `${name} ${source}`);
-    });
+    const policy = Object.entries(CSP_SOURCES).flatMap(([name, sources]) =>
+      sources.map((source) => `${name} ${source}`),
+    );
     expect(rows).toEqual(policy);
   });
 });

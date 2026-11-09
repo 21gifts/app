@@ -3417,10 +3417,17 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 ## Function: buildCsp
 
-- **Purpose:** The Content-Security-Policy text of every page: the directives of `CSP_SOURCES` in order, the nonce on `script-src`, then `report-uri /monitoring/csp` and `report-to csp`. `docs/csp.md` lists every source and why it is needed.
-- **Inputs:** The nonce and hostname of this response.
+- **Purpose:** The Content-Security-Policy text of every page: the directives of `CSP_SOURCES` in order, the nonce on `script-src`, then `report-uri /monitoring/csp` and `report-to csp`. The `img-src` directive contains only the OpenCryptoPay origin selected for the hostname. `docs/csp.md` lists every source and why it is needed.
+- **Inputs:** The nonce of this response and the request hostname; `21.gifts` and `www.21.gifts` select the production OpenCryptoPay origin, and all other hosts select development.
 - **Returns / side effects:** The policy string, directives separated by `; `.
 - **Used by:** `middleware`.
+
+## Function: imageCspSources
+
+- **Purpose:** Select the image sources allowed for a page hostname.
+- **Inputs:** The page or request hostname.
+- **Returns / side effects:** The image source list with exactly one OpenCryptoPay origin selected for the hostname; no side effects.
+- **Used by:** `buildCsp` and the homepage popup photo filter.
 
 ## Function: placesOrigin
 
