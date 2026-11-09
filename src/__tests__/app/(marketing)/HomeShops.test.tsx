@@ -1,13 +1,24 @@
 import { cleanup, render, screen, within, fireEvent, waitFor, act } from '@testing-library/react';
+import type { ReactNode } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { HomeShops } from '@/app/(marketing)/HomeShops';
 import { Scrollport } from '@/components/ui/Scrollport';
 import { getCatalog } from '@/lib/messages';
 
-const routerPush = vi.hoisted(() => vi.fn());
-
-vi.mock('next/navigation', () => ({
-  useRouter: (): { push: typeof routerPush } => ({ push: routerPush }),
+vi.mock('next/link', () => ({
+  default: ({
+    href,
+    className,
+    children,
+  }: {
+    href: string;
+    className?: string;
+    children: ReactNode;
+  }) => (
+    <a href={href} className={className} data-next-link="">
+      {children}
+    </a>
+  ),
 }));
 
 const messages = getCatalog('en');
@@ -592,7 +603,6 @@ function expectNoSecretWords(): void {
 
 describe('HomeShops', () => {
   beforeEach(() => {
-    routerPush.mockReset();
     pending.length = 0;
     setHostname('localhost');
     installFetch();
@@ -2409,6 +2419,7 @@ describe('HomeShops', () => {
     const popupLink = linked.content.querySelector('a');
     expect(popupLink?.getAttribute('href')).toBe(`/${npub('p')}`);
     expect(popupLink?.getAttribute('class')).toBe('shop-popup-name');
+    expect(popupLink?.hasAttribute('data-next-link')).toBe(true);
     const arrow = popupLink?.querySelector('svg.shop-popup-arrow');
     expect(arrow?.classList.contains('lucide-arrow-right')).toBe(true);
     expect(arrow?.getAttribute('aria-hidden')).toBe('true');
@@ -2448,7 +2459,7 @@ describe('HomeShops', () => {
       await Promise.resolve();
     });
     expect(linked.content.querySelector('.shop-popup-close')).toBeNull();
-    expect(popupLink?.querySelector('.shop-popup-arrow')).toBeNull();
+    expect(linked.content.querySelector('.shop-popup-name')).toBeNull();
   });
 
   it('renders only HTTPS photos matching exact or subdomain image CSP sources', async () => {
@@ -2490,48 +2501,51 @@ describe('HomeShops', () => {
     }
   });
 
-  it('navigates plain popup clicks client-side and preserves browser click behavior', async () => {
+  it('removes popup portals when markers are redrawn', async () => {
     const lib = installMapLibre();
     renderShops();
+    await resolveLatest(
+      basicFilters({ countries: ['PH', 'DE'] }),
+      placesBody([
+        giftsPlace('Linked', { id: npub('p') }),
+        giftsPlace('Berlin', { country: 'DE' }),
+      ]),
+    );
+    await fireScript('load');
+    const popup = lib.popups.find(
+      (item) => item.content?.querySelector('.shop-popup-name')?.textContent === 'Linked',
+    );
+    if (popup?.content === null || popup?.content === undefined) throw new Error('missing popup');
+    const content = popup.content;
+    expect(content.querySelector('[data-next-link]')).not.toBeNull();
+    expect(content.querySelector('.shop-popup-close')).not.toBeNull();
+    document.body.appendChild(content);
+    content.remove();
+    changeMenu(copy.country, 'DE');
+    await waitFor(() => {
+      expect(content.querySelector('[data-next-link]')).toBeNull();
+      expect(content.querySelector('.shop-popup-close')).toBeNull();
+    });
+  });
+
+  it('removes old popup portals when the map effect restarts', async () => {
+    const lib = installMapLibre();
+    const view = renderShops();
     await resolveLatest(basicFilters({}), placesBody([giftsPlace('Linked', { id: npub('p') })]));
     await fireScript('load');
     const popup = lib.popups.find(
       (item) => item.content?.querySelector('.shop-popup-name')?.textContent === 'Linked',
     );
-    const link = popup?.content?.querySelector('.shop-popup-name');
-    if (!(link instanceof HTMLAnchorElement)) throw new Error('missing shop link');
-    expect(link.getAttribute('href')).toBe(`/${npub('p')}`);
-    const prevented = vi.fn();
-    link.addEventListener('click', (event) => {
-      // Observe the app's decision first, then stop jsdom from following an allowed link.
-      prevented(event.defaultPrevented);
-      event.preventDefault();
-    });
+    if (popup?.content === null || popup?.content === undefined) throw new Error('missing popup');
+    const content = popup.content;
+    expect(content.querySelector('.shop-popup-close')).not.toBeNull();
+    expect(content.querySelector('a.shop-popup-name')).not.toBeNull();
 
-    fireEvent.click(link, { button: 0 });
-    expect(routerPush).toHaveBeenCalledTimes(1);
-    expect(routerPush).toHaveBeenCalledWith(`/${npub('p')}`);
-    expect(prevented).toHaveBeenLastCalledWith(true);
-    routerPush.mockClear();
+    view.rerender(<HomeShops copy={{ ...copy, closePopup: 'Dismiss map popup' }} locale="en" />);
 
-    for (const init of [
-      { metaKey: true },
-      { ctrlKey: true },
-      { shiftKey: true },
-      { altKey: true },
-      { button: 1 },
-      { button: 2 },
-    ]) {
-      fireEvent.click(link, init);
-      expect(routerPush).not.toHaveBeenCalled();
-      expect(prevented).toHaveBeenLastCalledWith(false);
-    }
-
-    const blocked = new MouseEvent('click', { button: 0, bubbles: true, cancelable: true });
-    blocked.preventDefault();
-    fireEvent(link, blocked);
-    expect(routerPush).not.toHaveBeenCalled();
-    expect(prevented).toHaveBeenLastCalledWith(true);
+    expect(lib.maps).toHaveLength(1);
+    expect(content.querySelector('.shop-popup-close')).toBeNull();
+    expect(content.querySelector('a.shop-popup-name')).toBeNull();
   });
 
   it('downloads quoted CSV rows and does nothing for an empty table', async () => {
@@ -4135,11 +4149,14 @@ describe('HomeShops', () => {
     fireEvent.keyDown(hank, { key: 'Enter' });
     hankPopup.emit('open');
     expect(focus).toHaveBeenCalledTimes(1);
-    hankPopup.content?.querySelector('.shop-popup-close')?.remove();
+    const removedClose = hankPopup.content?.querySelector('.shop-popup-close');
+    const closeHost = removedClose?.parentElement;
+    removedClose?.remove();
     focus.mockClear();
     fireEvent.keyDown(hank, { key: 'Enter' });
     hankPopup.emit('open');
     expect(focus).not.toHaveBeenCalled();
+    if (removedClose !== undefined && removedClose !== null) closeHost?.appendChild(removedClose);
     const panBy = map.panBy;
     delete (map as { panBy?: unknown }).panBy;
     hankPopup.emit('open');

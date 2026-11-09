@@ -1,12 +1,10 @@
 'use client';
 
-import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState } from 'react';
+import { Fragment, useCallback, useEffect, useId, useLayoutEffect, useRef, useState } from 'react';
 import type { ReactElement } from 'react';
-import { createPortal, flushSync } from 'react-dom';
-import { createRoot, type Root } from 'react-dom/client';
+import { createPortal } from 'react-dom';
 import { ArrowRight, CircleHelp, X } from 'lucide-react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import { SHOP_NPUB_RE } from '@/lib/api-types';
 import { countryDisplayName } from '@/lib/countries';
 import { CSP_SOURCES } from '@/lib/csp';
@@ -960,79 +958,29 @@ function markerPositions(rows: readonly ShopRow[], failed: boolean): LngLat[] {
   return positions;
 }
 
-type PopupClose = { root: Root; host: HTMLElement };
-
-const popupCloses = new Set<PopupClose>();
-
-function unmountPopupNode(entry: PopupClose): void {
-  // The button can already be gone: a test removes it, and map teardown can
-  // drop the node first. Unmounting then throws NotFoundError.
-  if (entry.host.querySelector('.shop-popup-close') === null) return;
-  entry.root.unmount();
-}
-
-function unmountPopupCloses(): void {
-  const entries = [...popupCloses];
-  popupCloses.clear();
-  queueMicrotask(() => {
-    for (const entry of entries) unmountPopupNode(entry);
-  });
-}
+type PopupPortal = {
+  host: HTMLElement;
+  title: HTMLElement;
+  row: ShopRow;
+  closeLabel: string;
+  onClose: () => void;
+};
 
 /**
- * Builds the shop popup with a client-side shop link and its own close button.
- * The close button and the link's lucide arrow share one React root.
+ * Builds the popup DOM and returns hosts for the page's React portals.
  *
  * @param row - Shop details and the optional in-app path.
  * @param showCategory - Whether categories differ across the displayed shops.
- * @param closeLabel - Localized accessible name of the close button.
- * @param onClose - Closes this popup.
- * @param navigate - Opens an in-app path without loading a new document.
- * @returns The popup content node.
+ * @returns The popup content and its portal hosts.
  */
 function popupContent(
   row: ShopRow,
   showCategory: boolean,
-  closeLabel: string,
-  onClose: () => void,
-  navigate: (href: string) => void,
-): HTMLElement {
+): { content: HTMLElement; host: HTMLElement; title: HTMLElement } {
   const content = document.createElement('div');
   content.className = 'shop-popup-card';
-  let arrowHost: HTMLSpanElement | null = null;
   const host = document.createElement('div');
   content.appendChild(host);
-  const root = createRoot(host);
-  const entry: PopupClose = { root, host };
-  popupCloses.add(entry);
-  // paintMarkers runs inside a React effect. Flushing here warns and can
-  // unmount a root mid-render, so the button and arrow commit on the next microtask.
-  queueMicrotask(() => {
-    flushSync(() => {
-      root.render(
-        <>
-          <IconButton
-            aria-label={closeLabel}
-            variant="ghost"
-            size="md"
-            className="shop-popup-close border border-ink/12 bg-paper"
-            onClick={(event) => {
-              event.stopPropagation();
-              onClose();
-            }}
-          >
-            <X aria-hidden="true" className="h-4 w-4" />
-          </IconButton>
-          {arrowHost === null
-            ? null
-            : createPortal(
-                <ArrowRight aria-hidden="true" className="shop-popup-arrow" />,
-                arrowHost,
-              )}
-        </>,
-      );
-    });
-  });
   if (row.coverPhotoUrl !== null) {
     const image = document.createElement('img');
     image.src = row.coverPhotoUrl;
@@ -1048,30 +996,6 @@ function popupContent(
     const name = document.createElement('strong');
     name.className = 'shop-popup-name';
     name.textContent = row.name;
-    title.appendChild(name);
-  } else {
-    const href = row.href;
-    const name = document.createElement('a');
-    name.href = href;
-    name.className = 'shop-popup-name';
-    name.appendChild(document.createTextNode(row.name));
-    arrowHost = document.createElement('span');
-    arrowHost.className = 'contents';
-    name.appendChild(arrowHost);
-    name.addEventListener('click', (event: MouseEvent): void => {
-      if (
-        event.defaultPrevented ||
-        event.button !== 0 ||
-        event.metaKey ||
-        event.ctrlKey ||
-        event.shiftKey ||
-        event.altKey
-      ) {
-        return;
-      }
-      event.preventDefault();
-      navigate(href);
-    });
     title.appendChild(name);
   }
   content.appendChild(title);
@@ -1094,7 +1018,7 @@ function popupContent(
     chips.appendChild(category);
   }
   if (chips.childNodes.length > 0) content.appendChild(chips);
-  return content;
+  return { content, host, title };
 }
 
 function paintRecord(layer: Record<string, unknown>): Record<string, unknown> {
@@ -1448,9 +1372,7 @@ function cellText(row: ShopRow, column: SortColumn, locale: string): string {
  * @returns The shop section.
  */
 export function HomeShops({ copy, locale }: { copy: HomeShopsCopy; locale: Locale }): ReactElement {
-  const router = useRouter();
-  const routerRef = useRef(router);
-  routerRef.current = router;
+  const [popupPortals, setPopupPortals] = useState<PopupPortal[]>([]);
   const [country, setCountry] = useState('');
   const [shopName, setShopName] = useState('');
   const [blockchain, setBlockchain] = useState('');
@@ -1681,12 +1603,15 @@ export function HomeShops({ copy, locale }: { copy: HomeShopsCopy; locale: Local
     if (session === null) return;
     cancelAnimationFrame(popupFrame.current);
     popupFrame.current = 0;
-    unmountPopupCloses();
+    const portals: PopupPortal[] = [];
     clearClusters();
     for (const marker of markersRef.current) marker.remove();
     markersRef.current = [];
     pinsRef.current = [];
-    if (awaitingRef.current) return;
+    if (awaitingRef.current) {
+      setPopupPortals(portals);
+      return;
+    }
     const positions = markerPositions(rowsRef.current, failedRef.current);
     if (!failedRef.current) {
       for (const row of rowsRef.current) {
@@ -1710,15 +1635,16 @@ export function HomeShops({ copy, locale }: { copy: HomeShopsCopy; locale: Local
             (pinClustersRef.current.get(element) ?? element).focus();
           }
         };
-        const content = popupContent(
+        const { content, host, title } = popupContent(row, showCategoryRef.current);
+        portals.push({
+          host,
+          title,
           row,
-          showCategoryRef.current,
-          closeLabelRef.current,
-          () => {
+          closeLabel: closeLabelRef.current,
+          onClose: () => {
             popup.remove();
           },
-          (href) => routerRef.current.push(href),
-        );
+        });
         element.addEventListener('keydown', (event: KeyboardEvent) => {
           if (event.key !== 'Enter' && event.key !== ' ') return;
           event.preventDefault();
@@ -1751,6 +1677,7 @@ export function HomeShops({ copy, locale }: { copy: HomeShopsCopy; locale: Local
         pinsRef.current.push({ element, row, position: row.position });
       }
     }
+    setPopupPortals(portals);
     if (viewRef.current === 'map') frameMap(session.map, session.lib, positions);
     scheduleClusters();
   }, [clearClusters, scheduleClusters]);
@@ -2045,7 +1972,7 @@ export function HomeShops({ copy, locale }: { copy: HomeShopsCopy; locale: Local
         session.map.remove();
       }
       sessionRef.current = null;
-      unmountPopupCloses();
+      setPopupPortals([]);
       for (const marker of markersRef.current) marker.remove();
       markersRef.current = [];
       clearClusters();
@@ -2217,6 +2144,34 @@ export function HomeShops({ copy, locale }: { copy: HomeShopsCopy; locale: Local
       aria-labelledby={headingId}
       className="scroll-mt-20 border-b border-ink/10 bg-paper px-5 py-16 text-ink scheme-light [--color-app-border:#e5e5e5] [--color-app-border-strong:#d4d4d4] [--color-app-btn:#171717] [--color-app-btn-fg:#ffffff] [--color-app-btn-hover:#404040] [--color-app-card:#ffffff] [--color-app-card-muted:#fafafa] [--color-app-danger:#b91c1c] [--color-app-fg:#171717] [--color-app-focus:#171717] [--color-app-hover:#fafafa] [--color-app-muted:#525252] sm:py-20"
     >
+      {popupPortals.map(({ host, title, row, closeLabel, onClose }) => (
+        <Fragment key={row.key}>
+          {createPortal(
+            <IconButton
+              aria-label={closeLabel}
+              variant="ghost"
+              size="md"
+              className="shop-popup-close border border-ink/12 bg-paper"
+              onClick={(event) => {
+                event.stopPropagation();
+                onClose();
+              }}
+            >
+              <X aria-hidden="true" className="h-4 w-4" />
+            </IconButton>,
+            host,
+          )}
+          {row.href === null
+            ? null
+            : createPortal(
+                <Link href={row.href} className="shop-popup-name">
+                  {row.name}
+                  <ArrowRight aria-hidden="true" className="shop-popup-arrow" />
+                </Link>,
+                title,
+              )}
+        </Fragment>
+      ))}
       <div className="mx-auto max-w-[1100px]">
         <h2
           id={headingId}
