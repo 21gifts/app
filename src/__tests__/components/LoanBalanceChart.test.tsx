@@ -253,7 +253,7 @@ describe('LoanBalanceChart', () => {
     expect(screen.getAllByText('$0')).toHaveLength(1);
   });
 
-  it('ticks only 0 on fiat when every loan fiat field is null', () => {
+  it('uses an em dash tick on USD when every loan fiat field is null', () => {
     renderWithLocale(
       <LoanBalanceChart
         owed={[loanDay('2026-06-01', 100, null, 100), loanDay('2026-06-02', -40, null, -140)]}
@@ -263,7 +263,20 @@ describe('LoanBalanceChart', () => {
     expect(screen.getByText(formatBitcoin(-40))).toBeTruthy();
     clickChartScale('USD');
     expect(screen.getByRole('img', { name: 'Debt and credit in USD' })).toBeTruthy();
-    expect(screen.getAllByText('$0')).toHaveLength(1);
+    expect(screen.getAllByText('\u2014')).toHaveLength(1);
+    expect(screen.queryByText('$0')).toBeNull();
+  });
+
+  it('uses an em dash tick on CHF when every loan fiat field is null', () => {
+    renderWithLocale(
+      <LoanBalanceChart owed={[loanDay('2026-06-01', 100, null, 100)]} />,
+      'en',
+      'ch',
+      'CHF',
+    );
+    clickChartScale('CHF');
+    expect(screen.getByRole('img', { name: 'Debt and credit in CHF' })).toBeTruthy();
+    expect(screen.getAllByText('\u2014')).toHaveLength(1);
   });
 
   it('ticks minY, 0, and maxY when series cross below and above zero', () => {

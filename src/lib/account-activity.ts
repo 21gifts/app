@@ -189,6 +189,44 @@ export function activityMaxY(
   return max === 0 ? 1 : max;
 }
 
+/** Raw cumulative fiat fields shared by gift-activity and loan days. */
+export interface FiatCumulativeDay {
+  /** Cumulative USD, or `null` when unsummed. */
+  cumulativeUsd: string | null;
+  /** Cumulative CHF, `null` when unsummed, or absent on older api bodies. */
+  cumulativeChf?: string | null | undefined;
+  /** Cumulative EUR, `null` when unsummed, or absent on older api bodies. */
+  cumulativeEur?: string | null | undefined;
+  /** Cumulative PHP, `null` when unsummed, or absent on older api bodies. */
+  cumulativePhp?: string | null | undefined;
+}
+
+const NON_USD_CUMULATIVE: Record<
+  Exclude<FiatCode, 'USD'>,
+  'cumulativeChf' | 'cumulativeEur' | 'cumulativePhp'
+> = {
+  CHF: 'cumulativeChf',
+  EUR: 'cumulativeEur',
+  PHP: 'cumulativePhp',
+};
+
+/**
+ * True when y-ticks for `fiat` should be an em dash instead of an amount.
+ * USD is unsummable when any raw `cumulativeUsd` is `null`. Other codes are
+ * unsummable when every source cumulative is `null` or missing.
+ *
+ * @param days - Raw days of every series the chart draws.
+ * @param fiat - Selected fiat.
+ * @returns Whether y-ticks should be an em dash instead of a fiat amount.
+ */
+export function fiatUnsummable(days: readonly FiatCumulativeDay[], fiat: FiatCode): boolean {
+  if (fiat === 'USD') {
+    return days.some((day) => day.cumulativeUsd === null);
+  }
+  const key = NON_USD_CUMULATIVE[fiat];
+  return days.every((day) => day[key] === null || day[key] === undefined);
+}
+
 /** One aligned UTC day on the dual Debt/Credit loan series. */
 export interface LoanPoint {
   /** Calendar day `YYYY-MM-DD`. */

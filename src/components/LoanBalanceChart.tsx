@@ -5,7 +5,13 @@ import { useFiatPreference } from '@/components/FiatPreferenceProvider';
 import { useTranslations } from '@/components/LocaleProvider';
 import { useNumberFormat } from '@/components/NumberFormatProvider';
 import { SegmentedControl } from '@/components/ui';
-import { alignLoanSeries, loanAxis, loanValue, type ActivityScale } from '@/lib/account-activity';
+import {
+  alignLoanSeries,
+  fiatUnsummable,
+  loanAxis,
+  loanValue,
+  type ActivityScale,
+} from '@/lib/account-activity';
 import type { AccountActivity } from '@/lib/api-types';
 import { formatBitcoin, formatFiatTick, formatUsdTick } from '@/lib/stats-money';
 
@@ -37,7 +43,9 @@ const PAD_B = 20;
  * FiatPicker. Fiat code comes from {@link useFiatPreference} (the Settings
  * Display row when signed in, otherwise the cookie or the locale default).
  * The ₿|fiat scale is local to this chart. Y-axis always includes 0 and may
- * extend below for negative balances.
+ * extend below for negative balances. Fiat ticks use an em dash when
+ * {@link fiatUnsummable} holds for the selected code (loan days from the api
+ * carry no fiat figure, so every fiat field is `null`).
  * Circles mark every value change (rise or fall), not only increases.
  *
  * @param props - Owed series, credit series, and optional `failed`.
@@ -79,9 +87,13 @@ export function LoanBalanceChart({
       Math.max(acc, loanValue(point, 'owed', scale, fiat), loanValue(point, 'credit', scale, fiat)),
     0,
   );
+  const unsummableFiat = scale === 'fiat' && fiatUnsummable([...owed, ...credit], fiat);
   const formatTick = (value: number): string => {
     if (scale === 'sat') {
       return formatBitcoin(value, numberFormat);
+    }
+    if (unsummableFiat) {
+      return '\u2014';
     }
     return fiat === 'USD'
       ? formatUsdTick(value, numberFormat)

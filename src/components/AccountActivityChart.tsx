@@ -9,10 +9,11 @@ import {
   activityMaxY,
   activityValue,
   alignActivitySeries,
+  fiatUnsummable,
   type ActivityScale,
 } from '@/lib/account-activity';
 import type { AccountActivity } from '@/lib/api-types';
-import { formatBitcoin, formatFiatTick, formatUsdTick, type FiatCode } from '@/lib/stats-money';
+import { formatBitcoin, formatFiatTick, formatUsdTick } from '@/lib/stats-money';
 
 /** Props for {@link AccountActivityChart}. */
 export interface AccountActivityChartProps {
@@ -41,38 +42,6 @@ const PAD_L = 56;
 const PAD_R = 8;
 const PAD_T = 8;
 const PAD_B = 20;
-
-const NON_USD_CUMULATIVE: Record<
-  Exclude<FiatCode, 'USD'>,
-  'cumulativeChf' | 'cumulativeEur' | 'cumulativePhp'
-> = {
-  CHF: 'cumulativeChf',
-  EUR: 'cumulativeEur',
-  PHP: 'cumulativePhp',
-};
-
-/**
- * True when y-ticks for `fiat` should be an em dash instead of an amount.
- * USD is unsummable when any raw `cumulativeUsd` is `null`. Other codes are
- * unsummable when every source cumulative on both series is `null`.
- *
- * @param received - Receive `receivedOverTime`.
- * @param donated - Donate `donatedOverTime`.
- * @param fiat - Selected fiat.
- * @returns Whether y-ticks should be an em dash instead of `formatFiatTick`.
- */
-function selectedFiatUnsummable(
-  received: AccountActivity['receivedOverTime'],
-  donated: AccountActivity['donatedOverTime'],
-  fiat: FiatCode,
-): boolean {
-  const points = [...received, ...donated];
-  if (fiat === 'USD') {
-    return points.some((point) => point.cumulativeUsd === null);
-  }
-  const key = NON_USD_CUMULATIVE[fiat];
-  return points.every((point) => point[key] === null || point[key] === undefined);
-}
 
 /**
  * Compact dual-line cumulative chart of Given and Received. Does not mount
@@ -129,7 +98,7 @@ export function AccountActivityChart({
       ),
     0,
   );
-  const unsummableFiat = scale === 'fiat' && selectedFiatUnsummable(received, donated, fiat);
+  const unsummableFiat = scale === 'fiat' && fiatUnsummable([...received, ...donated], fiat);
   const formatTick = (value: number): string => {
     if (scale === 'sat') {
       return formatBitcoin(value, numberFormat);

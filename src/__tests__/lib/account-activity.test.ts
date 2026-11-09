@@ -5,6 +5,7 @@ import {
   activityValue,
   alignActivitySeries,
   alignLoanSeries,
+  fiatUnsummable,
   loanAxis,
   loanValue,
   type ActivityPoint,
@@ -457,6 +458,24 @@ describe('alignLoanSeries', () => {
         ...ZERO_LOAN_FIAT,
       },
     ]);
+  });
+});
+
+describe('fiatUnsummable', () => {
+  it('flags USD when any cumulativeUsd is null', () => {
+    expect(
+      fiatUnsummable([loanDay('2026-06-01', 1, '0.01'), loanDay('2026-06-02', 1, null)], 'USD'),
+    ).toBe(true);
+    expect(fiatUnsummable([loanDay('2026-06-01', 1, '0.01')], 'USD')).toBe(false);
+  });
+
+  it('flags a non-USD code only when every cumulative is null or missing', () => {
+    const missing = { cumulativeUsd: '0.01' };
+    expect(fiatUnsummable([loanDay('2026-06-01', 1, null), missing], 'CHF')).toBe(true);
+    expect(
+      fiatUnsummable([loanDay('2026-06-01', 1, null), loanDay('2026-06-02', 1, '0.02')], 'EUR'),
+    ).toBe(false);
+    expect(fiatUnsummable([loanDay('2026-06-01', 1, '0.01')], 'PHP')).toBe(false);
   });
 });
 
