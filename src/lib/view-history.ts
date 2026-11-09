@@ -13,6 +13,9 @@ const CAP = 50;
 
 const SAFE_IN_APP_PATH = /^\/[A-Za-z0-9._~/-]*(?:\?[A-Za-z0-9._~%=&*+-]*)?$/;
 
+/** Query key on `/login` that names the view to open after login. */
+const LOGIN_NEXT_PARAM = 'next';
+
 /**
  * Persisted stack. `base` is how many entries have been dropped off the front.
  * It stays out of storage until the first drop. `historyLength` stays in memory.
@@ -461,6 +464,59 @@ export function resetViewHistory(): void {
   stepping = null;
   takeBackTarget();
   writeStoredMemory(null);
+}
+
+/**
+ * True when `path` may be opened after login: a safe in-app path (one leading
+ * `/`, not `//` or a backslash, no scheme, `..`, hash, or whitespace) that is not
+ * `/login` itself, with or without a query or subpath.
+ *
+ * @param path - Candidate pathname, optionally with a query string.
+ * @returns Whether a login may return to it.
+ */
+function isLoginReturnPath(path: string): boolean {
+  if (!isSafeViewPath(path)) {
+    return false;
+  }
+  return !(path === '/login' || path.startsWith('/login?') || path.startsWith('/login/'));
+}
+
+/**
+ * Href of the login page that brings the visitor back to `path` once signed in.
+ *
+ * `path` is carried as `/login?next=…` (URL-encoded). The root `/` and the
+ * forum home `/welcome` are where a finished login lands anyway, and an
+ * unsafe path or `/login` itself is never carried, so those get a plain
+ * `/login`.
+ *
+ * @param path - Current in-app path (pathname, optionally with query).
+ * @returns `/login`, or `/login?next=<encoded path>`.
+ */
+export function loginHref(path: string): string {
+  if (path === '/' || path === '/welcome' || !isLoginReturnPath(path)) {
+    return '/login';
+  }
+  return `/login?${LOGIN_NEXT_PARAM}=${encodeURIComponent(path)}`;
+}
+
+/**
+ * The path `/login` was asked to return to, when it is a safe in-app path.
+ *
+ * Reads `next` from the login page's query string. Accepts only a same-origin
+ * relative path that may enter this tab's view stack and is not `/login`
+ * itself. A missing, empty, outside (`//host`, a backslash, `https:`,
+ * `javascript:`), or otherwise unsafe value is `null`, so the caller keeps its
+ * default and an outside address can never be opened.
+ *
+ * @param search - The login page's query string (`location.search`), with or without `?`.
+ * @returns The path to open after login, or `null`.
+ */
+export function loginReturnPath(search: string): string | null {
+  const next = new URLSearchParams(search).get(LOGIN_NEXT_PARAM);
+  if (next === null || !isLoginReturnPath(next)) {
+    return null;
+  }
+  return next;
 }
 
 /**

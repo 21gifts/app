@@ -8,6 +8,7 @@ import { ProfileChromeLeft } from '@/components/ProfileChromeLeft';
 import { SignedInChrome } from '@/components/SignedInChrome';
 import { useTranslations } from '@/components/LocaleProvider';
 import { StatisticsScreen } from '@/components/StatisticsScreen';
+import { loginHref } from '@/lib/view-history';
 import { useAuthStore } from '@/stores/auth-store';
 
 function StatisticsTopRight(): ReactElement {
@@ -19,7 +20,10 @@ function StatisticsTopRight(): ReactElement {
     return <SignedInChrome />;
   }
   return (
-    <Link href="/login" className="text-sm font-medium text-app-fg underline underline-offset-2">
+    <Link
+      href={loginHref('/statistics')}
+      className="text-sm font-medium text-app-fg underline underline-offset-2"
+    >
       {t('nav.login')}
     </Link>
   );

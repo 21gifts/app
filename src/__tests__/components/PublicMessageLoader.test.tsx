@@ -29,13 +29,14 @@ vi.mock('next/link', () => ({
   ),
 }));
 
+const nav = vi.hoisted(() => ({ pathname: '/', search: '' }));
 vi.mock('next/navigation', () => ({
   useRouter: (): { push: typeof push; replace: typeof push } => ({
     push,
     replace: push,
   }),
-  usePathname: (): string => '/',
-  useSearchParams: (): URLSearchParams => new URLSearchParams(),
+  usePathname: (): string => nav.pathname,
+  useSearchParams: (): URLSearchParams => new URLSearchParams(nav.search),
 }));
 
 const walletOpen = vi.hoisted(() => ({ value: true }));
@@ -186,6 +187,31 @@ describe('PublicMessageLoader', () => {
     expect(screen.queryByRole('button', { name: 'Copy link to this note' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Send Bitcoin' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Send a private message' })).toBeNull();
+  });
+
+  it('carries the note path on the Log in link so a login returns to it', async () => {
+    nav.pathname = `/messages/${MESSAGE_ID}`;
+    fetchMessage.mockResolvedValue(sample);
+    try {
+      const { unmount } = renderWithLocale(<PublicMessageLoader id={MESSAGE_ID} />);
+      await waitFor(() => {
+        expect(screen.getByText('Hello from Ada')).toBeTruthy();
+      });
+      expect(screen.getByRole('link', { name: 'Log in' }).getAttribute('href')).toBe(
+        `/login?next=%2Fmessages%2F${MESSAGE_ID}`,
+      );
+      unmount();
+      nav.search = 'ref=share';
+      renderWithLocale(<PublicMessageLoader id={MESSAGE_ID} />);
+      await waitFor(() => {
+        expect(screen.getByRole('link', { name: 'Log in' }).getAttribute('href')).toBe(
+          `/login?next=%2Fmessages%2F${MESSAGE_ID}%3Fref%3Dshare`,
+        );
+      });
+    } finally {
+      nav.pathname = '/';
+      nav.search = '';
+    }
   });
 
   it('does not render a text back link when signed in', async () => {

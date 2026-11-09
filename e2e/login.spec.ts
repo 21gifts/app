@@ -405,3 +405,96 @@ test('signed-in session hydrates, saves a name, agrees to the rules, and reaches
   await page.getByRole('button', { name: 'Log out' }).click();
   await expect(page.getByRole('button', { name: 'Log in' })).toBeVisible();
 });
+
+const RETURN_NOTE_ID = '11111111-1111-4111-8111-111111111111';
+
+const RETURN_NOTE = {
+  id: RETURN_NOTE_ID,
+  name: 'Ada',
+  text: 'Hello from Ada',
+  createdAt: '2026-08-28T12:00:00.000Z',
+  sats: 0,
+  payable: false,
+  hasPhoto: false,
+  role: 'basis',
+  replyCount: 0,
+};
+
+/** A finished account whose existing passkey signs in, and one shared note, public and signed-in. */
+async function routeFinishedLoginAndNote(page: Page): Promise<void> {
+  const ready = {
+    ...E2E_ACCOUNT,
+    name: 'Ada',
+    username: 'ada',
+    rulesAgreedAt: 1_700_000_001,
+    setup: null,
+    missing: [],
+  };
+  await page.route(/\/auth\/passkey\/authenticate\/finish$/, async (route) => {
+    if (route.request().method() !== 'POST') {
+      await route.continue();
+      return;
+    }
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ token: 'sess-e2e', account: ready }),
+    });
+  });
+  await page.route(/\/me$/, async (route) => {
+    if (route.request().method() !== 'GET') {
+      await route.continue();
+      return;
+    }
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(ready),
+    });
+  });
+  for (const prefix of ['public-messages', 'forum/messages']) {
+    await page.route(`**/${prefix}/${RETURN_NOTE_ID}/replies`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ messages: [] }),
+      });
+    });
+    await page.route(`**/${prefix}/${RETURN_NOTE_ID}`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(RETURN_NOTE),
+      });
+    });
+  }
+  await installFakeWebAuthn(page, true);
+}
+
+test('Function: loginHref — Log in on a shared note returns to that note after login', async ({
+  page,
+}) => {
+  await routeFinishedLoginAndNote(page);
+  await page.goto(`/messages/${RETURN_NOTE_ID}`);
+  const origin = new URL(page.url()).origin;
+  await expect(page.getByText('Hello from Ada')).toBeVisible();
+  await page.getByRole('link', { name: 'Log in' }).click();
+  await expect(page).toHaveURL(
+    `${origin}/login?next=${encodeURIComponent(`/messages/${RETURN_NOTE_ID}`)}`,
+  );
+  await page.getByRole('button', { name: 'Log in' }).click();
+  await expect(page).toHaveURL(`${origin}/messages/${RETURN_NOTE_ID}`, { timeout: 10_000 });
+  await expect(page.getByText('Hello from Ada')).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Log in' })).toHaveCount(0);
+});
+
+test('Function: loginReturnPath — an outside next opens the forum home after login', async ({
+  page,
+}) => {
+  await routeFinishedLoginAndNote(page);
+  await page.goto(`/login?next=${encodeURIComponent('//evil.example')}`);
+  const origin = new URL(page.url()).origin;
+  await page.getByRole('button', { name: 'Log in' }).click();
+  await expect(page).toHaveURL(`${origin}/welcome`, { timeout: 10_000 });
+  await expect(page.getByRole('heading', { name: 'Welcome, Ada' })).toBeVisible();
+});

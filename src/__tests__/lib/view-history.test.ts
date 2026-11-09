@@ -2,6 +2,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   canStepBack,
   goToPreviousView,
+  loginHref,
+  loginReturnPath,
   markBackNavigation,
   previousViewPath,
   recordCurrentView,
@@ -1034,5 +1036,60 @@ describe('view stack invariant', () => {
         expect(previousViewPath(), `seed ${seed}, step ${step}`).not.toBe(here);
       }
     }
+  });
+});
+
+describe('loginHref', () => {
+  const post = '/messages/0190a6f2-5b7c-7d1e-9f00-1234567890ab';
+
+  it('carries the current path, encoded, as next', () => {
+    expect(loginHref(post)).toBe(`/login?next=%2Fmessages%2F0190a6f2-5b7c-7d1e-9f00-1234567890ab`);
+    expect(loginHref('/inbox?thread=abc&x=1')).toBe('/login?next=%2Finbox%3Fthread%3Dabc%26x%3D1');
+  });
+
+  it('round-trips through loginReturnPath', () => {
+    const href = loginHref(`${post}?ref=share`);
+    expect(loginReturnPath(href.slice(href.indexOf('?')))).toBe(`${post}?ref=share`);
+  });
+
+  it('is a plain /login for the home, the root, login itself, and unsafe paths', () => {
+    expect(loginHref('/')).toBe('/login');
+    expect(loginHref('/welcome')).toBe('/login');
+    expect(loginHref('/login')).toBe('/login');
+    expect(loginHref('/login?next=%2Fwallet')).toBe('/login');
+    expect(loginHref('//evil.com')).toBe('/login');
+    expect(loginHref('')).toBe('/login');
+  });
+});
+
+describe('loginReturnPath', () => {
+  const next = (value: string): string => `?next=${encodeURIComponent(value)}`;
+
+  it('accepts real post paths, with or without a query', () => {
+    const post = '/messages/0190a6f2-5b7c-7d1e-9f00-1234567890ab';
+    expect(loginReturnPath(next(post))).toBe(post);
+    expect(loginReturnPath(next(`${post}?ref=share`))).toBe(`${post}?ref=share`);
+    expect(loginReturnPath(`next=${encodeURIComponent('/habit-tracker')}`)).toBe('/habit-tracker');
+  });
+
+  it.each([
+    ['protocol-relative', '//evil.com'],
+    ['backslash', '/\\evil.com'],
+    ['absolute url', 'https://evil.com'],
+    ['javascript url', 'javascript:alert(1)'],
+    ['login itself', '/login'],
+    ['login with next', '/login?next=%2Fwallet'],
+    ['login subpath', '/login/x'],
+    ['empty', ''],
+    ['relative', 'messages/abc'],
+    ['dot segments', '/messages/../wallet'],
+    ['hash', '/messages/abc#x'],
+  ])('rejects a %s next', (_label, value) => {
+    expect(loginReturnPath(next(value))).toBeNull();
+  });
+
+  it('is null without a next parameter', () => {
+    expect(loginReturnPath('')).toBeNull();
+    expect(loginReturnPath('?other=1')).toBeNull();
   });
 });

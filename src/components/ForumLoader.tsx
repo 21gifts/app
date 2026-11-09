@@ -97,7 +97,7 @@ import { MissingRequirementsError, nextPostRequirement } from '@/lib/missing-req
 import { closeLocalPushNotifications, pushTagForNotification } from '@/lib/push';
 import { replyTextIsTooLong } from '@/lib/entry-text';
 import { authorCannotReceive, isOwnNote, isReplyPaymentExempt, roleAtLeast } from '@/lib/roles';
-import { returnToView } from '@/lib/view-history';
+import { loginHref, returnToView } from '@/lib/view-history';
 import { useAuthStore } from '@/stores/auth-store';
 import { PAY_POLL_MS } from '@/lib/payment-link';
 
@@ -161,6 +161,15 @@ function revokeObjectUrlIfPresent(url: string | undefined): void {
   if (url !== undefined && url !== '') {
     URL.revokeObjectURL(url);
   }
+}
+
+/**
+ * `/login` for a signed-out visitor, carrying this view so a login returns here.
+ *
+ * @returns {@link loginHref} of the current pathname and query.
+ */
+function currentLoginHref(): string {
+  return loginHref(`${window.location.pathname}${window.location.search}`);
 }
 
 /**
@@ -991,7 +1000,7 @@ export function ForumLoader({
           }
         } catch (err) {
           if (!cancelled && activeSession === null && err instanceof PublicForumUnauthorizedError) {
-            returnToView('/login', router);
+            returnToView(currentLoginHref(), router);
             return;
           }
           // Keep the current pages and cursor so a later intersection may retry.
@@ -1035,7 +1044,7 @@ export function ForumLoader({
       return;
     }
     if (session === null && feedMode !== 'active') {
-      returnToView('/login', router);
+      returnToView(currentLoginHref(), router);
       return;
     }
     let cancelled = false;
@@ -2334,7 +2343,7 @@ export function ForumLoader({
       return;
     }
     if (session === null) {
-      returnToView('/login', router);
+      returnToView(currentLoginHref(), router);
       return;
     }
     const listedParent =
