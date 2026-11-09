@@ -13,8 +13,9 @@ import { useAuthStore } from '@/stores/auth-store';
 
 /**
  * Member card drawn from the signed-in account until `fetchMember` returns.
- * Counts stay at zero on that first paint. The staff label and the funding
- * admission stay on this card when the fetch has not arrived or has failed.
+ * Counts stay at zero on that first paint. The `staffTag` compatibility bridge
+ * (shown as the Software Developer role pill) and the funding admission stay on
+ * this card when the fetch has not arrived or has failed.
  * The fetched card replaces it.
  *
  * @param account - Signed-in account.

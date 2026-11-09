@@ -7,14 +7,18 @@ import { IconButton } from '@/components/ui';
 import type { MemberProfile } from '@/lib/api-types';
 import { formatForumTimeFromMs } from '@/lib/forum-time';
 import type { MessageKey } from '@/lib/messages';
-import { verifiedChipHiddenByStaffTag } from '@/lib/roles';
+import { effectiveRole } from '@/lib/roles';
 
 /** Roles that show a clickable tag beside the author name. */
-type MemberTaggedRole = 'founder' | 'moderator' | 'initiator' | 'verified';
+type MemberTaggedRole = 'founder' | 'moderator' | 'software_developer' | 'initiator' | 'verified';
 
 const ROLE_TAG_KEYS: Record<MemberTaggedRole, { label: MessageKey; hint: MessageKey }> = {
   founder: { label: 'forum.role.founder', hint: 'forum.role.founderHint' },
   moderator: { label: 'forum.role.moderator', hint: 'forum.role.moderatorHint' },
+  software_developer: {
+    label: 'forum.role.softwareDeveloper',
+    hint: 'forum.role.softwareDeveloperHint',
+  },
   initiator: { label: 'forum.role.initiator', hint: 'forum.role.initiatorHint' },
   verified: { label: 'forum.role.verified', hint: 'forum.role.verifiedHint' },
 };
@@ -64,8 +68,8 @@ function FundingProgramMark({
 }
 
 /**
- * Role pill, Software Developer label, and funding-program icon that sit
- * beside a member's name, plus the sentences those controls reveal.
+ * Role pill and funding-program icon that sit beside a member's name, plus
+ * the sentences those controls reveal.
  *
  * The same marks are what a visitor sees and what the account owner sees
  * on `/profile`. `children` places the marks and the hint paragraphs.
@@ -86,16 +90,11 @@ export function MemberIdentityPills({
   if (profile === null) {
     return children(null, null);
   }
-  const tagged = isMemberTaggedRole(profile.role) ? profile.role : null;
-  const roleKeys =
-    tagged !== null && !verifiedChipHiddenByStaffTag(profile.role, profile.staffTag)
-      ? ROLE_TAG_KEYS[tagged]
-      : null;
+  const role = effectiveRole(profile.role, profile.staffTag);
+  const tagged = isMemberTaggedRole(role) ? role : null;
+  const roleKeys = tagged !== null ? ROLE_TAG_KEYS[tagged] : null;
   const fundingReviewedAt = profile.fundingReviewedAt;
-  const showMarks =
-    roleKeys !== null ||
-    typeof fundingReviewedAt === 'number' ||
-    profile.staffTag === 'software_developer';
+  const showMarks = roleKeys !== null || typeof fundingReviewedAt === 'number';
   const marks = showMarks ? (
     <>
       {roleKeys !== null ? (
@@ -109,11 +108,6 @@ export function MemberIdentityPills({
         >
           {t(roleKeys.label)}
         </button>
-      ) : null}
-      {profile.staffTag === 'software_developer' ? (
-        <span className="rounded-full border border-app-border-strong px-2 py-0.5 text-xs font-medium text-app-muted">
-          {t('forum.staff.softwareDeveloper')}
-        </span>
       ) : null}
       {typeof fundingReviewedAt === 'number' ? (
         <FundingProgramMark

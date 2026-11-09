@@ -166,16 +166,17 @@ export const accountSchema = z.object({
    * Missing or `undefined` is the same as `null` (no funding object).
    */
   funding: ownerFundingSchema.nullable().optional(),
-  /** Optional staff label; only `software_developer` is accepted. */
+  /** Older api compatibility label; only `software_developer` is accepted. */
   staffTag: z.literal('software_developer').optional(),
 });
 
 /**
  * An authenticated 21.gifts account.
  *
- * `role` is the live membership tier (`basis`, `verified`, `moderator`, or
- * `founder`); `linkingKey` is a leftover wallet public key from the retired
- * LNURL-auth login, or `null` for passkey-created accounts.
+ * `role` is the live membership tier (`basis`, `verified`, `moderator`,
+ * `software_developer`, `initiator`, or `founder`); `linkingKey` is a leftover
+ * wallet public key from the retired LNURL-auth login, or `null` for
+ * passkey-created accounts.
  * `name` is the non-empty display name, or `null` until the giver sets one.
  * `location` is an optional free-text place (never `""`; empty clears to `null`).
  * `lightningAddress` and `lightningAddressVerified` are accepted from the api
@@ -236,7 +237,7 @@ export const accountSchema = z.object({
  * not be synchronized, while `null` means the account preference is unset.
  * `funding` is the owner grant object, `null` for `basis`, and omitted on
  * older api builds (treat missing like `null`).
- * `staffTag` is an optional staff label; only `software_developer` is accepted.
+ * `staffTag` is an older api compatibility label; only `software_developer` is accepted.
  */
 export type Account = z.infer<typeof accountSchema>;
 
@@ -286,7 +287,7 @@ export const viewProfileSchema = z.object({
   profileMessage: z.record(z.unknown()).nullable().optional(),
   fundingReviewedAt: z.number().nullable().optional(),
   fundingReviewedByName: z.string().nullable().optional(),
-  /** Optional staff label; only `software_developer` is accepted. */
+  /** Older api compatibility label; only `software_developer` is accepted. */
   staffTag: z.literal('software_developer').optional(),
 });
 
@@ -896,7 +897,7 @@ export type ForumPlaceRow = z.infer<typeof forumPlaceRowSchema>;
  * `shopAccount` is optional on a shop note (`id`, `username`, `name`); omitted when cleared.
  * `shopNpub` is the listed shop identity, null for every other note, and
  * optional only so a rolling api deployment still parses.
- * `staffTag` is an optional staff label; only `software_developer` is accepted.
+ * `staffTag` is an older api compatibility label; only `software_developer` is accepted.
  */
 export const forumMessageSchema = z
   .object({
@@ -974,7 +975,7 @@ export const forumMessageSchema = z
         }),
       )
       .optional(),
-    /** Optional staff label; only `software_developer` is accepted. */
+    /** Older api compatibility label; only `software_developer` is accepted. */
     staffTag: z.literal('software_developer').optional(),
   })
   .refine(
@@ -1521,7 +1522,7 @@ export type AccountTrust = z.infer<typeof accountTrustSchema>;
  * is the shop-note total and optional `creditCount` is the credit-note total.
  * Activity feeds are capped at 200.
  * `trust` defaults to all-null when an older api omits the field.
- * `staffTag` is an optional staff label; only `software_developer` is accepted.
+ * `staffTag` is an older api compatibility label; only `software_developer` is accepted.
  */
 export const memberProfileSchema = z.object({
   id: z.string(),
@@ -1561,7 +1562,7 @@ export const memberProfileSchema = z.object({
    * payload still parses; `null` when unnamed.
    */
   fundingReviewedByName: z.string().nullable().optional(),
-  /** Optional staff label; only `software_developer` is accepted. */
+  /** Older api compatibility label; only `software_developer` is accepted. */
   staffTag: z.literal('software_developer').optional(),
 });
 
@@ -1576,7 +1577,7 @@ export type MemberProfile = z.infer<typeof memberProfileSchema>;
 export const trustChainNodeSchema = z.object({
   id: z.string(),
   name: z.string().nullable(),
-  role: z.enum(['verified', 'moderator', 'initiator', 'founder']),
+  role: z.enum(['verified', 'moderator', 'software_developer', 'initiator', 'founder']),
 });
 
 /**
