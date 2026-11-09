@@ -17,7 +17,12 @@ afterEach(() => {
 
 type LoanPoint = NonNullable<AccountActivity['owedOverTime']>[number];
 
-function loanDay(day: string, cumulativeSats: number, cumulativeUsd: string, sats = 0): LoanPoint {
+function loanDay(
+  day: string,
+  cumulativeSats: number,
+  cumulativeUsd: string | null,
+  sats = 0,
+): LoanPoint {
   const absBtc = Math.abs(cumulativeSats) / 1e8;
   const btcSign = cumulativeSats < 0 ? '-' : '';
   const cumulativeBtc = `${btcSign}${absBtc.toFixed(8)}`;
@@ -243,6 +248,19 @@ describe('LoanBalanceChart', () => {
 
   it('ticks only 0 on fiat when cumulatives are zero but sats are not', () => {
     renderWithLocale(<LoanBalanceChart owed={[loanDay('2026-06-01', 100, '0.00', 100)]} />);
+    clickChartScale('USD');
+    expect(screen.getByRole('img', { name: 'Debt and credit in USD' })).toBeTruthy();
+    expect(screen.getAllByText('$0')).toHaveLength(1);
+  });
+
+  it('ticks only 0 on fiat when every loan fiat field is null', () => {
+    renderWithLocale(
+      <LoanBalanceChart
+        owed={[loanDay('2026-06-01', 100, null, 100), loanDay('2026-06-02', -40, null, -140)]}
+        credit={[loanDay('2026-06-01', 50, null, 50)]}
+      />,
+    );
+    expect(screen.getByText(formatBitcoin(-40))).toBeTruthy();
     clickChartScale('USD');
     expect(screen.getByRole('img', { name: 'Debt and credit in USD' })).toBeTruthy();
     expect(screen.getAllByText('$0')).toHaveLength(1);

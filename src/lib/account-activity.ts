@@ -197,9 +197,9 @@ export interface LoanPoint {
   cumulativeOwedSats: number;
   /** Cumulative credit sats through this day (may be negative). */
   cumulativeCreditSats: number;
-  /** Cumulative owed USD through this day (parsed from `cumulativeUsd`). */
+  /** Cumulative owed USD through this day (`null` source → `0`). */
   cumulativeOwedUsd: number;
-  /** Cumulative credit USD through this day. */
+  /** Cumulative credit USD through this day (`null` source → `0`). */
   cumulativeCreditUsd: number;
   /** Cumulative owed CHF through this day (`null` source → `0`). */
   cumulativeOwedChf: number;
@@ -248,8 +248,8 @@ function loanCumulativeForFiat(
  * Empty credit → credit cumulatives are 0 on every owed day (same days, no fake
  * extra calendar). Empty owed and empty credit → `[]`. When both series are
  * non-empty, days are the sorted union; cumulatives step-hold on gap days.
- * CHF/EUR/PHP `null` strings become `0` for scale. Negative `cumulativeSats`
- * and `cumulativeUsd` are kept as-is.
+ * USD/CHF/EUR/PHP `null` strings become `0` for scale. Negative
+ * `cumulativeSats` and fiat strings are kept as-is.
  *
  * @param owed - Cumulative debt series (`owedOverTime`).
  * @param credit - Cumulative credit series (`creditOverTime`); pass `[]` when none.
@@ -282,14 +282,14 @@ export function alignLoanSeries(
     const creditPoint = creditByDay.get(day);
     if (owedPoint !== undefined) {
       cumulativeOwedSats = owedPoint.cumulativeSats;
-      cumulativeOwedUsd = Number(owedPoint.cumulativeUsd);
+      cumulativeOwedUsd = parseOptionalFiat(owedPoint.cumulativeUsd);
       cumulativeOwedChf = parseOptionalFiat(owedPoint.cumulativeChf);
       cumulativeOwedEur = parseOptionalFiat(owedPoint.cumulativeEur);
       cumulativeOwedPhp = parseOptionalFiat(owedPoint.cumulativePhp);
     }
     if (creditPoint !== undefined) {
       cumulativeCreditSats = creditPoint.cumulativeSats;
-      cumulativeCreditUsd = Number(creditPoint.cumulativeUsd);
+      cumulativeCreditUsd = parseOptionalFiat(creditPoint.cumulativeUsd);
       cumulativeCreditChf = parseOptionalFiat(creditPoint.cumulativeChf);
       cumulativeCreditEur = parseOptionalFiat(creditPoint.cumulativeEur);
       cumulativeCreditPhp = parseOptionalFiat(creditPoint.cumulativePhp);

@@ -577,6 +577,8 @@ export const activitySpendDaySchema = spendDaySchema
  * Unlike {@link activitySpendDaySchema} / {@link spendDaySchema}, sats and
  * amount strings may be negative (open debt or credit can fall below zero).
  * Own signed regexes — does not relax the unsigned gift-day schemas.
+ * Every fiat field (USD included) is nullable: a loan movement stores no fiat
+ * figure, so the api sends `null` for all of them on loan days.
  */
 export const loanSpendDaySchema = z.object({
   day: z.string(),
@@ -586,8 +588,14 @@ export const loanSpendDaySchema = z.object({
   cumulativeSats: z.number().int(),
   btc: z.string().regex(/^-?\d+\.\d{8}$/),
   cumulativeBtc: z.string().regex(/^-?\d+\.\d{8}$/),
-  usd: z.string().regex(/^-?\d+\.\d{2}$/),
-  cumulativeUsd: z.string().regex(/^-?\d+\.\d{2}$/),
+  usd: z
+    .string()
+    .regex(/^-?\d+\.\d{2}$/)
+    .nullable(),
+  cumulativeUsd: z
+    .string()
+    .regex(/^-?\d+\.\d{2}$/)
+    .nullable(),
   chf: z
     .string()
     .regex(/^-?\d+\.\d{2}$/)

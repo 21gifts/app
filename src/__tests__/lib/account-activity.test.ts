@@ -294,7 +294,12 @@ describe('activityValue', () => {
   });
 });
 
-function loanDay(day: string, cumulativeSats: number, cumulativeUsd: string, sats = 0): LoanDay {
+function loanDay(
+  day: string,
+  cumulativeSats: number,
+  cumulativeUsd: string | null,
+  sats = 0,
+): LoanDay {
   const absBtc = Math.abs(cumulativeSats) / 1e8;
   const btcSign = cumulativeSats < 0 ? '-' : '';
   const cumulativeBtc = `${btcSign}${absBtc.toFixed(8)}`;
@@ -429,6 +434,29 @@ describe('alignLoanSeries', () => {
     expect(first?.cumulativeOwedChf).toBe(0);
     expect(first?.cumulativeOwedEur).toBe(0);
     expect(first?.cumulativeOwedPhp).toBe(0);
+  });
+
+  it('maps all-null loan fiat, USD included, to 0 and keeps negative sats', () => {
+    const owed = [loanDay('2026-06-01', 60, null, 60), loanDay('2026-06-02', -40, null, -100)];
+    const credit = [loanDay('2026-06-01', 50, null, 50)];
+    expect(alignLoanSeries(owed, credit)).toEqual([
+      {
+        day: '2026-06-01',
+        cumulativeOwedSats: 60,
+        cumulativeCreditSats: 50,
+        cumulativeOwedUsd: 0,
+        cumulativeCreditUsd: 0,
+        ...ZERO_LOAN_FIAT,
+      },
+      {
+        day: '2026-06-02',
+        cumulativeOwedSats: -40,
+        cumulativeCreditSats: 50,
+        cumulativeOwedUsd: 0,
+        cumulativeCreditUsd: 0,
+        ...ZERO_LOAN_FIAT,
+      },
+    ]);
   });
 });
 

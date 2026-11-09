@@ -1371,7 +1371,7 @@
 
 ## Function: alignLoanSeries
 
-- **Purpose:** Align owed and credit cumulative loan series onto one sorted UTC-day axis for `LoanBalanceChart`. Step-hold matches `alignActivitySeries`; negative `cumulativeSats` / `cumulativeUsd` are kept; null CHF/EUR/PHP cumulatives become `0`.
+- **Purpose:** Align owed and credit cumulative loan series onto one sorted UTC-day axis for `LoanBalanceChart`. Step-hold matches `alignActivitySeries`; negative `cumulativeSats` and fiat cumulatives are kept; null USD/CHF/EUR/PHP cumulatives become `0`.
 - **Inputs:** `owed` (`AccountActivity.owedOverTime`) and `credit` (`AccountActivity.creditOverTime`); callers pass `[]` when a side is missing.
 - **Returns / side effects:** `LoanPoint[]`. Empty+empty → `[]`. Only one side → the other is 0 on those days (no invented calendar days). Both non-empty → sorted day union with step-hold carry-forward.
 - **Used by:** `LoanBalanceChart`, `loanValue` / `loanAxis` tests.
