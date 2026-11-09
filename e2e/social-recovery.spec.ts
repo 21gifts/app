@@ -2060,6 +2060,9 @@ test.describe('Recover account via Social Recovery', () => {
   }) => {
     await answerUnknownPasskey(page);
     await page.goto('/login');
+    await expect
+      .poll(() => page.evaluate(() => sessionStorage.getItem('21gifts.viewHistory')))
+      .toBe(JSON.stringify({ stack: ['/login'], cursor: 0 }));
     await page.goto('/recover?visual=recover-blocked-closed');
     await expect(page.getByRole('status')).toHaveText(
       '21.gifts is updating. Please try again a little later.',
@@ -2168,6 +2171,9 @@ test.describe('Recover account via Social Recovery', () => {
     page,
   }) => {
     await page.goto('/login');
+    await expect
+      .poll(() => page.evaluate(() => sessionStorage.getItem('21gifts.viewHistory')))
+      .toBe(JSON.stringify({ stack: ['/login'], cursor: 0 }));
     await page.goto('/recover?visual=recover-done');
     await expect(page.locator('p[role="alert"]')).toHaveText(
       'This account was already recovered. Log in with your new passkey.',

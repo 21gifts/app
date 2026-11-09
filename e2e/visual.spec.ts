@@ -1106,6 +1106,24 @@ async function expandScrollportForFullShot(page: Page): Promise<void> {
     if (!(port instanceof HTMLElement)) {
       return;
     }
+    const panel = document.querySelector('[data-shops-help-panel]');
+    const button =
+      panel instanceof HTMLElement && panel.id !== ''
+        ? document.querySelector(`[aria-controls="${CSS.escape(panel.id)}"]`)
+        : null;
+    const anchor = button instanceof HTMLElement ? button.getBoundingClientRect() : null;
+    const portBox = port.getBoundingClientRect();
+    const panelBox = panel instanceof HTMLElement ? panel.getBoundingClientRect() : null;
+    // Fixed `top` is a viewport offset. The capture stretches the page, so
+    // that offset paints on the hero. Keep the content offset under the button.
+    const pin =
+      anchor === null || panelBox === null
+        ? null
+        : {
+            top: anchor.bottom - portBox.top + port.scrollTop + 8,
+            left: anchor.left - portBox.left + port.scrollLeft,
+            width: panelBox.width,
+          };
     const height = Math.max(port.scrollHeight, document.documentElement.clientHeight);
     port.style.setProperty('overflow', 'visible', 'important');
     port.style.flex = 'none';
@@ -1114,6 +1132,30 @@ async function expandScrollportForFullShot(page: Page): Promise<void> {
     document.body.style.setProperty('overflow', 'visible', 'important');
     document.documentElement.style.height = `${height}px`;
     document.body.style.height = `${height}px`;
+    if (pin === null || !(panel instanceof HTMLElement)) return;
+    port.scrollTop = 0;
+    port.scrollLeft = 0;
+    const margin = 16;
+    let left = pin.left;
+    if (left + pin.width > port.clientWidth - margin) {
+      left = Math.max(margin, port.clientWidth - margin - pin.width);
+    }
+    panel.style.setProperty('position', 'absolute', 'important');
+    const host =
+      panel.offsetParent instanceof HTMLElement ? panel.offsetParent : document.documentElement;
+    const hostBox = host.getBoundingClientRect();
+    const portNow = port.getBoundingClientRect();
+    const top = portNow.top + pin.top - hostBox.top + host.scrollTop;
+    const side = portNow.left + left - hostBox.left + host.scrollLeft;
+    const rule = document.createElement('style');
+    rule.setAttribute('data-shot-help-pin', '');
+    rule.textContent = [
+      '[data-shops-help-panel]{position:absolute !important;',
+      `top:${top}px !important;left:${side}px !important;`,
+      'bottom:auto !important;right:auto !important;',
+      `width:${pin.width}px !important;margin:0 !important;}`,
+    ].join('');
+    document.head.appendChild(rule);
   });
 }
 
@@ -1132,6 +1174,172 @@ async function scrollAddFormIntoShot(page: Page): Promise<void> {
   const form = page.locator('form').filter({ has: field });
   await form.evaluate((node) => {
     node.scrollIntoView({ block: 'end', inline: 'nearest' });
+  });
+}
+
+async function sortHomeShops(
+  page: Page,
+  column: string,
+  direction: 'ascending' | 'descending',
+): Promise<void> {
+  await page.getByRole('button', { name: 'Table' }).click();
+  const header = page.getByRole('button', { name: column, exact: true });
+  const presses = direction === 'descending' ? (column === 'Name' ? 1 : 2) : 1;
+  for (let press = 0; press < presses; press += 1) {
+    await header.click();
+  }
+  await expect(page.getByRole('columnheader', { name: column })).toHaveAttribute(
+    'aria-sort',
+    direction,
+  );
+}
+
+/**
+ * Sorts a desktop-only column, then restores the phone layout before capture.
+ *
+ * @param page - Page under test.
+ * @param column - Column whose sort button is hidden below sm.
+ * @param direction - Sort direction to capture.
+ */
+async function sortHomeShopsDesktopColumn(
+  page: Page,
+  column: 'Country' | 'Shop',
+  direction: 'ascending' | 'descending',
+): Promise<void> {
+  const viewport = page.viewportSize();
+  if (viewport === null || viewport.width >= 640) {
+    await sortHomeShops(page, column, direction);
+    return;
+  }
+  await page.setViewportSize({ width: 1280, height: viewport.height });
+  try {
+    await sortHomeShops(page, column, direction);
+  } finally {
+    await page.setViewportSize(viewport);
+  }
+  const table = page.locator('#shops table');
+  await expect(table).toBeVisible();
+  await expect(table.getByRole('columnheader')).toHaveCount(3);
+  const header = table.locator('th').filter({ hasText: column });
+  await expect(header).toBeHidden();
+  await expect(header).toHaveAttribute('aria-sort', direction);
+}
+
+async function waitForShopPopupInsideMap(page: Page): Promise<void> {
+  await page.waitForFunction(() => {
+    const map = document.querySelector('#shop-places-map');
+    const popup = document.querySelector('#shop-places-map .maplibregl-popup');
+    if (!(map instanceof HTMLElement) || !(popup instanceof HTMLElement)) return false;
+    const mapBox = map.getBoundingClientRect();
+    const popupBox = popup.getBoundingClientRect();
+    return (
+      popupBox.width > 8 &&
+      popupBox.height > 8 &&
+      popupBox.left >= mapBox.left - 1 &&
+      popupBox.right <= mapBox.right + 1 &&
+      popupBox.top >= mapBox.top - 1 &&
+      popupBox.bottom <= mapBox.bottom + 1
+    );
+  });
+}
+
+async function settleShopMarkers(page: Page): Promise<void> {
+  await page.evaluate(() => {
+    const holder = document.documentElement;
+    delete holder.dataset['shopMarkerSig'];
+    delete holder.dataset['shopMarkerStable'];
+  });
+  await page.waitForFunction(
+    () => {
+      const holder = document.documentElement;
+      const map = document.querySelector('#shop-places-map');
+      const mapWidth = map instanceof HTMLElement ? map.clientWidth : 0;
+      const mapHeight = map instanceof HTMLElement ? map.clientHeight : 0;
+      if (mapWidth < 2 || mapHeight < 2) {
+        holder.dataset['shopMarkerSig'] = '';
+        holder.dataset['shopMarkerStable'] = '0';
+        return false;
+      }
+      const nodes = document.querySelectorAll(
+        '#shop-places-map .shop-place-marker, #shop-places-map .shop-cluster-marker, #shop-places-map .maplibregl-popup',
+      );
+      const signature = `${mapWidth}x${mapHeight}|${Array.from(nodes)
+        .map((node) => {
+          const rect = node.getBoundingClientRect();
+          return [rect.left, rect.top, rect.width, rect.height]
+            .map((value) => value.toFixed(2))
+            .join(',');
+        })
+        .join('|')}`;
+      const previous = holder.dataset['shopMarkerSig'] ?? '';
+      const stable = Number(holder.dataset['shopMarkerStable'] ?? '0');
+      if (signature !== '' && signature === previous) {
+        holder.dataset['shopMarkerStable'] = String(stable + 1);
+      } else {
+        holder.dataset['shopMarkerSig'] = signature;
+        holder.dataset['shopMarkerStable'] = '0';
+      }
+      return Number(holder.dataset['shopMarkerStable']) >= 12;
+    },
+    undefined,
+    { timeout: 10_000, polling: 50 },
+  );
+}
+
+const SHOP_PHOTO_PNG = Buffer.from(
+  'iVBORw0KGgoAAAANSUhEUgAAAAgAAAAFCAYAAAB4ka1VAAAAH0lEQVR4AWP8+unNfwY8gImBAGBiIACYGAgAJgYCAABwvQPcvej1igAAAABJRU5ErkJggg==',
+  'base64',
+);
+
+/** The browser's broken-image icon moves between captures. Serve one flat picture. */
+async function stubShopPhoto(page: Page): Promise<void> {
+  await page.route(
+    (url) =>
+      url.origin === 'https://dev-api.opencryptopay.io' && url.pathname.startsWith('/map/photos/'),
+    async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'image/png',
+        body: SHOP_PHOTO_PNG,
+      });
+    },
+  );
+}
+
+async function waitForShopPhoto(page: Page): Promise<void> {
+  const photo = page.locator('.shop-popup-photo');
+  await expect(photo).toBeVisible();
+  await photo.evaluate(async (node) => {
+    const image = node as HTMLImageElement;
+    image.loading = 'eager';
+    if (image.complete && image.naturalWidth > 0) return;
+    const src = image.currentSrc || image.src;
+    image.src = src;
+    await image.decode();
+  });
+}
+
+/**
+ * Whole pixels for the open card. The eased pan stops a fraction apart
+ * between two captures, and rounding that fraction moves the card by a pixel.
+ */
+async function snapShopPopup(page: Page): Promise<void> {
+  await page.evaluate(() => {
+    const map = document.querySelector('#shop-places-map');
+    const popup = document.querySelector('#shop-places-map .maplibregl-popup');
+    if (!(map instanceof HTMLElement) || !(popup instanceof HTMLElement)) return;
+    popup.style.pointerEvents = 'none';
+    popup.style.translate = '0px 0px';
+    const popupBox = popup.getBoundingClientRect();
+    const dx = Math.floor(popupBox.left) - popupBox.left;
+    const dy = Math.floor(popupBox.top) - popupBox.top;
+    popup.style.translate = `${dx}px ${dy}px`;
+  });
+}
+
+async function hideMapTiles(page: Page): Promise<void> {
+  await page.addStyleTag({
+    content: '#shop-places-map .maplibregl-canvas { visibility: hidden; }',
   });
 }
 
@@ -1177,6 +1385,7 @@ async function shotScreen(
   if (captureFullPage) {
     await expandScrollportForFullShot(page);
   }
+  await snapShopPopup(page);
   await expect(page).toHaveScreenshot(`${arg}.png`, {
     fullPage: captureFullPage,
     maxDiffPixelRatio: 0,
@@ -2219,7 +2428,130 @@ function isHomeMapRequest(url: URL): boolean {
   return api && (url.pathname === '/map/filters' || url.pathname === '/map/places');
 }
 
-async function fulfillHomeMap(route: Route): Promise<void> {
+function homeMapFilters(): Record<string, unknown> {
+  return {
+    activities: ['daily', 'within7Days', 'within30Days', 'olderThan30Days', 'none'],
+    countries: ['CH', 'KE', 'PH'],
+    shopNames: ['Mini', 'SPAR'],
+    techProviders: [
+      {
+        name: '21.gifts',
+        blockchains: ['Bitcoin'],
+        assets: ['BTC'],
+        pairs: [{ blockchain: 'Bitcoin', asset: 'BTC' }],
+      },
+      {
+        name: 'DFX.swiss',
+        blockchains: ['Liquid'],
+        assets: ['L-BTC'],
+        pairs: [{ blockchain: 'Liquid', asset: 'L-BTC' }],
+      },
+    ],
+  };
+}
+
+/** Four 21.gifts shops that differ, plus one hidden DFX desk. */
+function variedHomePlaces(): Record<string, unknown> {
+  return {
+    places: [
+      {
+        id: `npub1${'q'.repeat(58)}`,
+        name: 'Sample',
+        shopName: 'SPAR',
+        country: 'PH',
+        activity: 'daily',
+        category: 'shopping',
+        street: 'Nairobi road',
+        lat: -1.29,
+        lon: 36.82,
+        techProvider: '21.gifts',
+        coverPhoto: { url: 'https://dev-api.opencryptopay.io/map/photos/sample.jpg' },
+        supports: [{ blockchain: 'Bitcoin', asset: 'BTC' }],
+      },
+      {
+        name: 'North',
+        shopName: null,
+        country: 'PH',
+        activity: 'within7Days',
+        category: 'cafe',
+        street: 'Manila north',
+        lat: 14.6203,
+        lon: 120.958,
+        techProvider: '21.gifts',
+        supports: [{ blockchain: 'Tron', asset: 'USDT' }],
+      },
+      {
+        name: 'Mid',
+        shopName: null,
+        country: 'PH',
+        activity: 'within30Days',
+        category: 'grocery',
+        street: 'Manila mid',
+        lat: 14.62035,
+        lon: 120.95805,
+        techProvider: '21.gifts',
+        supports: [{ blockchain: 'Bitcoin', asset: 'BTC' }],
+      },
+      {
+        name: 'South',
+        shopName: null,
+        country: 'KE',
+        activity: 'none',
+        category: 'cafe',
+        street: 'Manila south',
+        lat: 14.6204,
+        lon: 120.9581,
+        techProvider: '21.gifts',
+        supports: [{ blockchain: 'Lightning', asset: 'BTC' }],
+      },
+      {
+        name: 'Other desk',
+        techProvider: 'DFX.swiss',
+        id: 'dfx-hidden',
+        country: 'PH',
+        activity: 'daily',
+        lat: 14.7,
+        lon: 121.1,
+      },
+    ],
+  };
+}
+
+/** Two 21.gifts shops that do not differ on any filter field. */
+function identicalHomePlaces(): Record<string, unknown> {
+  return {
+    places: [
+      {
+        id: `npub1${'a'.repeat(58)}`,
+        name: 'Ann',
+        shopName: null,
+        country: 'PH',
+        activity: 'daily',
+        category: 'shopping',
+        street: 'Nairobi road',
+        lat: -1.29,
+        lon: 36.82,
+        techProvider: '21.gifts',
+        coverPhoto: { url: 'https://dev-api.opencryptopay.io/map/photos/ann.jpg' },
+        supports: [{ blockchain: 'Bitcoin', asset: 'BTC' }],
+      },
+      {
+        name: 'Bea',
+        shopName: null,
+        country: 'PH',
+        activity: 'daily',
+        category: 'shopping',
+        street: 'Manila north',
+        lat: 14.6203,
+        lon: 120.958,
+        techProvider: '21.gifts',
+        supports: [{ blockchain: 'Bitcoin', asset: 'BTC' }],
+      },
+    ],
+  };
+}
+
+async function fulfillHomeMapKind(route: Route, kind: 'varied' | 'identical'): Promise<void> {
   const url = new URL(route.request().url());
   if (url.hostname.includes('openfreemap.org')) {
     await route.fulfill({ status: 200, body: '' });
@@ -2227,48 +2559,10 @@ async function fulfillHomeMap(route: Route): Promise<void> {
   }
   const body =
     url.pathname === '/map/filters'
-      ? {
-          activities: ['daily', 'within7Days', 'within30Days', 'olderThan30Days', 'none'],
-          countries: ['PH'],
-          shopNames: ['SPAR'],
-          techProviders: [
-            {
-              name: '21.gifts',
-              blockchains: ['Bitcoin'],
-              assets: ['BTC'],
-              pairs: [{ blockchain: 'Bitcoin', asset: 'BTC' }],
-            },
-            {
-              name: 'DFX.swiss',
-              blockchains: ['Liquid'],
-              assets: ['L-BTC'],
-              pairs: [{ blockchain: 'Liquid', asset: 'L-BTC' }],
-            },
-          ],
-        }
-      : {
-          places: [
-            {
-              id: `npub1${'q'.repeat(58)}`,
-              name: 'Sample',
-              shopName: 'SPAR',
-              country: 'PH',
-              activity: 'daily',
-              lat: 14.6,
-              lon: 121.0,
-              techProvider: '21.gifts',
-            },
-            {
-              name: 'Other desk',
-              techProvider: 'DFX.swiss',
-              id: 'dfx-hidden',
-              country: 'PH',
-              activity: 'daily',
-              lat: 14.7,
-              lon: 121.1,
-            },
-          ],
-        };
+      ? homeMapFilters()
+      : kind === 'identical'
+        ? identicalHomePlaces()
+        : variedHomePlaces();
   await route.fulfill({
     status: 200,
     contentType: 'application/json',
@@ -2276,8 +2570,27 @@ async function fulfillHomeMap(route: Route): Promise<void> {
   });
 }
 
+async function fulfillHomeMap(route: Route): Promise<void> {
+  await fulfillHomeMapKind(route, 'varied');
+}
+
+async function fulfillIdenticalHomeMap(route: Route): Promise<void> {
+  await fulfillHomeMapKind(route, 'identical');
+}
+
 async function stubHomeMap(page: Page): Promise<void> {
   await page.route((url) => isHomeMapRequest(url), fulfillHomeMap);
+}
+
+async function stubIdenticalHomeMap(page: Page): Promise<void> {
+  await page.route((url) => isHomeMapRequest(url), fulfillIdenticalHomeMap);
+}
+
+/** One pin stays outside the Manila cluster when the map is framed on every shop. */
+async function expectOneShopPin(page: Page): Promise<void> {
+  const pin = page.locator('#shop-places-map .shop-place-marker:not(.is-clustered)');
+  await expect(pin).toHaveCount(1, { timeout: 20_000 });
+  await expect(pin).toBeVisible();
 }
 
 test.describe('screen baselines', () => {
@@ -2285,9 +2598,7 @@ test.describe('screen baselines', () => {
     await stubHomeMap(page);
     await page.goto('/');
     await expect(page.getByRole('heading', { name: /Help people with Bitcoin/i })).toBeVisible();
-    await expect(page.locator('#shop-places-map .shop-place-marker')).toBeVisible({
-      timeout: 20_000,
-    });
+    await expectOneShopPin(page);
     await shotScreen(page, 'screen-root', true, page.locator('#shop-places-map'));
   });
 
@@ -2317,7 +2628,17 @@ test.describe('screen baselines', () => {
     await stubHomeMap(page);
     await page.goto('/');
     await page.getByRole('button', { name: 'Table' }).click();
-    await expect(page.getByRole('cell', { name: 'Sample', exact: true })).toBeVisible();
+    const table = page.locator('#shops table');
+    await expect(table.getByRole('link', { name: 'Sample', exact: true })).toBeVisible();
+    const viewport = page.viewportSize();
+    if (viewport !== null && viewport.width < 640) {
+      const country = table.locator('th').filter({ hasText: 'Country' });
+      await expect(country).toHaveCount(1);
+      await expect(country).toBeHidden();
+    } else {
+      await expect(table.getByRole('columnheader', { name: 'Country' })).toBeVisible();
+    }
+    await expect(page.getByRole('columnheader', { name: 'Tech provider' })).toHaveCount(0);
     await shotScreen(page, 'state-root-shops-table');
   });
 
@@ -2344,7 +2665,8 @@ test.describe('screen baselines', () => {
     await page.goto('/');
     await page.getByRole('combobox', { name: 'Blockchain', exact: true }).click();
     await expect(page.getByRole('option', { name: 'Bitcoin' })).toBeVisible();
-    await shotScreen(page, 'state-root-shops-blockchain', true, page.locator('#shop-places-map'));
+    await hideMapTiles(page);
+    await shotScreen(page, 'state-root-shops-blockchain');
   });
 
   test('state / shops-asset', async ({ page }) => {
@@ -2352,9 +2674,17 @@ test.describe('screen baselines', () => {
     await page.goto('/');
     await page.getByRole('combobox', { name: 'Blockchain', exact: true }).click();
     await page.getByRole('option', { name: 'Bitcoin' }).click();
-    await page.getByRole('combobox', { name: 'Asset', exact: true }).click();
+    const asset = page.getByRole('combobox', { name: 'Asset', exact: true });
+    // The pill sits on the first window's lower edge. The open list is a few
+    // pixels taller than the old one, so one capture flips it above the
+    // heading and the next opens it below. Centering the pill keeps it below.
+    await asset.evaluate((node) => {
+      node.scrollIntoView({ block: 'center', inline: 'nearest' });
+    });
+    await asset.click();
     await expect(page.getByRole('option', { name: 'BTC' })).toBeVisible();
-    await shotScreen(page, 'state-root-shops-asset', true, page.locator('#shop-places-map'));
+    await hideMapTiles(page);
+    await shotScreen(page, 'state-root-shops-asset');
   });
 
   test('state / shops-activity', async ({ page }) => {
@@ -2362,15 +2692,40 @@ test.describe('screen baselines', () => {
     await page.goto('/');
     await page.getByRole('combobox', { name: 'Activity', exact: true }).click();
     await expect(page.getByRole('option', { name: 'Daily' })).toBeVisible();
-    await shotScreen(page, 'state-root-shops-activity', true, page.locator('#shop-places-map'));
+    await hideMapTiles(page);
+    await shotScreen(page, 'state-root-shops-activity');
+  });
+
+  test('state / shops-country-open', async ({ page }) => {
+    await stubHomeMap(page);
+    await page.goto('/');
+    await page.getByRole('combobox', { name: 'Country', exact: true }).click();
+    await expect(page.getByRole('option', { name: 'Philippines' })).toBeVisible();
+    await expect(page.getByRole('option', { name: 'Kenya' })).toBeVisible();
+    await expect(page.getByRole('option', { name: 'Switzerland' })).toHaveCount(0);
+    await hideMapTiles(page);
+    await shotScreen(page, 'state-root-shops-country-open');
+  });
+
+  test('state / shops-name-open', async ({ page }) => {
+    await stubHomeMap(page);
+    await page.goto('/');
+    await page.getByRole('combobox', { name: 'Name', exact: true }).click();
+    await expect(page.getByRole('option', { name: 'Others' })).toBeVisible();
+    await expect(page.getByRole('option', { name: 'SPAR' })).toBeVisible();
+    await hideMapTiles(page);
+    await shotScreen(page, 'state-root-shops-name-open');
   });
 
   test('state / shops-country-selected', async ({ page }) => {
     await stubHomeMap(page);
     await page.goto('/');
     await page.getByRole('button', { name: 'Table' }).click();
-    await page.getByLabel('Country').selectOption('PH');
-    await expect(page.getByLabel('Country')).toHaveValue('PH');
+    await page.getByRole('combobox', { name: 'Country', exact: true }).click();
+    await page.getByRole('option', { name: 'Philippines' }).click();
+    await expect(page.getByRole('combobox', { name: 'Country', exact: true })).toContainText(
+      'Philippines',
+    );
     await shotScreen(page, 'state-root-shops-country-selected');
   });
 
@@ -2378,8 +2733,9 @@ test.describe('screen baselines', () => {
     await stubHomeMap(page);
     await page.goto('/');
     await page.getByRole('button', { name: 'Table' }).click();
-    await page.getByLabel('Name').selectOption('SPAR');
-    await expect(page.getByLabel('Name')).toHaveValue('SPAR');
+    await page.getByRole('combobox', { name: 'Name', exact: true }).click();
+    await page.getByRole('option', { name: 'SPAR' }).click();
+    await expect(page.getByRole('combobox', { name: 'Name', exact: true })).toContainText('SPAR');
     await shotScreen(page, 'state-root-shops-name-selected');
   });
 
@@ -2422,14 +2778,134 @@ test.describe('screen baselines', () => {
     await shotScreen(page, 'state-root-shops-activity-selected');
   });
 
-  test('state / shops-marker', async ({ page }) => {
+  test('state / shops-sorted-desc', async ({ page }) => {
     await stubHomeMap(page);
     await page.goto('/');
-    const marker = page.locator('#shop-places-map .shop-place-marker');
-    await expect(marker).toBeVisible({ timeout: 20_000 });
+    await page.getByRole('button', { name: 'Table' }).click();
+    await page.getByRole('button', { name: 'Location', exact: true }).click();
+    await page.getByRole('button', { name: 'Location', exact: true }).click();
+    const locationHeader = page.getByRole('columnheader', { name: 'Location' });
+    await expect(locationHeader).toHaveAttribute('aria-sort', 'descending');
+    await shotScreen(page, 'state-root-shops-sorted-desc');
+  });
+
+  test('state / shops-sorted-name-desc', async ({ page }) => {
+    await stubHomeMap(page);
+    await page.goto('/');
+    await sortHomeShops(page, 'Name', 'descending');
+    await shotScreen(page, 'state-root-shops-sorted-name-desc');
+  });
+
+  test('state / shops-sorted-location-asc', async ({ page }) => {
+    await stubHomeMap(page);
+    await page.goto('/');
+    await sortHomeShops(page, 'Location', 'ascending');
+    await shotScreen(page, 'state-root-shops-sorted-location-asc');
+  });
+
+  test('state / shops-sorted-country-asc', async ({ page }) => {
+    await stubHomeMap(page);
+    await page.goto('/');
+    await sortHomeShopsDesktopColumn(page, 'Country', 'ascending');
+    await shotScreen(page, 'state-root-shops-sorted-country-asc');
+  });
+
+  test('state / shops-sorted-country-desc', async ({ page }) => {
+    await stubHomeMap(page);
+    await page.goto('/');
+    await sortHomeShopsDesktopColumn(page, 'Country', 'descending');
+    await shotScreen(page, 'state-root-shops-sorted-country-desc');
+  });
+
+  test('state / shops-sorted-shop-asc', async ({ page }) => {
+    await stubHomeMap(page);
+    await page.goto('/');
+    await sortHomeShopsDesktopColumn(page, 'Shop', 'ascending');
+    await shotScreen(page, 'state-root-shops-sorted-shop-asc');
+  });
+
+  test('state / shops-sorted-shop-desc', async ({ page }) => {
+    await stubHomeMap(page);
+    await page.goto('/');
+    await sortHomeShopsDesktopColumn(page, 'Shop', 'descending');
+    await shotScreen(page, 'state-root-shops-sorted-shop-desc');
+  });
+
+  test('state / shops-sorted-activity-asc', async ({ page }) => {
+    await stubHomeMap(page);
+    await page.goto('/');
+    await sortHomeShops(page, 'Activity', 'ascending');
+    await shotScreen(page, 'state-root-shops-sorted-activity-asc');
+  });
+
+  test('state / shops-sorted-activity-desc', async ({ page }) => {
+    await stubHomeMap(page);
+    await page.goto('/');
+    await sortHomeShops(page, 'Activity', 'descending');
+    await shotScreen(page, 'state-root-shops-sorted-activity-desc');
+  });
+
+  test('state / shops-marker', async ({ page }) => {
+    await stubHomeMap(page);
+    await stubShopPhoto(page);
+    await page.goto('/');
+    const marker = page.locator('#shop-places-map .shop-place-marker:not(.is-clustered)');
+    await expect(marker).toHaveCount(1, { timeout: 20_000 });
+    await settleShopMarkers(page);
     await marker.click();
     await expect(page.getByRole('link', { name: 'Sample' })).toBeVisible();
-    await shotScreen(page, 'state-root-shops-marker', true, page.locator('.maplibregl-canvas'));
+    await waitForShopPhoto(page);
+    // The click leaves the pointer on the card. Move it off so a phone hover
+    // style is not part of the shot.
+    await page.mouse.move(0, 0);
+    await hideMapTiles(page);
+    await unstickStickyChrome(page);
+    await waitForShopPopupInsideMap(page);
+    await settleShopMarkers(page);
+    await shotScreen(page, 'state-root-shops-marker');
+  });
+
+  test('state / shops-marker-no-photo', async ({ page }) => {
+    await stubHomeMap(page);
+    await page.goto('/');
+    await page.getByRole('button', { name: '3 shops' }).click({ timeout: 20_000 });
+    await page.getByRole('button', { name: 'North, Weekly' }).click();
+    await expect(page.locator('.shop-popup-name')).toHaveText('North');
+    await expect(page.locator('.maplibregl-popup a.shop-popup-name')).toHaveCount(0);
+    await expect(page.locator('.shop-popup-photo')).toHaveCount(0);
+    await page.mouse.move(0, 0);
+    await hideMapTiles(page);
+    await unstickStickyChrome(page);
+    await waitForShopPopupInsideMap(page);
+    await settleShopMarkers(page);
+    await shotScreen(page, 'state-root-shops-marker-no-photo');
+  });
+
+  test('state / shops-cluster', async ({ page }) => {
+    await stubHomeMap(page);
+    await page.goto('/');
+    await expect(page.getByRole('button', { name: '3 shops' })).toBeVisible({ timeout: 20_000 });
+    await expect(
+      page.locator('#shop-places-map .shop-place-marker:not(.is-clustered)'),
+    ).toHaveCount(1);
+    await hideMapTiles(page);
+    await unstickStickyChrome(page);
+    await settleShopMarkers(page);
+    await shotScreen(page, 'state-root-shops-cluster');
+  });
+
+  test('state / shops-pins', async ({ page }) => {
+    await stubHomeMap(page);
+    await page.goto('/');
+    await page.getByRole('button', { name: '3 shops' }).click();
+    await expect(
+      page.locator('#shop-places-map .shop-place-marker:not(.is-clustered)'),
+    ).toHaveCount(4);
+    await expect(page.getByRole('button', { name: '3 shops' })).toHaveCount(0);
+    await hideMapTiles(page);
+    await unstickStickyChrome(page);
+    await settleShopMarkers(page);
+    await shotScreen(page, 'state-root-shops-pins');
   });
 
   test('state / shops-attribution', async ({ page }) => {
@@ -2441,7 +2917,7 @@ test.describe('screen baselines', () => {
     // resolve that summary as a button, so the test clicks the summary itself.
     const toggleAttribution = attribution.locator('summary');
     await expect(toggleAttribution).toHaveAttribute('aria-label', 'Toggle attribution');
-    await expect(page.locator('#shop-places-map .shop-place-marker')).toBeVisible();
+    await expectOneShopPin(page);
     const mapLibre = attribution.getByRole('link', { name: 'MapLibre', exact: true });
     // A pointer click on the summary is a drag on the map and moves the pin.
     // The DOM click still runs MapLibre's toggle listener.
@@ -2455,17 +2931,9 @@ test.describe('screen baselines', () => {
     await pressToggle();
     await expect(mapLibre).toBeVisible();
     await expect(attribution).toHaveClass(/maplibregl-compact-show/);
-    await page.locator('#shop-places-map canvas').evaluate((node: HTMLCanvasElement) => {
-      node.style.visibility = 'hidden';
-    });
-    // The empty style leaves the projected pin a few pixels off between runs.
-    await page.locator('#shop-places-map .shop-place-marker').evaluateAll((nodes) => {
-      for (const node of nodes) {
-        if (node instanceof HTMLElement) {
-          node.style.visibility = 'hidden';
-        }
-      }
-    });
+    await hideMapTiles(page);
+    await unstickStickyChrome(page);
+    await settleShopMarkers(page);
     await shotScreen(page, 'state-root-shops-attribution');
   });
 
@@ -2492,7 +2960,12 @@ test.describe('screen baselines', () => {
       },
     );
     await page.goto('/');
-    await expect(page.getByRole('heading', { name: 'Shops', exact: true })).toBeVisible();
+    await expect(
+      page.getByRole('heading', {
+        name: 'These shops accept Bitcoin through 21.gifts',
+        exact: true,
+      }),
+    ).toBeVisible();
     await expect(page.getByText('Could not load places. Please try again.')).toHaveCount(0);
     await expect(page.getByText('No locations published yet.')).toHaveCount(0);
     await expect(page.locator('#shop-places-map')).toBeVisible();
@@ -2557,12 +3030,24 @@ test.describe('screen baselines', () => {
     await shotScreen(page, 'state-root-shops-empty-table');
   });
 
+  test('state / shops-filters-hidden', async ({ page }) => {
+    await stubIdenticalHomeMap(page);
+    await page.goto('/');
+    await page.getByRole('button', { name: 'Table' }).click();
+    await expect(page.getByRole('cell', { name: 'Ann', exact: true })).toBeVisible();
+    await expect(page.getByRole('combobox', { name: 'Country', exact: true })).toHaveCount(0);
+    await expect(page.getByRole('columnheader', { name: 'Name' })).toBeVisible();
+    await expect(page.getByRole('columnheader', { name: 'Location' })).toBeVisible();
+    await expect(page.getByRole('columnheader', { name: 'Activity' })).toBeVisible();
+    await expect(page.getByRole('columnheader', { name: 'Country' })).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'What the activity words mean' })).toBeVisible();
+    await shotScreen(page, 'state-root-shops-filters-hidden');
+  });
+
   test('state / faq-account-open', async ({ page }) => {
     await stubHomeMap(page);
     await page.goto('/');
-    await expect(page.locator('#shop-places-map .shop-place-marker')).toBeVisible({
-      timeout: 20_000,
-    });
+    await expectOneShopPin(page);
     const faq = page.locator('#faq');
     await faq.getByText('Do I need an account to see the forum?').click();
     await expect(
@@ -2576,9 +3061,7 @@ test.describe('screen baselines', () => {
   test('state / faq-share-open', async ({ page }) => {
     await stubHomeMap(page);
     await page.goto('/');
-    await expect(page.locator('#shop-places-map .shop-place-marker')).toBeVisible({
-      timeout: 20_000,
-    });
+    await expectOneShopPin(page);
     const faq = page.locator('#faq');
     await faq.getByText('Does 21.gifts keep any of my donation?').click();
     await expect(
@@ -2592,9 +3075,7 @@ test.describe('screen baselines', () => {
   test('state / faq-password-open', async ({ page }) => {
     await stubHomeMap(page);
     await page.goto('/');
-    await expect(page.locator('#shop-places-map .shop-place-marker')).toBeVisible({
-      timeout: 20_000,
-    });
+    await expectOneShopPin(page);
     const faq = page.locator('#faq');
     await faq.getByText('Does 21.gifts store my password?').click();
     await expect(
@@ -2608,9 +3089,7 @@ test.describe('screen baselines', () => {
   test('state / faq-device-open', async ({ page }) => {
     await stubHomeMap(page);
     await page.goto('/');
-    await expect(page.locator('#shop-places-map .shop-place-marker')).toBeVisible({
-      timeout: 20_000,
-    });
+    await expectOneShopPin(page);
     const faq = page.locator('#faq');
     await faq.getByText('What if I lose my device?').click();
     await expect(
@@ -2624,9 +3103,7 @@ test.describe('screen baselines', () => {
   test('state / faq-recipient-open', async ({ page }) => {
     await stubHomeMap(page);
     await page.goto('/');
-    await expect(page.locator('#shop-places-map .shop-place-marker')).toBeVisible({
-      timeout: 20_000,
-    });
+    await expectOneShopPin(page);
     const faq = page.locator('#faq');
     await faq.getByText('Who receives the Bitcoin?').click();
     await expect(
@@ -2640,9 +3117,7 @@ test.describe('screen baselines', () => {
   test('state / faq-bitcoin-open', async ({ page }) => {
     await stubHomeMap(page);
     await page.goto('/');
-    await expect(page.locator('#shop-places-map .shop-place-marker')).toBeVisible({
-      timeout: 20_000,
-    });
+    await expectOneShopPin(page);
     const faq = page.locator('#faq');
     await faq.getByText('Why Bitcoin?').click();
     await expect(
@@ -2656,9 +3131,7 @@ test.describe('screen baselines', () => {
   test('state / faq-taxes-open', async ({ page }) => {
     await stubHomeMap(page);
     await page.goto('/');
-    await expect(page.locator('#shop-places-map .shop-place-marker')).toBeVisible({
-      timeout: 20_000,
-    });
+    await expectOneShopPin(page);
     const faq = page.locator('#faq');
     await faq.getByText('Is this regulated, and how do taxes work?').click();
     await expect(
@@ -2672,9 +3145,7 @@ test.describe('screen baselines', () => {
   test('state / faq-sat-open', async ({ page }) => {
     await stubHomeMap(page);
     await page.goto('/');
-    await expect(page.locator('#shop-places-map .shop-place-marker')).toBeVisible({
-      timeout: 20_000,
-    });
+    await expectOneShopPin(page);
     const faq = page.locator('#faq');
     await faq.getByText('What does ₿1 mean here?').click();
     await expect(
@@ -2699,9 +3170,7 @@ test.describe('screen baselines', () => {
     });
     await stubHomeMap(page);
     await page.goto('/');
-    await expect(page.locator('#shop-places-map .shop-place-marker')).toBeVisible({
-      timeout: 20_000,
-    });
+    await expectOneShopPin(page);
     const install = page.locator('main').getByRole('button', { name: 'Install app' });
     await expect(install).toBeVisible();
     await install.click();
@@ -25692,7 +26161,11 @@ test.describe('profile activity chart variants', () => {
       .locator('input[name="profile-banner"]')
       .setInputFiles(path.join(process.cwd(), 'e2e/fixtures/profile-portrait.jpg'));
     await expect(page.getByText('Drag the photo to choose the wide image')).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Use this crop' })).toBeEnabled();
+    // The hint is up before the photo is placed. An unplaced photo is its
+    // full file size and leaves the phone window.
+    await expect(page.getByRole('button', { name: 'Use this crop' })).toBeEnabled({
+      timeout: 15000,
+    });
     await expect(page.getByRole('button', { name: 'Add a wide image' })).toHaveCount(0);
     await expect(page.getByRole('button', { name: 'Add a profile photo' })).toBeVisible();
     await shotScreen(page, 'state-view-banner-not-wide');

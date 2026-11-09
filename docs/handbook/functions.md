@@ -3438,10 +3438,24 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 ## Function: buildCsp
 
-- **Purpose:** The Content-Security-Policy text of every page: the directives of `CSP_SOURCES` in order, the nonce on `script-src`, then `report-uri /monitoring/csp` and `report-to csp`. `docs/csp.md` lists every source and why it is needed.
-- **Inputs:** The nonce of this response.
+- **Purpose:** The Content-Security-Policy text of every page: the directives of `CSP_SOURCES` in order, the nonce on `script-src`, then `report-uri /monitoring/csp` and `report-to csp`. The `img-src` directive contains only the OpenCryptoPay origin selected for the hostname. `docs/csp.md` lists every source and why it is needed.
+- **Inputs:** The nonce of this response and the request hostname; `21.gifts` and `www.21.gifts` select the production OpenCryptoPay origin, and all other hosts select development.
 - **Returns / side effects:** The policy string, directives separated by `; `.
 - **Used by:** `middleware`.
+
+## Function: imageCspSources
+
+- **Purpose:** Select the image sources allowed for a page hostname.
+- **Inputs:** The page or request hostname.
+- **Returns / side effects:** The image source list with exactly one OpenCryptoPay origin selected for the hostname; no side effects.
+- **Used by:** `buildCsp` and the homepage popup photo filter.
+
+## Function: placesOrigin
+
+- **Purpose:** Select the OpenCryptoPay origin for the page hostname.
+- **Inputs:** A hostname; `21.gifts` and `www.21.gifts` select production.
+- **Returns / side effects:** The production origin for those hosts, otherwise the development origin; no side effects.
+- **Used by:** The middleware policy, homepage places endpoint, and popup photo filter.
 
 ## Function: traceWallet
 
@@ -7356,17 +7370,31 @@ The class exists so the composer can tell a refused free first post from any oth
 
 ## Function: HomeShops
 
-- **Purpose:** Marketing homepage section under the hero and before how it works. Shows filters, a Map/Table control, then a map or a table. A shop is listed only when its tech provider is exactly 21.gifts. The country filter stays. A shop id that matches the shop npub pattern links to `/{id}` on this site. A failed map library, missing map container, or failed map construction opens the table and shows the load-error sentence. That failure is not an empty list. Try again beside that sentence reloads the filters the same way the first load does, and a failed retry does not request places or show the empty sentence.
-- **Inputs:** Translated labels from the server page, including the CSV button label and the URL column label. Place and filter data come from the public map API after mount. Filters are loaded once, before the first places request. Places reload when country, name, blockchain, or asset changes. Activity filters the places already loaded. A non-empty country, name, blockchain, asset, or activity clears when a reloaded filter list no longer includes it.
-- **Returns / side effects:** A section element. Fetches the place list in the browser. Downloads a CSV of the visible rows when the visitor asks and at least one row is visible. No server write.
+- **Purpose:** Marketing homepage section under the hero and before how it works. One heading is `homeShops.lead`. The card uses the paper, ink, and `bg-home-card` tokens. A shop is listed only when its tech provider is exactly 21.gifts. Country, name, blockchain, asset, and activity are `FilterMenu`, and each is shown only when its options split the unfiltered 21.gifts rows. Map | Table is `SegmentedControl` `tone="neutral"`. Country labels use `countryDisplayName`. The map clusters pins closer than 44px below zoom 17. When a focused pin joins a cluster, focus moves to that cluster. When the focused pin or cluster leaves the visible map, focus moves to the map itself. Closing a shop card with focus inside returns focus to the pin's current cluster button when clustered, otherwise to the pin. It frames only after the container has a real size, snaps a later size change unless the visitor moved the map or opened a cluster or a shop window, frames again when the visitor returns from the table, and opens a popup with its own close button. The table sorts from its column headers and has no Tech provider column, because every listed row is 21.gifts. Below `sm`, only Name, Location, and Activity columns are visible; when Shop and Country columns exist, their values are stacked under the name. From `sm`, those separate columns and their sort buttons are visible. Headers stay on one line, and cell contents wrap. Activity sorts known tokens by rank and unknown tokens by their label, honoring the chosen direction and breaking ties by ascending shop name. The CSV still includes Tech provider. The help panel is measured after it mounts and sits below the button when it fits, otherwise above it; when neither side fits, it is held 16px inside the window and may cover the button. Its natural height is the inner content's `scrollHeight` plus the panel's computed vertical padding and border widths, measured with the pin in place. The live panel always sets top, bottom, left, and width. A fitting bottom is the space under the content. A panel taller than the window uses the 16px inset and scrolls its content. A full-page capture clears that edge. Opening the help panel moves focus into it without scrolling. Closing it with focus still inside returns focus to the help button without scrolling; an outside press on another focusable control leaves focus on that control. If an empty response removes help, its panel closes; focus on the help button or inside its panel moves without scrolling to the selected Map/Table button, and focus elsewhere stays put. A shop id that matches the shop npub pattern links to `/{id}` on this site. A failed map library, missing map container, or failed map construction opens the table and shows the load-error sentence. That failure is not an empty list. Try again beside that sentence reloads the filters the same way the first load does, and a failed retry does not request places or show the empty sentence. With zero shops the filters, the help button, and the legend are hidden.
+- **Inputs:** Translated labels from the server page, including the CSV button label, the URL column label, and the page locale. Place and filter data come from the public map API after mount. Filters are loaded once, before the first places request. Places reload when country, name, blockchain, or asset changes. Activity filters the places already loaded and is not a query parameter. A selection clears only when the shop-derived options no longer include it. A filters response that omits a value the shops still have does not clear it. A filters HTTP error does not wipe the unfiltered shop set.
+- **Returns / side effects:** A section element with light control tokens in either theme. Fetches the place list and the positron style in the browser. Popup photos use only HTTPS origins matching a common HTTPS image source or the host-selected OpenCryptoPay origin. The popup's shop link opens the shop page client-side. Its decorative lucide `ArrowRight` shares the close button's React root and teardown. The shop card moves down past an obstacle when it cannot move up or sideways and its bottom still fits inside the map's 16px inset. A cluster press frames its pins when that gains at least one zoom level; when the pins already fill the map, or no target zoom is available, it zooms in by two levels around the cluster instead, capped at 17.5. A cluster whose center is off the map uses the on-map members for its position when any are visible; keyboard activation returns focus to the previously focused member after splitting. Downloads a CSV of the visible rows, including Tech provider and localized country names, when the visitor asks and at least one row is visible. No server write.
 - **Used by:** The marketing page at `/`.
 
 ## Function: FilterMenu
 
-- **Purpose:** Custom listbox for one homepage shop filter. Blockchain, Asset, and Activity use it. Country and Name stay native selects. The Map/Table control is not this component.
-- **Inputs:** A visible label, the committed value, the All label, the options, and a change handler. An option may carry a decorative swatch.
-- **Returns / side effects:** A combobox button and, while open, a listbox. Choosing an option commits that value and closes the list. No network request.
+- **Purpose:** Custom listbox for one homepage shop filter. Country, name, blockchain, asset, and activity all use it. The Map/Table control is `SegmentedControl`, not this component. Below `sm`, the closed pill shows the label above the selected value, with the chevron centered on the right, at least 44px height, and `rounded-2xl` corners. From `sm`, it keeps one line, 44px height, `rounded-full` corners, the label on the left, and the value beside the chevron on the right. The open panel is a floating list, not a page-flow list. More than eight options use columns when the window is wide enough. The panel flips to stay inside the window. When the flipped panel still crosses an 8px inset, it pins top, bottom, left, and width. When pinning narrows the width, the panel is measured once more at that width before deciding the bottom edge and scrolling state, so wrapped labels are included. A pinned list taller than the window scrolls on the active scrollport, revealing the selected option on opening and the active option after Arrow, Home, or End. Option labels wrap when necessary. Escape and a pointer press outside close it. Focus moving outside the menu closes it without moving focus; focus leaving the page does not close it. A scroll or resize closes a pinned list when its pill is outside the window, without moving focus.
+- **Inputs:** A visible label, the committed value, the All label, the options, and a change handler. An option may carry a decorative swatch. Activity options pass their colour class as that swatch.
+- **Returns / side effects:** A combobox and, while open, a listbox. Choosing an option commits that value, closes the list, and returns focus to the trigger. Up and Down move by the column count, Left and Right within a grid row, and Home and End to the first and last option. All is a separate row: Down from All goes to the first option, and Up from the first grid row goes to All. The keys act on the trigger, which keeps focus. No network request.
 - **Used by:** HomeShops on the marketing page at `/`.
+
+## Function: MenuScroll
+
+- **Purpose:** Wrap the homepage filter list or help panel content in a scrollport when its pinned panel needs scrolling.
+- **Inputs:** The scrolling flag and the content.
+- **Returns / side effects:** The content directly, or inside a `Scrollport` when scrolling is needed.
+- **Used by:** FilterMenu and the HomeShops help panel on the marketing page at `/`.
+
+## Function: FilterOption
+
+- **Purpose:** Render one homepage filter option with its active and selected states and optional decorative swatch.
+- **Inputs:** The option, its index, the active index, the selected value, an id builder, and a selection handler.
+- **Returns / side effects:** An option button that stops click propagation and passes its value to the selection handler.
+- **Used by:** FilterMenu on the marketing page at `/`.
 
 ## Function: getMyLoans
 

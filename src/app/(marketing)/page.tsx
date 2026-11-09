@@ -298,8 +298,8 @@ export default async function Home(): Promise<ReactElement> {
       </section>
 
       <HomeShops
+        locale={locale}
         copy={{
-          title: t('homeShops.title'),
           lead: t('homeShops.lead'),
           view: t('homeShops.view'),
           map: t('homeShops.map'),
@@ -310,6 +310,7 @@ export default async function Home(): Promise<ReactElement> {
           asset: t('homeShops.asset'),
           activity: t('homeShops.activity'),
           all: t('homeShops.all'),
+          otherShops: t('homeShops.otherShops'),
           empty: t('homeShops.empty'),
           error: t('map.error'),
           retry: t('forum.retry'),
