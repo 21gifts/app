@@ -27,7 +27,9 @@ describe('HabitTrackerPage', () => {
     useAuthStore.setState({ session: null, account: null });
     renderWithLocale(<HabitTrackerPage />);
     expect(screen.getByTestId('member-habits')).toBeTruthy();
-    expect(screen.getByRole('link', { name: 'Log in' }).getAttribute('href')).toBe('/login');
+    expect(screen.getByRole('link', { name: 'Log in' }).getAttribute('href')).toBe(
+      '/login?next=%2Fhabit-tracker',
+    );
     expect(screen.queryByTestId('signed-in-chrome')).toBeNull();
   });
 

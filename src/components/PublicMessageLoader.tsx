@@ -2,6 +2,7 @@
 
 import { MapPin } from 'lucide-react';
 import Link from 'next/link';
+import { usePathname, useSearchParams } from 'next/navigation';
 import { useEffect, useRef, useState, type ReactElement } from 'react';
 import { useFiatPreference } from '@/components/FiatPreferenceProvider';
 import { ForumGoalBar } from '@/components/ForumGoalBar';
@@ -32,6 +33,7 @@ import { formatPlacePinText } from '@/lib/forum-shop';
 import { formatForumTime } from '@/lib/forum-time';
 import { forumVideoSrc } from '@/lib/forum-video';
 import { formatBitcoin, type FiatCode, type FiatRateDay } from '@/lib/stats-money';
+import { loginHref } from '@/lib/view-history';
 import { useAuthStore } from '@/stores/auth-store';
 
 const MESSAGE_ID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -283,6 +285,10 @@ export function PublicMessageLoader({ id }: { id: string }): ReactElement {
   // signed-in fetch and no notification marked read until it is open.
   const session = useActiveSession();
   const account = useAuthStore((state) => state.account);
+  // Re-render when the URL changes. The Log in href reads the raw location,
+  // which is the form the view stack records, so the login can step back here.
+  usePathname();
+  useSearchParams();
   const [status, setStatus] = useState<'loading' | 'missing' | 'error' | 'ready'>(() =>
     MESSAGE_ID_RE.test(id) ? 'loading' : 'missing',
   );
@@ -470,7 +476,7 @@ export function PublicMessageLoader({ id }: { id: string }): ReactElement {
       {ready ? (
         account === null ? (
           <Link
-            href="/login"
+            href={loginHref(`${window.location.pathname}${window.location.search}`)}
             className="text-sm font-medium text-app-fg underline underline-offset-2"
           >
             {t('login.submit')}

@@ -8,7 +8,7 @@ import { useHydrateSession } from '@/hooks/useHydrateSession';
 import { usePasskeyLogin } from '@/hooks/usePasskeyLogin';
 import { useWalletOpen } from '@/hooks/useWalletOpen';
 import { nextOnboardingPath } from '@/lib/onboarding';
-import { returnToView } from '@/lib/view-history';
+import { loginHref, loginReturnPath, returnToView } from '@/lib/view-history';
 import { useAuthStore } from '@/stores/auth-store';
 
 /** Which post-login screen this gate is wrapping. */
@@ -52,10 +52,13 @@ interface OnboardingGateProps {
  * screen shows once the wallet is open. That includes the screens open to
  * guests (`allowGuest`): a held-back session is a member, so they show the
  * card instead of the guest view; only a visitor without any stored session
- * sees the guest view. `/login`
+ * sees the guest view. A signed-out visitor on any other gated screen is sent
+ * to `/login` carrying that screen ({@link loginHref}). `/login`
  * itself sends a fresh login on only once its wallet is open, and shows
  * {@link WalletLoginCard} meanwhile and while a session is held back, so a
- * wallet that could not be opened keeps its alert there.
+ * wallet that could not be opened keeps its alert there. A finished setup
+ * then opens the view named by `/login?next=…` ({@link loginReturnPath})
+ * instead of `/welcome`; an unfinished one still opens its next setup step.
  *
  * @param props - See {@link OnboardingGateProps}.
  * @returns Children, or a spinner while redirecting.
@@ -87,7 +90,10 @@ export function OnboardingGate({
     if (screen === 'login') {
       if (account !== null && walletOpen) {
         cancel();
-        returnToView(nextOnboardingPath(account), router);
+        const target = nextOnboardingPath(account);
+        // A finished setup returns to the view that sent this visitor to log in.
+        const back = target === '/welcome' ? loginReturnPath(window.location.search) : null;
+        returnToView(back ?? target, router);
       }
       return;
     }
@@ -95,7 +101,7 @@ export function OnboardingGate({
       if (screen === 'welcome' && allowGuest) {
         return;
       }
-      returnToView('/login', router);
+      returnToView(loginHref(`${window.location.pathname}${window.location.search}`), router);
       return;
     }
     if (screen === 'profile') {

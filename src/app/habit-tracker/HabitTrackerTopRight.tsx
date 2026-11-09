@@ -4,6 +4,7 @@ import type { ReactElement } from 'react';
 import Link from 'next/link';
 import { SignedInChrome } from '@/components/SignedInChrome';
 import { useTranslations } from '@/components/LocaleProvider';
+import { loginHref } from '@/lib/view-history';
 import { useAuthStore } from '@/stores/auth-store';
 
 /**
@@ -12,7 +13,7 @@ import { useAuthStore } from '@/stores/auth-store';
  *
  * This is the client boundary. The page itself does not read the auth store.
  *
- * @returns Signed-in chrome (empty while the wallet is not open), or a link to `/login`.
+ * @returns Signed-in chrome (empty while the wallet is not open), or a link to `/login` that returns here.
  */
 export function HabitTrackerTopRight(): ReactElement {
   const { t } = useTranslations();
@@ -23,7 +24,10 @@ export function HabitTrackerTopRight(): ReactElement {
     return <SignedInChrome />;
   }
   return (
-    <Link href="/login" className="text-sm font-medium text-app-fg underline underline-offset-2">
+    <Link
+      href={loginHref('/habit-tracker')}
+      className="text-sm font-medium text-app-fg underline underline-offset-2"
+    >
       {t('nav.login')}
     </Link>
   );
