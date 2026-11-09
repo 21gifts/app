@@ -6309,6 +6309,11 @@
     "es": "La vista Enviar en un dispositivo sin cámara: No se encontró ninguna cámara. Pega la solicitud de pago. en letra blanca grande sobre el área negra de la cámara, con Pegar e Introducir manualmente todavía flotando abajo.",
     "fil": "Ang Ipadala na view sa device na walang camera: Walang nakitang camera. I-paste na lang ang payment request. sa malaking puting titik sa itim na lugar ng camera, habang lumulutang pa rin sa ibaba ang I-paste at Manwal na ilagay."
   },
+  "/wallet:send-camera-paused": {
+    "de": "Die Senden-Ansicht, wenn der Kamerastream läuft, aber die Vorschau nicht gestartet ist: Der Hinweis steht ohne Fehlermeldung über der schwarzen Kamerafläche, Einfügen und Manuell eingeben stehen unten als umrandete Buttons.",
+    "es": "La vista Enviar cuando el flujo de cámara funciona pero la vista previa no se inicia: la indicación aparece sobre el área negra sin alerta, Pegar e Introducir manualmente son botones con borde abajo.",
+    "fil": "Ang view na Ipadala kapag tumatakbo ang camera stream ngunit hindi nagsimula ang preview: nasa ibabaw ng itim na bahagi ang gabay nang walang alerto, nasa ibaba ang may bordeng I-paste at Manwal na ilagay."
+  },
   "/wallet:send-comment-long": {
     "de": "Angeheftete Fixture (?visual=send-comment-long, nur Playwright-Builds). Der Betragsschritt für eine Lightning-Adresse auf einem anderen Host (An bob@example.com, ihre Grenzen, Nachricht (optional)), nachdem der Empfänger die Nachricht als zu lang abgelehnt hat: der Hinweis Diese Nachricht ist für den Empfänger zu lang. über Weiter.",
     "es": "Fixture fijado (?visual=send-comment-long, solo builds de Playwright). El paso del importe para una dirección Lightning en otro host (Para bob@example.com, sus límites, Mensaje (opcional)) después de que el destinatario rechazara el mensaje por demasiado largo: la alerta Este mensaje es demasiado largo para el destinatario. encima de Continuar.",
@@ -8208,6 +8213,11 @@
     "de": "Die /wallet-Variante send-camera-unavailable in der Senden-Ansicht, die ein Pin ?visual=send-input über der Forum-Startseite öffnet: dieselbe Ansicht und derselbe Schritt wie auf /wallet, mit dem Pfeil oben links, ohne den Feed oder die unteren Buttons.",
     "es": "La variante de /wallet send-camera-unavailable en la vista Enviar que un pin ?visual=send-input abre sobre el inicio del foro: la misma vista y el mismo paso que en /wallet, con la flecha arriba a la izquierda, sin el feed ni los botones inferiores.",
     "fil": "Ang /wallet variant na send-camera-unavailable sa view na Ipadala na binubuksan ng isang pin ?visual=send-input sa ibabaw ng home ng forum: ang parehong view at hakbang gaya ng sa /wallet, may palaso sa itaas-kaliwa, walang feed o mga button sa ibaba."
+  },
+  "/welcome:wallet-send-camera-paused": {
+    "de": "Die /wallet-Variante send-camera-paused über der Forum-Startseite: Der Hinweis steht ohne Fehlermeldung über der schwarzen Kamerafläche, Einfügen und Manuell eingeben stehen unten als umrandete Buttons.",
+    "es": "La variante send-camera-paused de /wallet sobre el inicio del foro: la indicación aparece sobre el área negra sin alerta, Pegar e Introducir manualmente son botones con borde abajo.",
+    "fil": "Ang /wallet variant na send-camera-paused sa ibabaw ng home ng forum: nasa itaas ng itim na bahagi ang gabay nang walang alerto, nasa ibaba ang may bordeng I-paste at Manwal na ilagay."
   },
   "/welcome:wallet-send-comment-long": {
     "de": "Die /wallet-Variante send-comment-long in der Senden-Ansicht, die der Pin ?visual=send-comment-long über der Forum-Startseite öffnet (nur Playwright-Builds): dieselbe Ansicht und derselbe Schritt wie auf /wallet, mit dem Pfeil oben links, ohne den Feed und ohne die unteren Schaltflächen.",

@@ -10,17 +10,30 @@ import { renderWithLocale } from '@/__tests__/render-with-locale';
 
 vi.mock('@/hooks/useSpotRate', () => ({ useSpotRate: vi.fn() }));
 
+const scanner = vi.hoisted(() => ({
+  onPicture: null as ((picture: 'showing' | 'denied' | 'unavailable' | 'paused') => void) | null,
+}));
+
 vi.mock('@/components/QrScanner', () => ({
-  QrScanner: ({ onResult }: { onResult: (text: string) => void }) => (
-    <button
-      type="button"
-      onClick={() => {
-        onResult('lnbc1scanned');
-      }}
-    >
-      Camera stub
-    </button>
-  ),
+  QrScanner: ({
+    onResult,
+    onPicture,
+  }: {
+    onResult: (text: string) => void;
+    onPicture?: (picture: 'showing' | 'denied' | 'unavailable' | 'paused') => void;
+  }) => {
+    scanner.onPicture = onPicture ?? null;
+    return (
+      <button
+        type="button"
+        onClick={() => {
+          onResult('lnbc1scanned');
+        }}
+      >
+        Camera stub
+      </button>
+    );
+  },
 }));
 
 const RATE_DAY: FiatRateDay = {
@@ -115,6 +128,9 @@ describe('WalletSend input', () => {
     expect(layer.className).toContain('absolute inset-0');
     expect(layer.className).toContain('bg-black');
     expect(within(layer).getByRole('button', { name: 'Camera stub' })).toBeTruthy();
+    act(() => {
+      scanner.onPicture?.('showing');
+    });
     for (const name of ['Paste', 'Enter manually']) {
       const button = within(layer).getByRole('button', { name });
       expect(button.className).toContain('bg-black/55');
@@ -122,6 +138,62 @@ describe('WalletSend input', () => {
     }
     expect(screen.queryByLabelText('Payment request or address')).toBeNull();
     expect(screen.queryByText('Send Bitcoin')).toBeNull();
+  });
+
+  it('uses the outline for Paste and Enter manually when the scanner has no picture', () => {
+    const send = sendWith({ step: 'input', error: null });
+    const view = renderWithLocale(<SendHarness send={send} />);
+    expect(scanner.onPicture).not.toBeNull();
+    for (const name of ['Paste', 'Enter manually']) {
+      const button = screen.getByRole('button', { name });
+      expect(button.className).toContain('border-paper/20');
+      expect(button.className).toContain('text-paper');
+      expect(button.className).not.toContain('bg-black/55');
+    }
+    for (const picture of ['denied', 'unavailable', 'paused'] as const) {
+      act(() => {
+        scanner.onPicture?.('showing');
+      });
+      for (const name of ['Paste', 'Enter manually']) {
+        expect(screen.getByRole('button', { name }).className).toContain('bg-black/55');
+      }
+      act(() => {
+        scanner.onPicture?.(picture);
+      });
+      expect(screen.getByRole('button', { name: 'Camera stub' })).toBeTruthy();
+      for (const name of ['Paste', 'Enter manually']) {
+        const button = screen.getByRole('button', { name });
+        expect(button.className).toContain('border-paper/20');
+        expect(button.className).toContain('text-paper');
+        expect(button.className).not.toContain('bg-black/55');
+      }
+      act(() => {
+        scanner.onPicture?.('showing');
+      });
+      view.rerender(<SendHarness send={{ ...send, state: { step: 'input', error: 'invalid' } }} />);
+      view.rerender(<SendHarness send={send} />);
+      for (const name of ['Paste', 'Enter manually']) {
+        expect(screen.getByRole('button', { name }).className).toContain('border-paper/20');
+      }
+    }
+  });
+
+  it('returns the camera pills to overlay when the picture comes back', () => {
+    renderSend(sendWith({ step: 'input', error: null }));
+    for (const [picture, expected, absent] of [
+      ['showing', 'bg-black/55', 'border-paper/20'],
+      ['paused', 'border-paper/20', 'bg-black/55'],
+      ['showing', 'bg-black/55', 'border-paper/20'],
+    ] as const) {
+      act(() => {
+        scanner.onPicture?.(picture);
+      });
+      for (const name of ['Paste', 'Enter manually']) {
+        const button = screen.getByRole('button', { name });
+        expect(button.className).toContain(expected);
+        expect(button.className).not.toContain(absent);
+      }
+    }
   });
 
   it('opens the manual sheet with the field and a disabled Continue while blank, and its Close returns to the camera', () => {
@@ -197,7 +269,16 @@ describe('WalletSend input', () => {
     const alert = screen.getByRole('alert');
     expect(alert.textContent).toBe(text);
     expect(alert.className).toContain('text-white');
-    fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
+    const retry = screen.getByRole('button', { name: 'Try again' });
+    expect(retry.className).toContain('bg-paper text-ink');
+    expect(retry.className).not.toContain('bg-black/55');
+    for (const name of ['Paste', 'Enter manually']) {
+      const button = screen.getByRole('button', { name });
+      expect(button.className).toContain('border-paper/20');
+      expect(button.className).toContain('text-paper');
+      expect(button.className).not.toContain('bg-black/55');
+    }
+    fireEvent.click(retry);
     expect(send.setText).toHaveBeenCalledWith('');
   });
 
@@ -232,7 +313,16 @@ describe('WalletSend input', () => {
     expect(alert.textContent).toBe('Your wallet could not be opened. Please try again.');
     expect(alert.className).toContain('text-white');
     expect(screen.queryByRole('status')).toBeNull();
-    fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
+    const retry = screen.getByRole('button', { name: 'Try again' });
+    expect(retry.className).toContain('bg-paper text-ink');
+    expect(retry.className).not.toContain('bg-black/55');
+    for (const name of ['Paste', 'Enter manually']) {
+      const button = screen.getByRole('button', { name });
+      expect(button.className).toContain('border-paper/20');
+      expect(button.className).toContain('text-paper');
+      expect(button.className).not.toContain('bg-black/55');
+    }
+    fireEvent.click(retry);
     expect(send.retryWallet).toHaveBeenCalledTimes(1);
     expect(send.setText).not.toHaveBeenCalled();
   });

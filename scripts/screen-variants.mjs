@@ -922,6 +922,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/wallet',
+    id: 'send-camera-paused',
+    image: 'wallet-send-camera-paused.png',
+    visual: 'state-wallet-send-camera-paused',
+    needle: "shotScreen(page, 'state-wallet-send-camera-paused')",
+  },
+  {
+    route: '/wallet',
     id: 'send-amount',
     image: 'wallet-send-amount.png',
     visual: 'state-wallet-send-amount',
@@ -3091,6 +3098,13 @@ export const SCREEN_VARIANTS = [
     image: 'welcome-wallet-send-camera-unavailable.png',
     visual: 'state-welcome-wallet-send-camera-unavailable',
     needle: "shotScreen(page, 'state-welcome-wallet-send-camera-unavailable')",
+  },
+  {
+    route: '/welcome',
+    id: 'wallet-send-camera-paused',
+    image: 'welcome-wallet-send-camera-paused.png',
+    visual: 'state-welcome-wallet-send-camera-paused',
+    needle: "shotScreen(page, 'state-welcome-wallet-send-camera-paused')",
   },
   {
     route: '/welcome',

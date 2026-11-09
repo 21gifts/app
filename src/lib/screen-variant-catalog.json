@@ -726,6 +726,12 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/wallet:send-camera-paused",
+    "label": "/wallet send-camera-paused",
+    "visual": "state-wallet-send-camera-paused",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/wallet:send-amount",
     "label": "/wallet send-amount",
     "visual": "state-wallet-send-amount",
@@ -2583,6 +2589,12 @@
     "id": "/welcome:wallet-send-camera-unavailable",
     "label": "/welcome wallet-send-camera-unavailable",
     "visual": "state-welcome-wallet-send-camera-unavailable",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:wallet-send-camera-paused",
+    "label": "/welcome wallet-send-camera-paused",
+    "visual": "state-welcome-wallet-send-camera-paused",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
