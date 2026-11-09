@@ -441,7 +441,7 @@
 
 - **Purpose:** Next.js page for `/login`. The visible heading lives in `LoginCard` (`login.heading`).
 - **Inputs:** None.
-- **Returns / side effects:** `AppShell` with `ProfileChromeLeft` (wordmark `HomeWordmark`: `/` unsigned, `/welcome` when a session is hydrated) and `LanguageSwitcher` top-right, wrapping `OnboardingGate` around `LoginCard`. The arrow returns to the previous in-app view, or `/welcome` when this tab has none. Signed-in visitors are sent to `/setup/name`, `/setup/username`, `/setup/rules`, or `/welcome`. The recovery phrase is not part of that path.
+- **Returns / side effects:** `AppShell` with `ProfileChromeLeft` (wordmark `HomeWordmark`: `/` unsigned, `/welcome` when a session is hydrated) and `LanguageSwitcher` top-right, wrapping `OnboardingGate` around `LoginCard`. The arrow returns to the previous in-app view, or `/welcome` when this tab has none. Signed-in visitors are sent to `/setup/name`, `/setup/username`, `/setup/rules`, or `/welcome`; with a finished setup, a safe in-app path in `?next=` (`loginReturnPath`) opens instead of `/welcome`. The recovery phrase is not part of that path.
 - **Used by:** Route `/login`.
 
 ## Function: DonatePage
