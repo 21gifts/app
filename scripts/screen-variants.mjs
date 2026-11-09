@@ -2064,6 +2064,27 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/settings',
+    id: 'heart-amount-invalid',
+    image: 'settings-heart-amount-invalid.png',
+    visual: 'state-settings-heart-amount-invalid',
+    needle: "shotScreen(page, 'state-settings-heart-amount-invalid')",
+  },
+  {
+    route: '/settings',
+    id: 'heart-amount-saved',
+    image: 'settings-heart-amount-saved.png',
+    visual: 'state-settings-heart-amount-saved',
+    needle: "shotScreen(page, 'state-settings-heart-amount-saved')",
+  },
+  {
+    route: '/settings',
+    id: 'heart-amount-error',
+    image: 'settings-heart-amount-error.png',
+    visual: 'state-settings-heart-amount-error',
+    needle: "shotScreen(page, 'state-settings-heart-amount-error')",
+  },
+  {
+    route: '/settings',
     id: 'notification-level-gifted',
     image: 'settings-notification-level-gifted.png',
     visual: 'state-settings-notification-level-gifted',
@@ -5754,6 +5775,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/members/[accountId]',
+    id: 'replies-open-hearts-role',
+    image: 'members-replies-open-hearts-role.png',
+    visual: 'state-members-replies-open-hearts-role',
+    needle: "shotScreen(page, 'state-members-replies-open-hearts-role')",
+  },
+  {
+    route: '/members/[accountId]',
     id: 'shops-open',
     image: 'members-shops-open.png',
     visual: 'state-members-shops-open',
@@ -9304,6 +9332,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/welcome',
+    id: 'expanded-hearts-role',
+    image: 'welcome-expanded-hearts-role.png',
+    visual: 'state-welcome-expanded-hearts-role',
+    needle: "shotScreen(page, 'state-welcome-expanded-hearts-role')",
+  },
+  {
+    route: '/welcome',
     id: 'expanded-gifts',
     image: 'welcome-expanded-gifts.png',
     visual: 'state-welcome-expanded-gifts',
@@ -11604,6 +11639,13 @@ export const SCREEN_VARIANTS = [
     image: 'messages-id-reply-hearts.png',
     visual: 'state-messages-id-reply-hearts',
     needle: "shotScreen(page, 'state-messages-id-reply-hearts')",
+  },
+  {
+    route: '/messages/[id]',
+    id: 'reply-hearts-role',
+    image: 'messages-id-reply-hearts-role.png',
+    visual: 'state-messages-id-reply-hearts-role',
+    needle: "shotScreen(page, 'state-messages-id-reply-hearts-role')",
   },
   {
     route: '/messages/[id]',

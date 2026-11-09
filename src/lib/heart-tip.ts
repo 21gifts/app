@@ -185,19 +185,37 @@ function mapExtra(map: HeartSentMap, id: string): number {
 
 /** Result of one {@link sendHeartTip} run. */
 export type HeartTipOutcome =
-  { kind: 'noop' } | { kind: 'paid' } | { kind: 'failed'; reason: HeartTipFailure };
+  | { kind: 'noop' }
+  | { kind: 'paid'; notified?: boolean }
+  | { kind: 'failed'; reason: HeartTipFailure };
 
 /**
  * A heart whose send timed out: the Spark invoice it paid, when, and `sent`
  * once the SDK reported that the late send went out.
  */
-type UnsettledHeart = { invoice: string; sinceMs: number; sent: boolean };
+type UnsettledHeart = { invoice: string; sinceMs: number; sent: boolean; notified: boolean };
 
 /**
  * Hearts whose send timed out, by note id, for this tab. The payment may still
  * complete, so another heart on that note waits until the outcome is known.
  */
 const unsettledHearts = new Map<string, UnsettledHeart>();
+
+/**
+ * Settles a heart the app already saw as paid. The first settlement announces
+ * the payment to its caller; a `sentLate` that resolves after that settlement
+ * stays silent, so `onPaid` runs once.
+ *
+ * @param messageId - Note the heart is for.
+ * @param held - The note's unsettled heart.
+ * @returns `paid` when the settlement has not announced the payment yet, otherwise `paid-notified`.
+ */
+function settlePaidHeart(messageId: string, held: UnsettledHeart): 'paid' | 'paid-notified' {
+  const notified = held.notified;
+  held.notified = true;
+  unsettledHearts.delete(messageId);
+  return notified ? 'paid-notified' : 'paid';
+}
 
 /**
  * Note ids with a heart run in progress in this tab, across every board, so a
@@ -371,12 +389,14 @@ function recordHeartPaymentFailure(
  * @param result - Outcome of {@link payFromWallet}.
  * @param input - Click snapshot: the message id and the session.
  * @param invoice - Spark invoice that was prepared.
+ * @param onPaid - Called once when this send pays later after the app stopped waiting.
  * @returns Paid, or why the heart was not sent.
  */
 async function finishPreparedPay(
   result: WalletPayResult,
   input: HeartTipInput,
   invoice: string,
+  onPaid?: (messageId: string) => void,
 ): Promise<HeartTipOutcome> {
   if (result.kind !== 'confirm') {
     recordHeartPaymentFailure(result.failure, input);
@@ -432,12 +452,21 @@ async function finishPreparedPay(
     return { kind: 'failed', reason: 'insufficient_balance' };
   }
   if (sentLate !== undefined) {
-    const held: UnsettledHeart = { invoice, sinceMs: Date.now(), sent: false };
+    const held: UnsettledHeart = {
+      invoice,
+      sinceMs: Date.now(),
+      sent: false,
+      notified: false,
+    };
     unsettledHearts.set(input.messageId, held);
     void sentLate.then((late) => {
       if (late) {
         recordHeart();
         held.sent = true;
+        if (!held.notified && onPaid !== undefined) {
+          held.notified = true;
+          onPaid(input.messageId);
+        }
       } else if (unsettledHearts.get(input.messageId) === held) {
         unsettledHearts.delete(input.messageId);
       }
@@ -456,16 +485,17 @@ async function finishPreparedPay(
  * payment not listed yet, or a list that cannot be read keeps it waiting.
  *
  * @param messageId - Note the heart is for.
- * @returns `clear` to send a new heart, `paid`, or `pending`.
+ * @returns `clear` to send a new heart, `paid`, `paid-notified`, or `pending`.
  */
-async function settleUnsettledHeart(messageId: string): Promise<'clear' | 'paid' | 'pending'> {
+async function settleUnsettledHeart(
+  messageId: string,
+): Promise<'clear' | 'paid' | 'paid-notified' | 'pending'> {
   const held = unsettledHearts.get(messageId);
   if (held === undefined) {
     return 'clear';
   }
   if (held.sent) {
-    unsettledHearts.delete(messageId);
-    return 'paid';
+    return settlePaidHeart(messageId, held);
   }
   let payments;
   try {
@@ -475,8 +505,7 @@ async function settleUnsettledHeart(messageId: string): Promise<'clear' | 'paid'
   }
   // `sentLate` may have reported the send while the list was being read.
   if (held.sent) {
-    unsettledHearts.delete(messageId);
-    return 'paid';
+    return settlePaidHeart(messageId, held);
   }
   const match = payments.find(
     (payment) => payment.direction === 'sent' && payment.info.invoice === held.invoice,
@@ -491,8 +520,12 @@ async function settleUnsettledHeart(messageId: string): Promise<'clear' | 'paid'
   if (match.status === 'pending') {
     return 'pending';
   }
+  const completed = match.status === 'completed';
+  if (completed) {
+    held.notified = true;
+  }
   unsettledHearts.delete(messageId);
-  return match.status === 'completed' ? 'paid' : 'clear';
+  return completed ? 'paid' : 'clear';
 }
 
 /**
@@ -501,11 +534,13 @@ async function settleUnsettledHeart(messageId: string): Promise<'clear' | 'paid'
  *
  * @param sparkInvoice - The api's fee-free Spark invoice for this heart.
  * @param input - Click snapshot, including unlock eligibility.
+ * @param onPaid - Called once when this send pays later after the app stopped waiting.
  * @returns Paid, or why the heart was not sent.
  */
 async function payHeartInvoice(
   sparkInvoice: string,
   input: HeartTipInput,
+  onPaid?: (messageId: string) => void,
 ): Promise<HeartTipOutcome> {
   const first = await payFromWallet({ type: 'input', input: sparkInvoice });
   if (first.kind === 'unlock') {
@@ -513,13 +548,13 @@ async function payHeartInvoice(
       const unlocked = await unlockWalletPhrase();
       if (unlocked === 'unlocked') {
         const second = await payFromWallet({ type: 'input', input: sparkInvoice });
-        return finishPreparedPay(second, input, sparkInvoice);
+        return finishPreparedPay(second, input, sparkInvoice, onPaid);
       }
     }
     recordHeartPaymentFailure(first.failure, input);
     return { kind: 'failed', reason: 'payment_failed' };
   }
-  return finishPreparedPay(first, input, sparkInvoice);
+  return finishPreparedPay(first, input, sparkInvoice, onPaid);
 }
 
 /**
@@ -542,10 +577,14 @@ async function payHeartInvoice(
  * clock cannot hide the shot.
  *
  * @param input - Click snapshot for one `messageId`.
+ * @param onPaid - Called once when a send that timed out later pays.
  * @returns `noop`, `paid`, or why the heart was not sent.
  */
-export async function sendHeartTip(input: HeartTipInput): Promise<HeartTipOutcome> {
-  const outcome = await runHeartTip(input);
+export async function sendHeartTip(
+  input: HeartTipInput,
+  onPaid?: (messageId: string) => void,
+): Promise<HeartTipOutcome> {
+  const outcome = await runHeartTip(input, onPaid);
   if (outcome.kind === 'failed' && outcome.reason !== 'no_balance') {
     reportHeartFailure(input.messageId, outcome.reason);
   }
@@ -556,9 +595,13 @@ export async function sendHeartTip(input: HeartTipInput): Promise<HeartTipOutcom
  * The checks and the payment of {@link sendHeartTip}, without the report.
  *
  * @param input - Click snapshot for one `messageId`.
+ * @param onPaid - Called once when a send that timed out later pays.
  * @returns `noop`, `paid`, or why the heart was not sent.
  */
-async function runHeartTip(input: HeartTipInput): Promise<HeartTipOutcome> {
+async function runHeartTip(
+  input: HeartTipInput,
+  onPaid?: (messageId: string) => void,
+): Promise<HeartTipOutcome> {
   if (input.sessionToken === null || input.readOnly) {
     return { kind: 'noop' };
   }
@@ -583,7 +626,7 @@ async function runHeartTip(input: HeartTipInput): Promise<HeartTipOutcome> {
   }
   heartsInFlight.add(input.messageId);
   try {
-    return await invoiceAndPayHeart(input.messageId, input.sessionToken, input);
+    return await invoiceAndPayHeart(input.messageId, input.sessionToken, input, onPaid);
   } finally {
     heartsInFlight.delete(input.messageId);
   }
@@ -596,16 +639,21 @@ async function runHeartTip(input: HeartTipInput): Promise<HeartTipOutcome> {
  * @param messageId - Note the heart is for.
  * @param sessionToken - Bearer session.
  * @param input - Click snapshot.
+ * @param onPaid - Called once when a send that timed out later pays.
  * @returns Paid, or why the heart was not sent.
  */
 async function invoiceAndPayHeart(
   messageId: string,
   sessionToken: string,
   input: HeartTipInput,
+  onPaid?: (messageId: string) => void,
 ): Promise<HeartTipOutcome> {
   const held = await settleUnsettledHeart(messageId);
   if (held === 'paid') {
     return { kind: 'paid' };
+  }
+  if (held === 'paid-notified') {
+    return { kind: 'paid', notified: true };
   }
   if (held === 'pending') {
     return { kind: 'failed', reason: 'timeout_pending' };
@@ -630,7 +678,7 @@ async function invoiceAndPayHeart(
   if (typeof invoice.sparkInvoice !== 'string' || invoice.sparkInvoice === '') {
     return { kind: 'failed', reason: 'heart_unavailable' };
   }
-  return payHeartInvoice(invoice.sparkInvoice, input);
+  return payHeartInvoice(invoice.sparkInvoice, input, onPaid);
 }
 
 /**
@@ -946,9 +994,11 @@ export function useHeartTip(options: {
         }, HEART_TIP_PLUS_ONE_MS);
         timersRef.current.set(messageId, timer);
       }
-      void sendHeartTip(input).then((outcome) => {
+      void sendHeartTip(input, onPaid).then((outcome) => {
         if (outcome.kind === 'paid') {
-          onPaid?.(messageId);
+          if (outcome.notified !== true) {
+            onPaid?.(messageId);
+          }
           return;
         }
         const sent = sentRef.current;

@@ -307,10 +307,39 @@ describe('SettingsScreen', () => {
   it.each(['', '0', '1.5', '10000001'])('keeps the invalid heart amount %p local', (value) => {
     renderWithLocale(<SettingsScreen />);
     const wallet = screen.getByRole('region', { name: 'Wallet' });
-    fireEvent.change(within(wallet).getByLabelText('Heart amount'), { target: { value } });
-    fireEvent.click(within(wallet).getByRole('button', { name: 'Save' }));
+    const field = within(wallet).getByLabelText('Heart amount');
+    const save = within(wallet).getByRole('button', { name: 'Save' }) as HTMLButtonElement;
+    fireEvent.change(field, { target: { value } });
+    expect(save.disabled).toBe(true);
+    expect(field.getAttribute('aria-invalid')).toBe('true');
+    expect(field.getAttribute('aria-describedby')).toBe('heart-sats-error');
     expect(setHeartSats).not.toHaveBeenCalled();
     expect(within(wallet).getByText('Enter a whole number from 1 to 10,000,000.')).toBeTruthy();
+    fireEvent.click(save);
+    expect(setHeartSats).not.toHaveBeenCalled();
+  });
+
+  it('disables Save while the heart amount is being saved', async () => {
+    let finish: ((value: Account) => void) | undefined;
+    vi.mocked(setHeartSats).mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          finish = resolve;
+        }),
+    );
+    renderWithLocale(<SettingsScreen />);
+    const wallet = screen.getByRole('region', { name: 'Wallet' });
+    const save = within(wallet).getByRole('button', { name: 'Save' }) as HTMLButtonElement;
+    fireEvent.change(within(wallet).getByLabelText('Heart amount'), { target: { value: '21' } });
+    expect(save.disabled).toBe(false);
+    fireEvent.click(save);
+    expect(setHeartSats).toHaveBeenCalledWith('sess', 21);
+    expect(save.disabled).toBe(true);
+    await act(async () => {
+      finish?.({ ...account, heartSats: 21 });
+      await Promise.resolve();
+    });
+    expect(save.disabled).toBe(false);
   });
 
   it('shows the server error and rolls back when saving the heart amount fails', async () => {

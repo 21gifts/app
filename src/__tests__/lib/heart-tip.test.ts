@@ -1362,6 +1362,82 @@ describe('useHeartTip', () => {
     expect(onPaid).toHaveBeenCalledWith('m1');
   });
 
+  it('calls onPaid once when a timed-out heart pays late', async () => {
+    let late: ((sent: boolean) => void) | undefined;
+    const sentLate = new Promise<boolean>((resolve) => {
+      late = resolve;
+    });
+    const onPaid = vi.fn();
+    vi.mocked(postMessageInvoice).mockResolvedValue(HEART_INVOICE);
+    vi.mocked(payFromWallet).mockResolvedValue({
+      kind: 'confirm',
+      amountSats: 1,
+      feeSats: 0,
+      method: 'spark',
+      send: async () => ({ kind: 'failed', failure: TIMEOUT, sentLate }),
+    });
+    const { result } = renderHook(() => useHeartTip({ readOnly: false, onPaid }));
+    await clickHeart(result, 'h-late-paid');
+    expect(onPaid).not.toHaveBeenCalled();
+    await act(async () => {
+      late?.(true);
+      await sentLate;
+      await Promise.resolve();
+    });
+    expect(onPaid).toHaveBeenCalledTimes(1);
+    expect(onPaid).toHaveBeenCalledWith('h-late-paid');
+    await clickHeart(result, 'h-late-paid');
+    expect(onPaid).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not call onPaid when a timed-out heart fails late', async () => {
+    const sentLate = Promise.resolve(false);
+    const onPaid = vi.fn();
+    vi.mocked(postMessageInvoice).mockResolvedValue(HEART_INVOICE);
+    vi.mocked(payFromWallet).mockResolvedValue({
+      kind: 'confirm',
+      amountSats: 1,
+      feeSats: 0,
+      method: 'spark',
+      send: async () => ({ kind: 'failed', failure: TIMEOUT, sentLate }),
+    });
+    const { result } = renderHook(() => useHeartTip({ readOnly: false, onPaid }));
+    await clickHeart(result, 'h-late-failed');
+    await act(async () => {
+      await sentLate;
+      await Promise.resolve();
+    });
+    expect(onPaid).not.toHaveBeenCalled();
+  });
+
+  it('calls onPaid once when the wallet list pays before sentLate resolves', async () => {
+    let late: ((sent: boolean) => void) | undefined;
+    const sentLate = new Promise<boolean>((resolve) => {
+      late = resolve;
+    });
+    const onPaid = vi.fn();
+    vi.mocked(postMessageInvoice).mockResolvedValue(HEART_INVOICE);
+    vi.mocked(payFromWallet).mockResolvedValue({
+      kind: 'confirm',
+      amountSats: 1,
+      feeSats: 0,
+      method: 'spark',
+      send: async () => ({ kind: 'failed', failure: TIMEOUT, sentLate }),
+    });
+    const { result } = renderHook(() => useHeartTip({ readOnly: false, onPaid }));
+    await clickHeart(result, 'h-late-list');
+    expect(onPaid).not.toHaveBeenCalled();
+    vi.mocked(listWalletPayments).mockResolvedValueOnce([sentPayment('spark1heart', 'completed')]);
+    await clickHeart(result, 'h-late-list');
+    expect(onPaid).toHaveBeenCalledTimes(1);
+    await act(async () => {
+      late?.(true);
+      await sentLate;
+      await Promise.resolve();
+    });
+    expect(onPaid).toHaveBeenCalledTimes(1);
+  });
+
   it('shows only the balance line, without vibrate, press, or +1, when the ready wallet is empty', async () => {
     vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
     const vibrate = vi.fn();

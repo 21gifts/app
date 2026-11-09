@@ -182,9 +182,9 @@ function HeartAmountRow(): ReactElement {
   const [saved, setSaved] = useState(false);
   const rateDay = useSpotRate(account !== null);
   const parsed = parseAmountDraft(shownUnit, draft, rateDay, fiat);
-  const nextSats = parsed.kind === 'sats' ? parsed.sats : null;
-  // `parseAmountDraft` already returns a safe whole-sat number or no number.
-  const valid = nextSats !== null && nextSats >= 1 && nextSats <= MAX_HEART_SATS;
+  // Invalid drafts fall back to 0, which is outside the allowed range.
+  const nextSats = parsed.kind === 'sats' ? parsed.sats : 0;
+  const valid = nextSats >= 1 && nextSats <= MAX_HEART_SATS;
   const error = touched && !valid ? t('settings.heartAmountError') : null;
 
   const syncedSats = useRef(savedSats);
@@ -201,11 +201,6 @@ function HeartAmountRow(): ReactElement {
   const submit = async (): Promise<void> => {
     /* v8 ignore next 3 -- the screen renders this row only with a session and an account */
     if (session === null || account === null) {
-      return;
-    }
-    if (nextSats === null || !valid) {
-      setSaved(false);
-      setTouched(true);
       return;
     }
     setBusy(true);
@@ -255,7 +250,7 @@ function HeartAmountRow(): ReactElement {
             {t('settings.heartAmountSaveError')}
           </p>
         ) : null}
-        <Button type="submit" size="lg" disabled={busy}>
+        <Button type="submit" size="lg" disabled={busy || !valid}>
           {t('name.save')}
         </Button>
       </form>

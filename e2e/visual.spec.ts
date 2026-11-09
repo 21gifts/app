@@ -10173,6 +10173,74 @@ test.describe('onboarding screens', () => {
     await shotScreen(page, 'state-welcome-expanded-hearts');
   });
 
+  test('state /welcome expanded-hearts-role', async ({ page }) => {
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          name: 'Ada',
+          location: null,
+          username: 'alice',
+          lightningAddress: null,
+          rulesAgreedAt: 1_700_000_001,
+          viewKey: 'a'.repeat(64),
+          aboutMe: null,
+          setup: null,
+          missing: [],
+          heartSats: 21,
+        }),
+      });
+    });
+    await fulfillMixedSatsMessages(page, { m3: 2 });
+    await page.route('**/forum/messages/**/replies', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [],
+          hearts: [
+            {
+              accountId: 'acc_grace',
+              name: 'Grace',
+              role: 'moderator',
+              sats: 21,
+              createdAt: '2026-08-28T12:07:00.000Z',
+              amountUsd: '0.02',
+              amountChf: null,
+              amountEur: null,
+              amountPhp: null,
+            },
+            {
+              accountId: 'acc_deleted',
+              name: '',
+              sats: 1000,
+              createdAt: '2026-08-28T12:06:00.000Z',
+              amountUsd: null,
+              amountChf: null,
+              amountEur: null,
+              amountPhp: null,
+            },
+          ],
+        }),
+      });
+    });
+    await page.goto('/welcome');
+    await page.getByText('Thank you both — that helps.').click();
+    await expect(page.getByRole('heading', { name: 'Hearts (2)' })).toBeVisible();
+    const hearts = page.getByRole('region', { name: 'Hearts (2)' });
+    await hearts.getByRole('button', { name: 'Moderator' }).click();
+    await expect(
+      hearts.getByText('This person helps keep the living room in order.'),
+    ).toBeVisible();
+    await page.getByRole('heading', { name: 'Hearts (2)' }).scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-welcome-expanded-hearts-role');
+  });
+
   test('state /welcome expanded-gifts', async ({ page }) => {
     await page.addInitScript(() => {
       localStorage.setItem('21gifts.session', 'sess-e2e');
@@ -16942,6 +17010,150 @@ test.describe('onboarding screens', () => {
     await expect(page.getByRole('heading', { name: 'Hearts (2)' })).toBeVisible();
     await page.getByRole('heading', { name: 'Hearts (2)' }).scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-members-replies-open-hearts');
+  });
+
+  test('state /members replies-open-hearts-role', async ({ page }) => {
+    const memberId = '22222222-2222-4222-8222-222222222222';
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          name: 'Ada',
+          username: 'alice',
+          lightningAddress: null,
+          rulesAgreedAt: 1_700_000_001,
+          setup: null,
+          missing: [],
+          heartSats: 21,
+        }),
+      });
+    });
+    await page.route(`**/forum/members/${memberId}`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          id: memberId,
+          name: 'Carol',
+          location: null,
+          role: 'verified',
+          username: 'carol',
+          lightningAddress: 'member@21.gifts',
+          createdAt: '2026-01-15T12:00:00.000Z',
+          aboutMe: null,
+          profileMessage: {
+            id: '33333333-3333-4333-8333-333333333333',
+            accountId: memberId,
+            name: 'Carol',
+            text: 'Hello from my profile note.',
+            createdAt: '2026-08-01T10:00:00.000Z',
+            sats: 21,
+            payable: true,
+            hasPhoto: false,
+            role: 'verified',
+            replyCount: 0,
+            heartCount: 2,
+          },
+          postCount: 1,
+          replyCount: 1,
+        }),
+      });
+    });
+    await page.route('**/forum/messages/**/replies', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [
+            {
+              id: '66666666-6666-4666-8666-666666666666',
+              accountId: memberId,
+              name: 'Carol',
+              text: 'A reply from Carol.',
+              createdAt: '2026-08-03T10:00:00.000Z',
+              sats: 0,
+              payable: false,
+              hasPhoto: false,
+              hasVideo: false,
+              videoContentType: null,
+              role: 'verified',
+              replyCount: 0,
+              parentId: '33333333-3333-4333-8333-333333333333',
+            },
+          ],
+          hearts: [
+            {
+              accountId: 'acc_grace',
+              name: 'Grace',
+              role: 'verified',
+              sats: 21,
+              createdAt: '2026-08-03T10:07:00.000Z',
+              amountUsd: '0.02',
+              amountChf: null,
+              amountEur: null,
+              amountPhp: null,
+            },
+            {
+              accountId: 'acc_deleted',
+              name: '',
+              sats: 1000,
+              createdAt: '2026-08-03T10:06:00.000Z',
+              amountUsd: null,
+              amountChf: null,
+              amountEur: null,
+              amountPhp: null,
+            },
+          ],
+        }),
+      });
+    });
+    await page.route(`**/forum/members/${memberId}/posts`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [
+            {
+              id: '33333333-3333-4333-8333-333333333333',
+              accountId: memberId,
+              name: 'Carol',
+              text: 'Hello from my profile note.',
+              createdAt: '2026-08-01T10:00:00.000Z',
+              sats: 21,
+              payable: true,
+              hasPhoto: false,
+              role: 'verified',
+              replyCount: 0,
+              heartCount: 2,
+            },
+          ],
+        }),
+      });
+    });
+    await page.route(`**/forum/members/${memberId}/activity`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(EMPTY_ACTIVITY),
+      });
+    });
+    await page.goto(`/members/${memberId}`);
+    await page.getByRole('button', { name: '1 post' }).click();
+    await expect(page.getByText('Hello from my profile note.')).toBeVisible();
+    await page.getByRole('button', { name: 'Show reactions' }).click();
+    await expect(page.getByRole('heading', { name: 'Hearts (2)' })).toBeVisible();
+    const hearts = page.getByRole('region', { name: 'Hearts (2)' });
+    await hearts.getByRole('button', { name: 'Verified' }).click();
+    await expect(
+      hearts.getByText('A moderator has met this person in real life and confirmed they are real.'),
+    ).toBeVisible();
+    await page.getByRole('heading', { name: 'Hearts (2)' }).scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-members-replies-open-hearts-role');
   });
 
   test('state /members shops-open', async ({ page }) => {
@@ -24542,6 +24754,86 @@ test.describe('onboarding screens', () => {
     await expect(page.getByRole('heading', { name: 'Hearts (2)' })).toBeVisible();
     await page.getByRole('heading', { name: 'Hearts (2)' }).scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-messages-id-reply-hearts');
+  });
+
+  test('state /messages/[id] reply-hearts-role', async ({ page }) => {
+    const parentId = '11111111-1111-4111-8111-111111111111';
+    const replyId = '22222222-2222-4222-8222-222222222222';
+    const parent = {
+      id: parentId,
+      name: 'Ada',
+      text: 'Hello from Ada',
+      createdAt: '2026-08-28T12:00:00.000Z',
+      sats: 0,
+      payable: false,
+      hasPhoto: false,
+      role: 'basis',
+      replyCount: 1,
+      heartCount: 2,
+    };
+    const reply = {
+      id: replyId,
+      parentId,
+      name: 'Pater Severin',
+      text: '',
+      sats: 3000,
+      payable: false,
+      hasPhoto: false,
+      role: 'basis',
+      replyCount: 0,
+      createdAt: '2026-08-28T12:01:00.000Z',
+    };
+    await fulfillPublicThreadReplies(
+      page,
+      parentId,
+      [reply],
+      [
+        {
+          accountId: 'acc_grace',
+          name: 'Grace',
+          role: 'moderator',
+          sats: 21,
+          createdAt: '2026-08-28T12:07:00.000Z',
+          amountUsd: '0.02',
+          amountChf: null,
+          amountEur: null,
+          amountPhp: null,
+        },
+        {
+          accountId: 'acc_deleted',
+          name: '',
+          sats: 1000,
+          createdAt: '2026-08-28T12:06:00.000Z',
+          amountUsd: null,
+          amountChf: null,
+          amountEur: null,
+          amountPhp: null,
+        },
+      ],
+    );
+    await page.route(`**/public-messages/${replyId}`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(reply),
+      });
+    });
+    await page.route(`**/public-messages/${parentId}`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(parent),
+      });
+    });
+    await page.goto(`/messages/${replyId}`);
+    await expect(page.getByRole('heading', { name: 'Hearts (2)' })).toBeVisible();
+    const hearts = page.getByRole('region', { name: 'Hearts (2)' });
+    await hearts.getByRole('button', { name: 'Moderator' }).click();
+    await expect(
+      hearts.getByText('This person helps keep the living room in order.'),
+    ).toBeVisible();
+    await page.getByRole('heading', { name: 'Hearts (2)' }).scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-messages-id-reply-hearts-role');
   });
 
   test('state /messages/[id] reply-received', async ({ page }) => {
@@ -43988,6 +44280,56 @@ test.describe('settings states', () => {
     await expect(page.getByText('$0.02').first()).toBeVisible();
     await page.getByLabel('Heart amount').scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-settings-heart-amount');
+  });
+
+  test('settings heart-amount-invalid', async ({ page }) => {
+    await seedSettingsAccount(page, { heartSats: 21 });
+    await fulfillSpot(page);
+    await openSettings(page);
+    const wallet = page.getByRole('region', { name: 'Wallet' });
+    const field = wallet.getByLabel('Heart amount');
+    await field.fill('0');
+    await expect(wallet.getByText('Enter a whole number from 1 to 10,000,000.')).toBeVisible();
+    await expect(field).toHaveAttribute('aria-invalid', 'true');
+    await expect(wallet.getByRole('button', { name: 'Save' })).toBeDisabled();
+    await field.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-settings-heart-amount-invalid');
+  });
+
+  test('settings heart-amount-saved', async ({ page }) => {
+    await seedSettingsAccount(page, { heartSats: 1 });
+    await fulfillSpot(page);
+    await page.route(/\/me\/heart-sats$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ ...E2E_ACCOUNT, heartSats: 21 }),
+      });
+    });
+    await openSettings(page);
+    const wallet = page.getByRole('region', { name: 'Wallet' });
+    const field = wallet.getByLabel('Heart amount');
+    await field.fill('21');
+    await wallet.getByRole('button', { name: 'Save' }).click();
+    await expect(wallet.getByText('Saved: ₿21 per heart.')).toBeVisible();
+    await field.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-settings-heart-amount-saved');
+  });
+
+  test('settings heart-amount-error', async ({ page }) => {
+    await seedSettingsAccount(page, { heartSats: 1 });
+    await fulfillSpot(page);
+    await page.route(/\/me\/heart-sats$/, async (route) => {
+      await route.fulfill({ status: 500, body: '' });
+    });
+    await openSettings(page);
+    const wallet = page.getByRole('region', { name: 'Wallet' });
+    const field = wallet.getByLabel('Heart amount');
+    await field.fill('21');
+    await wallet.getByRole('button', { name: 'Save' }).click();
+    await expect(wallet.getByRole('alert')).toHaveText('Could not save the heart amount.');
+    await field.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-settings-heart-amount-error');
   });
 
   test('settings notification-level-gifted', async ({ page }) => {

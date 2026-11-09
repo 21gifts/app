@@ -1704,6 +1704,24 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/settings:heart-amount-invalid",
+    "label": "/settings heart-amount-invalid",
+    "visual": "state-settings-heart-amount-invalid",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/settings:heart-amount-saved",
+    "label": "/settings heart-amount-saved",
+    "visual": "state-settings-heart-amount-saved",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/settings:heart-amount-error",
+    "label": "/settings heart-amount-error",
+    "visual": "state-settings-heart-amount-error",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/settings:notification-level-gifted",
     "label": "/settings notification-level-gifted",
     "visual": "state-settings-notification-level-gifted",
@@ -4866,6 +4884,12 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/members/[accountId]:replies-open-hearts-role",
+    "label": "/members/[accountId] replies-open-hearts-role",
+    "visual": "state-members-replies-open-hearts-role",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/members/[accountId]:shops-open",
     "label": "/members/[accountId] shops-open",
     "visual": "state-members-shops-open",
@@ -7908,6 +7932,12 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/welcome:expanded-hearts-role",
+    "label": "/welcome expanded-hearts-role",
+    "visual": "state-welcome-expanded-hearts-role",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/welcome:expanded-gifts",
     "label": "/welcome expanded-gifts",
     "visual": "state-welcome-expanded-gifts",
@@ -9879,6 +9909,12 @@
     "id": "/messages/[id]:reply-hearts",
     "label": "/messages/[id] reply-hearts",
     "visual": "state-messages-id-reply-hearts",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/messages/[id]:reply-hearts-role",
+    "label": "/messages/[id] reply-hearts-role",
+    "visual": "state-messages-id-reply-hearts-role",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {

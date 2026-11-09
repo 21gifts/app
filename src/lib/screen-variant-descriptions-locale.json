@@ -1779,6 +1779,11 @@
     "es": "En el perfil del miembro, las publicaciones están abiertas y la nota de perfil Hello from my profile note. muestra ♡ 2. Mostrar reacciones está pulsado. Bajo la tarjeta de respuesta aparece Corazones (2): Grace con la pastilla Verificado y ₿21, después una cuenta eliminada con el marcador y ₿1'000, cada una con su hora y la más reciente primero.",
     "fil": "Sa profile ng miyembro, bukas ang mga post at ang tala sa profile na Hello from my profile note. ay nagpapakita ng ♡ 2. Nakapindot ang Ipakita ang mga reaksyon. Sa ilalim ng kard ng sagot ang Mga puso (2): si Grace na may pildorang Beripikado at ₿21, pagkatapos ang natanggal na account na may placeholder at ₿1'000, bawat isa may oras at pinakabago muna."
   },
+  "/members/[accountId]:replies-open-hearts-role": {
+    "de": "Im Mitgliederprofil ist die Herzen-Liste unter der Antwort sichtbar. Die Rolle Verifiziert in Graces Herz-Zeile ist gedrückt, und darunter steht der Hinweis Ein Moderator hat diese Person persönlich getroffen und bestätigt, dass sie echt ist. Die übrigen Zeilen bleiben unverändert.",
+    "es": "En el perfil del miembro se ve la lista Corazones bajo la respuesta. La pastilla Verificado de la fila de Grace está pulsada y debajo aparece Un moderador ha conocido a esta persona en la vida real y ha confirmado que es real. Las demás filas no cambian.",
+    "fil": "Nakikita sa profile ng miyembro ang listahang Mga puso sa ilalim ng sagot. Nakapindot ang pill na Beripikado sa hilera ni Grace, at nasa ibaba ang Personal na nakilala ng isang moderator ang taong ito at kinumpirmang totoo siya. Hindi nagbabago ang ibang hilera."
+  },
   "/members/[accountId]:replies-truncated": {
     "de": "Identitätskarte; Antworten-Zähler 3 gedrückt; eine aufgeführte Antwort; gedämpftes Zeigt die neuesten 1 von 3.; keine angeheftete Profilnotiz-Karte.",
     "es": "Tarjeta de identidad; contador de respuestas 3 pulsado; una respuesta listada; atenuado Mostrando las últimas 1 de 3.; ninguna tarjeta de nota de perfil fijada.",
@@ -2438,6 +2443,11 @@
     "de": "Der öffentliche Beitrag ist geöffnet und die Reaktionen sind aufgeklappt. Die Elternnotiz zeigt ♡ 2. Unter den Antworten steht die Sektion Herzen mit dem Namen Grace als Profil-Link, dem Rollen-Pill Moderator, dem exakten Betrag ₿21 und dem Zeitstempel; darunter ein gelöschtes Konto mit dem übersetzten Platzhalter und ₿1'000.",
     "es": "La publicación pública está abierta y las reacciones están desplegadas. La nota principal muestra ♡ 2. Bajo las respuestas aparece la sección Corazones con Grace enlazada a su perfil, la pastilla Moderador, el importe exacto ₿21 y la hora; debajo, una cuenta eliminada con el marcador traducido y ₿1'000.",
     "fil": "Bukas ang pampublikong post at naka-expand ang mga reaksyon. Ang pangunahing tala ay nagpapakita ng ♡ 2. Sa ilalim ng mga sagot ang seksyong Mga puso na may Grace na naka-link sa profile, ang pildorang Moderator, ang eksaktong ₿21 at oras; sa ibaba ang natanggal na account na may isinaling placeholder at ₿1'000."
+  },
+  "/messages/[id]:reply-hearts-role": {
+    "de": "Der öffentliche Beitrag zeigt die aufgeklappte Herzen (2)-Liste. Die Rolle Moderator in Graces Zeile ist gedrückt, und darunter steht der Hinweis Diese Person hilft, das Wohnzimmer in Ordnung zu halten. Die gelöschte Zeile darunter behält ihren Platzhalter und ₿1'000.",
+    "es": "La publicación pública muestra la lista Corazones (2) desplegada. La pastilla Moderador de la fila de Grace está pulsada y debajo aparece Esta persona ayuda a mantener el salón en orden. La fila eliminada de abajo conserva su marcador y ₿1'000.",
+    "fil": "Ipinapakita ng pampublikong post ang nakabukas na listahang Mga puso (2). Nakapindot ang pill na Moderator sa hilera ni Grace, at nasa ibaba ang Tumutulong ang taong ito na panatilihing maayos ang living room. Ang natanggal na hilera sa ibaba ay may placeholder at ₿1'000 pa rin."
   },
   "/messages/[id]:reply-rate-loading": {
     "de": "Angemeldeter Verlauf. Der Reaktionsbetrag ist 1.00 USD, und Senden wurde gedrückt, während der Kurs des Geschenktags noch lädt. Der Eingabebereich zeigt Der Wechselkurs für USD wird noch geladen. Senden ist deaktiviert.",
@@ -4328,6 +4338,21 @@
     "de": "Einstellungen mit der Wallet-Sektion: unter Standardbetrag steht Herz-Betrag. Die kleine Überschrift steht über dem AmountEntry mit dem gespeicherten Wert 21, dem ₿/Fiat-Schalter neben dem Feld und dem Fiat-Zähler $0.02 darunter; es folgen der Hinweis, dass jedes gedrückte Herz diesen Betrag sendet, der Beitrag aber nur ein Herz zählt, und Speichern.",
     "es": "Ajustes con la sección Wallet: bajo Importe predeterminado aparece Importe del corazón. El pequeño encabezado está sobre el AmountEntry con el valor guardado 21, el selector ₿/fiat junto al campo y el contador fiat $0.02 debajo; después la nota de que cada corazón pulsado envía ese importe aunque la publicación cuente solo un corazón, y Guardar.",
     "fil": "Mga setting na may seksyong Wallet: sa ilalim ng Default na halaga ang Halaga ng puso. Ang maliit na pamagat ay nasa itaas ng AmountEntry na may naka-save na 21, ang ₿/fiat na switch sa tabi ng field at ang fiat counter na $0.02 sa ibaba; pagkatapos ang paalala na ganoon kalaking halaga ang ipinapadala ng bawat pusong pinindot kahit isang puso lang ang bilang sa post, at I-save."
+  },
+  "/settings:heart-amount-invalid": {
+    "de": "Einstellungen, Wallet: Im Feld Herz-Betrag steht 0. Der live unter dem Feld stehende Fehler Gib eine ganze Zahl von 1 bis 10.000.000 ein. ist sichtbar, das Feld meldet aria-invalid, und Speichern ist deaktiviert.",
+    "es": "Ajustes, Wallet: el campo Importe del corazón contiene 0. El error en vivo bajo el campo Introduce un número entero de 1 a 10.000.000. está visible, el campo informa aria-invalid y Guardar está desactivado.",
+    "fil": "Mga setting, Wallet: ang field na Halaga ng puso ay may 0. Nakikita ang live na error sa ilalim ng field na Maglagay ng buong numero mula 1 hanggang 10,000,000., nag-uulat ang field ng aria-invalid, at naka-disable ang I-save."
+  },
+  "/settings:heart-amount-saved": {
+    "de": "Einstellungen, Wallet: Der Herz-Betrag 21 wurde gespeichert. Unter dem Formular steht die Erfolgsmeldung Gespeichert: ₿21 pro Herz., Speichern ist wieder aktiviert und das Feld zeigt 21.",
+    "es": "Ajustes, Wallet: se guardó el importe del corazón 21. Bajo el formulario aparece el mensaje de éxito Guardado: ₿21 por corazón., Guardar vuelve a estar activo y el campo muestra 21.",
+    "fil": "Mga setting, Wallet: na-save ang halaga ng puso na 21. Sa ibaba ng form ang mensaheng tagumpay na Naka-save: ₿21 bawat puso., aktibo muli ang I-save at 21 ang nasa field."
+  },
+  "/settings:heart-amount-error": {
+    "de": "Einstellungen, Wallet: Das Speichern des Herz-Betrags ist fehlgeschlagen, nachdem POST /me/heart-sats mit 500 geantwortet hat. Die rote role=\"alert\"-Meldung Der Herz-Betrag konnte nicht gespeichert werden. steht unter dem Hinweis, und das Feld bleibt bearbeitbar.",
+    "es": "Ajustes, Wallet: falló el guardado del importe del corazón después de que POST /me/heart-sats respondiera 500. El mensaje rojo role=\"alert\" No se pudo guardar el importe del corazón. aparece bajo la nota y el campo sigue editable.",
+    "fil": "Mga setting, Wallet: nabigo ang pag-save ng halaga ng puso matapos tumugon ang POST /me/heart-sats ng 500. Ang pulang role=\"alert\" na mensaheng Hindi na-save ang halaga ng puso. ay nasa ilalim ng paalala, at nae-edit pa rin ang field."
   },
   "/settings:heart-notify-error": {
     "de": "Abschnitt Benachrichtigungen mit Speicherfehler role=\"alert\" nach dem Stubben von POST /me/heart-notifications auf 500 und dem Klick auf Aus in Herzen. Text Die Herzen-Einstellung konnte nicht gespeichert werden.",
@@ -7088,6 +7113,11 @@
     "de": "Im Forum ist die Notiz von Ada aufgeklappt und zeigt ♡ 2. Unter den Antworten steht die Sektion Herzen (2) mit Grace, ihrer Rolle Moderator und ₿21 sowie einem gelöschten Konto mit ₿1'000; jede Zeile zeigt Name, exakten Betrag und Zeit, neueste zuerst.",
     "es": "En el foro, la nota de Ada está expandida y muestra ♡ 2. Bajo las respuestas aparece la sección Corazones (2) con Grace, su rol Moderador y ₿21, y una cuenta eliminada con ₿1'000; cada fila muestra nombre, importe exacto y hora, la más reciente primero.",
     "fil": "Sa forum, naka-expand ang tala ni Ada at nagpapakita ng ♡ 2. Sa ilalim ng mga sagot ang seksyong Mga puso (2) na may Grace, ang role niyang Moderator at ₿21, at isang natanggal na account na may ₿1'000; ipinapakita ng bawat hilera ang pangalan, eksaktong halaga at oras, pinakabago muna."
+  },
+  "/welcome:expanded-hearts-role": {
+    "de": "Im Forum ist die Notiz von Ada aufgeklappt, und in der Herzen (2)-Liste ist die Rolle Moderator in Graces Zeile gedrückt. Darunter steht der Hinweis Diese Person hilft, das Wohnzimmer in Ordnung zu halten. Die Beträge und Zeiten der Zeilen bleiben sichtbar.",
+    "es": "En el foro, la nota de Ada está expandida y en la lista Corazones (2) está pulsada la pastilla Moderador de la fila de Grace. Debajo aparece Esta persona ayuda a mantener el salón en orden. Los importes y las horas de las filas siguen visibles.",
+    "fil": "Sa forum, naka-expand ang tala ni Ada, at sa listahang Mga puso (2) ay nakapindot ang pill na Moderator sa hilera ni Grace. Nasa ibaba ang Tumutulong ang taong ito na panatilihing maayos ang living room. Nakikita pa rin ang mga halaga at oras ng mga hilera."
   },
   "/welcome:expanded-donated": {
     "de": "Adas Notiz ist aufgeklappt. Cyrills Antwort hat keinen Text. Sie zeigt senden ₿21'000 · $18.14 und keine Empfangen-Zeile. Die Notizfußzeile ist ₿21'000 · $18.14, dasselbe Geschenk, keine zweite Zahlung. Nichts an dieser Antwort wird in ₿21'100 eingerechnet.",

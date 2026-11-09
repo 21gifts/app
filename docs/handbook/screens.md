@@ -1648,6 +1648,24 @@ After pressing the fiat code under **Default amount**: it is pressed instead of 
 
 ![21.gifts settings heart amount](images/settings-heart-amount.png)
 
+### Variant: heart-amount-invalid
+
+**Heart amount** holds **0**. The live error **Enter a whole number from 1 to 10,000,000.** sits under the field, the field reports `aria-invalid`, and **Save** is disabled. The hint under the field stays visible.
+
+![21.gifts settings heart amount invalid](images/settings-heart-amount-invalid.png)
+
+### Variant: heart-amount-saved
+
+After typing **21** and pressing **Save**, the success line **Saved: ₿21 per heart.** sits under the form. The field still shows **21**, and **Save** is enabled again.
+
+![21.gifts settings heart amount saved](images/settings-heart-amount-saved.png)
+
+### Variant: heart-amount-error
+
+**Save** failed because `POST /me/heart-sats` answered 500. The red `role="alert"` line **Could not save the heart amount.** sits under the hint, the field keeps its value and stays editable.
+
+![21.gifts settings heart amount error](images/settings-heart-amount-error.png)
+
 ### Variant: notification-level-gifted
 
 **Notifications** section with the stored level active: Posts shows All, Only to me, Only with a gift, and Off on the same line as the label, with Only with a gift pressed.
@@ -3966,6 +3984,12 @@ On **All**, click **Show reactions** on a note — the note's ₿ amount and the
 On **All**, expand Ada's note, which shows **♡ 2**. Under the replies, **Hearts (2)** lists Grace with her Moderator pill and **₿21** and then a deleted account with **₿1'000**, each with its time and newest first. A note without paid hearts shows no Hearts section.
 
 ![21.gifts welcome expanded hearts](images/welcome-expanded-hearts.png)
+
+### Variant: expanded-hearts-role
+
+On **All**, expand Ada's note. In **Hearts (2)**, press Grace's **Moderator** pill; the hint **This person helps keep the living room in order.** appears under that heart row. The sats and times in the list stay visible.
+
+![21.gifts welcome expanded hearts role](images/welcome-expanded-hearts-role.png)
 
 ### Variant: expanded-gifts
 
@@ -7073,6 +7097,12 @@ Identity card; replies pressed; no pinned profile-note card; reply card 'A reply
 Identity card; posts pressed; the profile note **Hello from my profile note.** shows **♡ 2**; **Show reactions** is pressed; the reply card **A reply from Carol.**; below it **Hearts (2)** with Grace's Verified pill and **₿21**, then a deleted account and **₿1'000**, newest first with times.
 
 ![21.gifts member replies open hearts](images/members-replies-open-hearts.png)
+
+### Variant: replies-open-hearts-role
+
+The same Hearts list with Grace's **Verified** pill pressed. The hint **A moderator has met this person in real life and confirmed they are real.** appears under her heart row. The deleted row below keeps its placeholder and **₿1'000**.
+
+![21.gifts member replies open hearts role](images/members-replies-open-hearts-role.png)
 
 ### Variant: shops-open
 
@@ -10394,6 +10424,12 @@ Same thread opened on the reply UUID. Parent + gift; permalink target ring (`dat
 Unsigned public thread with replies expanded. The parent note shows **♡ 2**. **Hearts (2)** lists Grace, linked to `/members/acc_grace`, with her Moderator pill and **₿21**, then a deleted account with the translated placeholder and **₿1'000**. Each row shows its time; an empty hearts list renders no section.
 
 ![21.gifts public message reply hearts](images/messages-id-reply-hearts.png)
+
+### Variant: reply-hearts-role
+
+The same unsigned thread with Grace's **Moderator** pill in **Hearts (2)** pressed. The hint **This person helps keep the living room in order.** appears under her row. The deleted account below keeps its placeholder and **₿1'000**.
+
+![21.gifts public message reply hearts role](images/messages-id-reply-hearts-role.png)
 
 ### Variant: reply-received
 
