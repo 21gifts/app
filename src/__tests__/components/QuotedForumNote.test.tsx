@@ -867,6 +867,30 @@ describe('ForumQuotedBody', () => {
     expect(screen.queryByText('Moderator')).toBeNull();
   });
 
+  it('shows the Fond pill for a fond quoted author', async () => {
+    const fondNote: ForumMessage = {
+      ...quotedNote,
+      name: 'Fiona',
+      role: 'fond',
+      hasPhoto: false,
+      photoCount: 0,
+      text: 'fund note',
+    };
+    renderWithLocale(
+      <ForumQuotedBody
+        text={QUOTED_URL}
+        knownNotes={[fondNote]}
+        excludeId={PARENT_ID}
+        rateDay={null}
+        fiat="USD"
+      />,
+    );
+    await waitFor(() => {
+      expect(screen.getByText('fund note')).toBeTruthy();
+    });
+    expect(screen.getByText('Fond')).toBeTruthy();
+  });
+
   it('collapses long remaining text behind Show more on the feed', () => {
     const text = `${'a'.repeat(560)} TAILTOKEN`;
     renderWithLocale(

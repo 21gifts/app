@@ -2700,7 +2700,7 @@ Builds the country list of the Shops filter from the pins of `GET /forum/message
 
 ## Function: layoutTrustChain
 
-- **Purpose:** Positions Trust Chain nodes without a graph library. Roots sit in one row. A person with a single next person sits to their right. Several people hanging off one person stack top to bottom (`TRUST_NODE_VGAP`) by role (founder, then the moderator stack rank (initiator shares that rank), then verified; same-rank siblings keep edge order), not side by side and not as a pyramid of levels.
+- **Purpose:** Positions Trust Chain nodes without a graph library. Roots sit in one row. A person with a single next person sits to their right. Several people hanging off one person stack top to bottom (`TRUST_NODE_VGAP`) by display role (founder, initiator, fond, moderator, then verified; same-rank siblings keep edge order), not side by side and not as a pyramid of levels.
 - **Inputs:** `TrustChain` `{ nodes, edges }`.
 - **Returns / side effects:** `{ nodes, edges, width, height }` with pixel positions. Empty input is zero size.
 - **Used by:** `TrustChainDiagram`.
@@ -6211,8 +6211,8 @@ The class exists so the composer can tell a refused free first post from any oth
 ## Function: roleRank
 
 - **Purpose:** Numeric rank of a role from an explicit rank map (not `ROLE_ORDER.indexOf`), for use by `roleAtLeast`.
-- **Inputs:** `role` — one of `'basis' | 'verified' | 'moderator' | 'initiator' | 'founder'`.
-- **Returns / side effects:** Integer 0 through 3 (basis 0, verified 1, moderator 2, initiator 2, founder 3). Not `ROLE_ORDER`'s index (initiator is not 3, founder is not 4). Pure, no side effects.
+- **Inputs:** `role` — one of `'basis' | 'verified' | 'moderator' | 'fond' | 'initiator' | 'founder'`.
+- **Returns / side effects:** Integer 0 through 5 (basis 0, verified 1, moderator 2, fond 3, initiator 4, founder 5), read from the explicit rank map. Pure, no side effects.
 - **Used by:** `roleAtLeast`.
 
 ## Function: roleAtLeast
@@ -6220,11 +6220,11 @@ The class exists so the composer can tell a refused free first post from any oth
 - **Purpose:** Product-rule primitive for every viewer permission/visibility check: true when `role` meets or exceeds `min` by numeric rank. An equal rank meets the minimum. A missing account (`null`/`undefined` role) is never at least any role.
 - **Inputs:** `role` — live account role, or `null`/`undefined` when the account snapshot is absent; `min` — inclusive minimum role.
 - **Returns / side effects:** Boolean. Pure, no side effects; delegates to `roleRank`.
-- **Used by:** `ModerateScreen`, `ModeratorGroupScreen`, `InboxLoader`, `HiddenNotesScreen`, `ProposalsScreen`, `FundingApplicationsScreen`, `FundingApplicationDetailScreen`, `FundingStatusCard`, `DeletePostControl`, `ForumLoader`, `MemberProfileScreen`, `MemberTrustActions`, `SignedInChrome`, `useUnreadCount`, `isReplyPaymentExempt`.
+- **Used by:** `ModerateScreen`, `ModeratorGroupScreen`, `InboxLoader`, `HiddenNotesScreen`, `ProposalsScreen`, `FundingApplicationsScreen`, `FundingApplicationDetailScreen`, `FundingStatusCard`, `DeletePostControl`, `HabitComments`, `ForumLoader`, `MemberProfileScreen`, `MemberTrustActions`, `SignedInChrome`, `useUnreadCount`, `isReplyPaymentExempt`.
 
 ## Function: canEditDailyPayoutRoster
 
-- **Purpose:** True only for `initiator` and `founder`. This is not `roleAtLeast`: initiator and moderator share rank 2, and the daily payout roster stays closed to moderators. `null` and `undefined` are false.
+- **Purpose:** True only for `initiator` and `founder`. This is not `roleAtLeast`: it is the named exact-role exception, so the daily payout roster stays closed to moderators and `fond`. `null` and `undefined` are false.
 - **Inputs:** `role` — live account role, or `null`/`undefined` when the account snapshot is absent.
 - **Returns / side effects:** Boolean. Pure, no side effects.
 - **Used by:** `GrantsScreen`, `DailyPaymentCommentScreen`, `DailyPaymentAmountsScreen`.
@@ -6252,7 +6252,7 @@ The class exists so the composer can tell a refused free first post from any oth
 
 ## Function: verifiedChipHiddenByStaffTag
 
-- **Purpose:** True only when a Verified role pill would be redundant beside the Software Developer staff label. A staff feature tag is shown only for someone already treated as verified, so the Verified pill is omitted. Founder, Moderator, and Initiator pills stay. An absent tag does not hide Verified. An External (Nostr) pill is not shown in place of a hidden Verified pill.
+- **Purpose:** True only when a Verified role pill would be redundant beside the Software Developer staff label. A staff feature tag is shown only for someone already treated as verified, so the Verified pill is omitted. Founder, Moderator, Fond, and Initiator pills stay. An absent tag does not hide Verified. An External (Nostr) pill is not shown in place of a hidden Verified pill.
 - **Inputs:** `role` — live account role string; `staffTag` — staff feature tag when present, otherwise null or omitted. Only `software_developer` hides Verified.
 - **Returns / side effects:** Boolean. True only for role `verified` with staff tag `software_developer`. Pure, no side effects.
 - **Used by:** `ForumBoard`, `MemberProfileScreen`, `QuotedForumNote`.
@@ -6729,9 +6729,9 @@ The class exists so the composer can tell a refused free first post from any oth
 
 ## Function: GrantsScreen
 
-- **Purpose:** Signed-in grants page. Renders `FundingStatusCard` (verification / 21 gifts grant). When the account is non-null, a secondary large **Goals** `ButtonLink` (`funding.goals.link`) goes to `/grants/goals`, under the grant card and above the staff queue. A missing account shows no link. When `canEditDailyPayoutRoster` is true (initiator or founder only), three secondary large `ButtonLink`s, **Daily payment text** to `/grants/payments/comment`, **Daily payment amounts** to `/grants/payments/amounts`, and **Moderator payments** to `/grants/payments/moderators`, do not fetch the roster. A moderator does not see those links. When `roleAtLeast(role, 'moderator')`, loads open applications. A count above zero is a secondary large `ButtonLink` to `/grants/applications` labeled **Open application (1)** when the count is one and **Open applications (2)** otherwise (`funding.applications.openCount`). A count of zero is the plain sentence **No open applications.**, not a link. Renders `null` without a session.
+- **Purpose:** Signed-in grants page. Renders `FundingStatusCard` (verification / 21 gifts grant). When the account is non-null, a secondary large **Goals** `ButtonLink` (`funding.goals.link`) goes to `/grants/goals`, under the grant card and above the staff queue. A missing account shows no link. When `canEditDailyPayoutRoster` is true (initiator or founder only), three secondary large `ButtonLink`s, **Daily payment text** to `/grants/payments/comment`, **Daily payment amounts** to `/grants/payments/amounts`, and **Moderator payments** to `/grants/payments/moderators`, do not fetch the roster. A moderator or fond account does not see those links. When `roleAtLeast(role, 'moderator')`, loads open applications. A count above zero is a secondary large `ButtonLink` to `/grants/applications` labeled **Open application (1)** when the count is one and **Open applications (2)** otherwise (`funding.applications.openCount`). A count of zero is the plain sentence **No open applications.**, not a link. Renders `null` without a session.
 - **Inputs:** Session and account from `useAuthStore`; catalog via `useTranslations`.
-- **Returns / side effects:** React element or `null` without a session. Fetches `GET /funding/applications` only when `roleAtLeast(role, 'moderator')`, which includes an initiator and a founder. Roles below moderator do not fetch. Loading and a failed load (error sentence plus **Try again**) do not show the applications link. The Goals link does not fetch; `/grants/goals` loads `GET /funding/goal`. Renders `GrantPlacesPanel` under `FundingStatusCard` for every signed-in account.
+- **Returns / side effects:** React element or `null` without a session. Fetches `GET /funding/applications` only when `roleAtLeast(role, 'moderator')`, which includes a fond, an initiator, and a founder. Roles below moderator do not fetch. Loading and a failed load (error sentence plus **Try again**) do not show the applications link. The Goals link does not fetch; `/grants/goals` loads `GET /funding/goal`. Renders `GrantPlacesPanel` under `FundingStatusCard` for every signed-in account.
 - **Used by:** `GrantsPage`.
 
 ## Function: GrantGoalsPage
@@ -7394,7 +7394,7 @@ The class exists so the composer can tell a refused free first post from any oth
 
 ## Function: HabitComments
 
-- **Purpose:** Public comments on one habit. An empty list says there are no comments yet. A signed-out visitor uses the header **Log in** and gets no second sign-in link. A signed-in account gets **Write a comment** and **Post** inside `SundayWritingGate`. Delete is the same inline confirm as a forum note and only when the account is at least initiator, also inside that gate, and sends `Time-Zone`. **Send Bitcoin** on someone else's comment uses `ForumPaySheet` inside the zap gate and sends `Time-Zone`. A comment with `canReceive: false` shows **Can't receive yet** (`CannotReceiveLabel`) and a disabled **Send Bitcoin** inside the same zap gate, and never opens the sheet. Archived habits keep this block.
+- **Purpose:** Public comments on one habit. An empty list says there are no comments yet. A signed-out visitor uses the header **Log in** and gets no second sign-in link. A signed-in account gets **Write a comment** and **Post** inside `SundayWritingGate`. Delete is the same inline confirm as a forum note and only when the account is at least moderator (including `fond`), also inside that gate, and sends `Time-Zone`. **Send Bitcoin** on someone else's comment uses `ForumPaySheet` inside the zap gate and sends `Time-Zone`. A comment with `canReceive: false` shows **Can't receive yet** (`CannotReceiveLabel`) and a disabled **Send Bitcoin** inside the same zap gate, and never opens the sheet. Archived habits keep this block.
 - **Inputs:** The habit, the viewer account and session, the comment draft, and the pay-sheet state owned by `MemberHabits`.
 - **Returns / side effects:** The comment block. Posts nothing itself; `MemberHabits` posts comment, deleteComment, and invoice. The gift on a comment is a `ForumPaySheet` with the commenter as `recipient`, inside a `Collapse` with `holdMs` `PAY_SHEET_HOLD_MS`, so the pay sheet's success step shows after the payment closed it.
 - **Used by:** `MemberHabits`.
