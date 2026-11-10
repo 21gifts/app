@@ -686,6 +686,7 @@ describe('runFondPayoutTick rows', () => {
     const second = depsFor([OWED]);
     await expect(tick(second)).resolves.toEqual({ paid: 1, skipped: 0, stop: null });
     expect(second.payFromWallet).toHaveBeenCalledWith({ type: 'input', input: SPARK_A });
+    await tick(depsFor([]));
 
     const rejectedLate = Promise.reject(new Error('wallet-connect'));
     rejectedLate.catch(() => undefined);
