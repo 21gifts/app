@@ -44515,6 +44515,49 @@ test.describe('settings states', () => {
     await shotScreen(page, 'state-settings-heart-amount');
   });
 
+  test('settings heart-amount-fiat', async ({ page }) => {
+    await seedSettingsAccount(page, { heartSats: 21 });
+    await fulfillSpot(page);
+    await page.route(/\/me\/amount-unit$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          name: 'Ada',
+          username: 'ada',
+          lightningAddress: null,
+          rulesAgreedAt: 1,
+          setup: null,
+          missing: [],
+          walletRequired: true,
+          walletBackupSeenAt: 1,
+          passkeyCredentialId: 'cred-seed',
+          heartSats: 21,
+          amountUnit: 'fiat',
+        }),
+      });
+    });
+    await openSettings(page);
+    const wallet = page.getByRole('region', { name: 'Wallet' });
+    const field = wallet.getByLabel('Heart amount');
+    await expect(field).toHaveValue('21');
+    await expect(wallet.getByText('$0.02').first()).toBeVisible();
+    const fiat = wallet.getByRole('group', { name: 'Bitcoin or fiat' }).getByRole('button', {
+      name: 'USD',
+    });
+    const saved = page.waitForResponse(
+      (response) => response.url().includes('/me/amount-unit') && response.ok(),
+    );
+    await fiat.click();
+    await saved;
+    await expect(fiat).toHaveAttribute('aria-pressed', 'true');
+    await expect(field).toHaveValue('0.021');
+    await expect(wallet.getByText('₿21').first()).toBeVisible();
+    await field.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-settings-heart-amount-fiat');
+  });
+
   test('settings heart-amount-invalid', async ({ page }) => {
     await seedSettingsAccount(page, { heartSats: 21 });
     await fulfillSpot(page);

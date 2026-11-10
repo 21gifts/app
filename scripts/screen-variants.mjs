@@ -2064,6 +2064,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/settings',
+    id: 'heart-amount-fiat',
+    image: 'settings-heart-amount-fiat.png',
+    visual: 'state-settings-heart-amount-fiat',
+    needle: "shotScreen(page, 'state-settings-heart-amount-fiat')",
+  },
+  {
+    route: '/settings',
     id: 'heart-amount-invalid',
     image: 'settings-heart-amount-invalid.png',
     visual: 'state-settings-heart-amount-invalid',

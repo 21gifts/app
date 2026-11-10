@@ -1648,6 +1648,12 @@ After pressing the fiat code under **Default amount**: it is pressed instead of 
 
 ![21.gifts settings heart amount](images/settings-heart-amount.png)
 
+### Variant: heart-amount-fiat
+
+**Heart amount** with the stored value **21** and a loaded USD rate, after pressing the fiat side of the ₿ / USD switch on that row. The switch shows **USD** pressed, the field holds the exact fiat draft **0.021**, and the counter under it shows **₿21**. The hint and **Save** stay visible; the stored amount is unchanged and **Save** remains enabled.
+
+![21.gifts settings heart amount fiat](images/settings-heart-amount-fiat.png)
+
 ### Variant: heart-amount-invalid
 
 **Heart amount** holds **0** in ₿ mode after the stored **21** was overwritten. The live error **Enter whole ₿ from ₿1 to ₿10'000'000.** sits under the field, the field reports `aria-invalid`, and **Save** is disabled. The hint under the field stays visible. Fiat mode accepts decimals; its error **Enter an amount from ₿1 to ₿10'000'000.** names the same bitcoin limits, without calling the whole amount a whole number.

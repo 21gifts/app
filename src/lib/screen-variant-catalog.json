@@ -1704,6 +1704,12 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/settings:heart-amount-fiat",
+    "label": "/settings heart-amount-fiat",
+    "visual": "state-settings-heart-amount-fiat",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/settings:heart-amount-invalid",
     "label": "/settings heart-amount-invalid",
     "visual": "state-settings-heart-amount-invalid",
