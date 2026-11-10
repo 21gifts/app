@@ -5108,8 +5108,9 @@ export async function postLnurlInvoice(
 /**
  * Failure of a Fond payout call, without throwing on an HTTP status.
  *
- * `status` is the api status through the same-origin proxy, or `0` when the
- * request itself failed (network error or an unreadable success body).
+ * `status` is the HTTP status of the same-origin proxy answer (also for a 2xx
+ * whose body is unreadable or fails the schema, then with `error: null`), or
+ * `0` when the request itself failed (network error).
  */
 export interface FondPayoutFailure {
   ok: false;
