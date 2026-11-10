@@ -61,7 +61,17 @@ describe('sanitizeErrorMessage', () => {
   });
 
   it.each([
-    ['sk_live_abcdef12345.abcdefghijklmnopqrstu1', '[token]'],
+    ['key_demo_abcdef12345.abcdefghijklmnopqrstu1', '[hex]'],
+    ['fingerprint:ab:cd:ef:01:23:45:67:89', '[hex]'],
+    ['x-ab:cd:ef:01:23:45:67:89', '[hex]'],
+    ['x0123456789-abcdef', '[hex]'],
+    ['0123456789/abcdef', '[hex]'],
+    ['token.xyzDefgh12/abc7890xy', '[token]'],
+    ['key_demo.9xq27pmWbV/nTrLsK4dJh8cY', '[token]'],
+    ['lnbc-10u1p2k3m4n', '[token]'],
+    ['spark1-abcdefghij', '[token]'],
+    ['xprv-9s21ZrQH14', '[token]'],
+    ['bc1qar0srrr7xfkvy5l643/lydnw9re59gt', '[token]'],
     ['abcdefghijklmnopqrstu1.sfx12345678', '[token]'],
     ['bc1qar0srrr7xfkvy5l643lydnw9re-59gtzzwf5mdq', '[token]'],
     ['bc1qar0srrr7xfkvy5l643lydnw9re_59gtzzwf5mdq', '[token]'],
@@ -83,9 +93,9 @@ describe('sanitizeErrorMessage', () => {
   });
 
   it('replaces a dotted key with a digit and every part of a JWE', () => {
-    expect(sanitizeErrorMessage('key sk_live.4eC39HqLyjWDarjtT1 bad')).toBe('key [token] bad');
-    expect(sanitizeErrorMessage('key sk_live.4ec39hqlyjwdarjt bad')).toBe('key [token] bad');
-    expect(sanitizeErrorMessage('key SK_LIVE.4EC39HQLYJWDARJT bad')).toBe('key [token] bad');
+    expect(sanitizeErrorMessage('key key_demo.9xQ27PmWbVnTrLs1 bad')).toBe('key [token] bad');
+    expect(sanitizeErrorMessage('key key_demo.9xq27pmwbvntrls bad')).toBe('key [token] bad');
+    expect(sanitizeErrorMessage('key KEY_DEMO.9XQ27PMWBVNTRLS bad')).toBe('key [token] bad');
     expect(
       sanitizeErrorMessage(
         'jwe eyJhbGciOiJSU0EtT0FFUCJ9.OKOawDo13gRp2ojaHV7LFpZcgV7T6DVZKTyKOMTYUmKoTCVJRgckCL9kiMT03JGeipsEdY3mx_etLbbWSrFr05kLzcSr4qKAq7YN7e9jwQRb23nfa6c9d-StnImGyFDbSv04uVuxIp5Zms1gNxKKK2Da14B8S4rzVRltdYwam_lDp5XnZAYpQdb76FdIKLaVmqgfwX7XWRxv2322i-vDxRfqNzo_tETKzpVLzfiwQyeyPGLBIO56YJ7eObdv0je81860ppamavo35UgoRdbYaBcoh9QcfylQr66oc6vFWXRcZ_ZT2LawVCWTIy3brGPi6UklfCpIMfIjf7iGdXKHzg.48V1_ALb6US04U3b.5eym8TW_c8SuK0ltJ3rpYIzOeDQz7TALvtu6UG9oMo4vpzs9tX_EFShS8iB7j6jiSdiwkIr3ajwQzaBtQD_A.XFBoMYUZodetZdvTiFvSkQ end',
@@ -93,6 +103,9 @@ describe('sanitizeErrorMessage', () => {
     ).toBe('jwe [token] end');
     expect(sanitizeErrorMessage('see 21.gifts/static/WebAssembly.instantiate')).toBe(
       'see 21.gifts/static/WebAssembly.instantiate',
+    );
+    expect(sanitizeErrorMessage('at https://21.gifts/u/key_demo_9xQ27PmWbVnTrLsK4dJh8cY/x')).toBe(
+      'at https://21.gifts/u/[token]/x',
     );
   });
 
@@ -125,6 +138,7 @@ describe('sanitizeErrorMessage', () => {
     'alice.smith﹫example.com',
     '"verylongname here"@example.com',
     '"zzzzzzzzzz last"%40host.com',
+    '"a\\"bcdefghijk c"@host',
     `"${'z'.repeat(64)} z"@host.example`,
     'https://x.example/u/alice.smith%40example.com',
   ])('replaces the whole address %s', (address) => {
@@ -150,7 +164,7 @@ describe('sanitizeErrorMessage', () => {
   });
 
   it('replaces the query string of a path', () => {
-    expect(sanitizeErrorMessage('POST /api/x?apiKey=sk_live_abc failed')).toBe(
+    expect(sanitizeErrorMessage('POST /api/x?apiKey=key_demo_abc failed')).toBe(
       'POST /api/x?[q] failed',
     );
     expect(sanitizeErrorMessage('(/a/b#frag)')).toBe('(/a/b?[q]');

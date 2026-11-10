@@ -23,72 +23,45 @@ const MIN_WORD_RUN = 3;
 const LETTERS = /\[(?:addr|hex|q|token|words)\]|[A-Za-z]+/g;
 
 /**
- * Key-shaped patterns, in order, after addresses and queries and before the
- * recovery words. Each match is replaced as given. Earlier patterns take the
- * larger shapes, so a later one never leaves a readable part of a key behind.
+ * One run of characters a key, hash, token, or address can hold (letters,
+ * digits, `+ / = _ . : -`), matched whole from its start, so each character
+ * is read once.
  */
-const KEY_PATTERNS: ReadonlyArray<readonly [RegExp, string]> = [
-  // JSON web tokens and encrypted ones, with every dotted part.
-  [/(?<![A-Za-z0-9_.-])eyJ[A-Za-z0-9_-]*(?:\.[A-Za-z0-9_-]*)+/g, '[token]'],
-  // Invoices, offers, LNURL, Spark and base-chain addresses, extended keys,
-  // also when `-`, `_`, or `.` splits them.
-  [
-    /\b(?:lnbc|lntb|lnurl|lno1|lni1|spark1|sparkrt1|sp1|sprt1|spt1|bc1|tb1|bcrt1|[xtyzuv]p(?:rv|ub))[0-9A-Za-z]{10,}(?:[-_.][0-9A-Za-z]+)*/gi,
-    '[token]',
-  ],
-];
+const KEY_RUN = /(?<![A-Za-z0-9+/=_.:-])[A-Za-z0-9+/=_.:-]+/g;
 
-/**
- * Patterns for any other long token, after {@link KEY_PATTERNS} and the hex
- * groups.
- */
-const TOKEN_PATTERNS: ReadonlyArray<readonly [RegExp, string]> = [
-  // Any other base58, base64, or bech32 run (with `/`) of 20 or more
-  // characters with a digit, or of 40 or more in mixed case without one. A run
-  // glued to a dotted name (`a.<run>`, `<run>.b`) is left to the dotted rule
-  // below, which takes the whole dotted run. Each run is tried from its start
-  // only, so a long message is read in linear time.
-  [
-    /(?<![A-Za-z0-9+/=_-])(?<![A-Za-z0-9]\.)(?=[A-Za-z0-9+/=_-]*\d)[A-Za-z0-9+/=_-]{20,}(?![A-Za-z0-9+/=_-]|\.[A-Za-z0-9])/g,
-    '[token]',
-  ],
-  [
-    /(?<![A-Za-z0-9+/=_-])(?<![A-Za-z0-9]\.)(?=[A-Za-z0-9+/=_-]*[a-z])(?=[A-Za-z0-9+/=_-]*[A-Z])[A-Za-z0-9+/=_-]{40,}(?![A-Za-z0-9+/=_-]|\.[A-Za-z0-9])/g,
-    '[token]',
-  ],
-  // A dotted run (no `/`) of 20 or more characters with a digit, as a whole:
-  // a dotted key (`sk_live.4ec39hq…`), a glued JWT (`id_token_eyJ…`). A short
-  // host such as `21.gifts` stays; a long one with a digit does not.
-  [/(?<![A-Za-z0-9+=_.-])(?=[A-Za-z0-9+=_.-]*\d)[A-Za-z0-9+=_.-]{20,}/g, '[token]'],
-];
-
-/**
- * One run of base58, base64, or bech32 characters, matched from its start
- * only. A run that holds 16 hex digits in a row is a key, hash, preimage, or
- * id and is replaced whole, so no part of it stays.
- */
-const KEY_RUN = /(?<![A-Za-z0-9+/=_-])[A-Za-z0-9+/=_-]+/g;
+/** Separators removed before a run is searched for hex. */
+const RUN_SEPARATORS = /[+/=_.:-]/g;
 
 /** 16 hex digits in a row. */
 const HEX_16 = /[0-9a-f]{16}/i;
 
-/**
- * Hex in groups joined by `:`, `-`, `.`, or `_` (`ab:cd:…`, a UUID), as a
- * whole run: it starts after no letter, digit, or separator and ends before
- * no letter or digit (a trailing separator may follow).
- */
-const HEX_GROUPS = /(?<![0-9A-Za-z_.:-])[0-9a-f]+(?:[:._-][0-9a-f]+)+(?![0-9A-Za-z])/gi;
+/** Punctuation that may end a run, such as a sentence stop; it stays. */
+const TRAILING_PUNCTUATION = '.:_-';
 
-/** Fewest hex digits of a group run that is replaced. */
-const MIN_HEX_DIGITS = 16;
+/** Invoices, offers, LNURL, Spark and base-chain addresses, extended keys. */
+const KEY_PREFIX =
+  /(?:^|[^A-Za-z0-9])(?:lnbc|lntb|lnurl|lno1|lni1|spark1|sparkrt1|sp1|sprt1|spt1|bc1|tb1|bcrt1|[xtyzuv]p(?:rv|ub))[-_.]?[0-9a-z]{6,}/i;
+
+/**
+ * A run that starts with a host name, ending in a letters-only top-level
+ * domain, and a path (`api.example.com/…`).
+ */
+const HOST_PATH = /^[a-z0-9-]+(?:\.[a-z0-9-]+)*\.[a-z]{2,}\//i;
+
+/** Shortest run with a digit that is a token. */
+const MIN_TOKEN_LENGTH = 20;
+
+/** Shortest run in mixed case without a digit that is a token. */
+const MIN_MIXED_TOKEN_LENGTH = 40;
 
 /**
  * An address whose quoted name holds whitespace (`"first last"@host`): the
  * quotes, everything between them, the `@` (or `＠`, `﹫`, `%40`), and the
- * rest of the word. A quote is read up to the next quote only, so each part
- * of a message is read at most twice.
+ * rest of the word. An escaped quote (`\"`) stays inside the name. A quote
+ * is read up to the next unescaped quote only, so each part of a message is
+ * read at most twice.
  */
-const QUOTED_ADDRESS = /"[^"]*"(?:[@＠﹫]|%40)\S*/gi;
+const QUOTED_ADDRESS = /"(?:[^"\\]|\\.)*"(?:[@＠﹫]|%40)\S*/gi;
 
 /** The first query or fragment marker of a word, also URL-encoded. */
 const QUERY_MARKER = /[?#？＃]|%3F|%23/i;
@@ -137,32 +110,54 @@ function replaceAddressesAndQueries(text: string): string {
 }
 
 /**
- * Applies each pattern in order.
+ * What one run, or one segment of a URL or path, becomes: `[hex]` when it
+ * holds 16 hex digits in a row once its separators are removed; `[token]`
+ * when it holds a {@link KEY_PREFIX}, a JSON web token (`eyJ`), at least
+ * {@link MIN_TOKEN_LENGTH} characters with a digit, or at least
+ * {@link MIN_MIXED_TOKEN_LENGTH} in mixed case; otherwise itself.
  *
- * @param text - Error message.
- * @param patterns - Patterns and their replacements.
- * @returns The message with every match replaced.
+ * @param part - A run or a segment.
+ * @returns The part, or its placeholder.
  */
-function applyPatterns(text: string, patterns: ReadonlyArray<readonly [RegExp, string]>): string {
-  return patterns.reduce((out, [pattern, replacement]) => out.replace(pattern, replacement), text);
+function keyPlaceholder(part: string): string {
+  if (HEX_16.test(part.replace(RUN_SEPARATORS, ''))) {
+    return '[hex]';
+  }
+  const isToken =
+    KEY_PREFIX.test(part) ||
+    (part.includes('eyJ') && part.length >= MIN_TOKEN_LENGTH) ||
+    (part.length >= MIN_TOKEN_LENGTH && /\d/.test(part)) ||
+    (part.length >= MIN_MIXED_TOKEN_LENGTH && /[a-z]/.test(part) && /[A-Z]/.test(part));
+  return isToken ? '[token]' : part;
 }
 
 /**
- * Replaces every key-shaped part: {@link KEY_PATTERNS}, then hex groups of at
- * least {@link MIN_HEX_DIGITS} digits (also when a separator follows the last
- * group), then every {@link KEY_RUN} that holds 16 hex digits in a row, then
- * {@link TOKEN_PATTERNS}.
+ * Replaces every key-shaped {@link KEY_RUN} as a whole, so no head or tail of
+ * a key that `.`, `_`, `-`, `:`, or `/` splits stays readable. Trailing
+ * punctuation (a sentence stop) is kept. A URL (`://`), a path (a leading
+ * `/`), or a host with a path ({@link HOST_PATH}) is judged per segment
+ * between `/` and `:`, so its host and path stay readable while a key in it
+ * does not.
  *
  * @param text - Error message.
  * @returns The message with the keys replaced.
  */
 function replaceKeys(text: string): string {
-  const hexed = applyPatterns(text, KEY_PATTERNS)
-    .replace(HEX_GROUPS, (group) =>
-      group.replace(/[:._-]/g, '').length >= MIN_HEX_DIGITS ? '[hex]' : group,
-    )
-    .replace(KEY_RUN, (run) => (HEX_16.test(run) ? '[hex]' : run));
-  return applyPatterns(hexed, TOKEN_PATTERNS);
+  return text.replace(KEY_RUN, (run) => {
+    let end = run.length;
+    while (end > 0 && TRAILING_PUNCTUATION.includes(run.charAt(end - 1))) {
+      end -= 1;
+    }
+    const core = run.slice(0, end);
+    const replaced =
+      core.includes('://') || core.startsWith('/') || HOST_PATH.test(core)
+        ? core
+            .split(/([/:])/)
+            .map(keyPlaceholder)
+            .join('')
+        : keyPlaceholder(core);
+    return replaced + run.slice(end);
+  });
 }
 
 /**
@@ -214,16 +209,16 @@ function replaceWordRuns(text: string): string {
  * a user name) with `[addr]`; the query string and fragment of a URL or path (a
  * word cut at its first `?` or `#`, fullwidth `？` or `＃`, or URL-encoded `%3F`
  * or `%23`, when a `/` comes before it, an `=` after it, or at least four
- * characters follow) with `?[q]`; JSON web tokens (every dotted part),
- * invoices, offers, LNURL strings, Spark and base-chain addresses, and extended
- * keys (`xprv`, `xpub`, `tprv`, `tpub`, …), also split by `-`, `_`, or `.`,
- * with `[token]`; 16 or more hex digits, also in groups joined by `:`, `-`,
- * `.`, or `_`, with `[hex]` (the whole run around them); any other run of 20 or
- * more base58, base64, or bech32 characters that holds a digit, of 40 or more
- * in mixed case without one, or a whole dotted run of 20 or more with a digit
- * (`sk_live.4ec…`, a glued JWT), with `[token]`; and last every run of three or
- * more BIP-39 English words (any case, any separator) with `[words]`, so a word
- * run never cuts a key short. Then it cuts the result to
+ * characters follow) with `?[q]`; then every run of key characters (letters,
+ * digits, `+ / = _ . : -`) as a whole, or each segment of a URL or path: one
+ * that holds 16 hex digits in a row once its separators are removed with
+ * `[hex]`, and one that starts with an invoice, address, or extended-key prefix
+ * (`lnbc`, `lntb`, `lnurl`, `lno1`, `lni1`, `spark1`, `sp1`, `bc1`, `tb1`,
+ * `xprv`, `xpub`, `tprv`, `tpub`, …), holds a JSON web token (`eyJ`), has 20 or
+ * more characters with a digit, or 40 or more in mixed case with `[token]`, so
+ * no head or tail of a key that a separator splits stays; and last every run of
+ * three or more BIP-39 English words (any case, any separator) with `[words]`,
+ * so a word run never cuts a key short. Then it cuts the result to
  * {@link ERROR_MESSAGE_MAX_LENGTH} characters. Plain messages such as
  * `Failed to fetch` stay readable.
  *
