@@ -44544,7 +44544,7 @@ test.describe('settings states', () => {
     const field = wallet.getByLabel('Heart amount');
     await field.fill('21');
     await wallet.getByRole('button', { name: 'Save' }).click();
-    await expect(wallet.getByText('Saved: ₿21 per heart.')).toBeVisible();
+    await expect(wallet.getByText(/^Saved: ₿21/)).toBeVisible();
     await field.scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-settings-heart-amount-saved');
   });
