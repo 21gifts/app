@@ -29,7 +29,10 @@ export type InteractionName =
   | 'wallet_move_done'
   | 'recovery_done';
 
-/** Values an interaction may carry: ids, amounts, counts, and search terms. */
+/**
+ * Values an interaction may carry: ids, amounts, counts, flags, search terms,
+ * and the sanitized error message of `wallet_open_failed`.
+ */
 export type InteractionProps = Record<string, string | number | boolean | null>;
 
 /** One interaction event as `POST /me/events` takes it. */
@@ -274,7 +277,8 @@ function buildEvent(name: InteractionName, props: InteractionProps): Interaction
  * event that cannot be built is dropped.
  *
  * @param name - What happened.
- * @param props - Ids, amounts, counts, or a search term; never a secret.
+ * @param props - Ids, amounts, counts, flags, a search term, or a sanitized
+ *   error message; never a secret.
  * @param actionSession - Session the recorded action ran under, for an event
  *   recorded after an await. When given and no longer the current session
  *   (`null` included), the event is dropped, so it is never queued for
