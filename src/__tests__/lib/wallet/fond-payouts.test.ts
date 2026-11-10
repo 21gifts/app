@@ -241,7 +241,9 @@ describe('fondE2eWallet', () => {
       info: { invoice: 'lnbc1e2efondpayout', preimage: '11'.repeat(32) },
     });
     expect(
-      createHash('sha256').update(Buffer.from(preimage ?? '', 'hex')).digest('hex'),
+      createHash('sha256')
+        .update(Buffer.from(preimage ?? '', 'hex'))
+        .digest('hex'),
     ).toHaveLength(64);
   });
 

@@ -211,9 +211,7 @@ test('Function: postFondPayoutProof — the fixture checks sha256(preimage) befo
   });
   expect(proved.status()).toBe(200);
   expect(await proved.json()).toEqual({ status: 'paid', id: ROW_ID });
-  const posted = await withSameOriginFetch(() =>
-    postFondPayoutProof(session, ROW_ID, PREIMAGE),
-  );
+  const posted = await withSameOriginFetch(() => postFondPayoutProof(session, ROW_ID, PREIMAGE));
   expect(posted).toEqual({ ok: true });
   const refused = await withSameOriginFetch(() => postFondPayoutProof(session, ROW_ID, ''));
   expect(refused).toEqual({
@@ -271,9 +269,9 @@ test('Function: runFondPayoutTick — the loop invoices, pays, proves, and skips
   expect(first.paid).toBe(true);
   // The loop's next interval sees the paid row gone and requests no second invoice.
   await page.clock.runFor(60_000);
-  await expect.poll(async () => (await fondDebug(request, session)).lists).toBeGreaterThan(
-    first.lists,
-  );
+  await expect
+    .poll(async () => (await fondDebug(request, session)).lists)
+    .toBeGreaterThan(first.lists);
   const second = await fondDebug(request, session);
   expect(second.invoices).toBe(1);
   expect(second.proofs).toHaveLength(1);
@@ -298,9 +296,9 @@ test('Function: runFondPayoutTickOnce — the single-flight loop pays and proves
   // A second interval is another tick through the single-flight wrapper: the row is already paid.
   const before = await fondDebug(request, session);
   await page.clock.runFor(60_000);
-  await expect.poll(async () => (await fondDebug(request, session)).lists).toBeGreaterThan(
-    before.lists,
-  );
+  await expect
+    .poll(async () => (await fondDebug(request, session)).lists)
+    .toBeGreaterThan(before.lists);
   expect((await fondDebug(request, session)).invoices).toBe(1);
 });
 
