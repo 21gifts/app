@@ -85,6 +85,7 @@ describe('sanitizeErrorMessage', () => {
     'user/@192.168.1.1',
     'user/@mail.com/x',
     'https://user:password/@host.com',
+    'alice.smith＠example.com',
   ])('replaces the whole address %s', (address) => {
     expect(sanitizeErrorMessage(`to ${address} failed`)).toBe('to [addr] failed');
   });
@@ -92,6 +93,7 @@ describe('sanitizeErrorMessage', () => {
   it('cuts a query of four or more characters even without a path or an =', () => {
     expect(sanitizeErrorMessage('example.com?secretvalue1 x')).toBe('example.com?[q] x');
     expect(sanitizeErrorMessage('example.com#abcdefghijkl')).toBe('example.com?[q]');
+    expect(sanitizeErrorMessage('example.com？token=abcdefghijkl')).toBe('example.com?[q]');
     expect(sanitizeErrorMessage("https://x.com/cb?code=abc'defghijklmnop")).toBe(
       'https://x.com/cb?[q]',
     );
@@ -116,7 +118,7 @@ describe('sanitizeErrorMessage', () => {
   });
 
   it('reads a very long message without a digit in linear time', () => {
-    const long = `${'a'.repeat(100_000)} ${'x.'.repeat(50_000)} ${'b'.repeat(100_000)}@ ${'http://a,'.repeat(12_000)} ${'(/a'.repeat(30_000)} ${'=/a'.repeat(30_000)} ${'a:'.repeat(50_000)} ${"é'".repeat(50_000)}@ ${'add add add x '.repeat(70_000)}`;
+    const long = `${'a'.repeat(100_000)} ${'x.'.repeat(50_000)} ${'b'.repeat(100_000)}@ ${'http://a,'.repeat(12_000)} ${'(/a'.repeat(30_000)} ${'=/a'.repeat(30_000)} ${'a:'.repeat(50_000)} ${"é'".repeat(50_000)}@ ${'add add add x '.repeat(70_000)} ${'eyJ-'.repeat(250_000)}`;
     const started = performance.now();
     sanitizeErrorMessage(long);
     expect(performance.now() - started).toBeLessThan(1_000);

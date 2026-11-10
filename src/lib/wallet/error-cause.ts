@@ -28,7 +28,7 @@ const LETTERS = /\[[a-z]+\]|[A-Za-z]+/g;
  */
 const KEY_PATTERNS: ReadonlyArray<readonly [RegExp, string]> = [
   // JSON web tokens and other dotted three-part tokens.
-  [/\beyJ[A-Za-z0-9_-]*(?:\.[A-Za-z0-9_-]*){1,2}/g, '[token]'],
+  [/(?<![A-Za-z0-9_.-])eyJ[A-Za-z0-9_-]*(?:\.[A-Za-z0-9_-]*){1,2}/g, '[token]'],
   [
     /(?<![A-Za-z0-9_.-])(?=[A-Za-z0-9_.-]*\d)[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{4,}\b/g,
     '[token]',
@@ -97,10 +97,10 @@ const MIN_QUERY_LENGTH = 4;
  */
 function replaceAddressesAndQueries(text: string): string {
   return text.replace(WORD, (word) => {
-    if (word.replace(PACKAGE_SCOPE, '/').includes('@')) {
+    if (/[@＠]/.test(word.replace(PACKAGE_SCOPE, '/'))) {
       return '[addr]';
     }
-    const query = word.search(/[?#]/);
+    const query = word.search(/[?#？＃]/);
     if (query === -1) {
       return word;
     }
