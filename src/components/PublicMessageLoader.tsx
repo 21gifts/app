@@ -33,7 +33,12 @@ import { forumPhotoSrc } from '@/lib/forum-photo';
 import { formatPlacePinText } from '@/lib/forum-shop';
 import { formatForumTime } from '@/lib/forum-time';
 import { forumVideoSrc } from '@/lib/forum-video';
-import { formatBitcoin, type FiatCode, type FiatRateDay } from '@/lib/stats-money';
+import {
+  defaultFiatForLocale,
+  formatBitcoin,
+  type FiatCode,
+  type FiatRateDay,
+} from '@/lib/stats-money';
 import { loginHref } from '@/lib/view-history';
 import { useAuthStore } from '@/stores/auth-store';
 
@@ -478,7 +483,11 @@ export function PublicMessageLoader({ id }: { id: string }): ReactElement {
               cardIndex={replyIndex + 1}
             />
           ))}
-          <ReplyHeartSenders hearts={hearts} rateDay={rateDay} fiat={fiat} />
+          <ReplyHeartSenders
+            hearts={hearts}
+            rateDay={rateDay}
+            fiat={defaultFiatForLocale(locale)}
+          />
         </>
       )}
       {ready ? (

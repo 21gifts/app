@@ -17,9 +17,10 @@ import { formatBitcoin, type FiatRateDay } from '@/lib/stats-money';
  * name to that member's profile, shows the shared role pill when the role is
  * tagged, the exact sats that heart paid with the viewer's number grouping,
  * one fiat figure from the frozen strings on the heart (or the viewer's spot
- * when that string is null), and the forum timestamp. An empty name is a
- * deleted account and gets the translated placeholder instead of a profile
- * link.
+ * when that string is null), and the forum timestamp. A sender without a
+ * live role is a deleted account and gets the translated placeholder instead
+ * of a profile link. A live sender without a name uses the shared unnamed
+ * member label.
  *
  * @param props - Hearts from `GET /messages/:id/replies`, the current spot,
  *   and the visitor's fiat.
@@ -50,7 +51,8 @@ export function ReplyHeartSenders({
         {hearts.map((heart, index) => {
           const rowId = `${heart.accountId}:${heart.createdAt}:${index}`;
           const hintOpen = openRoleId === rowId;
-          const deleted = heart.name.trim() === '';
+          const deleted = heart.role === undefined;
+          const displayName = heart.name.trim() === '' ? t('moderate.unnamed') : heart.name;
           const role = heart.role ?? 'basis';
           return (
             <li
@@ -67,7 +69,7 @@ export function ReplyHeartSenders({
                     href={`/members/${heart.accountId}`}
                     className="text-sm font-medium text-app-fg underline underline-offset-2"
                   >
-                    {heart.name}
+                    {displayName}
                   </Link>
                 )}
                 {!deleted ? (

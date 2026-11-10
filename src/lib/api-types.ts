@@ -1048,8 +1048,8 @@ export const forumMessageRowsSchema = z.array(z.unknown()).transform(keepForumMe
 /**
  * Runtime schema for one paid heart returned with `GET /messages/:id/replies`.
  *
- * `name` may be empty when the account was deleted. `username` and `role` are
- * optional on older bodies. `sats` is the exact amount that heart paid.
+ * `name` may be empty for a live unnamed member. A deleted account has no
+ * `role` or `username`. `sats` is the exact amount that heart paid.
  */
 export const heartSenderSchema = z.object({
   accountId: z.string().min(1),
