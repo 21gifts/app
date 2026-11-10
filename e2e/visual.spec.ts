@@ -23,6 +23,7 @@ import {
   ledgerWith,
   loanA,
   loanB,
+  productionPhpLoans,
   loanWith,
   myLoans,
 } from './loan-fixtures';
@@ -29649,48 +29650,21 @@ test.describe('welcome forum variants', () => {
   });
 
   test('state /welcome loans-multi', async ({ page }) => {
-    const collecting = loanWith(loanA, {
-      sats: 18_000,
-      fundedAt: null,
-      daysDue: 0,
-      daysPaid: 0,
-      repaidSats: 0,
-      due: {
-        payableSats: 0,
-        payablePeople: 0,
-        waitingSats: 0,
-        waitingPeople: 0,
-        behindDays: 0,
-        lastPayment: false,
-      },
-      next: null,
-    });
-    await openWelcomeLoans(page, myLoans([collecting, loanB]));
+    await openWelcomeLoans(page, myLoans(productionPhpLoans));
     const card = page.getByRole('region', { name: 'Your loans (2)' });
     await expect(card).toContainText('1 of 2 fully funded.');
+    await expect(card).toContainText("₱10'000.00");
+    await expect(card).toContainText("₱15'000.00");
+    await expect(card).not.toContainText("₱27'051.19");
     await shotScreen(page, 'state-welcome-loans-multi');
   });
 
   test('state /welcome loans-multi-open', async ({ page }) => {
-    const collecting = loanWith(loanA, {
-      sats: 18_000,
-      fundedAt: null,
-      daysDue: 0,
-      daysPaid: 0,
-      repaidSats: 0,
-      due: {
-        payableSats: 0,
-        payablePeople: 0,
-        waitingSats: 0,
-        waitingPeople: 0,
-        behindDays: 0,
-        lastPayment: false,
-      },
-      next: null,
-    });
-    await openWelcomeLoans(page, myLoans([collecting, loanB]));
+    await openWelcomeLoans(page, myLoans(productionPhpLoans));
+    const card = page.getByRole('region', { name: 'Your loans (2)' });
     await page.getByRole('button', { name: 'Show loans' }).click();
-    await expect(page.getByText(loanB.text)).toBeVisible();
+    await expect(card.getByRole('link', { name: productionPhpLoans[0]!.text })).toBeVisible();
+    await expect(card.getByRole('link', { name: productionPhpLoans[1]!.text })).toBeVisible();
     await shotScreen(page, 'state-welcome-loans-multi-open');
   });
 

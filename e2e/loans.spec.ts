@@ -1,6 +1,13 @@
 import { expect, test, type Page } from '@playwright/test';
 import { fulfillSpot } from './fx-spot';
-import { fulfillLedger, fulfillMyLoans, ledgerA, loanA, myLoans } from './loan-fixtures';
+import {
+  fulfillLedger,
+  fulfillMyLoans,
+  ledgerA,
+  loanA,
+  myLoans,
+  productionPhpLoans,
+} from './loan-fixtures';
 
 async function seedMember(page: Page): Promise<void> {
   await page.addInitScript(() => {
@@ -54,6 +61,30 @@ test('the welcome loans card Send link navigates client-side to repayment', asyn
   await card.getByRole('link', { name: 'Send' }).click();
   await expect(page).toHaveURL(/\/loans\/repay$/);
   await expect(page.getByText('Due today')).toBeVisible();
+});
+
+test('the welcome loans card keeps two PHP loans on their frozen figures', async ({ page }) => {
+  await seedMember(page);
+  await page.clock.install({ time: new Date('2026-10-07T10:00:00.000Z') });
+  await fulfillSpot(page);
+  await fulfillMyLoans(page, myLoans(productionPhpLoans));
+  await page.goto('/welcome');
+  const card = page.getByRole('region', { name: 'Your loans (2)' });
+  await expect(card).toContainText("₱10'000.00");
+  await expect(card).toContainText("₱15'000.00");
+  await expect(card).not.toContainText("₱27'051.19");
+  await expect(card.getByText('Loan for a delivery bike to reach more customers.')).toBeVisible();
+  await expect(
+    card.getByText('Small loan for school books and a uniform for my daughter.'),
+  ).toBeVisible();
+  await expect(card.getByRole('button', { name: 'Show loan', exact: true })).toHaveCount(0);
+  await card.getByRole('button', { name: 'Show loans' }).click();
+  await expect(
+    card.getByRole('link', { name: 'Loan for a delivery bike to reach more customers.' }),
+  ).toBeVisible();
+  await expect(
+    card.getByRole('link', { name: 'Small loan for school books and a uniform for my daughter.' }),
+  ).toBeVisible();
 });
 
 test('the Menu loan Send row closes the Menu and opens repayment', async ({ page }) => {

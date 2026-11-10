@@ -20,6 +20,7 @@ import type { NumberFormatStyle } from '@/lib/number-format';
 import {
   centsString,
   definedDueLabel,
+  definedFiatSum,
   dueShares,
   fittingPrefix,
   summarizeLoans,
@@ -214,7 +215,7 @@ export function LoanRepayScreen(): ReactElement {
     );
   }
 
-  const summary = summarizeLoans(loans);
+  const summary = summarizeLoans(loans, numberFormat);
   const ledgers = loans.loans.map((loan) => ledgerById[loan.messageId] ?? null);
   const shares = dueShares(loans.loans, ledgers);
   const ledgersMissing = ledgers.some((ledger) => ledger === null);
@@ -250,8 +251,12 @@ export function LoanRepayScreen(): ReactElement {
     const tomorrow = new Date();
     tomorrow.setDate(tomorrow.getDate() + 1);
     const nextIsTomorrow = summary.next.dueOn === localDay(tomorrow);
+    const amount =
+      summary.next.amount === null
+        ? money(summary.next.sats)
+        : `${summary.next.amount} · ${bitcoinText(summary.next.sats)}`;
     const variables = {
-      amount: money(summary.next.sats),
+      amount,
       count: nextPeople,
       date: dateLabel(summary.next.dueOn, true),
     };
@@ -684,8 +689,24 @@ export function LoanRepayScreen(): ReactElement {
                   );
             const planPerDay = planSlice('perDay');
             const uneven = (split?.remainder ?? 0n) !== 0n;
+            const ledger = ledgerById[loan.messageId] ?? null;
+            let definedRepaid: string | null = null;
+            if (
+              isFiatCode(loan.goalCurrency) &&
+              ledger !== null &&
+              ledger.currency === loan.goalCurrency
+            ) {
+              const paidAmounts = ledger.repayments
+                .filter((row) => row.status === 'paid')
+                .map((row) => row.amount);
+              definedRepaid = definedFiatSum(loan.goalCurrency, paidAmounts, numberFormat);
+            }
+            const repaid =
+              definedRepaid === null
+                ? money(loan.repaidSats)
+                : `${definedRepaid} · ${bitcoinText(loan.repaidSats)}`;
             const repaidText = t('loans.repaidOf', {
-              repaid: money(loan.repaidSats),
+              repaid,
               total: wholeLoanText(loan),
             });
             const repaidPercent =

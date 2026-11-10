@@ -341,6 +341,33 @@ describe('LoanRepayScreen', () => {
     expect(screen.queryByText('$1.00')).toBeNull();
   });
 
+  it('sums two PHP payable amounts in their currency for the due box', () => {
+    show({
+      sundayRest: false,
+      loans: [
+        loan({
+          messageId: 'php-1',
+          goalCurrency: 'PHP',
+          goalAmount: '900.00',
+          due: { ...loan().due, payableSats: 536, payableAmount: '30.00' },
+        }),
+        loan({
+          messageId: 'php-2',
+          goalCurrency: 'PHP',
+          goalAmount: '600.00',
+          due: {
+            ...loan().due,
+            payableSats: 268,
+            payablePeople: 2,
+            payableAmount: '15.00',
+          },
+        }),
+      ],
+    });
+    expect(screen.getByText('₱45.00')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Send ₱45.00 · ₿804' })).toBeTruthy();
+  });
+
   it('puts a shared fiat loan currency first and shows waiting shares as neutral lines', async () => {
     const phpLoan = loan({
       goalCurrency: 'PHP',
@@ -619,6 +646,116 @@ describe('LoanRepayScreen', () => {
     expect(screen.queryByText(/\$0\.20 waits/)).toBeNull();
   });
 
+  it('shows a PHP loan repaid from the stored paid amounts of its ledger', async () => {
+    vi.mocked(getRepayment).mockResolvedValue(
+      ledger({
+        currency: 'PHP',
+        repayments: [
+          {
+            ...ledger().repayments[0]!,
+            dayIndex: 0,
+            status: 'paid',
+            amount: '30.00',
+            dueSats: null,
+          },
+          {
+            ...ledger().repayments[0]!,
+            dayIndex: 1,
+            status: 'paid',
+            amount: '29.99',
+            dueSats: null,
+          },
+          {
+            ...ledger().repayments[0]!,
+            dayIndex: 2,
+            status: 'due',
+            amount: '30.00',
+          },
+        ],
+      }),
+    );
+    show({
+      sundayRest: false,
+      loans: [
+        loan({
+          goalCurrency: 'PHP',
+          goalAmount: '900.00',
+          repaidSats: 5_999,
+          due: { ...loan().due, payableSats: 1_000, payableAmount: '30.00' },
+        }),
+      ],
+    });
+    expect(await screen.findByText("Repaid ₱59.99 · ₿5'999 of ₱900.00")).toBeTruthy();
+    expect(screen.queryByText('Repaid ₱59.99 of ₱900.00')).toBeNull();
+    expect(screen.queryByText("Repaid ₿5'999 · $6.00 of ₱900.00")).toBeNull();
+  });
+
+  it('falls back to bitcoin for a PHP loan whose ledger uses another currency', async () => {
+    vi.mocked(getRepayment).mockResolvedValue(
+      ledger({
+        currency: 'USD',
+        repayments: [
+          {
+            ...ledger().repayments[0]!,
+            dayIndex: 0,
+            status: 'paid',
+            amount: '59.99',
+            dueSats: null,
+          },
+        ],
+      }),
+    );
+    show({
+      sundayRest: false,
+      loans: [loan({ goalCurrency: 'PHP', goalAmount: '900.00', repaidSats: 5_999 })],
+    });
+    expect(await screen.findByText("Repaid ₿5'999 · $6.00 of ₱900.00")).toBeTruthy();
+  });
+
+  it('falls back to bitcoin for a PHP loan without a ledger or with a missing amount', async () => {
+    vi.mocked(getRepayment).mockResolvedValue(null);
+    show({
+      sundayRest: false,
+      loans: [loan({ goalCurrency: 'PHP', goalAmount: '900.00', repaidSats: 5_999 })],
+    });
+    expect(await screen.findByText("Repaid ₿5'999 · $6.00 of ₱900.00")).toBeTruthy();
+    cleanup();
+    vi.mocked(getRepayment).mockResolvedValue(
+      ledger({
+        currency: 'PHP',
+        repayments: [
+          {
+            ...ledger().repayments[0]!,
+            dayIndex: 0,
+            status: 'paid',
+            amount: null,
+            dueSats: null,
+          },
+        ],
+      }),
+    );
+    show({
+      sundayRest: false,
+      loans: [loan({ goalCurrency: 'PHP', goalAmount: '900.00', repaidSats: 5_999 })],
+    });
+    expect(await screen.findByText("Repaid ₿5'999 · $6.00 of ₱900.00")).toBeTruthy();
+  });
+
+  it('shows the stored next amount beside the next bitcoin amount', () => {
+    vi.mocked(getRepayment).mockImplementation(() => new Promise(() => undefined));
+    show({
+      sundayRest: false,
+      loans: [
+        loan({
+          goalCurrency: 'PHP',
+          due: { ...loan().due, payableSats: 0, payablePeople: 0 },
+          next: { dueOn: '2026-10-11', sats: 1_000, amount: '199.99' },
+        }),
+      ],
+    });
+    expect(screen.getByText("Next: tomorrow, ₱199.99 · ₿1'000")).toBeTruthy();
+  });
+
   it('asks for no amount when every due share waits', () => {
     vi.mocked(getRepayment).mockResolvedValue(null);
     show({
@@ -799,6 +936,28 @@ describe('LoanRepayScreen', () => {
       loans: [loan({ due: clearDue, next: { dueOn: '2026-10-13', sats: 1_000, amount: null } })],
     });
     expect(screen.getByText("Next: Tuesday, October 13, ₿1'000 · $1.00")).toBeTruthy();
+  });
+
+  it('leaves the next amount undefined when mixed currencies share a day', () => {
+    vi.mocked(getRepayment).mockResolvedValue(null);
+    const clearDue = { ...loan().due, payableSats: 0, payablePeople: 0 };
+    show({
+      sundayRest: false,
+      loans: [
+        loan({
+          goalCurrency: 'PHP',
+          due: clearDue,
+          next: { dueOn: '2026-10-11', sats: 1_000, amount: '30.00' },
+        }),
+        loan({
+          messageId: 'usd-2',
+          goalCurrency: 'USD',
+          due: clearDue,
+          next: { dueOn: '2026-10-11', sats: 1_000, amount: '1.00' },
+        }),
+      ],
+    });
+    expect(screen.getByText("Next: tomorrow, ₿2'000 · $2.00")).toBeTruthy();
   });
 
   it('shows tomorrow and later next lines for several recipients', async () => {
