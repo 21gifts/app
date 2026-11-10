@@ -1285,12 +1285,12 @@ because it can carry invoices, addresses, or keys. A wallet that did not open
 also sends where it stopped (`stage`: `sdk_load`, `connect`, `first_sync`, or
 `deadline`), the time since the attempt started, whether the browser was
 online and the page visible, and the error's message only after
-`sanitizeErrorMessage` (`src/lib/wallet/error-cause.ts`): runs of three or
-more BIP-39 words become `[words]`, 16 or more hex digits (also in `:` or `-`
-groups) `[hex]`, invoices,
-addresses, extended keys, JSON web tokens, and other long base58, base64, or
-bech32 tokens `[token]`, e-mail and `name@host` addresses and URL user names
-`[addr]`, and URL and path query strings `?[q]`, cut to 200 characters. The error report passes it
+`sanitizeErrorMessage` (`src/lib/wallet/error-cause.ts`): a word that holds
+an address (e-mail, `name@host`, a URL with a user name) becomes `[addr]`,
+URL and path query strings `?[q]`, invoices, addresses, extended keys, JSON
+web tokens, and other long base58, base64, or bech32 tokens `[token]`, 16 or
+more hex digits (also in `:` or `-` groups) `[hex]`, and last runs of three
+or more BIP-39 words `[words]`, cut to 200 characters. The error report passes it
 through that sanitizer once more before the scrubber. The thrown error
 itself, its other fields, and the SDK config are never sent.
 

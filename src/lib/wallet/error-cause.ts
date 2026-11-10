@@ -15,20 +15,18 @@ const BIP39_WORDS: ReadonlySet<string> = new Set(wordlist);
 /** Fewest recovery words in a row that are replaced. */
 const MIN_WORD_RUN = 3;
 
-/** Letters of one word; everything else separates two words. */
-const LETTERS = /[A-Za-z]+/g;
+/**
+ * Letters of one word; everything else separates two words. A placeholder
+ * this module wrote (`[token]`) is matched whole, so it ends a run.
+ */
+const LETTERS = /\[[a-z]+\]|[A-Za-z]+/g;
 
 /**
- * Value patterns after the recovery words and the URL queries, in order. Each match is replaced
- * as given. Earlier patterns take the larger shapes, so a later one never
- * leaves a readable part of a key behind.
+ * Key-shaped patterns, in order, after addresses and queries and before the
+ * recovery words. Each match is replaced as given. Earlier patterns take the
+ * larger shapes, so a later one never leaves a readable part of a key behind.
  */
-const REPLACEMENTS: ReadonlyArray<readonly [RegExp, string | ((match: string) => string)]> = [
-  // User name and password in an absolute URL.
-  [/(?<![a-z0-9+.-])([a-z][a-z0-9+.-]*:\/\/)[^\s/?#@"'<>]+@/gi, '$1[addr]@'],
-  // E-mail and Lightning addresses, also without a top-level domain: the whole
-  // word before the `@`, in any script (`andré@…`, `o'brien@…`).
-  [/(?<![^\s"<>()@])[^\s"<>()@]*[^\s"<>()@/\]]@[\p{L}\p{N}-]+(?:\.[\p{L}\p{N}-]+)*/gu, '[addr]'],
+const KEY_PATTERNS: ReadonlyArray<readonly [RegExp, string]> = [
   // JSON web tokens and other dotted three-part tokens.
   [/\beyJ[A-Za-z0-9_-]*(?:\.[A-Za-z0-9_-]*){1,2}/g, '[token]'],
   [
@@ -40,13 +38,15 @@ const REPLACEMENTS: ReadonlyArray<readonly [RegExp, string | ((match: string) =>
     /\b(?:lnbc|lntb|lnurl|lno1|lni1|spark1|sparkrt1|sp1|sprt1|spt1|bc1|tb1|bcrt1|[xtyzuv]p(?:rv|ub))[0-9A-Za-z]{10,}/gi,
     '[token]',
   ],
-  // Keys, hashes, preimages, and ids: 16 or more hex digits, also in groups
-  // joined by `:` or `-` (`ab:cd:…`, a UUID).
-  [
-    /(?<![0-9a-f:-])[0-9a-f]+(?:[:-][0-9a-f]+)+(?![0-9a-f:-])/gi,
-    (group: string): string => (group.replace(/[:-]/g, '').length >= 16 ? '[hex]' : group),
-  ],
+  // Keys, hashes, preimages, and ids: 16 or more hex digits.
   [/[0-9a-f]{16,}/gi, '[hex]'],
+];
+
+/**
+ * Patterns for any other long token, after {@link KEY_PATTERNS} and the hex
+ * groups.
+ */
+const TOKEN_PATTERNS: ReadonlyArray<readonly [RegExp, string]> = [
   // Any other base58, base64, or bech32 run of 20 or more characters with a
   // digit, or of 40 or more characters in mixed case without one. Each run is
   // tried from its start only, so a long message is read in linear time.
@@ -57,27 +57,73 @@ const REPLACEMENTS: ReadonlyArray<readonly [RegExp, string | ((match: string) =>
   ],
 ];
 
-/** One word of a message: everything between whitespace and quotes. */
-const TOKEN = /[^\s"'<>]+/g;
+/** Hex in groups joined by `:` or `-` (`ab:cd:…`, a UUID). */
+const HEX_GROUPS = /(?<![0-9a-f])[0-9a-f]+(?:[:-][0-9a-f]+)+(?![0-9a-f])/gi;
+
+/** Fewest hex digits of a group run that is replaced. */
+const MIN_HEX_DIGITS = 16;
+
+/** One word of a message: everything between two whitespace characters. */
+const WORD = /\S+/g;
+
+/** An `@` that is not the start of a package scope such as `/@breeztech`. */
+const ADDRESS_AT = /[^/]@/;
+
+/** Fewest characters after `?` or `#` that make a query without `/` or `=`. */
+const MIN_QUERY_LENGTH = 4;
 
 /**
- * Replaces the query string and fragment of every URL or path, with or
- * without a scheme, by `?[q]`: a word is cut at its first `?` or `#` when a
- * `/` comes before it or an `=` after it (`callback?code=…`). `what?` and
- * `#1` stay. Each character is read once.
+ * Replaces whole words that hold an address or a query. A word with an `@`
+ * after any character but `/` (an e-mail or `name@host` address in any
+ * script, quoted or not, or a URL with a user name and password) becomes
+ * `[addr]`. Otherwise a word is cut at its first `?` or `#`, and the rest
+ * becomes `?[q]`, when a `/` comes before it, an `=` after it, or at least
+ * {@link MIN_QUERY_LENGTH} characters follow it; `what?` and `#1` stay.
+ * Each character is read once.
  *
  * @param text - Error message.
- * @returns The message with the queries replaced.
+ * @returns The message with the addresses and queries replaced.
  */
-function replaceQueries(text: string): string {
-  return text.replace(TOKEN, (word) => {
+function replaceAddressesAndQueries(text: string): string {
+  return text.replace(WORD, (word) => {
+    if (ADDRESS_AT.test(word)) {
+      return '[addr]';
+    }
     const query = word.search(/[?#]/);
     if (query === -1) {
       return word;
     }
-    const isQuery = word.slice(0, query).includes('/') || word.slice(query).includes('=');
+    const rest = word.slice(query + 1);
+    const isQuery =
+      word.slice(0, query).includes('/') || rest.includes('=') || rest.length >= MIN_QUERY_LENGTH;
     return isQuery ? `${word.slice(0, query)}?[q]` : word;
   });
+}
+
+/**
+ * Applies each pattern in order.
+ *
+ * @param text - Error message.
+ * @param patterns - Patterns and their replacements.
+ * @returns The message with every match replaced.
+ */
+function applyPatterns(text: string, patterns: ReadonlyArray<readonly [RegExp, string]>): string {
+  return patterns.reduce((out, [pattern, replacement]) => out.replace(pattern, replacement), text);
+}
+
+/**
+ * Replaces every key-shaped part: {@link KEY_PATTERNS}, then hex groups of at
+ * least {@link MIN_HEX_DIGITS} digits (also when a separator follows the last
+ * group), then {@link TOKEN_PATTERNS}.
+ *
+ * @param text - Error message.
+ * @returns The message with the keys replaced.
+ */
+function replaceKeys(text: string): string {
+  const grouped = applyPatterns(text, KEY_PATTERNS).replace(HEX_GROUPS, (group) =>
+    group.replace(/[:-]/g, '').length >= MIN_HEX_DIGITS ? '[hex]' : group,
+  );
+  return applyPatterns(grouped, TOKEN_PATTERNS);
 }
 
 /**
@@ -122,18 +168,20 @@ function replaceWordRuns(text: string): string {
 }
 
 /**
- * Makes an error message safe to report. In this order it replaces every run
- * of three or more BIP-39 English words (any case, any separator) with
- * `[words]`; the query string and fragment of a URL or path (a word cut at
- * its first `?` or `#` when a `/` comes before it or an `=` after it) with
- * `?[q]`; the user name and password of an absolute URL with `[addr]`;
- * e-mail and `name@host` addresses (the whole name, in any script) with
- * `[addr]`; JSON web tokens and dotted three-part tokens, invoices, offers,
- * LNURL strings, Spark and base-chain addresses, and extended keys (`xprv`,
- * `xpub`, `tprv`, `tpub`, …) with `[token]`; 16 or more hex digits, also in
- * groups joined by `:` or `-`, with `[hex]`; and any other run of 20 or more
- * base58, base64, or bech32 characters that holds a digit, or of 40 or more
- * in mixed case without one, with `[token]`. Then it cuts the result to
+ * Makes an error message safe to report. In this order it replaces every
+ * word that holds an address (an `@` after any character but `/`: e-mail and
+ * `name@host` addresses in any script, a URL with a user name) with
+ * `[addr]`; the query string and fragment of a URL or path (a word cut at
+ * its first `?` or `#` when a `/` comes before it, an `=` after it, or at
+ * least four characters follow) with `?[q]`; JSON web tokens and dotted
+ * three-part tokens, invoices, offers, LNURL strings, Spark and base-chain
+ * addresses, and extended keys (`xprv`, `xpub`, `tprv`, `tpub`, …) with
+ * `[token]`; 16 or more hex digits, also in groups joined by `:` or `-`, with
+ * `[hex]`; any other run of 20 or more base58, base64, or bech32 characters
+ * that holds a digit, or of 40 or more in mixed case without one, with
+ * `[token]`; and last every run of three or
+ * more BIP-39 English words (any case, any separator) with `[words]`, so a
+ * word run never cuts a key short. Then it cuts the result to
  * {@link ERROR_MESSAGE_MAX_LENGTH} characters. Plain messages such as
  * `Failed to fetch` stay readable.
  *
@@ -141,15 +189,10 @@ function replaceWordRuns(text: string): string {
  * @returns The message with every key-shaped part replaced, at most 200 characters.
  */
 export function sanitizeErrorMessage(message: string): string {
-  const replaced = REPLACEMENTS.reduce(
-    (text, [pattern, replacement]) =>
-      // Two calls, because `replace` has one overload for each kind of replacement.
-      typeof replacement === 'string'
-        ? text.replace(pattern, replacement)
-        : text.replace(pattern, replacement),
-    replaceQueries(replaceWordRuns(message)),
+  return replaceWordRuns(replaceKeys(replaceAddressesAndQueries(message))).slice(
+    0,
+    ERROR_MESSAGE_MAX_LENGTH,
   );
-  return replaced.slice(0, ERROR_MESSAGE_MAX_LENGTH);
 }
 
 /**

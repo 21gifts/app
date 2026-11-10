@@ -67,10 +67,36 @@ describe('sanitizeErrorMessage', () => {
     expect(sanitizeErrorMessage('MaxDepositClaimFeeExceeded')).toBe('MaxDepositClaimFeeExceeded');
   });
 
-  it('replaces the user name and password of a URL', () => {
+  it('replaces a URL with a user name and password as a whole', () => {
     expect(sanitizeErrorMessage('GET https://alice:hunter2@h.example/x failed')).toBe(
-      'GET https://[addr]@h.example/x failed',
+      'GET [addr] failed',
     );
+  });
+
+  it.each([
+    'abandon.ability.able@xyzzyhost1.com',
+    'user@my_verylonghost.com',
+    '"alice.smith"@example.com',
+    'alice.smith@[192.0.2.1]',
+    'alice.smith(work)@example.com',
+    'user[tag]@example.com',
+    '<maximilian.o@example.com>',
+  ])('replaces the whole address %s', (address) => {
+    expect(sanitizeErrorMessage(`to ${address} failed`)).toBe('to [addr] failed');
+  });
+
+  it('cuts a query of four or more characters even without a path or an =', () => {
+    expect(sanitizeErrorMessage('example.com?secretvalue1 x')).toBe('example.com?[q] x');
+    expect(sanitizeErrorMessage('example.com#abcdefghijkl')).toBe('example.com?[q]');
+    expect(sanitizeErrorMessage("https://x.com/cb?code=abc'defghijklmnop")).toBe(
+      'https://x.com/cb?[q]',
+    );
+  });
+
+  it('replaces keys before recovery words, so no part of a key stays', () => {
+    expect(sanitizeErrorMessage('bc1qqqqqq1abandon2ability3able')).toBe('[token]');
+    expect(sanitizeErrorMessage('0123456789ab1add2fee3dad')).toBe('[hex]');
+    expect(sanitizeErrorMessage('[token] [token] [token]')).toBe('[token] [token] [token]');
   });
 
   it('replaces the query string of a path', () => {
@@ -118,6 +144,8 @@ describe('sanitizeErrorMessage', () => {
     expect(sanitizeErrorMessage('id 0123abcd-0123abcd end')).toBe('id [hex] end');
     expect(sanitizeErrorMessage('id 123e4567-e89b-12d3-a456-426614174000')).toBe('id [hex]');
     expect(sanitizeErrorMessage('add-a-fee ab:cd')).toBe('add-a-fee ab:cd');
+    expect(sanitizeErrorMessage('fp 01:23:45:67:89:00:11:22: bad')).toBe('fp [hex]: bad');
+    expect(sanitizeErrorMessage('fp 01-23-45-67-89-00-11-22-')).toBe('fp [hex]-');
   });
 
   it('replaces name@host addresses without a top-level domain', () => {
