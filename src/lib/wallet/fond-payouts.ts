@@ -107,8 +107,13 @@ export interface FondPayoutTickResult {
  */
 const unresolvedSentLate = new Map<string, Promise<boolean>>();
 
-/** Rows whose timed-out send the wallet confirmed before its history showed it. */
-const lateSends = new Set<string>();
+/**
+ * Payout ids whose send this tab saw as `paid`, including a timed-out send the
+ * wallet later confirmed. While an id is here its row is never paid again, even
+ * after its send left the history window. Ids the api stops listing are
+ * forgotten, because the api settled those rows.
+ */
+const paidPayouts = new Set<string>();
 
 /** How the tick finds the wallet send for one row. */
 interface PayoutTarget {
@@ -230,7 +235,8 @@ function thrownFailure(stage: 'prepare' | 'send', error: unknown): PaymentFailur
 /**
  * Remembers a timed-out send until its outcome is known. A send the wallet
  * later confirms (`true`) is treated as sent, so no tick pays the invoice
- * again; a send it rejects (`false`) is forgotten so a later tick may pay.
+ * again (also after its send left the history window); a send it rejects
+ * (`false`) is forgotten so a later tick may pay.
  *
  * @param id - Payout row id.
  * @param sentLate - Promise of the wallet's late outcome.
@@ -241,7 +247,7 @@ function rememberSentLate(id: string, sentLate: Promise<boolean>): void {
     (sent) => {
       unresolvedSentLate.delete(id);
       if (sent) {
-        lateSends.add(id);
+        paidPayouts.add(id);
       }
     },
     () => {
@@ -307,6 +313,7 @@ async function payInvoice(deps: FondPayoutTickDeps, target: PayoutTarget): Promi
     }
     return 'skipped';
   }
+  paidPayouts.add(target.id);
   if (deps.isCancelled()) {
     return 'cancelled';
   }
@@ -319,8 +326,10 @@ async function payInvoice(deps: FondPayoutTickDeps, target: PayoutTarget): Promi
  *
  * Any `completed` or `pending` match skips the row, because the api worker will
  * mark it paid. No match or only `failed` matches falls through to paying the
- * row once. A row whose timed-out send the wallet confirmed is never paid again
- * while its history does not yet show that send.
+ * row once. A row whose send this tab saw as paid (a `paid` send or a
+ * timed-out send the wallet confirmed) is never paid again while the api still
+ * lists it, even when its send is no longer in the history window. The history
+ * check remains the guard across reloads.
  *
  * @param deps - Tick collaborators.
  * @param target - The payout target.
@@ -340,7 +349,7 @@ async function payAndCheckHistory(
   } catch {
     return 'skipped';
   }
-  if (lateSends.has(target.id)) {
+  if (paidPayouts.has(target.id)) {
     return 'skipped';
   }
   return payInvoice(deps, target);
@@ -359,10 +368,12 @@ async function payAndCheckHistory(
  * sends are read and every send that matches the payment hash, BOLT11, or
  * Spark invoice is collected: any `completed` or `pending` match skips the row,
  * and only no match or only `failed` matches pays it. A row whose history
- * cannot be read is skipped and never paid twice. An empty wallet stops the
- * whole tick. Cancellation returns at once at its next check. Amounts come only
- * from the invoice; the app never computes or rounds one. The invoice and
- * address are never logged.
+ * cannot be read is skipped and never paid twice. A row whose send this tab
+ * saw as paid is skipped even after its send left the newest 100; the history
+ * stays the guard across reloads. Ids the list no longer returns are forgotten,
+ * so the set stays small. An empty wallet stops the whole tick. Cancellation
+ * returns at once at its next check. Amounts come only from the invoice; the
+ * app never computes or rounds one. The invoice and address are never logged.
  *
  * @param deps - Session, api calls, and wallet calls.
  * @returns Counts of paid and skipped rows and the reason to stop.
@@ -380,6 +391,12 @@ export async function runFondPayoutTick(deps: FondPayoutTickDeps): Promise<FondP
       summary.stop = 'forbidden';
     }
     return summary;
+  }
+  const listed = new Set(list.payouts.map((row) => row.id));
+  for (const id of paidPayouts) {
+    if (!listed.has(id)) {
+      paidPayouts.delete(id);
+    }
   }
   for (const row of list.payouts) {
     if (deps.isCancelled()) {

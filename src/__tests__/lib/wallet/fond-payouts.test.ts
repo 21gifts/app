@@ -637,6 +637,39 @@ describe('runFondPayoutTick rows', () => {
     expect(second.payFromWallet).not.toHaveBeenCalled();
   });
 
+  it('does not pay a row again after its own send left the history window', async () => {
+    const first = depsFor([OWED]);
+    await expect(tick(first)).resolves.toEqual({ paid: 1, skipped: 0, stop: null });
+
+    const second = depsFor([OWED]);
+    vi.mocked(second.listWalletPayments).mockResolvedValue([]);
+    await expect(tick(second)).resolves.toEqual({ paid: 0, skipped: 1, stop: null });
+    expect(second.postFondPayoutInvoice).toHaveBeenCalledTimes(1);
+    expect(second.payFromWallet).not.toHaveBeenCalled();
+  });
+
+  it('forgets a paid id once the list no longer returns it', async () => {
+    const first = depsFor([OWED]);
+    await expect(tick(first)).resolves.toEqual({ paid: 1, skipped: 0, stop: null });
+    await expect(tick(depsFor([]))).resolves.toEqual({ paid: 0, skipped: 0, stop: null });
+
+    const relisted = depsFor([OWED]);
+    await expect(tick(relisted)).resolves.toEqual({ paid: 1, skipped: 0, stop: null });
+    expect(relisted.payFromWallet).toHaveBeenCalledWith({ type: 'input', input: SPARK_A });
+  });
+
+  it('guards a forgotten id by its history when the row is listed again', async () => {
+    await tick(depsFor([OWED]));
+    await tick(depsFor([]));
+
+    const relisted = depsFor([OWED]);
+    vi.mocked(relisted.listWalletPayments).mockResolvedValue([
+      sentPayment({ info: { paymentHash: HASH_A } }),
+    ]);
+    await expect(tick(relisted)).resolves.toEqual({ paid: 0, skipped: 1, stop: null });
+    expect(relisted.payFromWallet).not.toHaveBeenCalled();
+  });
+
   it('pays again after a timed-out send the wallet rejects, and after a late reject', async () => {
     let settle: (sent: boolean) => void = () => undefined;
     const sentLate = new Promise<boolean>((resolve) => {
