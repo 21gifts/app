@@ -1,6 +1,5 @@
-import { createHash } from 'node:crypto';
 import { expect, test, type APIRequestContext, type Page } from '@playwright/test';
-import { fetchFondPayouts, postFondPayoutInvoice, postFondPayoutProof } from '../src/lib/api';
+import { fetchFondPayouts, postFondPayoutInvoice } from '../src/lib/api';
 
 /** The api stub, for reading what the app sent it. */
 const MOCK_API = 'http://127.0.0.1:3001';
@@ -8,11 +7,14 @@ const MOCK_API = 'http://127.0.0.1:3001';
 /** The fixture payout row the stub api lists. */
 const ROW_ID = '11111111-1111-4111-8111-111111111111';
 
-/** A 64-hex preimage for the fixture proof. */
-const PREIMAGE = '11'.repeat(32);
+/** The BOLT11 the fixture invoice returns. */
+const BOLT11 = 'lnbc1e2efondpayout';
 
-/** The fixture invoice's payment hash: SHA-256 of {@link PREIMAGE}. */
-const PAYMENT_HASH = createHash('sha256').update(Buffer.from(PREIMAGE, 'hex')).digest('hex');
+/** The fee-free Spark invoice the fixture returns unless a session asks for null. */
+const SPARK_INVOICE = 'spark1e2efondpayout';
+
+/** The fixture invoice's payment hash, as the api identifies the send. */
+const PAYMENT_HASH = 'ab'.repeat(32);
 
 /**
  * Runs `work` with relative `fetch` resolved against the running Next server,
@@ -39,19 +41,21 @@ async function withSameOriginFetch<T>(work: () => Promise<T>): Promise<T> {
 
 /**
  * Mints a fixture session through the mock api. Every test gets its own Fond
- * row state, so parallel tests cannot share an invoice or proof.
+ * row state, so parallel tests cannot share an invoice or settlement.
  *
  * @param request - Playwright request context.
  * @param role - Account role.
+ * @param sparkInvoice - The Spark invoice the fixture returns, or null to cover the BOLT11 path.
  * @returns The session token.
  */
 async function fondSession(
   request: APIRequestContext,
   role: 'fond' | 'moderator' = 'fond',
+  sparkInvoice: string | null = SPARK_INVOICE,
 ): Promise<string> {
   const name = role === 'fond' ? 'Fond' : 'Mod';
   const created = await request.post(`${MOCK_API}/e2e/role-session`, {
-    data: { role, name },
+    data: { role, name, sparkInvoice },
   });
   expect(created.status()).toBe(200);
   return ((await created.json()) as { token: string }).token;
@@ -63,14 +67,16 @@ async function fondSession(
  * @param page - The page.
  * @param request - Playwright request context against the running app.
  * @param role - Account role.
+ * @param sparkInvoice - The Spark invoice the fixture returns, or null to cover the BOLT11 path.
  * @returns The session token.
  */
 async function seedFondPage(
   page: Page,
   request: APIRequestContext,
   role: 'fond' | 'moderator',
+  sparkInvoice: string | null = SPARK_INVOICE,
 ): Promise<string> {
-  const token = await fondSession(request, role);
+  const token = await fondSession(request, role, sparkInvoice);
   await page.addInitScript((session: string) => {
     localStorage.setItem('21gifts.session', session);
   }, token);
@@ -78,7 +84,7 @@ async function seedFondPage(
 }
 
 /**
- * Pauses the page clock just after the pinned instant, so the preimage poll
+ * Pauses the page clock just after the pinned instant, so every loop interval
  * waits for an explicit fast-forward.
  *
  * @param page - The page.
@@ -94,7 +100,13 @@ async function pauseFondClock(page: Page): Promise<void> {
 interface FondDebug {
   lists: number;
   invoices: number;
-  proofs: Array<{ id: string; preimage: string; paymentHash: string }>;
+  invoiceRequests: number;
+  invoice: {
+    id: string;
+    bolt11: string;
+    paymentHash: string;
+    sparkInvoice: string | null;
+  } | null;
   paid: boolean;
 }
 
@@ -103,7 +115,7 @@ interface FondDebug {
  *
  * @param request - Playwright request context.
  * @param session - Fixture session token.
- * @returns The list and invoice counts, proofs, and paid flag.
+ * @returns The list count, issued invoices and requests, recorded invoice, and paid flag.
  */
 async function fondDebug(request: APIRequestContext, session: string): Promise<FondDebug> {
   const res = await request.get(`${MOCK_API}/e2e/fond-payouts`, {
@@ -111,6 +123,73 @@ async function fondDebug(request: APIRequestContext, session: string): Promise<F
   });
   expect(res.status()).toBe(200);
   return (await res.json()) as FondDebug;
+}
+
+/**
+ * Marks the fixture row paid as the api worker would, so the list stops returning it.
+ *
+ * @param request - Playwright request context.
+ * @param session - Fixture session token.
+ * @returns Nothing.
+ */
+async function settleFondPayout(request: APIRequestContext, session: string): Promise<void> {
+  const res = await request.post(`${MOCK_API}/e2e/fond-payouts/settle`, {
+    headers: { authorization: `Bearer ${session}` },
+  });
+  expect(res.status()).toBe(200);
+}
+
+/**
+ * Advances the paused page clock in steps until the mock has issued the fixture invoice.
+ *
+ * @param page - The page.
+ * @param request - Playwright request context.
+ * @param session - Fixture session token.
+ * @returns The recorded invoice.
+ */
+async function invoiceIssued(
+  page: Page,
+  request: APIRequestContext,
+  session: string,
+): Promise<NonNullable<FondDebug['invoice']>> {
+  await expect
+    .poll(
+      async () => {
+        await page.clock.runFor(2_000);
+        return (await fondDebug(request, session)).invoice;
+      },
+      { timeout: 20_000 },
+    )
+    .not.toBeNull();
+  const invoice = (await fondDebug(request, session)).invoice;
+  expect(invoice).not.toBeNull();
+  return invoice as NonNullable<FondDebug['invoice']>;
+}
+
+/**
+ * Advances the paused page clock in steps until the loop lists the row again.
+ *
+ * @param page - The page.
+ * @param request - Playwright request context.
+ * @param session - Fixture session token.
+ * @param after - Current list count.
+ * @returns Nothing.
+ */
+async function nextTick(
+  page: Page,
+  request: APIRequestContext,
+  session: string,
+  after: number,
+): Promise<void> {
+  await expect
+    .poll(
+      async () => {
+        await page.clock.runFor(15_000);
+        return (await fondDebug(request, session)).lists;
+      },
+      { timeout: 30_000 },
+    )
+    .toBeGreaterThan(after);
 }
 
 /**
@@ -164,7 +243,7 @@ test('Function: proxyFondPayoutInvoicePost — no bearer is 401', async ({ reque
   expect((await request.post('/fond/payouts/[id]/invoice')).status()).toBe(401);
 });
 
-test('Function: postFondPayoutInvoice — the fixture row returns its BOLT11', async ({
+test('Function: postFondPayoutInvoice — the fixture row returns its BOLT11 and Spark invoice', async ({
   request,
 }) => {
   const session = await fondSession(request);
@@ -174,51 +253,24 @@ test('Function: postFondPayoutInvoice — the fixture row returns its BOLT11', a
   expect(issued.status()).toBe(200);
   expect(await issued.json()).toEqual({
     id: ROW_ID,
-    bolt11: 'lnbc1e2efondpayout',
+    bolt11: BOLT11,
     paymentHash: PAYMENT_HASH,
+    sparkInvoice: SPARK_INVOICE,
   });
   const fetched = await withSameOriginFetch(() => postFondPayoutInvoice(session, ROW_ID));
   expect(fetched).toEqual({
     ok: true,
     invoice: {
       id: ROW_ID,
-      bolt11: 'lnbc1e2efondpayout',
+      bolt11: BOLT11,
       paymentHash: PAYMENT_HASH,
+      sparkInvoice: SPARK_INVOICE,
     },
   });
   const missing = await withSameOriginFetch(() =>
     postFondPayoutInvoice(session, '22222222-2222-4222-8222-222222222222'),
   );
   expect(missing).toEqual({ ok: false, status: 404, error: 'Not found' });
-});
-
-test('Function: proxyFondPayoutProofPost — no bearer is 401', async ({ request }) => {
-  expect((await request.post('/fond/payouts/[id]/proof')).status()).toBe(401);
-});
-
-test('Function: postFondPayoutProof — the fixture checks sha256(preimage) before it proves', async ({
-  request,
-}) => {
-  const session = await fondSession(request);
-  const wrong = await request.post(`/fond/payouts/${ROW_ID}/proof`, {
-    headers: { authorization: `Bearer ${session}` },
-    data: { preimage: '22'.repeat(32) },
-  });
-  expect(wrong.status()).toBe(400);
-  const proved = await request.post(`/fond/payouts/${ROW_ID}/proof`, {
-    headers: { authorization: `Bearer ${session}` },
-    data: { preimage: PREIMAGE },
-  });
-  expect(proved.status()).toBe(200);
-  expect(await proved.json()).toEqual({ status: 'paid', id: ROW_ID });
-  const posted = await withSameOriginFetch(() => postFondPayoutProof(session, ROW_ID, PREIMAGE));
-  expect(posted).toEqual({ ok: true });
-  const refused = await withSameOriginFetch(() => postFondPayoutProof(session, ROW_ID, ''));
-  expect(refused).toEqual({
-    ok: false,
-    status: 400,
-    error: 'Expected a JSON body with preimage',
-  });
 });
 
 test('Function: FondPayoutSync — a moderator never calls /fond/payouts', async ({
@@ -244,116 +296,67 @@ test('Function: fondE2eWallet — the Playwright wallet pays the fixture without
   await pauseFondClock(page);
   const session = await seedFondPage(page, request, 'fond');
   await openWelcome(page, 'Fond');
-  await expect.poll(async () => (await fondDebug(request, session)).invoices).toBe(1);
-  await expect
-    .poll(
-      async () => {
-        await page.clock.runFor(2_000);
-        return (await fondDebug(request, session)).proofs.length;
-      },
-      { timeout: 20_000 },
-    )
-    .toBe(1);
-  expect((await fondDebug(request, session)).proofs).toEqual([
-    { id: ROW_ID, preimage: PREIMAGE, paymentHash: PAYMENT_HASH },
-  ]);
+  const invoice = await invoiceIssued(page, request, session);
+  expect(invoice).toEqual({
+    id: ROW_ID,
+    bolt11: BOLT11,
+    paymentHash: PAYMENT_HASH,
+    sparkInvoice: SPARK_INVOICE,
+  });
+  const first = await fondDebug(request, session);
+  await nextTick(page, request, session, first.lists);
+  expect(await fondDebug(request, session)).toMatchObject({ invoices: 1, paid: false });
 });
 
-test('Function: runFondPayoutTick — the loop invoices, pays, proves, and skips the paid row next time', async ({
+test('Function: runFondPayoutTick — the loop invoices and pays the Spark invoice once, then nothing after settle', async ({
   page,
   request,
 }) => {
   await pauseFondClock(page);
   const session = await seedFondPage(page, request, 'fond');
   await openWelcome(page, 'Fond');
-  await expect.poll(async () => (await fondDebug(request, session)).invoices).toBe(1);
-  expect((await fondDebug(request, session)).proofs).toHaveLength(0);
-  await expect
-    .poll(
-      async () => {
-        await page.clock.runFor(2_000);
-        return (await fondDebug(request, session)).proofs.length;
-      },
-      { timeout: 20_000 },
-    )
-    .toBe(1);
-  const first = await fondDebug(request, session);
-  expect(first.invoices).toBe(1);
-  expect(first.proofs).toEqual([{ id: ROW_ID, preimage: PREIMAGE, paymentHash: PAYMENT_HASH }]);
-  expect(first.paid).toBe(true);
-  // The loop's next interval sees the paid row gone and requests no second invoice.
-  await expect
-    .poll(
-      async () => {
-        await page.clock.runFor(15_000);
-        return (await fondDebug(request, session)).lists;
-      },
-      { timeout: 30_000 },
-    )
-    .toBeGreaterThan(first.lists);
+  const invoice = await invoiceIssued(page, request, session);
+  expect(invoice.sparkInvoice).toBe(SPARK_INVOICE);
+  const invoiced = await fondDebug(request, session);
+  // The next tick finds the completed Spark send in history and issues no second invoice.
+  await nextTick(page, request, session, invoiced.lists);
+  expect(await fondDebug(request, session)).toMatchObject({ invoices: 1, paid: false });
+  await settleFondPayout(request, session);
+  // Once the api worker marks the row paid, the list is empty and no invoice is requested again.
+  const settled = await fondDebug(request, session);
+  await nextTick(page, request, session, settled.lists);
   const second = await fondDebug(request, session);
   expect(second.invoices).toBe(1);
-  expect(second.proofs).toHaveLength(1);
+  expect(second.invoiceRequests).toBe(settled.invoiceRequests);
+  expect(second.paid).toBe(true);
 });
 
-test('Function: runFondPayoutTickOnce — the single-flight loop pays and proves the fixture row', async ({
+test('Function: runFondPayoutTick — the loop pays the BOLT11 when the api returns no Spark invoice', async ({
+  page,
+  request,
+}) => {
+  await pauseFondClock(page);
+  const session = await seedFondPage(page, request, 'fond', null);
+  await openWelcome(page, 'Fond');
+  const invoice = await invoiceIssued(page, request, session);
+  expect(invoice).toMatchObject({ bolt11: BOLT11, sparkInvoice: null });
+  const invoiced = await fondDebug(request, session);
+  // The next tick finds the completed BOLT11 send in history and issues no second invoice.
+  await nextTick(page, request, session, invoiced.lists);
+  expect(await fondDebug(request, session)).toMatchObject({ invoices: 1, paid: false });
+});
+
+test('Function: runFondPayoutTickOnce — the single-flight loop pays the fixture row once', async ({
   page,
   request,
 }) => {
   await pauseFondClock(page);
   const session = await seedFondPage(page, request, 'fond');
   await openWelcome(page, 'Fond');
-  await expect.poll(async () => (await fondDebug(request, session)).invoices).toBe(1);
-  await expect
-    .poll(
-      async () => {
-        await page.clock.runFor(2_000);
-        return (await fondDebug(request, session)).proofs.length;
-      },
-      { timeout: 20_000 },
-    )
-    .toBe(1);
-  const paid = await fondDebug(request, session);
-  expect(paid).toMatchObject({
-    invoices: 1,
-    paid: true,
-    proofs: [{ id: ROW_ID, preimage: PREIMAGE, paymentHash: PAYMENT_HASH }],
-  });
-  // A second interval is another tick through the single-flight wrapper: the row is already paid.
-  const before = await fondDebug(request, session);
-  await expect
-    .poll(
-      async () => {
-        await page.clock.runFor(15_000);
-        return (await fondDebug(request, session)).lists;
-      },
-      { timeout: 30_000 },
-    )
-    .toBeGreaterThan(before.lists);
-  expect((await fondDebug(request, session)).invoices).toBe(1);
-});
-
-test('Function: waitForFondPayoutRead — the payment stays pending through one poll, then completes', async ({
-  page,
-  request,
-}) => {
-  await pauseFondClock(page);
-  const session = await seedFondPage(page, request, 'fond');
-  await openWelcome(page, 'Fond');
-  await expect.poll(async () => (await fondDebug(request, session)).invoices).toBe(1);
-  expect((await fondDebug(request, session)).proofs).toHaveLength(0);
-  // The fake wallet reports the first history read as pending; the proof can only
-  // arrive after the second PAY_POLL_MS wait and a read that returns the preimage.
-  await expect
-    .poll(
-      async () => {
-        await page.clock.runFor(2_000);
-        return (await fondDebug(request, session)).proofs.length;
-      },
-      { timeout: 20_000 },
-    )
-    .toBe(1);
-  const proved = await fondDebug(request, session);
-  expect(proved.proofs[0]?.preimage).toBe(PREIMAGE);
-  expect(proved.proofs[0]?.paymentHash).toBe(PAYMENT_HASH);
+  const invoice = await invoiceIssued(page, request, session);
+  expect(invoice).toMatchObject({ id: ROW_ID, paymentHash: PAYMENT_HASH });
+  const invoiced = await fondDebug(request, session);
+  // A second interval is another tick through the single-flight wrapper; the send is in history.
+  await nextTick(page, request, session, invoiced.lists);
+  expect(await fondDebug(request, session)).toMatchObject({ invoices: 1, paid: false });
 });

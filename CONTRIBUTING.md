@@ -169,9 +169,7 @@ app/
 │   │   ├── fond/
 │   │   │   └── payouts/
 │   │   │       ├── route.ts              # GET /fond/payouts (today's open Fond rows)
-│   │   │       └── [id]/
-│   │   │           ├── invoice/route.ts  # POST /fond/payouts/:id/invoice (BOLT11 + payment hash)
-│   │   │           └── proof/route.ts    # POST /fond/payouts/:id/proof (preimage as proof)
+│   │   │       └── [id]/invoice/route.ts # POST /fond/payouts/:id/invoice (Spark invoice or BOLT11)
 │   │   ├── login/
 │   │   │   └── page.tsx         # GET /login — login + signed-in form
 │   │   ├── recover/
@@ -424,7 +422,7 @@ app/
 │   │   │   ├── payment-fixtures.ts # Synthetic SDK payments for the history-rows pin (invariants unit-tested)
 │   │   │   ├── heart-context.ts # fetchHeartPosts: gift payment hashes → POST /me/wallet/hearts
 │   │   │   ├── wallet-report.ts # reportWallet: balance + unacknowledged payments → POST /me/wallet/report
-│   │   │   ├── fond-payouts.ts  # runFondPayoutTick: list → invoice → pay once → poll preimage → proof
+│   │   │   ├── fond-payouts.ts  # runFondPayoutTick: list → invoice → pay sparkInvoice ?? bolt11 once
 │   │   │   ├── payment-failure.ts # reportPaymentFailure: payment_failed event + `Payment failed` error report
 │   │   │   └── lnurl-relay.ts   # lnurlRelayTarget: outside address or LNURL goes through the api
 │   │   ├── gifts-address.ts     # Public username@21.gifts display handle
@@ -508,7 +506,7 @@ app/
 │   ├── messages.spec.ts         # Inbox HTML /messages vs public /messages/[id]
 │   ├── proposals.spec.ts        # /moderate/proposals staff confirm/reject queue
 │   ├── applications.spec.ts     # /grants grant card, queue, and review; old paths redirect
-│   ├── fond-payouts.spec.ts     # /fond/payouts proxies, client calls, tick, and the null loop component
+│   ├── fond-payouts.spec.ts     # /fond/payouts proxies, client calls, invoice/settle tick loop
 │   ├── proxy.spec.ts            # Same-origin api proxy round-trips against the stub
 │   ├── view.spec.ts             # /view/[viewKey] public profile
 │   ├── mock-api.mjs             # Local 21.gifts api protocol stub for proxies

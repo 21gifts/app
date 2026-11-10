@@ -1220,14 +1220,7 @@
 
 ## Endpoint: POST /fond/payouts/[id]/invoice
 
-- **Purpose:** Same-origin Bearer proxy of api `POST /fond/payouts/:id/invoice`. The api converts the row's stored USD amount at the current spot and returns `{ id, bolt11, paymentHash }`; the app pays the invoice as sent.
+- **Purpose:** Same-origin Bearer proxy of api `POST /fond/payouts/:id/invoice`. The api converts the row's stored USD amount at the current spot and returns `{ id, bolt11, paymentHash, sparkInvoice }`; the app pays `sparkInvoice ?? bolt11` once and sends no proof.
 - **Auth:** Bearer session of the Fond account. The api answers 403 `Fond only` for another session.
-- **Returns:** Upstream 200 `{ id, bolt11, paymentHash }`.
+- **Returns:** Upstream 200 `{ id, bolt11, paymentHash, sparkInvoice }`, with `sparkInvoice` a string or null. After the payment, the api detects the send by payment hash, BOLT11, or Spark invoice string and settles the row itself.
 - **Errors:** Upstream 404 for an unknown or malformed id, 409 in progress / not payable / amount below one sat, 401, 403, 503, or 502 when unreachable.
-
-## Endpoint: POST /fond/payouts/[id]/proof
-
-- **Purpose:** Same-origin Bearer proxy of api `POST /fond/payouts/:id/proof` with JSON `{ preimage }`. The api checks the 64-hex preimage against the row's payment hash and settles the payout.
-- **Auth:** Bearer session of the Fond account. The api answers 403 `Fond only` for another session.
-- **Returns:** Upstream 200 `{ status: 'paid', id }` (or an equivalent success body).
-- **Errors:** Upstream 400 for a missing preimage or a hash mismatch, 404 for an unknown id, 409 when the row is not invoiced or a proof is in progress, 401, 403, 503, or 502 when unreachable.

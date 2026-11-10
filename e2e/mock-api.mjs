@@ -68,22 +68,20 @@ const FOND_PAYOUT_ROW = {
   paymentHash: null,
 };
 
-/** BOLT11 and preimage the fixture invoice and Playwright wallet use together. */
+/** BOLT11 and fee-free Spark invoice the fixture returns. */
 const FOND_INVOICE = {
   bolt11: 'lnbc1e2efondpayout',
-  preimage: '11'.repeat(32),
+  sparkInvoice: 'spark1e2efondpayout',
 };
 
-/** SHA-256 of {@link FOND_INVOICE.preimage}, as the invoice's payment hash. */
-const FOND_PAYMENT_HASH = createHash('sha256')
-  .update(Buffer.from(FOND_INVOICE.preimage, 'hex'))
-  .digest('hex');
+/** The fixture invoice's payment hash, as the api identifies the send. */
+const FOND_PAYMENT_HASH = 'ab'.repeat(32);
 
 /**
  * Per-session Fond fixture state. Keeping it per bearer lets parallel tests
- * each invoice and prove their own fixture row.
+ * each invoice and settle their own fixture row.
  *
- * @type {Map<string, { lists: number, invoices: number, proofs: Array<{ id: string, preimage: string, paymentHash: string }> }>}
+ * @type {Map<string, { lists: number, invoices: number, invoiceRequests: number, invoice: { id: string, bolt11: string, paymentHash: string, sparkInvoice: string | null } | null, sparkInvoice: string | null, settled: boolean }>}
  */
 const fondPayoutStates = new Map();
 
@@ -91,15 +89,44 @@ const fondPayoutStates = new Map();
  * The Fond fixture state of one session, created empty on first use.
  *
  * @param {string} token - Bearer session.
- * @returns {{ lists: number, invoices: number, proofs: Array<{ id: string, preimage: string, paymentHash: string }> }}
+ * @returns The session's list, invoice, and settlement state.
  */
 function fondPayoutState(token) {
   let state = fondPayoutStates.get(token);
   if (state === undefined) {
-    state = { lists: 0, invoices: 0, proofs: [] };
+    state = {
+      lists: 0,
+      invoices: 0,
+      invoiceRequests: 0,
+      invoice: null,
+      sparkInvoice: FOND_INVOICE.sparkInvoice,
+      settled: false,
+    };
     fondPayoutStates.set(token, state);
   }
   return state;
+}
+
+/**
+ * The fixture row as the api would list it now: still owed before an invoice,
+ * `invoiced` with that invoice's payment hash after one, and gone once the
+ * worker records the send.
+ *
+ * @param {{ invoice: { paymentHash: string } | null, settled: boolean }} state - Session state.
+ * @returns The row, or `null` when the api worker has settled it.
+ */
+function fondPayoutRow(state) {
+  if (state.settled) {
+    return null;
+  }
+  if (state.invoice === null) {
+    return FOND_PAYOUT_ROW;
+  }
+  return {
+    ...FOND_PAYOUT_ROW,
+    status: 'invoiced',
+    paymentHash: state.invoice.paymentHash,
+  };
 }
 
 function roleAtLeast(role, min) {
@@ -111,7 +138,7 @@ function roleAtLeast(role, min) {
  * `/e2e/role-session` at rank `fond` or above.
  *
  * @param {string | null} token - Bearer session.
- * @returns {boolean} Whether the three `/fond/payouts` handlers answer it.
+ * @returns {boolean} Whether the Fond fixture handlers answer it.
  */
 function fondPayer(token) {
   if (token === null) {
@@ -3040,7 +3067,13 @@ const server = http.createServer(async (req, res) => {
     }
     const role = parsed?.role;
     const name = parsed?.name;
-    if (!ROLE_ORDER.includes(role) || typeof name !== 'string' || name === '') {
+    const sparkInvoice = parsed?.sparkInvoice;
+    if (
+      !ROLE_ORDER.includes(role) ||
+      typeof name !== 'string' ||
+      name === '' ||
+      (sparkInvoice !== undefined && sparkInvoice !== null && typeof sparkInvoice !== 'string')
+    ) {
       json(res, 400, { error: 'Expected a JSON body with role and name' });
       return;
     }
@@ -3054,6 +3087,9 @@ const server = http.createServer(async (req, res) => {
     afterFieldWrite(account);
     const token = hex(randomBytes(32));
     byToken.set(token, account);
+    if (sparkInvoice !== undefined) {
+      fondPayoutState(token).sparkInvoice = sparkInvoice;
+    }
     json(res, 200, { token, account });
     return;
   }
@@ -3961,7 +3997,8 @@ const server = http.createServer(async (req, res) => {
     }
     const state = fondPayoutState(token);
     state.lists += 1;
-    json(res, 200, { payouts: state.proofs.length === 0 ? [FOND_PAYOUT_ROW] : [] });
+    const row = fondPayoutRow(state);
+    json(res, 200, { payouts: row === null ? [] : [row] });
     return;
   }
 
@@ -3983,50 +4020,21 @@ const server = http.createServer(async (req, res) => {
       id = '';
     }
     const state = fondPayoutState(token);
-    if (id !== FOND_PAYOUT_ROW.id || state.proofs.length > 0) {
+    state.invoiceRequests += 1;
+    if (id !== FOND_PAYOUT_ROW.id || state.settled) {
       json(res, 404, { error: 'Not found' });
       return;
     }
-    state.invoices += 1;
-    json(res, 200, { id, bolt11: FOND_INVOICE.bolt11, paymentHash: FOND_PAYMENT_HASH });
-    return;
-  }
-
-  const fondProofMatch = pathName.match(/^\/fond\/payouts\/([^/]+)\/proof$/);
-  if (method === 'POST' && fondProofMatch) {
-    const token = bearer(req);
-    if (token === null) {
-      json(res, 401, { error: 'Unauthorized' });
-      return;
+    if (state.invoice === null) {
+      state.invoice = {
+        id,
+        bolt11: FOND_INVOICE.bolt11,
+        paymentHash: FOND_PAYMENT_HASH,
+        sparkInvoice: state.sparkInvoice,
+      };
+      state.invoices += 1;
     }
-    if (!fondPayer(token)) {
-      json(res, 403, { error: 'Fond only' });
-      return;
-    }
-    let id;
-    try {
-      id = decodeURIComponent(fondProofMatch[1] ?? '');
-    } catch {
-      id = '';
-    }
-    if (id !== FOND_PAYOUT_ROW.id) {
-      json(res, 404, { error: 'Not found' });
-      return;
-    }
-    const body = jsonObject(rawBody);
-    if (typeof body?.preimage !== 'string' || body.preimage === '') {
-      json(res, 400, { error: 'Expected a JSON body with preimage' });
-      return;
-    }
-    const preimage = body.preimage.toLowerCase();
-    const paymentHash = createHash('sha256').update(Buffer.from(preimage, 'hex')).digest('hex');
-    if (paymentHash !== FOND_PAYMENT_HASH) {
-      json(res, 400, { error: 'Preimage does not match payment hash' });
-      return;
-    }
-    const state = fondPayoutState(token);
-    state.proofs.push({ id, preimage, paymentHash });
-    json(res, 200, { status: 'paid', id });
+    json(res, 200, state.invoice);
     return;
   }
 
@@ -4040,9 +4048,22 @@ const server = http.createServer(async (req, res) => {
     json(res, 200, {
       lists: state.lists,
       invoices: state.invoices,
-      proofs: state.proofs,
-      paid: state.proofs.length > 0,
+      invoiceRequests: state.invoiceRequests,
+      invoice: state.invoice,
+      paid: state.settled,
     });
+    return;
+  }
+
+  if (method === 'POST' && pathName === '/e2e/fond-payouts/settle') {
+    const token = bearer(req);
+    if (token === null || !fondPayer(token)) {
+      json(res, 401, { error: 'Unauthorized' });
+      return;
+    }
+    const state = fondPayoutState(token);
+    state.settled = true;
+    json(res, 200, { paid: state.settled, invoice: state.invoice });
     return;
   }
 
