@@ -200,20 +200,6 @@ type UnsettledHeart = { invoice: string; sinceMs: number; sent: boolean; notifie
 const unsettledHearts = new Map<string, UnsettledHeart>();
 
 /**
- * Settles a heart the app already saw as paid. A `sentLate` that resolves after
- * that settlement stays silent, so `onPaid` runs once.
- *
- * @param messageId - Note the heart is for.
- * @param held - The note's unsettled heart.
- * @returns `paid` after forgetting the settled heart.
- */
-function settlePaidHeart(messageId: string, held: UnsettledHeart): 'paid' {
-  held.notified = true;
-  unsettledHearts.delete(messageId);
-  return 'paid';
-}
-
-/**
  * Note ids with a heart run in progress in this tab, across every board, so a
  * board mounted again during a send cannot start a second heart on that note.
  */
@@ -477,9 +463,11 @@ async function finishPreparedPay(
 
 /**
  * Settles a heart on this note whose send timed out. A late send the SDK
- * reported as sent while the wallet was read counts as paid and nothing new is
- * sent. Otherwise the wallet's newest payments decide: a completed payment is
- * the heart that was asked for, so it counts as paid and nothing new is sent.
+ * reported as sent and booked while the wallet was read clears the old heart,
+ * so the retap sends its own new heart. Otherwise the wallet's newest payments
+ * decide: a completed payment is the heart that was asked for, so it counts as
+ * paid and nothing new is sent. Marking that payment notified keeps a later
+ * `sentLate` callback silent.
  * A failed payment, or one still missing after {@link HEART_TIP_UNSETTLED_MS},
  * clears the note. A pending payment, a payment not listed yet, or a list that
  * cannot be read keeps it waiting.
@@ -498,9 +486,10 @@ async function settleUnsettledHeart(messageId: string): Promise<'clear' | 'paid'
   } catch {
     return 'pending';
   }
-  // `sentLate` may have reported the send while the list was being read.
+  // `sentLate` may have booked the old heart while the list was being read. In
+  // that case this retap is still a new click and must send its own heart.
   if (held.sent) {
-    return settlePaidHeart(messageId, held);
+    return 'clear';
   }
   const match = payments.find(
     (payment) => payment.direction === 'sent' && payment.info.invoice === held.invoice,

@@ -1074,6 +1074,60 @@ async function openProfile(page: Page): Promise<void> {
   await expect(page.getByRole('button', { name: '14 posts' })).toBeVisible();
 }
 
+const VISUAL_HEARTS = [
+  {
+    accountId: 'acc_grace',
+    name: 'Grace',
+    role: 'moderator',
+    sats: 21,
+    createdAt: '2026-08-03T10:07:00.000Z',
+    amountUsd: '0.02',
+    amountChf: null,
+    amountEur: null,
+    amountPhp: null,
+  },
+  {
+    accountId: 'acc_deleted',
+    name: '',
+    sats: 1000,
+    createdAt: '2026-08-03T10:06:00.000Z',
+    amountUsd: null,
+    amountChf: null,
+    amountEur: null,
+    amountPhp: null,
+  },
+];
+
+/** Replies fixture whose two paid hearts exercise the shared sender section. */
+async function fulfillVisualHeartReplies(page: Page, parentId: string): Promise<void> {
+  await page.route(`**/forum/messages/${parentId}/replies`, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        messages: [
+          {
+            id: '55555555-5555-4555-8555-555555555555',
+            parentId,
+            accountId: 'acc_carol',
+            name: 'Carol',
+            text: 'A reply from Carol.',
+            createdAt: '2026-08-03T10:00:00.000Z',
+            sats: 0,
+            payable: false,
+            hasPhoto: false,
+            hasVideo: false,
+            videoContentType: null,
+            role: 'verified',
+            replyCount: 0,
+          },
+        ],
+        hearts: VISUAL_HEARTS,
+      }),
+    });
+  });
+}
+
 test.beforeEach(async ({ page }, testInfo) => {
   const theme = testInfo.project.name.endsWith('dark') ? 'dark' : 'light';
   await page.context().addCookies([{ name: 'theme', value: theme, url: 'http://localhost:3000' }]);
@@ -12710,6 +12764,59 @@ test.describe('onboarding screens', () => {
     await page.getByRole('button', { name: '1 reaction' }).click();
     await expect(page.getByText('A reply from Ada.')).toBeVisible();
     await shotScreen(page, 'state-profile-replies-open');
+  });
+
+  async function openProfileHearts(page: Page): Promise<void> {
+    const parentId = '44444444-4444-4444-8444-444444444444';
+    await seedProfilePage(page);
+    await page.route(/\/forum\/members\/acc_e2e\/posts$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [
+            {
+              id: parentId,
+              accountId: 'acc_e2e',
+              name: 'Ada',
+              text: 'Second post from Ada.',
+              createdAt: '2026-08-02T10:00:00.000Z',
+              sats: 0,
+              payable: true,
+              hasPhoto: false,
+              hasVideo: false,
+              videoContentType: null,
+              role: 'basis',
+              replyCount: 1,
+              heartCount: 2,
+            },
+          ],
+        }),
+      });
+    });
+    await fulfillVisualHeartReplies(page, parentId);
+    await openProfile(page);
+    await page.getByRole('button', { name: '14 posts' }).click();
+    await expect(page.getByText('Second post from Ada.')).toBeVisible();
+    await page.getByRole('button', { name: 'Show reactions' }).click();
+    await expect(page.getByRole('heading', { name: 'Hearts (2)' })).toBeVisible();
+    await centreAtRest(page.getByRole('heading', { name: 'Hearts (2)' }));
+  }
+
+  test('state /profile replies-open-hearts', async ({ page }) => {
+    await openProfileHearts(page);
+    await shotScreen(page, 'state-profile-replies-open-hearts');
+  });
+
+  test('state /profile replies-open-hearts-role', async ({ page }) => {
+    await openProfileHearts(page);
+    const hearts = page.getByRole('region', { name: 'Hearts (2)' });
+    await hearts.getByRole('button', { name: 'Moderator' }).click();
+    await expect(
+      hearts.getByText('This person helps keep the living room in order.'),
+    ).toBeVisible();
+    await centreAtRest(page.getByRole('heading', { name: 'Hearts (2)' }));
+    await shotScreen(page, 'state-profile-replies-open-hearts-role');
   });
 
   test('state /profile shops-open', async ({ page }) => {
@@ -24924,6 +25031,80 @@ test.describe('onboarding screens', () => {
     await shotScreen(page, 'screen-view-viewKey');
   });
 
+  async function openViewHearts(page: Page): Promise<void> {
+    const parentId = '44444444-4444-4444-8444-444444444444';
+    await seedProfilePage(page);
+    await page.route(new RegExp(`/view-key/${E2E_ACCOUNT.viewKey}$`), async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          id: 'acc_e2e',
+          name: 'Ada',
+          location: null,
+          username: 'alice',
+          role: 'basis',
+          lightningAddress: 'member@21.gifts',
+          lightningAddressVerified: true,
+          createdAt: 1,
+          hasPasskey: true,
+          aboutMe: null,
+          postCount: 14,
+          replyCount: 0,
+        }),
+      });
+    });
+    await page.route(/\/forum\/members\/acc_e2e\/posts$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [
+            {
+              id: parentId,
+              accountId: 'acc_e2e',
+              name: 'Ada',
+              text: 'Second post from Ada.',
+              createdAt: '2026-08-02T10:00:00.000Z',
+              sats: 0,
+              payable: true,
+              hasPhoto: false,
+              hasVideo: false,
+              videoContentType: null,
+              role: 'basis',
+              replyCount: 1,
+              heartCount: 2,
+            },
+          ],
+        }),
+      });
+    });
+    await fulfillVisualHeartReplies(page, parentId);
+    await page.goto(`/view/${E2E_ACCOUNT.viewKey}`);
+    await expect(page.getByRole('button', { name: '14 posts' })).toBeVisible();
+    await page.getByRole('button', { name: '14 posts' }).click();
+    await expect(page.getByText('Second post from Ada.')).toBeVisible();
+    await page.getByRole('button', { name: 'Show reactions' }).click();
+    await expect(page.getByRole('heading', { name: 'Hearts (2)' })).toBeVisible();
+    await centreAtRest(page.getByRole('heading', { name: 'Hearts (2)' }));
+  }
+
+  test('state /view/[viewKey] replies-open-hearts', async ({ page }) => {
+    await openViewHearts(page);
+    await shotScreen(page, 'state-view-replies-open-hearts');
+  });
+
+  test('state /view/[viewKey] replies-open-hearts-role', async ({ page }) => {
+    await openViewHearts(page);
+    const hearts = page.getByRole('region', { name: 'Hearts (2)' });
+    await hearts.getByRole('button', { name: 'Moderator' }).click();
+    await expect(
+      hearts.getByText('This person helps keep the living room in order.'),
+    ).toBeVisible();
+    await centreAtRest(page.getByRole('heading', { name: 'Hearts (2)' }));
+    await shotScreen(page, 'state-view-replies-open-hearts-role');
+  });
+
   test('state /view images', async ({ page }) => {
     // state-view-images
     await page.route(new RegExp(`/view-key/${E2E_ACCOUNT.viewKey}$`), async (route) => {
@@ -33604,6 +33785,58 @@ test.describe('shops screens', () => {
     await expect(page.getByRole('link', { name: '#Shop' })).toHaveCount(0);
     await expect(page.getByText('#21GiftsShop')).toHaveCount(0);
     await shotScreen(page, 'screen-shops');
+  });
+
+  async function openShopsHearts(page: Page): Promise<void> {
+    const parentId = '44444444-4444-4444-8444-444444444444';
+    await seedAda(page);
+    await page.route(/\/messages(?:\?|$)/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [
+            {
+              id: parentId,
+              accountId: 'acc_shop',
+              name: 'Ada',
+              text: 'Cafe Luna\n\n#21GiftsShop',
+              createdAt: '2026-08-28T12:00:00.000Z',
+              sats: 21,
+              payable: true,
+              hasPhoto: false,
+              hasVideo: false,
+              videoContentType: null,
+              role: 'basis',
+              replyCount: 1,
+              heartCount: 2,
+            },
+          ],
+        }),
+      });
+    });
+    await fulfillVisualHeartReplies(page, parentId);
+    await page.goto('/shops#post');
+    await expect(page.getByText('Cafe Luna')).toBeVisible();
+    await page.getByRole('button', { name: 'Show reactions' }).click();
+    await expect(page.getByRole('heading', { name: 'Hearts (2)' })).toBeVisible();
+    await centreAtRest(page.getByRole('heading', { name: 'Hearts (2)' }));
+  }
+
+  test('state /shops expanded-hearts', async ({ page }) => {
+    await openShopsHearts(page);
+    await shotScreen(page, 'state-shops-expanded-hearts');
+  });
+
+  test('state /shops expanded-hearts-role', async ({ page }) => {
+    await openShopsHearts(page);
+    const hearts = page.getByRole('region', { name: 'Hearts (2)' });
+    await hearts.getByRole('button', { name: 'Moderator' }).click();
+    await expect(
+      hearts.getByText('This person helps keep the living room in order.'),
+    ).toBeVisible();
+    await centreAtRest(page.getByRole('heading', { name: 'Hearts (2)' }));
+    await shotScreen(page, 'state-shops-expanded-hearts-role');
   });
 
   test('state /shops heart-needs-balance', async ({ page }) => {

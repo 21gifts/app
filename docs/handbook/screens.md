@@ -5147,6 +5147,18 @@ Heading **Shops**, each row is a shop page rather than a forum note, the **List*
 
 ![21.gifts shops](images/shops.png)
 
+### Variant: expanded-hearts
+
+On **Post**, expand **Cafe Luna**, which shows **♡ 2**. Under the reply, **Hearts (2)** lists Grace with her Moderator pill and **₿21** and then a deleted account with **₿1'000**, each with its time and newest first.
+
+![21.gifts shops expanded hearts](images/shops-expanded-hearts.png)
+
+### Variant: expanded-hearts-role
+
+On **Post**, expand **Cafe Luna**. In **Hearts (2)**, press Grace's **Moderator** pill; the hint **This person helps keep the living room in order.** appears under that heart row. The sats and times in the list stay visible.
+
+![21.gifts shops expanded hearts role](images/shops-expanded-hearts-role.png)
+
 ### Variant: heart-needs-balance
 
 Shop post feed with **Cafe Luna** after opening `?visual=heart-needs-balance` (a ready wallet below the stored heart amount) and clicking Send a heart. No press and no **+1**; nothing is sent. Copy **A Bitcoin balance is required for this.**
@@ -8108,6 +8120,18 @@ Choosing `@ada` from that open list writes `@ada ` into the reaction field and c
 
 ![21.gifts profile reactions](images/profile-replies-open.png)
 
+### Variant: replies-open-hearts
+
+The posts feed is open and **Second post from Ada.** shows **♡ 2**. **Show reactions** is pressed; under the reply, **Hearts (2)** lists Grace with her Moderator pill and **₿21**, then a deleted account with **₿1'000**, newest first with times.
+
+![21.gifts profile replies open hearts](images/profile-replies-open-hearts.png)
+
+### Variant: replies-open-hearts-role
+
+The same Hearts list with Grace's **Moderator** pill pressed. The hint **This person helps keep the living room in order.** appears under her heart row. The deleted row below keeps its placeholder and **₿1'000**.
+
+![21.gifts profile replies open hearts role](images/profile-replies-open-hearts-role.png)
+
 ### Variant: shops-open
 
 **1 shop** is pressed and the feed shows **A shop from Ada.** Needle `A shop from Ada.`
@@ -10725,6 +10749,18 @@ After a failed translation of that reaction. The feed shows `Could not translate
 Valid known key. Heading **Profile**, no FiatPicker; empty series shows `profile.chartEmpty` (**No gifts yet.**, no legend/SVG / no ₿|fiat scale; never **Loading…** on the chart) (a failed activity load is `profile.chartError` on the gift chart and `profile.loanChartError` on the loan chart; `LoanBalanceChart` sits directly under the gift chart, empty or in-flight renders nothing, and its axis includes zero and may fall below zero), About me inside the card when `aboutMe` is a string (not a forum post), icon-only **Copy link to this profile**, name, location, and 21.gifts address, yellow **Action required, the account must be activated** / **Activate** banner under the card when unclaimed (even if signed in), no visible view-key URL/text. The card has no back control; the page header has the one top-left arrow. This shot draws Debt and Credit under the gift chart: debt ₿100'000, ₿60'000, then ₿-20'000, and credit ₿20'000, ₿120'000, then ₿-30'000.
 
 ![21.gifts public view profile](images/view-viewKey.png)
+
+### Variant: replies-open-hearts
+
+A signed-in member opens the profile through its view key. The posts feed is open and **Second post from Ada.** shows **♡ 2**. **Show reactions** is pressed; under the reply, **Hearts (2)** lists Grace with her Moderator pill and **₿21**, then a deleted account with **₿1'000**, newest first with times.
+
+![21.gifts public view replies open hearts](images/view-replies-open-hearts.png)
+
+### Variant: replies-open-hearts-role
+
+The same view-key profile and Hearts list with Grace's **Moderator** pill pressed. The hint **This person helps keep the living room in order.** appears under her heart row. The sats and times remain visible.
+
+![21.gifts public view replies open hearts role](images/view-replies-open-hearts-role.png)
 
 ### Variant: cannot-receive
 

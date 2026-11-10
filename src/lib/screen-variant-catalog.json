@@ -4734,6 +4734,18 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/profile:replies-open-hearts",
+    "label": "/profile replies-open-hearts",
+    "visual": "state-profile-replies-open-hearts",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/profile:replies-open-hearts-role",
+    "label": "/profile replies-open-hearts-role",
+    "visual": "state-profile-replies-open-hearts-role",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/profile:shops-open",
     "label": "/profile shops-open",
     "visual": "state-profile-shops-open",
@@ -6399,6 +6411,18 @@
     "id": "/view/[viewKey]:default",
     "label": "/view/[viewKey] default",
     "visual": "screen-view-viewKey",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/view/[viewKey]:replies-open-hearts",
+    "label": "/view/[viewKey] replies-open-hearts",
+    "visual": "state-view-replies-open-hearts",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/view/[viewKey]:replies-open-hearts-role",
+    "label": "/view/[viewKey] replies-open-hearts-role",
+    "visual": "state-view-replies-open-hearts-role",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
@@ -8541,6 +8565,18 @@
     "id": "/shops:default",
     "label": "/shops default",
     "visual": "screen-shops",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/shops:expanded-hearts",
+    "label": "/shops expanded-hearts",
+    "visual": "state-shops-expanded-hearts",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/shops:expanded-hearts-role",
+    "label": "/shops expanded-hearts-role",
+    "visual": "state-shops-expanded-hearts-role",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {

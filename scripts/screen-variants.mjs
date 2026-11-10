@@ -5600,6 +5600,20 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/profile',
+    id: 'replies-open-hearts',
+    image: 'profile-replies-open-hearts.png',
+    visual: 'state-profile-replies-open-hearts',
+    needle: "shotScreen(page, 'state-profile-replies-open-hearts')",
+  },
+  {
+    route: '/profile',
+    id: 'replies-open-hearts-role',
+    image: 'profile-replies-open-hearts-role.png',
+    visual: 'state-profile-replies-open-hearts-role',
+    needle: "shotScreen(page, 'state-profile-replies-open-hearts-role')",
+  },
+  {
+    route: '/profile',
     id: 'shops-open',
     image: 'profile-shops-open.png',
     visual: 'state-profile-shops-open',
@@ -7543,6 +7557,20 @@ export const SCREEN_VARIANTS = [
     image: 'view-viewKey.png',
     visual: 'screen-view-viewKey',
     needle: "getByRole('heading', { name: 'Profile' })",
+  },
+  {
+    route: '/view/[viewKey]',
+    id: 'replies-open-hearts',
+    image: 'view-replies-open-hearts.png',
+    visual: 'state-view-replies-open-hearts',
+    needle: "shotScreen(page, 'state-view-replies-open-hearts')",
+  },
+  {
+    route: '/view/[viewKey]',
+    id: 'replies-open-hearts-role',
+    image: 'view-replies-open-hearts-role.png',
+    visual: 'state-view-replies-open-hearts-role',
+    needle: "shotScreen(page, 'state-view-replies-open-hearts-role')",
   },
   {
     route: '/view/[viewKey]',
@@ -10043,6 +10071,20 @@ export const SCREEN_VARIANTS = [
     image: 'shops.png',
     visual: 'screen-shops',
     needle: 'Cafe Luna',
+  },
+  {
+    route: '/shops',
+    id: 'expanded-hearts',
+    image: 'shops-expanded-hearts.png',
+    visual: 'state-shops-expanded-hearts',
+    needle: "shotScreen(page, 'state-shops-expanded-hearts')",
+  },
+  {
+    route: '/shops',
+    id: 'expanded-hearts-role',
+    image: 'shops-expanded-hearts-role.png',
+    visual: 'state-shops-expanded-hearts-role',
+    needle: "shotScreen(page, 'state-shops-expanded-hearts-role')",
   },
   {
     route: '/shops',
