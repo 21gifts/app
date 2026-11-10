@@ -123,6 +123,56 @@ describe('usePaymentCounterparty', () => {
     });
     expect(hook.result.current).toBeNull();
   });
+  it('ignores a late response from the previous session and does not cache it', async () => {
+    let resolveA!: (rows: (typeof RECEIVED_FROM_MEMBER_SENDER)[]) => void;
+    let resolveB!: (rows: (typeof RECEIVED_FROM_MEMBER_SENDER)[]) => void;
+    let resolveRetry!: (rows: (typeof RECEIVED_FROM_MEMBER_SENDER)[]) => void;
+    vi.mocked(fetchPaymentCounterparties)
+      .mockReturnValueOnce(
+        new Promise((done) => {
+          resolveA = done;
+        }),
+      )
+      .mockReturnValueOnce(
+        new Promise((done) => {
+          resolveB = done;
+        }),
+      )
+      .mockReturnValueOnce(
+        new Promise((done) => {
+          resolveRetry = done;
+        }),
+      );
+    const { result, rerender } = renderHook(
+      ({ completed }: { completed: boolean }) =>
+        usePaymentCounterparty({ ...payment, status: completed ? 'completed' : 'pending' }),
+      { initialProps: { completed: true } },
+    );
+    expect(fetchPaymentCounterparties).toHaveBeenCalledWith('session', [
+      { id: payment.id, direction: 'in' },
+    ]);
+    vi.mocked(useActiveSession).mockReturnValue('other');
+    rerender({ completed: true });
+    expect(fetchPaymentCounterparties).toHaveBeenCalledWith('other', [
+      { id: payment.id, direction: 'in' },
+    ]);
+    await act(async () => {
+      resolveA([RECEIVED_FROM_MEMBER_SENDER]);
+    });
+    expect(result.current).toBeNull();
+    rerender({ completed: false });
+    rerender({ completed: true });
+    expect(result.current).toBeNull();
+    expect(fetchPaymentCounterparties).toHaveBeenCalledTimes(3);
+    await act(async () => {
+      resolveB([]);
+      resolveRetry([]);
+    });
+    expect(result.current).toBeNull();
+    rerender({ completed: false });
+    rerender({ completed: true });
+    expect(result.current).toBeNull();
+  });
   it.each([
     ['received-from-member', payment, RECEIVED_FROM_MEMBER_SENDER],
     ['sent-to-member', sent, SENT_TO_MEMBER_COUNTERPARTY],

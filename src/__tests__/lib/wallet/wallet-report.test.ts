@@ -160,6 +160,22 @@ describe('reportWallet', () => {
     },
   );
 
+  it.each(['invoice', 'paymentHash'] as const)(
+    'sends a payment again when %s arrives after the other detail was acknowledged',
+    async (field) => {
+      const first = payment('a', { [field]: null });
+      listing([first]);
+      await mod.reportWallet();
+      expect(mocks.postWalletReport.mock.calls[0]?.[1]).toMatchObject({ payments: [first] });
+      const updated = { ...first, [field]: 'later-value' };
+      listing([updated]);
+      await mod.reportWallet();
+      expect(mocks.postWalletReport.mock.calls[1]?.[1]).toMatchObject({ payments: [updated] });
+      await mod.reportWallet();
+      expect(mocks.postWalletReport).toHaveBeenCalledTimes(2);
+    },
+  );
+
   it('retries newly available details until the api acknowledges that payment', async () => {
     const first = payment('a', { invoice: null, paymentHash: null });
     listing([first]);
