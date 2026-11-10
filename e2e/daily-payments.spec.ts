@@ -36,11 +36,25 @@ const EMPTY_ROSTER = {
 
 async function seedAdaSession(
   page: Page,
-  role: 'basis' | 'verified' | 'moderator' | 'fond' | 'initiator' | 'founder' = 'basis',
-): Promise<void> {
-  await page.addInitScript(() => {
-    localStorage.setItem('21gifts.session', 'sess-e2e');
-  });
+  role:
+    | 'basis'
+    | 'verified'
+    | 'moderator'
+    | 'software_developer'
+    | 'initiator'
+    | 'founder' = 'basis',
+): Promise<string> {
+  let session = 'sess-e2e';
+  if (role === 'software_developer') {
+    const response = await page.request.post('http://127.0.0.1:3001/e2e/role-session', {
+      data: { role, name: 'Ada' },
+    });
+    expect(response.status()).toBe(200);
+    session = ((await response.json()) as { token: string }).token;
+  }
+  await page.addInitScript((stored: string) => {
+    localStorage.setItem('21gifts.session', stored);
+  }, session);
   await page.route(/\/me$/, async (route) => {
     await route.fulfill({
       status: 200,
@@ -72,6 +86,7 @@ async function seedAdaSession(
       }),
     });
   });
+  return session;
 }
 
 async function stubApplications(page: Page): Promise<void> {
@@ -405,6 +420,15 @@ test('Function: proxyFundingDailyRosterGet — GET /funding/daily-roster without
   request,
 }) => {
   expect((await request.get('/funding/daily-roster')).status()).toBe(401);
+});
+
+test('Function: proxyFundingDailyRosterGet — a software developer gets 403', async ({ page }) => {
+  const session = await seedAdaSession(page, 'software_developer');
+  const response = await page.request.get('/funding/daily-roster', {
+    headers: { authorization: `Bearer ${session}` },
+  });
+  expect(response.status()).toBe(403);
+  expect(await response.json()).toEqual({ error: 'Forbidden' });
 });
 
 test('Function: proxyFundingDailyRosterCommentPost — POST /funding/daily-roster/comment without bearer is 401', async ({

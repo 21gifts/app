@@ -6235,7 +6235,7 @@ The class exists so the composer can tell a refused free first post from any oth
 - **Purpose:** Numeric rank of a role from an explicit rank map (not `ROLE_ORDER.indexOf`), for use by `roleAtLeast`.
 - **Inputs:** `role` — one of `'basis' | 'verified' | 'moderator' | 'fond' | 'software_developer' | 'initiator' | 'founder'`.
 - **Returns / side effects:** Integer 0 through 6 (basis 0, verified 1, moderator 2, fond 3, software_developer 4, initiator 5, founder 6), read from the explicit rank map. Pure, no side effects.
-- **Used by:** `roleAtLeast`.
+- **Used by:** `roleAtLeast`, `layoutTrustChain`.
 
 ## Function: roleAtLeast
 
