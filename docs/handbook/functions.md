@@ -6213,7 +6213,7 @@ The class exists so the composer can tell a refused free first post from any oth
 - **Purpose:** Numeric rank of a role from an explicit rank map (not `ROLE_ORDER.indexOf`), for use by `roleAtLeast` and `effectiveRole`.
 - **Inputs:** `role` — one of `'basis' | 'verified' | 'moderator' | 'software_developer' | 'initiator' | 'founder'`.
 - **Returns / side effects:** Integer 0 through 5 (basis 0, verified 1, moderator 2, software_developer 3, initiator 4, founder 5). Pure, no side effects.
-- **Used by:** `roleAtLeast`.
+- **Used by:** `roleAtLeast`, `effectiveRole`.
 
 ## Function: roleAtLeast
 
@@ -6234,7 +6234,7 @@ The class exists so the composer can tell a refused free first post from any oth
 - **Purpose:** Compatibility bridge for an older api that sends a lower role (usually `verified`) plus `staffTag: 'software_developer'`. Returns `software_developer` when `staffTag` is `software_developer` and the role ranks below it; otherwise returns the role unchanged. This lets role tags show one Software Developer pill against both api versions.
 - **Inputs:** `role` — live account role; `staffTag` — older api compatibility label, only `software_developer` when present, otherwise null or omitted.
 - **Returns / side effects:** The effective `Role`. Unchanged for `software_developer`, `initiator`, `founder`, a missing tag, or an unknown tag. Pure, no side effects.
-- **Used by:** `ForumBoard`, `MemberIdentityPills`, `QuotedForumNote`, `src/lib/forum-feed.ts`.
+- **Used by:** `ForumBoard`, `ForumRoleTag`, `ForumRoleHint`, `MemberIdentityPills`, `QuotedForumNote`, `src/lib/forum-feed.ts`.
 
 ## Function: isOwnNote
 
