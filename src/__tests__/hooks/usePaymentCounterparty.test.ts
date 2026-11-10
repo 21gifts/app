@@ -3,6 +3,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useActiveSession } from '@/hooks/useActiveSession';
 import { usePaymentCounterparty } from '@/hooks/usePaymentCounterparty';
 import { fetchPaymentCounterparties } from '@/lib/wallet/payment-counterparty';
+import { reportWallet } from '@/lib/wallet/wallet-report';
+import { useWalletStore } from '@/stores/wallet-store';
 import {
   RECEIVED_FROM_MEMBER_PAYMENT,
   RECEIVED_FROM_MEMBER_SENDER,
@@ -13,6 +15,7 @@ import {
 
 vi.mock('@/hooks/useActiveSession', () => ({ useActiveSession: vi.fn() }));
 vi.mock('@/lib/wallet/payment-counterparty', () => ({ fetchPaymentCounterparties: vi.fn() }));
+vi.mock('@/lib/wallet/wallet-report', () => ({ reportWallet: vi.fn() }));
 const payment = toFixturePayment(RECEIVED_FROM_MEMBER_PAYMENT);
 const sent = toFixturePayment(SENT_TO_MEMBER_PAYMENT);
 const originalUrl = window.location.href;
@@ -23,6 +26,8 @@ beforeEach(() => {
   window.history.replaceState({}, '', '/wallet');
   vi.mocked(useActiveSession).mockReturnValue('session');
   vi.mocked(fetchPaymentCounterparties).mockReset().mockResolvedValue([]);
+  vi.mocked(reportWallet).mockReset().mockResolvedValue(undefined);
+  useWalletStore.setState({ syncCount: 0 });
 });
 afterEach(() => {
   cleanup();
@@ -63,8 +68,8 @@ describe('usePaymentCounterparty', () => {
     expect(renderHook(() => usePaymentCounterparty(payment)).result.current).toBeNull();
     expect(fetchPaymentCounterparties).not.toHaveBeenCalled();
   });
-  it.each([true, false])('caches a result (match: %s)', async (match) => {
-    const rows = match ? [RECEIVED_FROM_MEMBER_SENDER] : [];
+  it('caches a match', async () => {
+    const rows = [RECEIVED_FROM_MEMBER_SENDER];
     vi.mocked(fetchPaymentCounterparties).mockResolvedValue(rows);
     const { result, rerender } = renderHook(
       ({ completed }: { completed: boolean }) =>
@@ -78,6 +83,54 @@ describe('usePaymentCounterparty', () => {
     rerender({ completed: false });
     rerender({ completed: true });
     expect(result.current).toEqual(rows[0] ?? null);
+    expect(fetchPaymentCounterparties).toHaveBeenCalledTimes(1);
+  });
+  it('waits for the report before retrying a miss on sync and stops after a match', async () => {
+    let finishReport!: () => void;
+    vi.mocked(reportWallet).mockReturnValue(
+      new Promise<void>((resolve) => {
+        finishReport = resolve;
+      }),
+    );
+    vi.mocked(fetchPaymentCounterparties)
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([RECEIVED_FROM_MEMBER_SENDER]);
+    const { result, rerender } = renderHook(() => usePaymentCounterparty(payment));
+    await act(async () => {
+      await Promise.resolve();
+    });
+    expect(result.current).toBeNull();
+    rerender();
+    expect(fetchPaymentCounterparties).toHaveBeenCalledTimes(1);
+    expect(reportWallet).not.toHaveBeenCalled();
+    act(() => useWalletStore.setState({ syncCount: 1 }));
+    expect(reportWallet).toHaveBeenCalledTimes(1);
+    expect(fetchPaymentCounterparties).toHaveBeenCalledTimes(1);
+    await act(async () => {
+      finishReport();
+    });
+    await waitFor(() => expect(result.current).toEqual(RECEIVED_FROM_MEMBER_SENDER));
+    expect(fetchPaymentCounterparties).toHaveBeenCalledTimes(2);
+    act(() => useWalletStore.setState({ syncCount: 2 }));
+    expect(fetchPaymentCounterparties).toHaveBeenCalledTimes(2);
+    expect(reportWallet).toHaveBeenCalledTimes(1);
+  });
+  it('does not fetch after a pending report is invalidated', async () => {
+    let finishReport!: () => void;
+    vi.mocked(reportWallet).mockReturnValue(
+      new Promise<void>((resolve) => {
+        finishReport = resolve;
+      }),
+    );
+    const hook = renderHook(() => usePaymentCounterparty(payment));
+    await act(async () => {
+      await Promise.resolve();
+    });
+    act(() => useWalletStore.setState({ syncCount: 1 }));
+    hook.unmount();
+    await act(async () => {
+      finishReport();
+    });
     expect(fetchPaymentCounterparties).toHaveBeenCalledTimes(1);
   });
   it('keeps the cached result when invoice and hash change', async () => {

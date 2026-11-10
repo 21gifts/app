@@ -397,11 +397,17 @@ test.describe('POST /me/wallet/counterparties', () => {
     page,
   }) => {
     await stubHeartLookupWallet(page);
+    let lookupFulfilled!: () => void;
+    const lookup = new Promise<void>((resolve) => {
+      lookupFulfilled = resolve;
+    });
     await page.route('**/me/wallet/counterparties', async (route) => {
       await route.fulfill({ json: { counterparties: [] } });
+      if (route.request().method() === 'POST') lookupFulfilled();
     });
     await page.goto('/wallet/payment?id=6a6c3f1f-5841-415b-b8a6-f21d3e513bae&visual=history-rows');
     await expect(page.getByText('Coffee & croissant')).toBeVisible();
+    await lookup;
     await expect(page.getByText('From', { exact: true })).toHaveCount(0);
   });
 });

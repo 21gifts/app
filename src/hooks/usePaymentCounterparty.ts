@@ -11,27 +11,30 @@ import {
   RECEIVED_FROM_MEMBER_SENDER,
   SENT_TO_MEMBER_COUNTERPARTY,
 } from '@/lib/wallet/payment-fixtures';
+import { reportWallet } from '@/lib/wallet/wallet-report';
 import type { WalletPayment } from '@/lib/wallet/wallet-sdk';
+import { useWalletStore } from '@/stores/wallet-store';
 
 /**
  * Resolve the counterparty of a completed payment in the active session.
+ * Cache matches; after a wallet sync, wait for its report and retry a miss.
  *
  * @param payment - Payment displayed by the wallet.
  * @returns The counterparty, or null while unknown or unavailable.
  */
 export function usePaymentCounterparty(payment: WalletPayment): PaymentCounterparty | null {
   const session = useActiveSession();
+  const syncCount = useWalletStore((state) => state.syncCount);
+  const previousSyncCount = useRef(syncCount);
   const pin = visualPin();
   const pinned = pin === 'received-from-member' || pin === 'sent-to-member';
   const direction = payment.direction === 'received' ? 'in' : 'out';
   const eligible = payment.status === 'completed';
   const key = JSON.stringify([payment.id, direction]);
-  const cache = useRef<{ session: string | null; values: Map<string, PaymentCounterparty | null> }>(
-    {
-      session: null,
-      values: new Map(),
-    },
-  );
+  const cache = useRef<{ session: string | null; values: Map<string, PaymentCounterparty> }>({
+    session: null,
+    values: new Map(),
+  });
   const [state, setState] = useState<{
     session: string;
     key: string;
@@ -39,6 +42,8 @@ export function usePaymentCounterparty(payment: WalletPayment): PaymentCounterpa
   } | null>(null);
 
   useEffect(() => {
+    const synced = previousSyncCount.current !== syncCount;
+    previousSyncCount.current = syncCount;
     if (pinned) return;
     if (cache.current.session !== session) cache.current = { session, values: new Map() };
     if (session === null || !eligible) return;
@@ -48,16 +53,22 @@ export function usePaymentCounterparty(payment: WalletPayment): PaymentCounterpa
       return;
     }
     let active = true;
-    void fetchPaymentCounterparties(session, [{ id: payment.id, direction }]).then((rows) => {
+    const lookup = async (): Promise<void> => {
+      if (synced) {
+        await reportWallet();
+        if (!active) return;
+      }
+      const rows = await fetchPaymentCounterparties(session, [{ id: payment.id, direction }]);
       if (!active) return;
       const sender = rows.find((row) => row.id === payment.id) ?? null;
-      cache.current.values.set(key, sender);
+      if (sender !== null) cache.current.values.set(key, sender);
       setState({ session, key, sender });
-    });
+    };
+    void lookup();
     return () => {
       active = false;
     };
-  }, [session, pinned, eligible, key, payment.id, direction]);
+  }, [session, pinned, eligible, key, payment.id, direction, syncCount]);
 
   if (pin === 'received-from-member' && payment.id === RECEIVED_FROM_MEMBER_SENDER.id && eligible)
     return RECEIVED_FROM_MEMBER_SENDER;
