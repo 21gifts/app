@@ -158,29 +158,48 @@ function matchesPayment(payment: WalletPayment, target: PayoutTarget): boolean {
 }
 
 /**
- * The newest matching send of a payout, if any.
+ * All matching sends of a payout, newest first.
  *
  * @param deps - Tick collaborators.
  * @param target - The payout target.
- * @returns The matching payment, or `undefined` when no send matches.
+ * @returns Every matching payment, or an empty array when no send matches.
  */
-async function findPayment(
+async function findPayments(
   deps: FondPayoutTickDeps,
   target: PayoutTarget,
-): Promise<WalletPayment | undefined> {
+): Promise<WalletPayment[]> {
   const payments = await deps.listWalletPayments({ offset: 0, limit: FOND_PAYOUT_HISTORY_LIMIT });
-  return payments.find((payment) => matchesPayment(payment, target));
+  return payments.filter((payment) => matchesPayment(payment, target));
 }
 
 /**
- * A preimage from a matching send, or `null` when it is missing or not 64-hex.
+ * A preimage from one matching send, or `null` when it is missing or not 64-hex.
  *
- * @param payment - Matching payment, if one was found.
+ * @param payment - Matching payment.
  * @returns The normalized preimage, or `null`.
  */
-function preimageOf(payment: WalletPayment | undefined): string | null {
-  const preimage = payment?.info.preimage;
+function preimageOf(payment: WalletPayment): string | null {
+  const preimage = payment.info.preimage;
   return typeof preimage === 'string' && PREIMAGE.test(preimage) ? preimage.toLowerCase() : null;
+}
+
+/**
+ * The first readable preimage among completed matching sends.
+ *
+ * @param payments - All matching sends, newest first.
+ * @returns The normalized preimage, or `null` when no completed send has one.
+ */
+function completedPreimage(payments: WalletPayment[]): string | null {
+  for (const payment of payments) {
+    if (payment.status !== 'completed') {
+      continue;
+    }
+    const preimage = preimageOf(payment);
+    if (preimage !== null) {
+      return preimage;
+    }
+  }
+  return null;
 }
 
 /**
@@ -199,7 +218,7 @@ async function waitForPreimage(
       return 'cancelled';
     }
     await deps.sleep(FOND_PAYOUT_PREIMAGE_WAIT_MS);
-    const preimage = preimageOf(await findPayment(deps, target));
+    const preimage = completedPreimage(await findPayments(deps, target));
     if (preimage !== null) {
       return preimage;
     }
@@ -331,15 +350,15 @@ async function payAndWait(
 }
 
 /**
- * Finds an earlier send for one layout row, pays it if none is completed, and
- * posts the preimage as proof.
+ * Finds every earlier send for one payout row, proves a completed one when
+ * possible, and otherwise pays only when none is completed or pending.
  *
- * A `completed` send with a 64-hex preimage is proven without paying again,
- * and a `completed` send without readable preimage skips the row; a `pending`
- * send skips the row; any other listed send falls through to paying the row
- * once. A row whose timed-out send the wallet confirmed is never paid, only
- * proven once its preimage appears. A `settling` row has no BOLT11 of its own,
- * so it is skipped when its hash matches no listed send.
+ * Any `completed` match with a 64-hex preimage is proven without paying again.
+ * Without such a preimage, any `completed` or `pending` match skips the row;
+ * no match or only `failed` matches falls through to paying the row once. A row
+ * whose timed-out send the wallet confirmed is never paid, only proven once its
+ * preimage appears. A `settling` row has no BOLT11 of its own, so it is skipped
+ * when its hash matches no listed send.
  *
  * @param deps - Tick collaborators.
  * @param target - The payout target.
@@ -351,15 +370,13 @@ async function payAndProve(
 ): Promise<'paid' | 'insufficient' | 'forbidden' | 'cancelled' | 'skipped'> {
   let preimage: string | null = null;
   try {
-    const existing = await findPayment(deps, target);
-    if (existing?.status === 'pending') {
+    const matching = await findPayments(deps, target);
+    preimage = completedPreimage(matching);
+    const settled = matching.some(
+      (payment) => payment.status === 'completed' || payment.status === 'pending',
+    );
+    if (preimage === null && settled) {
       return 'skipped';
-    }
-    if (existing?.status === 'completed') {
-      preimage = preimageOf(existing);
-      if (preimage === null) {
-        return 'skipped';
-      }
     }
   } catch {
     return 'skipped';

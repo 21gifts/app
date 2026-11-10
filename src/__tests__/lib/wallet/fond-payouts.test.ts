@@ -331,6 +331,74 @@ describe('runFondPayoutTick rows', () => {
     expect(deps.postFondPayoutProof).toHaveBeenCalledWith('sess', 'row-a', PREIMAGE_A);
   });
 
+  it('proves an older completed send with a preimage after a newer failed send', async () => {
+    const deps = depsFor([OWED]);
+    vi.mocked(deps.listWalletPayments).mockResolvedValue([
+      sentPayment({ id: 'pay-new', status: 'failed', info: { paymentHash: HASH_A } }),
+      sentPayment({ id: 'pay-old', info: { paymentHash: HASH_A, preimage: PREIMAGE_A } }),
+    ]);
+    await expect(tick(deps)).resolves.toEqual({
+      paid: 1,
+      proved: 1,
+      skipped: 0,
+      stop: null,
+    });
+    expect(deps.payFromWallet).not.toHaveBeenCalled();
+    expect(deps.postFondPayoutProof).toHaveBeenCalledWith('sess', 'row-a', PREIMAGE_A);
+  });
+
+  it('skips an older pending send after a newer failed send', async () => {
+    const deps = depsFor([OWED]);
+    vi.mocked(deps.listWalletPayments).mockResolvedValue([
+      sentPayment({ id: 'pay-new', status: 'failed', info: { paymentHash: HASH_A } }),
+      sentPayment({ id: 'pay-old', status: 'pending', info: { paymentHash: HASH_A } }),
+    ]);
+    await expect(tick(deps)).resolves.toEqual({
+      paid: 0,
+      proved: 0,
+      skipped: 1,
+      stop: null,
+    });
+    expect(deps.payFromWallet).not.toHaveBeenCalled();
+    expect(deps.postFondPayoutProof).not.toHaveBeenCalled();
+  });
+
+  it('skips an older completed send without a preimage after a newer failed send', async () => {
+    const deps = depsFor([OWED]);
+    vi.mocked(deps.listWalletPayments).mockResolvedValue([
+      sentPayment({ id: 'pay-new', status: 'failed', info: { paymentHash: HASH_A } }),
+      sentPayment({ id: 'pay-old', info: { paymentHash: HASH_A } }),
+    ]);
+    await expect(tick(deps)).resolves.toEqual({
+      paid: 0,
+      proved: 0,
+      skipped: 1,
+      stop: null,
+    });
+    expect(deps.payFromWallet).not.toHaveBeenCalled();
+    expect(deps.postFondPayoutProof).not.toHaveBeenCalled();
+  });
+
+  it('pays when only a failed send matches and finds an older preimage after paying', async () => {
+    const deps = depsFor([OWED]);
+    vi.mocked(deps.listWalletPayments)
+      .mockResolvedValueOnce([
+        sentPayment({ id: 'pay-new', status: 'failed', info: { paymentHash: HASH_A } }),
+      ])
+      .mockResolvedValue([
+        sentPayment({ id: 'pay-newer', status: 'failed', info: { paymentHash: HASH_A } }),
+        sentPayment({ id: 'pay-old', info: { paymentHash: HASH_A, preimage: PREIMAGE_A } }),
+      ]);
+    await expect(tick(deps)).resolves.toEqual({
+      paid: 1,
+      proved: 1,
+      skipped: 0,
+      stop: null,
+    });
+    expect(deps.payFromWallet).toHaveBeenCalledWith({ type: 'input', input: 'lnbc-row-a' });
+    expect(deps.postFondPayoutProof).toHaveBeenCalledWith('sess', 'row-a', PREIMAGE_A);
+  });
+
   it("does not treat a received payment as the row's send", async () => {
     const deps = depsFor([OWED]);
     vi.mocked(deps.listWalletPayments)
