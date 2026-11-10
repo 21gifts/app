@@ -277,11 +277,13 @@ export function MenuAccountHeader({
                 loanSummary.behindDays > 0 ? 'text-app-danger' : 'text-app-fg'
               }`}
             >
-              {definedDue ?? (
+              {definedDue === null ? (
                 <>
                   {formatBitcoin(loanSummary.payableSats, numberFormat)}
                   {preferredFiatSuffix(loanSummary.payableSats, rateDay, fiat, numberFormat)}
                 </>
+              ) : (
+                `${definedDue} · ${formatBitcoin(loanSummary.payableSats, numberFormat)}`
               )}
             </p>
           </div>

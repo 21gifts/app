@@ -371,7 +371,7 @@ describe('LoanRepayScreen', () => {
     expect(screen.getByRole('button', { name: 'Send ₱45.00 · ₿804' })).toBeTruthy();
   });
 
-  it('names each payable fiat currency in the big due line and on Send', () => {
+  it('names each payable fiat currency with the bitcoin in the big due line and on Send', () => {
     show(
       {
         sundayRest: false,
@@ -392,8 +392,7 @@ describe('LoanRepayScreen', () => {
       },
       repay(),
     );
-    expect(screen.getByText('₱30.00 + $3.00')).toBeTruthy();
-    expect(screen.queryByText("₿1'000")).toBeNull();
+    expect(screen.getByText("₱30.00 + $3.00 · ₿1'000")).toBeTruthy();
     expect(screen.getByRole('button', { name: "Send ₱30.00 + $3.00 · ₿1'000" })).toBeTruthy();
   });
 
@@ -645,6 +644,35 @@ describe('LoanRepayScreen', () => {
       repay({ balanceSats: 2_000 }),
     );
     expect(screen.getByRole('button', { name: "Send ₿1'000 · $1.00" })).toBeTruthy();
+  });
+
+  it('keeps the loan payable amount and bitcoin when a loaded ledger has no due rows', async () => {
+    vi.mocked(getRepayment).mockResolvedValue(
+      ledger({
+        currency: 'PHP',
+        repayments: [{ ...ledger().repayments[0]!, status: 'paid', amount: '30.00' }],
+      }),
+    );
+    show(
+      {
+        sundayRest: false,
+        loans: [
+          loan({
+            goalCurrency: 'PHP',
+            goalAmount: '900.00',
+            due: { ...loan().due, payableSats: 1_000, payableAmount: '30.00' },
+          }),
+        ],
+      },
+      repay({ balanceSats: 2_000 }),
+    );
+    expect(screen.getByText('₱30.00')).toBeTruthy();
+    await waitFor(() => expect(getRepayment).toHaveBeenCalledWith('loan-1'));
+    fireEvent.click(screen.getByRole('button', { name: 'Who gets paid' }));
+    await waitFor(() => expect(screen.queryByRole('status')).toBeNull());
+    expect(screen.queryByText('Bruno')).toBeNull();
+    expect(screen.getByRole('button', { name: "Send ₱30.00 · ₿1'000" })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Send ₿0 · $0.00' })).toBeNull();
   });
 
   it('hides send-now when a loan repayment list has not loaded', async () => {

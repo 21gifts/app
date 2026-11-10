@@ -280,7 +280,16 @@ export function LoanRepayScreen(): ReactElement {
   const definedWaiting = definedDueLabel(loans.loans, 'waiting', numberFormat);
   const waitingLabel =
     definedWaiting === null ? money(waiting) : `${definedWaiting} · ${bitcoinText(waiting)}`;
-  const bigAmount = definedPayableLabel ?? formatBitcoin(payable, numberFormat);
+  const payableCurrencies = new Set(
+    loans.loans.filter((loan) => loan.due.payableSats > 0).map((loan) => loan.goalCurrency),
+  );
+  const singlePayableFiat = payableCurrencies.size === 1 && !payableCurrencies.has('BTC');
+  const bigAmount =
+    definedPayableLabel === null
+      ? formatBitcoin(payable, numberFormat)
+      : singlePayableFiat
+        ? definedPayableLabel
+        : `${definedPayableLabel} · ${bitcoinText(payable)}`;
   const smallAmount = definedPayableLabel !== null ? null : fiatOnly(payable);
 
   const rowAmount = (share: DueShare): string => {
@@ -382,7 +391,9 @@ export function LoanRepayScreen(): ReactElement {
     .map((loan) => ({ code: loan.goalCurrency, amount: loan.due.payableAmount }));
   // The full send asks each loan's due endpoint once, which returns at most 60 bills.
   const fullSendFromShares =
-    !ledgersMissing && payableWithinDue.every((share) => share.sats !== null);
+    !ledgersMissing &&
+    payableWithinDue.length > 0 &&
+    payableWithinDue.every((share) => share.sats !== null);
   const fullSendSats = fullSendFromShares
     ? payableWithinDue.reduce((sum, share) => sum + (share.sats as number), 0)
     : payable;

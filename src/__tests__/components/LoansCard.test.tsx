@@ -311,7 +311,7 @@ describe('LoansCard', () => {
     expect(screen.getByText("₿1'000").textContent).toBe("₿1'000 · $1.00");
   });
 
-  it('shows a stored payable amount in its fiat currency alone', () => {
+  it('shows a stored payable amount with its bitcoin on the compact row', () => {
     show({
       sundayRest: false,
       loans: [
@@ -324,8 +324,7 @@ describe('LoansCard', () => {
         }),
       ],
     });
-    expect(screen.getByText("₱9'999.99")).toBeTruthy();
-    expect(screen.queryByText("₿192'833")).toBeNull();
+    expect(screen.getByText("₱9'999.99 · ₿192'833")).toBeTruthy();
     expect(screen.queryByText(PRODUCTION_SPOT)).toBeNull();
   });
 
@@ -347,8 +346,7 @@ describe('LoansCard', () => {
         }),
       ],
     });
-    expect(screen.getByText('₱30.00 + $3.00')).toBeTruthy();
-    expect(screen.queryByText("₿1'000")).toBeNull();
+    expect(screen.getByText("₱30.00 + $3.00 · ₿1'000")).toBeTruthy();
   });
 
   it('shows the stored next amount beside its bitcoin', () => {

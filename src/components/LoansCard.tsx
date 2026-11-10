@@ -156,11 +156,13 @@ export function LoansCard({ place }: LoansCardProps): ReactElement | null {
                     summary.behindDays > 0 ? 'text-app-danger' : 'text-app-fg'
                   }`}
                 >
-                  {definedPayable ?? (
+                  {definedPayable === null ? (
                     <>
                       {formatBitcoin(summary.payableSats, numberFormat)}
                       {preferredFiatSuffix(summary.payableSats, rateDay, fiat, numberFormat)}
                     </>
+                  ) : (
+                    `${definedPayable} · ${formatBitcoin(summary.payableSats, numberFormat)}`
                   )}
                 </p>
               </div>

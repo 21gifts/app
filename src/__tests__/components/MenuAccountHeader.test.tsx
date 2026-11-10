@@ -172,7 +172,7 @@ describe('MenuAccountHeader', () => {
     expect(screen.getByText("₿1'000").textContent).toBe("₿1'000");
   });
 
-  it('shows a PHP payable amount in its stored currency alone', () => {
+  it('shows a PHP payable amount with its bitcoin on the Menu row', () => {
     signIn();
     vi.mocked(useMyLoans).mockReturnValue({
       loans: {
@@ -200,11 +200,10 @@ describe('MenuAccountHeader', () => {
       reload: vi.fn(),
     });
     renderWithLocale(<MenuAccountHeader onNavigate={vi.fn()} tight={false} open />);
-    expect(screen.getByText('₱30.00')).toBeTruthy();
-    expect(screen.queryByText("₿1'000")).toBeNull();
+    expect(screen.getByText("₱30.00 · ₿1'000")).toBeTruthy();
   });
 
-  it('shows each payable fiat currency in the Menu row', () => {
+  it('shows each payable fiat currency with the bitcoin on the Menu row', () => {
     signIn();
     vi.mocked(useMyLoans).mockReturnValue({
       loans: {
@@ -249,8 +248,7 @@ describe('MenuAccountHeader', () => {
       reload: vi.fn(),
     });
     renderWithLocale(<MenuAccountHeader onNavigate={vi.fn()} tight={false} open />);
-    expect(screen.getByText('₱30.00 + $3.00')).toBeTruthy();
-    expect(screen.queryByText("₿1'000")).toBeNull();
+    expect(screen.getByText("₱30.00 + $3.00 · ₿1'000")).toBeTruthy();
   });
 
   it('re-reads loans once whenever the Menu opens', () => {
