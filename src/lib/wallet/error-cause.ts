@@ -243,6 +243,72 @@ function replaceKeys(text: string): string {
   });
 }
 
+/** Most letters a recovery word has. */
+const MAX_WORD_LENGTH = Math.max(...wordlist.map((word) => word.length));
+
+/**
+ * Reads a word that holds invisible format characters and is not one recovery
+ * word as a whole: its pieces between them. A piece joined with the pieces
+ * right before it (together at most {@link MAX_WORD_LENGTH} letters) that
+ * makes one recovery word (`ab\u200Bandon`) is that word; a piece that can no
+ * longer be part of one is not. So each piece is read a bounded number of
+ * times.
+ *
+ * @param word - A word of {@link LETTERS}.
+ * @param index - Where the word starts in the message.
+ * @param onWord - Called with the start and end of each recovery word.
+ * @param onOther - Called for each piece that is not part of one.
+ */
+function visitPieces(
+  word: string,
+  index: number,
+  onWord: (from: number, to: number) => void,
+  onOther: () => void,
+): void {
+  let pending: Array<{ text: string; from: number }> = [];
+  let at = index;
+  for (const piece of word.split(INVISIBLE)) {
+    const pieceTo = at + piece.length;
+    if (piece !== '') {
+      pending.push({ text: piece, from: at });
+      let joined = pending.map((part) => part.text).join('');
+      let wordFrom: number | null = null;
+      let skipped = false;
+      for (const part of pending) {
+        if (isRecoveryWord(joined)) {
+          wordFrom = part.from;
+          break;
+        }
+        skipped = true;
+        joined = joined.slice(part.text.length);
+      }
+      if (wordFrom !== null) {
+        if (skipped) {
+          onOther();
+        }
+        onWord(wordFrom, pieceTo);
+        pending = [];
+      } else {
+        let length = pending.reduce((sum, part) => sum + part.text.length, 0);
+        let dropped = 0;
+        for (const part of pending) {
+          if (length <= MAX_WORD_LENGTH) {
+            break;
+          }
+          length -= part.text.length;
+          dropped += 1;
+          onOther();
+        }
+        pending = pending.slice(dropped);
+      }
+    }
+    at = pieceTo + 1;
+  }
+  if (pending.length > 0) {
+    onOther();
+  }
+}
+
 /**
  * Replaces every run of {@link MIN_WORD_RUN} or more BIP-39 English words in
  * a row, in any letter case and with any separator between them, by
@@ -264,32 +330,24 @@ function replaceWordRuns(text: string): string {
     }
     count = 0;
   };
-  const visit = (word: string, at: number): void => {
-    if (isRecoveryWord(word)) {
-      if (count === 0) {
-        start = at;
-      }
-      end = at + word.length;
-      count += 1;
-    } else {
-      close();
+  const addWord = (from: number, to: number): void => {
+    if (count === 0) {
+      start = from;
     }
+    end = to;
+    count += 1;
   };
   for (const match of text.matchAll(LETTERS)) {
     const word = match[0];
     if (ESCAPED_SEPARATOR.test(word)) {
       continue;
     }
-    if (!INVISIBLE_IN.test(word) || isRecoveryWord(word)) {
-      visit(word, match.index);
-      continue;
-    }
-    let at = match.index;
-    for (const piece of word.split(INVISIBLE)) {
-      if (piece !== '') {
-        visit(piece, at);
-      }
-      at += piece.length + 1;
+    if (isRecoveryWord(word)) {
+      addWord(match.index, match.index + word.length);
+    } else if (INVISIBLE_IN.test(word)) {
+      visitPieces(word, match.index, addWord, close);
+    } else {
+      close();
     }
   }
   close();

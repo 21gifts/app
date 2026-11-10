@@ -65,6 +65,15 @@ describe('sanitizeErrorMessage', () => {
     expect(sanitizeErrorMessage('x\u200Babandon\u200Bability\u200Bable\u200By')).toBe(
       'x\u200B[words]\u200By',
     );
+    expect(sanitizeErrorMessage('ab\u200Bandon\u200Bability\u200Bable here')).toBe('[words] here');
+    expect(sanitizeErrorMessage('x\u200Bab\u200Ban\u200Bdon\u200Babi\u200Blity\u200Bable')).toBe(
+      'x\u200B[words]',
+    );
+    expect(sanitizeErrorMessage('qq\u200Bzz\u200Babandon x')).toBe('qq\u200Bzz\u200Babandon x');
+    expect(sanitizeErrorMessage('abandon\u200Bability\u200Bab\u200Bandon x')).toBe('[words] x');
+    expect(sanitizeErrorMessage('qqqqq\u200Bzzzzz\u200Babandon ability x')).toBe(
+      'qqqqq\u200Bzzzzz\u200Babandon ability x',
+    );
     expect(sanitizeErrorMessage('\u200B\u200Babandon\u200Bability\u200Bable')).toBe(
       '\u200B\u200B[words]',
     );
@@ -206,7 +215,7 @@ describe('sanitizeErrorMessage', () => {
   });
 
   it('reads a very long message without a digit in linear time', () => {
-    const long = `${'a'.repeat(100_000)} ${'x.'.repeat(50_000)} ${'b'.repeat(100_000)}@ ${'http://a,'.repeat(12_000)} ${'(/a'.repeat(30_000)} ${'=/a'.repeat(30_000)} ${'a:'.repeat(50_000)} ${"é'".repeat(50_000)}@ ${'add add add x '.repeat(70_000)} ${'eyJ-'.repeat(250_000)} ${'"a'.repeat(100_000)} ${'\\"'.repeat(250_000)} ${'&a'.repeat(100_000)} ${'%2'.repeat(70_000)} ${'\u200B'.repeat(100_000)} ${'x/?'.repeat(70_000)} ${'/x?a= '.repeat(40_000)}`;
+    const long = `${'a'.repeat(100_000)} ${'x.'.repeat(50_000)} ${'b'.repeat(100_000)}@ ${'http://a,'.repeat(12_000)} ${'(/a'.repeat(30_000)} ${'=/a'.repeat(30_000)} ${'a:'.repeat(50_000)} ${"é'".repeat(50_000)}@ ${'add add add x '.repeat(70_000)} ${'eyJ-'.repeat(250_000)} ${'"a'.repeat(100_000)} ${'\\"'.repeat(250_000)} ${'&a'.repeat(100_000)} ${'%2'.repeat(70_000)} ${'\u200B'.repeat(100_000)} ${'ab\u200B'.repeat(150_000)} ${'x/?'.repeat(70_000)} ${'/x?a= '.repeat(40_000)}`;
     const started = performance.now();
     sanitizeErrorMessage(long);
     expect(performance.now() - started).toBeLessThan(1_000);
