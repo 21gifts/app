@@ -318,3 +318,31 @@ export async function runFondPayoutTick(
   }
   return summary;
 }
+
+/** The tick that is currently paying, shared by every caller until it settles. */
+let inFlightTick: Promise<FondPayoutTickResult> | null = null;
+
+/**
+ * Runs at most one {@link runFondPayoutTick} at a time.
+ *
+ * An effect re-run while a tick is still in flight must not start a second
+ * tick against the same rows: overlapping ticks could both read the same
+ * stored BOLT11, see no send yet, and pay it twice. Every caller during a tick
+ * receives that tick's promise; the guard is cleared when it settles, whether
+ * it resolves or throws, so the next caller starts a fresh tick.
+ *
+ * @param deps - Session, api calls, wallet calls, and sleep for a new tick.
+ * @returns The settled result of the single in-flight tick.
+ */
+export function runFondPayoutTickOnce(
+  deps: FondPayoutTickDeps,
+): Promise<FondPayoutTickResult> {
+  if (inFlightTick !== null) {
+    return inFlightTick;
+  }
+  const running = runFondPayoutTick(deps).finally(() => {
+    inFlightTick = null;
+  });
+  inFlightTick = running;
+  return running;
+}

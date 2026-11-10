@@ -7599,13 +7599,20 @@ The class exists so the composer can tell a refused free first post from any oth
 - **Purpose:** One pure, injectable step of the automatic Fond payout loop. It lists today's open rows, asks the api for each row's BOLT11, pays it once from the in-app wallet, and posts the preimage as proof. A `settling` row is handled only when this tab remembers its payment hash from an earlier invoice request; another tab's settling row is skipped.
 - **Inputs:** `session`; the three api calls `fetchFondPayouts`, `postFondPayoutInvoice`, `postFondPayoutProof`; `payFromWallet`; `listWalletPayments`; and `sleep`.
 - **Returns / side effects:** `{ paid, proved, skipped, stop }`. A list `404` sets `stop: 'off'` and a list `403` sets `stop: 'forbidden'`; any other list failure returns with `stop: null` so the next tick retries. Rows are handled in list order, one at a time. Before paying, the newest 100 wallet sends are read and matched by payment hash (case-insensitive) or BOLT11: a `completed` send with a 64-hex preimage is proven without paying, a `pending` send is skipped, and any other send is paid once. An `insufficient` prepare or send stops the whole tick; every other outcome skips the row. After a fresh `paid`, the history is polled up to five times with `sleep(2_000)` for the preimage; a missing preimage skips the row for the next tick. Amounts come only from the BOLT11, and no BOLT11, preimage, or address is logged or reported.
-- **Used by:** `FondPayoutSync`.
+- **Used by:** `runFondPayoutTickOnce`, and `FondPayoutSync` through it.
+
+## Function: runFondPayoutTickOnce
+
+- **Purpose:** Single-flight wrapper around `runFondPayoutTick`. It returns the running tick's promise while one is in flight, so an effect re-run that changes the wallet status, session, or account cannot start a second tick against the same payout row and pay its stored BOLT11 twice.
+- **Inputs:** The same `FondPayoutTickDeps` as `runFondPayoutTick`: `session`, the three api calls, `payFromWallet`, `listWalletPayments`, and `sleep`.
+- **Returns / side effects:** The in-flight tick's `{ paid, proved, skipped, stop }` result when a tick is running; otherwise starts one tick with these deps. The module-level guard is cleared in `finally` after the tick resolves or throws, so the next call starts a fresh tick. It adds no other side effects.
+- **Used by:** `FondPayoutSync` for every tick it starts.
 
 ## Function: FondPayoutSync
 
 - **Purpose:** Root-mounted, `null`-rendering client loop that pays the Fond queue automatically while the Fond account is signed in and its in-app wallet is open. It has no screen.
-- **Inputs:** Reads the auth store (`session`, account id, role) and the wallet store status; calls `runFondPayoutTick` with the real api and wallet functions.
-- **Returns / side effects:** `null`. Active only when signed in, `roleAtLeast(account.role, 'fond')`, a session token is present, and the wallet is `ready`. It runs one tick on activation and then every `FOND_PAYOUT_INTERVAL_MS` (60 s). Single flight: a tick never overlaps another. A tick result `forbidden` (403) or `off` (404) stops the loop until the session or account changes; the stopped key survives a wallet reconnect in the same tab. Unmount, sign-out, or a locked wallet clears the timer. A rejected tick is swallowed and retried on the next interval.
+- **Inputs:** Reads the auth store (`session`, account id, role) and the wallet store status; calls `runFondPayoutTickOnce` with the real api and wallet functions.
+- **Returns / side effects:** `null`. Active only when signed in, `roleAtLeast(account.role, 'fond')`, a session token is present, and the wallet is `ready`. It runs one tick on activation and then every `FOND_PAYOUT_INTERVAL_MS` (60 s). Single flight: the module-level guard makes an effect re-run during a tick share the running tick instead of starting a second one, and a tick scheduled by a stopped effect finishes its current row but schedules no further tick. A tick result `forbidden` (403) or `off` (404) stops the loop until the session or account changes; the stopped key survives a wallet reconnect in the same tab. Unmount, sign-out, or a locked wallet clears the timer. A rejected tick is swallowed and retried on the next interval.
 - **Used by:** `RootLayout`, right after `WalletSync`.
 
 ## Function: proxyFondPayoutsGet

@@ -3,7 +3,7 @@
 import { useEffect, useRef } from 'react';
 import { fetchFondPayouts, postFondPayoutInvoice, postFondPayoutProof } from '@/lib/api';
 import { roleAtLeast } from '@/lib/roles';
-import { runFondPayoutTick, waitForFondPayoutRead } from '@/lib/wallet/fond-payouts';
+import { runFondPayoutTickOnce, waitForFondPayoutRead } from '@/lib/wallet/fond-payouts';
 import { listWalletPayments, payFromWallet } from '@/lib/wallet/wallet-service';
 import { useAuthStore } from '@/stores/auth-store';
 import { useWalletStore } from '@/stores/wallet-store';
@@ -17,9 +17,11 @@ export const FOND_PAYOUT_INTERVAL_MS = 60_000;
  *
  * Active only for an account at rank `fond` or above with a session and a
  * `ready` wallet. It runs one tick on activation and then every
- * {@link FOND_PAYOUT_INTERVAL_MS}. A tick never overlaps another. A tick that
- * answers `forbidden` (403) or `off` (404) stops the loop until the account
- * or session changes. Unmount and sign-out stop it.
+ * {@link FOND_PAYOUT_INTERVAL_MS}. Ticks are single-flight across effect
+ * re-runs, so a changed wallet status, session, or account during a tick
+ * shares the running tick instead of paying a row twice. A tick that answers
+ * `forbidden` (403) or `off` (404) stops the loop until the account or session
+ * changes. Unmount and sign-out stop it.
  *
  * @returns `null` because the loop has no visual surface.
  */
@@ -56,7 +58,7 @@ export function FondPayoutSync(): null {
       timer = null;
       let stop: 'forbidden' | 'off' | null = null;
       try {
-        const result = await runFondPayoutTick({
+        const result = await runFondPayoutTickOnce({
           session,
           fetchFondPayouts,
           postFondPayoutInvoice,

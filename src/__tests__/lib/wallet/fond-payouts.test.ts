@@ -8,12 +8,20 @@ import {
   type FondPayoutTickDeps,
   type FondPayoutTickResult,
 } from '@/lib/wallet/fond-payouts';
-import type { WalletPayResult } from '@/lib/wallet/wallet-service';
+import type { PaymentFailure } from '@/lib/wallet/payment-failure';
+import type { WalletPayResult, WalletSendResult } from '@/lib/wallet/wallet-service';
 import type { WalletPayment } from '@/lib/wallet/wallet-sdk';
 
 const HASH_A = 'aa'.repeat(32);
 const HASH_B = 'bb'.repeat(32);
 const PREIMAGE_A = '11'.repeat(32);
+const FAILURE: PaymentFailure = {
+  stage: 'prepare',
+  reason: 'sdk_error',
+  method: 'lightning',
+  amountSats: null,
+  feeSats: null,
+};
 
 const OWED: FondPayout = { id: 'row-a', kind: 'daily', status: 'owed', utcDay: '2026-11-10' };
 const OWED_B: FondPayout = { id: 'row-b', kind: 'moderator', status: 'owed', utcDay: '2026-11-10' };
@@ -98,17 +106,20 @@ function failure(status: number, error: string | null = null): FondPayoutFailure
 }
 
 let tick: typeof runFondPayoutTick;
+let tickOnce: (deps: FondPayoutTickDeps) => Promise<FondPayoutTickResult>;
 
 beforeEach(async () => {
   vi.resetModules();
-  tick = (await import('@/lib/wallet/fond-payouts')).runFondPayoutTick;
+  const fondPayouts = await import('@/lib/wallet/fond-payouts');
+  tick = fondPayouts.runFondPayoutTick;
+  tickOnce = fondPayouts.runFondPayoutTickOnce;
 });
 
 describe('runFondPayoutTick list failures', () => {
   it('stops as off on 404 and forbidden on 403', async () => {
     const off = depsFor([]);
     vi.mocked(off.fetchFondPayouts).mockResolvedValue(failure(404));
-    await expect(tick(off)).resolves.toEqual<FondPayoutTickResult>({
+    await expect(tick(off)).resolves.toEqual({
       paid: 0,
       proved: 0,
       skipped: 0,
@@ -116,7 +127,7 @@ describe('runFondPayoutTick list failures', () => {
     });
     const forbidden = depsFor([]);
     vi.mocked(forbidden.fetchFondPayouts).mockResolvedValue(failure(403));
-    await expect(tick(forbidden)).resolves.toEqual<FondPayoutTickResult>({
+    await expect(tick(forbidden)).resolves.toEqual({
       paid: 0,
       proved: 0,
       skipped: 0,
@@ -127,7 +138,7 @@ describe('runFondPayoutTick list failures', () => {
   it('returns quietly on any other list failure so the next tick retries', async () => {
     const deps = depsFor([]);
     vi.mocked(deps.fetchFondPayouts).mockResolvedValue(failure(503));
-    await expect(tick(deps)).resolves.toEqual<FondPayoutTickResult>({
+    await expect(tick(deps)).resolves.toEqual({
       paid: 0,
       proved: 0,
       skipped: 0,
@@ -151,16 +162,66 @@ describe('waitForFondPayoutRead', () => {
   });
 });
 
+describe('runFondPayoutTickOnce', () => {
+  it('shares one tick while it is in flight', async () => {
+    let release = (_value: { ok: true; payouts: FondPayout[] }): void => undefined;
+    const gate = new Promise<{ ok: true; payouts: FondPayout[] }>((resolve) => {
+      release = resolve;
+    });
+    const first = depsFor([]);
+    vi.mocked(first.fetchFondPayouts).mockReturnValue(gate);
+    const second = depsFor([]);
+
+    const firstRun = tickOnce(first);
+    const secondRun = tickOnce(second);
+
+    expect(first.fetchFondPayouts).toHaveBeenCalledTimes(1);
+    expect(second.fetchFondPayouts).not.toHaveBeenCalled();
+    expect(secondRun).toBe(firstRun);
+
+    release({ ok: true, payouts: [] });
+    await expect(firstRun).resolves.toEqual({ paid: 0, proved: 0, skipped: 0, stop: null });
+    await expect(secondRun).resolves.toEqual({ paid: 0, proved: 0, skipped: 0, stop: null });
+  });
+
+  it('starts a new tick after the first settled', async () => {
+    const first = depsFor([]);
+    const second = depsFor([]);
+
+    await tickOnce(first);
+    await tickOnce(second);
+
+    expect(first.fetchFondPayouts).toHaveBeenCalledTimes(1);
+    expect(second.fetchFondPayouts).toHaveBeenCalledTimes(1);
+  });
+
+  it('clears the guard after a throw', async () => {
+    const failed = depsFor([]);
+    vi.mocked(failed.fetchFondPayouts).mockRejectedValueOnce(new Error('boom'));
+
+    await expect(tickOnce(failed)).rejects.toThrow('boom');
+
+    const retry = depsFor([]);
+    await expect(tickOnce(retry)).resolves.toEqual({
+      paid: 0,
+      proved: 0,
+      skipped: 0,
+      stop: null,
+    });
+    expect(retry.fetchFondPayouts).toHaveBeenCalledTimes(1);
+  });
+});
+
 describe('runFondPayoutTick rows', () => {
   it('pays a fresh invoice and posts the polled preimage', async () => {
     const deps = depsFor([OWED]);
     vi.mocked(deps.listWalletPayments)
       .mockResolvedValueOnce([])
-      .mockResolvedValueOnce([sentPayment({ status: 'pending' })])
+      .mockResolvedValueOnce([sentPayment({ status: 'pending', info: { paymentHash: HASH_A } })])
       .mockResolvedValue([
         sentPayment({ info: { paymentHash: HASH_A, preimage: PREIMAGE_A } }),
       ]);
-    await expect(tick(deps)).resolves.toEqual<FondPayoutTickResult>({
+    await expect(tick(deps)).resolves.toEqual({
       paid: 1,
       proved: 1,
       skipped: 0,
@@ -193,7 +254,7 @@ describe('runFondPayoutTick rows', () => {
   it('skips a row whose invoice is not payable now', async () => {
     const deps = depsFor([OWED]);
     vi.mocked(deps.postFondPayoutInvoice).mockResolvedValue(failure(409, 'Invoice in progress'));
-    await expect(tick(deps)).resolves.toEqual<FondPayoutTickResult>({
+    await expect(tick(deps)).resolves.toEqual({
       paid: 0,
       proved: 0,
       skipped: 1,
@@ -207,7 +268,7 @@ describe('runFondPayoutTick rows', () => {
     vi.mocked(deps.listWalletPayments).mockResolvedValue([
       sentPayment({ info: { paymentHash: HASH_A.toUpperCase(), preimage: PREIMAGE_A } }),
     ]);
-    await expect(tick(deps)).resolves.toEqual<FondPayoutTickResult>({
+    await expect(tick(deps)).resolves.toEqual({
       paid: 1,
       proved: 1,
       skipped: 0,
@@ -230,7 +291,7 @@ describe('runFondPayoutTick rows', () => {
   it('never pays a pending send again', async () => {
     const deps = depsFor([OWED]);
     vi.mocked(deps.listWalletPayments).mockResolvedValue([sentPayment({ status: 'pending' })]);
-    await expect(tick(deps)).resolves.toEqual<FondPayoutTickResult>({
+    await expect(tick(deps)).resolves.toEqual({
       paid: 0,
       proved: 0,
       skipped: 1,
@@ -245,7 +306,7 @@ describe('runFondPayoutTick rows', () => {
       vi.mocked(deps.listWalletPayments)
         .mockResolvedValueOnce([sentPayment({ info })])
         .mockResolvedValue([sentPayment({ info: { paymentHash: HASH_A, preimage: PREIMAGE_A } })]);
-      await expect(tick(deps)).resolves.toEqual<FondPayoutTickResult>({
+      await expect(tick(deps)).resolves.toEqual({
         paid: 1,
         proved: 1,
         skipped: 0,
@@ -258,7 +319,7 @@ describe('runFondPayoutTick rows', () => {
   it('skips the row when history cannot be read', async () => {
     const deps = depsFor([OWED]);
     vi.mocked(deps.listWalletPayments).mockRejectedValue(new Error('wallet-connect'));
-    await expect(tick(deps)).resolves.toEqual<FondPayoutTickResult>({
+    await expect(tick(deps)).resolves.toEqual({
       paid: 0,
       proved: 0,
       skipped: 1,
@@ -269,8 +330,8 @@ describe('runFondPayoutTick rows', () => {
 
   it('stops the whole tick when prepare or send reports no balance', async () => {
     const preparer = depsFor([OWED, OWED_B]);
-    vi.mocked(preparer.payFromWallet).mockResolvedValue({ kind: 'insufficient', failure: {} as never });
-    await expect(tick(preparer)).resolves.toEqual<FondPayoutTickResult>({
+    vi.mocked(preparer.payFromWallet).mockResolvedValue({ kind: 'insufficient', failure: FAILURE });
+    await expect(tick(preparer)).resolves.toEqual({
       paid: 0,
       proved: 0,
       skipped: 0,
@@ -279,14 +340,15 @@ describe('runFondPayoutTick rows', () => {
     expect(preparer.postFondPayoutInvoice).toHaveBeenCalledTimes(1);
 
     const sender = depsFor([OWED, OWED_B]);
+    const insufficient: WalletSendResult = { kind: 'insufficient', failure: FAILURE };
     vi.mocked(sender.payFromWallet).mockResolvedValue({
       kind: 'confirm',
       amountSats: 10,
       feeSats: 0,
       method: 'lightning',
-      send: vi.fn(async () => ({ kind: 'insufficient', failure: {} as never })),
+      send: vi.fn(async () => insufficient),
     });
-    await expect(tick(sender)).resolves.toEqual<FondPayoutTickResult>({
+    await expect(tick(sender)).resolves.toEqual({
       paid: 0,
       proved: 0,
       skipped: 0,
@@ -296,29 +358,31 @@ describe('runFondPayoutTick rows', () => {
   });
 
   it('skips every other prepare and send outcome', async () => {
+    const failed: WalletSendResult = { kind: 'failed', failure: FAILURE };
+    const expired: WalletSendResult = { kind: 'expired', failure: FAILURE };
     const outcomes: WalletPayResult[] = [
-      { kind: 'belowMinimum', minSats: 100, failure: {} as never },
-      { kind: 'failed', failure: {} as never },
-      { kind: 'unlock', failure: {} as never },
+      { kind: 'belowMinimum', minSats: 100, failure: FAILURE },
+      { kind: 'failed', failure: FAILURE },
+      { kind: 'unlock', failure: FAILURE },
       {
         kind: 'confirm',
         amountSats: 10,
         feeSats: 0,
         method: 'lightning',
-        send: vi.fn(async () => ({ kind: 'failed', failure: {} as never })),
+        send: vi.fn(async () => failed),
       },
       {
         kind: 'confirm',
         amountSats: 10,
         feeSats: 0,
         method: 'lightning',
-        send: vi.fn(async () => ({ kind: 'expired', failure: {} as never })),
+        send: vi.fn(async () => expired),
       },
     ];
     for (const outcome of outcomes) {
       const deps = depsFor([OWED]);
       vi.mocked(deps.payFromWallet).mockResolvedValue(outcome);
-      await expect(tick(deps)).resolves.toEqual<FondPayoutTickResult>({
+      await expect(tick(deps)).resolves.toEqual({
         paid: 0,
         proved: 0,
         skipped: 1,
@@ -330,7 +394,7 @@ describe('runFondPayoutTick rows', () => {
   it('skips the row when prepare or send throws', async () => {
     const preparer = depsFor([OWED]);
     vi.mocked(preparer.payFromWallet).mockRejectedValue(new Error('boom'));
-    await expect(tick(preparer)).resolves.toEqual<FondPayoutTickResult>({
+    await expect(tick(preparer)).resolves.toEqual({
       paid: 0,
       proved: 0,
       skipped: 1,
@@ -347,7 +411,7 @@ describe('runFondPayoutTick rows', () => {
         throw new Error('boom');
       }),
     });
-    await expect(tick(sender)).resolves.toEqual<FondPayoutTickResult>({
+    await expect(tick(sender)).resolves.toEqual({
       paid: 0,
       proved: 0,
       skipped: 1,
@@ -357,7 +421,7 @@ describe('runFondPayoutTick rows', () => {
 
   it('skips a row whose preimage never appears, so the next tick finds it', async () => {
     const deps = depsFor([OWED]);
-    await expect(tick(deps)).resolves.toEqual<FondPayoutTickResult>({
+    await expect(tick(deps)).resolves.toEqual({
       paid: 0,
       proved: 0,
       skipped: 1,
@@ -372,7 +436,7 @@ describe('runFondPayoutTick rows', () => {
     vi.mocked(deps.listWalletPayments)
       .mockResolvedValueOnce([])
       .mockRejectedValue(new Error('wallet-connect'));
-    await expect(tick(deps)).resolves.toEqual<FondPayoutTickResult>({
+    await expect(tick(deps)).resolves.toEqual({
       paid: 0,
       proved: 0,
       skipped: 1,
@@ -386,7 +450,7 @@ describe('runFondPayoutTick rows', () => {
       sentPayment({ info: { paymentHash: HASH_A, preimage: PREIMAGE_A } }),
     ]);
     vi.mocked(deps.postFondPayoutProof).mockResolvedValue(failure(409, 'Proof in progress'));
-    await expect(tick(deps)).resolves.toEqual<FondPayoutTickResult>({
+    await expect(tick(deps)).resolves.toEqual({
       paid: 0,
       proved: 0,
       skipped: 1,
@@ -396,7 +460,7 @@ describe('runFondPayoutTick rows', () => {
 
   it('skips a settling row this tab does not remember', async () => {
     const deps = depsFor([SETTLING]);
-    await expect(tick(deps)).resolves.toEqual<FondPayoutTickResult>({
+    await expect(tick(deps)).resolves.toEqual({
       paid: 0,
       proved: 0,
       skipped: 1,
@@ -412,7 +476,7 @@ describe('runFondPayoutTick rows', () => {
     vi.mocked(second.listWalletPayments).mockResolvedValue([
       sentPayment({ info: { paymentHash: HASH_A, preimage: PREIMAGE_A } }),
     ]);
-    await expect(tick(second)).resolves.toEqual<FondPayoutTickResult>({
+    await expect(tick(second)).resolves.toEqual({
       paid: 1,
       proved: 1,
       skipped: 0,
@@ -428,7 +492,7 @@ describe('runFondPayoutTick rows', () => {
     vi.mocked(second.listWalletPayments).mockResolvedValue([
       sentPayment({ status: 'pending', info: { paymentHash: HASH_A } }),
     ]);
-    await expect(tick(second)).resolves.toEqual<FondPayoutTickResult>({
+    await expect(tick(second)).resolves.toEqual({
       paid: 0,
       proved: 0,
       skipped: 1,
@@ -443,7 +507,7 @@ describe('runFondPayoutTick rows', () => {
     await tick(first);
     const second = depsFor([SETTLING]);
     vi.mocked(second.payFromWallet).mockResolvedValue(confirmResult({ kind: 'paid' }));
-    await expect(tick(second)).resolves.toEqual<FondPayoutTickResult>({
+    await expect(tick(second)).resolves.toEqual({
       paid: 0,
       proved: 0,
       skipped: 1,

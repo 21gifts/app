@@ -2,12 +2,15 @@ import { act, cleanup, render } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { FOND_PAYOUT_INTERVAL_MS, FondPayoutSync } from '@/components/FondPayoutSync';
 import type { Account } from '@/lib/api-types';
-import { runFondPayoutTick, waitForFondPayoutRead } from '@/lib/wallet/fond-payouts';
+import {
+  runFondPayoutTickOnce as runFondPayoutTick,
+  waitForFondPayoutRead,
+} from '@/lib/wallet/fond-payouts';
 import { useAuthStore } from '@/stores/auth-store';
 import { useWalletStore } from '@/stores/wallet-store';
 
 vi.mock('@/lib/wallet/fond-payouts', () => ({
-  runFondPayoutTick: vi.fn(async () => ({ paid: 0, proved: 0, skipped: 0, stop: null })),
+  runFondPayoutTickOnce: vi.fn(async () => ({ paid: 0, proved: 0, skipped: 0, stop: null })),
   waitForFondPayoutRead: vi.fn(async () => undefined),
 }));
 
