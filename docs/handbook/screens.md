@@ -2945,7 +2945,7 @@ Open **Menu** with Loan A two days behind. The account header's repayment row sa
 
 ### Variant: software-developer
 
-One author row on the welcome forum. Beside the name, a clickable **Software Developer** role pill, exactly like the Moderator pill, with its hint. There is no separate static label and no Verified pill. An older api body with role verified plus `staffTag` `software_developer` and a newer body with role `software_developer` both show this one pill.
+One author row on the welcome forum. Beside the name, a clickable **Software Developer** role pill, exactly like the Moderator pill, with its hint. It is the one role pill; no second Verified pill appears. An older api body with role verified plus `staffTag` `software_developer` and a newer body with role `software_developer` both show this one pill.
 
 ![21.gifts welcome software developer](images/welcome-software-developer.png)
 
@@ -7016,7 +7016,7 @@ Member identity card with About me inside the card when `aboutMe` is set; locati
 
 ### Variant: software-developer
 
-Basis member identity card. Beside the name, a clickable **Software Developer** role pill from the `staffTag` `software_developer` compatibility bridge. There is no separate static label and no Verified pill. About me and Message stay as on the default member card.
+Basis member identity card. Beside the name, a clickable **Software Developer** role pill from the `staffTag` `software_developer` compatibility bridge. It is the one role pill; no second Verified pill appears. About me and Message stay as on the default member card.
 
 ![21.gifts member software developer](images/members-software-developer.png)
 
@@ -8128,7 +8128,7 @@ The funding-program icon is pressed and the participation sentence is visible. N
 
 ### Variant: software-developer
 
-Basis account. Beside the centered name, a clickable Software Developer role pill, then the pencil. There is no separate static label and no Verified pill. The rest of the public card matches the default profile, including the edit controls.
+Basis account. Beside the centered name, a clickable Software Developer role pill, then the pencil. It is the one role pill; no second Verified pill appears. The rest of the public card matches the default profile, including the edit controls.
 
 ![21.gifts profile software developer](images/profile-software-developer.png)
 
@@ -11016,7 +11016,7 @@ Signed-in owner on /view/:viewKey, where the account id matches. Copy link write
 
 ### Variant: software-developer
 
-Public card on /view/:viewKey. Beside the name, a clickable **Software Developer** role pill, with no separate static label and no Verified pill. The claim banner can sit under the card.
+Public card on /view/:viewKey. Beside the name, a clickable **Software Developer** role pill. It is the one role pill; no second Verified pill appears. The claim banner can sit under the card.
 
 ![21.gifts public view profile](images/view-software-developer.png)
 
