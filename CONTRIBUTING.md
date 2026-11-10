@@ -166,6 +166,12 @@ app/
 │   │   │   ├── trial/route.ts                    # POST /funding/trial
 │   │   │   ├── admit/route.ts                    # POST /funding/admit
 │   │   │   └── reject/route.ts                   # POST /funding/reject
+│   │   ├── fond/
+│   │   │   └── payouts/
+│   │   │       ├── route.ts              # GET /fond/payouts (today's open Fond rows)
+│   │   │       └── [id]/
+│   │   │           ├── invoice/route.ts  # POST /fond/payouts/:id/invoice (BOLT11 + payment hash)
+│   │   │           └── proof/route.ts    # POST /fond/payouts/:id/proof (preimage as proof)
 │   │   ├── login/
 │   │   │   └── page.tsx         # GET /login — login + signed-in form
 │   │   ├── recover/
@@ -285,6 +291,7 @@ app/
 │   │   ├── WalletHistory.tsx    # /wallet payments card (newest first, paged on scroll)
 │   │   ├── WalletSetupNote.tsx  # Inline wallet setup note on money screens (Try again)
 │   │   ├── WalletSync.tsx       # Root-mounted wallet phrase and background setup listeners + wallet data report triggers (renders nothing)
+│   │   ├── FondPayoutSync.tsx   # Root-mounted automatic Fond payout loop while the Fond wallet is ready (renders nothing)
 │   │   ├── InteractionLog.tsx   # Root-mounted interaction log: screen views, flush timer (renders nothing)
 │   │   ├── WalletPay.tsx        # In-app wallet pay slot of the pay sheet (the only way to pay)
 │   │   ├── PaySheet.tsx         # Bottom sheet for the last tap of every in-app wallet payment (title, amount, pay slot, success step)
@@ -417,6 +424,7 @@ app/
 │   │   │   ├── payment-fixtures.ts # Synthetic SDK payments for the history-rows pin (invariants unit-tested)
 │   │   │   ├── heart-context.ts # fetchHeartPosts: gift payment hashes → POST /me/wallet/hearts
 │   │   │   ├── wallet-report.ts # reportWallet: balance + unacknowledged payments → POST /me/wallet/report
+│   │   │   ├── fond-payouts.ts  # runFondPayoutTick: list → invoice → pay once → poll preimage → proof
 │   │   │   ├── payment-failure.ts # reportPaymentFailure: payment_failed event + `Payment failed` error report
 │   │   │   └── lnurl-relay.ts   # lnurlRelayTarget: outside address or LNURL goes through the api
 │   │   ├── gifts-address.ts     # Public username@21.gifts display handle
@@ -500,6 +508,7 @@ app/
 │   ├── messages.spec.ts         # Inbox HTML /messages vs public /messages/[id]
 │   ├── proposals.spec.ts        # /moderate/proposals staff confirm/reject queue
 │   ├── applications.spec.ts     # /grants grant card, queue, and review; old paths redirect
+│   ├── fond-payouts.spec.ts     # /fond/payouts proxies, client calls, tick, and the null loop component
 │   ├── proxy.spec.ts            # Same-origin api proxy round-trips against the stub
 │   ├── view.spec.ts             # /view/[viewKey] public profile
 │   ├── mock-api.mjs             # Local 21.gifts api protocol stub for proxies

@@ -39,6 +39,8 @@ import {
   fundingPayoutDaysResponseSchema,
   fundingApplicationDetailSchema,
   fundingDecisionResultSchema,
+  fondPayoutInvoiceSchema,
+  fondPayoutListSchema,
   trustActionResultSchema,
   trustChainSchema,
   passkeyBeginSchema,
@@ -2618,5 +2620,38 @@ describe('lnurlInvoiceSchema', () => {
   it('parses { pr } and rejects an empty pr', () => {
     expect(lnurlInvoiceSchema.parse({ pr: 'lnbc1' })).toEqual({ pr: 'lnbc1' });
     expect(() => lnurlInvoiceSchema.parse({ pr: '' })).toThrow();
+  });
+});
+
+describe('fondPayoutListSchema', () => {
+  const row = { id: 'row-1', kind: 'daily', status: 'owed', utcDay: '2026-11-10' };
+
+  it('parses every kind and status', () => {
+    const payouts = [
+      row,
+      { ...row, id: 'r2', kind: 'moderator', status: 'issuing' },
+      { ...row, id: 'r3', kind: 'welcome', status: 'invoiced' },
+      { ...row, id: 'r4', status: 'settling' },
+    ];
+    expect(fondPayoutListSchema.parse({ payouts })).toEqual({ payouts });
+  });
+
+  it('rejects an unknown kind, status, or empty id', () => {
+    expect(() => fondPayoutListSchema.parse({ payouts: [{ ...row, kind: 'gift' }] })).toThrow();
+    expect(() => fondPayoutListSchema.parse({ payouts: [{ ...row, status: 'paid' }] })).toThrow();
+    expect(() => fondPayoutListSchema.parse({ payouts: [{ ...row, id: '' }] })).toThrow();
+  });
+});
+
+describe('fondPayoutInvoiceSchema', () => {
+  const invoice = { id: 'row-1', bolt11: 'lnbc1', paymentHash: 'aa'.repeat(32) };
+
+  it('parses one invoice', () => {
+    expect(fondPayoutInvoiceSchema.parse(invoice)).toEqual(invoice);
+  });
+
+  it('rejects an empty invoice or hash', () => {
+    expect(() => fondPayoutInvoiceSchema.parse({ ...invoice, bolt11: '' })).toThrow();
+    expect(() => fondPayoutInvoiceSchema.parse({ ...invoice, paymentHash: '' })).toThrow();
   });
 });

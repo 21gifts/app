@@ -59,6 +59,26 @@ function heldShareBoxIdFromPath(pathName) {
 /** Same order as `ROLE_ORDER` in `src/lib/roles.ts`: a named role means that role or higher. */
 const ROLE_ORDER = ['basis', 'verified', 'moderator', 'fond', 'initiator', 'founder'];
 
+/**
+ * Fixture session of the Fond payout account. The three `/fond/payouts`
+ * handlers accept it and refuse every other bearer with `Fond only`.
+ */
+const FOND_SESSION = 'e2e-fond-session';
+
+/** The one open payout the fixture Fond account sees today. */
+const FOND_PAYOUT_ROW = {
+  id: '11111111-1111-4111-8111-111111111111',
+  kind: 'daily',
+  status: 'owed',
+  utcDay: '2026-01-07',
+};
+
+/** BOLT11 and payment hash the fixture invoice handler returns. */
+const FOND_INVOICE = {
+  bolt11: 'lnbc1e2efondpayout',
+  paymentHash: 'ab'.repeat(32),
+};
+
 function roleAtLeast(role, min) {
   return ROLE_ORDER.indexOf(role) >= ROLE_ORDER.indexOf(min);
 }
@@ -3860,6 +3880,75 @@ const server = http.createServer(async (req, res) => {
       return;
     }
     json(res, 404, { error: 'Not found' });
+    return;
+  }
+
+  if (method === 'GET' && pathName === '/fond/payouts') {
+    const token = bearer(req);
+    if (token === null) {
+      json(res, 401, { error: 'Unauthorized' });
+      return;
+    }
+    if (token !== FOND_SESSION) {
+      json(res, 403, { error: 'Fond only' });
+      return;
+    }
+    json(res, 200, { payouts: [FOND_PAYOUT_ROW] });
+    return;
+  }
+
+  const fondInvoiceMatch = pathName.match(/^\/fond\/payouts\/([^/]+)\/invoice$/);
+  if (method === 'POST' && fondInvoiceMatch) {
+    const token = bearer(req);
+    if (token === null) {
+      json(res, 401, { error: 'Unauthorized' });
+      return;
+    }
+    if (token !== FOND_SESSION) {
+      json(res, 403, { error: 'Fond only' });
+      return;
+    }
+    let id;
+    try {
+      id = decodeURIComponent(fondInvoiceMatch[1] ?? '');
+    } catch {
+      id = '';
+    }
+    if (id !== FOND_PAYOUT_ROW.id) {
+      json(res, 404, { error: 'Not found' });
+      return;
+    }
+    json(res, 200, { id, ...FOND_INVOICE });
+    return;
+  }
+
+  const fondProofMatch = pathName.match(/^\/fond\/payouts\/([^/]+)\/proof$/);
+  if (method === 'POST' && fondProofMatch) {
+    const token = bearer(req);
+    if (token === null) {
+      json(res, 401, { error: 'Unauthorized' });
+      return;
+    }
+    if (token !== FOND_SESSION) {
+      json(res, 403, { error: 'Fond only' });
+      return;
+    }
+    let id;
+    try {
+      id = decodeURIComponent(fondProofMatch[1] ?? '');
+    } catch {
+      id = '';
+    }
+    if (id !== FOND_PAYOUT_ROW.id) {
+      json(res, 404, { error: 'Not found' });
+      return;
+    }
+    const body = jsonObject(rawBody);
+    if (typeof body?.preimage !== 'string' || body.preimage === '') {
+      json(res, 400, { error: 'Expected a JSON body with preimage' });
+      return;
+    }
+    json(res, 200, { status: 'paid', id });
     return;
   }
 

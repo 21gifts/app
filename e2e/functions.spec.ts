@@ -37,6 +37,12 @@ import {
   shownPaySheetError,
 } from '../src/lib/stats-money';
 import { fitBoxInFrame, pageFrameProblems } from '../src/lib/page-frame';
+import { FOND_PAYOUT_INTERVAL_MS } from '../src/components/FondPayoutSync';
+import {
+  runFondPayoutTick,
+  waitForFondPayoutRead,
+  type FondPayoutTickDeps,
+} from '../src/lib/wallet/fond-payouts';
 import {
   fulfillLedger,
   fulfillMyLoans,
@@ -764,6 +770,60 @@ test('Function: GET — healthz is ok', async ({ request }) => {
   const res = await request.get('/healthz');
   expect(res.status()).toBe(200);
   expect(await res.json()).toEqual({ status: 'ok' });
+});
+
+test('Function: FondPayoutSync — the loop requests nothing while signed out', async ({
+  page,
+}) => {
+  expect(FOND_PAYOUT_INTERVAL_MS).toBe(60_000);
+  await page.addInitScript(() => {
+    localStorage.removeItem('21gifts.session');
+  });
+  let requests = 0;
+  page.on('request', (request) => {
+    if (new URL(request.url()).pathname === '/fond/payouts') {
+      requests += 1;
+    }
+  });
+  await page.route(/\/forum\/messages(?:\?|$)/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ messages: [] }),
+    });
+  });
+  await page.goto('/welcome');
+  await expect(page.getByRole('heading', { name: 'Welcome' })).toBeVisible();
+  await page.waitForTimeout(250);
+  expect(requests).toBe(0);
+});
+
+test('Function: runFondPayoutTick — an empty list changes nothing', async () => {
+  const deps: FondPayoutTickDeps = {
+    session: 'sess',
+    fetchFondPayouts: async () => ({ ok: true, payouts: [] }),
+    postFondPayoutInvoice: async () => {
+      throw new Error('not used');
+    },
+    postFondPayoutProof: async () => {
+      throw new Error('not used');
+    },
+    payFromWallet: async () => {
+      throw new Error('not used');
+    },
+    listWalletPayments: async () => [],
+    sleep: async () => undefined,
+  };
+  expect(await runFondPayoutTick(deps)).toEqual({
+    paid: 0,
+    proved: 0,
+    skipped: 0,
+    stop: null,
+  });
+});
+
+test('Function: waitForFondPayoutRead — the history wait resolves', async () => {
+  await waitForFondPayoutRead(1);
 });
 
 test('Function: getApiUrl — proxy reaches the stub', async ({ request }) => {

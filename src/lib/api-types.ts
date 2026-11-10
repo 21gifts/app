@@ -1864,3 +1864,47 @@ export const dailyRosterSchema = z.object({
  * moderator payments switch, and moderator stipend list.
  */
 export type DailyRoster = z.infer<typeof dailyRosterSchema>;
+
+/**
+ * Runtime schema for one open row of `GET /fond/payouts`.
+ *
+ * The api owns every amount, so a row carries no amount: the app asks for the
+ * row's BOLT11 and pays what that invoice says.
+ */
+export const fondPayoutSchema = z.object({
+  id: z.string().min(1),
+  kind: z.enum(['daily', 'moderator', 'welcome']),
+  status: z.enum(['owed', 'issuing', 'invoiced', 'settling']),
+  utcDay: z.string(),
+});
+
+/**
+ * Runtime schema for the `GET /fond/payouts` body: today's open rows in list order.
+ */
+export const fondPayoutListSchema = z.object({
+  payouts: z.array(fondPayoutSchema),
+});
+
+/**
+ * One open Fond payout row: what to pay, in which state, and for which UTC day.
+ */
+export type FondPayout = z.infer<typeof fondPayoutSchema>;
+
+/**
+ * The open Fond payouts for today, in the order the api lists them.
+ */
+export type FondPayoutList = z.infer<typeof fondPayoutListSchema>;
+
+/**
+ * Runtime schema for a `POST /fond/payouts/:id/invoice` success body.
+ */
+export const fondPayoutInvoiceSchema = z.object({
+  id: z.string().min(1),
+  bolt11: z.string().min(1),
+  paymentHash: z.string().min(1),
+});
+
+/**
+ * One payout invoice: the BOLT11 to pay and the hash that proves the payment.
+ */
+export type FondPayoutInvoice = z.infer<typeof fondPayoutInvoiceSchema>;

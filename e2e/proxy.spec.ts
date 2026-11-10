@@ -110,6 +110,9 @@ test('same-origin api proxy routes exist', async ({ request }) => {
   expect((await request.post('/funding/trial')).status()).toBe(401);
   expect((await request.post('/funding/admit')).status()).toBe(401);
   expect((await request.post('/funding/reject')).status()).toBe(401);
+  expect((await request.get('/fond/payouts')).status()).toBe(401);
+  expect((await request.post('/fond/payouts/[id]/invoice')).status()).toBe(401);
+  expect((await request.post('/fond/payouts/[id]/proof')).status()).toBe(401);
   expect((await request.get('/gifts')).status()).toBe(400);
   expect(
     (await request.post('/auth/passkey/register/begin', { headers: APP_BUILD })).status(),

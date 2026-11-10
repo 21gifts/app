@@ -7571,3 +7571,67 @@ The class exists so the composer can tell a refused free first post from any oth
 - **Inputs:** `username` and optional `copy` (default false); reads the browser hostname and localized labels.
 - **Returns / side effects:** Returns `null` until the host is known or when no address can be formed. Otherwise shows the add-funds sentence, truncated monospaced address, and profile-style Open CryptoPay QR on every device; `copy` also adds an icon-only `IconButton` whose accessible name is **Copy**. It writes the address, then changes to a green check with accessible name **Copied** for two seconds; neither label is visible. Clipboard refusal leaves the readable block unchanged.
 - **Used by:** `LoanRepayScreen` after **Top up your wallet**.
+
+## Function: fetchFondPayouts
+
+- **Purpose:** GET `/fond/payouts` (same-origin Bearer proxy of api `GET /fond/payouts`) and parse `fondPayoutListSchema`. Lists today's open Fond payout rows in the api's order: `{ id, kind, status, utcDay }` per row, with `kind` `daily` | `moderator` | `welcome` and `status` `owed` | `issuing` | `invoiced` | `settling`. A row carries no amount: the app asks for the BOLT11 and pays what it says.
+- **Inputs:** Bearer `session` of the Fond account.
+- **Returns / side effects:** `{ ok: true, payouts }`, or `{ ok: false, status, error }` without throwing on an HTTP status. `status` is the api status, or `0` for a network failure or unreadable body; `error` is the api's `error` text or `null`. Status `404` means the api's Fond surface is off, `403` means the session is not the Fond account, and every other failure is retried by the next tick.
+- **Used by:** `FondPayoutSync` through `runFondPayoutTick`.
+- **Privacy:** The tick never logs a BOLT11, preimage, or address from this body.
+
+## Function: postFondPayoutInvoice
+
+- **Purpose:** POST `/fond/payouts/:id/invoice` (same-origin Bearer proxy of api `POST /fond/payouts/:id/invoice`) and parse `fondPayoutInvoiceSchema` as `{ id, bolt11, paymentHash }`. The api converts its stored USD amount at the current spot and owns the amount; the app never computes or rounds one.
+- **Inputs:** Bearer `session` of the Fond account and the payout row `id`, URL-encoded into the path.
+- **Returns / side effects:** `{ ok: true, invoice }`, or `{ ok: false, status, error }` without throwing on an HTTP status (`0` for a network failure). A non-200 (`409` in progress / not payable / below one sat, `503`, `404`) skips the row for this tick; `error` carries the api text but is never shown or logged with the invoice.
+- **Used by:** `FondPayoutSync` through `runFondPayoutTick`.
+
+## Function: postFondPayoutProof
+
+- **Purpose:** POST `/fond/payouts/:id/proof` with JSON `{ preimage }` (same-origin Bearer proxy of api `POST /fond/payouts/:id/proof`). The preimage is the app's proof that the invoice was paid; the api checks it against the row's payment hash.
+- **Inputs:** Bearer `session` of the Fond account, the payout row `id` (URL-encoded into the path), and the 64-hex `preimage`.
+- **Returns / side effects:** `{ ok: true }` on any success status, or `{ ok: false, status, error }` without throwing (`0` for a network failure). A refused proof skips the row, and the next tick still finds the payment in history. Neither the preimage nor the BOLT11 is logged or reported.
+- **Used by:** `FondPayoutSync` through `runFondPayoutTick`.
+
+## Function: runFondPayoutTick
+
+- **Purpose:** One pure, injectable step of the automatic Fond payout loop. It lists today's open rows, asks the api for each row's BOLT11, pays it once from the in-app wallet, and posts the preimage as proof. A `settling` row is handled only when this tab remembers its payment hash from an earlier invoice request; another tab's settling row is skipped.
+- **Inputs:** `session`; the three api calls `fetchFondPayouts`, `postFondPayoutInvoice`, `postFondPayoutProof`; `payFromWallet`; `listWalletPayments`; and `sleep`.
+- **Returns / side effects:** `{ paid, proved, skipped, stop }`. A list `404` sets `stop: 'off'` and a list `403` sets `stop: 'forbidden'`; any other list failure returns with `stop: null` so the next tick retries. Rows are handled in list order, one at a time. Before paying, the newest 100 wallet sends are read and matched by payment hash (case-insensitive) or BOLT11: a `completed` send with a 64-hex preimage is proven without paying, a `pending` send is skipped, and any other send is paid once. An `insufficient` prepare or send stops the whole tick; every other outcome skips the row. After a fresh `paid`, the history is polled up to five times with `sleep(2_000)` for the preimage; a missing preimage skips the row for the next tick. Amounts come only from the BOLT11, and no BOLT11, preimage, or address is logged or reported.
+- **Used by:** `FondPayoutSync`.
+
+## Function: FondPayoutSync
+
+- **Purpose:** Root-mounted, `null`-rendering client loop that pays the Fond queue automatically while the Fond account is signed in and its in-app wallet is open. It has no screen.
+- **Inputs:** Reads the auth store (`session`, account id, role) and the wallet store status; calls `runFondPayoutTick` with the real api and wallet functions.
+- **Returns / side effects:** `null`. Active only when signed in, `roleAtLeast(account.role, 'fond')`, a session token is present, and the wallet is `ready`. It runs one tick on activation and then every `FOND_PAYOUT_INTERVAL_MS` (60 s). Single flight: a tick never overlaps another. A tick result `forbidden` (403) or `off` (404) stops the loop until the session or account changes; the stopped key survives a wallet reconnect in the same tab. Unmount, sign-out, or a locked wallet clears the timer. A rejected tick is swallowed and retried on the next interval.
+- **Used by:** `RootLayout`, right after `WalletSync`.
+
+## Function: proxyFondPayoutsGet
+
+- **Purpose:** Proxies GET `/fond/payouts` to the api. The route answers the Fond payer's session the open rows for today.
+- **Inputs:** Incoming `Request` with Bearer session.
+- **Returns / side effects:** Upstream `Response` with the api's status and body, or 502 when this proxy cannot reach the api. It forwards the `Authorization` header and never logs the body.
+- **Used by:** Route GET `/fond/payouts`.
+
+## Function: proxyFondPayoutInvoicePost
+
+- **Purpose:** Proxies POST `/fond/payouts/:id/invoice` to the api. The api issues or returns the row's BOLT11 and payment hash.
+- **Inputs:** Incoming `Request` with Bearer session and the path `id`, URL-encoded upstream.
+- **Returns / side effects:** Upstream `Response`, or 502 when the api is unreachable. No body is read or logged.
+- **Used by:** Route POST `/fond/payouts/[id]/invoice`.
+
+## Function: proxyFondPayoutProofPost
+
+- **Purpose:** Proxies POST `/fond/payouts/:id/proof` with the JSON `{ preimage }` body to the api.
+- **Inputs:** Incoming `Request` with Bearer session and the path `id`, URL-encoded upstream.
+- **Returns / side effects:** Upstream `Response`, or 502 when the api is unreachable. The body is forwarded unchanged and never logged.
+- **Used by:** Route POST `/fond/payouts/[id]/proof`.
+
+## Function: waitForFondPayoutRead
+
+- **Purpose:** Resolves after a given delay, so the tick can wait between wallet history reads for a fresh send's preimage without a real timer in tests.
+- **Inputs:** `ms`, the delay in milliseconds (the tick passes 2,000).
+- **Returns / side effects:** A promise that resolves after the delay. It changes no state.
+- **Used by:** `runFondPayoutTick` through its injected `sleep`, and `FondPayoutSync` as that `sleep`.

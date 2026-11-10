@@ -40,6 +40,8 @@ import {
   fundingPayoutDaysResponseSchema,
   fundingDecisionResultSchema,
   dailyRosterSchema,
+  fondPayoutListSchema,
+  fondPayoutInvoiceSchema,
   trustActionResultSchema,
   trustChainSchema,
   passkeyBeginSchema,
@@ -87,6 +89,8 @@ import {
   type FundingPayoutDays,
   type FundingDecisionResult,
   type DailyRoster,
+  type FondPayout,
+  type FondPayoutInvoice,
   type OwnerFunding,
   type PasskeyBegin,
   type PasskeySession,
@@ -5099,4 +5103,131 @@ export async function postLnurlInvoice(
     throw new LnurlRelayError('failed');
   }
   return parsed.data;
+}
+
+/**
+ * Failure of a Fond payout call, without throwing on an HTTP status.
+ *
+ * `status` is the api status through the same-origin proxy, or `0` when the
+ * request itself failed (network error or an unreadable success body).
+ */
+export interface FondPayoutFailure {
+  ok: false;
+  /** HTTP status, or `0` for a network failure. */
+  status: number;
+  /** The api's `error` text, or `null` when the body was not that envelope. */
+  error: string | null;
+}
+
+/**
+ * Calls one `/fond/payouts` endpoint and reads its body without logging the
+ * BOLT11, preimage, or address.
+ *
+ * @param path - Same-origin path.
+ * @param session - Bearer session.
+ * @param init - Method and optional JSON body.
+ * @returns The raw response and its parsed JSON body, or a status `0` failure
+ *   when the request did not answer.
+ */
+async function fondPayoutRequest(
+  path: string,
+  session: string,
+  init: { method?: 'POST'; body?: unknown } = {},
+): Promise<{ response: Response; body: unknown } | FondPayoutFailure> {
+  let response: Response;
+  try {
+    response = await fetch(path, {
+      ...(init.method === undefined ? {} : { method: init.method }),
+      headers: {
+        Authorization: `Bearer ${session}`,
+        ...(init.body === undefined ? {} : { 'Content-Type': 'application/json' }),
+      },
+      ...(init.body === undefined ? {} : { body: JSON.stringify(init.body) }),
+    });
+  } catch {
+    return { ok: false, status: 0, error: null };
+  }
+  if (!response.ok) {
+    return { ok: false, status: response.status, error: await readApiError(response) };
+  }
+  const body: unknown = await response.json().catch(() => null);
+  return { response, body };
+}
+
+/**
+ * Lists today's open Fond payouts through `GET /fond/payouts` (Bearer).
+ *
+ * Never throws on an HTTP status: `404` means the api's Fond surface is off,
+ * `403` means this session is not the Fond account, and any other failure is
+ * retried by the next tick.
+ *
+ * @param session - Bearer session of the Fond account.
+ * @returns The parsed rows, or a {@link FondPayoutFailure}.
+ */
+export async function fetchFondPayouts(
+  session: string,
+): Promise<{ ok: true; payouts: FondPayout[] } | FondPayoutFailure> {
+  const result = await fondPayoutRequest('/fond/payouts', session);
+  if ('ok' in result) {
+    return result;
+  }
+  const parsed = fondPayoutListSchema.safeParse(result.body);
+  if (!parsed.success) {
+    return { ok: false, status: result.response.status, error: null };
+  }
+  return { ok: true, payouts: parsed.data.payouts };
+}
+
+/**
+ * Asks the api for one payout's BOLT11 through `POST /fond/payouts/:id/invoice`.
+ *
+ * The api computes the amount from its stored USD amount; the app pays the
+ * invoice as sent and never rounds an amount itself.
+ *
+ * @param session - Bearer session of the Fond account.
+ * @param id - Payout row id (URL-encoded into the path).
+ * @returns The invoice, or a {@link FondPayoutFailure}.
+ */
+export async function postFondPayoutInvoice(
+  session: string,
+  id: string,
+): Promise<{ ok: true; invoice: FondPayoutInvoice } | FondPayoutFailure> {
+  const result = await fondPayoutRequest(
+    `/fond/payouts/${encodeURIComponent(id)}/invoice`,
+    session,
+    { method: 'POST' },
+  );
+  if ('ok' in result) {
+    return result;
+  }
+  const parsed = fondPayoutInvoiceSchema.safeParse(result.body);
+  if (!parsed.success) {
+    return { ok: false, status: result.response.status, error: null };
+  }
+  return { ok: true, invoice: parsed.data };
+}
+
+/**
+ * Posts the preimage as proof of one payout through
+ * `POST /fond/payouts/:id/proof`.
+ *
+ * @param session - Bearer session of the Fond account.
+ * @param id - Payout row id (URL-encoded into the path).
+ * @param preimage - 64-hex preimage of the paid invoice.
+ * @returns `{ ok: true }`, or a {@link FondPayoutFailure}.
+ */
+export async function postFondPayoutProof(
+  session: string,
+  id: string,
+  preimage: string,
+): Promise<{ ok: true } | FondPayoutFailure> {
+  const result = await fondPayoutRequest(
+    `/fond/payouts/${encodeURIComponent(id)}/proof`,
+    session,
+    { method: 'POST', body: { preimage } },
+  );
+  if ('ok' in result) {
+    return result;
+  }
+  return { ok: true };
 }

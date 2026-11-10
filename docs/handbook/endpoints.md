@@ -1209,3 +1209,25 @@
 - **Errors:** 400 invalid body, 401 without a session, 404 when the thread or message is missing, 503 not configured, 502 upstream.
 - **Used by:** `translateConversationMessage` from `NoteTranslate` on inbox and moderator-room prose.
 - **Auth:** Forwards Bearer authorization. The api requires a participant session.
+
+## Endpoint: GET /fond/payouts
+
+- **Purpose:** Same-origin Bearer proxy of api `GET /fond/payouts`. Lists today's open Fond payout rows (`id`, `kind`, `status`, `utcDay`) in the api's order; it carries no amounts.
+- **Auth:** Bearer session of the account named `FOND_USERNAME`. The api answers 403 `Fond only` for another session and 404 when its Fond surface is off.
+- **Returns:** Upstream 200 `{ payouts: [{ id, kind, status, utcDay }] }`.
+- **Errors:** Upstream 401 without a Bearer session, 403 for another account, 404 when the surface is off, 503 when the queue is unavailable, or 502 when this proxy cannot reach the api.
+- **Used by:** `fetchFondPayouts` through `runFondPayoutTick`; the route is also covered by the e2e proxy spec.
+
+## Endpoint: POST /fond/payouts/[id]/invoice
+
+- **Purpose:** Same-origin Bearer proxy of api `POST /fond/payouts/:id/invoice`. The api converts the row's stored USD amount at the current spot and returns `{ id, bolt11, paymentHash }`; the app pays the invoice as sent.
+- **Auth:** Bearer session of the Fond account. The api answers 403 `Fond only` for another session.
+- **Returns:** Upstream 200 `{ id, bolt11, paymentHash }`.
+- **Errors:** Upstream 404 for an unknown or malformed id, 409 in progress / not payable / amount below one sat, 401, 403, 503, or 502 when unreachable.
+
+## Endpoint: POST /fond/payouts/[id]/proof
+
+- **Purpose:** Same-origin Bearer proxy of api `POST /fond/payouts/:id/proof` with JSON `{ preimage }`. The api checks the 64-hex preimage against the row's payment hash and settles the payout.
+- **Auth:** Bearer session of the Fond account. The api answers 403 `Fond only` for another session.
+- **Returns:** Upstream 200 `{ status: 'paid', id }` (or an equivalent success body).
+- **Errors:** Upstream 400 for a missing preimage or a hash mismatch, 404 for an unknown id, 409 when the row is not invoiced or a proof is in progress, 401, 403, 503, or 502 when unreachable.
