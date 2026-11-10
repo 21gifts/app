@@ -81,9 +81,11 @@ function isRepaymentContext(value: unknown): value is RepaymentContext {
     PAYMENT_HASH.test(paymentHash) &&
     typeof messageId === 'string' &&
     messageId.length > 0 &&
+    typeof dayIndex === 'number' &&
     Number.isInteger(dayIndex) &&
-    (dayIndex as number) >= 0 &&
-    (termDays === null || (Number.isInteger(termDays) && (termDays as number) >= 1)) &&
+    dayIndex >= 0 &&
+    (termDays === null ||
+      (typeof termDays === 'number' && Number.isInteger(termDays) && termDays >= 1)) &&
     (role === 'borrower' || role === 'giver') &&
     typeof authorName === 'string' &&
     typeof text === 'string' &&
