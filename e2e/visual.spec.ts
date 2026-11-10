@@ -3878,6 +3878,29 @@ test.describe('screen baselines', () => {
     await shotScreen(page, 'state-wallet-loans-open');
   });
 
+  test('state /wallet loans-multi', async ({ page }) => {
+    await seedLoanMember(page);
+    await seedLoanData(page, productionPhpLoans, {});
+    await page.goto('/wallet?visual=balance-ready');
+    const card = page.getByRole('region', { name: 'Your loans (2)' });
+    await expect(card).toContainText('1 of 2 fully funded.');
+    await expect(card).toContainText("₱10'000.00");
+    await expect(card).toContainText("₱15'000.00");
+    await expect(card).not.toContainText("₱27'051.19");
+    await shotScreen(page, 'state-wallet-loans-multi');
+  });
+
+  test('state /wallet loans-multi-open', async ({ page }) => {
+    await seedLoanMember(page);
+    await seedLoanData(page, productionPhpLoans, {});
+    await page.goto('/wallet?visual=balance-ready');
+    const card = page.getByRole('region', { name: 'Your loans (2)' });
+    await page.getByRole('button', { name: 'Show loans' }).click();
+    await expect(card.getByRole('link', { name: productionPhpLoans[0]!.text })).toBeVisible();
+    await expect(card.getByRole('link', { name: productionPhpLoans[1]!.text })).toBeVisible();
+    await shotScreen(page, 'state-wallet-loans-multi-open');
+  });
+
   test('state /wallet loans-waiting-all', async ({ page }) => {
     const waitingAllLoan = loanWith(loanA, {
       due: {

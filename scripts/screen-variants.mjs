@@ -1216,6 +1216,20 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/wallet',
+    id: 'loans-multi',
+    image: 'wallet-loans-multi.png',
+    visual: 'state-wallet-loans-multi',
+    needle: 'state /wallet loans-multi',
+  },
+  {
+    route: '/wallet',
+    id: 'loans-multi-open',
+    image: 'wallet-loans-multi-open.png',
+    visual: 'state-wallet-loans-multi-open',
+    needle: 'state /wallet loans-multi-open',
+  },
+  {
+    route: '/wallet',
     id: 'loans-waiting-all',
     image: 'wallet-loans-waiting-all.png',
     visual: 'state-wallet-loans-waiting-all',

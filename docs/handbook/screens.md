@@ -456,6 +456,18 @@ The same ready wallet and loan amounts after **Show loan** is pressed. The discl
 
 ![21.gifts wallet loans open](images/wallet-loans-open.png)
 
+### Variant: loans-multi
+
+Ready wallet with **Balance ₿21'000 · $21.00** and the reported production case: **Your loans (2)** and **1 of 2 fully funded.**, with no combined bar. Each loan has its own muted, non-linked, truncated text above its own `ForumGoalBar`: the funded delivery-bike loan keeps **₱10'000.00** as its goal and receives **₱10'000.98** as its frozen collected figure; the collecting school-books loan keeps **₱15'000.00** as its goal and receives **₱480.28** as its frozen collected figure. Neither bar nor the card shows the spot for the summed goal sats (**₱27'051.19**). The card shows **Nothing due today**, **Next: Monday, November 16, ₱199.99 · ₿3'857**, and no Send. **Show loans** is closed.
+
+![21.gifts wallet multiple loans](images/wallet-loans-multi.png)
+
+### Variant: loans-multi-open
+
+The same ready wallet and two PHP loans after **Show loans** is pressed. Both text plus bar rows, **Nothing due today**, and **Next: Monday, November 16, ₱199.99 · ₿3'857** stay; the list links the delivery-bike and school-books texts with their funding percentages; the toggle now says **Hide loans**.
+
+![21.gifts wallet multiple loans open](images/wallet-loans-multi-open.png)
+
 ### Variant: loans-waiting-all
 
 Ready wallet with **Balance ₿21'000 · $21.00**. Between the balance and **Payments**, the neutral **Your loan** card shows **Fully funded.**, **Ask ₿30'000 · $30.00** with **100%**, muted **Nothing to send now** without the check, **Next: tomorrow, ₿1'000 · $1.00**, and the muted line **₿1'000 · $1.00 is waiting for 3 lenders to set up their wallets**. The right-arrow link to repayment details is present. There is no Send button; **Show loan** remains closed.
