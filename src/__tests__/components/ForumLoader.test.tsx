@@ -12744,7 +12744,7 @@ describe('ForumLoader in-app wallet pay', () => {
     expect(await screen.findByLabelText('Your reaction')).toBeTruthy();
     expect(repliesMock).toHaveBeenCalledTimes(1);
 
-    fireEvent.click(screen.getByRole('button', { name: 'Send a heart' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Send a heart (₿1)' }));
 
     await waitFor(() => {
       expect(repliesMock).toHaveBeenCalledTimes(2);

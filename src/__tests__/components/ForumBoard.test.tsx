@@ -9900,6 +9900,80 @@ describe('ForumBoard in-app wallet pay', () => {
     expect(screen.queryByText('Send a heart')).toBeNull();
   });
 
+  it.each([
+    ['en', 'Send a heart (₿21)'],
+    ['de', 'Herz senden (₿21)'],
+    ['es', 'Enviar un corazón (₿21)'],
+    ['fil', 'Magpadala ng puso (₿21)'],
+  ] as const)('names the stored heart amount in %s', (locale, label) => {
+    renderWithLocale(
+      <ForumBoard
+        messages={[{ ...SAMPLE, accountId: 'acc-ada' }]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        heartViewerId="acc_viewer"
+        heartViewerSats={21}
+        onHeartTip={() => undefined}
+        {...modeProps('all')}
+      />,
+      locale,
+    );
+    const heart = screen.getByRole('button', { name: label });
+    expect(heart.getAttribute('title')).toBe(label);
+  });
+
+  it('keeps the plain heart name without an account', () => {
+    renderWithLocale(
+      <ForumBoard
+        messages={[{ ...SAMPLE, accountId: 'acc-ada' }]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        heartViewerId="acc_viewer"
+        onHeartTip={() => undefined}
+        {...modeProps('all')}
+      />,
+    );
+    expect(screen.getByRole('button', { name: 'Send a heart' })).toBeTruthy();
+  });
+
+  it('formats the named heart amount with the app grouping style', () => {
+    renderWithLocale(
+      <ForumBoard
+        messages={[{ ...SAMPLE, accountId: 'acc-ada' }]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        heartViewerId="acc_viewer"
+        heartViewerSats={1_000}
+        onHeartTip={() => undefined}
+        {...modeProps('all')}
+      />,
+      'en',
+    );
+    const heart = screen.getByRole('button', { name: "Send a heart (₿1'000)" });
+    expect(heart.getAttribute('title')).toBe("Send a heart (₿1'000)");
+  });
+
   it('hides Send a heart on a post and a reply whose author cannot receive', () => {
     renderWithLocale(
       <ForumBoard

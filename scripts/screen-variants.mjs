@@ -2085,6 +2085,20 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/settings',
+    id: 'heart-amount-saving',
+    image: 'settings-heart-amount-saving.png',
+    visual: 'state-settings-heart-amount-saving',
+    needle: "shotScreen(page, 'state-settings-heart-amount-saving')",
+  },
+  {
+    route: '/settings',
+    id: 'heart-amount-no-rate',
+    image: 'settings-heart-amount-no-rate.png',
+    visual: 'state-settings-heart-amount-no-rate',
+    needle: "shotScreen(page, 'state-settings-heart-amount-no-rate')",
+  },
+  {
+    route: '/settings',
     id: 'notification-level-gifted',
     image: 'settings-notification-level-gifted.png',
     visual: 'state-settings-notification-level-gifted',

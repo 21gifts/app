@@ -13962,7 +13962,7 @@ test('Function: useHeartTip — the +1 shows on the tap while the payment is sti
   await page.goto('/welcome');
   await expect(page.getByText('Hello from the heart list.')).toBeVisible();
   const invoiced = page.waitForRequest(/\/messages\/[^/]+\/invoice/);
-  await page.getByRole('button', { name: 'Send a heart' }).click();
+  await page.getByRole('button', { name: 'Send a heart (₿1)' }).click();
   await expect(page.getByText('+1', { exact: true })).toBeVisible({ timeout: 100 });
   await invoiced;
   expect(answered).toBe(false);
@@ -13990,7 +13990,7 @@ test('Function: heartFailureView — a heart refused with cannot_receive keeps t
   });
   await page.goto('/welcome');
   await expect(page.getByText('Hello from the heart list.')).toBeVisible();
-  await page.getByRole('button', { name: 'Send a heart' }).click();
+  await page.getByRole('button', { name: 'Send a heart (₿1)' }).click();
   const line = page
     .locator('li', { hasText: 'Hello from the heart list.' })
     .getByText("The author's wallet cannot receive this Bitcoin payment");
@@ -14011,10 +14011,10 @@ test('Function: endHeartPlusOne — the +1 leaves after the press window', async
   });
   await page.goto('/welcome');
   await expect(page.getByText('Hello from the heart list.')).toBeVisible();
-  await page.getByRole('button', { name: 'Send a heart' }).click();
+  await page.getByRole('button', { name: 'Send a heart (₿1)' }).click();
   await expect(page.getByText('+1', { exact: true })).toBeVisible();
   await expect(page.getByText('+1', { exact: true })).toHaveCount(0);
-  await expect(page.getByRole('button', { name: 'Send a heart' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Send a heart (₿1)' })).toBeVisible();
 });
 
 test('Function: sendHeartTip — a 503 HEART_UNAVAILABLE shows no sentence under the heart', async ({
@@ -14032,7 +14032,7 @@ test('Function: sendHeartTip — a 503 HEART_UNAVAILABLE shows no sentence under
   await page.goto('/welcome');
   await expect(page.getByText('Hello from the heart list.')).toBeVisible();
   const answered = page.waitForResponse(/\/messages\/[^/]+\/invoice/);
-  await page.getByRole('button', { name: 'Send a heart' }).click();
+  await page.getByRole('button', { name: 'Send a heart (₿1)' }).click();
   await expect(page.getByText('+1', { exact: true })).toBeVisible();
   await answered;
   await expect(page.getByText('+1', { exact: true })).toHaveCount(0);
@@ -14057,7 +14057,7 @@ test('Function: sendHeartTip — an invoice without a Spark invoice is not paid'
   });
   await page.goto('/welcome');
   const answered = page.waitForResponse(/\/messages\/[^/]+\/invoice/);
-  await page.getByRole('button', { name: 'Send a heart' }).click();
+  await page.getByRole('button', { name: 'Send a heart (₿1)' }).click();
   await answered;
   expect(heartBody).toEqual({ sats: 1, heart: true });
   await expect(page.getByText('+1', { exact: true })).toHaveCount(0);
@@ -14083,7 +14083,7 @@ test('Function: sendHeartTip — the account heart amount sends 21 sats and coun
   await page.goto('/welcome');
   await expect(page.getByText('Hello from the heart list.')).toBeVisible();
   const answered = page.waitForResponse(/\/messages\/[^/]+\/invoice/);
-  await page.getByRole('button', { name: 'Send a heart' }).click();
+  await page.getByRole('button', { name: 'Send a heart (₿21)' }).click();
   await expect(page.getByText('+1', { exact: true })).toBeVisible();
   await answered;
   expect(heartBody).toEqual({ sats: 21, heart: true });
@@ -14209,7 +14209,7 @@ test('Function: ForumBoard — no heart on a note whose author cannot receive', 
   await page.goto('/welcome');
   await expect(page.getByText('Hello from the heart list.')).toBeVisible();
   await expect(page.getByRole('button', { name: 'React' }).first()).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Send a heart' })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Send a heart (₿1)' })).toHaveCount(0);
 });
 
 test('Function: ExternalAuthorProfile — the read-only feed shows no heart', async ({ page }) => {

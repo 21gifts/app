@@ -50,6 +50,7 @@ import {
 } from '@/lib/api';
 import {
   FORUM_MESSAGE_MAX_LENGTH,
+  accountHeartSats,
   type AmountUnit,
   type ForumMessage,
   type HeartSender,
@@ -1603,6 +1604,7 @@ export function MemberProfileScreen({
     onReplyPost: handleReplyPost,
     onRetryReplies: handleRetryReplies,
     heartViewerId: account?.id ?? null,
+    heartViewerSats: account === null ? null : accountHeartSats(account),
     onHeartTip,
     heartTipViews,
   };

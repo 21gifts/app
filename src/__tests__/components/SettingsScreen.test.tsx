@@ -2,11 +2,12 @@ import { act, cleanup, fireEvent, screen, waitFor, within } from '@testing-libra
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { SettingsScreen } from '@/components/SettingsScreen';
 import { saveAmountUnit } from '@/lib/amount-unit';
-import { fetchPreviousWallets, setHeartSats, setUsername } from '@/lib/api';
+import { fetchPreviousWallets, setAccountFiat, setHeartSats, setUsername } from '@/lib/api';
 import type { Account } from '@/lib/api-types';
 import { useAuthStore } from '@/stores/auth-store';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
 import { fetchFxSpot } from '@/lib/api';
+import { SPOT_REFRESH_MS } from '@/hooks/useSpotRate';
 
 vi.mock('next/navigation', () => ({
   useRouter: () => ({ push: vi.fn(), replace: vi.fn(), refresh: vi.fn(), back: vi.fn() }),
@@ -39,6 +40,7 @@ vi.mock('@/lib/api', async (importOriginal) => ({
   setUsername: vi.fn(),
   fetchPreviousWallets: vi.fn(),
   setHeartSats: vi.fn(),
+  setAccountFiat: vi.fn(),
   fetchFxSpot: vi.fn(),
 }));
 
@@ -70,6 +72,8 @@ beforeEach(() => {
   vi.stubEnv('NEXT_PUBLIC_APP_VERSION', '42');
   vi.mocked(fetchPreviousWallets).mockReset().mockResolvedValue([]);
   vi.mocked(setHeartSats).mockReset();
+  vi.mocked(setAccountFiat).mockReset();
+  vi.mocked(fetchFxSpot).mockReset();
   useAuthStore.setState({ session: 'sess', account });
 });
 
@@ -290,6 +294,225 @@ describe('SettingsScreen', () => {
     });
   });
 
+  it('recomputes an untouched fiat draft on USD to PHP and saves the same sats', async () => {
+    vi.mocked(fetchFxSpot).mockResolvedValue({
+      asOf: '2026-08-28T12:00:00.000Z',
+      source: 'test',
+      rates: { USD: '100000.00', CHF: '80000.00', EUR: '90000.00', PHP: '5600000.00' },
+    });
+    vi.mocked(setAccountFiat).mockResolvedValue({ ...account, fiat: 'PHP' });
+    vi.mocked(setHeartSats).mockResolvedValue({ ...account, heartSats: 21 });
+    useAuthStore.setState({
+      session: 'sess',
+      account: { ...account, amountUnit: 'fiat', heartSats: 21 },
+    });
+    renderWithLocale(<SettingsScreen />, 'en', 'ch', 'USD');
+    const wallet = screen.getByRole('region', { name: 'Wallet' });
+    const field = within(wallet).getByLabelText('Heart amount') as HTMLInputElement;
+    await waitFor(() => {
+      expect(field.value).toBe('0.021');
+    });
+    const display = screen.getByRole('region', { name: 'Display' });
+    const fiatGroup = within(display).getByRole('group', { name: 'Fiat currency' });
+    fireEvent.click(within(fiatGroup).getByRole('button', { name: 'PHP' }));
+    await waitFor(() => {
+      expect(field.value).toBe('1.18');
+    });
+    await act(async () => {
+      fireEvent.click(within(wallet).getByRole('button', { name: 'Save' }));
+      await Promise.resolve();
+    });
+    expect(setHeartSats).toHaveBeenCalledWith('sess', 21);
+  });
+
+  it('recomputes an untouched fiat draft after the spot rate changes', async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    vi.mocked(fetchFxSpot)
+      .mockResolvedValueOnce({
+        asOf: '2026-08-28T12:00:00.000Z',
+        source: 'test',
+        rates: { USD: '100000.00', CHF: '80000.00', EUR: '90000.00', PHP: '5600000.00' },
+      })
+      .mockResolvedValueOnce({
+        asOf: '2026-08-28T12:05:00.000Z',
+        source: 'test',
+        rates: { USD: '200000.00', CHF: '80000.00', EUR: '90000.00', PHP: '5600000.00' },
+      });
+    vi.mocked(setHeartSats).mockResolvedValue({ ...account, heartSats: 21 });
+    useAuthStore.setState({
+      session: 'sess',
+      account: { ...account, amountUnit: 'fiat', heartSats: 21 },
+    });
+    renderWithLocale(<SettingsScreen />, 'en', 'ch', 'USD');
+    const wallet = screen.getByRole('region', { name: 'Wallet' });
+    const field = within(wallet).getByLabelText('Heart amount') as HTMLInputElement;
+    await waitFor(() => {
+      expect(field.value).toBe('0.021');
+    });
+    await act(async () => {
+      vi.advanceTimersByTime(SPOT_REFRESH_MS);
+      await Promise.resolve();
+    });
+    await waitFor(() => {
+      expect(field.value).toBe('0.042');
+    });
+    await act(async () => {
+      fireEvent.click(within(wallet).getByRole('button', { name: 'Save' }));
+      await Promise.resolve();
+    });
+    expect(setHeartSats).toHaveBeenCalledWith('sess', 21);
+  });
+
+  it('falls back to the stored sats when the previous fiat draft is invalid', async () => {
+    vi.mocked(fetchFxSpot).mockResolvedValue({
+      asOf: '2026-08-28T12:00:00.000Z',
+      source: 'test',
+      rates: { USD: '100000.00', CHF: '80000.00', EUR: '90000.00', PHP: '5600000.00' },
+    });
+    vi.mocked(setAccountFiat).mockResolvedValue({ ...account, fiat: 'PHP' });
+    vi.mocked(setHeartSats).mockResolvedValue({ ...account, heartSats: 21 });
+    useAuthStore.setState({
+      session: 'sess',
+      account: { ...account, amountUnit: 'fiat', heartSats: 21 },
+    });
+    renderWithLocale(<SettingsScreen />, 'en', 'ch', 'USD');
+    const wallet = screen.getByRole('region', { name: 'Wallet' });
+    const field = within(wallet).getByLabelText('Heart amount') as HTMLInputElement;
+    await waitFor(() => {
+      expect(field.value).toBe('0.021');
+    });
+    fireEvent.change(field, { target: { value: 'not an amount' } });
+    const display = screen.getByRole('region', { name: 'Display' });
+    const fiatGroup = within(display).getByRole('group', { name: 'Fiat currency' });
+    fireEvent.click(within(fiatGroup).getByRole('button', { name: 'PHP' }));
+    await waitFor(() => {
+      expect(field.value).toBe('1.18');
+    });
+    await act(async () => {
+      fireEvent.click(within(wallet).getByRole('button', { name: 'Save' }));
+      await Promise.resolve();
+    });
+    expect(setHeartSats).toHaveBeenCalledWith('sess', 21);
+  });
+
+  it('keeps the sats of a typed fiat draft when the preferred fiat changes', async () => {
+    vi.mocked(fetchFxSpot).mockResolvedValue({
+      asOf: '2026-08-28T12:00:00.000Z',
+      source: 'test',
+      rates: { USD: '100000.00', CHF: '80000.00', EUR: '90000.00', PHP: '5600000.00' },
+    });
+    vi.mocked(setAccountFiat).mockResolvedValue({ ...account, fiat: 'PHP' });
+    vi.mocked(setHeartSats).mockResolvedValue({ ...account, heartSats: 42 });
+    useAuthStore.setState({
+      session: 'sess',
+      account: { ...account, amountUnit: 'fiat', heartSats: 21 },
+    });
+    renderWithLocale(<SettingsScreen />, 'en', 'ch', 'USD');
+    const wallet = screen.getByRole('region', { name: 'Wallet' });
+    const field = within(wallet).getByLabelText('Heart amount') as HTMLInputElement;
+    await waitFor(() => {
+      expect(field.value).toBe('0.021');
+    });
+    fireEvent.change(field, { target: { value: '0.042' } });
+    const display = screen.getByRole('region', { name: 'Display' });
+    const fiatGroup = within(display).getByRole('group', { name: 'Fiat currency' });
+    fireEvent.click(within(fiatGroup).getByRole('button', { name: 'PHP' }));
+    await waitFor(() => {
+      expect(field.value).toBe('2.35');
+    });
+    await act(async () => {
+      fireEvent.click(within(wallet).getByRole('button', { name: 'Save' }));
+      await Promise.resolve();
+    });
+    expect(setHeartSats).toHaveBeenCalledWith('sess', 42);
+  });
+
+  it('falls back to the stored sats when the previous fiat draft is zero', async () => {
+    vi.mocked(fetchFxSpot).mockResolvedValue({
+      asOf: '2026-08-28T12:00:00.000Z',
+      source: 'test',
+      rates: { USD: '100000.00', CHF: '80000.00', EUR: '90000.00', PHP: '5600000.00' },
+    });
+    vi.mocked(setAccountFiat).mockResolvedValue({ ...account, fiat: 'PHP' });
+    vi.mocked(setHeartSats).mockResolvedValue({ ...account, heartSats: 21 });
+    useAuthStore.setState({
+      session: 'sess',
+      account: { ...account, amountUnit: 'fiat', heartSats: 21 },
+    });
+    renderWithLocale(<SettingsScreen />, 'en', 'ch', 'USD');
+    const wallet = screen.getByRole('region', { name: 'Wallet' });
+    const field = within(wallet).getByLabelText('Heart amount') as HTMLInputElement;
+    await waitFor(() => {
+      expect(field.value).toBe('0.021');
+    });
+    fireEvent.change(field, { target: { value: '0' } });
+    const display = screen.getByRole('region', { name: 'Display' });
+    const fiatGroup = within(display).getByRole('group', { name: 'Fiat currency' });
+    fireEvent.click(within(fiatGroup).getByRole('button', { name: 'PHP' }));
+    await waitFor(() => {
+      expect(field.value).toBe('1.18');
+    });
+    await act(async () => {
+      fireEvent.click(within(wallet).getByRole('button', { name: 'Save' }));
+      await Promise.resolve();
+    });
+    expect(setHeartSats).toHaveBeenCalledWith('sess', 21);
+  });
+
+  it('switches to the exact stored sats when the new fiat has no rate', async () => {
+    vi.mocked(fetchFxSpot).mockResolvedValue({
+      asOf: '2026-08-28T12:00:00.000Z',
+      source: 'test',
+      rates: { USD: '100000.00', CHF: '80000.00', EUR: '90000.00' },
+    });
+    vi.mocked(setAccountFiat).mockResolvedValue({ ...account, fiat: 'PHP' });
+    useAuthStore.setState({
+      session: 'sess',
+      account: { ...account, amountUnit: 'fiat', heartSats: 21 },
+    });
+    renderWithLocale(<SettingsScreen />, 'en', 'ch', 'USD');
+    const wallet = screen.getByRole('region', { name: 'Wallet' });
+    const field = within(wallet).getByLabelText('Heart amount') as HTMLInputElement;
+    await waitFor(() => {
+      expect(field.value).toBe('0.021');
+    });
+    const display = screen.getByRole('region', { name: 'Display' });
+    const fiatGroup = within(display).getByRole('group', { name: 'Fiat currency' });
+    fireEvent.click(within(fiatGroup).getByRole('button', { name: 'PHP' }));
+    await waitFor(() => {
+      expect((within(wallet).getByLabelText('Heart amount') as HTMLInputElement).value).toBe('21');
+    });
+    expect(within(wallet).getByText('No exchange rate yet')).toBeTruthy();
+    const unitGroup = within(wallet).getByRole('group', { name: 'Bitcoin or fiat' });
+    expect(within(unitGroup).getByRole('button', { name: 'PHP' })).toHaveProperty('disabled', true);
+    expect(within(wallet).getByRole('button', { name: 'Save' })).toHaveProperty('disabled', false);
+  });
+
+  it.each([
+    ['de', 'Herz-Betrag', "Gib einen Betrag von ₿1 bis ₿10'000'000 ein."],
+    ['es', 'Importe del corazón', "Introduce un importe de ₿1 a ₿10'000'000."],
+    ['fil', 'Halaga ng puso', "Maglagay ng halagang mula ₿1 hanggang ₿10'000'000."],
+  ] as const)('names the bitcoin limit for a fiat draft in %s', async (locale, label, error) => {
+    vi.mocked(fetchFxSpot).mockResolvedValue({
+      asOf: '2026-08-28T12:00:00.000Z',
+      source: 'test',
+      rates: { USD: '100000.00', CHF: '80000.00', EUR: '90000.00', PHP: '5600000.00' },
+    });
+    useAuthStore.setState({
+      session: 'sess',
+      account: { ...account, amountUnit: 'fiat', heartSats: 21 },
+    });
+    renderWithLocale(<SettingsScreen />, locale, 'ch', 'USD');
+    const wallet = screen.getByRole('region', { name: 'Wallet' });
+    const field = within(wallet).getByLabelText(label) as HTMLInputElement;
+    await waitFor(() => {
+      expect(field.value).toBe('0.021');
+    });
+    fireEvent.change(field, { target: { value: '0' } });
+    expect(within(wallet).getByText(error)).toBeTruthy();
+    expect(within(wallet).queryByText(/sats/i)).toBeNull();
+  });
+
   it('saves a whole heart amount and confirms it', async () => {
     vi.mocked(setHeartSats).mockResolvedValue({ ...account, heartSats: 21 });
     renderWithLocale(<SettingsScreen />);
@@ -314,7 +537,7 @@ describe('SettingsScreen', () => {
     expect(field.getAttribute('aria-invalid')).toBe('true');
     expect(field.getAttribute('aria-describedby')).toBe('heart-sats-error');
     expect(setHeartSats).not.toHaveBeenCalled();
-    expect(within(wallet).getByText('Enter a whole number from 1 to 10,000,000.')).toBeTruthy();
+    expect(within(wallet).getByText("Enter whole ₿ from ₿1 to ₿10'000'000.")).toBeTruthy();
     fireEvent.click(save);
     expect(setHeartSats).not.toHaveBeenCalled();
   });
@@ -335,11 +558,35 @@ describe('SettingsScreen', () => {
     fireEvent.click(save);
     expect(setHeartSats).toHaveBeenCalledWith('sess', 21);
     expect(save.disabled).toBe(true);
+    expect(within(wallet).getByRole('status').textContent).toBe('Saving…');
     await act(async () => {
       finish?.({ ...account, heartSats: 21 });
       await Promise.resolve();
     });
     expect(save.disabled).toBe(false);
+  });
+
+  it('allows fiat decimals and still names the bitcoin limit', async () => {
+    vi.mocked(fetchFxSpot).mockResolvedValue({
+      asOf: '2026-08-28T12:00:00.000Z',
+      source: 'test',
+      rates: { USD: '100000.00', CHF: '80000.00', EUR: '90000.00', PHP: '5600000.00' },
+    });
+    useAuthStore.setState({
+      session: 'sess',
+      account: { ...account, amountUnit: 'fiat', heartSats: 21 },
+    });
+    renderWithLocale(<SettingsScreen />, 'en', 'ch', 'USD');
+    const wallet = screen.getByRole('region', { name: 'Wallet' });
+    const field = within(wallet).getByLabelText('Heart amount');
+    await waitFor(() => {
+      expect((field as HTMLInputElement).value).toBe('0.021');
+    });
+    fireEvent.change(field, { target: { value: '0.5' } });
+    expect(within(wallet).queryByText("Enter an amount from ₿1 to ₿10'000'000.")).toBeNull();
+    expect(within(wallet).getByRole('button', { name: 'Save' })).toHaveProperty('disabled', false);
+    fireEvent.change(field, { target: { value: '0' } });
+    expect(within(wallet).getByText("Enter an amount from ₿1 to ₿10'000'000.")).toBeTruthy();
   });
 
   it('shows the server error and rolls back when saving the heart amount fails', async () => {

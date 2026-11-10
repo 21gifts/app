@@ -23,6 +23,7 @@ import {
 } from '@/lib/api';
 import {
   FORUM_MESSAGE_MAX_LENGTH,
+  accountHeartSats,
   type AmountUnit,
   type ForumMessage,
   type HeartSender,
@@ -1262,6 +1263,7 @@ export function PublicMessageThread(props: {
         onPayOpen={handlePayOpen}
         viewerAccountId={account?.id ?? null}
         heartViewerId={account?.id ?? null}
+        heartViewerSats={account === null ? null : accountHeartSats(account)}
         onHeartTip={onHeartTip}
         heartTipViews={heartTipViews}
         onPayDraftChange={(value: string): void => {

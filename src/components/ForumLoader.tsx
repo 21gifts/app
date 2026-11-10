@@ -55,6 +55,7 @@ import {
 } from '@/lib/api';
 import {
   FORUM_MESSAGE_MAX_LENGTH,
+  accountHeartSats,
   type AmountUnit,
   type ForumGoalCurrency,
   type ForumMessage,
@@ -3136,6 +3137,7 @@ export function ForumLoader({
           }}
           viewerAccountId={account?.id ?? null}
           heartViewerId={account?.id ?? null}
+          heartViewerSats={account === null ? null : accountHeartSats(account)}
           onHeartTip={onHeartTip}
           heartTipViews={heartTipViews}
           repayLink

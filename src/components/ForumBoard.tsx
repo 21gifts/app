@@ -486,6 +486,12 @@ export interface ForumBoardProps {
    */
   heartViewerId?: string | null;
   /**
+   * Whole sats a heart sends for the loaded viewer, or `null` without an
+   * account. The heart's accessible name and tooltip name this amount.
+   * Default `null`.
+   */
+  heartViewerSats?: number | null;
+  /**
    * Sends a heart at the member's stored amount. Omit to hide the heart on
    * every note, as on a board that cannot pay one.
    */
@@ -561,6 +567,7 @@ function ForumHeartControl({
   hearted,
   view,
   onHeartTip,
+  heartViewerSats,
 }: {
   messageId: string;
   accountId: string | undefined;
@@ -572,11 +579,19 @@ function ForumHeartControl({
   hearted: boolean;
   view: HeartTipView | undefined;
   onHeartTip: ((id: string) => void) | undefined;
+  heartViewerSats: number | null;
 }): ReactElement | null {
   const { t } = useTranslations();
+  const { numberFormat } = useNumberFormat();
   if (onHeartTip === undefined || deletedAt !== undefined || heartViewerId === accountId) {
     return null;
   }
+  // The amount is named only for a loaded account, so a signed-out card keeps
+  // the plain action label that spends nothing yet.
+  const heartLabel =
+    heartViewerSats === null
+      ? t('forum.heart')
+      : t('forum.heartAmount', { amount: formatBitcoin(heartViewerSats, numberFormat) });
   const authorWalletLine =
     view?.cannotReceive === true ? (
       <p role="alert" className="text-xs text-app-danger">
@@ -606,8 +621,8 @@ function ForumHeartControl({
             type="button"
             size="sm"
             variant="ghost"
-            aria-label={t('forum.heart')}
-            title={t('forum.heart')}
+            aria-label={heartLabel}
+            title={heartLabel}
             className={buttonClass}
             disabled={cannotReceive}
             onClick={(event) => {
@@ -768,7 +783,8 @@ function replyFormElement(field: HTMLTextAreaElement | null): HTMLFormElement | 
  * copy-link control, `ForumGoalBar` on a top-level note
  * with `goalSats`, React control on posts (`forum.react`, lucide Reply;
  * expands the reply composer; omitted when `deletedAt` is set), a heart
- * (`forum.heart`, lucide Heart) on a non-deleted post and a non-deleted reply
+ * (`forum.heartAmount` with `heartViewerSats`, otherwise `forum.heart`, lucide
+ * Heart) on a non-deleted post and a non-deleted reply
  * when `onHeartTip` is set, `payable` is true, and `heartViewerId !== accountId`
  * (shown disabled instead when the author cannot receive yet,
  * `authorCanReceive: false`; shown signed-out; omitted on the viewer's own note; the count sits
@@ -926,6 +942,7 @@ export function ForumBoard({
   shopNoteEdit = false,
   onShopNoteUpdated,
   heartViewerId = null,
+  heartViewerSats = null,
   onHeartTip,
   heartTipViews,
   onShopNoteSaved,
@@ -1859,6 +1876,7 @@ export function ForumBoard({
                     payable={message.payable}
                     cannotReceive={cannotReceive}
                     heartViewerId={heartViewerId}
+                    heartViewerSats={heartViewerSats}
                     heartCount={message.heartCount}
                     hearted={message.hearted}
                     view={heartTipViews === undefined ? undefined : heartTipViews[message.id]}
@@ -2206,6 +2224,7 @@ export function ForumBoard({
                                   payable={reply.payable}
                                   cannotReceive={replyCannotReceive}
                                   heartViewerId={heartViewerId}
+                                  heartViewerSats={heartViewerSats}
                                   heartCount={reply.heartCount}
                                   hearted={reply.hearted}
                                   view={

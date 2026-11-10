@@ -1722,6 +1722,18 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/settings:heart-amount-saving",
+    "label": "/settings heart-amount-saving",
+    "visual": "state-settings-heart-amount-saving",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/settings:heart-amount-no-rate",
+    "label": "/settings heart-amount-no-rate",
+    "visual": "state-settings-heart-amount-no-rate",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/settings:notification-level-gifted",
     "label": "/settings notification-level-gifted",
     "visual": "state-settings-notification-level-gifted",

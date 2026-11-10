@@ -4335,14 +4335,14 @@
     "fil": "Pagkatapos pindutin ang fiat code sa ilalim ng Default na halaga: ito na ang nakapindot sa halip na ₿, at nagsisimula na sa fiat ang mga field ng halaga."
   },
   "/settings:heart-amount": {
-    "de": "Einstellungen mit der Wallet-Sektion: unter Standardbetrag steht Herz-Betrag. Die kleine Überschrift steht über dem AmountEntry mit dem gespeicherten Wert 21, dem ₿/Fiat-Schalter neben dem Feld und dem Fiat-Zähler $0.02 darunter; es folgen der Hinweis, dass jedes gedrückte Herz diesen Betrag sendet, der Beitrag aber nur ein Herz zählt, und Speichern.",
-    "es": "Ajustes con la sección Wallet: bajo Importe predeterminado aparece Importe del corazón. El pequeño encabezado está sobre el AmountEntry con el valor guardado 21, el selector ₿/fiat junto al campo y el contador fiat $0.02 debajo; después la nota de que cada corazón pulsado envía ese importe aunque la publicación cuente solo un corazón, y Guardar.",
-    "fil": "Mga setting na may seksyong Wallet: sa ilalim ng Default na halaga ang Halaga ng puso. Ang maliit na pamagat ay nasa itaas ng AmountEntry na may naka-save na 21, ang ₿/fiat na switch sa tabi ng field at ang fiat counter na $0.02 sa ibaba; pagkatapos ang paalala na ganoon kalaking halaga ang ipinapadala ng bawat pusong pinindot kahit isang puso lang ang bilang sa post, at I-save."
+    "de": "Einstellungen mit der Wallet-Sektion: unter Standardbetrag steht Herz-Betrag. Die kleine Überschrift steht über dem AmountEntry mit dem gespeicherten Wert 21, dem ₿/Fiat-Schalter neben dem Feld und dem Fiat-Zähler $0.02 bei geladenem USD-Kurs darunter; es folgen der Hinweis, dass jedes gedrückte Herz diesen Betrag sendet, der Beitrag aber nur ein Herz zählt, und Speichern.",
+    "es": "Ajustes con la sección Wallet: bajo Importe predeterminado aparece Importe del corazón. El pequeño encabezado está sobre el AmountEntry con el valor guardado 21, el selector ₿/fiat junto al campo y el contador fiat $0.02 con el tipo de cambio USD cargado debajo; después la nota de que cada corazón pulsado envía ese importe aunque la publicación cuente solo un corazón, y Guardar.",
+    "fil": "Mga setting na may seksyong Wallet: sa ilalim ng Default na halaga ang Halaga ng puso. Ang maliit na pamagat ay nasa itaas ng AmountEntry na may naka-save na 21, ang ₿/fiat na switch sa tabi ng field at ang fiat counter na $0.02 kapag naka-load ang USD rate sa ibaba; pagkatapos ang paalala na ganoon kalaking halaga ang ipinapadala ng bawat pusong pinindot kahit isang puso lang ang bilang sa post, at I-save."
   },
   "/settings:heart-amount-invalid": {
-    "de": "Einstellungen, Wallet: Im Feld Herz-Betrag steht 0. Der live unter dem Feld stehende Fehler Gib eine ganze Zahl von 1 bis 10.000.000 ein. ist sichtbar, das Feld meldet aria-invalid, und Speichern ist deaktiviert.",
-    "es": "Ajustes, Wallet: el campo Importe del corazón contiene 0. El error en vivo bajo el campo Introduce un número entero de 1 a 10.000.000. está visible, el campo informa aria-invalid y Guardar está desactivado.",
-    "fil": "Mga setting, Wallet: ang field na Halaga ng puso ay may 0. Nakikita ang live na error sa ilalim ng field na Maglagay ng buong numero mula 1 hanggang 10,000,000., nag-uulat ang field ng aria-invalid, at naka-disable ang I-save."
+    "de": "Einstellungen, Wallet: Im Feld Herz-Betrag steht 0 im ₿-Modus. Der live unter dem Feld stehende Fehler Gib ganze ₿ von ₿1 bis ₿10'000'000 ein. ist sichtbar, das Feld meldet aria-invalid, und Speichern ist deaktiviert. Im Fiat-Modus sind Dezimalen erlaubt; sein Fehler Gib einen Betrag von ₿1 bis ₿10'000'000 ein. nennt dieselbe Bitcoin-Grenze.",
+    "es": "Ajustes, Wallet: el campo Importe del corazón contiene 0 en modo ₿. El error en vivo bajo el campo Introduce ₿ enteros de ₿1 a ₿10'000'000. está visible, el campo informa aria-invalid y Guardar está desactivado. El modo fiat admite decimales; su error Introduce un importe de ₿1 a ₿10'000'000. nombra el mismo límite en bitcoin.",
+    "fil": "Mga setting, Wallet: ang field na Halaga ng puso ay may 0 sa ₿ mode. Nakikita ang live na error sa ilalim ng field na Maglagay ng buong ₿ mula ₿1 hanggang ₿10'000'000., nag-uulat ang field ng aria-invalid, at naka-disable ang I-save. Tumatanggap ng decimal ang fiat mode; ang error nitong Maglagay ng halagang mula ₿1 hanggang ₿10'000'000. ay nagpapangalan ng parehong limit sa bitcoin."
   },
   "/settings:heart-amount-saved": {
     "de": "Einstellungen, Wallet: Der Herz-Betrag 21 wurde gespeichert. Unter dem Formular steht die Erfolgsmeldung Gespeichert: ₿21 pro Herz., Speichern ist wieder aktiviert und das Feld zeigt 21.",
@@ -4353,6 +4353,16 @@
     "de": "Einstellungen, Wallet: Das Speichern des Herz-Betrags ist fehlgeschlagen, nachdem POST /me/heart-sats mit 500 geantwortet hat. Die rote role=\"alert\"-Meldung Der Herz-Betrag konnte nicht gespeichert werden. steht unter dem Hinweis, und das Feld bleibt bearbeitbar.",
     "es": "Ajustes, Wallet: falló el guardado del importe del corazón después de que POST /me/heart-sats respondiera 500. El mensaje rojo role=\"alert\" No se pudo guardar el importe del corazón. aparece bajo la nota y el campo sigue editable.",
     "fil": "Mga setting, Wallet: nabigo ang pag-save ng halaga ng puso matapos tumugon ang POST /me/heart-sats ng 500. Ang pulang role=\"alert\" na mensaheng Hindi na-save ang halaga ng puso. ay nasa ilalim ng paalala, at nae-edit pa rin ang field."
+  },
+  "/settings:heart-amount-saving": {
+    "de": "Einstellungen, Wallet: Nach dem Drücken von Speichern läuft POST /me/heart-sats noch. Unter dem Formular steht die Statuszeile mit Spinner Wird gespeichert…, das Feld ist deaktiviert und Speichern bleibt gesperrt.",
+    "es": "Ajustes, Wallet: tras pulsar Guardar, POST /me/heart-sats sigue pendiente. Bajo el formulario aparece la línea de estado con spinner Guardando…, el campo está desactivado y Guardar sigue bloqueado.",
+    "fil": "Mga setting, Wallet: pagkatapos pindutin ang I-save, tumatakbo pa ang POST /me/heart-sats. Sa ibaba ng form ang status line na may spinner na Sine-save…, naka-disable ang field at naka-lock pa rin ang I-save."
+  },
+  "/settings:heart-amount-no-rate": {
+    "de": "Einstellungen, Wallet: Die bevorzugte Währung USD hat keinen Kurs. Der Fiat-Schalter im Herz-Betrag ist deaktiviert, das Feld zeigt die gespeicherten 21 in ₿, und die Zeile darunter sagt Noch kein Wechselkurs. Speichern bleibt aktiv, solange der große Betrag gilt.",
+    "es": "Ajustes, Wallet: la moneda preferida USD no tiene tipo de cambio. El selector fiat del Importe del corazón está desactivado, el campo muestra el valor guardado 21 en ₿ y la línea inferior dice Aún no hay tipo de cambio. Guardar sigue activo mientras el importe en ₿ sea válido.",
+    "fil": "Mga setting, Wallet: walang palitan ang gustong currency na USD. Naka-disable ang fiat switch sa Halaga ng puso, ipinapakita ng field ang naka-save na 21 sa ₿, at sinasabi ng linya sa ibaba ang Wala pang halaga ng palitan. Aktibo pa rin ang I-save habang valid ang halaga sa ₿."
   },
   "/settings:heart-notify-error": {
     "de": "Abschnitt Benachrichtigungen mit Speicherfehler role=\"alert\" nach dem Stubben von POST /me/heart-notifications auf 500 und dem Klick auf Aus in Herzen. Text Die Herzen-Einstellung konnte nicht gespeichert werden.",

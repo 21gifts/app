@@ -5635,7 +5635,7 @@ describe('MemberProfileScreen in-app wallet pay', () => {
     expect(fetchReplies).toHaveBeenCalledTimes(1);
     const noteCard = document.querySelector(`[data-message-id="${note.id}"]`) as HTMLElement;
 
-    fireEvent.click(within(noteCard).getByRole('button', { name: 'Send a heart' }));
+    fireEvent.click(within(noteCard).getByRole('button', { name: 'Send a heart (₿1)' }));
 
     await waitFor(() => {
       expect(fetchReplies).toHaveBeenCalledTimes(2);
