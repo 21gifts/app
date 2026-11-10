@@ -184,14 +184,14 @@ const LABEL_MAX_LENGTH = 63;
 
 /**
  * The value after a label: a bracketed list of up to 1000 characters that is
- * not a placeholder (without its closing `]`, up to the end of the line), also
+ * not a placeholder (without its closing `]` when the line ends first), also
  * after a typed-array name (`[17, 34]`, `Uint8Array(4) [17, 34, 51, 68]`), a
  * quoted string of up to 200 characters, or everything up to a space, `;`, or
  * `&`, also a list joined by `,` whose further items hold only key characters
  * (`7,7,7` or `7, 7, 7`, not `, "n":`).
  */
 const LABEL_VALUE =
-  /(?:[A-Za-z][A-Za-z0-9]{0,30}\(\d{1,9}\)\s?)?(?!\[(?:addr|hex|q|token|words)\])\[[^\]\n]{0,1000}\]?|"[^"\n]{0,200}"|'[^'\n]{0,200}'|[^\s,;&]+(?:,\s?[A-Za-z0-9_.+/=-]+)*/y;
+  /(?:[A-Za-z][A-Za-z0-9]{0,30}\(\d{1,9}\)\s?)?(?!\[(?:addr|hex|q|token|words)\])\[[^\]\n]{0,1000}(?:\]|(?=\n|$))|"[^"\n]{0,200}"|'[^'\n]{0,200}'|[^\s,;&]+(?:,\s?[A-Za-z0-9_.+/=-]+)*/y;
 
 /** A value that is only a placeholder this module wrote, which a label may already hold. */
 const PLACEHOLDER = /^\[(?:addr|hex|q|token|words)\]$/;

@@ -420,6 +420,7 @@ describe('sanitizeErrorMessage', () => {
     ['PRF output: Uint8Array(4) [17, 34, 51, 68] done', 'PRF output: [token] done'],
     ['seed=[17, 34] x', 'seed=[token] x'],
     ['token: [unclosed 17, 34\nnext line', 'token: [token]\nnext line'],
+    [`token: [${'17, 34, '.repeat(200)}99`, 'token: [token]'],
     ['PRF    = 17, 34, 51, 68', 'PRF    = [token]'],
     ['token\t:\n  abc def', 'token\t:\n  [token] def'],
     ['bad password = hunter2;', 'bad password = [token];'],
