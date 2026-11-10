@@ -4,7 +4,7 @@ import { layoutTrustChain, mergeTrustChain } from '@/lib/trust-chain';
 
 const FOUNDER = { id: 'f', name: 'Cyrill', role: 'founder' as const };
 const MODERATOR = { id: 'm', name: 'Severin', role: 'moderator' as const };
-const FOND = { id: 'fond', name: 'Fiona', role: 'fond' as const };
+const SOFTWARE_DEVELOPER = { id: 's', name: 'Sam', role: 'software_developer' as const };
 const INITIATOR = { id: 'i', name: 'Ivy', role: 'initiator' as const };
 const ADA = { id: 'ada', name: 'Ada', role: 'verified' as const };
 const BOB = { id: 'bob', name: 'Bob', role: 'verified' as const };
@@ -107,23 +107,28 @@ describe('layoutTrustChain', () => {
     expect(laid.nodes.find((node) => node.id === 'ada')).toMatchObject({ x: 280, y: 112 });
   });
 
-  it('stacks founder, initiator, fond, moderator, then verified by display rank', () => {
+  it('stacks a software developer in the moderator group and keeps sibling edge order', () => {
+    const founderSibling = { id: 'f2', name: 'Fabian', role: 'founder' as const };
+    const edges: TrustChain['edges'] = [
+      { from: 'f', to: 'ada', kind: 'verify' },
+      { from: 'f', to: 'i', kind: 'moderator_appoint' },
+      { from: 'f', to: 's', kind: 'moderator_appoint' },
+      { from: 'f', to: 'm', kind: 'moderator_appoint' },
+      { from: 'f', to: 'f2', kind: 'moderator_appoint' },
+    ];
     const laid = layoutTrustChain({
-      nodes: [FOUNDER, ADA, MODERATOR, FOND, INITIATOR],
-      edges: [
-        { from: 'f', to: 'ada', kind: 'verify' },
-        { from: 'f', to: 'm', kind: 'moderator_appoint' },
-        { from: 'f', to: 'fond', kind: 'moderator_appoint' },
-        { from: 'f', to: 'i', kind: 'moderator_appoint' },
-      ],
+      nodes: [FOUNDER, SOFTWARE_DEVELOPER, MODERATOR, INITIATOR, ADA, founderSibling],
+      edges,
     });
-    expect(laid.nodes.find((node) => node.id === 'i')).toMatchObject({ x: 280, y: 16 });
-    expect(laid.nodes.find((node) => node.id === 'fond')).toMatchObject({ x: 280, y: 112 });
-    expect(laid.nodes.find((node) => node.id === 'm')).toMatchObject({ x: 280, y: 208 });
-    expect(laid.nodes.find((node) => node.id === 'ada')).toMatchObject({ x: 280, y: 304 });
+    expect(laid.edges).toBe(edges);
+    expect(laid.nodes.find((node) => node.id === 'f2')).toMatchObject({ x: 280, y: 16 });
+    expect(laid.nodes.find((node) => node.id === 'i')).toMatchObject({ x: 280, y: 112 });
+    expect(laid.nodes.find((node) => node.id === 's')).toMatchObject({ x: 280, y: 208 });
+    expect(laid.nodes.find((node) => node.id === 'm')).toMatchObject({ x: 280, y: 304 });
+    expect(laid.nodes.find((node) => node.id === 'ada')).toMatchObject({ x: 280, y: 400 });
   });
 
-  it('stacks an initiator above a moderator regardless of edge order', () => {
+  it('keeps edge order when a moderator and an initiator hang off the founder', () => {
     const modFirst = layoutTrustChain({
       nodes: [FOUNDER, MODERATOR, INITIATOR],
       edges: [
