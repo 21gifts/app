@@ -242,18 +242,24 @@ describe('sanitizeErrorMessage', () => {
     ];
     const message = (unit: string, end: string, length: number): string =>
       unit.repeat(Math.ceil(length / unit.length)) + end;
-    const bestOfThree = (text: string): number => {
-      let best = Number.POSITIVE_INFINITY;
-      for (let run = 0; run < 3; run += 1) {
-        const started = performance.now();
-        sanitizeErrorMessage(text);
-        best = Math.min(best, performance.now() - started);
+    // Small and large runs alternate, so both see the same load, and each
+    // size keeps its fastest of five runs after one warm-up run.
+    const fastest = (small: string, large: string): readonly [number, number] => {
+      sanitizeErrorMessage(small);
+      let bestSmall = Number.POSITIVE_INFINITY;
+      let bestLarge = Number.POSITIVE_INFINITY;
+      for (let run = 0; run < 5; run += 1) {
+        let started = performance.now();
+        sanitizeErrorMessage(small);
+        bestSmall = Math.min(bestSmall, performance.now() - started);
+        started = performance.now();
+        sanitizeErrorMessage(large);
+        bestLarge = Math.min(bestLarge, performance.now() - started);
       }
-      return best;
+      return [bestSmall, bestLarge];
     };
     for (const [name, unit, end] of hostile) {
-      const small = bestOfThree(message(unit, end, 50_000));
-      const large = bestOfThree(message(unit, end, 200_000));
+      const [small, large] = fastest(message(unit, end, 50_000), message(unit, end, 200_000));
       // A 1 ms floor keeps timer noise on very fast runs from looking like
       // growth; a quadratic step still fails once its large run takes 8 ms.
       expect(large / Math.max(small, 1), name).toBeLessThan(8);
