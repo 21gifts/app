@@ -37,12 +37,7 @@ const EMPTY_ROSTER = {
 async function seedAdaSession(
   page: Page,
   role:
-    | 'basis'
-    | 'verified'
-    | 'moderator'
-    | 'software_developer'
-    | 'initiator'
-    | 'founder' = 'basis',
+    'basis' | 'verified' | 'moderator' | 'software_developer' | 'initiator' | 'founder' = 'basis',
 ): Promise<string> {
   let session = 'sess-e2e';
   if (role === 'software_developer') {
