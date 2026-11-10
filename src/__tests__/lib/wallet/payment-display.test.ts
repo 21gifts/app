@@ -1,5 +1,10 @@
 import { afterEach, describe, expect, it } from 'vitest';
-import { paymentHref, paymentMessage, paymentTitle } from '@/lib/wallet/payment-display';
+import {
+  paymentHref,
+  paymentLookupHash,
+  paymentMessage,
+  paymentTitle,
+} from '@/lib/wallet/payment-display';
 import type { WalletPayment } from '@/lib/wallet/wallet-sdk';
 
 const ORIGINAL_E2E_NOW = process.env.NEXT_PUBLIC_E2E_NOW;
@@ -79,6 +84,61 @@ describe('paymentMessage', () => {
       paymentMessage(payment({ info: { zap: { ...ZAP, content: '' }, lnurlComment: 'c' } })),
     ).toBe('c');
     expect(paymentMessage(payment({}))).toBeNull();
+  });
+
+  it('treats a loan repayment marker as no message, in any case', () => {
+    const marker = 'repay:12:22222222-2222-4222-8222-222222222222';
+    expect(paymentMessage(payment({ info: { zap: { ...ZAP, content: marker } } }))).toBeNull();
+    expect(
+      paymentMessage(payment({ info: { zap: { ...ZAP, content: marker.toUpperCase() } } })),
+    ).toBeNull();
+    expect(
+      paymentMessage(payment({ info: { zap: { ...ZAP, content: marker }, lnurlComment: 'c' } })),
+    ).toBeNull();
+  });
+
+  it('keeps zap text that only resembles the marker', () => {
+    for (const content of [
+      'repay:x:22222222-2222-4222-8222-222222222222',
+      'repay:1:2222',
+      'repay:1:22222222-2222-4222-8222-222222222222 thanks',
+      'Thanks! repay:1:22222222-2222-4222-8222-222222222222',
+    ]) {
+      expect(paymentMessage(payment({ info: { zap: { ...ZAP, content } } }))).toBe(content);
+    }
+  });
+});
+
+describe('paymentTitle for a repayment without its lookup', () => {
+  it('keeps the gift titles; the repayment title comes from the lookup only', () => {
+    const marker = { ...ZAP, content: 'repay:0:22222222-2222-4222-8222-222222222222' };
+    expect(paymentTitle(payment({ info: { zap: marker } }))).toEqual({
+      key: 'wallet.payment.giftOnPost',
+    });
+    expect(paymentTitle(payment({ direction: 'sent', info: { purpose: 'gift' } }))).toEqual({
+      key: 'wallet.payment.gift',
+    });
+  });
+});
+
+describe('paymentLookupHash', () => {
+  const HASH = 'A'.repeat(64);
+
+  it('looks up a settled gift or memo-less payment by its lowercase hash', () => {
+    expect(paymentLookupHash(payment({ info: { purpose: 'gift', paymentHash: HASH } }))).toBe(
+      'a'.repeat(64),
+    );
+    expect(paymentLookupHash(payment({ status: 'failed', info: { paymentHash: HASH } }))).toBe(
+      'a'.repeat(64),
+    );
+  });
+
+  it('skips a pending payment, a shop payment, and a payment without a hash', () => {
+    expect(paymentLookupHash(payment({ status: 'pending', info: { paymentHash: HASH } }))).toBe(
+      null,
+    );
+    expect(paymentLookupHash(payment({ info: { purpose: 'shop', paymentHash: HASH } }))).toBe(null);
+    expect(paymentLookupHash(payment({ info: { purpose: 'gift' } }))).toBeNull();
   });
 });
 

@@ -3405,7 +3405,25 @@ const server = http.createServer(async (req, res) => {
             },
           ]
         : [];
-    json(res, 200, { hearts });
+    // The borrower repayment fixture (REPAYMENT_BORROWER_VISUAL_PAYMENT). Its hash
+    // is in no other fixture list, so no other screen turns into a repayment.
+    const repaymentHash = 'f00dbabef00dbabef00dbabef00dbabef00dbabef00dbabef00dbabef00dbabe';
+    const repayments =
+      Array.isArray(body?.hashes) && body.hashes.includes(repaymentHash)
+        ? [
+            {
+              paymentHash: repaymentHash,
+              messageId: '33333333-3333-4333-8333-333333333333',
+              dayIndex: 4,
+              termDays: 10,
+              role: 'borrower',
+              authorName: 'Mia',
+              text: 'Rent until payday',
+              deleted: false,
+            },
+          ]
+        : [];
+    json(res, 200, { hearts, repayments });
     return;
   }
 

@@ -41,9 +41,13 @@ export function paymentTitle(payment: WalletPayment): PaymentTitle {
   return { key: payment.direction === 'received' ? 'wallet.received' : 'wallet.sent' };
 }
 
+/** Zap content of a loan repayment paid over Lightning: `repay:<day>:<uuid>`, a marker and not a message. */
+const REPAYMENT_MARKER = /^repay:\d+:[0-9a-f-]{36}$/i;
+
 /**
  * The message that came with a payment: the payer's note, the zap message, or
- * the comment sent to a Lightning address.
+ * the comment sent to a Lightning address. A loan repayment's zap marker
+ * (`repay:<day>:<uuid>`) is not a message.
  *
  * @param payment - The payment.
  * @returns The message, or `null` when there is none.
@@ -53,9 +57,29 @@ export function paymentMessage(payment: WalletPayment): string | null {
     return payment.senderComment;
   }
   if (payment.info.zap !== undefined && payment.info.zap.content !== '') {
-    return payment.info.zap.content;
+    return REPAYMENT_MARKER.test(payment.info.zap.content) ? null : payment.info.zap.content;
   }
   return payment.info.lnurlComment ?? null;
+}
+
+/**
+ * The hash the wallet hearts lookup is asked about for a payment: its payment
+ * hash, lowercased, once the payment is no longer pending and when it is not a
+ * shop payment. A gift memo and a loan repayment over the Lightning fallback
+ * (no memo, so no purpose) both qualify.
+ *
+ * @param payment - The payment.
+ * @returns The lowercase hash to look up, or `null` when the payment is not looked up.
+ */
+export function paymentLookupHash(payment: WalletPayment): string | null {
+  if (
+    payment.status === 'pending' ||
+    payment.info.purpose === 'shop' ||
+    typeof payment.info.paymentHash !== 'string'
+  ) {
+    return null;
+  }
+  return payment.info.paymentHash.toLowerCase();
 }
 
 /**

@@ -4659,6 +4659,20 @@ test.describe('screen baselines', () => {
     await shotScreen(page, 'state-wallet-history-heart-pending');
   });
 
+  test('wallet history-repayment', async ({ page }) => {
+    await stubWalletSetupAccount(page, { sparkWalletVerified: true });
+    await fulfillRateDay(page);
+    await page.goto('/wallet?visual=history-repayment');
+    const rows = page.getByRole('region', { name: 'Payments' }).getByRole('listitem');
+    await expect(rows).toHaveCount(2);
+    await expect(page.getByText('Loan repayment')).toHaveCount(2);
+    await expect(page.getByText('New bike tyres')).toBeVisible();
+    await expect(page.getByText('Rent until payday')).toBeVisible();
+    await expect(page.getByText(/repay:/)).toHaveCount(0);
+    await expect(page.getByText('Gift on your post')).toHaveCount(0);
+    await shotScreen(page, 'state-wallet-history-repayment');
+  });
+
   test('screen-wallet-payment', async ({ page }) => {
     await stubWalletSetupAccount(page, { sparkWalletVerified: true });
     await fulfillRateDay(page);
@@ -4864,6 +4878,43 @@ test.describe('screen baselines', () => {
       '/members/acc_ada',
     );
     await shotScreen(page, 'state-wallet-payment-heart-pending-open');
+  });
+
+  test('state-wallet-payment-repayment', async ({ page }) => {
+    await stubWalletSetupAccount(page, { sparkWalletVerified: true });
+    await fulfillRateDay(page);
+    await page.goto(
+      '/wallet/payment?id=c2a8f5e1-3b7d-4c9a-8e21-5f6d7a8b9c03&visual=repayment-payment',
+    );
+    await expect(page.getByText('Loan repayment')).toBeVisible();
+    await expect(page.getByText('New bike tyres')).toBeVisible();
+    await expect(page.getByText('3 of 7')).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Repayment list' })).toHaveAttribute(
+      'href',
+      '/messages/22222222-2222-4222-8222-222222222222/repayment-list',
+    );
+    await expect(
+      page.locator('a[href="/messages/22222222-2222-4222-8222-222222222222"]'),
+    ).toBeVisible();
+    await expect(page.getByText(/repay:/)).toHaveCount(0);
+    await expect(page.getByText('Gift on your post')).toHaveCount(0);
+    await shotScreen(page, 'state-wallet-payment-repayment');
+  });
+
+  test('state-wallet-payment-repayment-open', async ({ page }) => {
+    await stubWalletSetupAccount(page, { sparkWalletVerified: true });
+    await fulfillRateDay(page);
+    await page.goto(
+      '/wallet/payment?id=c2a8f5e1-3b7d-4c9a-8e21-5f6d7a8b9c03&visual=repayment-payment',
+    );
+    await expect(page.getByText('Loan repayment')).toBeVisible();
+    await page.getByRole('button', { name: 'Details' }).click();
+    await expect(page.getByText('Payment request')).toBeVisible();
+    await expect(page.getByText('Payment hash')).toBeVisible();
+    await expect(page.getByText('Proof of payment')).toBeVisible();
+    await expect(page.getByText(/repay:/)).toHaveCount(0);
+    await expect(page.getByText('3 of 7')).toBeVisible();
+    await shotScreen(page, 'state-wallet-payment-repayment-open');
   });
 
   test('state-wallet-payment-deposit', async ({ page }) => {

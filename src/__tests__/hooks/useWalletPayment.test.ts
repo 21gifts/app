@@ -3,6 +3,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useWalletPayment } from '@/hooks/useWalletPayment';
 import {
   HEART_VISUAL_PAYMENT,
+  REPAYMENT_BORROWER_VISUAL_PAYMENT,
+  REPAYMENT_GIVER_VISUAL_PAYMENT,
   SHOP_SUM_VISUAL_PAYMENT,
   toFixturePayment,
   WALLET_PAYMENT_FIXTURES,
@@ -182,6 +184,29 @@ describe('useWalletPayment', () => {
       expect(getWalletPayment).toHaveBeenCalledWith(HEART_VISUAL_PAYMENT.id);
     },
   );
+
+  it('shows the received and the sent repayment fixture under the repayment-payment pin in a Playwright build only', () => {
+    process.env.NEXT_PUBLIC_E2E_NOW = '2026-01-07T12:00:00.000Z';
+    window.history.replaceState({}, '', '/wallet/payment?visual=repayment-payment');
+    for (const fixture of [REPAYMENT_GIVER_VISUAL_PAYMENT, REPAYMENT_BORROWER_VISUAL_PAYMENT]) {
+      expect(renderHook(() => useWalletPayment(fixture.id)).result.current).toEqual({
+        status: 'ready',
+        payment: toFixturePayment(fixture),
+      });
+    }
+    expect(renderHook(() => useWalletPayment(HEART_VISUAL_PAYMENT.id)).result.current).toEqual({
+      status: 'missing',
+    });
+    expect(getWalletPayment).not.toHaveBeenCalled();
+
+    cleanup();
+    delete process.env.NEXT_PUBLIC_E2E_NOW;
+    vi.mocked(getWalletPayment).mockReturnValue(new Promise(() => undefined));
+    expect(
+      renderHook(() => useWalletPayment(REPAYMENT_GIVER_VISUAL_PAYMENT.id)).result.current,
+    ).toEqual({ status: 'loading' });
+    expect(getWalletPayment).toHaveBeenCalledWith(REPAYMENT_GIVER_VISUAL_PAYMENT.id);
+  });
 
   it('starts over for another id and never shows the previous payment under it', async () => {
     vi.mocked(getWalletPayment).mockResolvedValueOnce(PAYMENT);
