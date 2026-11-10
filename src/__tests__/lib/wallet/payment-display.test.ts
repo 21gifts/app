@@ -131,6 +131,11 @@ describe('paymentLookupHash', () => {
     expect(paymentLookupHash(payment({ status: 'failed', info: { paymentHash: HASH } }))).toBe(
       'a'.repeat(64),
     );
+    expect(paymentLookupHash(payment({ info: { paymentHash: HASH } }))).toBe('a'.repeat(64));
+    const marker = { ...ZAP, content: 'repay:12:22222222-2222-4222-8222-222222222222' };
+    expect(paymentLookupHash(payment({ info: { paymentHash: HASH, zap: marker } }))).toBe(
+      'a'.repeat(64),
+    );
   });
 
   it('skips a pending payment, a shop payment, and a payment without a hash', () => {

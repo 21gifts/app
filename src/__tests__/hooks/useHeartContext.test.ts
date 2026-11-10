@@ -312,17 +312,22 @@ describe('useHeartContext', () => {
 
   it('clears cached context when the active session changes', async () => {
     vi.mocked(fetchHeartPosts)
-      .mockResolvedValueOnce(lookup([heart(HASH_A)]))
+      .mockResolvedValueOnce(lookup([heart(HASH_A)], [repayment(HASH_B)]))
       .mockResolvedValueOnce(lookup());
     vi.mocked(useActiveSession).mockReturnValue('first');
-    const { result, rerender } = renderHook(() => useHeartContext([HASH_A]));
+    const { result, rerender } = renderHook(() => useHeartContext([HASH_A, HASH_B]));
     await waitFor(() => expect(result.current.byHash.has(HASH_A)).toBe(true));
+    expect(result.current.repaymentsByHash.has(HASH_B)).toBe(true);
 
     vi.mocked(useActiveSession).mockReturnValue('second');
     rerender();
     expect(result.current.byHash.has(HASH_A)).toBe(false);
+    expect(result.current.repaymentsByHash.has(HASH_B)).toBe(false);
     expect(result.current.pending.has(HASH_A)).toBe(true);
+    expect(result.current.pending.has(HASH_B)).toBe(true);
     await waitFor(() => expect(result.current.pending.size).toBe(0));
-    expect(fetchHeartPosts).toHaveBeenNthCalledWith(2, 'second', [HASH_A]);
+    expect(fetchHeartPosts).toHaveBeenNthCalledWith(2, 'second', [HASH_A, HASH_B]);
+    expect(result.current.byHash.has(HASH_A)).toBe(false);
+    expect(result.current.repaymentsByHash.has(HASH_B)).toBe(false);
   });
 });

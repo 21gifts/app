@@ -97,6 +97,35 @@ describe('fetchHeartPosts', () => {
     });
   });
 
+  it('returns hearts and repayments together from one body', async () => {
+    const heart = {
+      paymentHash: HASH,
+      messageId: 'message-1',
+      authorName: 'Ada',
+      text: 'A post',
+      deleted: false,
+    };
+    const repayment = {
+      paymentHash: 'b'.repeat(64),
+      messageId: 'note-1',
+      dayIndex: 3,
+      termDays: 7,
+      role: 'borrower',
+      authorName: 'Mia',
+      text: 'Rent',
+      deleted: false,
+    };
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(Response.json({ hearts: [heart], repayments: [repayment] })),
+    );
+
+    await expect(fetchHeartPosts('session', [HASH, 'b'.repeat(64)])).resolves.toEqual({
+      hearts: [heart],
+      repayments: [repayment],
+    });
+  });
+
   it('treats a missing or malformed repayments key as no repayments', async () => {
     const heart = {
       paymentHash: HASH,

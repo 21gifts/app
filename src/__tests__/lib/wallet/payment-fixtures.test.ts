@@ -4,6 +4,7 @@ import { WALLET_VISUAL_FIXTURE_SATS } from '@/hooks/useWallet';
 import {
   HEART_VISUAL_PAYMENT,
   REPAYMENT_BORROWER_VISUAL_HASH,
+  REPAYMENT_BORROWER_VISUAL_MESSAGE_ID,
   REPAYMENT_BORROWER_VISUAL_PAYMENT,
   REPAYMENT_GIVER_VISUAL_HASH,
   REPAYMENT_GIVER_VISUAL_MESSAGE_ID,
@@ -202,10 +203,18 @@ describe('WALLET_PAYMENT_FIXTURES', () => {
     expect(borrower.info.purpose).toBe('gift');
     expect(borrower.info.paymentHash).toBe(REPAYMENT_BORROWER_VISUAL_HASH);
 
-    expect(REPAYMENT_VISUAL_CONTEXTS.map((row) => [row.paymentHash, row.role])).toEqual([
-      [REPAYMENT_GIVER_VISUAL_HASH, 'giver'],
-      [REPAYMENT_BORROWER_VISUAL_HASH, 'borrower'],
-    ]);
+    expect(REPAYMENT_VISUAL_CONTEXTS).toHaveLength(2);
+    expect(REPAYMENT_VISUAL_CONTEXTS[0]).toMatchObject({
+      paymentHash: REPAYMENT_GIVER_VISUAL_HASH,
+      messageId: REPAYMENT_GIVER_VISUAL_MESSAGE_ID,
+      dayIndex: 2,
+      role: 'giver',
+    });
+    expect(REPAYMENT_VISUAL_CONTEXTS[1]).toMatchObject({
+      paymentHash: REPAYMENT_BORROWER_VISUAL_HASH,
+      messageId: REPAYMENT_BORROWER_VISUAL_MESSAGE_ID,
+      role: 'borrower',
+    });
     const ids = [REPAYMENT_GIVER_VISUAL_PAYMENT.id, REPAYMENT_BORROWER_VISUAL_PAYMENT.id];
     for (const id of ids) {
       expect(id).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/);
