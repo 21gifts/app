@@ -53,12 +53,9 @@ const TOKEN_PATTERNS: ReadonlyArray<readonly [RegExp, string]> = [
     /(?<![A-Za-z0-9+/=_-])(?=[A-Za-z0-9+/=_-]*[a-z])(?=[A-Za-z0-9+/=_-]*[A-Z])[A-Za-z0-9+/=_-]{40,}/g,
     '[token]',
   ],
-  // A dotted key of 20 or more characters that mixes digits, upper, and lower
-  // case (`sk_live.4eC39HqLy…`); a host name such as `21.gifts` is not mixed.
-  [
-    /(?<![A-Za-z0-9_.-])(?=[A-Za-z0-9_.-]*\d)(?=[A-Za-z0-9_.-]*[a-z])(?=[A-Za-z0-9_.-]*[A-Z])[A-Za-z0-9_.-]{20,}/g,
-    '[token]',
-  ],
+  // A dotted key of 20 or more characters with a digit (`sk_live.4ec39hq…`).
+  // A short host such as `21.gifts` stays; a long one with a digit does not.
+  [/(?<![A-Za-z0-9_.-])(?=[A-Za-z0-9_.-]*\d)[A-Za-z0-9_.-]{20,}/g, '[token]'],
 ];
 
 /**
@@ -77,6 +74,12 @@ const HEX_GROUPS = /(?<![0-9a-f])[0-9a-f]+(?:[:-][0-9a-f]+)+(?![0-9a-f])/gi;
 /** Fewest hex digits of a group run that is replaced. */
 const MIN_HEX_DIGITS = 16;
 
+/**
+ * An address whose quoted name holds whitespace (`"first last"@host`): the
+ * quotes, at most 64 characters between them, and the rest of the word.
+ */
+const QUOTED_ADDRESS = /"[^"]{0,64}"[@＠﹫]\S*/g;
+
 /** One word of a message: everything between two whitespace characters. */
 const WORD = /\S+/g;
 
@@ -90,7 +93,8 @@ const PACKAGE_SCOPE = /\/@[a-z0-9~-][a-z0-9_~-]*\//gi;
 const MIN_QUERY_LENGTH = 4;
 
 /**
- * Replaces whole words that hold an address or a query. A word with an `@`
+ * Replaces whole words that hold an address or a query. A quoted address
+ * ({@link QUOTED_ADDRESS}) is replaced first, spaces and all. A word with an `@`
  * (also `＠`, `﹫`, or the URL-encoded `%40`) that is not a
  * {@link PACKAGE_SCOPE} (an e-mail or `name@host` address in any script,
  * quoted or not, or a URL with a user name and password) becomes `[addr]`.
@@ -104,7 +108,7 @@ const MIN_QUERY_LENGTH = 4;
  * @returns The message with the addresses and queries replaced.
  */
 function replaceAddressesAndQueries(text: string): string {
-  return text.replace(WORD, (word) => {
+  return text.replace(QUOTED_ADDRESS, '[addr]').replace(WORD, (word) => {
     if (/[@＠﹫]|%40/i.test(word.replace(PACKAGE_SCOPE, '/'))) {
       return '[addr]';
     }
@@ -190,22 +194,23 @@ function replaceWordRuns(text: string): string {
 }
 
 /**
- * Makes an error message safe to report. In this order it replaces every word
- * that holds an address (any `@`, `＠`, `﹫`, or `%40` but a package scope such
- * as `/@breeztech/`: e-mail and `name@host` addresses in any script, a URL with
- * a user name) with `[addr]`; the query string and fragment of a URL or path (a
+ * Makes an error message safe to report. In this order it replaces a quoted
+ * address with spaces (`"first last"@host`) and every word that holds an
+ * address (any `@`, `＠`, `﹫`, or `%40` but a package scope such as
+ * `/@breeztech/`: e-mail and `name@host` addresses in any script, a URL with a
+ * user name) with `[addr]`; the query string and fragment of a URL or path (a
  * word cut at its first `?` or `#`, or fullwidth `？` or `＃`, when a `/` comes
  * before it, an `=` after it, or at least four characters follow) with `?[q]`;
  * JSON web tokens and dotted three-part tokens, invoices, offers, LNURL
  * strings, Spark and base-chain addresses, and extended keys (`xprv`, `xpub`,
  * `tprv`, `tpub`, …) with `[token]`; 16 or more hex digits, also in groups
  * joined by `:` or `-`, with `[hex]` (the whole run around them); any other run
- * of 20 or more base58, base64, or bech32 characters that holds a digit, or of
- * 40 or more in mixed case without one, with `[token]`; and last every run of
- * three or more BIP-39 English words (any case, any separator) with `[words]`,
- * so a word run never cuts a key short. Then it cuts the result to
- * {@link ERROR_MESSAGE_MAX_LENGTH} characters. Plain messages such as
- * `Failed to fetch` stay readable.
+ * of 20 or more base58, base64, or bech32 characters that holds a digit, of 40
+ * or more in mixed case without one, or a dotted run of 20 or more with a digit
+ * (`sk_live.4ec…`), with `[token]`; and last every run of three or more BIP-39
+ * English words (any case, any separator) with `[words]`, so a word run never
+ * cuts a key short. Then it cuts the result to {@link ERROR_MESSAGE_MAX_LENGTH}
+ * characters. Plain messages such as `Failed to fetch` stay readable.
  *
  * @param message - Error message as thrown.
  * @returns The message with every key-shaped part replaced, at most 200 characters.
