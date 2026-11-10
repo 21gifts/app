@@ -107,6 +107,23 @@ describe('paymentMessage', () => {
       expect(paymentMessage(payment({ info: { zap: { ...ZAP, content } } }))).toBe(content);
     }
   });
+
+  it('shows 36 hex-or-hyphen characters that are not a canonical UUID, and hides the canonical marker', () => {
+    for (const content of [
+      `repay:1:${'-'.repeat(36)}`,
+      `repay:1:${'a'.repeat(36)}`,
+      'repay:1:2222222222222222222222222222222222-2',
+      'repay:1:22222222-22224222-8222-2222222222222',
+    ]) {
+      expect(content.length - 'repay:1:'.length).toBe(36);
+      expect(paymentMessage(payment({ info: { zap: { ...ZAP, content } } }))).toBe(content);
+    }
+    const marker = 'repay:3:22222222-2222-4222-8222-222222222222';
+    expect(paymentMessage(payment({ info: { zap: { ...ZAP, content: marker } } }))).toBeNull();
+    expect(
+      paymentMessage(payment({ info: { zap: { ...ZAP, content: marker.toUpperCase() } } })),
+    ).toBeNull();
+  });
 });
 
 describe('paymentTitle for a repayment without its lookup', () => {

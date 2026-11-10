@@ -41,8 +41,12 @@ export function paymentTitle(payment: WalletPayment): PaymentTitle {
   return { key: payment.direction === 'received' ? 'wallet.received' : 'wallet.sent' };
 }
 
-/** Zap content of a loan repayment paid over Lightning: `repay:<day>:<uuid>`, a marker and not a message. */
-const REPAYMENT_MARKER = /^repay:\d+:[0-9a-f-]{36}$/i;
+/**
+ * Zap content of a loan repayment paid over Lightning: `repay:<day>:<uuid>` with
+ * a canonical 8-4-4-4-12 hex UUID, the shape the api writes. A marker, not a message.
+ */
+const REPAYMENT_MARKER =
+  /^repay:\d+:[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 /**
  * The message that came with a payment: the payer's note, the zap message, or
