@@ -54,14 +54,8 @@ const MIN_TOKEN_LENGTH = 20;
 /** Shortest run in mixed case without a digit that is a token. */
 const MIN_MIXED_TOKEN_LENGTH = 40;
 
-/**
- * An address whose quoted name holds whitespace (`"first last"@host`): the
- * quotes, everything between them, the `@` (or `＠`, `﹫`, `%40`), and the
- * rest of the word. An escaped quote (`\"`) stays inside the name. A quote
- * is read up to the next unescaped quote only, so each part of a message is
- * read at most twice.
- */
-const QUOTED_ADDRESS = /"(?:[^"\\]|\\.)*"(?:[@＠﹫]|%40)\S*/gi;
+/** An address sign right after a quoted name: `@`, `＠`, `﹫`, or `%40`. */
+const QUOTED_ADDRESS_AT = /^(?:[@＠﹫]|%40)\S*/i;
 
 /** The first query or fragment marker of a word, also URL-encoded. */
 const QUERY_MARKER = /[?#？＃]|%3F|%23/i;
@@ -79,8 +73,43 @@ const PACKAGE_SCOPE = /\/@[a-z0-9~-][a-z0-9_~-]*\//gi;
 const MIN_QUERY_LENGTH = 4;
 
 /**
+ * Replaces every address whose quoted name may hold whitespace
+ * (`"first last"@host`): the quotes, everything between them (an escaped
+ * quote `\"` stays inside), the address sign ({@link QUOTED_ADDRESS_AT}),
+ * and the rest of the word, by `[addr]`. The scan moves forward only and
+ * goes on from the closing quote of a name that is not an address, so each
+ * character is read at most twice.
+ *
+ * @param text - Error message.
+ * @returns The message with quoted addresses replaced.
+ */
+function replaceQuotedAddresses(text: string): string {
+  let out = '';
+  let from = 0;
+  let open = text.indexOf('"');
+  while (open !== -1) {
+    let close = open + 1;
+    while (close < text.length && text.charAt(close) !== '"') {
+      close += text.charAt(close) === '\\' ? 2 : 1;
+    }
+    if (close >= text.length) {
+      break;
+    }
+    const at = QUOTED_ADDRESS_AT.exec(text.slice(close + 1));
+    if (at === null) {
+      open = close;
+      continue;
+    }
+    out += `${text.slice(from, open)}[addr]`;
+    from = close + 1 + at[0].length;
+    open = text.indexOf('"', from);
+  }
+  return out + text.slice(from);
+}
+
+/**
  * Replaces whole words that hold an address or a query. A quoted address
- * ({@link QUOTED_ADDRESS}) is replaced first, spaces and all. A word with an
+ * ({@link replaceQuotedAddresses}) is replaced first, spaces and all. A word with an
  * `@` (also `＠`, `﹫`, or the URL-encoded `%40`) that is not a
  * {@link PACKAGE_SCOPE} (an e-mail or `name@host` address in any script, quoted
  * or not, or a URL with a user name and password) becomes `[addr]`. Otherwise a
@@ -93,7 +122,7 @@ const MIN_QUERY_LENGTH = 4;
  * @returns The message with the addresses and queries replaced.
  */
 function replaceAddressesAndQueries(text: string): string {
-  return text.replace(QUOTED_ADDRESS, '[addr]').replace(WORD, (word) => {
+  return replaceQuotedAddresses(text).replace(WORD, (word) => {
     if (/[@＠﹫]|%40/i.test(word.replace(PACKAGE_SCOPE, '/'))) {
       return '[addr]';
     }
@@ -132,6 +161,17 @@ function keyPlaceholder(part: string): string {
 }
 
 /**
+ * Whether a run is a URL (`://`), a path (a leading `/`), or a host with a
+ * path ({@link HOST_PATH}), which is judged per segment.
+ *
+ * @param core - A run without its trailing punctuation.
+ * @returns `true` for a URL or a path.
+ */
+function isPath(core: string): boolean {
+  return core.includes('://') || core.startsWith('/') || HOST_PATH.test(core);
+}
+
+/**
  * Replaces every key-shaped {@link KEY_RUN} as a whole, so no head or tail of
  * a key that `.`, `_`, `-`, `:`, or `/` splits stays readable. Trailing
  * punctuation (a sentence stop) is kept. A URL (`://`), a path (a leading
@@ -149,14 +189,16 @@ function replaceKeys(text: string): string {
       end -= 1;
     }
     const core = run.slice(0, end);
-    const replaced =
-      core.includes('://') || core.startsWith('/') || HOST_PATH.test(core)
-        ? core
-            .split(/([/:])/)
-            .map(keyPlaceholder)
-            .join('')
-        : keyPlaceholder(core);
-    return replaced + run.slice(end);
+    const replaced = isPath(core)
+      ? core
+          .split(/([/:])/)
+          .map(keyPlaceholder)
+          .join('')
+      : keyPlaceholder(core);
+    // A key that ends in `-` or `_` keeps its full length for the digit rule.
+    const isLongKey =
+      replaced === core && run.length >= MIN_TOKEN_LENGTH && /\d/.test(core) && !isPath(core);
+    return isLongKey ? '[token]' : replaced + run.slice(end);
   });
 }
 

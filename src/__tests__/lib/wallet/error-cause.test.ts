@@ -72,6 +72,7 @@ describe('sanitizeErrorMessage', () => {
     ['spark1-abcdefghij', '[token]'],
     ['xprv-9s21ZrQH14', '[token]'],
     ['bc1qar0srrr7xfkvy5l643/lydnw9re59gt', '[token]'],
+    ['abcdefghij123456789-', '[token]'],
     ['abcdefghijklmnopqrstu1.sfx12345678', '[token]'],
     ['bc1qar0srrr7xfkvy5l643lydnw9re-59gtzzwf5mdq', '[token]'],
     ['bc1qar0srrr7xfkvy5l643lydnw9re_59gtzzwf5mdq', '[token]'],
@@ -176,7 +177,7 @@ describe('sanitizeErrorMessage', () => {
   });
 
   it('reads a very long message without a digit in linear time', () => {
-    const long = `${'a'.repeat(100_000)} ${'x.'.repeat(50_000)} ${'b'.repeat(100_000)}@ ${'http://a,'.repeat(12_000)} ${'(/a'.repeat(30_000)} ${'=/a'.repeat(30_000)} ${'a:'.repeat(50_000)} ${"é'".repeat(50_000)}@ ${'add add add x '.repeat(70_000)} ${'eyJ-'.repeat(250_000)} ${'"a'.repeat(100_000)}`;
+    const long = `${'a'.repeat(100_000)} ${'x.'.repeat(50_000)} ${'b'.repeat(100_000)}@ ${'http://a,'.repeat(12_000)} ${'(/a'.repeat(30_000)} ${'=/a'.repeat(30_000)} ${'a:'.repeat(50_000)} ${"é'".repeat(50_000)}@ ${'add add add x '.repeat(70_000)} ${'eyJ-'.repeat(250_000)} ${'"a'.repeat(100_000)} ${'\\"'.repeat(250_000)}`;
     const started = performance.now();
     sanitizeErrorMessage(long);
     expect(performance.now() - started).toBeLessThan(1_000);
