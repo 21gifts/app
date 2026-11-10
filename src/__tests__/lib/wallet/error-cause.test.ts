@@ -44,6 +44,26 @@ describe('sanitizeErrorMessage', () => {
     );
   });
 
+  it.each(['%2c', '%2C', '%0a', '%5f', '%2d', '%2e', '\\n', '\\t', '&nbsp;', '&amp;'])(
+    'replaces recovery words joined by the escaped separator %j',
+    (separator) => {
+      const phrase = LEAK_MNEMONIC.split(' ').join(separator);
+      expect(sanitizeErrorMessage(`bad ${phrase} here`)).toBe('bad [words] here');
+    },
+  );
+
+  it('replaces recovery words with invisible characters inside or in fullwidth letters', () => {
+    expect(sanitizeErrorMessage('bad le\u200Bgal win\u00ADner th\uFEFFank year')).toBe(
+      'bad [words]',
+    );
+    expect(sanitizeErrorMessage('bad ｌｅｇａｌ ｗｉｎｎｅｒ ＴＨＡＮＫ here')).toBe(
+      'bad [words] here',
+    );
+    expect(sanitizeErrorMessage('100%25 done, see &lt;x&gt; and C:\\temp')).toBe(
+      '100%25 done, see &lt;x&gt; and C:\\temp',
+    );
+  });
+
   it('keeps two recovery words in a row', () => {
     expect(sanitizeErrorMessage('wallet access denied')).toBe('wallet access denied');
   });
@@ -177,7 +197,7 @@ describe('sanitizeErrorMessage', () => {
   });
 
   it('reads a very long message without a digit in linear time', () => {
-    const long = `${'a'.repeat(100_000)} ${'x.'.repeat(50_000)} ${'b'.repeat(100_000)}@ ${'http://a,'.repeat(12_000)} ${'(/a'.repeat(30_000)} ${'=/a'.repeat(30_000)} ${'a:'.repeat(50_000)} ${"é'".repeat(50_000)}@ ${'add add add x '.repeat(70_000)} ${'eyJ-'.repeat(250_000)} ${'"a'.repeat(100_000)} ${'\\"'.repeat(250_000)}`;
+    const long = `${'a'.repeat(100_000)} ${'x.'.repeat(50_000)} ${'b'.repeat(100_000)}@ ${'http://a,'.repeat(12_000)} ${'(/a'.repeat(30_000)} ${'=/a'.repeat(30_000)} ${'a:'.repeat(50_000)} ${"é'".repeat(50_000)}@ ${'add add add x '.repeat(70_000)} ${'eyJ-'.repeat(250_000)} ${'"a'.repeat(100_000)} ${'\\"'.repeat(250_000)} ${'&a'.repeat(100_000)} ${'%2'.repeat(70_000)} ${'\u200B'.repeat(100_000)} ${'x/?'.repeat(70_000)} ${'/x?a= '.repeat(40_000)}`;
     const started = performance.now();
     sanitizeErrorMessage(long);
     expect(performance.now() - started).toBeLessThan(1_000);
@@ -191,6 +211,26 @@ describe('sanitizeErrorMessage', () => {
     expect(sanitizeErrorMessage('in node_modules/@breeztech/x')).toBe(
       'in node_modules/@breeztech/x',
     );
+  });
+
+  it('replaces a query value that goes on after a space or a line break', () => {
+    const cases: ReadonlyArray<readonly [string, string]> = [
+      [
+        'GET https://api.example.com/v1/checkout? apiKey=sk_live_51abc failed',
+        'GET https://api.example.com/v1/checkout?[q] [q] failed',
+      ],
+      ['request failed /x?apiKey= 0af56e12dead x', 'request failed /x?[q] [q] x'],
+      [
+        'https://api.example.com/oauth/callback?\ncode=Zq8xLm2Vb9Kp&\nstate=xyz done',
+        'https://api.example.com/oauth/callback?[q]\n[q]\n[q] done',
+      ],
+      ['/x?a=1& b= c d', '/x?[q] [q] [q] d'],
+    ];
+    for (const [message, sent] of cases) {
+      expect(sanitizeErrorMessage(message)).toBe(sent);
+      expect(sanitizeErrorMessage(sent)).toBe(sent);
+    }
+    expect(sanitizeErrorMessage('what? and = sign')).toBe('what? and = sign');
   });
 
   it('replaces a query that has no path before it', () => {
@@ -276,6 +316,12 @@ describe('errorCause', () => {
     expect(errorCause(new Error('Service connectivity error: down')).errorCode).toBe(
       'service_connectivity',
     );
+  });
+
+  it('reports no code when the SDK kind is made of recovery words', () => {
+    const cause = errorCause(new Error('add age aim air all ant arm art ask and error: fail'));
+    expect(cause.errorCode).toBeNull();
+    expect(JSON.stringify(cause)).not.toMatch(/aim|air|arm|art|ask/);
   });
 
   it('reports a subclass name such as RuntimeError and TypeError', () => {

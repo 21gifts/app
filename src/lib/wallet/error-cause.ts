@@ -16,11 +16,21 @@ const BIP39_WORDS: ReadonlySet<string> = new Set(wordlist);
 const MIN_WORD_RUN = 3;
 
 /**
- * Letters of one word; everything else separates two words. A placeholder
- * this module wrote (`[token]`) is matched whole, so it ends a run; any other
- * bracketed word is read as letters.
+ * One word or one escaped separator. A placeholder this module wrote
+ * (`[token]`) is matched whole, so it ends a run; any other bracketed word is
+ * read as letters. An escaped separator ({@link ESCAPED_SEPARATOR}) is matched
+ * whole, so its letters (`%2c`, `\n`, `&nbsp;`) do not join the next word. A
+ * word holds ASCII or fullwidth letters and may hold invisible format
+ * characters ({@link INVISIBLE}); everything else separates two words.
  */
-const LETTERS = /\[(?:addr|hex|q|token|words)\]|[A-Za-z]+/g;
+const LETTERS =
+  /\[(?:addr|hex|q|token|words)\]|%[0-9A-Fa-f]{2}|\\[nrt]|&[a-z]+;|[A-Za-zＡ-Ｚａ-ｚ\u00AD\u200B-\u200D\u2060\uFEFF]+/g;
+
+/** A URL-encoded character, a `\n` `\r` `\t` escape, or an HTML entity. */
+const ESCAPED_SEPARATOR = /^(?:%[0-9A-Fa-f]{2}|\\[nrt]|&[a-z]+;)$/;
+
+/** Invisible format characters (soft hyphen, zero-width space and joiners). */
+const INVISIBLE = /[\u00AD\u200B-\u200D\u2060\uFEFF]/g;
 
 /**
  * One run of characters a key, hash, token, or address can hold (letters,
@@ -73,6 +83,12 @@ const PACKAGE_SCOPE = /\/@[a-z0-9~-][a-z0-9_~-]*\//gi;
 const MIN_QUERY_LENGTH = 4;
 
 /**
+ * The end of a query part whose value follows in the next word, after a line
+ * break or a space (`?apiKey=` or `&`).
+ */
+const QUERY_GOES_ON = /[=&]$/;
+
+/**
  * Replaces every address whose quoted name may hold whitespace
  * (`"first last"@host`): the quotes, everything between them (an escaped
  * quote `\"` stays inside), the address sign ({@link QUOTED_ADDRESS_AT}),
@@ -116,13 +132,20 @@ function replaceQuotedAddresses(text: string): string {
  * word is cut at its first `?` or `#` (also the fullwidth `？` and `＃`, and the
  * URL-encoded `%3F` and `%23`), and the rest becomes `?[q]`, when a `/` comes
  * before it, an `=` after it, or at least {@link MIN_QUERY_LENGTH} characters
- * follow it; `what?` and `#1` stay. Each character is read once.
+ * follow it; `what?` and `#1` stay. When such a query ends at its marker, or
+ * with `=` or `&` ({@link QUERY_GOES_ON}), its value went on in the next word,
+ * so that word becomes `[q]` as well, and so on. Each character is read once.
  *
  * @param text - Error message.
  * @returns The message with the addresses and queries replaced.
  */
 function replaceAddressesAndQueries(text: string): string {
+  let queryGoesOn = false;
   return replaceQuotedAddresses(text).replace(WORD, (word) => {
+    if (queryGoesOn) {
+      queryGoesOn = QUERY_GOES_ON.test(word);
+      return '[q]';
+    }
     if (/[@＠﹫]|%40/i.test(word.replace(PACKAGE_SCOPE, '/'))) {
       return '[addr]';
     }
@@ -134,7 +157,11 @@ function replaceAddressesAndQueries(text: string): string {
     const rest = word.slice(query + marker[0].length);
     const isQuery =
       word.slice(0, query).includes('/') || rest.includes('=') || rest.length >= MIN_QUERY_LENGTH;
-    return isQuery ? `${word.slice(0, query)}?[q]` : word;
+    if (!isQuery) {
+      return word;
+    }
+    queryGoesOn = rest === '' || QUERY_GOES_ON.test(rest);
+    return `${word.slice(0, query)}?[q]`;
   });
 }
 
@@ -222,7 +249,10 @@ function replaceWordRuns(text: string): string {
     count = 0;
   };
   for (const match of text.matchAll(LETTERS)) {
-    if (BIP39_WORDS.has(match[0].toLowerCase())) {
+    if (ESCAPED_SEPARATOR.test(match[0])) {
+      continue;
+    }
+    if (BIP39_WORDS.has(match[0].replace(INVISIBLE, '').normalize('NFKC').toLowerCase())) {
       if (count === 0) {
         start = match.index;
       }
