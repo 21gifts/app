@@ -389,6 +389,7 @@ app/
 │   │   ├── config.ts            # Typed NEXT_PUBLIC_* accessors (required ones throw on missing; optional ones return null)
 │   │   ├── csp.ts               # Content-Security-Policy: sources, nonce, mode, header name
 │   │   ├── sentry.ts            # Error reporting + browser tracing: init options, privacy scrubber, traceWallet, tunnel forwarder, CSP report forwarder
+│   │   ├── sensitive-keys.ts    # Key names and key fragments whose values the scrubber and the wallet-open sanitizer remove
 │   │   ├── countries.ts         # ISO country codes + localized country option labels
 │   │   ├── locale.ts            # Supported locales + Accept-Language negotiation
 │   │   ├── number-format.ts         # ch/us/de grouping + formatGroupedNumber
@@ -1287,12 +1288,15 @@ also sends where it stopped (`stage`: `sdk_load`, `connect`, `first_sync`, or
 online and the page visible, and the error's message only after
 `sanitizeErrorMessage` (`src/lib/wallet/error-cause.ts`): a word that holds
 an address (e-mail, `name@host`, a URL with a user name) becomes `[addr]`,
-URL and path query strings `?[q]`, every run of key characters as a whole
+URL and path query strings `?[q]`, the value after a label that names a
+secret (`api_key=`, `token:`, `secret=`, `password=`, `username=`, and the
+scrubber's own key fragments) `[token]`, every run of key characters as a whole
 (each segment of a URL, a path, or a host with a path) `[hex]` when it holds
 16 hex digits and `[token]` when it is an invoice, address, extended key,
 JSON web token, 20 or more characters with a digit, or 40 or more in mixed
 case, and last runs of three or more BIP-39 words
-`[words]`, cut to 200 characters. The error report passes it
+`[words]`, cut to at most 200 characters at a word, so a second pass changes
+nothing. The error report passes it
 through that sanitizer once more before the scrubber. The thrown error
 itself, its other fields, and the SDK config are never sent.
 

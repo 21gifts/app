@@ -1,6 +1,7 @@
 import { startSpan, type Breadcrumb, type ErrorEvent, type Event } from '@sentry/nextjs';
 import { capturePageLoad, type PageLoad } from '@/lib/page-load';
 import { isStandaloneDisplay } from '@/lib/push';
+import { SENSITIVE_KEYS, SENSITIVE_KEY_PARTS } from '@/lib/sensitive-keys';
 import {
   getAppVersion,
   getSentryDsn,
@@ -80,27 +81,6 @@ const SDK_ID_KEYS = new Set(['event_id', 'trace_id', 'span_id', 'parent_span_id'
 
 /** An SDK id: 16 or 32 lower-case hex digits, shorter than any key or hash. */
 const SDK_ID = /^(?:[0-9a-f]{16}|[0-9a-f]{32})$/;
-
-/** Keys whose value is always removed, compared lower-case and exactly. */
-const SENSITIVE_KEYS = new Set(['pr', 'words', '21gifts.session']);
-
-/** Key fragments whose value is always removed, compared lower-case. */
-const SENSITIVE_KEY_PARTS = [
-  'mnemonic',
-  'phrase',
-  'seed',
-  'share',
-  'slip39',
-  'prf',
-  'token',
-  'secret',
-  'invoice',
-  'password',
-  'authorization',
-  'cookie',
-  'query',
-  'fragment',
-];
 
 /** Request headers kept on an event. Everything else is dropped. */
 const ALLOWED_HEADERS = new Set(['user-agent', 'referer']);

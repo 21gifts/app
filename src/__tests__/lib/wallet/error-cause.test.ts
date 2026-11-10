@@ -302,16 +302,112 @@ describe('sanitizeErrorMessage', () => {
     }
   });
 
+  it('cuts at a word, so a second run neither replaces a cut word nor sees a cut placeholder', () => {
+    const words = `${'z'.repeat(176)} abandon ability abilityx`;
+    const once = sanitizeErrorMessage(words);
+    expect(once).toBe(`${'z'.repeat(176)} abandon ability`);
+    expect(sanitizeErrorMessage(once)).toBe(once);
+    const hex = sanitizeErrorMessage(`${'z'.repeat(195)} 0123456789abcdef`);
+    expect(hex).toBe('z'.repeat(195));
+    const oneWord = sanitizeErrorMessage(`${'z'.repeat(150)}(${'y'.repeat(30)}[${'x'.repeat(40)}`);
+    expect(oneWord).toBe(`${'z'.repeat(150)}(`);
+    expect(sanitizeErrorMessage(oneWord)).toBe(oneWord);
+  });
+
+  it('changes nothing on a second run for random messages near the length limit', () => {
+    const parts = [
+      'abandon',
+      'ability',
+      'able',
+      'x',
+      'zz',
+      '0123456789abcdef',
+      'lnbc1qqqqqq',
+      'a@b.c',
+      '/p?k=v',
+      '?',
+      '=',
+      '&',
+      ':',
+      '"',
+      '\\',
+      '%2c',
+      '\u200B',
+      'token=',
+      'api_key:',
+      '[hex]',
+      '(',
+      ')',
+      '.',
+      '-',
+      '_',
+      'Ab1',
+      'eyJ',
+      'https://h.example/',
+      ' ',
+      ' ',
+      ' ',
+      '\n',
+    ];
+    let seed = 7;
+    const next = (): number => {
+      seed = (seed * 1_103_515_245 + 12_345) % 2_147_483_648;
+      return seed;
+    };
+    for (let round = 0; round < 3_000; round += 1) {
+      let message = '';
+      const length = 150 + (next() % 120);
+      while (message.length < length) {
+        message += parts[next() % parts.length];
+      }
+      const once = sanitizeErrorMessage(message);
+      expect(once.length).toBeLessThanOrEqual(ERROR_MESSAGE_MAX_LENGTH);
+      expect(sanitizeErrorMessage(once), JSON.stringify(message)).toBe(once);
+    }
+  });
+
+  it.each([
+    ['api_key=gggggggggggggggggggggggggggggggggggggggg', 'api_key=[token]'],
+    ['failed with token: abc', 'failed with token: [token]'],
+    ['{"secret": "two words", "n": 1}', '{"secret": [token], "n": 1}'],
+    ['username=alice next', 'username=[token] next'],
+    ['PRF output: 7,7,7,7', 'PRF output: [token]'],
+    ['seed: 1, 2, 3; ok', 'seed: [token]; ok'],
+    ['bad password = hunter2;', 'bad password = [token];'],
+    ['Authorization:Bearer xyz', 'Authorization:[token] xyz'],
+    ['x-api-key= qwerty end', 'x-api-key= [token] end'],
+    ['user: [addr]', 'user: [addr]'],
+  ])('replaces the value after a secret-naming label in %j', (message, sent) => {
+    expect(sanitizeErrorMessage(message)).toBe(sent);
+    expect(sanitizeErrorMessage(sent)).toBe(sent);
+  });
+
   it('cuts the result to 200 characters after the replacements', () => {
     const hex = 'ab'.repeat(200);
     expect(sanitizeErrorMessage(`x ${hex}`)).toBe('x [hex]');
     const long = 'Failed to fetch '.repeat(30);
-    expect(sanitizeErrorMessage(long)).toHaveLength(ERROR_MESSAGE_MAX_LENGTH);
-    expect(sanitizeErrorMessage(long)).toBe(long.slice(0, ERROR_MESSAGE_MAX_LENGTH));
+    const cut = sanitizeErrorMessage(long);
+    expect(cut.length).toBeLessThanOrEqual(ERROR_MESSAGE_MAX_LENGTH);
+    expect(cut).toBe('Failed to fetch '.repeat(12) + 'Failed');
   });
 });
 
 describe('errorCause', () => {
+  it('reports only class-shaped names and constant-shaped or SDK-kind codes', () => {
+    expect(errorCause({ name: 'alice', code: 'account_alice', message: 'x' })).toEqual({
+      errorName: 'unknown',
+      errorCode: null,
+      errorMessage: 'x',
+    });
+    const chunk = Object.assign(new Error('x'), { name: 'ChunkLoadError', code: 'ERR_CHUNK_LOAD' });
+    expect(errorCause(chunk)).toMatchObject({
+      errorName: 'ChunkLoadError',
+      errorCode: 'ERR_CHUNK_LOAD',
+    });
+    const dom = { name: 'QuotaExceededError', code: 22, message: 'x' };
+    expect(errorCause(dom)).toMatchObject({ errorName: 'QuotaExceededError', errorCode: '22' });
+  });
+
   it('reports the name, the SDK kind, and the sanitized message of an Error', () => {
     const cause = errorCause(new Error(`Storage error: ${LEAK_MNEMONIC}`));
     expect(cause).toEqual({
@@ -371,7 +467,7 @@ describe('errorCause', () => {
     class SdkError extends Error {}
     const error = new SdkError('boom');
     Object.defineProperty(error, 'name', { value: 42, configurable: true });
-    expect(errorCause(error).errorName).toBe('42');
+    expect(errorCause(error).errorName).toBe('SdkError');
     Object.defineProperty(error, 'name', { value: { nested: true } });
     expect(errorCause(error).errorName).toBe('SdkError');
   });
@@ -394,15 +490,15 @@ describe('errorCause', () => {
     });
   });
 
-  it('reports a fractional code as written and ignores a message that is not a string', () => {
+  it('reports no fractional code and ignores a message that is not a string', () => {
     const error = { name: 'Error', code: 1.5, message: 7 };
-    expect(errorCause(error)).toEqual({ errorName: 'Error', errorCode: '1.5', errorMessage: null });
+    expect(errorCause(error)).toEqual({ errorName: 'Error', errorCode: null, errorMessage: null });
   });
 
   it.each([-1, 1e21])('reports no code for the number %s', (code) => {
-    // The number is not a name either, so the constructor names it.
+    // Neither the number nor the constructor name `Object` is an error name.
     expect(errorCause({ name: code, code, message: 'x' })).toEqual({
-      errorName: 'Object',
+      errorName: 'unknown',
       errorCode: null,
       errorMessage: 'x',
     });
