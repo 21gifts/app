@@ -3,7 +3,7 @@ import { getBreezApiKey, getE2eNow } from '@/lib/config';
 import { logInteraction } from '@/lib/interaction-log';
 import { traceWallet, type WalletSpanAttributes } from '@/lib/sentry';
 import { peekSessionPhrase, SESSION_PHRASE_EVENT } from '@/lib/tab-phrase';
-import { errorCause } from '@/lib/wallet/error-cause';
+import { errorCause, type ErrorCause } from '@/lib/wallet/error-cause';
 import type { PaymentFailure, PayMethod, PayReason, PayStage } from '@/lib/wallet/payment-failure';
 import {
   loadWalletSdk,
@@ -471,22 +471,24 @@ type WalletOpenStage = 'sdk_load' | 'connect' | 'first_sync' | 'deadline';
  *   connecting, or the first read failed.
  * @param stage - Where the open stopped.
  * @param startedAt - `Date.now()` when the attempt started.
- * @param error - What the failed step rejected with; absent at the deadline.
+ * @param failed - `errorCause` of what the failed step rejected with, or
+ *   `null` at the deadline, where nothing was thrown.
  */
 function reportWalletOpenFailure(
   reason: 'timeout' | 'error',
   stage: WalletOpenStage,
   startedAt: number,
-  error?: unknown,
+  failed: ErrorCause | null,
 ): void {
   if (openFailureReported) {
     return;
   }
   openFailureReported = true;
-  const { errorName, errorCode, errorMessage } =
-    error === undefined
-      ? { errorName: null, errorCode: null, errorMessage: null }
-      : errorCause(error);
+  const { errorName, errorCode, errorMessage } = failed ?? {
+    errorName: null,
+    errorCode: null,
+    errorMessage: null,
+  };
   const cause = {
     stage,
     errorName,
@@ -731,7 +733,7 @@ async function openWallet(loadSdk: WalletSdkLoader, quiet: boolean): Promise<voi
     sdk = await traceWallet('wallet.sdk.load', loadSdk);
   } catch (error) {
     if (run === runCounter) {
-      reportWalletOpenFailure('error', 'sdk_load', startedAt, error);
+      reportWalletOpenFailure('error', 'sdk_load', startedAt, errorCause(error));
     }
     await failRun(run);
     return;
@@ -776,7 +778,7 @@ async function openWallet(loadSdk: WalletSdkLoader, quiet: boolean): Promise<voi
       void rememberKnownPayments(run, next, mnemonic);
     } catch (error) {
       if (run === runCounter) {
-        reportWalletOpenFailure('error', stage, startedAt, error);
+        reportWalletOpenFailure('error', stage, startedAt, errorCause(error));
       }
       await failRun(run);
     }
@@ -790,7 +792,7 @@ async function openWallet(loadSdk: WalletSdkLoader, quiet: boolean): Promise<voi
     await deadline;
   }
   if (run === runCounter && useWalletStore.getState().status === waiting) {
-    reportWalletOpenFailure('timeout', 'deadline', startedAt);
+    reportWalletOpenFailure('timeout', 'deadline', startedAt, null);
     void failRun(run);
   }
 }

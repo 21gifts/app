@@ -1201,7 +1201,8 @@ describe('wallet open failure cause', () => {
   it.each(['sdk_load', 'connect', 'first_sync'] as const)(
     'sends no key material from a %s error that carries it',
     async (stage) => {
-      const message = `Generic error: ${KEY_MATERIAL.map(([, secret]) => secret).join(' ')} ${MNEMONIC} ${API_KEY}`;
+      // The test API key has no key shape; it rides on the error's config only.
+      const message = `Generic error: ${KEY_MATERIAL.map(([, secret]) => secret).join(' ')} ${MNEMONIC}`;
       const error = Object.assign(new Error(message), {
         mnemonic: MNEMONIC,
         config: { apiKey: API_KEY },
@@ -1231,6 +1232,7 @@ describe('wallet open failure cause', () => {
       expectNoKeyMaterial(text);
       expect(text).not.toContain(MNEMONIC.split(' ').slice(0, 3).join(' '));
       expect(text).not.toContain(API_KEY);
+      expect(text).not.toContain('breez-api-key');
       expect(text).not.toContain('apiKey');
       expect(text).not.toContain('"config"');
       expect(text).not.toContain('"prf"');
@@ -1240,6 +1242,18 @@ describe('wallet open failure cause', () => {
       expect(extra.extra.errorMessage?.length).toBeLessThanOrEqual(200);
     },
   );
+
+  it('reports a rejection without a value as unknown, not as a deadline', async () => {
+    const sdk = createFakeSdk();
+    sdk.connect.mockImplementationOnce(() => Promise.reject(undefined));
+    await connectWallet(sdk.loadSdk);
+    expectWalletOpenReport('error', {
+      stage: 'connect',
+      errorName: 'unknown',
+      errorCode: null,
+      errorMessage: null,
+    });
+  });
 
   it('reports only the first failure until the wallet was ready again', async () => {
     const sdk = createFakeSdk();

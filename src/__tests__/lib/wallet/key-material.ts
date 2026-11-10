@@ -51,6 +51,7 @@ export const KEY_MATERIAL: ReadonlyArray<readonly [string, string, string, strin
     'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c',
   ],
   ['an e-mail address', 'user@21.gifts', '[addr]', 'user@21.gifts'],
+  ['a bare API key', API_KEY_VALUE, '[token]', API_KEY_VALUE],
   [
     'an API key in a URL query',
     `https://api.example.com/v1/connect?apiKey=${API_KEY_VALUE}&network=mainnet`,

@@ -60,6 +60,34 @@ describe('sanitizeErrorMessage', () => {
     );
   });
 
+  it('replaces a 40-character mixed-case token without a digit', () => {
+    expect(sanitizeErrorMessage('key AbCdEfGhIjKlMnOpQrStUvWxYzAbCdEfGhIjKlMn end')).toBe(
+      'key [token] end',
+    );
+    expect(sanitizeErrorMessage('MaxDepositClaimFeeExceeded')).toBe('MaxDepositClaimFeeExceeded');
+  });
+
+  it('replaces the user name and password of a URL', () => {
+    expect(sanitizeErrorMessage('GET https://alice:hunter2@h.example/x failed')).toBe(
+      'GET https://[addr]@h.example/x failed',
+    );
+  });
+
+  it('replaces the query string of a path', () => {
+    expect(sanitizeErrorMessage('POST /api/x?apiKey=sk_live_abc failed')).toBe(
+      'POST /api/x?[q] failed',
+    );
+    expect(sanitizeErrorMessage('(/a/b#frag)')).toBe('(/a/b?[q]');
+    expect(sanitizeErrorMessage('what? and/or #1')).toBe('what? and/or #1');
+  });
+
+  it('reads a very long message without a digit in linear time', () => {
+    const long = `${'a'.repeat(100_000)} ${'x.'.repeat(50_000)} ${'b'.repeat(100_000)}@`;
+    const started = performance.now();
+    sanitizeErrorMessage(long);
+    expect(performance.now() - started).toBeLessThan(1_000);
+  });
+
   it('replaces name@host addresses without a top-level domain', () => {
     expect(sanitizeErrorMessage('pay alice@localhost failed')).toBe('pay [addr] failed');
   });
