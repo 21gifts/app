@@ -7,6 +7,7 @@ import {
   getSentryEnvironment,
   getSentryTracesSampleRate,
 } from '@/lib/config';
+import { sanitizeErrorMessage } from '@/lib/wallet/error-cause';
 
 /**
  * Error reporting (Sentry): init options, the privacy scrubber, the wallet
@@ -433,18 +434,52 @@ function scrubRequest(request: EventRequest): EventRequest {
   return reduced;
 }
 
+/** Message of the report of a wallet that did not open. */
+const WALLET_OPEN_FAILED = 'Wallet did not open';
+
+/**
+ * Every string tag and extra of a `Wallet did not open` report through
+ * `sanitizeErrorMessage`, which also replaces shorter recovery-word runs,
+ * shorter hex, and other key-shaped tokens than {@link REDACTIONS}. Other
+ * events are returned unchanged.
+ *
+ * @param event - Error or transaction event about to be sent.
+ * @returns The event, with that report's tags and extras sanitized.
+ */
+function sanitizeWalletOpenCause<T extends ErrorEvent | TransactionEvent>(event: T): T {
+  if (event.message !== WALLET_OPEN_FAILED) {
+    return event;
+  }
+  const sanitize = (values: Record<string, unknown>): Record<string, unknown> =>
+    Object.fromEntries(
+      Object.entries(values).map(([key, value]) => [
+        key,
+        typeof value === 'string' ? sanitizeErrorMessage(value) : value,
+      ]),
+    );
+  const copy: T = { ...event };
+  if (copy.tags !== undefined) {
+    copy.tags = sanitize(copy.tags) as NonNullable<T['tags']>;
+  }
+  if (copy.extra !== undefined) {
+    copy.extra = sanitize(copy.extra);
+  }
+  return copy;
+}
+
 /**
  * Event filter for errors and transactions: user and request details are
  * reduced, stack frame variables are removed, breadcrumbs are filtered again,
  * and every remaining string is scrubbed. In a transaction that covers its
  * name, span descriptions, and span data, so URLs there lose their query
- * string and fragment.
+ * string and fragment. A `Wallet did not open` report first has its string
+ * tags and extras passed through `sanitizeErrorMessage`.
  *
  * @param event - Error or transaction event about to be sent.
  * @returns The scrubbed event.
  */
 function scrubEvent<T extends ErrorEvent | TransactionEvent>(event: T): T {
-  const copy: T = { ...event };
+  const copy: T = { ...sanitizeWalletOpenCause(event) };
   delete copy.user;
   // The SDK reads only these two after this filter; the rest are live SDK objects.
   if (copy.sdkProcessingMetadata !== undefined) {

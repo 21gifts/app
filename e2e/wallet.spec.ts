@@ -865,6 +865,48 @@ test('Function: connectWallet — unset key leaves no balance region or wasm', a
   expect(urls.some((u) => u.endsWith('.wasm'))).toBe(false);
 });
 
+/**
+ * Record the body of every request the page sends to the error-report tunnel
+ * or to the interaction log.
+ *
+ * @param page - Page under test.
+ * @returns The recorded bodies (live array).
+ */
+function recordReports(page: Page): string[] {
+  const bodies: string[] = [];
+  page.on('request', (req) => {
+    const path = new URL(req.url()).pathname;
+    if (path === '/monitoring' || path === '/me/events') {
+      bodies.push(`${path} ${req.postData() ?? ''}`);
+    }
+  });
+  return bodies;
+}
+
+test('Function: errorCause — unset key opens no wallet, so no wallet_open_failed and no error report go out', async ({
+  page,
+}) => {
+  await signInWalletEligible(page);
+  const bodies = recordReports(page);
+  await page.goto('/wallet');
+  await expect(page.getByRole('region', { name: 'Balance' })).toHaveCount(0);
+  await page.waitForLoadState('networkidle');
+  expect(bodies.filter((body) => body.includes('wallet_open_failed'))).toEqual([]);
+  expect(bodies.filter((body) => body.startsWith('/monitoring'))).toEqual([]);
+});
+
+test('Function: sanitizeErrorMessage — unset key opens no wallet, so no wallet error text goes out', async ({
+  page,
+}) => {
+  await signInWalletEligible(page);
+  const bodies = recordReports(page);
+  await page.goto('/wallet');
+  await expect(page.getByRole('region', { name: 'Balance' })).toHaveCount(0);
+  await page.waitForLoadState('networkidle');
+  expect(bodies.filter((body) => body.includes('errorMessage'))).toEqual([]);
+  expect(bodies.filter((body) => body.startsWith('/monitoring'))).toEqual([]);
+});
+
 test('Function: refreshWallet — unset key leaves no balance region or wasm', async ({ page }) => {
   await signInWalletEligible(page);
   const urls: string[] = [];

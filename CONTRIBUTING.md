@@ -1261,7 +1261,8 @@ only for a signed-in member and both through same-origin proxies:
   session is cleared). Visitors without a session are not recorded.
   `payment_failed` (every wallet payment that did not go out: `stage`,
   `reason`, `method`, `flow`, `amountSats`) and `wallet_open_failed`
-  (`reason` `timeout` or `error`) go out in batches of their own, and so do
+  (`reason` `timeout` or `error`, `stage`, `errorName`, `errorCode`,
+  `errorMessage`, `elapsedMs`, `online`, `visibility`) go out in batches of their own, and so do
   the wallet tour and move-funds events (`wallet_tour_*`, `wallet_move_*`) as
   a group of their own, and `recovery_done` (the sign-in that ends a social
   recovery) as another, so an api that does not accept those names yet cannot
@@ -1277,9 +1278,19 @@ failure sends `wallet_open_failed` and `Wallet did not open`, and nothing more
 goes out until the wallet has been ready again or was disconnected.
 Member state (too little balance, an amount below the minimum, no wallet
 connection) and hearts (`Heart not sent`) are not sent as `Payment failed`.
-Reason, stage, method, flow, and the error name and code are short codes; the
-text of an SDK or api error is never sent, because it can carry invoices,
-addresses, or keys.
+Reason, stage, method, flow, and the error name and code are short codes; for
+a payment that did not go out, the text of an SDK or api error is never sent,
+because it can carry invoices, addresses, or keys. A wallet that did not open
+also sends where it stopped (`stage`: `sdk_load`, `connect`, `first_sync`, or
+`deadline`), the time since the attempt started, whether the browser was
+online and the page visible, and the error's message only after
+`sanitizeErrorMessage` (`src/lib/wallet/error-cause.ts`): runs of three or
+more BIP-39 words become `[words]`, 16 or more hex digits `[hex]`, invoices,
+addresses, extended keys, JSON web tokens, and other long base58, base64, or
+bech32 tokens `[token]`, e-mail and `name@host` addresses `[addr]`, and URL
+query strings `?[q]`, cut to 200 characters. The error report passes it
+through that sanitizer once more before the scrubber. The thrown error
+itself, its other fields, and the SDK config are never sent.
 
 **Hard requirement:** neither report, nor any other request, log, or error
 report, ever carries the recovery phrase, the seed, PRF output, a preimage, or

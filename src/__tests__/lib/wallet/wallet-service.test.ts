@@ -37,6 +37,7 @@ import { captureMessage } from '@sentry/nextjs';
 import { logInteraction } from '@/lib/interaction-log';
 import { traceWallet } from '@/lib/sentry';
 import { useAuthStore } from '@/stores/auth-store';
+import { KEY_MATERIAL, expectNoKeyMaterial } from '@/__tests__/lib/wallet/key-material';
 
 vi.mock('@/lib/interaction-log', () => ({ logInteraction: vi.fn() }));
 vi.mock('@sentry/nextjs', () => ({ captureMessage: vi.fn() }));
@@ -137,19 +138,40 @@ beforeEach(() => {
   vi.mocked(logInteraction).mockClear();
 });
 
+/** Cause fields a wallet-open report carries besides the reason. */
+interface WalletOpenCause {
+  stage: 'sdk_load' | 'connect' | 'first_sync' | 'deadline';
+  errorName: string | null;
+  errorCode: string | null;
+  errorMessage: string | null;
+  elapsedMs: number;
+  online: boolean;
+  visibility: DocumentVisibilityState;
+}
+
 /**
- * Asserts that exactly one wallet-open failure was reported, with `reason`.
+ * Asserts that exactly one wallet-open failure was reported, with `reason`
+ * and, when given, these cause fields in both the error report and the
+ * member event.
  *
  * @param reason - Expected reason.
+ * @param cause - Expected cause fields; the rest are not checked.
  */
-function expectWalletOpenReport(reason: 'timeout' | 'error'): void {
+function expectWalletOpenReport(
+  reason: 'timeout' | 'error',
+  cause: Partial<WalletOpenCause> = {},
+): void {
   expect(captureMessage).toHaveBeenCalledTimes(1);
   expect(captureMessage).toHaveBeenCalledWith('Wallet did not open', {
     level: 'error',
     fingerprint: ['wallet-open-failed', reason],
-    tags: { wallet_open_reason: reason },
+    tags: expect.objectContaining({ wallet_open_reason: reason }) as Record<string, unknown>,
+    extra: expect.objectContaining(cause) as Record<string, unknown>,
   });
-  expect(logInteraction).toHaveBeenCalledWith('wallet_open_failed', { reason });
+  expect(logInteraction).toHaveBeenCalledWith(
+    'wallet_open_failed',
+    expect.objectContaining({ reason, ...cause }),
+  );
 }
 
 afterEach(async () => {
@@ -1017,6 +1039,217 @@ describe('connectWallet', () => {
     await expect(pending).resolves.toBeUndefined();
     expect(connection.getInfo).not.toHaveBeenCalled();
     expect(useWalletStore.getState().status).toBe('locked');
+  });
+});
+
+describe('wallet open failure cause', () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+    rememberSessionPhrase(MNEMONIC);
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+    vi.restoreAllMocks();
+  });
+
+  /**
+   * Everything sent about the failed open, as text: every error report and
+   * every member event.
+   *
+   * @returns The calls of `captureMessage` and `logInteraction`, as JSON.
+   */
+  function sent(): string {
+    return JSON.stringify([
+      vi.mocked(captureMessage).mock.calls,
+      vi.mocked(logInteraction).mock.calls,
+    ]);
+  }
+
+  it('reports sdk_load with the name, code, and message of a failed download', async () => {
+    const loadSdk: WalletSdkLoader = vi.fn(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 750));
+      throw new TypeError('Failed to fetch');
+    });
+    const pending = connectWallet(loadSdk);
+    await vi.advanceTimersByTimeAsync(750);
+    await pending;
+    const cause: WalletOpenCause = {
+      stage: 'sdk_load',
+      errorName: 'TypeError',
+      errorCode: null,
+      errorMessage: 'Failed to fetch',
+      elapsedMs: 750,
+      online: true,
+      visibility: 'visible',
+    };
+    expect(captureMessage).toHaveBeenCalledWith('Wallet did not open', {
+      level: 'error',
+      fingerprint: ['wallet-open-failed', 'error'],
+      tags: {
+        wallet_open_reason: 'error',
+        wallet_open_stage: 'sdk_load',
+        wallet_open_error: 'TypeError',
+        wallet_open_error_code: 'none',
+        wallet_open_online: true,
+        wallet_open_visibility: 'visible',
+      },
+      extra: cause,
+    });
+    expect(logInteraction).toHaveBeenCalledWith('wallet_open_failed', {
+      reason: 'error',
+      ...cause,
+    });
+  });
+
+  it('reports a WebAssembly failure while loading readable', async () => {
+    class RuntimeError extends Error {}
+    Object.defineProperty(RuntimeError.prototype, 'name', { value: 'RuntimeError' });
+    await connectWallet(
+      vi.fn(async () => {
+        throw new RuntimeError('WebAssembly.instantiate(): out of memory');
+      }),
+    );
+    expectWalletOpenReport('error', {
+      stage: 'sdk_load',
+      errorName: 'RuntimeError',
+      errorCode: null,
+      errorMessage: 'WebAssembly.instantiate(): out of memory',
+    });
+  });
+
+  it('reports connect with the SDK error kind as the code', async () => {
+    const sdk = createFakeSdk();
+    sdk.connect.mockRejectedValueOnce(new Error('Network error: request timed out'));
+    await connectWallet(sdk.loadSdk);
+    expectWalletOpenReport('error', {
+      stage: 'connect',
+      errorName: 'Error',
+      errorCode: 'network',
+      errorMessage: 'Network error: request timed out',
+      elapsedMs: 0,
+    });
+  });
+
+  it('reports connect when the event listener cannot be added', async () => {
+    const { loadSdk } = createFakeSdk({
+      addEventListener: async () => {
+        throw new DOMException('The quota has been exceeded.', 'QuotaExceededError');
+      },
+    });
+    await connectWallet(loadSdk);
+    expectWalletOpenReport('error', {
+      stage: 'connect',
+      errorName: 'QuotaExceededError',
+      errorCode: '22',
+      errorMessage: 'The quota has been exceeded.',
+    });
+  });
+
+  it('reports first_sync when the first synchronized read fails, with the time it took', async () => {
+    const { loadSdk } = createFakeSdk({
+      getInfo: async () => {
+        await new Promise((resolve) => setTimeout(resolve, 1_234));
+        throw new Error('Storage error: database closed');
+      },
+    });
+    const pending = connectWallet(loadSdk);
+    await vi.advanceTimersByTimeAsync(1_234);
+    await pending;
+    expectWalletOpenReport('error', {
+      stage: 'first_sync',
+      errorName: 'Error',
+      errorCode: 'storage',
+      errorMessage: 'Storage error: database closed',
+      elapsedMs: 1_234,
+    });
+  });
+
+  it('reports deadline without error fields, with whether the browser was online and visible', async () => {
+    vi.spyOn(navigator, 'onLine', 'get').mockReturnValue(false);
+    vi.spyOn(document, 'visibilityState', 'get').mockReturnValue('hidden');
+    const { loadSdk } = createFakeSdk({
+      connect: () => new Promise<WalletConnection>(() => undefined),
+    });
+    const pending = connectWallet(loadSdk);
+    await vi.advanceTimersByTimeAsync(WALLET_CONNECT_TIMEOUT_MS);
+    await pending;
+    expect(captureMessage).toHaveBeenCalledWith('Wallet did not open', {
+      level: 'error',
+      fingerprint: ['wallet-open-failed', 'timeout'],
+      tags: {
+        wallet_open_reason: 'timeout',
+        wallet_open_stage: 'deadline',
+        wallet_open_error: 'none',
+        wallet_open_error_code: 'none',
+        wallet_open_online: false,
+        wallet_open_visibility: 'hidden',
+      },
+      extra: {
+        stage: 'deadline',
+        errorName: null,
+        errorCode: null,
+        errorMessage: null,
+        elapsedMs: WALLET_CONNECT_TIMEOUT_MS,
+        online: false,
+        visibility: 'hidden',
+      },
+    });
+    expectWalletOpenReport('timeout', { stage: 'deadline', elapsedMs: WALLET_CONNECT_TIMEOUT_MS });
+  });
+
+  it.each(['sdk_load', 'connect', 'first_sync'] as const)(
+    'sends no key material from a %s error that carries it',
+    async (stage) => {
+      const message = `Generic error: ${KEY_MATERIAL.map(([, secret]) => secret).join(' ')} ${MNEMONIC} ${API_KEY}`;
+      const error = Object.assign(new Error(message), {
+        mnemonic: MNEMONIC,
+        config: { apiKey: API_KEY },
+        prf: new Uint8Array(32),
+      });
+      const sdk = createFakeSdk(
+        stage === 'first_sync'
+          ? {
+              getInfo: async () => {
+                throw error;
+              },
+            }
+          : {},
+      );
+      if (stage === 'connect') {
+        sdk.connect.mockRejectedValueOnce(error);
+      }
+      const loadSdk: WalletSdkLoader =
+        stage === 'sdk_load'
+          ? vi.fn(async () => {
+              throw error;
+            })
+          : sdk.loadSdk;
+      await connectWallet(loadSdk);
+      expectWalletOpenReport('error', { stage, errorName: 'Error', errorCode: 'generic' });
+      const text = sent();
+      expectNoKeyMaterial(text);
+      expect(text).not.toContain(MNEMONIC.split(' ').slice(0, 3).join(' '));
+      expect(text).not.toContain(API_KEY);
+      expect(text).not.toContain('apiKey');
+      expect(text).not.toContain('"config"');
+      expect(text).not.toContain('"prf"');
+      const extra = vi.mocked(captureMessage).mock.calls[0]?.[1] as unknown as {
+        extra: WalletOpenCause;
+      };
+      expect(extra.extra.errorMessage?.length).toBeLessThanOrEqual(200);
+    },
+  );
+
+  it('reports only the first failure until the wallet was ready again', async () => {
+    const sdk = createFakeSdk();
+    sdk.connect.mockRejectedValueOnce(new Error('Network error: down'));
+    sdk.connect.mockRejectedValueOnce(new Error('Storage error: other'));
+    await connectWallet(sdk.loadSdk);
+    await connectWallet(sdk.loadSdk);
+    expectWalletOpenReport('error', { stage: 'connect', errorCode: 'network' });
+    expect(logInteraction).toHaveBeenCalledTimes(1);
+    expect(useWalletStore.getState().status).toBe('error');
   });
 });
 
