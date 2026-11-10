@@ -1656,7 +1656,7 @@ After pressing the fiat code under **Default amount**: it is pressed instead of 
 
 ### Variant: heart-amount-saved
 
-After opening `/settings` from the stored value 1, typing **21** and pressing **Save**: the success line **Saved: ₿21 per heart.** sits under the form. The field still shows **21**, and **Save** is enabled again.
+After opening `/settings` from the stored value 1, typing **21** and pressing **Save**: the success line **Saved: ₿21 · $0.02 per heart.** sits under the form, using the visitor's preferred fiat and current spot beside the bitcoin amount. The field still shows **21**, and **Save** is enabled again.
 
 ![21.gifts settings heart amount saved](images/settings-heart-amount-saved.png)
 

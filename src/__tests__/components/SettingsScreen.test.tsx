@@ -513,7 +513,7 @@ describe('SettingsScreen', () => {
     expect(within(wallet).queryByText(/sats/i)).toBeNull();
   });
 
-  it('saves a whole heart amount and confirms it', async () => {
+  it('saves a whole heart amount and confirms it without fiat when no rate is available', async () => {
     vi.mocked(setHeartSats).mockResolvedValue({ ...account, heartSats: 21 });
     renderWithLocale(<SettingsScreen />);
     const wallet = screen.getByRole('region', { name: 'Wallet' });
@@ -525,6 +525,29 @@ describe('SettingsScreen', () => {
     });
     expect(setHeartSats).toHaveBeenCalledWith('sess', 21);
     expect(within(wallet).getByText('Saved: ₿21 per heart.')).toBeTruthy();
+  });
+
+  it('confirms a saved whole heart amount with its preferred-fiat spot figure', async () => {
+    vi.mocked(fetchFxSpot).mockResolvedValue({
+      asOf: '2026-08-28T12:00:00.000Z',
+      source: 'test',
+      rates: { USD: '100000.00', CHF: '80000.00', EUR: '90000.00', PHP: '5600000.00' },
+    });
+    vi.mocked(setHeartSats).mockResolvedValue({ ...account, heartSats: 21 });
+    renderWithLocale(<SettingsScreen />, 'en', 'ch', 'USD');
+    const wallet = screen.getByRole('region', { name: 'Wallet' });
+    await waitFor(() => {
+      expect(within(wallet).queryByText('No exchange rate yet')).toBeNull();
+    });
+    fireEvent.change(within(wallet).getByLabelText('Heart amount'), {
+      target: { value: '21' },
+    });
+    await act(async () => {
+      fireEvent.click(within(wallet).getByRole('button', { name: 'Save' }));
+      await Promise.resolve();
+    });
+    expect(setHeartSats).toHaveBeenCalledWith('sess', 21);
+    expect(within(wallet).getByRole('status').textContent).toBe('Saved: ₿21 · $0.02 per heart.');
   });
 
   it.each(['', '0', '1.5', '10000001'])('keeps the invalid heart amount %p local', (value) => {

@@ -12,6 +12,7 @@ import { useTranslations } from '@/components/LocaleProvider';
 import { LogoutButton } from '@/components/LogoutButton';
 import { useNumberFormat } from '@/components/NumberFormatProvider';
 import { NumberFormatSwitcher } from '@/components/NumberFormatSwitcher';
+import { preferredFiatSuffix } from '@/components/PreferredFiatSuffix';
 import { PushToggle } from '@/components/PushToggle';
 import { ThemeSwitcher } from '@/components/ThemeSwitcher';
 import { UsernameForm } from '@/components/UsernameForm';
@@ -167,7 +168,8 @@ function DefaultAmountRow(): ReactElement {
  * fiat has no rate. The submitted value is always whole sats. Empty, zero,
  * a non-integer, and a value above {@link MAX_HEART_SATS} stay local and
  * show a short error; a valid value saves through {@link saveHeartSats} and
- * shows the stored confirmation.
+ * shows the stored confirmation with the preferred-fiat spot beside bitcoin,
+ * or bitcoin alone while that spot is unavailable.
  *
  * In fiat mode the draft is re-converted from the sats it stands for when
  * the preferred fiat or the spot rate changes, so an untouched draft never
@@ -215,6 +217,8 @@ function HeartAmountRow(): ReactElement {
           limits,
         )
       : null;
+  const savedMessage = t('settings.heartAmountSaved', { amount: '{amount}' });
+  const [savedBeforeAmount, savedAfterAmount] = savedMessage.split('{amount}');
 
   const syncedSats = useRef(savedSats);
   useEffect(() => {
@@ -312,9 +316,14 @@ function HeartAmountRow(): ReactElement {
         <BusyLine label={t('settings.heartAmountSaving')} />
       ) : (
         <p role="status" className="min-h-5 text-center text-sm text-app-success">
-          {saved
-            ? t('settings.heartAmountSaved', { amount: formatBitcoin(savedSats, numberFormat) })
-            : ''}
+          {saved ? (
+            <>
+              {savedBeforeAmount}
+              {formatBitcoin(savedSats, numberFormat)}
+              {preferredFiatSuffix(savedSats, rateDay, fiat, numberFormat)}
+              {savedAfterAmount}
+            </>
+          ) : null}
         </p>
       )}
     </div>
