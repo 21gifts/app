@@ -4,7 +4,7 @@ import {
   isSparkPaymentRequest,
 } from '@/lib/wallet/payment-counterparty';
 
-const payment = { id: 'p1', direction: 'in' as const, invoice: 'spark1example', paymentHash: null };
+const payment = { id: 'p1', direction: 'in' as const };
 const sender = { id: 'p1', accountId: 'acc_e2e', username: 'alice' };
 
 afterEach(() => {

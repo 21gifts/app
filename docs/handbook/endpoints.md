@@ -336,7 +336,7 @@
 ## Endpoint: POST /me/wallet/counterparties
 
 - **Purpose:** Resolve the member on the other side of a completed payment through the same-origin api proxy: the sender for incoming (`in`) payments or the recipient for outgoing (`out`) payments.
-- **Inputs:** Bearer session and a `payments` array of ids, `in`/`out` directions, invoices and hashes.
+- **Inputs:** Bearer session and a `payments` array of `{ id, direction }` rows, with `in`/`out` directions.
 - **Returns:** The upstream `counterparties` response or its error status.
 - **Used by:** `fetchPaymentCounterparties` on the payment details screen.
 

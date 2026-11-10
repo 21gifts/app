@@ -39,23 +39,21 @@ describe('usePaymentCounterparty', () => {
     renderHook(() => usePaymentCounterparty(entry));
     await waitFor(() =>
       expect(fetchPaymentCounterparties).toHaveBeenCalledWith('session', [
-        { id: entry.id, direction, invoice: entry.info.invoice, paymentHash: null },
+        { id: entry.id, direction },
       ]),
     );
   });
-  it('looks up a payment by hash without an invoice', async () => {
-    const hash = 'a'.repeat(64);
-    renderHook(() => usePaymentCounterparty({ ...payment, info: { paymentHash: hash } }));
+  it('looks up a completed payment without invoice or hash', async () => {
+    renderHook(() => usePaymentCounterparty({ ...payment, info: {} }));
     await waitFor(() =>
       expect(fetchPaymentCounterparties).toHaveBeenCalledWith('session', [
-        { id: payment.id, direction: 'in', invoice: null, paymentHash: hash },
+        { id: payment.id, direction: 'in' },
       ]),
     );
   });
   it.each([
     { ...payment, status: 'pending' as const },
     { ...payment, status: 'failed' as const },
-    { ...payment, info: {} },
   ])('does not fetch ineligible payments', (entry) => {
     expect(renderHook(() => usePaymentCounterparty(entry)).result.current).toBeNull();
     expect(fetchPaymentCounterparties).not.toHaveBeenCalled();
@@ -80,6 +78,21 @@ describe('usePaymentCounterparty', () => {
     rerender({ completed: false });
     rerender({ completed: true });
     expect(result.current).toEqual(rows[0] ?? null);
+    expect(fetchPaymentCounterparties).toHaveBeenCalledTimes(1);
+  });
+  it('keeps the cached result when invoice and hash change', async () => {
+    vi.mocked(fetchPaymentCounterparties).mockResolvedValue([RECEIVED_FROM_MEMBER_SENDER]);
+    const { result, rerender } = renderHook(
+      ({ withDetails }: { withDetails: boolean }) =>
+        usePaymentCounterparty({
+          ...payment,
+          info: withDetails ? { invoice: 'spark1example', paymentHash: 'hash' } : {},
+        }),
+      { initialProps: { withDetails: false } },
+    );
+    await waitFor(() => expect(result.current).toEqual(RECEIVED_FROM_MEMBER_SENDER));
+    rerender({ withDetails: true });
+    expect(result.current).toEqual(RECEIVED_FROM_MEMBER_SENDER);
     expect(fetchPaymentCounterparties).toHaveBeenCalledTimes(1);
   });
   it('ignores foreign ids and clears the cache on session change', async () => {

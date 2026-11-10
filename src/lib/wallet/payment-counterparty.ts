@@ -4,10 +4,6 @@ export interface PaymentCounterpartyRequest {
   id: string;
   /** Incoming or outgoing payment. */
   direction: 'in' | 'out';
-  /** Payment request, if available. */
-  invoice: string | null;
-  /** Payment hash, if available. */
-  paymentHash: string | null;
 }
 
 /** A counterparty returned for a payment. */

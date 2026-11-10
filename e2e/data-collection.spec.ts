@@ -362,13 +362,13 @@ test.describe('POST /me/wallet/counterparties', () => {
     const res = await request.post('/me/wallet/counterparties', {
       headers: { authorization: `Bearer ${token}` },
       data: {
-        payments: [
-          { id: 'payment-1', direction: 'in', invoice: 'spark-test-sender', paymentHash: null },
-        ],
+        payments: [{ id: '6a6c3f1f-5841-415b-b8a6-f21d3e513bae', direction: 'in' }],
       },
     });
     expect(await res.json()).toEqual({
-      counterparties: [{ id: 'payment-1', accountId: 'acc_e2e', username: 'alice' }],
+      counterparties: [
+        { id: '6a6c3f1f-5841-415b-b8a6-f21d3e513bae', accountId: 'acc_e2e', username: 'alice' },
+      ],
     });
   });
 

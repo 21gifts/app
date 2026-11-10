@@ -3492,7 +3492,7 @@ const server = http.createServer(async (req, res) => {
     }
     const counterparties = Array.isArray(body?.payments)
       ? body.payments
-          .filter((payment) => payment?.invoice === 'spark-test-sender')
+          .filter((payment) => payment?.id === '6a6c3f1f-5841-415b-b8a6-f21d3e513bae')
           .map((payment) => ({ id: payment.id, accountId: 'acc_e2e', username: 'alice' }))
       : [];
     json(res, 200, { counterparties });

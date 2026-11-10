@@ -24,10 +24,8 @@ export function usePaymentCounterparty(payment: WalletPayment): PaymentCounterpa
   const pin = visualPin();
   const pinned = pin === 'received-from-member' || pin === 'sent-to-member';
   const direction = payment.direction === 'received' ? 'in' : 'out';
-  const invoice = payment.info.invoice || null;
-  const paymentHash = payment.info.paymentHash || null;
-  const eligible = payment.status === 'completed' && (invoice !== null || paymentHash !== null);
-  const key = JSON.stringify([payment.id, direction, invoice, paymentHash]);
+  const eligible = payment.status === 'completed';
+  const key = JSON.stringify([payment.id, direction]);
   const cache = useRef<{ session: string | null; values: Map<string, PaymentCounterparty | null> }>(
     {
       session: null,
@@ -50,9 +48,7 @@ export function usePaymentCounterparty(payment: WalletPayment): PaymentCounterpa
       return;
     }
     let active = true;
-    void fetchPaymentCounterparties(session, [
-      { id: payment.id, direction, invoice, paymentHash },
-    ]).then((rows) => {
+    void fetchPaymentCounterparties(session, [{ id: payment.id, direction }]).then((rows) => {
       if (!active) return;
       const sender = rows.find((row) => row.id === payment.id) ?? null;
       cache.current.values.set(key, sender);
@@ -61,7 +57,7 @@ export function usePaymentCounterparty(payment: WalletPayment): PaymentCounterpa
     return () => {
       active = false;
     };
-  }, [session, pinned, eligible, key, payment.id, direction, invoice, paymentHash]);
+  }, [session, pinned, eligible, key, payment.id, direction]);
 
   if (pin === 'received-from-member' && payment.id === RECEIVED_FROM_MEMBER_SENDER.id && eligible)
     return RECEIVED_FROM_MEMBER_SENDER;

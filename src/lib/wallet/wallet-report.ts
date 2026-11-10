@@ -20,8 +20,11 @@ export const WALLET_REPORT_STEP_TIMEOUT_MS = 30_000;
 /** Wallet identity the cursors below belong to. */
 let identity: string | null = null;
 
-/** Payment id → status the api acknowledged. Tab memory only. */
-const acknowledged = new Map<string, WalletReportPayment['status']>();
+/** Payment id → status and field presence the api acknowledged. Tab memory only. */
+const acknowledged = new Map<
+  string,
+  { status: WalletReportPayment['status']; invoice: boolean; paymentHash: boolean }
+>();
 
 /** Payment id → status at the last listing, or `null` before the first one. */
 let listed: Map<string, WalletReportPayment['status']> | null = null;
@@ -152,7 +155,15 @@ async function reportOnce(): Promise<void> {
     return;
   }
   noticeReceived(payments, session);
-  const unsent = payments.filter((payment) => acknowledged.get(payment.id) !== payment.status);
+  const unsent = payments.filter((payment) => {
+    const prior = acknowledged.get(payment.id);
+    return (
+      prior === undefined ||
+      prior.status !== payment.status ||
+      (Boolean(payment.invoice) && !prior.invoice) ||
+      (Boolean(payment.paymentHash) && !prior.paymentHash)
+    );
+  });
   if (
     unsent.length === 0 &&
     balanceSats === lastBalance &&
@@ -163,6 +174,16 @@ async function reportOnce(): Promise<void> {
   let offset = 0;
   do {
     const chunk = unsent.slice(offset, offset + WALLET_REPORT_PAGE_SIZE);
+    const sent = new Map(
+      chunk.map((payment) => [
+        payment.id,
+        {
+          status: payment.status,
+          invoice: Boolean(payment.invoice),
+          paymentHash: Boolean(payment.paymentHash),
+        },
+      ]),
+    );
     let ids: string[];
     try {
       ids = await withinStepTime(
@@ -174,11 +195,10 @@ async function reportOnce(): Promise<void> {
     if (useWalletStore.getState().identityPubkey !== owner) {
       return;
     }
-    const sentStatus = new Map(chunk.map((payment) => [payment.id, payment.status]));
     for (const id of ids) {
-      const status = sentStatus.get(id);
-      if (status !== undefined) {
-        acknowledged.set(id, status);
+      const snapshot = sent.get(id);
+      if (snapshot !== undefined) {
+        acknowledged.set(id, snapshot);
       }
     }
     lastBalance = balanceSats;
@@ -192,7 +212,8 @@ async function reportOnce(): Promise<void> {
  * the balance and every payment the api has not acknowledged yet (the first
  * report of a tab sends the full history). The acknowledged cursor lives in
  * tab memory only, so a new tab sends the history again; the api ignores
- * repeats. A report that carries nothing new waits
+ * repeats. A payment is sent again when an invoice or payment hash becomes
+ * available. A report that carries nothing new waits
  * {@link WALLET_REPORT_QUIET_MS} after the last one. Calls while a report runs
  * add one more report after it. Without a session or a ready wallet nothing
  * is sent. The report holds the payment fields of

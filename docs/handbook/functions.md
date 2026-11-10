@@ -5501,13 +5501,13 @@ The `/me/wallet/counterparties` route re-exports `proxyMeWalletCounterpartiesPos
 ## Function: fetchPaymentCounterparties
 
 - **Purpose:** Look up counterparties for wallet payments.
-- **Inputs:** A session, payment identifiers, and incoming or outgoing direction.
+- **Inputs:** A session and payment rows containing only id and incoming or outgoing direction.
 - **Returns:** Valid counterparty rows, or an empty list on failure or invalid response.
 - **Used by:** `usePaymentCounterparty`.
 
 ## Function: usePaymentCounterparty
 
-- **Purpose:** Resolve the counterparty of a completed payment and retain the result within its session.
+- **Purpose:** Resolve the counterparty of every completed payment by id and direction, even without an invoice or hash, and retain the result within its session by id and direction.
 - **Inputs:** One wallet payment.
 - **Returns:** Its counterparty or null; the screenshot pins return fixtures without a request.
 - **Used by:** `WalletPaymentDetails`.
@@ -5786,7 +5786,7 @@ The `/me/wallet/counterparties` route re-exports `proxyMeWalletCounterpartiesPos
 
 ## Function: reportWallet
 
-- **Purpose:** While the member is signed in (login opens the wallet), sends the wallet data report to `POST /me/wallet/report`: the balance, the time it was read, and every payment the api has not acknowledged yet, with its current status. The first report in a tab sends the full history; a status change (pending to completed) is sent again.
+- **Purpose:** While the member is signed in (login opens the wallet), sends the wallet data report to `POST /me/wallet/report`: the balance, the time it was read, and every payment the api has not acknowledged yet, with its current status. The first report in a tab sends the full history; a status change (pending to completed), a newly available invoice, or a newly available payment hash sends the payment again.
 - **Inputs:** None. Reads the session from `useAuthStore` and the status, balance, and identity key from `useWalletStore`.
 - **Returns / side effects:** A promise that never rejects. Without a session or a `ready` wallet nothing is sent. It lists every payment with `listWalletReportPayments` in pages of `WALLET_REPORT_PAGE_SIZE` (200) and posts them in requests of at most 200 with `postWalletReport`. The acknowledged ids and their statuses live in tab memory only (no storage of any kind), keyed to the wallet identity: another wallet starts over, and a new tab sends the history again (the api treats repeats as the same payment). A payment that moved onto the next page while the pages were read is kept once. A failed list or post, or one that has not answered after `WALLET_REPORT_STEP_TIMEOUT_MS` (30 s), stops the report; the next one sends the rest. A report with no unacknowledged payment and the same balance as the last one waits `WALLET_REPORT_QUIET_MS` (60 s) after it. A call while a report runs adds one report after it. After the first listing in a tab, a received payment that is newly completed is recorded once as `payment_received_seen` with its id and amount. The body holds only the fields of `WalletReportPayment`: never the recovery phrase, a private key, PRF output, or a preimage.
 - **Used by:** `WalletSync`.
