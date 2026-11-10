@@ -86,10 +86,38 @@ describe('sanitizeErrorMessage', () => {
   });
 
   it('reads a very long message without a digit in linear time', () => {
-    const long = `${'a'.repeat(100_000)} ${'x.'.repeat(50_000)} ${'b'.repeat(100_000)}@ ${'http://a,'.repeat(12_000)} ${'(/a'.repeat(30_000)} ${'=/a'.repeat(30_000)}`;
+    const long = `${'a'.repeat(100_000)} ${'x.'.repeat(50_000)} ${'b'.repeat(100_000)}@ ${'http://a,'.repeat(12_000)} ${'(/a'.repeat(30_000)} ${'=/a'.repeat(30_000)} ${'a:'.repeat(50_000)} ${"é'".repeat(50_000)}@ ${'add add add x '.repeat(70_000)}`;
     const started = performance.now();
     sanitizeErrorMessage(long);
     expect(performance.now() - started).toBeLessThan(1_000);
+  });
+
+  it('replaces the whole name of an address in any script', () => {
+    expect(sanitizeErrorMessage('Failed to send to andré@example.com')).toBe(
+      'Failed to send to [addr]',
+    );
+    expect(sanitizeErrorMessage("to maximilian.o'brien@example.com now")).toBe('to [addr] now');
+    expect(sanitizeErrorMessage('in node_modules/@breeztech/x')).toBe(
+      'in node_modules/@breeztech/x',
+    );
+  });
+
+  it('replaces a query that has no path before it', () => {
+    expect(sanitizeErrorMessage('Cannot GET callback?code=Zq8xLm2Vb9Kp')).toBe(
+      'Cannot GET callback?[q]',
+    );
+    expect(sanitizeErrorMessage('api.example.com?next=/home&token=Zq8xLm2Vb9Kp')).toBe(
+      'api.example.com?[q]',
+    );
+  });
+
+  it('replaces hex in groups joined by colons or hyphens', () => {
+    expect(sanitizeErrorMessage('fp ab:cd:ef:01:23:45:67:89:ab:cd:ef:01:23:45:67:89 x')).toBe(
+      'fp [hex] x',
+    );
+    expect(sanitizeErrorMessage('id 0123abcd-0123abcd end')).toBe('id [hex] end');
+    expect(sanitizeErrorMessage('id 123e4567-e89b-12d3-a456-426614174000')).toBe('id [hex]');
+    expect(sanitizeErrorMessage('add-a-fee ab:cd')).toBe('add-a-fee ab:cd');
   });
 
   it('replaces name@host addresses without a top-level domain', () => {
@@ -191,9 +219,18 @@ describe('errorCause', () => {
     });
   });
 
-  it('ignores a fractional code and a message that is not a string', () => {
+  it('reports a fractional code as written and ignores a message that is not a string', () => {
     const error = { name: 'Error', code: 1.5, message: 7 };
-    expect(errorCause(error)).toEqual({ errorName: 'Error', errorCode: null, errorMessage: null });
+    expect(errorCause(error)).toEqual({ errorName: 'Error', errorCode: '1.5', errorMessage: null });
+  });
+
+  it.each([-1, 1e21])('reports no code for the number %s', (code) => {
+    // The number is not a name either, so the constructor names it.
+    expect(errorCause({ name: code, code, message: 'x' })).toEqual({
+      errorName: 'Object',
+      errorCode: null,
+      errorMessage: 'x',
+    });
   });
 
   it('sanitizes a thrown string and reports the type of other primitives', () => {

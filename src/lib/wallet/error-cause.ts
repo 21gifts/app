@@ -23,11 +23,12 @@ const LETTERS = /[A-Za-z]+/g;
  * as given. Earlier patterns take the larger shapes, so a later one never
  * leaves a readable part of a key behind.
  */
-const REPLACEMENTS: ReadonlyArray<readonly [RegExp, string]> = [
+const REPLACEMENTS: ReadonlyArray<readonly [RegExp, string | ((match: string) => string)]> = [
   // User name and password in an absolute URL.
   [/(?<![a-z0-9+.-])([a-z][a-z0-9+.-]*:\/\/)[^\s/?#@"'<>]+@/gi, '$1[addr]@'],
-  // E-mail and Lightning addresses, also without a top-level domain.
-  [/(?<![A-Za-z0-9._%+-])[A-Za-z0-9._%+-]+@[A-Za-z0-9-]+(?:\.[A-Za-z0-9-]+)*/g, '[addr]'],
+  // E-mail and Lightning addresses, also without a top-level domain: the whole
+  // word before the `@`, in any script (`andré@…`, `o'brien@…`).
+  [/(?<![^\s"<>()@])[^\s"<>()@]*[^\s"<>()@/\]]@[\p{L}\p{N}-]+(?:\.[\p{L}\p{N}-]+)*/gu, '[addr]'],
   // JSON web tokens and other dotted three-part tokens.
   [/\beyJ[A-Za-z0-9_-]*(?:\.[A-Za-z0-9_-]*){1,2}/g, '[token]'],
   [
@@ -39,7 +40,12 @@ const REPLACEMENTS: ReadonlyArray<readonly [RegExp, string]> = [
     /\b(?:lnbc|lntb|lnurl|lno1|lni1|spark1|sparkrt1|sp1|sprt1|spt1|bc1|tb1|bcrt1|[xtyzuv]p(?:rv|ub))[0-9A-Za-z]{10,}/gi,
     '[token]',
   ],
-  // Keys, hashes, preimages, and ids: 16 or more hex digits.
+  // Keys, hashes, preimages, and ids: 16 or more hex digits, also in groups
+  // joined by `:` or `-` (`ab:cd:…`, a UUID).
+  [
+    /(?<![0-9a-f:-])[0-9a-f]+(?:[:-][0-9a-f]+)+(?![0-9a-f:-])/gi,
+    (group: string): string => (group.replace(/[:-]/g, '').length >= 16 ? '[hex]' : group),
+  ],
   [/[0-9a-f]{16,}/gi, '[hex]'],
   // Any other base58, base64, or bech32 run of 20 or more characters with a
   // digit, or of 40 or more characters in mixed case without one. Each run is
@@ -56,20 +62,21 @@ const TOKEN = /[^\s"'<>]+/g;
 
 /**
  * Replaces the query string and fragment of every URL or path, with or
- * without a scheme, by `?[q]`: a word that holds a `/` is cut at the first
- * `?` or `#` after it. Each character is read once.
+ * without a scheme, by `?[q]`: a word is cut at its first `?` or `#` when a
+ * `/` comes before it or an `=` after it (`callback?code=…`). `what?` and
+ * `#1` stay. Each character is read once.
  *
  * @param text - Error message.
  * @returns The message with the queries replaced.
  */
 function replaceQueries(text: string): string {
   return text.replace(TOKEN, (word) => {
-    const slash = word.indexOf('/');
-    if (slash === -1) {
+    const query = word.search(/[?#]/);
+    if (query === -1) {
       return word;
     }
-    const query = word.slice(slash).search(/[?#]/);
-    return query === -1 ? word : `${word.slice(0, slash + query)}?[q]`;
+    const isQuery = word.slice(0, query).includes('/') || word.slice(query).includes('=');
+    return isQuery ? `${word.slice(0, query)}?[q]` : word;
   });
 }
 
@@ -104,33 +111,42 @@ function replaceWordRuns(text: string): string {
     }
   }
   close();
-  let out = text;
-  for (const [from, to] of runs.reverse()) {
-    out = `${out.slice(0, from)}[words]${out.slice(to)}`;
+  const parts: string[] = [];
+  let last = 0;
+  for (const [from, to] of runs) {
+    parts.push(text.slice(last, from), '[words]');
+    last = to;
   }
-  return out;
+  parts.push(text.slice(last));
+  return parts.join('');
 }
 
 /**
  * Makes an error message safe to report. In this order it replaces every run
  * of three or more BIP-39 English words (any case, any separator) with
- * `[words]`; the query string and fragment of a URL or path (any word that
- * holds a `/`, cut at the first `?` or `#` after it) with `?[q]`; the user
- * name and password of an absolute URL with `[addr]`;
- * e-mail and `name@host` addresses with `[addr]`; JSON web tokens and dotted
- * three-part tokens, invoices, offers, LNURL strings, Spark and base-chain
- * addresses, and extended keys (`xprv`, `xpub`, `tprv`, `tpub`, …) with
- * `[token]`; 16 or more hex digits with `[hex]`; and any other run of 20 or
- * more base58, base64, or bech32 characters that holds a digit, or of 40
- * or more in mixed case without one, with `[token]`. Then it cuts the result to {@link ERROR_MESSAGE_MAX_LENGTH}
- * characters. Plain messages such as `Failed to fetch` stay readable.
+ * `[words]`; the query string and fragment of a URL or path (a word cut at
+ * its first `?` or `#` when a `/` comes before it or an `=` after it) with
+ * `?[q]`; the user name and password of an absolute URL with `[addr]`;
+ * e-mail and `name@host` addresses (the whole name, in any script) with
+ * `[addr]`; JSON web tokens and dotted three-part tokens, invoices, offers,
+ * LNURL strings, Spark and base-chain addresses, and extended keys (`xprv`,
+ * `xpub`, `tprv`, `tpub`, …) with `[token]`; 16 or more hex digits, also in
+ * groups joined by `:` or `-`, with `[hex]`; and any other run of 20 or more
+ * base58, base64, or bech32 characters that holds a digit, or of 40 or more
+ * in mixed case without one, with `[token]`. Then it cuts the result to
+ * {@link ERROR_MESSAGE_MAX_LENGTH} characters. Plain messages such as
+ * `Failed to fetch` stay readable.
  *
  * @param message - Error message as thrown.
  * @returns The message with every key-shaped part replaced, at most 200 characters.
  */
 export function sanitizeErrorMessage(message: string): string {
   const replaced = REPLACEMENTS.reduce(
-    (text, [pattern, replacement]) => text.replace(pattern, replacement),
+    (text, [pattern, replacement]) =>
+      // Two calls, because `replace` has one overload for each kind of replacement.
+      typeof replacement === 'string'
+        ? text.replace(pattern, replacement)
+        : text.replace(pattern, replacement),
     replaceQueries(replaceWordRuns(message)),
   );
   return replaced.slice(0, ERROR_MESSAGE_MAX_LENGTH);
@@ -145,8 +161,8 @@ export function sanitizeErrorMessage(message: string): string {
  * @returns The value, or `null` when it may not be reported.
  */
 function identifier(value: unknown): string | null {
-  if (typeof value === 'number' && Number.isInteger(value)) {
-    return String(value);
+  if (typeof value === 'number') {
+    return identifier(String(value));
   }
   if (
     typeof value !== 'string' ||
@@ -176,8 +192,9 @@ export interface ErrorCause {
  * Name, code, and sanitized message of a thrown value, never the value
  * itself. The name is the error's `name` (or its constructor's name) when it
  * is a short identifier, otherwise `unknown`; a thrown string or number
- * reports its type. The code is the error's own `code` (a string identifier
- * or a whole number, as a `DOMException` has) or the SDK's error kind at the
+ * reports its type. The code is the error's own `code` (a string identifier,
+ * or a number such as a `DOMException`'s, held to the same characters) or the
+ * SDK's error kind at the
  * start of its message (`Network error: …` → `network`). The message, or a
  * thrown string, goes through {@link sanitizeErrorMessage}. A value that
  * cannot be read (a throwing getter) reports `unknown` and nothing else.
