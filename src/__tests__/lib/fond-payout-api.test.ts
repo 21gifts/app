@@ -142,6 +142,31 @@ describe('postFondPayoutProof', () => {
     });
   });
 
+  it('returns a failure for a success body that fails the schema', async () => {
+    stubFetch(200, { status: 'ok', id: 'row-1' });
+    await expect(postFondPayoutProof('sess', 'row-1', 'bb'.repeat(32))).resolves.toEqual({
+      ok: false,
+      status: 200,
+      error: null,
+    });
+  });
+
+  it('returns a failure for a success body that is not JSON', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: true,
+        status: 200,
+        json: () => Promise.reject(new SyntaxError('bad json')),
+      }),
+    );
+    await expect(postFondPayoutProof('sess', 'row-1', 'bb'.repeat(32))).resolves.toEqual({
+      ok: false,
+      status: 200,
+      error: null,
+    });
+  });
+
   it('returns the failure status without throwing', async () => {
     stubFetch(409, { error: 'Proof in progress' });
     await expect(postFondPayoutProof('sess', 'row-1', 'bb'.repeat(32))).resolves.toEqual({

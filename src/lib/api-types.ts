@@ -1911,3 +1911,16 @@ export const fondPayoutInvoiceSchema = z.object({
  * One payout invoice: the BOLT11 to pay and the hash that proves the payment.
  */
 export type FondPayoutInvoice = z.infer<typeof fondPayoutInvoiceSchema>;
+
+/**
+ * Runtime schema for a `POST /fond/payouts/:id/proof` success body.
+ */
+export const fondPayoutProofSchema = z.object({
+  status: z.literal('paid'),
+  id: z.string(),
+});
+
+/**
+ * The proof confirmation for a successfully marked daily payout.
+ */
+export type FondPayoutProof = z.infer<typeof fondPayoutProofSchema>;

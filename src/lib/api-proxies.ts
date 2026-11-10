@@ -921,7 +921,7 @@ export async function proxyFundingApplicationsGet(request: Request): Promise<Res
 }
 
 /**
- * Proxies GET /funding/daily-roster to the 21.gifts api (founder/initiator Bearer).
+ * Proxies GET /funding/daily-roster to the 21.gifts api (at least initiator).
  *
  * @param request - Incoming App Router request (Bearer session).
  * @returns The upstream response.

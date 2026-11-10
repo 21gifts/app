@@ -41,6 +41,7 @@ import {
   fundingDecisionResultSchema,
   fondPayoutInvoiceSchema,
   fondPayoutListSchema,
+  fondPayoutProofSchema,
   trustActionResultSchema,
   trustChainSchema,
   passkeyBeginSchema,
@@ -2661,5 +2662,19 @@ describe('fondPayoutInvoiceSchema', () => {
   it('rejects an empty invoice or hash', () => {
     expect(() => fondPayoutInvoiceSchema.parse({ ...invoice, bolt11: '' })).toThrow();
     expect(() => fondPayoutInvoiceSchema.parse({ ...invoice, paymentHash: '' })).toThrow();
+  });
+});
+
+describe('fondPayoutProofSchema', () => {
+  it('parses a paid proof acknowledgement', () => {
+    expect(fondPayoutProofSchema.parse({ status: 'paid', id: 'row-1' })).toEqual({
+      status: 'paid',
+      id: 'row-1',
+    });
+  });
+
+  it('rejects another status or a non-string id', () => {
+    expect(() => fondPayoutProofSchema.parse({ status: 'ok', id: 'row-1' })).toThrow();
+    expect(() => fondPayoutProofSchema.parse({ status: 'paid', id: 7 })).toThrow();
   });
 });

@@ -74,7 +74,7 @@ describe('roleAtLeast', () => {
 });
 
 describe('canEditDailyPayoutRoster', () => {
-  it('is true only for initiator and founder', () => {
+  it('allows at least initiator (initiator and founder)', () => {
     expect(canEditDailyPayoutRoster('initiator')).toBe(true);
     expect(canEditDailyPayoutRoster('founder')).toBe(true);
     expect(canEditDailyPayoutRoster('fond')).toBe(false);

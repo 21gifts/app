@@ -42,6 +42,7 @@ import {
   dailyRosterSchema,
   fondPayoutListSchema,
   fondPayoutInvoiceSchema,
+  fondPayoutProofSchema,
   trustActionResultSchema,
   trustChainSchema,
   passkeyBeginSchema,
@@ -1969,7 +1970,8 @@ export async function postFundingReject(
 }
 
 /**
- * Fetches the daily payout roster for founder and initiator editors.
+ * Fetches the daily payout roster for editors at least initiator
+ * (initiator and founder).
  *
  * Hits same-origin `GET /funding/daily-roster` (Bearer). Next.js forbids a
  * `route.ts` beside `/grants/payments/comment`, `/grants/payments/amounts`,
@@ -5215,7 +5217,9 @@ export async function postFondPayoutInvoice(
  * @param session - Bearer session of the Fond account.
  * @param id - Payout row id (URL-encoded into the path).
  * @param preimage - 64-hex preimage of the paid invoice.
- * @returns `{ ok: true }`, or a {@link FondPayoutFailure}.
+ * @returns `{ ok: true }` when the body is `{ status: 'paid', id }`, or a
+ *   {@link FondPayoutFailure}. A 2xx with an unreadable or schema-invalid body
+ *   is a failure with that HTTP status and a `null` error.
  */
 export async function postFondPayoutProof(
   session: string,
@@ -5228,6 +5232,10 @@ export async function postFondPayoutProof(
   });
   if ('ok' in result) {
     return result;
+  }
+  const parsed = fondPayoutProofSchema.safeParse(result.body);
+  if (!parsed.success) {
+    return { ok: false, status: result.response.status, error: null };
   }
   return { ok: true };
 }
