@@ -313,8 +313,10 @@ function visitPieces(
  * Replaces every run of {@link MIN_WORD_RUN} or more BIP-39 English words in
  * a row, in any letter case and with any separator between them, by
  * `[words]`. A word with invisible format characters is one recovery word
- * when it is one without them (`aban\u200Bdon`); otherwise each piece between
- * them is a word of its own (`abandon\u200Bability`).
+ * when it is one without them (`aban\u200Bdon`); otherwise its pieces between
+ * them are read by {@link visitPieces}: neighbouring pieces that together make
+ * a recovery word (`ab\u200Bandon`) are that word, and every other piece is a
+ * word of its own (`abandon\u200Bability`).
  *
  * @param text - Error message.
  * @returns The message with the runs replaced.
