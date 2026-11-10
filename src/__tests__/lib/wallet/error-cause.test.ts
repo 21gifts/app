@@ -254,11 +254,9 @@ describe('sanitizeErrorMessage', () => {
     for (const [name, unit, end] of hostile) {
       const small = bestOfThree(message(unit, end, 50_000));
       const large = bestOfThree(message(unit, end, 200_000));
-      // Under 5 ms the timer and the collector decide the ratio, and nothing
-      // that fast at 200,000 characters is quadratic.
-      if (large >= 5) {
-        expect(large / Math.max(small, 0.1), name).toBeLessThan(8);
-      }
+      // A 1 ms floor keeps timer noise on very fast runs from looking like
+      // growth; a quadratic step still fails once its large run takes 8 ms.
+      expect(large / Math.max(small, 1), name).toBeLessThan(8);
     }
     // Backstop: about 1 MB of all patterns together stays far below 10 s.
     const all = hostile.map(([, unit, end]) => message(unit, end, 50_000)).join(' ');
@@ -421,6 +419,7 @@ describe('sanitizeErrorMessage', () => {
     ['seed: 1, 2, 3; ok', 'seed: [token]; ok'],
     ['PRF output: Uint8Array(4) [17, 34, 51, 68] done', 'PRF output: [token] done'],
     ['seed=[17, 34] x', 'seed=[token] x'],
+    ['token: [unclosed 17, 34\nnext line', 'token: [token]\nnext line'],
     ['PRF    = 17, 34, 51, 68', 'PRF    = [token]'],
     ['token\t:\n  abc def', 'token\t:\n  [token] def'],
     ['bad password = hunter2;', 'bad password = [token];'],

@@ -6,10 +6,23 @@ describe('sensitive keys', () => {
     expect([...SENSITIVE_KEYS]).toEqual(['pr', 'words', '21gifts.session']);
   });
 
-  it('names the key fragments of every secret the wallet and the session hold', () => {
-    for (const part of ['mnemonic', 'phrase', 'seed', 'prf', 'token', 'secret', 'password']) {
-      expect(SENSITIVE_KEY_PARTS).toContain(part);
-    }
+  it('names every key fragment whose value is always removed', () => {
+    expect(SENSITIVE_KEY_PARTS).toEqual([
+      'mnemonic',
+      'phrase',
+      'seed',
+      'share',
+      'slip39',
+      'prf',
+      'token',
+      'secret',
+      'invoice',
+      'password',
+      'authorization',
+      'cookie',
+      'query',
+      'fragment',
+    ]);
   });
 
   it('holds only lower-case entries, as both lists are compared lower-case', () => {
