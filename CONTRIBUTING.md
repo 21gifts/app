@@ -576,7 +576,7 @@ update stuff
   values; explicitly optional ones (`getE2eNow`, `getBreezApiKey`,
   `getPlatformUsername`, `getSentryDsn`, `getSentryEnvironment`,
   `getSentryTracesSampleRate`) return `null`. No silent fallbacks.
-- **Viewer permission checks use `roleAtLeast`** (`src/lib/roles.ts`), never an equality test on the viewer's role — a higher role must always do and see everything a lower role can. The one named exception is `canEditDailyPayoutRoster` in `src/lib/roles.ts`, which stays exactly `role === 'initiator' || role === 'founder'` so moderators and `fond` stay closed out. No further equality checks.
+- **Viewer permission checks use `roleAtLeast`** (`src/lib/roles.ts`), never an equality test on the viewer's role — a higher role must always do and see everything a lower role can. Every viewer permission check, including the daily payout roster (`canEditDailyPayoutRoster` in `src/lib/roles.ts`), is a `roleAtLeast` minimum; the roster's minimum is `initiator`. No equality checks.
 
 ### Styling
 

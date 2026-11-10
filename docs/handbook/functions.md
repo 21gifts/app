@@ -6217,14 +6217,14 @@ The class exists so the composer can tell a refused free first post from any oth
 
 ## Function: roleAtLeast
 
-- **Purpose:** Product-rule primitive for every viewer permission/visibility check: true when `role` meets or exceeds `min` by numeric rank. An equal rank meets the minimum. A missing account (`null`/`undefined` role) is never at least any role.
+- **Purpose:** Product-rule primitive for every viewer permission/visibility check, including the daily payout roster: true when `role` meets or exceeds `min` by numeric rank. An equal rank meets the minimum. A missing account (`null`/`undefined` role) is never at least any role.
 - **Inputs:** `role` — live account role, or `null`/`undefined` when the account snapshot is absent; `min` — inclusive minimum role.
 - **Returns / side effects:** Boolean. Pure, no side effects; delegates to `roleRank`.
-- **Used by:** `ModerateScreen`, `ModeratorGroupScreen`, `InboxLoader`, `HiddenNotesScreen`, `ProposalsScreen`, `FundingApplicationsScreen`, `FundingApplicationDetailScreen`, `FundingStatusCard`, `DeletePostControl`, `HabitComments`, `ForumLoader`, `MemberProfileScreen`, `MemberTrustActions`, `SignedInChrome`, `useUnreadCount`, `isReplyPaymentExempt`.
+- **Used by:** `ModerateScreen`, `ModeratorGroupScreen`, `InboxLoader`, `HiddenNotesScreen`, `ProposalsScreen`, `FundingApplicationsScreen`, `FundingApplicationDetailScreen`, `FundingStatusCard`, `DeletePostControl`, `HabitComments`, `ForumLoader`, `MemberProfileScreen`, `MemberTrustActions`, `SignedInChrome`, `useUnreadCount`, `isReplyPaymentExempt`, `canEditDailyPayoutRoster`.
 
 ## Function: canEditDailyPayoutRoster
 
-- **Purpose:** True only for `initiator` and `founder`. This is not `roleAtLeast`: it is the named exact-role exception, so the daily payout roster stays closed to moderators and `fond`. `null` and `undefined` are false.
+- **Purpose:** The daily payout roster's minimum rank is `initiator`: true for an initiator and every higher role (`founder`), false for every role below initiator. `null` and `undefined` are false.
 - **Inputs:** `role` — live account role, or `null`/`undefined` when the account snapshot is absent.
 - **Returns / side effects:** Boolean. Pure, no side effects.
 - **Used by:** `GrantsScreen`, `DailyPaymentCommentScreen`, `DailyPaymentAmountsScreen`.
@@ -6729,7 +6729,7 @@ The class exists so the composer can tell a refused free first post from any oth
 
 ## Function: GrantsScreen
 
-- **Purpose:** Signed-in grants page. Renders `FundingStatusCard` (verification / 21 gifts grant). When the account is non-null, a secondary large **Goals** `ButtonLink` (`funding.goals.link`) goes to `/grants/goals`, under the grant card and above the staff queue. A missing account shows no link. When `canEditDailyPayoutRoster` is true (initiator or founder only), three secondary large `ButtonLink`s, **Daily payment text** to `/grants/payments/comment`, **Daily payment amounts** to `/grants/payments/amounts`, and **Moderator payments** to `/grants/payments/moderators`, do not fetch the roster. A moderator or fond account does not see those links. When `roleAtLeast(role, 'moderator')`, loads open applications. A count above zero is a secondary large `ButtonLink` to `/grants/applications` labeled **Open application (1)** when the count is one and **Open applications (2)** otherwise (`funding.applications.openCount`). A count of zero is the plain sentence **No open applications.**, not a link. Renders `null` without a session.
+- **Purpose:** Signed-in grants page. Renders `FundingStatusCard` (verification / 21 gifts grant). When the account is non-null, a secondary large **Goals** `ButtonLink` (`funding.goals.link`) goes to `/grants/goals`, under the grant card and above the staff queue. A missing account shows no link. When the viewer is at least `initiator` (`canEditDailyPayoutRoster`), three secondary large `ButtonLink`s, **Daily payment text** to `/grants/payments/comment`, **Daily payment amounts** to `/grants/payments/amounts`, and **Moderator payments** to `/grants/payments/moderators`, do not fetch the roster. A moderator or fond account does not see those links. When `roleAtLeast(role, 'moderator')`, loads open applications. A count above zero is a secondary large `ButtonLink` to `/grants/applications` labeled **Open application (1)** when the count is one and **Open applications (2)** otherwise (`funding.applications.openCount`). A count of zero is the plain sentence **No open applications.**, not a link. Renders `null` without a session.
 - **Inputs:** Session and account from `useAuthStore`; catalog via `useTranslations`.
 - **Returns / side effects:** React element or `null` without a session. Fetches `GET /funding/applications` only when `roleAtLeast(role, 'moderator')`, which includes a fond, an initiator, and a founder. Roles below moderator do not fetch. Loading and a failed load (error sentence plus **Try again**) do not show the applications link. The Goals link does not fetch; `/grants/goals` loads `GET /funding/goal`. Renders `GrantPlacesPanel` under `FundingStatusCard` for every signed-in account.
 - **Used by:** `GrantsPage`.
