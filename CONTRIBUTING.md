@@ -1288,9 +1288,10 @@ online and the page visible, and the error's message only after
 `sanitizeErrorMessage` (`src/lib/wallet/error-cause.ts`): a word that holds
 an address (e-mail, `name@host`, a URL with a user name) becomes `[addr]`,
 URL and path query strings `?[q]`, every run of key characters as a whole
-(each segment of a URL) `[hex]` when it holds 16 hex digits and `[token]`
-when it is an invoice, address, extended key, JSON web token, or 20 or more
-characters with a digit, and last runs of three or more BIP-39 words
+(each segment of a URL, a path, or a host with a path) `[hex]` when it holds
+16 hex digits and `[token]` when it is an invoice, address, extended key,
+JSON web token, 20 or more characters with a digit, or 40 or more in mixed
+case, and last runs of three or more BIP-39 words
 `[words]`, cut to 200 characters. The error report passes it
 through that sanitizer once more before the scrubber. The thrown error
 itself, its other fields, and the SDK config are never sent.
