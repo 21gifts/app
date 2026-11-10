@@ -554,15 +554,19 @@ export function sanitizeErrorMessage(message: string): string {
   );
 }
 
-/** Characters after which a cut word ends cleanly: no key, word, or placeholder goes on. */
+/**
+ * The end of a cut word back to its last `( ) < > { } , ; ! * |` or quote:
+ * none of these is part of a key, a word, or a placeholder.
+ */
 const CUT_AFTER = /[^\s()<>,;!*'"|{}]*$/;
 
 /**
  * Cuts a sanitized message to {@link ERROR_MESSAGE_MAX_LENGTH} characters
  * without cutting a word: at the last whitespace before the limit, or, in a
- * single word longer than the limit, after its last bracket, quote, or
- * punctuation mark. So no placeholder is cut (`[hex`), and no cut word turns
- * into a key or a recovery word that a second pass would replace.
+ * single word longer than the limit, after its last `( ) < > { } , ; ! * |`
+ * or quote ({@link CUT_AFTER}); a word with none of them is dropped. So no
+ * placeholder is cut (`[hex`), and no cut word turns into a key or a recovery
+ * word that a second pass would replace.
  *
  * @param text - Sanitized message.
  * @returns The message, at most {@link ERROR_MESSAGE_MAX_LENGTH} characters.
