@@ -8375,7 +8375,7 @@ describe('ForumBoard', () => {
     expect(screen.queryByRole('button', { name: /^React$/ })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Send Bitcoin' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Delete post' })).toBeNull();
-    expect(screen.queryByRole('button', { name: 'Send a heart' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Send ₿1' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Moderator functions' })).toBeNull();
     expect(screen.queryByTestId('staff-functions')).toBeNull();
     expect(screen.queryByPlaceholderText('Write a reaction')).toBeNull();
@@ -9866,7 +9866,7 @@ describe('ForumBoard in-app wallet pay', () => {
     expect(payFromWallet).toHaveBeenCalledWith({ type: 'input', input: SPARK_INVOICE });
   });
 
-  it('shows Send a heart on a post and on a reply', () => {
+  it('shows Send ₿1 on a post and on a reply without a loaded account amount', () => {
     renderWithLocale(
       <ForumBoard
         messages={[{ ...SAMPLE, accountId: 'acc-ada' }]}
@@ -9896,15 +9896,15 @@ describe('ForumBoard in-app wallet pay', () => {
         {...modeProps('all')}
       />,
     );
-    expect(screen.getAllByRole('button', { name: 'Send a heart' })).toHaveLength(2);
-    expect(screen.queryByText('Send a heart')).toBeNull();
+    expect(screen.getAllByRole('button', { name: 'Send ₿1' })).toHaveLength(2);
+    expect(screen.queryByText('Send ₿1')).toBeNull();
   });
 
   it.each([
-    ['en', 'Send a heart (₿21)'],
-    ['de', 'Herz senden (₿21)'],
-    ['es', 'Enviar un corazón (₿21)'],
-    ['fil', 'Magpadala ng puso (₿21)'],
+    ['en', 'Send ₿21'],
+    ['de', '₿21 senden'],
+    ['es', 'Enviar ₿21'],
+    ['fil', 'Magpadala ng ₿21'],
   ] as const)('names the stored heart amount in %s', (locale, label) => {
     renderWithLocale(
       <ForumBoard
@@ -9947,7 +9947,7 @@ describe('ForumBoard in-app wallet pay', () => {
         {...modeProps('all')}
       />,
     );
-    expect(screen.getByRole('button', { name: 'Send a heart' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Send ₿1' })).toBeTruthy();
   });
 
   it('formats the named heart amount with the app grouping style', () => {
@@ -9970,11 +9970,11 @@ describe('ForumBoard in-app wallet pay', () => {
       />,
       'en',
     );
-    const heart = screen.getByRole('button', { name: "Send a heart (₿1'000)" });
-    expect(heart.getAttribute('title')).toBe("Send a heart (₿1'000)");
+    const heart = screen.getByRole('button', { name: "Send ₿1'000" });
+    expect(heart.getAttribute('title')).toBe("Send ₿1'000");
   });
 
-  it('hides Send a heart on a post and a reply whose author cannot receive', () => {
+  it('hides Send ₿1 on a post and a reply whose author cannot receive', () => {
     renderWithLocale(
       <ForumBoard
         messages={[{ ...SAMPLE, accountId: 'acc-ada', payable: false }]}
@@ -10005,10 +10005,10 @@ describe('ForumBoard in-app wallet pay', () => {
       />,
     );
     expect(screen.getByText('Bob')).toBeTruthy();
-    expect(screen.queryByRole('button', { name: 'Send a heart' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Send ₿1' })).toBeNull();
   });
 
-  it('hides Send a heart on the viewer own post and reply', () => {
+  it('hides Send ₿1 on the viewer own post and reply', () => {
     renderWithLocale(
       <ForumBoard
         messages={[{ ...SAMPLE, accountId: 'acc-ada' }]}
@@ -10037,10 +10037,10 @@ describe('ForumBoard in-app wallet pay', () => {
         {...modeProps('all')}
       />,
     );
-    expect(screen.queryByRole('button', { name: 'Send a heart' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Send ₿1' })).toBeNull();
   });
 
-  it('does not hide Send a heart when only viewerAccountId matches the author', () => {
+  it('does not hide Send ₿1 when only viewerAccountId matches the author', () => {
     renderWithLocale(
       <ForumBoard
         messages={[{ ...SAMPLE, accountId: 'acc-ada' }]}
@@ -10070,8 +10070,8 @@ describe('ForumBoard in-app wallet pay', () => {
         {...modeProps('all')}
       />,
     );
-    expect(screen.getAllByRole('button', { name: 'Send a heart' })).toHaveLength(2);
-    expect(screen.queryByText('Send a heart')).toBeNull();
+    expect(screen.getAllByRole('button', { name: 'Send ₿1' })).toHaveLength(2);
+    expect(screen.queryByText('Send ₿1')).toBeNull();
   });
 
   it('shows the balance sentence without +1 when needsBalance', () => {
@@ -10122,15 +10122,12 @@ describe('ForumBoard in-app wallet pay', () => {
     );
     expect(screen.getByText('+1')).toBeTruthy();
     expect(
-      screen
-        .getByRole('button', { name: 'Send a heart' })
-        .querySelector('svg')
-        ?.getAttribute('fill'),
+      screen.getByRole('button', { name: 'Send ₿1' }).querySelector('svg')?.getAttribute('fill'),
     ).toBe('currentColor');
     expect(screen.queryByRole('alert')).toBeNull();
   });
 
-  it('calls onHeartTip with the message id when Send a heart is clicked', () => {
+  it('calls onHeartTip with the message id when Send ₿1 is clicked', () => {
     const onHeartTip = vi.fn();
     renderWithLocale(
       <ForumBoard
@@ -10149,12 +10146,12 @@ describe('ForumBoard in-app wallet pay', () => {
         {...modeProps('all')}
       />,
     );
-    fireEvent.click(screen.getByRole('button', { name: 'Send a heart' }));
-    expect(screen.queryByText('Send a heart')).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Send ₿1' }));
+    expect(screen.queryByText('Send ₿1')).toBeNull();
     expect(onHeartTip).toHaveBeenCalledWith('m1');
   });
 
-  it('hides Send a heart on a board without onHeartTip', () => {
+  it('hides Send ₿1 on a board without onHeartTip', () => {
     renderWithLocale(
       <ForumBoard
         messages={[{ ...SAMPLE, accountId: 'acc-ada' }]}
@@ -10172,7 +10169,7 @@ describe('ForumBoard in-app wallet pay', () => {
       />,
     );
     expect(screen.getByText(SAMPLE.text)).toBeTruthy();
-    expect(screen.queryByRole('button', { name: 'Send a heart' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Send ₿1' })).toBeNull();
   });
 
   it('shows the server heart count to the right of the icon', () => {
@@ -10192,7 +10189,7 @@ describe('ForumBoard in-app wallet pay', () => {
         {...modeProps('all')}
       />,
     );
-    const heart = screen.getByRole('button', { name: 'Send a heart' });
+    const heart = screen.getByRole('button', { name: 'Send ₿1' });
     expect(heart.parentElement?.nextElementSibling?.textContent).toBe('4');
   });
 
@@ -10213,7 +10210,7 @@ describe('ForumBoard in-app wallet pay', () => {
         {...modeProps('all')}
       />,
     );
-    const heart = screen.getByRole('button', { name: 'Send a heart' });
+    const heart = screen.getByRole('button', { name: 'Send ₿1' });
     expect(heart.querySelector('svg')?.getAttribute('fill')).toBe('currentColor');
     expect(heart.className.split(' ')).toContain('text-app-accent');
     expect(heart.className.split(' ')).not.toContain('scale-110');
@@ -10239,11 +10236,11 @@ describe('ForumBoard in-app wallet pay', () => {
         {...modeProps('all')}
       />,
     );
-    const heart = screen.getByRole('button', { name: 'Send a heart' });
+    const heart = screen.getByRole('button', { name: 'Send ₿1' });
     expect(heart.parentElement?.nextElementSibling?.textContent).toBe('6');
   });
 
-  it('shows +1 when plusOne and keeps the button labelled Send a heart', () => {
+  it('shows +1 when plusOne and keeps the button labelled Send ₿1', () => {
     renderWithLocale(
       <ForumBoard
         messages={[{ ...SAMPLE, accountId: 'acc-ada' }]}
@@ -10264,8 +10261,8 @@ describe('ForumBoard in-app wallet pay', () => {
       />,
     );
     expect(screen.getByText('+1')).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'Send a heart' })).toBeTruthy();
-    expect(screen.queryByText('Send a heart')).toBeNull();
+    expect(screen.getByRole('button', { name: 'Send ₿1' })).toBeTruthy();
+    expect(screen.queryByText('Send ₿1')).toBeNull();
   });
 
   it('shows the count 0 when heartCount is 0 and there is no extra', () => {
@@ -10285,7 +10282,7 @@ describe('ForumBoard in-app wallet pay', () => {
         {...modeProps('all')}
       />,
     );
-    const heart = screen.getByRole('button', { name: 'Send a heart' });
+    const heart = screen.getByRole('button', { name: 'Send ₿1' });
     expect(heart.parentElement?.nextElementSibling?.textContent).toBe('0');
   });
 
@@ -10305,7 +10302,7 @@ describe('ForumBoard in-app wallet pay', () => {
         {...modeProps('all')}
       />,
     );
-    expect(screen.queryByRole('button', { name: 'Send a heart' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Send ₿1' })).toBeNull();
     expect(screen.queryByText('4')).toBeNull();
 
     rerender(
@@ -10329,7 +10326,7 @@ describe('ForumBoard in-app wallet pay', () => {
         </ThemeProvider>
       </LocaleProvider>,
     );
-    expect(screen.queryByRole('button', { name: 'Send a heart' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Send ₿1' })).toBeNull();
     expect(screen.queryByText('4')).toBeNull();
 
     rerender(
@@ -10352,7 +10349,7 @@ describe('ForumBoard in-app wallet pay', () => {
         </ThemeProvider>
       </LocaleProvider>,
     );
-    expect(screen.queryByRole('button', { name: 'Send a heart' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Send ₿1' })).toBeNull();
     expect(screen.queryByText('4')).toBeNull();
 
     rerender(
@@ -10382,7 +10379,7 @@ describe('ForumBoard in-app wallet pay', () => {
         </ThemeProvider>
       </LocaleProvider>,
     );
-    expect(screen.queryByRole('button', { name: 'Send a heart' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Send ₿1' })).toBeNull();
     expect(screen.queryByText('4')).toBeNull();
   });
 
@@ -10406,7 +10403,7 @@ describe('ForumBoard in-app wallet pay', () => {
         {...modeProps('all')}
       />,
     );
-    const withPlusOne = screen.getByRole('button', { name: 'Send a heart' });
+    const withPlusOne = screen.getByRole('button', { name: 'Send ₿1' });
     expect(withPlusOne.className.split(' ')).toContain('scale-110');
     expect(withPlusOne.className.split(' ')).toContain('text-app-accent');
   });
@@ -11111,7 +11108,7 @@ describe('ForumBoard author who cannot receive', () => {
     const onHeartTip = vi.fn();
     renderWithLocale(board({ onHeartTip }));
     expect(screen.getByText("Can't receive yet")).toBeTruthy();
-    const heart = screen.getByRole('button', { name: 'Send a heart' }) as HTMLButtonElement;
+    const heart = screen.getByRole('button', { name: 'Send ₿1' }) as HTMLButtonElement;
     expect(heart.disabled).toBe(true);
     expect(screen.getByText('3')).toBeTruthy();
     fireEvent.click(heart);
@@ -11154,6 +11151,64 @@ describe('ForumBoard author who cannot receive', () => {
       </LocaleProvider>,
     );
     expect(screen.queryByRole('heading', { name: /^Hearts/ })).toBeNull();
+  });
+
+  it('uses USD for signed-out hearts on an English surface despite a stale CHF preference', () => {
+    renderWithLocale(
+      board({
+        viewerAccountId: null,
+        expandedId: 'm1',
+        replies: [],
+        replyHearts: [
+          {
+            accountId: 'acc_grace',
+            name: 'Grace',
+            role: 'moderator',
+            sats: 21,
+            createdAt: '2026-08-28T12:02:00.000Z',
+            amountUsd: '0.02',
+            amountChf: '0.01',
+            amountEur: null,
+            amountPhp: null,
+          },
+        ],
+      }),
+      'en',
+      'ch',
+      'CHF',
+    );
+    const hearts = screen.getByRole('region', { name: 'Hearts (1)' });
+    expect(hearts.textContent).toContain('$0.02');
+    expect(hearts.textContent).not.toContain('CHF 0.01');
+  });
+
+  it('uses the signed-in member fiat preference for hearts', () => {
+    renderWithLocale(
+      board({
+        heartViewerId: 'acc-ada',
+        expandedId: 'm1',
+        replies: [],
+        replyHearts: [
+          {
+            accountId: 'acc_grace',
+            name: 'Grace',
+            role: 'moderator',
+            sats: 21,
+            createdAt: '2026-08-28T12:02:00.000Z',
+            amountUsd: '0.02',
+            amountChf: '0.01',
+            amountEur: null,
+            amountPhp: null,
+          },
+        ],
+      }),
+      'en',
+      'ch',
+      'CHF',
+    );
+    const hearts = screen.getByRole('region', { name: 'Hearts (1)' });
+    expect(hearts.textContent).toContain('CHF 0.01');
+    expect(hearts.textContent).not.toContain('$0.02');
   });
 
   it('shows the label and a disabled gift on a reply in the thread', () => {
@@ -11360,7 +11415,7 @@ describe('ForumBoard author who cannot receive', () => {
         </ThemeProvider>
       </LocaleProvider>,
     );
-    const heart = within(card()).getByRole('button', { name: 'Send a heart' }) as HTMLButtonElement;
+    const heart = within(card()).getByRole('button', { name: 'Send ₿1' }) as HTMLButtonElement;
     expect(heart.disabled).toBe(true);
     expect(heart.querySelector('svg')?.getAttribute('fill')).toBe('currentColor');
     expect(within(card()).getByText('+1')).toBeTruthy();
@@ -11390,7 +11445,7 @@ describe('ForumBoard author who cannot receive', () => {
         </ThemeProvider>
       </LocaleProvider>,
     );
-    expect(screen.queryByRole('button', { name: 'Send a heart' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Send ₿1' })).toBeNull();
     expect(screen.getByRole('alert').textContent).toBe(
       "The author's wallet cannot receive this Bitcoin payment",
     );
@@ -11423,9 +11478,9 @@ describe('ForumBoard author who cannot receive', () => {
         </ThemeProvider>
       </LocaleProvider>,
     );
-    expect(
-      (screen.getByRole('button', { name: 'Send a heart' }) as HTMLButtonElement).disabled,
-    ).toBe(true);
+    expect((screen.getByRole('button', { name: 'Send ₿1' }) as HTMLButtonElement).disabled).toBe(
+      true,
+    );
     expect(screen.getByText("Can't receive yet")).toBeTruthy();
     expect(screen.getByRole('alert').textContent).toBe(
       "The author's wallet cannot receive this Bitcoin payment",

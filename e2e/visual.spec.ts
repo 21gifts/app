@@ -11624,7 +11624,7 @@ test.describe('onboarding screens', () => {
       });
     });
     await page.goto('/welcome?visual=heart-needs-balance');
-    await page.getByRole('button', { name: 'Send a heart (₿1)' }).click();
+    await page.getByRole('button', { name: 'Send ₿1' }).click();
     await expect(page.getByText('A Bitcoin balance is required for this.')).toBeVisible();
     await page.getByText('A Bitcoin balance is required for this.').scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-welcome-heart-needs-balance');
@@ -11673,7 +11673,7 @@ test.describe('onboarding screens', () => {
       });
     });
     await page.goto('/welcome?visual=heart-cannot-receive');
-    await page.getByRole('button', { name: 'Send a heart (₿1)' }).click();
+    await page.getByRole('button', { name: 'Send ₿1' }).click();
     const line = page.getByText("The author's wallet cannot receive this Bitcoin payment");
     await expect(line).toBeVisible();
     await line.scrollIntoViewIfNeeded();
@@ -11724,7 +11724,7 @@ test.describe('onboarding screens', () => {
       });
     });
     await page.goto('/welcome?visual=heart-cannot-receive');
-    await page.getByRole('button', { name: 'Send a heart (₿1)' }).click();
+    await page.getByRole('button', { name: 'Send ₿1' }).click();
     const line = page.getByText("The author's wallet cannot receive this Bitcoin payment");
     await expect(line).toBeVisible();
     blocked = true;
@@ -11741,7 +11741,7 @@ test.describe('onboarding screens', () => {
       document.dispatchEvent(new Event('visibilitychange'));
     });
     await expect(page.getByText("Can't receive yet")).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Send a heart (₿1)' })).toBeDisabled();
+    await expect(page.getByRole('button', { name: 'Send ₿1' })).toBeDisabled();
     await expect(line).toBeVisible();
     await expect(page.getByText('+1', { exact: true })).toHaveCount(0);
     await line.scrollIntoViewIfNeeded();
@@ -11792,7 +11792,7 @@ test.describe('onboarding screens', () => {
       });
     });
     await page.goto('/welcome?visual=heart-cannot-receive');
-    await page.getByRole('button', { name: 'Send a heart (₿1)' }).click();
+    await page.getByRole('button', { name: 'Send ₿1' }).click();
     const line = page.getByText("The author's wallet cannot receive this Bitcoin payment");
     await expect(line).toBeVisible();
     blocked = true;
@@ -11808,7 +11808,7 @@ test.describe('onboarding screens', () => {
       });
       document.dispatchEvent(new Event('visibilitychange'));
     });
-    await expect(page.getByRole('button', { name: 'Send a heart (₿1)' })).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Send ₿1' })).toHaveCount(0);
     await expect(page.getByText("Can't receive yet")).toHaveCount(0);
     await expect(line).toBeVisible();
     await expect(page.getByText('+1', { exact: true })).toHaveCount(0);
@@ -11859,7 +11859,7 @@ test.describe('onboarding screens', () => {
     });
     await page.emulateMedia({ reducedMotion: 'reduce' });
     await page.goto('/welcome?visual=heart-paid');
-    await page.getByRole('button', { name: 'Send a heart (₿1)' }).click();
+    await page.getByRole('button', { name: 'Send ₿1' }).click();
     await expect(page.getByText('+1', { exact: true })).toBeVisible();
     await shotScreen(page, 'state-welcome-heart-paid');
   });
@@ -20280,7 +20280,7 @@ test.describe('onboarding screens', () => {
     });
     await page.goto(`/members/${memberId}?visual=heart-needs-balance`);
     await page.getByRole('button', { name: '1 post' }).click();
-    await page.getByRole('button', { name: 'Send a heart (₿1)' }).click();
+    await page.getByRole('button', { name: 'Send ₿1' }).click();
     await expect(page.getByText('A Bitcoin balance is required for this.')).toBeVisible();
     await page.getByText('A Bitcoin balance is required for this.').evaluate((node) => {
       node.scrollIntoView({ block: 'center', inline: 'nearest' });
@@ -20390,7 +20390,7 @@ test.describe('onboarding screens', () => {
     await page.getByRole('button', { name: '1 post' }).click();
     const card = page.locator('li', { hasText: 'Fresh pandesal every morning near the chapel.' });
     await expect(card.getByText("Can't receive yet")).toBeVisible();
-    await expect(card.getByRole('button', { name: 'Send a heart (₿1)' })).toBeDisabled();
+    await expect(card.getByRole('button', { name: 'Send ₿1' })).toBeDisabled();
     await card.getByText("Can't receive yet").scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-members-posts-open-cannot-receive');
   });
@@ -20490,7 +20490,7 @@ test.describe('onboarding screens', () => {
     });
     await page.goto(`/members/${memberId}?visual=heart-cannot-receive`);
     await page.getByRole('button', { name: '1 post' }).click();
-    await page.getByRole('button', { name: 'Send a heart (₿1)' }).click();
+    await page.getByRole('button', { name: 'Send ₿1' }).click();
     await expect(
       page.getByText("The author's wallet cannot receive this Bitcoin payment"),
     ).toBeVisible();
@@ -20587,11 +20587,11 @@ test.describe('onboarding screens', () => {
     await page.emulateMedia({ reducedMotion: 'reduce' });
     await page.goto(`/members/${memberId}?visual=heart-paid`);
     await page.getByRole('button', { name: '1 post' }).click();
-    await page.getByRole('button', { name: 'Send a heart (₿1)' }).click();
+    await page.getByRole('button', { name: 'Send ₿1' }).click();
     await expect(page.getByText('+1', { exact: true })).toBeVisible();
     const viewport = page.viewportSize();
     if (viewport !== null && viewport.width < 500) {
-      await page.getByRole('button', { name: 'Send a heart (₿1)' }).evaluate((button) => {
+      await page.getByRole('button', { name: 'Send ₿1' }).evaluate((button) => {
         const scroller = button.closest('[data-scrollport]');
         if (!(scroller instanceof HTMLElement)) {
           return;
@@ -23414,7 +23414,7 @@ test.describe('onboarding screens', () => {
       });
     });
     await page.goto(`/messages/${id}?visual=heart-needs-balance`);
-    await page.getByRole('button', { name: 'Send a heart (₿1)' }).click();
+    await page.getByRole('button', { name: 'Send ₿1' }).click();
     await expect(page.getByText('A Bitcoin balance is required for this.')).toBeVisible();
     await page.getByText('A Bitcoin balance is required for this.').scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-messages-id-heart-needs-balance');
@@ -23480,16 +23480,17 @@ test.describe('onboarding screens', () => {
       });
     });
     await page.goto(`/messages/${id}?visual=heart-cannot-receive`);
-    await page.getByRole('button', { name: 'Send a heart (₿1)' }).click();
+    await page.getByRole('button', { name: 'Send ₿1' }).click();
     await expect(
       page.getByText("The author's wallet cannot receive this Bitcoin payment"),
     ).toBeVisible();
     await page
       .getByText("The author's wallet cannot receive this Bitcoin payment")
       .scrollIntoViewIfNeeded();
-    await expect(
-      page.getByRole('button', { name: 'Send a heart (₿1)' }).locator('svg'),
-    ).toHaveAttribute('fill', 'none');
+    await expect(page.getByRole('button', { name: 'Send ₿1' }).locator('svg')).toHaveAttribute(
+      'fill',
+      'none',
+    );
     await shotScreen(page, 'state-messages-id-heart-cannot-receive');
   });
 
@@ -23556,7 +23557,7 @@ test.describe('onboarding screens', () => {
     });
     await page.goto(`/messages/${id}`);
     await expect(page.getByText("Can't receive yet")).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Send a heart (₿1)' })).toBeDisabled();
+    await expect(page.getByRole('button', { name: 'Send ₿1' })).toBeDisabled();
     await shotScreen(page, 'state-messages-id-author-cannot-receive');
   });
 
@@ -23621,7 +23622,7 @@ test.describe('onboarding screens', () => {
     });
     await page.emulateMedia({ reducedMotion: 'reduce' });
     await page.goto(`/messages/${id}?visual=heart-paid`);
-    await page.getByRole('button', { name: 'Send a heart (₿1)' }).click();
+    await page.getByRole('button', { name: 'Send ₿1' }).click();
     await expect(page.getByText('+1', { exact: true })).toBeVisible();
     await shotScreen(page, 'state-messages-id-heart-paid');
   });
@@ -32885,7 +32886,7 @@ test.describe('welcome forum variants', () => {
     await expect(page.getByRole('heading', { name: 'Welcome, Ada' })).toBeVisible();
     await chooseForumView(page, 'All');
     await expect(page.getByText("Can't receive yet")).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Send a heart (₿1)' })).toBeDisabled();
+    await expect(page.getByRole('button', { name: 'Send ₿1' })).toBeDisabled();
     await shotScreen(page, 'state-welcome-author-cannot-receive');
   });
 
@@ -33864,7 +33865,7 @@ test.describe('shops screens', () => {
     });
     await page.goto('/shops?visual=heart-needs-balance#post');
     await expect(page.getByText('Cafe Luna')).toBeVisible();
-    await page.getByRole('button', { name: 'Send a heart (₿1)' }).click();
+    await page.getByRole('button', { name: 'Send ₿1' }).click();
     await expect(page.getByText('A Bitcoin balance is required for this.')).toBeVisible();
     await page.getByText('A Bitcoin balance is required for this.').scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-shops-heart-needs-balance');
@@ -33895,7 +33896,7 @@ test.describe('shops screens', () => {
     });
     await page.goto('/shops?visual=heart-cannot-receive#post');
     await expect(page.getByText('Cafe Luna')).toBeVisible();
-    await page.getByRole('button', { name: 'Send a heart (₿1)' }).click();
+    await page.getByRole('button', { name: 'Send ₿1' }).click();
     await expect(
       page.getByText("The author's wallet cannot receive this Bitcoin payment"),
     ).toBeVisible();
@@ -33932,7 +33933,7 @@ test.describe('shops screens', () => {
     });
     await page.goto('/shops?visual=heart-cannot-receive#post');
     await expect(page.getByText('Cafe Luna')).toBeVisible();
-    await page.getByRole('button', { name: 'Send a heart (₿1)' }).click();
+    await page.getByRole('button', { name: 'Send ₿1' }).click();
     const line = page.getByText("The author's wallet cannot receive this Bitcoin payment");
     await expect(line).toBeVisible();
     blocked = true;
@@ -33949,7 +33950,7 @@ test.describe('shops screens', () => {
       document.dispatchEvent(new Event('visibilitychange'));
     });
     await expect(page.getByText("Can't receive yet")).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Send a heart (₿1)' })).toBeDisabled();
+    await expect(page.getByRole('button', { name: 'Send ₿1' })).toBeDisabled();
     await expect(line).toBeVisible();
     await expect(page.getByText('+1', { exact: true })).toHaveCount(0);
     await line.scrollIntoViewIfNeeded();
@@ -33983,7 +33984,7 @@ test.describe('shops screens', () => {
     });
     await page.goto('/shops?visual=heart-cannot-receive#post');
     await expect(page.getByText('Cafe Luna')).toBeVisible();
-    await page.getByRole('button', { name: 'Send a heart (₿1)' }).click();
+    await page.getByRole('button', { name: 'Send ₿1' }).click();
     const line = page.getByText("The author's wallet cannot receive this Bitcoin payment");
     await expect(line).toBeVisible();
     blocked = true;
@@ -33999,7 +34000,7 @@ test.describe('shops screens', () => {
       });
       document.dispatchEvent(new Event('visibilitychange'));
     });
-    await expect(page.getByRole('button', { name: 'Send a heart (₿1)' })).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Send ₿1' })).toHaveCount(0);
     await expect(page.getByText("Can't receive yet")).toHaveCount(0);
     await expect(line).toBeVisible();
     await expect(page.getByText('+1', { exact: true })).toHaveCount(0);
@@ -34035,7 +34036,7 @@ test.describe('shops screens', () => {
     await page.goto('/shops#post');
     await expect(page.getByText('Cafe Luna')).toBeVisible();
     await expect(page.getByText("Can't receive yet")).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Send a heart (₿1)' })).toBeDisabled();
+    await expect(page.getByRole('button', { name: 'Send ₿1' })).toBeDisabled();
     await shotScreen(page, 'state-shops-author-cannot-receive');
   });
 
@@ -34130,7 +34131,7 @@ test.describe('shops screens', () => {
     await page.emulateMedia({ reducedMotion: 'reduce' });
     await page.goto('/shops?visual=heart-paid#post');
     await expect(page.getByText('Cafe Luna')).toBeVisible();
-    await page.getByRole('button', { name: 'Send a heart (₿1)' }).click();
+    await page.getByRole('button', { name: 'Send ₿1' }).click();
     await expect(page.getByText('+1', { exact: true })).toBeVisible();
     await shotScreen(page, 'state-shops-heart-paid');
   });

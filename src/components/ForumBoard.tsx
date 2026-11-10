@@ -105,7 +105,7 @@ import type { HeartTipView } from '@/lib/heart-tip';
 import { ForumRoleHint, ForumRoleTag, forumTaggedRole } from '@/components/ForumRoleTag';
 import { authorCannotReceive, isOwnNote, verifiedChipHiddenByStaffTag } from '@/lib/roles';
 import { useFiatPreference } from '@/components/FiatPreferenceProvider';
-import { formatBitcoin, type FiatRateDay } from '@/lib/stats-money';
+import { defaultFiatForLocale, formatBitcoin, type FiatRateDay } from '@/lib/stats-money';
 
 export type { ForumPayError, ForumPayInvoice } from '@/components/ForumPaySheet';
 /** Top-level compose mode: messenger post or Ask wizard. */
@@ -586,8 +586,7 @@ function ForumHeartControl({
   if (onHeartTip === undefined || deletedAt !== undefined || heartViewerId === accountId) {
     return null;
   }
-  // The amount is named only for a loaded account, so a signed-out card keeps
-  // the plain action label that spends nothing yet.
+  // A signed-out card keeps the basis amount that opening an account starts with.
   const heartLabel =
     heartViewerSats === null
       ? t('forum.heart')
@@ -951,6 +950,7 @@ export function ForumBoard({
   const { t, locale } = useTranslations();
   const { numberFormat } = useNumberFormat();
   const { fiat } = useFiatPreference();
+  const replyHeartsFiat = heartViewerId === null ? defaultFiatForLocale(locale) : fiat;
   const shopElsewhereLive = !shopComposer && isShopNote(draft);
   const shopElsewhereHintVisible =
     !hideCompose &&
@@ -2327,7 +2327,7 @@ export function ForumBoard({
                       <ReplyHeartSenders
                         hearts={replyHearts}
                         rateDay={rateDay ?? null}
-                        fiat={fiat}
+                        fiat={replyHeartsFiat}
                       />
                     ) : null}
                     {!readOnly && message.deletedAt === undefined ? (

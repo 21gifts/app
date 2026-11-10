@@ -1941,7 +1941,7 @@ describe('PublicMessageThread', () => {
     expect(row.textContent).toContain('$0.02');
     const loads = vi.mocked(fetchReplies).mock.calls.length;
     const rootCard = document.querySelector(`[data-message-id="${MESSAGE_ID}"]`) as HTMLElement;
-    const rootHeart = within(rootCard).getAllByRole('button', { name: 'Send a heart (₿1)' })[0];
+    const rootHeart = within(rootCard).getAllByRole('button', { name: 'Send ₿1' })[0];
     if (rootHeart === undefined) {
       throw new Error('root heart missing');
     }
