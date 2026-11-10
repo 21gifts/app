@@ -325,7 +325,7 @@ test('Function: fetchWalletStats — public stats show the wallet totals and cha
   await expect(wallets).toContainText('32');
   const chart = page.getByLabel('Wallet balance over time in ₿');
   await expect(chart).toBeVisible();
-  await expect(chart.locator('circle title').last()).toHaveText("2026-11-10: ₿89'096 · $89.10");
+  await expect(chart.locator('rect title').last()).toHaveText("2026-11-10: ₿89'096 · $89.10");
 });
 
 test('Function: StatsLoader — a failed wallet fetch keeps the public gift stats', async ({

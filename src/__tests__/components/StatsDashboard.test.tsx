@@ -251,12 +251,19 @@ describe('StatsDashboard', () => {
     expect(chart.getAttribute('role')).toBe('group');
     expect(within(chart).getByText('2026-11-09')).toBeTruthy();
     expect(within(chart).getByText('2026-11-10')).toBeTruthy();
-    expect(chart.querySelectorAll('circle title')[0]?.textContent).toBe(
+    expect(chart.querySelectorAll('rect title')[0]?.textContent).toBe(
       "2026-11-09: ₿80'000 · $80.00",
     );
-    expect(chart.querySelectorAll('circle title')[1]?.textContent).toBe(
+    expect(chart.querySelectorAll('rect title')[1]?.textContent).toBe(
       "2026-11-10: ₿89'096 · $89.10",
     );
+    expect(chart.querySelectorAll('rect')).toHaveLength(2);
+    expect(chart.querySelectorAll('circle')).toHaveLength(2);
+    expect(
+      [...chart.querySelectorAll('circle')].every(
+        (el) => el.getAttribute('pointer-events') === 'none',
+      ),
+    ).toBe(true);
     expect(within(chart).queryByRole('link')).toBeNull();
   });
 
@@ -275,8 +282,8 @@ describe('StatsDashboard', () => {
     expect(wallets.textContent).toContain("₿89'096");
     expect(wallets.textContent).not.toContain('$89.10');
     const chart = screen.getByLabelText('Wallet balance over time in ₿');
-    expect(chart.querySelectorAll('circle title')[0]?.textContent).toBe("2026-11-09: ₿80'000");
-    expect(chart.querySelectorAll('circle title')[1]?.textContent).toBe("2026-11-10: ₿89'096");
+    expect(chart.querySelectorAll('rect title')[0]?.textContent).toBe("2026-11-09: ₿80'000");
+    expect(chart.querySelectorAll('rect title')[1]?.textContent).toBe("2026-11-10: ₿89'096");
   });
 
   it('shows wallet tiles only for an empty balance series', () => {
@@ -293,7 +300,7 @@ describe('StatsDashboard', () => {
     expect(screen.queryByLabelText('Wallet balance over time in ₿')).toBeNull();
   });
 
-  it('leaves zero wallet days unmarked while drawing the line', () => {
+  it('keeps zero wallet days hoverable without drawing their dot', () => {
     renderWithLocale(
       <StatsDashboard
         stats={EMPTY}
@@ -316,6 +323,9 @@ describe('StatsDashboard', () => {
       />,
     );
     const chart = screen.getByLabelText('Wallet balance over time in ₿');
+    expect(chart.querySelectorAll('rect')).toHaveLength(3);
+    expect(chart.querySelectorAll('rect title')).toHaveLength(3);
+    expect(chart.querySelector('rect title')?.textContent).toBe('2026-11-08: ₿0 · $0.00');
     expect(chart.querySelectorAll('circle')).toHaveLength(2);
     expect(within(chart).getByText('2026-11-08')).toBeTruthy();
   });

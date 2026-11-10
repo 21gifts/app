@@ -482,17 +482,20 @@ function WalletsSummary({
             points,
             (value) => formatBitcoin(value, numberFormat),
             'Wallet balance over time in ₿',
-            ({ point, x, y }) => {
-              if (point.value <= 0) {
-                return null;
-              }
+            ({ point, x, y, hitX, hitWidth, top, height }) => {
               const pointFiat = fiatText(point.value);
+              const title = `${point.day}: ${formatBitcoin(point.value, numberFormat)}${
+                pointFiat === null ? '' : ` · ${pointFiat}`
+              }`;
               return (
-                <circle key={point.day} cx={x} cy={y} r={3.5} className="fill-accent">
-                  <title>{`${point.day}: ${formatBitcoin(point.value, numberFormat)}${
-                    pointFiat === null ? '' : ` · ${pointFiat}`
-                  }`}</title>
-                </circle>
+                <g key={point.day}>
+                  <rect x={hitX} y={top} width={hitWidth} height={height} fill="transparent">
+                    <title>{title}</title>
+                  </rect>
+                  {point.value > 0 ? (
+                    <circle cx={x} cy={y} r={3.5} className="fill-accent" pointerEvents="none" />
+                  ) : null}
+                </g>
               );
             },
           )
