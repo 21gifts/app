@@ -7,7 +7,7 @@ afterEach(() => {
   delete process.env.NEXT_PUBLIC_API_URL;
 });
 
-it('forwards the sender lookup', async () => {
+it('forwards the counterparty lookup', async () => {
   process.env.NEXT_PUBLIC_API_URL = 'https://api.test';
   const fetchMock = vi.fn().mockResolvedValue(new Response('{}'));
   vi.stubGlobal('fetch', fetchMock);

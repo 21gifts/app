@@ -110,7 +110,8 @@ function visualStatus(reopened: boolean): WalletViewStatus | null {
  * page is never reloaded. Visual pins (`?visual=balance-…`,
  * `?visual=history-…` including `history-heart`, `history-heart-pending`, and
  * `history-repayment`, `?visual=heart-payment`, `?visual=heart-payment-pending`,
- * and `?visual=repayment-payment`,
+ * `?visual=repayment-payment`, `?visual=received-from-member` and
+ * `?visual=sent-to-member`,
  * `?visual=wallet-received`, `?visual=move-arrived` and
  * `?visual=wallet-pay-insufficient` as ready,
  * `?visual=setup-pending` as connecting, `?visual=balance-downloading` as

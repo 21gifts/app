@@ -490,7 +490,7 @@ app/
 │   ├── login.spec.ts            # /login Log in + account choice + signed-in forms
 │   ├── login-gate.spec.ts       # logins_closed / app_outdated notices, X-App-Build, wiped session falls back to signed out
 │   ├── wallet.spec.ts           # /wallet recovery-phrase, balance, Send (camera), Receive, and Function titles
-│   ├── data-collection.spec.ts  # POST /me/wallet/report, /me/wallet/hearts, and /me/events proxies, interaction log in the browser
+│   ├── data-collection.spec.ts  # POST /me/wallet/report, /me/wallet/hearts, /me/wallet/counterparties, and /me/events proxies, interaction log in the browser
 │   ├── camera.ts                # Stubbed getUserMedia (black stream, QR stream, one QR per request, blocked, none) for camera specs
 │   ├── fake-webauthn.ts         # Stubbed passkey that always succeeds with PRF output (login, login gate)
 │   ├── no-prf.ts                # Stubbed passkeys without PRF output + the one no-wallet sentence

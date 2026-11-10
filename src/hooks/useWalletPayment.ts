@@ -96,7 +96,9 @@ function pinnedPayment(id: string | null): WalletPaymentState | null {
  * shows the fixture payment with that id, under `?visual=heart-payment` and
  * `?visual=heart-payment-pending` the heart fixture when the id matches
  * (otherwise missing), under `?visual=repayment-payment` the received or sent
- * repayment fixture whose id matches (otherwise missing), and under
+ * repayment fixture whose id matches (otherwise missing), under
+ * `?visual=received-from-member` and `?visual=sent-to-member` the respective
+ * member payment fixture when the id matches (otherwise missing), and under
  * `?visual=history-error` a failed read.
  *
  * @param id - SDK payment id, or `null` when the address has none.
