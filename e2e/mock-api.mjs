@@ -71,6 +71,7 @@ const FOND_PAYOUT_ROW = {
   kind: 'daily',
   status: 'owed',
   utcDay: '2026-01-07',
+  paymentHash: null,
 };
 
 /** BOLT11 and payment hash the fixture invoice handler returns. */
@@ -81,6 +82,24 @@ const FOND_INVOICE = {
 
 function roleAtLeast(role, min) {
   return ROLE_ORDER.indexOf(role) >= ROLE_ORDER.indexOf(min);
+}
+
+/**
+ * Whether a bearer may use the Fond payout fixtures: the fixed fixture session
+ * or an account minted by `/e2e/role-session` at rank `fond` or above.
+ *
+ * @param {string | null} token - Bearer session.
+ * @returns {boolean} Whether the three `/fond/payouts` handlers answer it.
+ */
+function fondPayer(token) {
+  if (token === null) {
+    return false;
+  }
+  if (token === FOND_SESSION) {
+    return true;
+  }
+  const account = byToken.get(token);
+  return account !== undefined && roleAtLeast(account.role, 'fond');
 }
 
 function hex(bytes) {
@@ -2992,6 +3011,38 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
+  if (method === 'POST' && pathName === '/e2e/role-session') {
+    let parsed;
+    try {
+      parsed = JSON.parse(rawBody);
+    } catch {
+      json(res, 400, { error: 'Expected a JSON body with role and name' });
+      return;
+    }
+    const role = parsed?.role;
+    const name = parsed?.name;
+    if (
+      !ROLE_ORDER.includes(role) ||
+      typeof name !== 'string' ||
+      name === ''
+    ) {
+      json(res, 400, { error: 'Expected a JSON body with role and name' });
+      return;
+    }
+    const account = newAccount(null);
+    account.role = role;
+    account.name = name;
+    account.username = role === 'fond' ? 'fond' : 'mod';
+    account.rulesAgreedAt = Date.now();
+    account.forumLawsDismissed = true;
+    account.setup = null;
+    afterFieldWrite(account);
+    const token = hex(randomBytes(32));
+    byToken.set(token, account);
+    json(res, 200, { token, account });
+    return;
+  }
+
   // As the api with APP_BUILD_REQUIRED set: every passkey step that leads to
   // a session, including the social recovery steps, needs the Playwright
   // build's id (`dev`) in X-App-Build, checked before anything else. A missing
@@ -3889,7 +3940,7 @@ const server = http.createServer(async (req, res) => {
       json(res, 401, { error: 'Unauthorized' });
       return;
     }
-    if (token !== FOND_SESSION) {
+    if (!fondPayer(token)) {
       json(res, 403, { error: 'Fond only' });
       return;
     }
@@ -3904,7 +3955,7 @@ const server = http.createServer(async (req, res) => {
       json(res, 401, { error: 'Unauthorized' });
       return;
     }
-    if (token !== FOND_SESSION) {
+    if (!fondPayer(token)) {
       json(res, 403, { error: 'Fond only' });
       return;
     }
@@ -3929,7 +3980,7 @@ const server = http.createServer(async (req, res) => {
       json(res, 401, { error: 'Unauthorized' });
       return;
     }
-    if (token !== FOND_SESSION) {
+    if (!fondPayer(token)) {
       json(res, 403, { error: 'Fond only' });
       return;
     }

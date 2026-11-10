@@ -1,7 +1,5 @@
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type APIRequestContext, type Page } from '@playwright/test';
 import { fetchFondPayouts, postFondPayoutInvoice, postFondPayoutProof } from '../src/lib/api';
-import { runFondPayoutTick } from '../src/lib/wallet/fond-payouts';
-import type { WalletPayment } from '../src/lib/wallet/wallet-sdk';
 
 /** The fixture session the stub api accepts on the three `/fond/payouts` routes. */
 const FOND_SESSION = 'e2e-fond-session';
@@ -36,37 +34,27 @@ async function withSameOriginFetch<T>(work: () => Promise<T>): Promise<T> {
 }
 
 /**
- * Signs in a Fond account in the page and stubs `/me`.
+ * Signs in an account through the mock api and puts its session in the tab.
  *
  * @param page - The page.
+ * @param request - Playwright request context against the running app.
+ * @param role - Account role.
  * @returns Nothing.
  */
-async function seedFondPage(page: Page): Promise<void> {
-  await page.addInitScript(() => {
-    localStorage.setItem('21gifts.session', 'sess-fond-e2e');
+async function seedFondPage(
+  page: Page,
+  request: APIRequestContext,
+  role: 'fond' | 'moderator',
+): Promise<void> {
+  const name = role === 'fond' ? 'Fond' : 'Mod';
+  const created = await request.post('http://127.0.0.1:3001/e2e/role-session', {
+    data: { role, name },
   });
-  await page.route(/\/me$/, async (route) => {
-    await route.fulfill({
-      status: 200,
-      contentType: 'application/json',
-      body: JSON.stringify({
-        id: 'acc_fond',
-        linkingKey: null,
-        role: 'fond',
-        name: 'Fond',
-        location: null,
-        lightningAddress: null,
-        lightningAddressVerified: false,
-        forumLawsDismissed: true,
-        createdAt: 1,
-        rulesAgreedAt: 1_700_000_001,
-        viewKey: 'a'.repeat(64),
-        aboutMe: null,
-        setup: null,
-        missing: [],
-      }),
-    });
-  });
+  expect(created.status()).toBe(200);
+  const { token } = (await created.json()) as { token: string };
+  await page.addInitScript((session: string) => {
+    localStorage.setItem('21gifts.session', session);
+  }, token);
 }
 
 test('Function: proxyFondPayoutsGet — no bearer is 401', async ({ request }) => {
@@ -81,12 +69,16 @@ test('Function: fetchFondPayouts — the Fond fixture session lists the open row
   });
   expect(listed.status()).toBe(200);
   expect(await listed.json()).toEqual({
-    payouts: [{ id: ROW_ID, kind: 'daily', status: 'owed', utcDay: '2026-01-07' }],
+    payouts: [
+      { id: ROW_ID, kind: 'daily', status: 'owed', utcDay: '2026-01-07', paymentHash: null },
+    ],
   });
   const fetched = await withSameOriginFetch(() => fetchFondPayouts(FOND_SESSION));
   expect(fetched).toEqual({
     ok: true,
-    payouts: [{ id: ROW_ID, kind: 'daily', status: 'owed', utcDay: '2026-01-07' }],
+    payouts: [
+      { id: ROW_ID, kind: 'daily', status: 'owed', utcDay: '2026-01-07', paymentHash: null },
+    ],
   });
   const refused = await withSameOriginFetch(() => fetchFondPayouts('not-fond'));
   expect(refused).toEqual({ ok: false, status: 403, error: 'Fond only' });
@@ -148,45 +140,11 @@ test('Function: postFondPayoutProof — the fixture accepts a preimage as proof'
   });
 });
 
-test('Function: runFondPayoutTick — pays and proves the fixture row once', async () => {
-  const send = async () => ({ kind: 'paid' as const });
-  const payment: WalletPayment = {
-    id: 'pay-fond-1',
-    direction: 'sent',
-    amountSats: 21,
-    feesSats: 0,
-    timestamp: 1,
-    status: 'completed',
-    method: 'lightning',
-    senderComment: null,
-    info: {
-      paymentHash: 'ab'.repeat(32),
-      invoice: 'lnbc1e2efondpayout',
-      preimage: PREIMAGE,
-    },
-  };
-  const result = await withSameOriginFetch(() =>
-    runFondPayoutTick({
-      session: FOND_SESSION,
-      fetchFondPayouts,
-      postFondPayoutInvoice,
-      postFondPayoutProof,
-      payFromWallet: async () => ({
-        kind: 'confirm',
-        amountSats: 21,
-        feeSats: 0,
-        method: 'lightning',
-        send,
-      }),
-      listWalletPayments: async () => [payment],
-      sleep: async () => undefined,
-    }),
-  );
-  expect(result).toEqual({ paid: 1, proved: 1, skipped: 0, stop: null });
-});
-
-test('Function: FondPayoutSync — a locked wallet sends no payout request', async ({ page }) => {
-  await seedFondPage(page);
+test('Function: FondPayoutSync — a locked wallet sends no payout request', async ({
+  page,
+  request,
+}) => {
+  await seedFondPage(page, request, 'fond');
   let requests = 0;
   page.on('request', (request) => {
     if (new URL(request.url()).pathname === '/fond/payouts') {
@@ -204,4 +162,64 @@ test('Function: FondPayoutSync — a locked wallet sends no payout request', asy
   await expect(page.getByRole('heading', { name: 'Welcome, Fond' })).toBeVisible();
   await page.waitForTimeout(250);
   expect(requests).toBe(0);
+});
+
+test('Function: runFondPayoutTick — a Fond account without a ready wallet sends no payout request', async ({
+  page,
+  request,
+}) => {
+  await seedFondPage(page, request, 'fond');
+  let requests = 0;
+  page.on('request', (request) => {
+    if (new URL(request.url()).pathname === '/fond/payouts') {
+      requests += 1;
+    }
+  });
+  await page.route(/\/forum\/messages(?:\?|$)/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ messages: [] }),
+    });
+  });
+  await page.goto('/welcome');
+  await expect(page.getByRole('heading', { name: 'Welcome, Fond' })).toBeVisible();
+  await page.waitForTimeout(250);
+  expect(requests).toBe(0);
+});
+
+test('Function: runFondPayoutTickOnce — a moderator without a ready wallet sends no payout request', async ({
+  page,
+  request,
+}) => {
+  await seedFondPage(page, request, 'moderator');
+  let requests = 0;
+  page.on('request', (request) => {
+    if (new URL(request.url()).pathname === '/fond/payouts') {
+      requests += 1;
+    }
+  });
+  await page.route(/\/forum\/messages(?:\?|$)/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ messages: [] }),
+    });
+  });
+  await page.goto('/welcome');
+  await expect(page.getByRole('heading', { name: 'Welcome, Mod' })).toBeVisible();
+  await page.waitForTimeout(250);
+  expect(requests).toBe(0);
+});
+
+test('Function: waitForFondPayoutRead — the Fond session reads the fixture row through the proxy', async ({
+  request,
+}) => {
+  const listed = await request.get('/fond/payouts', {
+    headers: { authorization: `Bearer ${FOND_SESSION}` },
+  });
+  expect(listed.status()).toBe(200);
+  const body = (await listed.json()) as { payouts: { id: string; paymentHash: string | null }[] };
+  expect(body.payouts[0]?.id).toBe(ROW_ID);
+  expect(body.payouts[0]?.paymentHash).toBeNull();
 });

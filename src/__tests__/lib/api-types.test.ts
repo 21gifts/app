@@ -2630,10 +2630,20 @@ describe('fondPayoutListSchema', () => {
     const payouts = [
       row,
       { ...row, id: 'r2', kind: 'moderator', status: 'issuing' },
-      { ...row, id: 'r3', kind: 'welcome', status: 'invoiced' },
-      { ...row, id: 'r4', status: 'settling' },
+      { ...row, id: 'r3', kind: 'welcome', status: 'invoiced', paymentHash: 'aa'.repeat(32) },
+      { ...row, id: 'r4', status: 'settling', paymentHash: 'bb'.repeat(32) },
     ];
     expect(fondPayoutListSchema.parse({ payouts })).toEqual({ payouts });
+  });
+
+  it('accepts a null or absent payment hash and rejects another type', () => {
+    expect(fondPayoutListSchema.parse({ payouts: [{ ...row, paymentHash: null }] })).toEqual({
+      payouts: [{ ...row, paymentHash: null }],
+    });
+    expect(fondPayoutListSchema.parse({ payouts: [row] })).toEqual({ payouts: [row] });
+    expect(() =>
+      fondPayoutListSchema.parse({ payouts: [{ ...row, paymentHash: 7 }] }),
+    ).toThrow();
   });
 
   it('rejects an unknown kind, status, or empty id', () => {

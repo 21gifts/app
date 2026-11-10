@@ -119,6 +119,28 @@ describe('FondPayoutSync', () => {
     expect(runFondPayoutTick).toHaveBeenCalledTimes(1);
     expect(vi.mocked(runFondPayoutTick).mock.calls[0]?.[0]).toMatchObject({ session: 'sess' });
     expect(vi.mocked(runFondPayoutTick).mock.calls[0]?.[0]?.sleep).toBe(waitForFondPayoutRead);
+    expect(vi.mocked(runFondPayoutTick).mock.calls[0]?.[0]?.isCancelled()).toBe(false);
+  });
+
+  it('cancels the running tick on unmount and on a sign-out', async () => {
+    let finish: (() => void) | null = null;
+    vi.mocked(runFondPayoutTick).mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          finish = () => resolve({ paid: 0, proved: 0, skipped: 0, stop: null });
+        }),
+    );
+    setState('fond', 'sess', 'ready');
+    const { unmount } = render(<FondPayoutSync />);
+    await flush();
+    const deps = vi.mocked(runFondPayoutTick).mock.calls[0]?.[0];
+    expect(deps?.isCancelled()).toBe(false);
+    unmount();
+    expect(deps?.isCancelled()).toBe(true);
+    await act(async () => {
+      finish?.();
+      await Promise.resolve();
+    });
   });
 
   it('runs again on the interval and stops one tick from overlapping another', async () => {

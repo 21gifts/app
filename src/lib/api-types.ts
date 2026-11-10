@@ -1869,13 +1869,16 @@ export type DailyRoster = z.infer<typeof dailyRosterSchema>;
  * Runtime schema for one open row of `GET /fond/payouts`.
  *
  * The api owns every amount, so a row carries no amount: the app asks for the
- * row's BOLT11 and pays what that invoice says.
+ * row's BOLT11 and pays what that invoice says. `paymentHash` is present for
+ * `invoiced` and `settling` rows and null for `owed` and `issuing`; it is
+ * optional so an api without the field still parses.
  */
 export const fondPayoutSchema = z.object({
   id: z.string().min(1),
   kind: z.enum(['daily', 'moderator', 'welcome']),
   status: z.enum(['owed', 'issuing', 'invoiced', 'settling']),
   utcDay: z.string(),
+  paymentHash: z.string().nullable().optional(),
 });
 
 /**

@@ -1655,6 +1655,7 @@ const en = {
     'Verified means a moderator met the person in real life and confirmed they are real. It is not a wallet proof.',
   'trustChain.explainModerator':
     'To become a moderator, an existing moderator proposes the person and a different moderator confirms — or a founder appoints them directly.',
+  'trustChain.explainFond': 'Fond: pays the daily gifts from the 21.gifts fund.',
   'trustChain.explainInitiator': 'An initiator is named directly. There is no proposal step.',
   'trustChain.explainFounder': 'A founder started 21.gifts and is the first link of the chain.',
   'staff.functions': 'Moderator functions',
@@ -3495,6 +3496,7 @@ const de = {
     'Verifiziert bedeutet, dass eine Moderatorin oder ein Moderator die Person im echten Leben getroffen und bestätigt hat, dass sie echt ist. Das ist kein Wallet-Nachweis.',
   'trustChain.explainModerator':
     'Um Moderatorin oder Moderator zu werden, schlägt eine bestehende Moderatorin oder ein bestehender Moderator die Person vor, und eine andere Moderatorin oder ein anderer Moderator bestätigt — oder eine Gründerperson ernennt sie direkt.',
+  'trustChain.explainFond': 'Fond: Zahlt die täglichen Geschenke aus dem 21.gifts-Fonds.',
   'trustChain.explainInitiator':
     'Ein Initiator wird direkt benannt. Es gibt keinen Vorschlagsschritt.',
   'trustChain.explainFounder':
@@ -5296,6 +5298,7 @@ const es = {
     'Verificado significa que una persona moderadora conoció a esta persona en la vida real y confirmó que es real. No es una prueba de monedero.',
   'trustChain.explainModerator':
     'Para ser moderadora o moderador, una persona moderadora existente propone a la persona y otra distinta confirma — o una persona fundadora la nombra directamente.',
+  'trustChain.explainFond': 'Fond: Paga los regalos diarios del fondo de 21.gifts.',
   'trustChain.explainInitiator':
     'Un iniciador se nombra directamente. No hay un paso de propuesta.',
   'trustChain.explainFounder':
@@ -7105,6 +7108,7 @@ const fil = {
     'Ang Verified ay nangangahulugang isang moderator ang nakilala ang tao sa totoo at kinumpirmang totoo siya. Hindi ito patunay ng wallet.',
   'trustChain.explainModerator':
     'Para maging moderator, nagmumungkahi ang isang kasalukuyang moderator at ibang moderator ang kumukumpirma — o diretsong itinatalaga sila ng founder.',
+  'trustChain.explainFond': 'Fond: Nagbabayad ng mga araw-araw na regalo mula sa pondo ng 21.gifts.',
   'trustChain.explainInitiator':
     'Ang Initiator ay direktang pinangalanan. Walang hakbang ng panukala.',
   'trustChain.explainFounder':

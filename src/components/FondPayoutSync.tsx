@@ -60,6 +60,7 @@ export function FondPayoutSync(): null {
       try {
         const result = await runFondPayoutTickOnce({
           session,
+          isCancelled: () => stopped,
           fetchFondPayouts,
           postFondPayoutInvoice,
           postFondPayoutProof,

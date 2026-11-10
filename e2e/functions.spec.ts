@@ -37,13 +37,6 @@ import {
   shownPaySheetError,
 } from '../src/lib/stats-money';
 import { fitBoxInFrame, pageFrameProblems } from '../src/lib/page-frame';
-import { FOND_PAYOUT_INTERVAL_MS } from '../src/components/FondPayoutSync';
-import {
-  runFondPayoutTick,
-  runFondPayoutTickOnce,
-  waitForFondPayoutRead,
-  type FondPayoutTickDeps,
-} from '../src/lib/wallet/fond-payouts';
 import {
   fulfillLedger,
   fulfillMyLoans,
@@ -774,7 +767,6 @@ test('Function: GET — healthz is ok', async ({ request }) => {
 });
 
 test('Function: FondPayoutSync — the loop requests nothing while signed out', async ({ page }) => {
-  expect(FOND_PAYOUT_INTERVAL_MS).toBe(60_000);
   await page.addInitScript(() => {
     localStorage.removeItem('21gifts.session');
   });
@@ -795,67 +787,6 @@ test('Function: FondPayoutSync — the loop requests nothing while signed out', 
   await expect(page.getByRole('heading', { name: 'Welcome' })).toBeVisible();
   await page.waitForTimeout(250);
   expect(requests).toBe(0);
-});
-
-test('Function: runFondPayoutTick — an empty list changes nothing', async () => {
-  const deps: FondPayoutTickDeps = {
-    session: 'sess',
-    fetchFondPayouts: async () => ({ ok: true, payouts: [] }),
-    postFondPayoutInvoice: async () => {
-      throw new Error('not used');
-    },
-    postFondPayoutProof: async () => {
-      throw new Error('not used');
-    },
-    payFromWallet: async () => {
-      throw new Error('not used');
-    },
-    listWalletPayments: async () => [],
-    sleep: async () => undefined,
-  };
-  expect(await runFondPayoutTick(deps)).toEqual({
-    paid: 0,
-    proved: 0,
-    skipped: 0,
-    stop: null,
-  });
-});
-
-test('Function: runFondPayoutTickOnce — overlapping calls share one tick', async () => {
-  let fetches = 0;
-  let release = (): void => undefined;
-  const gate = new Promise<void>((resolve) => {
-    release = () => resolve();
-  });
-  const deps: FondPayoutTickDeps = {
-    session: 'sess',
-    fetchFondPayouts: async () => {
-      fetches += 1;
-      await gate;
-      return { ok: true, payouts: [] };
-    },
-    postFondPayoutInvoice: async () => {
-      throw new Error('not used');
-    },
-    postFondPayoutProof: async () => {
-      throw new Error('not used');
-    },
-    payFromWallet: async () => {
-      throw new Error('not used');
-    },
-    listWalletPayments: async () => [],
-    sleep: async () => undefined,
-  };
-  const first = runFondPayoutTickOnce(deps);
-  const second = runFondPayoutTickOnce(deps);
-  release();
-  expect(await first).toEqual({ paid: 0, proved: 0, skipped: 0, stop: null });
-  expect(await second).toEqual({ paid: 0, proved: 0, skipped: 0, stop: null });
-  expect(fetches).toBe(1);
-});
-
-test('Function: waitForFondPayoutRead — the history wait resolves', async () => {
-  await waitForFondPayoutRead(1);
 });
 
 test('Function: getApiUrl — proxy reaches the stub', async ({ request }) => {
