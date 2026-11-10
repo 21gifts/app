@@ -420,6 +420,49 @@ describe('LoanRepayScreen', () => {
     expect(amounts.get('loan-1:11:giver-1')).toBeNull();
   });
 
+  it('uses the loan payable total for a full send when the ledger currency differs', async () => {
+    const phpLoan = loan({
+      goalCurrency: 'PHP',
+      goalAmount: '900.00',
+      due: { ...loan().due, payableSats: 1_000, payableAmount: '30.00' },
+    });
+    vi.mocked(getRepayment).mockResolvedValue(
+      ledger({
+        currency: 'USD',
+        repayments: [{ ...ledger().repayments[0]!, amount: '1.00', sats: 90 }],
+      }),
+    );
+    const pay = vi.fn();
+    const view = show({ sundayRest: false, loans: [phpLoan] }, repay({ balanceSats: 2_000, pay }));
+    fireEvent.click(screen.getByRole('button', { name: 'Who gets paid' }));
+    expect(await screen.findByText('₿90 · $0.09')).toBeTruthy();
+    const send = screen.getByRole('button', { name: "Send ₱30.00 · ₿1'000" });
+    fireEvent.click(send);
+    vi.mocked(useLoanRepay).mockReturnValue(repay({ balanceSats: 2_000, pay, phase: 'preparing' }));
+    view.rerender(<LoanRepayScreen />);
+    expect(screen.getByRole('status').textContent).toContain("Sending ₱30.00 · ₿1'000…");
+    expect(screen.getByRole('status').textContent).not.toContain('₿90');
+  });
+
+  it('uses the loan payable total when due-share sats do not match it', async () => {
+    const phpLoan = loan({
+      goalCurrency: 'PHP',
+      goalAmount: '900.00',
+      due: { ...loan().due, payableSats: 1_000, payableAmount: '30.00' },
+    });
+    vi.mocked(getRepayment).mockResolvedValue(
+      ledger({
+        currency: 'PHP',
+        repayments: [{ ...ledger().repayments[0]!, amount: '27.00', sats: 900 }],
+      }),
+    );
+    show({ sundayRest: false, loans: [phpLoan] }, repay({ balanceSats: 2_000 }));
+    fireEvent.click(screen.getByRole('button', { name: 'Who gets paid' }));
+    expect(await screen.findByText('₱27.00')).toBeTruthy();
+    expect(screen.getByRole('button', { name: "Send ₱30.00 · ₿1'000" })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Send ₱27.00 · ₿900' })).toBeNull();
+  });
+
   it('puts a shared fiat loan currency first and shows waiting shares as neutral lines', async () => {
     const phpLoan = loan({
       goalCurrency: 'PHP',

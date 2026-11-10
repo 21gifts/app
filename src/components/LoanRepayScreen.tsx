@@ -79,8 +79,9 @@ const DUE_BILLS_PER_REQUEST = 60;
  * a danger error line when it failed to load; each list is applied as it arrives.
  * A share whose lender cannot receive yet (`waiting`) is a muted line that names the
  * lender and is left out of the amount to send; when every due share waits, no
- * amount is asked. A capped full-send total is used only when every payable loan
- * contributes a share with known satoshis. Behind follows the api's `behindDays`.
+ * amount is asked. A capped full-send total is used only when every payable loan's
+ * matching-currency ledger has complete share satoshis equal to its payable total.
+ * Behind follows the api's `behindDays`.
  *
  * @returns The repayment screen body.
  */
@@ -399,12 +400,18 @@ export function LoanRepayScreen(): ReactElement {
     code: loan.goalCurrency,
     amount: loan.due.payableAmount,
   }));
-  const payableWithinDueLoanIds = new Set(payableWithinDue.map((share) => share.messageId));
+  const payableSharesMatchLoans = payableLoans.every((loan) => {
+    const ledger = ledgerById[loan.messageId] ?? null;
+    const loanShares = payableShares.filter((share) => share.messageId === loan.messageId);
+    return (
+      ledger !== null &&
+      ledger.currency === loan.goalCurrency &&
+      loanShares.every((share) => share.sats !== null) &&
+      loanShares.reduce((sum, share) => sum + (share.sats as number), 0) === loan.due.payableSats
+    );
+  });
   // The full send asks each loan's due endpoint once, which returns at most 60 bills.
-  const fullSendFromShares =
-    payableWithinDue.length > 0 &&
-    payableLoans.every((loan) => payableWithinDueLoanIds.has(loan.messageId)) &&
-    payableWithinDue.every((share) => share.sats !== null);
+  const fullSendFromShares = payableWithinDue.length > 0 && payableSharesMatchLoans;
   const fullSendSats = fullSendFromShares
     ? payableWithinDue.reduce((sum, share) => sum + (share.sats as number), 0)
     : payable;
