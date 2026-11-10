@@ -11,7 +11,7 @@ describe('forumTaggedRole', () => {
   it('returns only the five tagged roles', () => {
     expect(forumTaggedRole('founder')).toBe('founder');
     expect(forumTaggedRole('moderator')).toBe('moderator');
-    expect(forumTaggedRole('fond')).toBe('fond');
+    expect(forumTaggedRole('software_developer')).toBe('software_developer');
     expect(forumTaggedRole('initiator')).toBe('initiator');
     expect(forumTaggedRole('verified')).toBe('verified');
     expect(forumTaggedRole('basis')).toBeNull();
@@ -36,13 +36,8 @@ describe('ForumRoleTag', () => {
     expect(container.innerHTML).toBe('');
   });
 
-  it('draws the Fond pill', () => {
-    renderWithLocale(<ForumRoleTag role="fond" expanded={false} onToggle={vi.fn()} />);
-    expect(screen.getByRole('button', { name: 'Fond' })).toBeTruthy();
-  });
-
-  it('hides Verified behind the Software Developer label', () => {
-    const { container } = renderWithLocale(
+  it('shows Software Developer for a verified member with the staff tag', () => {
+    renderWithLocale(
       <ForumRoleTag
         role="verified"
         staffTag="software_developer"
@@ -50,7 +45,15 @@ describe('ForumRoleTag', () => {
         onToggle={vi.fn()}
       />,
     );
-    expect(container.innerHTML).toBe('');
+    expect(screen.getByRole('button', { name: 'Software Developer' })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Verified' })).toBeNull();
+  });
+
+  it('shows Software Developer for the live role', () => {
+    renderWithLocale(
+      <ForumRoleTag role="software_developer" expanded={false} onToggle={vi.fn()} />,
+    );
+    expect(screen.getByRole('button', { name: 'Software Developer' })).toBeTruthy();
   });
 });
 
@@ -65,17 +68,19 @@ describe('ForumRoleHint', () => {
     expect(container.innerHTML).toBe('');
   });
 
-  it('returns the Fond explanation', () => {
-    renderWithLocale(<ForumRoleHint role="fond" />);
+  it('returns the Software Developer sentence for a verified member with the staff tag', () => {
+    renderWithLocale(
+      <ForumRoleHint role="verified" staffTag="software_developer" />,
+    );
     expect(
-      screen.getByText('This account pays the daily gifts from the 21.gifts fund.'),
+      screen.getByText('This person builds 21.gifts and moderates the living room.'),
     ).toBeTruthy();
   });
 
-  it('returns nothing for Verified behind the Software Developer label', () => {
-    const { container } = renderWithLocale(
-      <ForumRoleHint role="verified" staffTag="software_developer" />,
-    );
-    expect(container.innerHTML).toBe('');
+  it('returns the Software Developer sentence for the live role', () => {
+    renderWithLocale(<ForumRoleHint role="software_developer" />);
+    expect(
+      screen.getByText('This person builds 21.gifts and moderates the living room.'),
+    ).toBeTruthy();
   });
 });
