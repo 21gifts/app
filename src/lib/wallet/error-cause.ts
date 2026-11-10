@@ -38,8 +38,6 @@ const KEY_PATTERNS: ReadonlyArray<readonly [RegExp, string]> = [
     /\b(?:lnbc|lntb|lnurl|lno1|lni1|spark1|sparkrt1|sp1|sprt1|spt1|bc1|tb1|bcrt1|[xtyzuv]p(?:rv|ub))[0-9A-Za-z]{10,}/gi,
     '[token]',
   ],
-  // Keys, hashes, preimages, and ids: 16 or more hex digits.
-  [/[0-9a-f]{16,}/gi, '[hex]'],
 ];
 
 /**
@@ -57,6 +55,16 @@ const TOKEN_PATTERNS: ReadonlyArray<readonly [RegExp, string]> = [
   ],
 ];
 
+/**
+ * One run of base58, base64, or bech32 characters, matched from its start
+ * only. A run that holds 16 hex digits in a row is a key, hash, preimage, or
+ * id and is replaced whole, so no part of it stays.
+ */
+const KEY_RUN = /(?<![A-Za-z0-9+/=_-])[A-Za-z0-9+/=_-]+/g;
+
+/** 16 hex digits in a row. */
+const HEX_16 = /[0-9a-f]{16}/i;
+
 /** Hex in groups joined by `:` or `-` (`ab:cd:…`, a UUID). */
 const HEX_GROUPS = /(?<![0-9a-f])[0-9a-f]+(?:[:-][0-9a-f]+)+(?![0-9a-f])/gi;
 
@@ -66,16 +74,19 @@ const MIN_HEX_DIGITS = 16;
 /** One word of a message: everything between two whitespace characters. */
 const WORD = /\S+/g;
 
-/** An `@` that is not the start of a package scope such as `/@breeztech`. */
-const ADDRESS_AT = /[^/]@/;
+/**
+ * A package scope in a path, such as `/@breeztech/`: `/@`, a scope name
+ * without dots, and `/`. Every other `@` makes a word an address.
+ */
+const PACKAGE_SCOPE = /\/@[a-z0-9~-][a-z0-9_~-]*\//gi;
 
 /** Fewest characters after `?` or `#` that make a query without `/` or `=`. */
 const MIN_QUERY_LENGTH = 4;
 
 /**
  * Replaces whole words that hold an address or a query. A word with an `@`
- * after any character but `/` (an e-mail or `name@host` address in any
- * script, quoted or not, or a URL with a user name and password) becomes
+ * that is not a {@link PACKAGE_SCOPE} (an e-mail or `name@host` address in
+ * any script, quoted or not, or a URL with a user name and password) becomes
  * `[addr]`. Otherwise a word is cut at its first `?` or `#`, and the rest
  * becomes `?[q]`, when a `/` comes before it, an `=` after it, or at least
  * {@link MIN_QUERY_LENGTH} characters follow it; `what?` and `#1` stay.
@@ -86,7 +97,7 @@ const MIN_QUERY_LENGTH = 4;
  */
 function replaceAddressesAndQueries(text: string): string {
   return text.replace(WORD, (word) => {
-    if (ADDRESS_AT.test(word)) {
+    if (word.replace(PACKAGE_SCOPE, '/').includes('@')) {
       return '[addr]';
     }
     const query = word.search(/[?#]/);
@@ -114,16 +125,19 @@ function applyPatterns(text: string, patterns: ReadonlyArray<readonly [RegExp, s
 /**
  * Replaces every key-shaped part: {@link KEY_PATTERNS}, then hex groups of at
  * least {@link MIN_HEX_DIGITS} digits (also when a separator follows the last
- * group), then {@link TOKEN_PATTERNS}.
+ * group), then every {@link KEY_RUN} that holds 16 hex digits in a row, then
+ * {@link TOKEN_PATTERNS}.
  *
  * @param text - Error message.
  * @returns The message with the keys replaced.
  */
 function replaceKeys(text: string): string {
-  const grouped = applyPatterns(text, KEY_PATTERNS).replace(HEX_GROUPS, (group) =>
-    group.replace(/[:-]/g, '').length >= MIN_HEX_DIGITS ? '[hex]' : group,
-  );
-  return applyPatterns(grouped, TOKEN_PATTERNS);
+  const hexed = applyPatterns(text, KEY_PATTERNS)
+    .replace(HEX_GROUPS, (group) =>
+      group.replace(/[:-]/g, '').length >= MIN_HEX_DIGITS ? '[hex]' : group,
+    )
+    .replace(KEY_RUN, (run) => (HEX_16.test(run) ? '[hex]' : run));
+  return applyPatterns(hexed, TOKEN_PATTERNS);
 }
 
 /**
@@ -169,15 +183,16 @@ function replaceWordRuns(text: string): string {
 
 /**
  * Makes an error message safe to report. In this order it replaces every
- * word that holds an address (an `@` after any character but `/`: e-mail and
- * `name@host` addresses in any script, a URL with a user name) with
+ * word that holds an address (any `@` but a package scope such as
+ * `/@breeztech/`: e-mail and `name@host` addresses in any script, a URL with
+ * a user name) with
  * `[addr]`; the query string and fragment of a URL or path (a word cut at
  * its first `?` or `#` when a `/` comes before it, an `=` after it, or at
  * least four characters follow) with `?[q]`; JSON web tokens and dotted
  * three-part tokens, invoices, offers, LNURL strings, Spark and base-chain
  * addresses, and extended keys (`xprv`, `xpub`, `tprv`, `tpub`, …) with
  * `[token]`; 16 or more hex digits, also in groups joined by `:` or `-`, with
- * `[hex]`; any other run of 20 or more base58, base64, or bech32 characters
+ * `[hex]` (the whole run around them); any other run of 20 or more base58, base64, or bech32 characters
  * that holds a digit, or of 40 or more in mixed case without one, with
  * `[token]`; and last every run of three or
  * more BIP-39 English words (any case, any separator) with `[words]`, so a

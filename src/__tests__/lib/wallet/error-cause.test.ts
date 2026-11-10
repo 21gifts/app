@@ -81,6 +81,10 @@ describe('sanitizeErrorMessage', () => {
     'alice.smith(work)@example.com',
     'user[tag]@example.com',
     '<maximilian.o@example.com>',
+    '(user/@mail.com)',
+    'user/@192.168.1.1',
+    'user/@mail.com/x',
+    'https://user:password/@host.com',
   ])('replaces the whole address %s', (address) => {
     expect(sanitizeErrorMessage(`to ${address} failed`)).toBe('to [addr] failed');
   });
@@ -146,6 +150,12 @@ describe('sanitizeErrorMessage', () => {
     expect(sanitizeErrorMessage('add-a-fee ab:cd')).toBe('add-a-fee ab:cd');
     expect(sanitizeErrorMessage('fp 01:23:45:67:89:00:11:22: bad')).toBe('fp [hex]: bad');
     expect(sanitizeErrorMessage('fp 01-23-45-67-89-00-11-22-')).toBe('fp [hex]-');
+    expect(sanitizeErrorMessage('k 0123456789abcdef-0123-4567-89ab: x')).toBe('k [hex]: x');
+  });
+
+  it('replaces the whole run around 16 hex digits', () => {
+    expect(sanitizeErrorMessage('k 0123456789abcdefXYZ12345678 x')).toBe('k [hex] x');
+    expect(sanitizeErrorMessage('k XYZ0123456789abcdef x')).toBe('k [hex] x');
   });
 
   it('replaces name@host addresses without a top-level domain', () => {
