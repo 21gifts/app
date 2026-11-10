@@ -251,6 +251,54 @@ async function routeGiftHeart(page: Page): Promise<{ hashes: string[] }> {
   return seen;
 }
 
+/** Lightning hash of the received-zap row in the history-rows fixture (no memo, so no purpose). */
+const ZAP_PAYMENT_HASH = '412527ec5d814b75f8641ebd875bffbf26a11b7c180380e31e833d777cfa9d89';
+
+/**
+ * Answers the wallet lookup with two repayments on history-rows payments: the
+ * received zap as a repayment to the member (giver) and the sent gift as one
+ * the member paid (borrower).
+ *
+ * @param page - The page.
+ * @returns The hashes the page submitted, filled when the request arrives.
+ */
+async function routeRepayments(page: Page): Promise<{ hashes: string[] }> {
+  const seen = { hashes: [] as string[] };
+  await page.route('**/me/wallet/hearts', async (route) => {
+    if (route.request().method() !== 'POST') {
+      await route.continue();
+      return;
+    }
+    const body = route.request().postDataJSON() as { hashes?: string[] };
+    seen.hashes = body.hashes ?? [];
+    const row = (
+      paymentHash: string,
+      role: 'giver' | 'borrower',
+      authorName: string,
+      text: string,
+    ): { paymentHash: string } & Record<string, unknown> => ({
+      paymentHash,
+      messageId: '22222222-2222-4222-8222-222222222222',
+      dayIndex: 2,
+      termDays: 7,
+      role,
+      authorName,
+      text,
+      deleted: false,
+    });
+    const repayments = [
+      row(ZAP_PAYMENT_HASH, 'giver', 'Ben', 'New bike tyres'),
+      row(GIFT_PAYMENT_HASH, 'borrower', 'Ada', 'Rent until payday'),
+    ].filter((entry) => seen.hashes.includes(entry.paymentHash));
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ hearts: [], repayments }),
+    });
+  });
+  return seen;
+}
+
 test.describe('POST /me/wallet/hearts', () => {
   test('Function: proxyMeWalletHeartsPost — 401 without a session', async ({ request }) => {
     expect((await request.post('/me/wallet/hearts', { data: { hashes: [] } })).status()).toBe(401);
@@ -271,6 +319,34 @@ test.describe('POST /me/wallet/hearts', () => {
           messageId: '11111111-1111-4111-8111-111111111111',
           authorName: 'Ada',
           text: 'Sunday lunch',
+          deleted: false,
+        },
+      ],
+      repayments: [],
+    });
+  });
+
+  test('a signed-in lookup of the visual borrower repayment returns its credit note', async ({
+    request,
+  }) => {
+    const token = await newMember(request);
+    const paymentHash = 'f00dbabef00dbabef00dbabef00dbabef00dbabef00dbabef00dbabef00dbabe';
+    const res = await request.post('/me/wallet/hearts', {
+      headers: { authorization: `Bearer ${token}` },
+      data: { hashes: [paymentHash] },
+    });
+    expect(res.status()).toBe(200);
+    expect(await res.json()).toEqual({
+      hearts: [],
+      repayments: [
+        {
+          paymentHash,
+          messageId: '33333333-3333-4333-8333-333333333333',
+          dayIndex: 4,
+          termDays: 10,
+          role: 'borrower',
+          authorName: 'Mia',
+          text: 'Rent until payday',
           deleted: false,
         },
       ],
@@ -301,6 +377,39 @@ test.describe('POST /me/wallet/hearts', () => {
     await expect(page.getByText('Sunday lunch')).toBeVisible();
     expect(seen.hashes).toContain(GIFT_PAYMENT_HASH);
     await expect(page.getByText('Gift', { exact: true })).toHaveCount(0);
+  });
+
+  test('Function: paymentLookupHash — the history asks about memo-less payments and names repayments', async ({
+    page,
+  }) => {
+    const seen = await routeRepayments(page);
+    await stubHeartLookupWallet(page);
+    await page.goto('/wallet?visual=history-rows');
+    await expect(page.getByText('Loan repayment')).toHaveCount(2);
+    await expect(page.getByText('New bike tyres')).toBeVisible();
+    await expect(page.getByText('Rent until payday')).toBeVisible();
+    expect(seen.hashes).toContain(ZAP_PAYMENT_HASH);
+    expect(seen.hashes).toContain(GIFT_PAYMENT_HASH);
+    await expect(page.getByText('Gift on your post')).toHaveCount(0);
+    await expect(page.getByText('Great photo!')).toHaveCount(0);
+  });
+
+  test('Function: WalletPaymentDetails — a received repayment shows its day and the repayment list', async ({
+    page,
+  }) => {
+    await routeRepayments(page);
+    await stubHeartLookupWallet(page);
+    await page.goto('/wallet/payment?id=f43f0362-edf9-4387-8edb-e18af9bb4dbc&visual=history-rows');
+    await expect(page.getByText('Loan repayment')).toBeVisible();
+    await expect(page.getByText('3 of 7')).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Repayment list' })).toHaveAttribute(
+      'href',
+      '/messages/22222222-2222-4222-8222-222222222222/repayment-list',
+    );
+    await expect(
+      page.locator('a[href="/messages/22222222-2222-4222-8222-222222222222"]'),
+    ).toBeVisible();
+    await expect(page.getByText('Great photo!')).toHaveCount(0);
   });
 });
 

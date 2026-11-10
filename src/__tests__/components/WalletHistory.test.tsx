@@ -361,6 +361,116 @@ describe('WalletHistory', () => {
     expect(row.querySelector('.lucide-arrow-up-right')).toBeTruthy();
   });
 
+  it('shows a repayment row for the giver and the borrower with the credit note under it', async () => {
+    const giverHash = '1'.repeat(64);
+    const borrowerHash = '2'.repeat(64);
+    const authorHash = '3'.repeat(64);
+    const emptyHash = '4'.repeat(64);
+    const marker = 'repay:2:22222222-2222-4222-8222-222222222222';
+    useAuthStore.setState({ session: 'session', account: null });
+    const repaymentRow = (
+      paymentHash: string,
+      role: 'giver' | 'borrower',
+      authorName: string,
+      text: string,
+    ): Record<string, unknown> => ({
+      paymentHash,
+      messageId: `note-${paymentHash.slice(0, 1)}`,
+      dayIndex: 2,
+      termDays: 7,
+      role,
+      authorName,
+      text,
+      deleted: false,
+    });
+    const fetchMock = vi.fn().mockResolvedValue(
+      Response.json({
+        hearts: [],
+        repayments: [
+          repaymentRow(giverHash, 'giver', 'Ben', 'New bike\ntyres'),
+          repaymentRow(borrowerHash, 'borrower', 'Mia', 'Rent until payday'),
+          repaymentRow(authorHash, 'giver', 'Cleo', ' '),
+          repaymentRow(emptyHash, 'giver', '', ''),
+        ],
+      }),
+    );
+    vi.stubGlobal('fetch', fetchMock);
+    show({
+      payments: [
+        payment({
+          id: 'giver',
+          info: {
+            paymentHash: giverHash,
+            zap: { senderPubkey: 'ab', content: marker, noteId: null },
+          },
+        }),
+        payment({
+          id: 'borrower',
+          direction: 'sent',
+          method: 'spark',
+          info: { purpose: 'gift', paymentHash: borrowerHash },
+        }),
+        payment({ id: 'author', info: { paymentHash: authorHash } }),
+        payment({ id: 'empty', info: { paymentHash: emptyHash } }),
+        payment({
+          id: 'shop',
+          direction: 'sent',
+          info: { purpose: 'shop', paymentHash: 'f'.repeat(64) },
+        }),
+      ],
+    });
+
+    await waitFor(() => expect(screen.getAllByText('Loan repayment')).toHaveLength(4));
+    const body = JSON.parse(String(fetchMock.mock.calls[0]?.[1]?.body)) as { hashes: string[] };
+    expect(body.hashes).toEqual([giverHash, borrowerHash, authorHash, emptyHash]);
+    const rows = screen.getAllByRole('link');
+    for (const row of rows.slice(0, 4)) {
+      const icon = row.querySelector('.lucide-hand-coins');
+      expect(icon?.getAttribute('class')).toContain('text-app-accent');
+      expect(row.querySelector('.lucide-heart')).toBeNull();
+      expect(row.textContent).not.toContain('Gift');
+    }
+    expect(rows[0]?.textContent).toContain("+₿21'000");
+    expect(rows[0]?.querySelector('p.truncate')?.textContent).toBe('New bike tyres');
+    expect(rows[1]?.querySelector('p.truncate')?.textContent).toBe('Rent until payday');
+    expect(rows[1]?.textContent).toContain('−');
+    expect(rows[2]?.querySelector('p.truncate')?.textContent).toBe('Cleo');
+    expect(rows[3]?.querySelector('p.truncate')).toBeNull();
+    expect(screen.queryByText(marker)).toBeNull();
+    expect(rows[4]?.textContent).toContain('Shop payment');
+    expect(rows[4]?.querySelector('.lucide-hand-coins')).toBeNull();
+  });
+
+  it('renders a repayment as today while its lookup is out, without the marker', () => {
+    useAuthStore.setState({ session: 'session', account: null });
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(() => new Promise<Response>(() => undefined)),
+    );
+    show({
+      payments: [
+        payment({
+          id: 'giver-pending',
+          info: {
+            paymentHash: '5'.repeat(64),
+            zap: {
+              senderPubkey: 'ab',
+              content: 'repay:0:22222222-2222-4222-8222-222222222222',
+              noteId: null,
+            },
+          },
+        }),
+      ],
+    });
+
+    const row = screen.getByRole('link');
+    expect(row.textContent).toContain('Gift on your post');
+    expect(row.textContent).not.toContain('repay:');
+    expect(row.textContent).not.toContain('Loan repayment');
+    expect(row.querySelector('.lucide-hand-coins')).toBeNull();
+    expect(row.querySelector('.lucide-arrow-down-left')).toBeTruthy();
+  });
+
   it('loads the next page when the end of the list comes into view', () => {
     const { unmount } = show({ payments: [payment({})], hasMore: true });
     expect(observers).toHaveLength(1);

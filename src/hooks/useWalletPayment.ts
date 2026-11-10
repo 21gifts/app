@@ -4,6 +4,8 @@ import { useEffect, useMemo, useState } from 'react';
 import { visualPin } from '@/lib/visual-pin';
 import {
   HEART_VISUAL_PAYMENT,
+  REPAYMENT_BORROWER_VISUAL_PAYMENT,
+  REPAYMENT_GIVER_VISUAL_PAYMENT,
   SHOP_SUM_VISUAL_PAYMENT,
   toFixturePayment,
   WALLET_PAYMENT_FIXTURES,
@@ -33,8 +35,9 @@ function isUnknownPayment(error: unknown): boolean {
 
 /**
  * The fixture payment under the `?visual=history-rows` pin, the heart fixture
- * under `?visual=heart-payment` and `?visual=heart-payment-pending`, and a
- * failed read under `?visual=history-error` (Playwright builds only).
+ * under `?visual=heart-payment` and `?visual=heart-payment-pending`, the two
+ * repayment fixtures under `?visual=repayment-payment`, and a failed read
+ * under `?visual=history-error` (Playwright builds only).
  *
  * @param id - Payment id from the address.
  * @returns The pinned state, or `null` without either pin.
@@ -48,6 +51,14 @@ function pinnedPayment(id: string | null): WalletPaymentState | null {
     return id === HEART_VISUAL_PAYMENT.id
       ? { status: 'ready', payment: toFixturePayment(HEART_VISUAL_PAYMENT) }
       : { status: 'missing' };
+  }
+  if (pin === 'repayment-payment') {
+    const repayment = [REPAYMENT_GIVER_VISUAL_PAYMENT, REPAYMENT_BORROWER_VISUAL_PAYMENT].find(
+      (entry) => entry.id === id,
+    );
+    return repayment === undefined
+      ? { status: 'missing' }
+      : { status: 'ready', payment: toFixturePayment(repayment) };
   }
   if (pin !== 'history-rows') {
     return null;
@@ -72,7 +83,9 @@ function pinnedPayment(id: string | null): WalletPaymentState | null {
  * payment. Under the `?visual=history-rows` pin (Playwright builds only) it
  * shows the fixture payment with that id, under `?visual=heart-payment` and
  * `?visual=heart-payment-pending` the heart fixture when the id matches
- * (otherwise missing), and under `?visual=history-error` a failed read.
+ * (otherwise missing), under `?visual=repayment-payment` the received or sent
+ * repayment fixture whose id matches (otherwise missing), and under
+ * `?visual=history-error` a failed read.
  *
  * @param id - SDK payment id, or `null` when the address has none.
  * @returns The payment state.

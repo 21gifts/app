@@ -7,7 +7,16 @@ import { useWallet, type UseWalletResult } from '@/hooks/useWallet';
 import { useWalletPayment, type WalletPaymentState } from '@/hooks/useWalletPayment';
 import { openInSystemBrowser } from '@/lib/in-app-browser';
 import type { FiatRateDay } from '@/lib/stats-money';
-import { toFixturePayment, WALLET_PAYMENT_FIXTURES } from '@/lib/wallet/payment-fixtures';
+import {
+  REPAYMENT_BORROWER_VISUAL_HASH,
+  REPAYMENT_BORROWER_VISUAL_MESSAGE_ID,
+  REPAYMENT_BORROWER_VISUAL_PAYMENT,
+  REPAYMENT_GIVER_VISUAL_HASH,
+  REPAYMENT_GIVER_VISUAL_MESSAGE_ID,
+  REPAYMENT_GIVER_VISUAL_PAYMENT,
+  toFixturePayment,
+  WALLET_PAYMENT_FIXTURES,
+} from '@/lib/wallet/payment-fixtures';
 import type { WalletPayment } from '@/lib/wallet/wallet-sdk';
 import { useAuthStore } from '@/stores/auth-store';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
@@ -435,6 +444,116 @@ describe('WalletPaymentDetails', () => {
     expect(screen.queryByText('Ada')).toBeNull();
     expect(document.querySelector('.lucide-heart')).toBeNull();
     expect(document.querySelector('.lucide-arrow-up-right')).toBeTruthy();
+  });
+
+  it('shows a repayment received as giver: title, credit note, repayment day, and the repayment list, without the marker', async () => {
+    const mapped = toFixturePayment(REPAYMENT_GIVER_VISUAL_PAYMENT);
+    const payment = {
+      ...mapped,
+      senderComment: 'See you tomorrow',
+      info: { ...mapped.info, description: 'Lightning memo' },
+    };
+    useAuthStore.setState({ session: 'session', account: null });
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(
+        Response.json({
+          hearts: [],
+          repayments: [
+            {
+              paymentHash: REPAYMENT_GIVER_VISUAL_HASH,
+              messageId: REPAYMENT_GIVER_VISUAL_MESSAGE_ID,
+              dayIndex: 2,
+              termDays: 7,
+              role: 'giver',
+              authorName: 'Ben',
+              text: 'New bike tyres',
+              deleted: false,
+            },
+          ],
+        }),
+      ),
+    );
+
+    showPayment(payment);
+    const note = await screen.findByRole('link', { name: 'Ben New bike tyres' });
+    expect(note.getAttribute('href')).toBe(`/messages/${REPAYMENT_GIVER_VISUAL_MESSAGE_ID}`);
+    expect(screen.getByText('Loan repayment')).toBeTruthy();
+    const icon = document.querySelector('.lucide-hand-coins');
+    expect(icon?.getAttribute('class')).toContain('text-app-accent');
+    expect(document.querySelector('.lucide-heart')).toBeNull();
+    expect(row('Repayment day').textContent).toBe('3 of 7');
+    expect(screen.getByRole('link', { name: 'Repayment list' }).getAttribute('href')).toBe(
+      `/messages/${REPAYMENT_GIVER_VISUAL_MESSAGE_ID}/repayment-list`,
+    );
+    expect(screen.queryByText('Gift on your post')).toBeNull();
+    expect(screen.queryByText('Message')).toBeNull();
+    expect(screen.queryByText('See you tomorrow')).toBeNull();
+    expect(screen.queryByText('Description')).toBeNull();
+    expect(screen.queryByText('Lightning memo')).toBeNull();
+    expect(screen.queryByText(/repay:/)).toBeNull();
+    expect(screen.getByText("+₿2'100")).toBeTruthy();
+  });
+
+  it('shows a repayment paid as borrower with only the day when the term is unknown', async () => {
+    useAuthStore.setState({ session: 'session', account: null });
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(
+        Response.json({
+          hearts: [],
+          repayments: [
+            {
+              paymentHash: REPAYMENT_BORROWER_VISUAL_HASH,
+              messageId: REPAYMENT_BORROWER_VISUAL_MESSAGE_ID,
+              dayIndex: 4,
+              termDays: null,
+              role: 'borrower',
+              authorName: 'Mia',
+              text: '',
+              deleted: true,
+            },
+          ],
+        }),
+      ),
+    );
+
+    showPayment({
+      ...toFixturePayment(REPAYMENT_BORROWER_VISUAL_PAYMENT),
+      senderComment: 'Day five',
+    });
+    const note = await screen.findByRole('link', { name: 'Mia' });
+    const icon = document.querySelector('.lucide-hand-coins');
+    expect(icon?.getAttribute('class')).toContain('text-app-accent');
+    expect(document.querySelector('.lucide-heart')).toBeNull();
+    expect(document.querySelector('.lucide-arrow-up-right')).toBeNull();
+    expect(screen.queryByText('Message')).toBeNull();
+    expect(screen.queryByText('Day five')).toBeNull();
+    expect(note.getAttribute('href')).toBe(`/messages/${REPAYMENT_BORROWER_VISUAL_MESSAGE_ID}`);
+    expect(screen.getByText('Loan repayment')).toBeTruthy();
+    expect(screen.queryByText('Gift')).toBeNull();
+    expect(row('Repayment day').textContent).toBe('5');
+    expect(screen.getByRole('link', { name: 'Repayment list' }).getAttribute('href')).toBe(
+      `/messages/${REPAYMENT_BORROWER_VISUAL_MESSAGE_ID}/repayment-list`,
+    );
+    expect(screen.getByText("−₿3'000")).toBeTruthy();
+  });
+
+  it('shows a received repayment as today while its lookup is out, without the marker', () => {
+    useAuthStore.setState({ session: 'session', account: null });
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(() => new Promise<Response>(() => undefined)),
+    );
+
+    showPayment(toFixturePayment(REPAYMENT_GIVER_VISUAL_PAYMENT));
+    expect(screen.getByText('Gift on your post')).toBeTruthy();
+    expect(screen.queryByText('Loan repayment')).toBeNull();
+    expect(screen.queryByText('Repayment day')).toBeNull();
+    expect(screen.queryByRole('link', { name: 'Repayment list' })).toBeNull();
+    expect(screen.queryByText('Message')).toBeNull();
+    expect(screen.queryByText(/repay:/)).toBeNull();
+    expect(document.querySelector('.lucide-hand-coins')).toBeNull();
   });
 
   it('names an empty heart post Post when the author and the text are empty', async () => {

@@ -1,6 +1,6 @@
 'use client';
 
-import { ArrowDownLeft, ArrowUpRight, ChevronRight, Heart } from 'lucide-react';
+import { ArrowDownLeft, ArrowUpRight, ChevronRight, HandCoins, Heart } from 'lucide-react';
 import Link from 'next/link';
 import { useEffect, useRef, type ReactElement } from 'react';
 import { useFiatPreference } from '@/components/FiatPreferenceProvider';
@@ -17,7 +17,12 @@ import { formatDefinedGoalAmount } from '@/lib/forum-goal';
 import type { NumberFormatStyle } from '@/lib/number-format';
 import { formatForumTimeFromMs } from '@/lib/forum-time';
 import { formatBitcoin, formatFiatDisplay } from '@/lib/stats-money';
-import { paymentHref, paymentMessage, paymentTitle } from '@/lib/wallet/payment-display';
+import {
+  paymentHref,
+  paymentLookupHash,
+  paymentMessage,
+  paymentTitle,
+} from '@/lib/wallet/payment-display';
 import type { WalletPayment } from '@/lib/wallet/wallet-sdk';
 
 /** A stored fiat figure. An unusable string uses the two-decimal display of that same string. */
@@ -64,7 +69,10 @@ function HistoryFiat(props: {
 
 /**
  * `/wallet` payment list, newest first: direction, Bitcoin amount with one
- * fiat figure, date, and the payer's note when there is one. A shop payment
+ * fiat figure, date, and the payer's note when there is one. A payment the
+ * hearts lookup names a heart shows the post instead of the gift title; one it
+ * names a loan repayment shows the accent hand with coins, **Loan repayment**,
+ * and the credit note text (or its author) under the date. A shop payment
  * shows the currency figure stored on that charge once the receipt returns.
  * Any other payment, and a shop charge with no stored figure, shows the
  * current spot. Shown only
@@ -78,13 +86,10 @@ export function WalletHistory(): ReactElement | null {
   const { numberFormat } = useNumberFormat();
   const { status, payments, hasMore, loadMore, retry } = useWalletHistory();
   const heartContext = useHeartContext(
-    payments.flatMap((payment) =>
-      payment.status !== 'pending' &&
-      payment.info.purpose === 'gift' &&
-      typeof payment.info.paymentHash === 'string'
-        ? [payment.info.paymentHash]
-        : [],
-    ),
+    payments.flatMap((payment) => {
+      const hash = paymentLookupHash(payment);
+      return hash === null ? [] : [hash];
+    }),
   );
   const sentinel = useRef<HTMLLIElement>(null);
 
@@ -129,33 +134,42 @@ export function WalletHistory(): ReactElement | null {
           const Icon = received ? ArrowDownLeft : ArrowUpRight;
           const title = paymentTitle(payment);
           const message = paymentMessage(payment);
-          const heartHash =
-            payment.status !== 'pending' &&
-            payment.info.purpose === 'gift' &&
-            typeof payment.info.paymentHash === 'string'
-              ? payment.info.paymentHash.toLowerCase()
-              : null;
-          const heart = heartHash === null ? undefined : heartContext.byHash.get(heartHash);
+          const lookupHash = paymentLookupHash(payment);
+          const heart = lookupHash === null ? undefined : heartContext.byHash.get(lookupHash);
+          const repayment =
+            lookupHash === null || heart !== undefined
+              ? undefined
+              : heartContext.repaymentsByHash.get(lookupHash);
           const heartTitle =
             heart === undefined
               ? null
               : heart.text.replace(/\r?\n|\r/g, ' ').trim() || heart.authorName;
+          const repaymentNote =
+            repayment === undefined
+              ? null
+              : repayment.text.replace(/\r?\n|\r/g, ' ').trim() || repayment.authorName || null;
+          const line = repayment === undefined ? message : repaymentNote;
           return (
             <li key={payment.id} className="w-full">
               <Link
                 href={paymentHref(payment.id)}
                 className="flex w-full items-center gap-3 rounded-2xl border border-app-border bg-app-card-muted px-4 py-3 text-app-fg no-underline transition hover:bg-app-hover"
               >
-                {heart === undefined ? (
-                  <Icon
-                    aria-hidden="true"
-                    className="h-4 w-4 shrink-0 self-start mt-0.5 text-app-muted"
-                  />
-                ) : (
+                {heart !== undefined ? (
                   <Heart
                     aria-hidden="true"
                     fill="currentColor"
                     className="h-4 w-4 shrink-0 self-start mt-0.5 text-app-accent"
+                  />
+                ) : repayment !== undefined ? (
+                  <HandCoins
+                    aria-hidden="true"
+                    className="h-4 w-4 shrink-0 self-start mt-0.5 text-app-accent"
+                  />
+                ) : (
+                  <Icon
+                    aria-hidden="true"
+                    className="h-4 w-4 shrink-0 self-start mt-0.5 text-app-muted"
                   />
                 )}
                 <div className="flex min-w-0 flex-1 flex-col gap-1">
@@ -163,9 +177,11 @@ export function WalletHistory(): ReactElement | null {
                     <span className="min-w-0 truncate text-sm font-medium">
                       {heart !== undefined
                         ? heartTitle
-                        : 'text' in title
-                          ? title.text
-                          : t(title.key)}
+                        : repayment !== undefined
+                          ? t('wallet.payment.repayment')
+                          : 'text' in title
+                            ? title.text
+                            : t(title.key)}
                     </span>
                     <span
                       className={`shrink-0 text-sm tabular-nums lining-nums${payment.status === 'failed' ? ' text-app-subtle line-through' : ''}`}
@@ -188,9 +204,7 @@ export function WalletHistory(): ReactElement | null {
                       )}
                     </time>
                   </div>
-                  {message === null ? null : (
-                    <p className="truncate text-sm text-app-muted">{message}</p>
-                  )}
+                  {line === null ? null : <p className="truncate text-sm text-app-muted">{line}</p>}
                 </div>
                 <ChevronRight aria-hidden="true" className="h-4 w-4 shrink-0 text-app-subtle" />
               </Link>

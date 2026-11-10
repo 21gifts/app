@@ -335,8 +335,8 @@
 
 ## Endpoint: POST /me/wallet/hearts
 
-- **Purpose:** Same-origin proxy of api `POST /me/wallet/hearts`. Looks up the forum posts attached to 1–32 lowercase Spark payment hashes for the signed-in member.
-- **Returns:** Upstream `{ hearts }`, whose rows contain `paymentHash`, `messageId`, `authorName`, `text`, and `deleted`; hashes that are not this member's hearts are absent.
+- **Purpose:** Same-origin proxy of api `POST /me/wallet/hearts`. Looks up the forum posts attached to 1–32 lowercase Spark payment hashes for the signed-in member, and the credit notes of the ones that are loan repayments.
+- **Returns:** Upstream `{ hearts, repayments }`. Heart rows contain `paymentHash`, `messageId`, `authorName`, `text`, and `deleted`. Repayment rows contain `paymentHash`, `messageId` (the credit note), `dayIndex` (zero-based day of the term), `termDays` (or `null`), `role` (`borrower` when the member paid it, `giver` when the member is being repaid), `authorName` (the borrower, may be empty), `text` (clipped, may be empty), and `deleted`. A hash is in at most one of the two arrays; hashes that are neither are absent. An api without `repayments` is read as no repayments, so those rows render as before.
 - **Errors:** Upstream 400, 401, 413, or 502 if the api is unreachable. The wallet UI keeps its ordinary gift title when the lookup fails or has a bad body.
 - **Used by:** `fetchHeartPosts` (from `useHeartContext`).
 - **Auth:** Bearer.

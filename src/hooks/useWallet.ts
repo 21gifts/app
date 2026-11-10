@@ -78,6 +78,8 @@ function visualStatus(reopened: boolean): WalletViewStatus | null {
     case 'history-heart-pending':
     case 'heart-payment':
     case 'heart-payment-pending':
+    case 'history-repayment':
+    case 'repayment-payment':
     case 'history-error':
     case 'wallet-received':
     case 'move-arrived':
@@ -104,8 +106,9 @@ function visualStatus(reopened: boolean): WalletViewStatus | null {
  * still downloading, the status is `connecting` with `downloading` set. Retry
  * connects again in this page; a failed download is downloaded again, so the
  * page is never reloaded. Visual pins (`?visual=balance-…`,
- * `?visual=history-…` including `history-heart` and `history-heart-pending`,
- * `?visual=heart-payment` and `?visual=heart-payment-pending`,
+ * `?visual=history-…` including `history-heart`, `history-heart-pending`, and
+ * `history-repayment`, `?visual=heart-payment`, `?visual=heart-payment-pending`,
+ * and `?visual=repayment-payment`,
  * `?visual=wallet-received`, `?visual=move-arrived` and
  * `?visual=wallet-pay-insufficient` as ready,
  * `?visual=setup-pending` as connecting, `?visual=balance-downloading` as
