@@ -101,6 +101,14 @@ const en = {
   'settings.about': 'About & legal',
   'settings.defaultAmount': 'Default amount',
   'settings.defaultAmountHint': 'Amount fields start in this unit.',
+  'settings.heartAmount': 'Heart amount',
+  'settings.heartAmountHint':
+    'Each heart you tap sends this much. The post still counts as only one heart.',
+  'settings.heartAmountError': 'Enter an amount from {min} to {max}.',
+  'settings.heartAmountErrorBitcoin': 'Enter whole ₿ from {min} to {max}.',
+  'settings.heartAmountSaveError': 'Could not save the heart amount.',
+  'settings.heartAmountSaving': 'Saving…',
+  'settings.heartAmountSaved': 'Saved: {amount} per heart.',
   'settings.deviceOnly': 'Saved on this device',
   'settings.notificationSettings': 'Notification settings',
   'wallet.backupLink': 'Back up your wallet',
@@ -400,6 +408,9 @@ const en = {
   'forum.listLabel': 'All messages',
   'forum.react': 'React',
   'forum.heart': 'Send ₿1',
+  'forum.heartAmount': 'Send {amount}',
+  'forum.heartsHeading': 'Hearts ({count})',
+  'forum.deletedAccount': 'Deleted account',
   'forum.heartNeedsBalance': 'A Bitcoin balance is required for this.',
   'forum.hiddenNotice': 'This note was hidden by {name} on {time}.',
   'forum.pay': 'Send Bitcoin',
@@ -1703,8 +1714,7 @@ const en = {
   'home.discoverTrustTitle': 'Who receives it?',
   'home.discoverTrustBody':
     "To the person who wrote the post you reacted to. Here's how the payment works.",
-  'homeShops.title': 'Shops',
-  'homeShops.lead': 'These shops accept Bitcoin through 21.gifts.',
+  'homeShops.lead': 'These shops accept Bitcoin through 21.gifts',
   'homeShops.view': 'View',
   'homeShops.map': 'Map',
   'homeShops.table': 'Table',
@@ -1743,6 +1753,8 @@ const en = {
   'homeShops.mapFeedback': 'Map feedback',
   'homeShops.closePopup': 'Close popup',
   'homeShops.mapTitle': 'Map',
+  'homeShops.clusterCount': '{count, plural, one {# shop} other {# shops}}',
+  'homeShops.otherShops': 'Others',
 } as const;
 
 /** Flat dotted catalog key shared by every locale. */
@@ -1854,6 +1866,14 @@ const de = {
   'settings.about': 'Über 21.gifts & Rechtliches',
   'settings.defaultAmount': 'Standardbetrag',
   'settings.defaultAmountHint': 'Betragsfelder starten in dieser Einheit.',
+  'settings.heartAmount': 'Herz-Betrag',
+  'settings.heartAmountHint':
+    'So viel sendet jedes Herz, das du drückst. Der Beitrag zählt trotzdem nur ein Herz.',
+  'settings.heartAmountError': 'Gib einen Betrag von {min} bis {max} ein.',
+  'settings.heartAmountErrorBitcoin': 'Gib ganze ₿ von {min} bis {max} ein.',
+  'settings.heartAmountSaveError': 'Der Herz-Betrag konnte nicht gespeichert werden.',
+  'settings.heartAmountSaving': 'Wird gespeichert…',
+  'settings.heartAmountSaved': 'Gespeichert: {amount} pro Herz.',
   'settings.deviceOnly': 'Auf diesem Gerät gespeichert',
   'settings.notificationSettings': 'Benachrichtigungseinstellungen',
   'wallet.backupLink': 'Wallet sichern',
@@ -2158,6 +2178,9 @@ const de = {
   'forum.listLabel': 'Alle Nachrichten',
   'forum.react': 'Reagieren',
   'forum.heart': '₿1 senden',
+  'forum.heartAmount': '{amount} senden',
+  'forum.heartsHeading': 'Herzen ({count})',
+  'forum.deletedAccount': 'Gelöschtes Konto',
   'forum.heartNeedsBalance': 'Dafür ist ein Bitcoin-Guthaben nötig.',
   'forum.hiddenNotice': 'Diese Notiz wurde von {name} am {time} ausgeblendet.',
   'forum.pay': 'Bitcoin senden',
@@ -3534,8 +3557,7 @@ const de = {
   'home.discoverTrustTitle': 'Bei wem kommt es an?',
   'home.discoverTrustBody':
     'Bei der Person, auf deren Beitrag du reagierst. So funktioniert die Zahlung.',
-  'homeShops.title': 'Läden',
-  'homeShops.lead': 'Diese Läden nehmen Bitcoin über 21.gifts an.',
+  'homeShops.lead': 'Diese Läden nehmen Bitcoin über 21.gifts an',
   'homeShops.view': 'Ansicht',
   'homeShops.map': 'Karte',
   'homeShops.table': 'Tabelle',
@@ -3574,6 +3596,8 @@ const de = {
   'homeShops.mapFeedback': 'Karten-Feedback',
   'homeShops.closePopup': 'Popup schließen',
   'homeShops.mapTitle': 'Karte',
+  'homeShops.clusterCount': '{count, plural, one {# Laden} other {# Läden}}',
+  'homeShops.otherShops': 'Andere',
 } satisfies Messages;
 
 const es = {
@@ -3677,6 +3701,14 @@ const es = {
   'settings.about': 'Acerca de y aviso legal',
   'settings.defaultAmount': 'Importe predeterminado',
   'settings.defaultAmountHint': 'Los campos de importe empiezan en esta unidad.',
+  'settings.heartAmount': 'Importe del corazón',
+  'settings.heartAmountHint':
+    'Cada corazón que toques envía esta cantidad. La publicación sigue contando solo un corazón.',
+  'settings.heartAmountError': 'Introduce un importe de {min} a {max}.',
+  'settings.heartAmountErrorBitcoin': 'Introduce ₿ enteros de {min} a {max}.',
+  'settings.heartAmountSaveError': 'No se pudo guardar el importe del corazón.',
+  'settings.heartAmountSaving': 'Guardando…',
+  'settings.heartAmountSaved': 'Guardado: {amount} por corazón.',
   'settings.deviceOnly': 'Guardado en este dispositivo',
   'settings.notificationSettings': 'Ajustes de notificaciones',
   'wallet.backupLink': 'Haz una copia de seguridad de tu wallet',
@@ -3977,6 +4009,9 @@ const es = {
   'forum.listLabel': 'Todos los mensajes',
   'forum.react': 'Reaccionar',
   'forum.heart': 'Enviar ₿1',
+  'forum.heartAmount': 'Enviar {amount}',
+  'forum.heartsHeading': 'Corazones ({count})',
+  'forum.deletedAccount': 'Cuenta eliminada',
   'forum.heartNeedsBalance': 'Para esto hace falta saldo de Bitcoin.',
   'forum.hiddenNotice': 'Esta nota fue ocultada por {name} el {time}.',
   'forum.pay': 'Enviar Bitcoin',
@@ -5316,8 +5351,7 @@ const es = {
   'home.discoverTrustTitle': '¿Quién lo recibe?',
   'home.discoverTrustBody':
     'A quien escribió la publicación a la que reaccionas. Aquí te explicamos cómo funciona el pago.',
-  'homeShops.title': 'Tiendas',
-  'homeShops.lead': 'Estas tiendas aceptan Bitcoin a través de 21.gifts.',
+  'homeShops.lead': 'Estas tiendas aceptan Bitcoin a través de 21.gifts',
   'homeShops.view': 'Vista',
   'homeShops.map': 'Mapa',
   'homeShops.table': 'Tabla',
@@ -5356,6 +5390,8 @@ const es = {
   'homeShops.mapFeedback': 'Comentarios del mapa',
   'homeShops.closePopup': 'Cerrar el popup',
   'homeShops.mapTitle': 'Mapa',
+  'homeShops.clusterCount': '{count, plural, one {# tienda} other {# tiendas}}',
+  'homeShops.otherShops': 'Otros',
 } satisfies Messages;
 
 const fil = {
@@ -5459,6 +5495,14 @@ const fil = {
   'settings.about': 'Tungkol at legal',
   'settings.defaultAmount': 'Default na halaga',
   'settings.defaultAmountHint': 'Nagsisimula sa unit na ito ang mga field ng halaga.',
+  'settings.heartAmount': 'Halaga ng puso',
+  'settings.heartAmountHint':
+    'Ito ang dami na ipinapadala ng bawat pusong pinindot mo. Isang puso pa rin ang bilang sa post.',
+  'settings.heartAmountError': 'Maglagay ng halagang mula {min} hanggang {max}.',
+  'settings.heartAmountErrorBitcoin': 'Maglagay ng buong ₿ mula {min} hanggang {max}.',
+  'settings.heartAmountSaveError': 'Hindi na-save ang halaga ng puso.',
+  'settings.heartAmountSaving': 'Sine-save…',
+  'settings.heartAmountSaved': 'Naka-save: {amount} bawat puso.',
   'settings.deviceOnly': 'Naka-save sa device na ito',
   'settings.notificationSettings': 'Mga setting ng notification',
   'wallet.backupLink': 'I-back up ang iyong wallet',
@@ -5760,6 +5804,9 @@ const fil = {
   'forum.listLabel': 'Lahat ng mensahe',
   'forum.react': 'Tumugon',
   'forum.heart': 'Magpadala ng ₿1',
+  'forum.heartAmount': 'Magpadala ng {amount}',
+  'forum.heartsHeading': 'Mga puso ({count})',
+  'forum.deletedAccount': 'Natanggal na account',
   'forum.heartNeedsBalance': 'Kailangan ng Bitcoin balance para dito.',
   'forum.hiddenNotice': 'Itinago ni {name} ang notang ito noong {time}.',
   'forum.pay': 'Magpadala ng Bitcoin',
@@ -7107,8 +7154,7 @@ const fil = {
   'home.discoverTrustTitle': 'Sino ang tumatanggap nito?',
   'home.discoverTrustBody':
     'Sa sumulat ng post na nire-react-an mo. Alamin dito kung paano gumagana ang bayad.',
-  'homeShops.title': 'Mga tindahan',
-  'homeShops.lead': 'Tumatanggap ang mga tindahang ito ng Bitcoin sa pamamagitan ng 21.gifts.',
+  'homeShops.lead': 'Tumatanggap ang mga tindahang ito ng Bitcoin sa pamamagitan ng 21.gifts',
   'homeShops.view': 'Tingin',
   'homeShops.map': 'Mapa',
   'homeShops.table': 'Talaan',
@@ -7147,6 +7193,8 @@ const fil = {
   'homeShops.mapFeedback': 'Feedback sa mapa',
   'homeShops.closePopup': 'Isara ang popup',
   'homeShops.mapTitle': 'Mapa',
+  'homeShops.clusterCount': '{count, plural, one {# tindahan} other {# mga tindahan}}',
+  'homeShops.otherShops': 'Iba pa',
 } satisfies Messages;
 
 /**

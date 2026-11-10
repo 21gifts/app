@@ -122,6 +122,7 @@ import {
   postMessageVideo,
   postNotificationLevel,
   postHeartNotifications,
+  setHeartSats,
   setAccountFiat,
   setAccountLocale,
   setAmountUnit,
@@ -1144,6 +1145,28 @@ describe('setAmountUnit', () => {
   it('throws when the body fails validation', async () => {
     stubFetch({ ok: true, status: 200, body: { id: 'acc_1' } });
     await expect(setAmountUnit('sess', 'btc')).rejects.toThrow();
+  });
+});
+
+describe('setHeartSats', () => {
+  it('posts the whole sats and returns the validated account', async () => {
+    const updated = { ...account, heartSats: 21 };
+    const fetchMock = stubFetch({ ok: true, status: 200, body: updated });
+
+    await expect(setHeartSats('sess', 21)).resolves.toEqual(updated);
+    expect(fetchMock).toHaveBeenCalledWith('/me/heart-sats', {
+      method: 'POST',
+      headers: {
+        Authorization: 'Bearer sess',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ sats: 21 }),
+    });
+  });
+
+  it('throws on a non-ok response', async () => {
+    stubFetch({ ok: false, status: 400, body: {} });
+    await expect(setHeartSats('sess', 21)).rejects.toThrow('Could not save the heart amount.');
   });
 });
 
@@ -2728,6 +2751,19 @@ describe('postMessageInvoice', () => {
     await postMessageInvoice('sess', 'm1', 1, undefined, undefined, true);
     expect(JSON.parse((fetchMock.mock.calls[0]?.[1] as RequestInit).body as string)).toEqual({
       sats: 1,
+      heart: true,
+    });
+  });
+
+  it('accepts any positive whole sats for a heart', async () => {
+    const fetchMock = stubFetch({
+      ok: true,
+      status: 200,
+      body: { pr: 'lnbc21', amountSats: 21 },
+    });
+    await postMessageInvoice('sess', 'm1', 21, undefined, undefined, true);
+    expect(JSON.parse((fetchMock.mock.calls[0]?.[1] as RequestInit).body as string)).toEqual({
+      sats: 21,
       heart: true,
     });
   });
@@ -4332,14 +4368,16 @@ describe('fetchPublicReplies', () => {
       status: 200,
       body: { messages: [forumMessage] },
     });
-    await expect(fetchPublicReplies('parent')).resolves.toEqual([forumMessage]);
+    const replies = await fetchPublicReplies('parent');
+    expect([...replies]).toEqual([forumMessage]);
+    expect(replies.hearts).toEqual([]);
     expect(fetchMock).toHaveBeenCalledWith('/public-messages/parent/replies');
     expect(fetchMock.mock.calls[0]?.[1]).toBeUndefined();
   });
 
   it('returns an empty list on HTTP 200 with messages: []', async () => {
     stubFetch({ ok: true, status: 200, body: { messages: [] } });
-    await expect(fetchPublicReplies('parent')).resolves.toEqual([]);
+    await expect(fetchPublicReplies('parent')).resolves.toMatchObject({ hearts: [] });
   });
 
   it('keeps valid replies and skips an invalid empty name', async () => {
@@ -4350,7 +4388,8 @@ describe('fetchPublicReplies', () => {
       status: 200,
       body: { messages: [forumMessage, invalidEmptyName, secondValid] },
     });
-    await expect(fetchPublicReplies('parent')).resolves.toEqual([forumMessage, secondValid]);
+    const replies = await fetchPublicReplies('parent');
+    expect([...replies]).toEqual([forumMessage, secondValid]);
   });
 
   it('returns an empty list when every reply is invalid', async () => {
@@ -4359,7 +4398,7 @@ describe('fetchPublicReplies', () => {
       status: 200,
       body: { messages: [{ ...forumMessage, name: '' }] },
     });
-    await expect(fetchPublicReplies('parent')).resolves.toEqual([]);
+    await expect(fetchPublicReplies('parent')).resolves.toMatchObject({ hearts: [] });
   });
 
   it('throws visitor copy on HTTP 404', async () => {
@@ -4416,10 +4455,48 @@ describe('fetchReplies', () => {
       status: 200,
       body: { messages: [forumMessage] },
     });
-    await expect(fetchReplies('sess', 'parent')).resolves.toEqual([forumMessage]);
+    const replies = await fetchReplies('sess', 'parent');
+    expect([...replies]).toEqual([forumMessage]);
+    expect(replies.hearts).toEqual([]);
     expect(fetchMock).toHaveBeenCalledWith('/forum/messages/parent/replies', {
       headers: { Authorization: 'Bearer sess' },
     });
+  });
+
+  it('parses hearts newest first and keeps the reply rows', async () => {
+    const hearts = [
+      {
+        accountId: 'acc_2',
+        name: 'Grace',
+        username: 'grace',
+        role: 'moderator',
+        sats: 21,
+        createdAt: '2026-08-28T12:01:00.000Z',
+        amountUsd: '0.02',
+        amountChf: null,
+        amountEur: null,
+        amountPhp: null,
+      },
+      {
+        accountId: 'acc_3',
+        name: '',
+        sats: 5,
+        createdAt: '2026-08-28T12:00:00.000Z',
+        amountUsd: null,
+        amountChf: null,
+        amountEur: null,
+        amountPhp: null,
+      },
+    ];
+    stubFetch({ ok: true, status: 200, body: { messages: [forumMessage], hearts } });
+    const replies = await fetchReplies('sess', 'parent');
+    expect(replies.hearts).toEqual(hearts);
+    expect([...replies]).toEqual([forumMessage]);
+  });
+
+  it('treats a missing hearts field as no hearts', async () => {
+    stubFetch({ ok: true, status: 200, body: { messages: [forumMessage] } });
+    await expect(fetchReplies('sess', 'parent')).resolves.toMatchObject({ hearts: [] });
   });
 
   it('throws visitor copy on a non-ok response', async () => {
@@ -4437,7 +4514,8 @@ describe('fetchReplies', () => {
       status: 200,
       body: { messages: [forumMessage, invalidEmptyName, secondValid] },
     });
-    await expect(fetchReplies('sess', 'parent')).resolves.toEqual([forumMessage, secondValid]);
+    const replies = await fetchReplies('sess', 'parent');
+    expect([...replies]).toEqual([forumMessage, secondValid]);
   });
 
   it('returns an empty list when every reply is invalid', async () => {
@@ -4446,7 +4524,7 @@ describe('fetchReplies', () => {
       status: 200,
       body: { messages: [{ ...forumMessage, name: '' }] },
     });
-    await expect(fetchReplies('sess', 'parent')).resolves.toEqual([]);
+    await expect(fetchReplies('sess', 'parent')).resolves.toMatchObject({ hearts: [] });
   });
 
   it('throws visitor copy when the body is not { messages: array }', async () => {

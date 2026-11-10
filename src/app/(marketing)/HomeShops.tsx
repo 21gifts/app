@@ -1,15 +1,23 @@
 'use client';
 
-import { useEffect, useId, useRef, useState } from 'react';
-import type { ChangeEvent, ReactElement } from 'react';
-import { CircleHelp } from 'lucide-react';
+import { Fragment, useCallback, useEffect, useId, useLayoutEffect, useRef, useState } from 'react';
+import type { ReactElement } from 'react';
+import { createPortal } from 'react-dom';
+import { ArrowRight, CircleHelp, X } from 'lucide-react';
+import Link from 'next/link';
 import { SHOP_NPUB_RE } from '@/lib/api-types';
+import { countryDisplayName } from '@/lib/countries';
+import { imageCspSources, placesOrigin } from '@/lib/csp';
+import type { Locale } from '@/lib/locale';
+import { getCatalog } from '@/lib/messages';
+import { translate } from '@/lib/translate';
 import { Button } from '@/components/ui/Button';
 import { IconButton } from '@/components/ui/IconButton';
+import { SegmentedControl } from '@/components/ui/SegmentedControl';
 import { FilterMenu, type MenuOption } from './FilterMenu';
+import { MenuScroll } from './MenuScroll';
 
 type HomeShopsCopy = {
-  title: string;
   lead: string;
   view: string;
   map: string;
@@ -20,6 +28,7 @@ type HomeShopsCopy = {
   asset: string;
   activity: string;
   all: string;
+  otherShops: string;
   empty: string;
   error: string;
   retry: string;
@@ -54,7 +63,20 @@ type HomeShopsCopy = {
 
 type LngLat = [number, number];
 
+type ClusterMarker = {
+  marker: MarkerHandle;
+  shell: HTMLDivElement;
+  button: HTMLButtonElement;
+  group: PinRecord[];
+  targetPin: PinRecord;
+  position: LngLat;
+};
+
 type ShopView = 'map' | 'table';
+
+type SortColumn = 'name' | 'location' | 'country' | 'shop' | 'activity';
+
+type SortDir = 'asc' | 'desc';
 
 type Pair = { blockchain: string; asset: string };
 
@@ -90,6 +112,7 @@ type ShopRow = {
   shop: string;
   provider: string;
   activity: string;
+  activityToken: string;
   markerClass: string;
   markerTitle: string;
   position: LngLat | null;
@@ -97,42 +120,114 @@ type ShopRow = {
   coverPhotoUrl: string | null;
 };
 
+type FramePadding = { top: number; bottom: number; left: number; right: number };
+
+type MapStyle = string | Record<string, unknown>;
+
 type MapHandle = {
   addControl: (control: object, position: string) => void;
   resize: () => void;
   setCenter: (center: LngLat) => void;
   setZoom: (zoom: number) => void;
-  fitBounds: (bounds: LngLatBoundsHandle, options: { padding: number; maxZoom: number }) => void;
+  easeTo: (options: { center: LngLat; zoom: number; duration?: number; animate?: boolean }) => void;
+  cameraForBounds?: (
+    bounds: LngLatBoundsHandle,
+    options: { padding: number | FramePadding; maxZoom: number },
+  ) => { zoom?: number } | undefined;
+  fitBounds: (
+    bounds: LngLatBoundsHandle,
+    options: {
+      padding: number | FramePadding;
+      maxZoom: number;
+      duration?: number;
+      animate?: boolean;
+    },
+  ) => void;
   remove: () => void;
+  project?: (position: LngLat) => { x: number; y: number };
+  unproject?: (point: [number, number]) => { lng: number; lat: number };
+  getZoom?: () => number;
+  loaded?: () => boolean;
+  getContainer?: () => HTMLElement;
+  getCanvas?: () => HTMLElement;
+  panBy?: (offset: [number, number], options?: { duration?: number }) => void;
+  on?: (event: string, handler: (event: { originalEvent?: Event }) => void) => void;
+  off?: (event: string, handler: (event: { originalEvent?: Event }) => void) => void;
+  once?: (event: string, handler: () => void) => void;
 };
 
 type LngLatBoundsHandle = { extend: (position: LngLat) => void };
 
 type MarkerHandle = {
-  setLngLat: (position: LngLat) => void;
+  setLngLat: (position: LngLat) => MarkerHandle;
   setPopup: (popup: PopupHandle) => MarkerHandle;
-  addTo: (map: MapHandle) => void;
+  addTo: (map: MapHandle) => MarkerHandle;
   remove: () => void;
   getLngLat: () => { lng: number; lat: number };
+  getElement?: () => HTMLElement;
 };
 
-type PopupHandle = { setDOMContent: (content: HTMLElement) => PopupHandle };
+type PopupHandle = {
+  setDOMContent: (content: HTMLElement) => PopupHandle;
+  on: (event: 'open' | 'close', handler: () => void) => void;
+  remove: () => void;
+};
 
 type MapLibreNamespace = {
   Map: new (options: {
     container: HTMLElement;
-    style: string;
+    style: MapStyle;
     center: LngLat;
     zoom: number;
+    renderWorldCopies?: boolean;
+    trackResize?: boolean;
+    attributionControl?: { compact: boolean; customAttribution: string };
     locale?: Record<string, string>;
   }) => MapHandle;
-  NavigationControl: new () => object;
+  NavigationControl: new (options?: { showCompass?: boolean }) => object;
   Marker: new (options: { element: HTMLElement }) => MarkerHandle;
-  Popup: new (options: { offset: number }) => PopupHandle;
+  Popup: new (options: {
+    offset: number;
+    closeButton?: boolean;
+    focusAfterOpen?: boolean;
+    className?: string;
+  }) => PopupHandle;
   LngLatBounds: new () => LngLatBoundsHandle;
 };
 
-type MapSession = { map: MapHandle; lib: MapLibreNamespace };
+type MapSession = {
+  map: MapHandle;
+  lib: MapLibreNamespace;
+  onMove: () => void;
+  onMoveStart: (event: { originalEvent?: Event }) => void;
+  onMoveEnd: () => void;
+};
+
+type PinRecord = { element: HTMLButtonElement; row: ShopRow; position: LngLat };
+
+type HelpBox = { top: number; bottom: number; left: number; width: number; scrolls: boolean };
+
+function helpPanelBox(anchor: DOMRect, panelHeight: number): HelpBox {
+  const margin = 16;
+  const gap = 8;
+  const width = Math.min(320, window.innerWidth - margin * 2);
+  let left = anchor.left;
+  if (left + width > window.innerWidth - margin) left = window.innerWidth - margin - width;
+  if (left < margin) left = margin;
+  const below = anchor.bottom + gap;
+  const above = anchor.top - gap - panelHeight;
+  const fitsBelow = below + panelHeight <= window.innerHeight - margin;
+  let top = fitsBelow ? below : above;
+  if (top < margin) top = margin;
+  const limit = window.innerHeight - margin - panelHeight;
+  if (top > limit) top = Math.max(margin, limit);
+  // The live overlay always sets top, bottom, left, and width. A fitting
+  // bottom is the space under the content. A panel that does not fit uses
+  // the 16px inset. A full-page capture clears that bottom edge itself.
+  const bottom = window.innerHeight - top - panelHeight;
+  if (bottom < margin) return { top, bottom: margin, left, width, scrolls: true };
+  return { top, bottom, left, width, scrolls: false };
+}
 
 declare global {
   interface Window {
@@ -140,8 +235,6 @@ declare global {
   }
 }
 
-const PROD_PLACES = 'https://api.opencryptopay.io/map/places';
-const DEV_PLACES = 'https://dev-api.opencryptopay.io/map/places';
 const MAP_STYLE_URL = 'https://unpkg.com/maplibre-gl@5.6.1/dist/maplibre-gl.css';
 const MAP_SCRIPT_URL = 'https://unpkg.com/maplibre-gl@5.6.1/dist/maplibre-gl.js';
 
@@ -155,24 +248,35 @@ function pageScriptNonce(): string {
   }
   return '';
 }
-const TILE_STYLE = 'https://tiles.openfreemap.org/styles/liberty';
+const TILE_STYLE = 'https://tiles.openfreemap.org/styles/positron';
 const HOME_CENTER: LngLat = [8.23, 46.8];
 const HOME_ZOOM = 7;
 const SINGLE_ZOOM = 12;
-const BOUNDS_PADDING = 48;
 const BOUNDS_MAX_ZOOM = 12;
+const CLUSTER_ZOOM = 17;
+const CLUSTER_MAX_ZOOM = 17.5;
+const CLUSTER_PX = 44;
 const GIFTS = '21.gifts';
+const FRAME_PADDING: FramePadding = { top: 56, bottom: 72, left: 56, right: 88 };
+const ACTIVITY_ORDER = ['daily', 'within7Days', 'within30Days', 'olderThan30Days', 'none'] as const;
+const EMPTY_SELECTION: Selection = {
+  country: '',
+  shopName: '',
+  blockchain: '',
+  asset: '',
+  activity: '',
+};
 
-function viewButtonClass(selected: boolean): string {
-  if (selected) {
-    return 'min-h-11 rounded-full border-0 bg-[#272b38] px-3.5 text-white';
-  }
-  return 'min-h-11 rounded-full border-0 bg-transparent px-3.5 text-[#272b38]';
-}
+const HELP_ROWS: readonly (readonly [keyof HomeShopsCopy, keyof HomeShopsCopy, string])[] = [
+  ['daily', 'dailyHelp', 'shop-place-marker is-daily'],
+  ['weekly', 'weeklyHelp', 'shop-place-marker is-weekly'],
+  ['monthly', 'monthlyHelp', 'shop-place-marker is-monthly'],
+  ['idle', 'idleHelp', 'shop-place-marker is-idle'],
+  ['none', 'noneHelp', 'shop-place-marker is-none'],
+];
 
 function placesEndpoint(hostname: string): string {
-  if (hostname === GIFTS || hostname === `www.${GIFTS}`) return PROD_PLACES;
-  return DEV_PLACES;
+  return `${placesOrigin(hostname)}/map/places`;
 }
 
 function filtersEndpoint(places: string): string {
@@ -275,6 +379,14 @@ function readPlaces(value: unknown): Record<string, unknown>[] | null {
   return rows;
 }
 
+function giftsPlaces(places: readonly Record<string, unknown>[]): Record<string, unknown>[] {
+  const rows: Record<string, unknown>[] = [];
+  for (const place of places) {
+    if (place['techProvider'] === GIFTS) rows.push(place);
+  }
+  return rows;
+}
+
 function sortWithLessThan(values: readonly string[]): string[] {
   const sorted: string[] = [];
   for (const value of values) {
@@ -292,28 +404,13 @@ function sortWithLessThan(values: readonly string[]): string[] {
   return sorted;
 }
 
-function assetsFromPairs(pairs: readonly Pair[], blockchain: string): string[] {
-  const seen = new Set<string>();
-  const values: string[] = [];
-  for (const pair of pairs) {
-    if (pair.blockchain !== blockchain) continue;
-    if (seen.has(pair.asset)) continue;
-    seen.add(pair.asset);
-    values.push(pair.asset);
-  }
-  return sortWithLessThan(values);
-}
-
-function assetsFor(provider: GiftsProvider | null, blockchain: string): string[] {
-  if (provider === null) return [];
-  if (blockchain === '') return provider.assets;
-  if (provider.pairs === null) return provider.assets;
-  return assetsFromPairs(provider.pairs, blockchain);
-}
-
 function trimmedString(value: unknown): string {
   if (typeof value !== 'string') return '';
   return value.trim();
+}
+
+function countryCode(value: unknown): string {
+  return trimmedString(value);
 }
 
 function joinPart(left: string, right: string): string {
@@ -332,14 +429,17 @@ function locationText(place: Record<string, unknown>): string {
 
 function countryMatches(country: unknown, selected: string): boolean {
   if (selected === '') return true;
-  return country === selected;
+  return countryCode(country) === selected;
+}
+
+function isSpar(shopName: unknown): boolean {
+  return trimmedString(shopName) === 'SPAR';
 }
 
 function shopNameMatches(shopName: unknown, selected: string): boolean {
   if (selected === '') return true;
-  if (selected === 'SPAR') return shopName === 'SPAR';
-  if (selected === 'others') return shopName !== 'SPAR';
-  return shopName === selected;
+  if (selected === 'SPAR') return isSpar(shopName);
+  return !isSpar(shopName);
 }
 
 function activityMatches(activity: string, selected: string): boolean {
@@ -391,18 +491,54 @@ function markerTitle(activity: string, copy: HomeShopsCopy): string {
   return activity;
 }
 
+function clusterTone(token: string): string {
+  if (token === 'daily') return 'is-daily';
+  if (token === 'within7Days') return 'is-weekly';
+  if (token === 'within30Days') return 'is-monthly';
+  if (token === 'olderThan30Days') return 'is-idle';
+  return 'is-none';
+}
+
+function activityRank(token: string): number {
+  let index = 0;
+  for (const known of ACTIVITY_ORDER) {
+    if (known === token) return index;
+    index += 1;
+  }
+  return ACTIVITY_ORDER.length;
+}
+
 function markerAriaLabel(name: string, title: string): string {
   if (name !== '' && title !== '') return `${name}, ${title}`;
   if (name !== '') return name;
   return title;
 }
 
+/**
+ * Returns a photo URL whose HTTPS origin matches an exact or wildcard image CSP source.
+ *
+ * @param place - Place returned by the public map API.
+ * @returns The allowed URL, or null when absent or disallowed.
+ */
 function coverPhotoUrl(place: Record<string, unknown>): string | null {
   const coverPhoto = place['coverPhoto'];
   if (!isRecord(coverPhoto)) return null;
   const url = coverPhoto['url'];
-  if (typeof url !== 'string' || !url.startsWith('https://')) return null;
-  return url;
+  if (typeof url !== 'string') return null;
+  try {
+    const photo = new URL(url);
+    if (photo.protocol !== 'https:') return null;
+    const allowed = imageCspSources(window.location.hostname).some((source) => {
+      if (!source.startsWith('https://')) return false;
+      if (source.startsWith('https://*.')) {
+        return photo.origin.endsWith(source.slice('https://*'.length));
+      }
+      return photo.origin === source;
+    });
+    return allowed ? url : null;
+  } catch {
+    return null;
+  }
 }
 
 function entryMatches(entry: unknown, blockchain: string, asset: string): boolean {
@@ -414,7 +550,7 @@ function entryMatches(entry: unknown, blockchain: string, asset: string): boolea
 
 function chainMatches(
   place: Record<string, unknown>,
-  provider: GiftsProvider,
+  provider: GiftsProvider | null,
   blockchain: string,
   asset: string,
 ): boolean {
@@ -426,11 +562,202 @@ function chainMatches(
     return false;
   }
   if (supports !== undefined && supports !== null && !Array.isArray(supports)) return false;
-  if (provider.pairs === null) return false;
+  if (provider === null || provider.pairs === null) return false;
   for (const pair of provider.pairs) {
     if (entryMatches(pair, blockchain, asset)) return true;
   }
   return false;
+}
+
+function entriesFor(
+  place: Record<string, unknown>,
+  provider: GiftsProvider | null,
+): readonly unknown[] | null {
+  const supports = place['supports'];
+  if (Array.isArray(supports) && supports.length > 0) return supports;
+  if (supports !== undefined && supports !== null && !Array.isArray(supports)) return null;
+  if (provider === null || provider.pairs === null) return null;
+  return provider.pairs;
+}
+
+function fieldValues(
+  place: Record<string, unknown>,
+  provider: GiftsProvider | null,
+  field: 'blockchain' | 'asset',
+  blockchain: string,
+): string[] {
+  const entries = entriesFor(place, provider);
+  if (entries === null) return [];
+  const seen = new Set<string>();
+  const values: string[] = [];
+  for (const entry of entries) {
+    if (!isRecord(entry)) continue;
+    if (field === 'asset' && blockchain !== '' && entry['blockchain'] !== blockchain) continue;
+    const raw = entry[field];
+    if (typeof raw !== 'string' || raw === '' || seen.has(raw)) continue;
+    seen.add(raw);
+    values.push(raw);
+  }
+  return values;
+}
+
+function uniqueValues(values: readonly string[]): string[] {
+  const seen = new Set<string>();
+  const result: string[] = [];
+  for (const value of values) {
+    if (seen.has(value)) continue;
+    seen.add(value);
+    result.push(value);
+  }
+  return sortWithLessThan(result);
+}
+
+function countWhere(
+  places: readonly Record<string, unknown>[],
+  matches: (place: Record<string, unknown>) => boolean,
+): number {
+  let count = 0;
+  for (const place of places) {
+    if (matches(place)) count += 1;
+  }
+  return count;
+}
+
+function splittingValues(
+  places: readonly Record<string, unknown>[],
+  values: readonly string[],
+  matches: (place: Record<string, unknown>, value: string) => boolean,
+): string[] {
+  const total = places.length;
+  if (total === 0) return [];
+  const shown: string[] = [];
+  let split = false;
+  for (const value of values) {
+    const count = countWhere(places, (place) => matches(place, value));
+    if (count > 0) shown.push(value);
+    if (count > 0 && count < total) split = true;
+  }
+  if (!split) return [];
+  return shown;
+}
+
+function countryValues(places: readonly Record<string, unknown>[], locale: string): string[] {
+  const codes = uniqueValues(
+    places.map((place) => countryCode(place['country'])).filter((code) => code !== ''),
+  );
+  const shown = splittingValues(
+    places,
+    codes,
+    (place, code) => countryCode(place['country']) === code,
+  );
+  const collator = new Intl.Collator(locale, { numeric: true, sensitivity: 'base' });
+  shown.sort((left, right) =>
+    collator.compare(countryDisplayName(left, locale), countryDisplayName(right, locale)),
+  );
+  return shown;
+}
+
+function nameValues(places: readonly Record<string, unknown>[]): string[] {
+  const values: string[] = [];
+  if (countWhere(places, (place) => isSpar(place['shopName'])) > 0) values.push('SPAR');
+  if (countWhere(places, (place) => !isSpar(place['shopName'])) > 0) values.push('others');
+  return splittingValues(places, values, (place, value) => {
+    if (value === 'SPAR') return isSpar(place['shopName']);
+    return !isSpar(place['shopName']);
+  });
+}
+
+function activityValues(places: readonly Record<string, unknown>[]): string[] {
+  const present = new Set<string>();
+  for (const place of places) {
+    const activity = place['activity'];
+    if (typeof activity !== 'string') continue;
+    const token = activity.trim();
+    if (token !== '') present.add(token);
+  }
+  const ordered: string[] = [];
+  for (const token of ACTIVITY_ORDER) {
+    if (present.has(token)) ordered.push(token);
+  }
+  const unknown: string[] = [];
+  for (const token of present) {
+    if (activityRank(token) === ACTIVITY_ORDER.length) unknown.push(token);
+  }
+  return splittingValues(places, ordered.concat(sortWithLessThan(unknown)), (place, token) => {
+    const activity = typeof place['activity'] === 'string' ? place['activity'] : '';
+    return activityMatches(activity, token);
+  });
+}
+
+function blockchainValues(
+  places: readonly Record<string, unknown>[],
+  provider: GiftsProvider | null,
+): string[] {
+  const values = uniqueValues(
+    places.flatMap((place) => fieldValues(place, provider, 'blockchain', '')),
+  );
+  return splittingValues(places, values, (place, value) =>
+    chainMatches(place, provider, value, ''),
+  );
+}
+
+function assetValues(
+  places: readonly Record<string, unknown>[],
+  provider: GiftsProvider | null,
+  blockchain: string,
+): string[] {
+  const values = uniqueValues(
+    places.flatMap((place) => fieldValues(place, provider, 'asset', blockchain)),
+  );
+  return splittingValues(places, values, (place, value) =>
+    chainMatches(place, provider, blockchain, value),
+  );
+}
+
+function keptValue(selected: string, options: readonly string[]): string {
+  if (selected === '') return '';
+  for (const option of options) {
+    if (option === selected) return selected;
+  }
+  return '';
+}
+
+function textChoices(tokens: readonly string[], allLabel: string): MenuOption[] {
+  const options: MenuOption[] = [{ value: '', label: allLabel, swatch: null }];
+  for (const token of tokens) options.push({ value: token, label: token, swatch: null });
+  return options;
+}
+
+function nameChoices(tokens: readonly string[], copy: HomeShopsCopy): MenuOption[] {
+  const options: MenuOption[] = [{ value: '', label: copy.all, swatch: null }];
+  for (const token of tokens) {
+    options.push({
+      value: token,
+      label: token === 'others' ? copy.otherShops : token,
+      swatch: null,
+    });
+  }
+  return options;
+}
+
+function countryChoices(codes: readonly string[], allLabel: string, locale: string): MenuOption[] {
+  const options: MenuOption[] = [{ value: '', label: allLabel, swatch: null }];
+  for (const code of codes) {
+    options.push({ value: code, label: countryDisplayName(code, locale), swatch: null });
+  }
+  return options;
+}
+
+function activityChoices(tokens: readonly string[], copy: HomeShopsCopy): MenuOption[] {
+  const options: MenuOption[] = [{ value: '', label: copy.all, swatch: null }];
+  for (const token of tokens) {
+    options.push({
+      value: token,
+      label: activityOptionLabel(token, copy),
+      swatch: activitySwatch(token),
+    });
+  }
+  return options;
 }
 
 function readCoordinate(value: unknown, min: number, max: number): number | null {
@@ -473,9 +800,7 @@ function buildRows(
     const activity = typeof place['activity'] === 'string' ? place['activity'] : '';
     if (!activityMatches(activity, selection.activity)) continue;
     if (selection.blockchain !== '' || selection.asset !== '') {
-      if (!chainMatches(place, provider as GiftsProvider, selection.blockchain, selection.asset)) {
-        continue;
-      }
+      if (!chainMatches(place, provider, selection.blockchain, selection.asset)) continue;
     }
     const id = place['id'];
     rows.push({
@@ -483,10 +808,11 @@ function buildRows(
       name: trimmedString(place['name']),
       href: hrefFor(id),
       location: locationText(place),
-      country: trimmedString(place['country']),
+      country: countryCode(place['country']),
       shop: trimmedString(place['shopName']),
       provider: techProvider,
       activity: activityOptionLabel(activity, copy),
+      activityToken: activity,
       markerClass: markerClass(activity),
       markerTitle: markerTitle(activity, copy),
       position: readPosition(place),
@@ -497,38 +823,48 @@ function buildRows(
   return rows;
 }
 
-function sortRows(rows: readonly ShopRow[]): ShopRow[] {
-  const sorted = [...rows];
-  sorted.sort((left, right) => left.name.localeCompare(right.name));
-  return sorted;
-}
-
-function textChoices(tokens: readonly string[], allLabel: string): MenuOption[] {
-  const options: MenuOption[] = [{ value: '', label: allLabel, swatch: null }];
-  for (const token of tokens) options.push({ value: token, label: token, swatch: null });
-  return options;
-}
-
-function activityChoices(tokens: readonly string[], copy: HomeShopsCopy): MenuOption[] {
-  const options: MenuOption[] = [{ value: '', label: copy.all, swatch: null }];
-  for (const token of tokens) {
-    options.push({
-      value: token,
-      label: activityOptionLabel(token, copy),
-      swatch: activitySwatch(token),
-    });
+function differs(rows: readonly ShopRow[], read: (row: ShopRow) => string): boolean {
+  const first = rows[0];
+  if (first === undefined) return false;
+  const value = read(first);
+  for (const row of rows) {
+    if (read(row) !== value) return true;
   }
-  return options;
+  return false;
 }
 
-function onTextChoice(
-  event: ChangeEvent<HTMLSelectElement>,
-  current: string,
-  apply: (next: string) => void,
-): void {
-  const next = event.target.value;
-  if (next === current) return;
-  apply(next);
+function sortText(row: ShopRow, column: SortColumn, locale: string): string {
+  if (column === 'name') return row.name;
+  if (column === 'location') return row.location;
+  if (column === 'country') return countryDisplayName(row.country, locale);
+  if (column === 'shop') return row.shop;
+  return row.activity;
+}
+
+function sortShopRows(
+  rows: readonly ShopRow[],
+  column: SortColumn,
+  dir: SortDir,
+  locale: string,
+): ShopRow[] {
+  const collator = new Intl.Collator(locale, { numeric: true, sensitivity: 'base' });
+  const sorted = [...rows];
+  sorted.sort((left, right) => {
+    let primary: number;
+    if (column === 'activity') {
+      const leftRank = activityRank(left.activityToken);
+      const rightRank = activityRank(right.activityToken);
+      primary =
+        leftRank === ACTIVITY_ORDER.length && rightRank === ACTIVITY_ORDER.length
+          ? collator.compare(left.activity, right.activity)
+          : leftRank - rightRank;
+    } else {
+      primary = collator.compare(sortText(left, column, locale), sortText(right, column, locale));
+    }
+    if (primary !== 0) return dir === 'desc' ? -primary : primary;
+    return collator.compare(left.name, right.name);
+  });
+  return sorted;
 }
 
 function findByUrl(tagName: 'script' | 'link', url: string): Element | null {
@@ -540,63 +876,78 @@ function findByUrl(tagName: 'script' | 'link', url: string): Element | null {
   return null;
 }
 
-function frameMap(map: MapHandle, lib: MapLibreNamespace, positions: readonly LngLat[]): void {
+const framedMaps = new WeakSet<MapHandle>();
+const framedSizes = new WeakMap<MapHandle, string>();
+const userMovedMaps = new WeakSet<MapHandle>();
+
+function mapBox(map: MapHandle): { width: number; height: number } | null | undefined {
+  if (typeof map.getContainer !== 'function') return undefined;
+  const container = map.getContainer();
+  if (!(container instanceof HTMLElement)) return undefined;
+  // A zero box is not a real layout. MapLibre would fit a 400×300 stand-in
+  // and the pins would jump once the container received its width.
+  if (container.clientWidth < 2 || container.clientHeight < 2) return null;
+  return { width: container.clientWidth, height: container.clientHeight };
+}
+
+function usesStandIn(map: MapHandle, box: { width: number; height: number }): boolean {
+  const canvas = map.getCanvas?.();
+  if (!(canvas instanceof HTMLElement)) return false;
+  const width = Number.parseFloat(canvas.style.width);
+  const height = Number.parseFloat(canvas.style.height);
+  return Math.abs(width - box.width) > 1 || Math.abs(height - box.height) > 1;
+}
+
+function boundsMotion(map: MapHandle, first: boolean): { duration: number; animate?: false } {
+  const unloaded = typeof map.loaded === 'function' && map.loaded() === false;
+  if (first || unloaded) return { duration: 0, animate: false };
+  return { duration: 800 };
+}
+
+function clusterMotion(map: MapHandle): { duration: number; animate?: false } {
+  if (typeof map.loaded === 'function' && map.loaded() === false) {
+    return { duration: 0, animate: false };
+  }
+  return { duration: 600 };
+}
+
+function frameMap(
+  map: MapHandle,
+  lib: MapLibreNamespace,
+  positions: readonly LngLat[],
+  snap = false,
+): boolean {
+  const box = mapBox(map);
+  if (box === null) return false;
+  if (box !== undefined) {
+    map.resize();
+    // The canvas can still be the 400×300 stand-in. Fitting that, then
+    // stretching it, moves every pin by half the size difference.
+    if (usesStandIn(map, box)) return false;
+  }
+  const first = !framedMaps.has(map);
+  framedMaps.add(map);
+  if (box !== undefined) framedSizes.set(map, `${box.width}x${box.height}`);
+  const motion: { duration: number; animate?: false } = snap
+    ? { duration: 0, animate: false }
+    : boundsMotion(map, first);
   if (positions.length > 1) {
     const bounds = new lib.LngLatBounds();
     for (const position of positions) bounds.extend(position);
-    map.fitBounds(bounds, { padding: BOUNDS_PADDING, maxZoom: BOUNDS_MAX_ZOOM });
-    return;
+    map.fitBounds(bounds, {
+      padding: FRAME_PADDING,
+      maxZoom: BOUNDS_MAX_ZOOM,
+      ...motion,
+    });
+    return true;
   }
   if (positions.length === 0) {
-    map.setCenter(HOME_CENTER);
-    map.setZoom(HOME_ZOOM);
-    return;
+    map.easeTo({ center: HOME_CENTER, zoom: HOME_ZOOM, ...motion });
+    return true;
   }
   const position = positions[0] as LngLat;
-  map.setCenter(position);
-  map.setZoom(SINGLE_ZOOM);
-}
-
-function popupContent(row: ShopRow): HTMLElement {
-  const content = document.createElement('div');
-  if (row.coverPhotoUrl !== null) {
-    const image = document.createElement('img');
-    image.src = row.coverPhotoUrl;
-    image.alt = '';
-    image.setAttribute('loading', 'lazy');
-    image.setAttribute('referrerpolicy', 'no-referrer');
-    image.className = 'block h-auto max-h-80 w-full max-w-full object-contain';
-    content.appendChild(image);
-  }
-  if (row.href === null) {
-    const name = document.createElement('strong');
-    name.textContent = row.name;
-    content.appendChild(name);
-  } else {
-    const name = document.createElement('a');
-    name.href = row.href;
-    name.className = 'font-medium underline underline-offset-2';
-    name.textContent = row.name;
-    content.appendChild(name);
-  }
-  if (row.markerTitle !== '') {
-    const activity = document.createElement('p');
-    activity.textContent = row.markerTitle;
-    content.appendChild(activity);
-  }
-  if (row.category !== '') {
-    const category = document.createElement('p');
-    category.textContent = row.category;
-    content.appendChild(category);
-  }
-  return content;
-}
-
-function csvField(value: string): string {
-  let safe = value;
-  if (/^[=+\-@\t\r]/.test(safe)) safe = `'${safe}`;
-  if (/[,"\r\n]/.test(safe)) return `"${safe.replaceAll('"', '""')}"`;
-  return safe;
+  map.easeTo({ center: position, zoom: SINGLE_ZOOM, ...motion });
+  return true;
 }
 
 function markerPositions(rows: readonly ShopRow[], failed: boolean): LngLat[] {
@@ -609,17 +960,429 @@ function markerPositions(rows: readonly ShopRow[], failed: boolean): LngLat[] {
   return positions;
 }
 
+type PopupPortal = {
+  host: HTMLElement;
+  title: HTMLElement;
+  row: ShopRow;
+  closeLabel: string;
+  onClose: () => void;
+};
+
+/**
+ * Builds the popup DOM and returns hosts for the page's React portals.
+ *
+ * @param row - Shop details and the optional in-app path.
+ * @param showCategory - Whether categories differ across the displayed shops.
+ * @returns The popup content and its portal hosts.
+ */
+function popupContent(
+  row: ShopRow,
+  showCategory: boolean,
+): { content: HTMLElement; host: HTMLElement; title: HTMLElement } {
+  const content = document.createElement('div');
+  content.className = 'shop-popup-card';
+  const host = document.createElement('div');
+  content.appendChild(host);
+  if (row.coverPhotoUrl !== null) {
+    const image = document.createElement('img');
+    image.src = row.coverPhotoUrl;
+    image.alt = '';
+    image.setAttribute('loading', 'lazy');
+    image.setAttribute('referrerpolicy', 'no-referrer');
+    image.className = 'shop-popup-photo';
+    content.appendChild(image);
+  }
+  const title = document.createElement('div');
+  title.className = 'shop-popup-title';
+  if (row.href === null) {
+    const name = document.createElement('strong');
+    name.className = 'shop-popup-name';
+    name.textContent = row.name;
+    title.appendChild(name);
+  }
+  content.appendChild(title);
+  const chips = document.createElement('div');
+  chips.className = 'shop-popup-chips';
+  if (row.markerTitle !== '') {
+    const activity = document.createElement('span');
+    activity.className = 'shop-popup-chip';
+    const dot = document.createElement('span');
+    dot.className = row.markerClass;
+    dot.setAttribute('aria-hidden', 'true');
+    activity.appendChild(dot);
+    activity.appendChild(document.createTextNode(row.markerTitle));
+    chips.appendChild(activity);
+  }
+  if (showCategory && row.category !== '') {
+    const category = document.createElement('span');
+    category.className = 'shop-popup-chip shop-popup-category';
+    category.textContent = row.category;
+    chips.appendChild(category);
+  }
+  if (chips.childNodes.length > 0) content.appendChild(chips);
+  return { content, host, title };
+}
+
+function paintRecord(layer: Record<string, unknown>): Record<string, unknown> {
+  const paint = layer['paint'];
+  if (!isRecord(paint)) return {};
+  return { ...paint };
+}
+
+function roadColor(id: string): string | null {
+  if (/dashline/.test(id)) return null;
+  if (/casing/.test(id)) return '#d3cdc2';
+  if (/motorway_inner|motorway_bridge_inner/.test(id)) return '#efe9df';
+  if (/inner|runway$/.test(id)) return '#ffffff';
+  if (/subtle/.test(id)) return 'rgba(211,205,194,0.6)';
+  if (/minor/.test(id)) return '#e3ded5';
+  if (/path|pier/.test(id)) return '#ebe7e0';
+  if (/rail/.test(id)) return '#dcd7ce';
+  return '#e3ded5';
+}
+
+function restyleLayers(style: Record<string, unknown>, locale: string): Record<string, unknown> {
+  const layers = style['layers'];
+  if (!Array.isArray(layers)) return style;
+  for (const layer of layers) {
+    if (!isRecord(layer)) continue;
+    const id = typeof layer['id'] === 'string' ? layer['id'] : '';
+    const type = layer['type'];
+    if (type === 'background') {
+      layer['paint'] = { 'background-color': '#ffffff' };
+    } else if (/water/.test(id) && type === 'fill') {
+      layer['paint'] = { 'fill-color': '#f5f2ec' };
+    } else if (/water/.test(id) && type === 'line') {
+      layer['paint'] = { ...paintRecord(layer), 'line-color': '#f5f2ec' };
+    } else if (/landcover|landuse|park/.test(id) && type === 'fill') {
+      layer['paint'] = { ...paintRecord(layer), 'fill-opacity': 0 };
+    } else if (/boundary/.test(id) && type === 'line') {
+      layer['paint'] = { ...paintRecord(layer), 'line-color': 'rgba(10,9,12,0.16)' };
+    } else if (/road|highway|tunnel|bridge|rail|aeroway/.test(id) && type === 'line') {
+      const color = roadColor(id);
+      if (color !== null) layer['paint'] = { ...paintRecord(layer), 'line-color': color };
+    } else if (/building/.test(id) && type === 'fill') {
+      layer['paint'] = { 'fill-color': '#eeebe5' };
+    }
+    if (type === 'symbol') {
+      if (/highway-shield|road_shield/.test(id)) {
+        const shieldLayout = layer['layout'];
+        layer['layout'] = {
+          ...(isRecord(shieldLayout) ? shieldLayout : {}),
+          visibility: 'none',
+        };
+      } else {
+        const paint = paintRecord(layer);
+        const water = /water/.test(id);
+        paint['text-color'] = water ? 'rgba(10,9,12,0.32)' : 'rgba(10,9,12,0.58)';
+        paint['text-halo-color'] = water ? '#f5f2ec' : '#ffffff';
+        layer['paint'] = paint;
+        const layout = layer['layout'];
+        if (isRecord(layout) && layout['text-field'] !== undefined) {
+          layer['layout'] = {
+            ...layout,
+            'text-field': [
+              'coalesce',
+              ['get', `name:${locale}`],
+              ['get', 'name:latin'],
+              ['get', 'name'],
+            ],
+          };
+        }
+      }
+    }
+  }
+  return style;
+}
+
+async function loadMapStyle(locale: string, signal: AbortSignal): Promise<MapStyle | null> {
+  /* v8 ignore next -- the controller starts unaborted; cleanup aborts the request mid-flight */
+  if (signal.aborted) return null;
+  try {
+    const response = await fetch(TILE_STYLE, { credentials: 'omit', signal });
+    if (signal.aborted) return null;
+    if (!response.ok) return TILE_STYLE;
+    const json: unknown = await response.json();
+    if (signal.aborted) return null;
+    if (!isRecord(json)) return TILE_STYLE;
+    return restyleLayers(json, locale);
+  } catch (error: unknown) {
+    if (signal.aborted || isAbortError(error)) return null;
+    return TILE_STYLE;
+  }
+}
+
+function revealAttribution(map: MapHandle): void {
+  if (typeof map.getContainer !== 'function') return;
+  const container = map.getContainer();
+  if (!(container instanceof HTMLElement)) return;
+  const attrib = container.querySelector('.maplibregl-ctrl-attrib');
+  if (!(attrib instanceof HTMLElement)) return;
+  attrib.classList.remove('maplibregl-compact-show');
+  attrib.removeAttribute('open');
+}
+
+function fitPopup(map: MapHandle, duration = 250): void {
+  if (typeof map.getContainer !== 'function' || typeof map.panBy !== 'function') return;
+  const container = map.getContainer();
+  if (!(container instanceof HTMLElement)) return;
+  const popup = container.querySelector('.maplibregl-popup');
+  if (!(popup instanceof HTMLElement)) return;
+  const popupBox = popup.getBoundingClientRect();
+  const mapBox = container.getBoundingClientRect();
+  const pad = 16;
+  let dx = 0;
+  let dy = 0;
+  if (popupBox.top < mapBox.top + pad) dy = popupBox.top - (mapBox.top + pad);
+  else if (popupBox.bottom > mapBox.bottom - pad) dy = popupBox.bottom - (mapBox.bottom - pad);
+  if (popupBox.left < mapBox.left + pad) dx = popupBox.left - (mapBox.left + pad);
+  else if (popupBox.right > mapBox.right - pad) dx = popupBox.right - (mapBox.right - pad);
+  const obstacles = [
+    container.parentElement?.querySelector('.shop-legend'),
+    container.querySelector('.maplibregl-ctrl-attrib'),
+    container.querySelector('.maplibregl-ctrl-top-right'),
+  ].filter((node): node is Element => node instanceof HTMLElement);
+  for (const obstacle of obstacles) {
+    const box = obstacle.getBoundingClientRect();
+    const left = popupBox.left - dx;
+    const right = popupBox.right - dx;
+    const top = popupBox.top - dy;
+    const bottom = popupBox.bottom - dy;
+    if (left >= box.right || right <= box.left || top >= box.bottom || bottom <= box.top) continue;
+    const up = bottom - box.top;
+    if (top - up >= Math.min(mapBox.top + pad, top)) {
+      dy += up;
+    } else if (right + (box.right - left) <= Math.max(mapBox.right - pad, right)) {
+      dx -= box.right - left;
+    } else if (left - (right - box.left) >= Math.min(mapBox.left + pad, left)) {
+      dx += right - box.left;
+    } else if (bottom + (box.bottom - top) <= mapBox.bottom - pad) {
+      dy -= box.bottom - top;
+    }
+  }
+  if (dx !== 0 || dy !== 0) {
+    map.panBy([dx, dy], {
+      duration: typeof map.loaded === 'function' && map.loaded() === false ? 0 : duration,
+    });
+  }
+}
+
+function mapRect(map: MapHandle): DOMRect | null {
+  const node =
+    typeof map.getContainer === 'function'
+      ? map.getContainer()
+      : document.getElementById('shop-places-map');
+  if (!(node instanceof HTMLElement)) return null;
+  return node.getBoundingClientRect();
+}
+
+function clusterBox(map: MapHandle): DOMRect | null {
+  if (typeof map.project !== 'function' || typeof map.getZoom !== 'function') return null;
+  const rect = mapRect(map);
+  if (rect === null) return null;
+  if (rect.width === 0 && rect.height === 0) return null;
+  return rect;
+}
+
+const PIN_BOX = 24;
+const markerSizes = new WeakMap<HTMLElement, { width: number; height: number }>();
+
+function liveOr(live: number, saved: number | undefined): number {
+  if (live > 0) return live;
+  if (saved !== undefined) return saved;
+  return PIN_BOX;
+}
+
+function markerSize(element: HTMLElement): { width: number; height: number } {
+  const saved = markerSizes.get(element);
+  const width = liveOr(element.offsetWidth, saved === undefined ? undefined : saved.width);
+  const height = liveOr(element.offsetHeight, saved === undefined ? undefined : saved.height);
+  if (element.offsetWidth > 0) markerSizes.set(element, { width, height });
+  return { width, height };
+}
+
+function axisMisses(start: number, size: number, limit: number): boolean {
+  if (start + size <= 0) return true;
+  if (start >= limit) return true;
+  return false;
+}
+
+function markOffscreen(
+  map: MapHandle,
+  rect: DOMRect,
+  element: HTMLElement,
+  position: LngLat,
+): void {
+  const point = projectPoint(map, position);
+  if (point === null) {
+    element.classList.remove('is-offscreen');
+    return;
+  }
+  const size = markerSize(element);
+  const left = point.x - size.width / 2;
+  const top = point.y - size.height / 2;
+  const outside =
+    axisMisses(left, size.width, rect.width) || axisMisses(top, size.height, rect.height);
+  element.classList.toggle('is-offscreen', outside);
+}
+
+function projectPoint(map: MapHandle, position: LngLat): { x: number; y: number } | null {
+  /* v8 ignore next -- clusterBox already required project */
+  if (typeof map.project !== 'function') return null;
+  try {
+    const point = map.project(position);
+    if (!Number.isFinite(point.x) || !Number.isFinite(point.y)) return null;
+    return point;
+  } catch {
+    return null;
+  }
+}
+
+function groupCentroid(group: readonly PinRecord[]): { x: number; y: number } {
+  let x = 0;
+  let y = 0;
+  for (const pin of group) {
+    x += pin.position[0];
+    y += pin.position[1];
+  }
+  return { x: x / group.length, y: y / group.length };
+}
+
+function screenCentroid(
+  group: readonly PinRecord[],
+  points: ReadonlyMap<PinRecord, { x: number; y: number }>,
+): { x: number; y: number } {
+  let x = 0;
+  let y = 0;
+  for (const pin of group) {
+    const point = points.get(pin);
+    /* v8 ignore next -- clusterGroups only passes pins that are already in the point map */
+    if (point === undefined) continue;
+    x += point.x;
+    y += point.y;
+  }
+  return { x: x / group.length, y: y / group.length };
+}
+
+function clusterGroups(
+  pins: readonly PinRecord[],
+  points: ReadonlyMap<PinRecord, { x: number; y: number }>,
+): PinRecord[][] {
+  type Node = {
+    pin: PinRecord;
+    index: number;
+    point: { x: number; y: number };
+    parent: Node | null;
+  };
+  const cells = new Map<string, Node[]>();
+  const nodes: Node[] = [];
+  function root(node: Node): Node {
+    if (node.parent !== null) node.parent = root(node.parent);
+    return node.parent ?? node;
+  }
+  pins.forEach((pin, index) => {
+    const point = points.get(pin);
+    /* v8 ignore next -- callers pass only pins present in the point map */
+    if (point === undefined) return;
+    const node: Node = { pin, index, point, parent: null };
+    nodes.push(node);
+    const x = Math.floor(point.x / CLUSTER_PX);
+    const y = Math.floor(point.y / CLUSTER_PX);
+    for (let dx = -1; dx <= 1; dx += 1) {
+      for (let dy = -1; dy <= 1; dy += 1) {
+        for (const other of cells.get(`${x + dx},${y + dy}`) ?? []) {
+          if (Math.hypot(point.x - other.point.x, point.y - other.point.y) >= CLUSTER_PX) continue;
+          const a = root(node);
+          const b = root(other);
+          if (a !== b) {
+            if (a.index < b.index) b.parent = a;
+            else a.parent = b;
+          }
+        }
+      }
+    }
+    const key = `${x},${y}`;
+    const cell = cells.get(key) ?? [];
+    cell.push(node);
+    cells.set(key, cell);
+  });
+  const groups = new Map<Node, PinRecord[]>();
+  for (const node of nodes) {
+    const key = root(node);
+    const group = groups.get(key) ?? [];
+    group.push(node.pin);
+    groups.set(key, group);
+  }
+  return [...groups.values()];
+}
+
+function bestToken(group: readonly PinRecord[]): string {
+  let best: number = ACTIVITY_ORDER.length;
+  let token = 'none';
+  for (const pin of group) {
+    const rank = activityRank(pin.row.activityToken);
+    if (rank < best) {
+      best = rank;
+      token = pin.row.activityToken;
+    }
+  }
+  return token;
+}
+
+function clusterPosition(map: MapHandle, group: readonly PinRecord[]): LngLat {
+  const average = groupCentroid(group);
+  if (typeof map.unproject === 'function') {
+    const points = new Map<PinRecord, { x: number; y: number }>();
+    for (const pin of group) {
+      const point = projectPoint(map, pin.position);
+      if (point !== null) points.set(pin, point);
+    }
+    const screen = screenCentroid(group, points);
+    try {
+      const lngLat = map.unproject([Math.round(screen.x), Math.round(screen.y)]);
+      if (Number.isFinite(lngLat.lng) && Number.isFinite(lngLat.lat))
+        return [lngLat.lng, lngLat.lat];
+    } catch {
+      return [average.x, average.y];
+    }
+  }
+  return [average.x, average.y];
+}
+
+function csvField(value: string): string {
+  let safe = value;
+  if (/^[=+\-@\t\r]/.test(safe)) safe = `'${safe}`;
+  if (/[,"\r\n]/.test(safe)) return `"${safe.replaceAll('"', '""')}"`;
+  return safe;
+}
+
 function isAbortError(error: unknown): boolean {
   return isRecord(error) && error['name'] === 'AbortError';
 }
 
+function cellText(row: ShopRow, column: SortColumn, locale: string): string {
+  if (column === 'country') return countryDisplayName(row.country, locale);
+  return sortText(row, column, locale);
+}
+
 /**
- * Renders the homepage shop filters with map and table views.
+ * Renders the homepage shop directory: filters, map, and table.
  *
- * @param props - Localized copy for the shop section.
- * @returns The interactive homepage shop section.
+ * Filters, columns, and the popup category come from the loaded 21.gifts rows.
+ * A control is shown only when its values actually differ.
+ * Popup shop links open client-side on plain primary clicks.
+ * Closing a popup with focus inside returns focus to the pin's current cluster or pin.
+ * A focused pin or cluster leaving the visible map transfers focus to the map canvas.
+ * Below sm, the table puts shop and country below the name instead of in columns.
+ * Help measures its inner content plus padding and borders while keeping its pin.
+ * If an empty response removes help, focus on its button or inside its panel
+ * moves without scrolling to the selected Map/Table button.
+ *
+ * @param props - Localized copy and the page locale.
+ * @returns The shop section.
  */
-export function HomeShops({ copy }: { copy: HomeShopsCopy }): ReactElement {
+export function HomeShops({ copy, locale }: { copy: HomeShopsCopy; locale: Locale }): ReactElement {
+  const [popupPortals, setPopupPortals] = useState<PopupPortal[]>([]);
   const [country, setCountry] = useState('');
   const [shopName, setShopName] = useState('');
   const [blockchain, setBlockchain] = useState('');
@@ -629,27 +1392,52 @@ export function HomeShops({ copy }: { copy: HomeShopsCopy }): ReactElement {
   const [attempt, setAttempt] = useState(0);
   const [filters, setFilters] = useState<Filters | null>(null);
   const [ready, setReady] = useState<Ready | null>(null);
+  const [census, setCensus] = useState<Record<string, unknown>[] | null>(null);
   const [loadFailed, setLoadFailed] = useState(false);
   const [scriptFailed, setScriptFailed] = useState(false);
-  const helpId = useId();
+  const [sortColumn, setSortColumn] = useState<SortColumn>('name');
+  const [sortDir, setSortDir] = useState<SortDir>('asc');
+  const [helpOpen, setHelpOpen] = useState(false);
+  const [helpBox, setHelpBox] = useState<HelpBox | null>(null);
+  const headingId = useId();
+  const helpPanelId = useId();
+  const viewControlRef = useRef<HTMLDivElement>(null);
+  const helpRef = useRef<HTMLSpanElement>(null);
+  const helpPanelRef = useRef<HTMLDivElement>(null);
+  const helpContentRef = useRef<HTMLDivElement>(null);
+  const restoreHelpFocusRef = useRef(false);
   const sessionRef = useRef<MapSession | null>(null);
   const markersRef = useRef<MarkerHandle[]>([]);
+  const clusterMarkersRef = useRef(new Map<string, ClusterMarker>());
+  const clusterPinsRef = useRef(new Map<Element | null, PinRecord>());
+  const pinClustersRef = useRef(new Map<HTMLElement, HTMLButtonElement>());
+  const pinsRef = useRef<PinRecord[]>([]);
+  const clusterFrame = useRef(0);
+  const clusterFocus = useRef<{ pin: PinRecord; button: HTMLElement } | null>(null);
+  const popupFrame = useRef(0);
+  const sizeObserverRef = useRef<ResizeObserver | null>(null);
   const awaitingRef = useRef(false);
   const rowsRef = useRef<ShopRow[]>([]);
+  const showCategoryRef = useRef(false);
   const failedRef = useRef(false);
   const viewRef = useRef<ShopView>('map');
   const startedOnMap = useRef(true);
+  const localeRef = useRef(locale);
+  localeRef.current = locale;
+  const closeLabelRef = useRef(copy.closePopup);
+  closeLabelRef.current = copy.closePopup;
   const provider = filters === null ? null : readGiftsProvider(filters.techProviders);
-  const blockchainOptions = provider === null ? [] : provider.blockchains;
-  const blockchainActive = blockchainOptions.includes(blockchain) ? blockchain : '';
-  const assetOptions = assetsFor(provider, blockchainActive);
-  const assetActive = assetOptions.includes(asset) ? asset : '';
-  const countries = filters === null ? [] : filters.countries;
-  const shopNames = filters === null ? [] : filters.shopNames;
-  const activities = filters === null ? [] : filters.activities;
-  const countryActive = countries.includes(country) ? country : '';
-  const shopNameActive = shopNames.includes(shopName) ? shopName : '';
-  const activityActive = activities.includes(activity) ? activity : '';
+  const source = census ?? [];
+  const countries = census === null ? [] : countryValues(source, locale);
+  const shopNames = census === null ? [] : nameValues(source);
+  const blockchains = census === null ? [] : blockchainValues(source, provider);
+  const countryActive = keptValue(country, countries);
+  const shopNameActive = keptValue(shopName, shopNames);
+  const blockchainActive = keptValue(blockchain, blockchains);
+  const assets = census === null ? [] : assetValues(source, provider, blockchainActive);
+  const activities = census === null ? [] : activityValues(source);
+  const assetActive = keptValue(asset, assets);
+  const activityActive = keptValue(activity, activities);
   const selection: Selection = {
     country: countryActive,
     shopName: shopNameActive,
@@ -664,21 +1452,209 @@ export function HomeShops({ copy }: { copy: HomeShopsCopy }): ReactElement {
     asset: assetActive,
   });
   const covered = ready !== null && queryCovers(ready.query, query);
-  const rows =
-    ready !== null && covered ? sortRows(buildRows(ready.places, provider, selection, copy)) : [];
+  const built = ready !== null && covered ? buildRows(ready.places, provider, selection, copy) : [];
+  const rows = sortShopRows(built, sortColumn, sortDir, locale);
+  const censusRows = census === null ? [] : buildRows(census, provider, EMPTY_SELECTION, copy);
+  const showCountry = differs(censusRows, (row) => row.country);
+  const showShop = differs(censusRows, (row) => row.shop);
+  const showCategory = differs(censusRows, (row) => row.category);
+  const showHelp = census === null || census.length > 0;
+  // Keep open help mounted until the layout effect transfers its focus.
+  const helpVisible = helpOpen && helpBox !== null;
+  const showLegend = view === 'map' && census !== null && census.length > 0;
   rowsRef.current = rows;
+  showCategoryRef.current = showCategory;
   failedRef.current = loadFailed || scriptFailed;
   viewRef.current = view;
   awaitingRef.current = !covered;
   const showError = loadFailed || scriptFailed;
   const showEmpty = !showError && covered && rows.length === 0;
-  const rowsKey = `${loadFailed ? 1 : 0}${scriptFailed ? 1 : 0}${covered ? 1 : 0}:${JSON.stringify(rows)}`;
-  function paintMarkers(): void {
+  const rowsKey = `${loadFailed ? 1 : 0}${scriptFailed ? 1 : 0}${covered ? 1 : 0}:${JSON.stringify(built)}`;
+
+  const clearClusters = useCallback((): void => {
+    for (const cluster of clusterMarkersRef.current.values()) cluster.marker.remove();
+    clusterMarkersRef.current.clear();
+    clusterPinsRef.current.clear();
+    pinClustersRef.current.clear();
+    for (const pin of pinsRef.current) pin.element.classList.remove('is-clustered');
+  }, []);
+
+  const paintClusters = useCallback(
+    (focusPin?: PinRecord): void => {
+      const session = sessionRef.current;
+      const focusedElement = document.activeElement;
+      const activePin =
+        focusPin ??
+        clusterPinsRef.current.get(focusedElement) ??
+        pinsRef.current.find((pin): boolean => pin.element === focusedElement);
+      if (session === null || awaitingRef.current || failedRef.current) {
+        clearClusters();
+        return;
+      }
+      const rect = clusterBox(session.map);
+      if (rect === null) {
+        clearClusters();
+        return;
+      }
+      const readZoom = session.map.getZoom;
+      /* v8 ignore next -- clusterBox already required getZoom */
+      if (readZoom === undefined) return;
+      const zoom = readZoom.call(session.map);
+      const clusters: { element: HTMLElement; position: LngLat }[] = [];
+      const previous = clusterMarkersRef.current;
+      const next = new Map<string, ClusterMarker>();
+      const pinIndexes = new Map(pinsRef.current.map((pin, index) => [pin, index]));
+      clusterPinsRef.current.clear();
+      pinClustersRef.current.clear();
+      for (const pin of pinsRef.current) pin.element.classList.remove('is-clustered');
+      let focusTarget: HTMLElement | undefined;
+      if (typeof zoom === 'number' && zoom < CLUSTER_ZOOM) {
+        const points = new Map<PinRecord, { x: number; y: number }>();
+        for (const pin of pinsRef.current) {
+          const point = projectPoint(session.map, pin.position);
+          if (point !== null) points.set(pin, point);
+        }
+        const groups = clusterGroups(
+          pinsRef.current.filter((pin) => points.has(pin)),
+          points,
+        );
+        for (const group of groups) {
+          const firstPin = group[0];
+          if (group.length < 2 || firstPin === undefined) continue;
+          for (const pin of group) pin.element.classList.add('is-clustered');
+          const key = group.map((pin) => pinIndexes.get(pin)).join(',');
+          const targetPin =
+            activePin !== undefined && group.includes(activePin) ? activePin : firstPin;
+          let cluster = previous.get(key);
+          const isNew = cluster === undefined;
+          if (cluster === undefined) {
+            const button = document.createElement('button');
+            button.type = 'button';
+            const shell = document.createElement('div');
+            shell.className = 'shop-cluster-marker';
+            shell.appendChild(button);
+            const marker = new session.lib.Marker({ element: shell });
+            const record: ClusterMarker = {
+              marker,
+              shell,
+              button,
+              group,
+              targetPin,
+              position: firstPin.position,
+            };
+            cluster = record;
+            button.addEventListener('click', (event: MouseEvent) => {
+              clusterFocus.current = event.detail === 0 ? { pin: record.targetPin, button } : null;
+              userMovedMaps.add(session.map);
+              const bounds = new session.lib.LngLatBounds();
+              for (const pin of record.group) bounds.extend(pin.position);
+              const currentZoom = readZoom.call(session.map);
+              const camera =
+                typeof session.map.cameraForBounds === 'function'
+                  ? session.map.cameraForBounds(bounds, {
+                      padding: FRAME_PADDING,
+                      maxZoom: CLUSTER_MAX_ZOOM,
+                    })
+                  : undefined;
+              if (typeof camera?.zoom === 'number' && camera.zoom >= currentZoom + 1) {
+                session.map.fitBounds(bounds, {
+                  padding: FRAME_PADDING,
+                  maxZoom: CLUSTER_MAX_ZOOM,
+                  ...clusterMotion(session.map),
+                });
+              } else {
+                session.map.easeTo({
+                  center: record.position,
+                  zoom: Math.min(currentZoom + 2, CLUSTER_MAX_ZOOM),
+                  ...clusterMotion(session.map),
+                });
+              }
+            });
+          }
+          cluster.group = group;
+          cluster.targetPin = targetPin;
+          const { button, shell, marker } = cluster;
+          button.className = `shop-cluster ${clusterTone(bestToken(group))}`;
+          button.textContent = String(group.length);
+          button.setAttribute(
+            'aria-label',
+            translate(getCatalog(localeRef.current), 'homeShops.clusterCount', {
+              count: group.length,
+            }),
+          );
+          if (targetPin === activePin) focusTarget = button;
+          clusterPinsRef.current.set(button, targetPin);
+          for (const pin of group) pinClustersRef.current.set(pin.element, button);
+          let position = clusterPosition(session.map, group);
+          const center = projectPoint(session.map, position);
+          if (
+            center !== null &&
+            (center.x < 0 || center.x >= rect.width || center.y < 0 || center.y >= rect.height)
+          ) {
+            const visible = group.filter((pin) => {
+              const point = points.get(pin);
+              /* v8 ignore next -- clusterGroups only passes pins in the point map */
+              if (point === undefined) return false;
+              const size = markerSize(pin.element);
+              return (
+                !axisMisses(point.x - size.width / 2, size.width, rect.width) &&
+                !axisMisses(point.y - size.height / 2, size.height, rect.height)
+              );
+            });
+            if (visible.length > 0) position = clusterPosition(session.map, visible);
+          }
+          cluster.position = position;
+          marker.setLngLat(position);
+          if (isNew) marker.addTo(session.map);
+          next.set(key, cluster);
+          clusters.push({ element: shell, position });
+        }
+      }
+      for (const [key, cluster] of previous) {
+        if (!next.has(key)) cluster.marker.remove();
+      }
+      clusterMarkersRef.current = next;
+      for (const pin of pinsRef.current) {
+        markOffscreen(session.map, rect, pin.element, pin.position);
+      }
+      for (const cluster of clusters) {
+        markOffscreen(session.map, rect, cluster.element, cluster.position);
+      }
+      if (activePin !== undefined && activePin.element.isConnected) {
+        const target = focusTarget ?? activePin.element;
+        const canvas =
+          target.closest('.is-offscreen') !== null ? session.map.getCanvas?.() : undefined;
+        const destination = canvas instanceof HTMLElement ? canvas : target;
+        if (document.activeElement !== destination) destination.focus({ preventScroll: true });
+      }
+    },
+    [clearClusters],
+  );
+
+  const scheduleClusters = useCallback((): void => {
+    const session = sessionRef.current;
+    if (session === null || typeof session.map.project !== 'function') return;
+    if (clusterFrame.current !== 0) return;
+    clusterFrame.current = requestAnimationFrame(() => {
+      clusterFrame.current = 0;
+      paintClusters();
+    });
+  }, [paintClusters]);
+
+  const paintMarkers = useCallback((): void => {
     const session = sessionRef.current;
     if (session === null) return;
+    cancelAnimationFrame(popupFrame.current);
+    popupFrame.current = 0;
+    const portals: PopupPortal[] = [];
+    clearClusters();
     for (const marker of markersRef.current) marker.remove();
     markersRef.current = [];
-    if (awaitingRef.current) return;
+    pinsRef.current = [];
+    if (awaitingRef.current) {
+      setPopupPortals(portals);
+      return;
+    }
     const positions = markerPositions(rowsRef.current, failedRef.current);
     if (!failedRef.current) {
       for (const row of rowsRef.current) {
@@ -688,46 +1664,81 @@ export function HomeShops({ copy }: { copy: HomeShopsCopy }): ReactElement {
         element.className = row.markerClass;
         element.title = row.markerTitle;
         element.setAttribute('aria-label', markerAriaLabel(row.name, row.markerTitle));
+        const popup = new session.lib.Popup({
+          offset: 16,
+          closeButton: false,
+          focusAfterOpen: false,
+          className: 'shop-popup',
+        });
+        const removePopup = popup.remove.bind(popup);
+        popup.remove = (): void => {
+          const restoreFocus = content.contains(document.activeElement);
+          removePopup();
+          if (restoreFocus && element.isConnected) {
+            (pinClustersRef.current.get(element) ?? element).focus();
+          }
+        };
+        const { content, host, title } = popupContent(row, showCategoryRef.current);
+        portals.push({
+          host,
+          title,
+          row,
+          closeLabel: closeLabelRef.current,
+          onClose: () => {
+            popup.remove();
+          },
+        });
         element.addEventListener('keydown', (event: KeyboardEvent) => {
           if (event.key !== 'Enter' && event.key !== ' ') return;
           event.preventDefault();
+          element.dataset['keyboardOpen'] = '1';
           element.click();
+        });
+        popup.on('open', () => {
+          userMovedMaps.add(session.map);
+          if (element.dataset['keyboardOpen'] === '1') {
+            delete element.dataset['keyboardOpen'];
+            const close = content.querySelector('.shop-popup-close');
+            if (close instanceof HTMLButtonElement) close.focus();
+          }
+          if (popupFrame.current !== 0) cancelAnimationFrame(popupFrame.current);
+          popupFrame.current = requestAnimationFrame(() => {
+            popupFrame.current = 0;
+            fitPopup(session.map);
+          });
+        });
+        popup.on('close', () => {
+          delete element.dataset['keyboardOpen'];
+          if (popupFrame.current !== 0) cancelAnimationFrame(popupFrame.current);
+          popupFrame.current = 0;
         });
         const marker = new session.lib.Marker({ element });
         marker.setLngLat(row.position);
-        marker.setPopup(new session.lib.Popup({ offset: 16 }).setDOMContent(popupContent(row)));
+        marker.setPopup(popup.setDOMContent(content));
         marker.addTo(session.map);
         markersRef.current.push(marker);
+        pinsRef.current.push({ element, row, position: row.position });
       }
     }
+    setPopupPortals(portals);
     if (viewRef.current === 'map') frameMap(session.map, session.lib, positions);
-  }
-
-  const assetKey = assetOptions.join('\u0000');
-  const blockchainKey = blockchainOptions.join('\u0000');
-  const countryKey = countries.join('\u0000');
-  const shopNameKey = shopNames.join('\u0000');
-  const activityKey = activities.join('\u0000');
+    scheduleClusters();
+  }, [clearClusters, scheduleClusters]);
 
   useEffect(() => {
-    if (asset !== '' && !assetKey.split('\u0000').includes(asset)) setAsset('');
-  }, [asset, assetKey]);
+    if (census === null) return;
+    if (blockchain !== '' && blockchainActive === '') setBlockchain('');
+  }, [census, blockchain, blockchainActive]);
 
   useEffect(() => {
-    if (blockchain !== '' && !blockchainKey.split('\u0000').includes(blockchain)) setBlockchain('');
-  }, [blockchain, blockchainKey]);
+    if (census === null) return;
+    if (asset !== '' && assetActive === '') setAsset('');
+  }, [census, asset, assetActive]);
 
   useEffect(() => {
-    if (country !== '' && !countryKey.split('\u0000').includes(country)) setCountry('');
-  }, [country, countryKey]);
-
-  useEffect(() => {
-    if (shopName !== '' && !shopNameKey.split('\u0000').includes(shopName)) setShopName('');
-  }, [shopName, shopNameKey]);
-
-  useEffect(() => {
-    if (activity !== '' && !activityKey.split('\u0000').includes(activity)) setActivity('');
-  }, [activity, activityKey]);
+    if (census === null) return;
+    if (activity !== '' && activityActive === '') setActivity('');
+  }, [census, activity, activityActive]);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -777,21 +1788,27 @@ export function HomeShops({ copy }: { copy: HomeShopsCopy }): ReactElement {
     async function loadPlaces(): Promise<void> {
       try {
         setLoadFailed(false);
-        const response = await fetch(placesUrl, {
-          credentials: 'omit',
-          signal: controller.signal,
-        });
+        const response = await fetch(placesUrl, { credentials: 'omit', signal: controller.signal });
         if (!response.ok) throw new Error('load failed');
         const body: unknown = await response.json();
         const nextPlaces = readPlaces(body);
         if (nextPlaces === null) throw new Error('load failed');
         if (!active) return;
         setReady({ filters: loadedFilters, places: nextPlaces, query: requestedQuery });
+        if (requestedQuery === '') {
+          const nextCensus = giftsPlaces(nextPlaces);
+          restoreHelpFocusRef.current =
+            nextCensus.length === 0 &&
+            (helpRef.current?.contains(document.activeElement) === true ||
+              helpPanelRef.current?.contains(document.activeElement) === true);
+          setCensus(nextCensus);
+        }
         setLoadFailed(false);
       } catch (error: unknown) {
         if (!active || isAbortError(error)) return;
         setReady(null);
         setLoadFailed(true);
+        if (requestedQuery === '') setCensus(null);
       }
     }
 
@@ -804,7 +1821,7 @@ export function HomeShops({ copy }: { copy: HomeShopsCopy }): ReactElement {
 
   useEffect(() => {
     paintMarkers();
-  }, [rowsKey]);
+  }, [paintMarkers, rowsKey]);
 
   useEffect(() => {
     const session = sessionRef.current;
@@ -813,13 +1830,100 @@ export function HomeShops({ copy }: { copy: HomeShopsCopy }): ReactElement {
       session.map.resize();
       if (!awaitingRef.current) {
         frameMap(session.map, session.lib, markerPositions(rowsRef.current, failedRef.current));
+        scheduleClusters();
       }
     }
     startedOnMap.current = view === 'map';
-  }, [view]);
+  }, [scheduleClusters, view]);
 
   useEffect(() => {
     let cancelled = false;
+    const styleController = new AbortController();
+
+    async function openMap(lib: MapLibreNamespace, container: HTMLElement): Promise<void> {
+      const style = await loadMapStyle(localeRef.current, styleController.signal);
+      if (cancelled || style === null) return;
+      try {
+        const map = new lib.Map({
+          container,
+          style,
+          center: HOME_CENTER,
+          zoom: HOME_ZOOM,
+          renderWorldCopies: false,
+          // MapLibre otherwise resizes on its own and can keep a frame that
+          // was measured while the box was still empty.
+          trackResize: false,
+          attributionControl: {
+            compact: true,
+            customAttribution: '<a href="https://maplibre.org/" target="_blank">MapLibre</a>',
+          },
+          locale: {
+            'NavigationControl.ZoomIn': copy.zoomIn,
+            'NavigationControl.ZoomOut': copy.zoomOut,
+            'NavigationControl.ResetBearing': copy.resetBearing,
+            'AttributionControl.ToggleAttribution': copy.toggleAttribution,
+            'AttributionControl.MapFeedback': copy.mapFeedback,
+            'Popup.Close': copy.closePopup,
+            'Map.Title': copy.mapTitle,
+          },
+        });
+        map.addControl(new lib.NavigationControl({ showCompass: false }), 'top-right');
+        const onMove = (): void => {
+          scheduleClusters();
+        };
+        const onMoveStart = (event: { originalEvent?: Event }): void => {
+          if (event.originalEvent !== undefined) userMovedMaps.add(map);
+        };
+        const onMoveEnd = (): void => {
+          const pending = clusterFocus.current;
+          if (pending === null) return;
+          clusterFocus.current = null;
+          if (document.activeElement !== pending.button) return;
+          if (clusterFrame.current !== 0) cancelAnimationFrame(clusterFrame.current);
+          clusterFrame.current = 0;
+          paintClusters(pending.pin);
+        };
+        if (typeof map.on === 'function') {
+          map.on('move', onMove);
+          map.on('zoom', onMove);
+          for (const event of ['dragstart', 'zoomstart', 'rotatestart', 'pitchstart']) {
+            map.on(event, onMoveStart);
+          }
+          map.on('moveend', onMoveEnd);
+        }
+        if (typeof map.once === 'function') map.once('load', () => revealAttribution(map));
+        else revealAttribution(map);
+        sessionRef.current = { map, lib, onMove, onMoveStart, onMoveEnd };
+        paintMarkers();
+        if (typeof ResizeObserver === 'function' && typeof map.getContainer === 'function') {
+          const container = map.getContainer();
+          if (container instanceof HTMLElement) {
+            const observer = new ResizeObserver(() => {
+              // Places are still in flight. Framing the empty map here would
+              // make the real shops fly in afterwards, and a capture can land
+              // in the middle of that flight.
+              if (awaitingRef.current) return;
+              const box = mapBox(map);
+              if (box === null || box === undefined) return;
+              const key = `${box.width}x${box.height}`;
+              if (framedSizes.get(map) === key) return;
+              // The user placed this view, so size the canvas and do not fit again.
+              if (userMovedMaps.has(map)) {
+                map.resize();
+                framedSizes.set(map, key);
+                return;
+              }
+              frameMap(map, lib, markerPositions(rowsRef.current, failedRef.current), true);
+            });
+            observer.observe(container);
+            sizeObserverRef.current = observer;
+          }
+        }
+      } catch {
+        setScriptFailed(true);
+        setView('table');
+      }
+    }
 
     function onLoad(script: Element): void {
       const lib = window.maplibregl;
@@ -838,29 +1942,7 @@ export function HomeShops({ copy }: { copy: HomeShopsCopy }): ReactElement {
         return;
       }
       if (sessionRef.current !== null) return;
-      try {
-        const map = new lib.Map({
-          container,
-          style: TILE_STYLE,
-          center: HOME_CENTER,
-          zoom: HOME_ZOOM,
-          locale: {
-            'NavigationControl.ZoomIn': copy.zoomIn,
-            'NavigationControl.ZoomOut': copy.zoomOut,
-            'NavigationControl.ResetBearing': copy.resetBearing,
-            'AttributionControl.ToggleAttribution': copy.toggleAttribution,
-            'AttributionControl.MapFeedback': copy.mapFeedback,
-            'Popup.Close': copy.closePopup,
-            'Map.Title': copy.mapTitle,
-          },
-        });
-        map.addControl(new lib.NavigationControl(), 'top-right');
-        sessionRef.current = { map, lib };
-        paintMarkers();
-      } catch {
-        setScriptFailed(true);
-        setView('table');
-      }
+      void openMap(lib, container);
     }
 
     function onError(script: Element): void {
@@ -912,11 +1994,32 @@ export function HomeShops({ copy }: { copy: HomeShopsCopy }): ReactElement {
 
     return () => {
       cancelled = true;
+      styleController.abort();
+      if (clusterFrame.current !== 0) cancelAnimationFrame(clusterFrame.current);
+      clusterFrame.current = 0;
+      if (popupFrame.current !== 0) cancelAnimationFrame(popupFrame.current);
+      popupFrame.current = 0;
+      sizeObserverRef.current?.disconnect();
+      sizeObserverRef.current = null;
       const session = sessionRef.current;
-      if (session !== null) session.map.remove();
+      if (session !== null) {
+        if (typeof session.map.off === 'function') {
+          session.map.off('move', session.onMove);
+          session.map.off('zoom', session.onMove);
+          for (const event of ['dragstart', 'zoomstart', 'rotatestart', 'pitchstart']) {
+            session.map.off(event, session.onMoveStart);
+          }
+          session.map.off('moveend', session.onMoveEnd);
+        }
+        clusterFocus.current = null;
+        session.map.remove();
+      }
       sessionRef.current = null;
+      setPopupPortals([]);
       for (const marker of markersRef.current) marker.remove();
       markersRef.current = [];
+      clearClusters();
+      pinsRef.current = [];
     };
   }, [
     copy.zoomIn,
@@ -926,7 +2029,102 @@ export function HomeShops({ copy }: { copy: HomeShopsCopy }): ReactElement {
     copy.mapFeedback,
     copy.closePopup,
     copy.mapTitle,
+    clearClusters,
+    locale,
+    paintClusters,
+    paintMarkers,
+    scheduleClusters,
   ]);
+
+  useLayoutEffect(() => {
+    if (!helpOpen) return undefined;
+    function place(): void {
+      const node = helpRef.current;
+      /* v8 ignore next -- trigger removal closes help and cleans up listeners before paint */
+      if (node === null) return;
+      const panel = helpPanelRef.current;
+      const content = helpContentRef.current;
+      // Read the natural content height even when the pinned panel scrolls.
+      let panelHeight = 0;
+      if (panel !== null && content !== null) {
+        const style = getComputedStyle(panel);
+        const chrome = [
+          style.paddingTop,
+          style.paddingBottom,
+          style.borderTopWidth,
+          style.borderBottomWidth,
+        ].reduce((height, value) => height + (Number.parseFloat(value) || 0), 0);
+        panelHeight = content.scrollHeight + chrome;
+      }
+      const next = helpPanelBox(node.getBoundingClientRect(), panelHeight);
+      setHelpBox((current) => {
+        if (
+          current !== null &&
+          current.top === next.top &&
+          current.bottom === next.bottom &&
+          current.left === next.left &&
+          current.width === next.width &&
+          current.scrolls === next.scrolls
+        ) {
+          return current;
+        }
+        return next;
+      });
+    }
+    place();
+    window.addEventListener('resize', place);
+    window.addEventListener('scroll', place, true);
+    return () => {
+      window.removeEventListener('resize', place);
+      window.removeEventListener('scroll', place, true);
+    };
+  }, [helpOpen, helpBox]);
+
+  useLayoutEffect(() => {
+    if (showHelp) return;
+    if (restoreHelpFocusRef.current || helpPanelRef.current?.contains(document.activeElement)) {
+      viewControlRef.current
+        ?.querySelector<HTMLButtonElement>('button[aria-pressed="true"]')
+        ?.focus({ preventScroll: true });
+    }
+    restoreHelpFocusRef.current = false;
+    setHelpOpen(false);
+  }, [showHelp, helpOpen]);
+
+  useLayoutEffect(() => {
+    helpPanelRef.current?.focus({ preventScroll: true });
+  }, [helpVisible]);
+
+  const closeHelp = useCallback((): void => {
+    if (helpPanelRef.current?.contains(document.activeElement)) {
+      helpRef.current?.querySelector('button')?.focus({ preventScroll: true });
+    }
+    setHelpOpen(false);
+  }, []);
+
+  useEffect(() => {
+    if (!helpOpen) return undefined;
+    function onPointerDown(event: MouseEvent): void {
+      const target = event.target;
+      if (!(target instanceof Element)) {
+        closeHelp();
+        return;
+      }
+      if (helpRef.current !== null && helpRef.current.contains(target)) return;
+      if (target.closest('[data-shops-help-panel]') !== null) return;
+      closeHelp();
+    }
+    function onKeyDown(event: KeyboardEvent): void {
+      if (event.key !== 'Escape') return;
+      closeHelp();
+    }
+    document.addEventListener('mousedown', onPointerDown);
+    document.addEventListener('keydown', onKeyDown);
+    return () => {
+      document.removeEventListener('mousedown', onPointerDown);
+      document.removeEventListener('keydown', onKeyDown);
+    };
+  }, [closeHelp, helpOpen]);
 
   function retryFilters(): void {
     setAttempt((current) => current + 1);
@@ -948,7 +2146,7 @@ export function HomeShops({ copy }: { copy: HomeShopsCopy }): ReactElement {
       ...rows.map((row) => [
         row.name,
         row.location,
-        row.country,
+        countryDisplayName(row.country, locale),
         row.shop,
         row.provider,
         row.activity,
@@ -966,200 +2164,308 @@ export function HomeShops({ copy }: { copy: HomeShopsCopy }): ReactElement {
     URL.revokeObjectURL(url);
   }
 
+  function chooseSort(column: SortColumn): void {
+    if (sortColumn === column) {
+      setSortDir((current) => (current === 'asc' ? 'desc' : 'asc'));
+      return;
+    }
+    setSortColumn(column);
+    setSortDir('asc');
+  }
+
+  const tableColumns: { key: SortColumn; label: string }[] = [
+    { key: 'name', label: copy.colName },
+    { key: 'location', label: copy.colLocation },
+  ];
+  if (showCountry) tableColumns.push({ key: 'country', label: copy.colCountry });
+  if (showShop) tableColumns.push({ key: 'shop', label: copy.colShop });
+  tableColumns.push({ key: 'activity', label: copy.colActivity });
+
   return (
     <section
       id="shops"
-      className="bg-[#fff] text-[#272b38] [--color-app-danger:#b91c1c] [--color-app-focus:#171717] [--color-app-btn:#171717] [--color-app-btn-fg:#ffffff] [--color-app-btn-hover:#404040]"
+      aria-labelledby={headingId}
+      className="scroll-mt-20 border-b border-ink/10 bg-paper px-5 py-16 text-ink scheme-light [--color-app-border:#e5e5e5] [--color-app-border-strong:#d4d4d4] [--color-app-btn:#171717] [--color-app-btn-fg:#ffffff] [--color-app-btn-hover:#404040] [--color-app-card:#ffffff] [--color-app-card-muted:#fafafa] [--color-app-danger:#b91c1c] [--color-app-fg:#171717] [--color-app-focus:#171717] [--color-app-hover:#fafafa] [--color-app-muted:#525252] sm:py-20"
     >
-      <div className="mx-auto max-w-[1100px] px-5 py-20">
-        <h2 className="text-2xl font-semibold">{copy.title}</h2>
-        <p>{copy.lead}</p>
-        <div className="flex flex-wrap items-end gap-4">
-          <label>
-            {copy.country}
-            <select
-              className="min-h-11 rounded-lg border border-[#ced1da] bg-[#fff] px-3"
-              value={countryActive}
-              onChange={(event) => onTextChoice(event, countryActive, setCountry)}
+      {popupPortals.map(({ host, title, row, closeLabel, onClose }) => (
+        <Fragment key={row.key}>
+          {createPortal(
+            <IconButton
+              aria-label={closeLabel}
+              variant="ghost"
+              size="md"
+              className="shop-popup-close border border-ink/12 bg-paper"
+              onClick={(event) => {
+                event.stopPropagation();
+                onClose();
+              }}
             >
-              <option value="">{copy.all}</option>
-              {countries.map((item) => (
-                <option key={item} value={item}>
-                  {item}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label>
-            {copy.name}
-            <select
-              className="min-h-11 rounded-lg border border-[#ced1da] bg-[#fff] px-3"
-              value={shopNameActive}
-              onChange={(event) => onTextChoice(event, shopNameActive, setShopName)}
-            >
-              <option value="">{copy.all}</option>
-              {shopNames.map((item) => (
-                <option key={item} value={item}>
-                  {item}
-                </option>
-              ))}
-            </select>
-          </label>
-          <FilterMenu
-            label={copy.blockchain}
-            value={blockchainActive}
-            allLabel={copy.all}
-            options={textChoices(blockchainOptions, copy.all)}
-            onChange={setBlockchain}
-          />
-          <FilterMenu
-            label={copy.asset}
-            value={asset}
-            allLabel={copy.all}
-            options={textChoices(assetOptions, copy.all)}
-            onChange={setAsset}
-          />
-          <FilterMenu
-            label={copy.activity}
-            value={activityActive}
-            allLabel={copy.all}
-            options={activityChoices(activities, copy)}
-            onChange={setActivity}
-          />
-          <IconButton
-            type="button"
-            aria-label={copy.helpLabel}
-            popoverTarget={helpId}
-            variant="primary"
-            size="md"
-          >
-            <CircleHelp aria-hidden="true" className="h-4 w-4" />
-          </IconButton>
-          <div className="basis-full">
-            <div
-              role="group"
-              aria-label={copy.view}
-              className="inline-flex min-h-11 items-center rounded-full border border-[#ced1da] bg-[#fff] px-1"
-            >
-              <button
-                type="button"
-                aria-pressed={view === 'map'}
-                className={viewButtonClass(view === 'map')}
-                onClick={() => setView('map')}
-              >
-                {copy.map}
-              </button>
-              <button
-                type="button"
-                aria-pressed={view === 'table'}
-                className={viewButtonClass(view === 'table')}
-                onClick={() => setView('table')}
-              >
-                {copy.table}
-              </button>
-            </div>
-          </div>
-        </div>
-        <div
-          id={helpId}
-          popover="auto"
-          className="border border-[#ced1da] bg-[#fff] text-[#272b38] [color-scheme:light]"
+              <X aria-hidden="true" className="h-4 w-4" />
+            </IconButton>,
+            host,
+          )}
+          {row.href === null
+            ? null
+            : createPortal(
+                <Link href={row.href} className="shop-popup-name">
+                  {row.name}
+                  <ArrowRight aria-hidden="true" className="shop-popup-arrow" />
+                </Link>,
+                title,
+              )}
+        </Fragment>
+      ))}
+      <div className="mx-auto max-w-[1100px]">
+        <h2
+          id={headingId}
+          className="text-3xl leading-tight font-semibold tracking-tight text-balance sm:text-4xl"
         >
-          <dl>
-            <div>
-              <dt>
-                <span className="shop-place-marker is-daily" aria-hidden="true" />
-                {copy.daily}
-              </dt>
-              <dd>{copy.dailyHelp}</dd>
+          {copy.lead}
+        </h2>
+        <div className="mt-8 rounded-2xl border border-ink/10 bg-home-card">
+          <div className="grid grid-cols-2 items-center gap-2 p-3 sm:flex sm:flex-wrap">
+            {countries.length > 0 ? (
+              <div className="order-2 min-w-0 sm:order-none">
+                <FilterMenu
+                  label={copy.country}
+                  value={countryActive}
+                  allLabel={copy.all}
+                  options={countryChoices(countries, copy.all, locale)}
+                  onChange={setCountry}
+                />
+              </div>
+            ) : null}
+            {shopNames.length > 0 ? (
+              <div className="order-2 min-w-0 sm:order-none">
+                <FilterMenu
+                  label={copy.name}
+                  value={shopNameActive}
+                  allLabel={copy.all}
+                  options={nameChoices(shopNames, copy)}
+                  onChange={setShopName}
+                />
+              </div>
+            ) : null}
+            {blockchains.length > 0 ? (
+              <div className="order-2 min-w-0 sm:order-none">
+                <FilterMenu
+                  label={copy.blockchain}
+                  value={blockchainActive}
+                  allLabel={copy.all}
+                  options={textChoices(blockchains, copy.all)}
+                  onChange={setBlockchain}
+                />
+              </div>
+            ) : null}
+            {assets.length > 0 ? (
+              <div className="order-2 min-w-0 sm:order-none">
+                <FilterMenu
+                  label={copy.asset}
+                  value={assetActive}
+                  allLabel={copy.all}
+                  options={textChoices(assets, copy.all)}
+                  onChange={setAsset}
+                />
+              </div>
+            ) : null}
+            {activities.length > 0 ? (
+              <div className="order-2 min-w-0 sm:order-none">
+                <FilterMenu
+                  label={copy.activity}
+                  value={activityActive}
+                  allLabel={copy.all}
+                  options={activityChoices(activities, copy)}
+                  onChange={setActivity}
+                />
+              </div>
+            ) : null}
+            <div
+              ref={viewControlRef}
+              className="order-1 col-span-2 flex items-center gap-2 sm:contents"
+            >
+              <SegmentedControl
+                tone="neutral"
+                ariaLabel={copy.view}
+                value={view}
+                onChange={setView}
+                className="min-w-0 flex-1 sm:order-last sm:ml-auto sm:w-auto sm:flex-none"
+                options={[
+                  { value: 'map', label: copy.map },
+                  { value: 'table', label: copy.table },
+                ]}
+              />
+              {showHelp ? (
+                <span ref={helpRef} className="shrink-0">
+                  <IconButton
+                    type="button"
+                    aria-label={copy.helpLabel}
+                    aria-expanded={helpOpen}
+                    aria-controls={helpPanelId}
+                    variant="ghost"
+                    size="md"
+                    className="border border-ink/12"
+                    onClick={() => {
+                      if (helpOpen) closeHelp();
+                      else setHelpOpen(true);
+                    }}
+                  >
+                    <CircleHelp aria-hidden="true" className="h-4 w-4" />
+                  </IconButton>
+                </span>
+              ) : null}
             </div>
-            <div>
-              <dt>
-                <span className="shop-place-marker is-weekly" aria-hidden="true" />
-                {copy.weekly}
-              </dt>
-              <dd>{copy.weeklyHelp}</dd>
-            </div>
-            <div>
-              <dt>
-                <span className="shop-place-marker is-monthly" aria-hidden="true" />
-                {copy.monthly}
-              </dt>
-              <dd>{copy.monthlyHelp}</dd>
-            </div>
-            <div>
-              <dt>
-                <span className="shop-place-marker is-idle" aria-hidden="true" />
-                {copy.idle}
-              </dt>
-              <dd>{copy.idleHelp}</dd>
-            </div>
-            <div>
-              <dt>
-                <span className="shop-place-marker is-none" aria-hidden="true" />
-                {copy.none}
-              </dt>
-              <dd>{copy.noneHelp}</dd>
-            </div>
-          </dl>
-          <p>{copy.hierarchy}</p>
-        </div>
-        {showError ? (
-          <div className="flex flex-wrap items-center gap-3">
-            <p role="alert" className="text-center text-sm text-app-danger">
-              {copy.error}
-            </p>
-            <Button type="button" onClick={retryFilters}>
-              {copy.retry}
-            </Button>
           </div>
-        ) : null}
-        {showEmpty ? <p>{copy.empty}</p> : null}
-        <div
-          id="shop-places-map"
-          hidden={view !== 'map'}
-          className="h-[28rem] min-h-[28rem] w-full"
-        />
-        <div hidden={view !== 'table'}>
-          <Button type="button" onClick={downloadCsv}>
-            {copy.csv}
-          </Button>
-          <div hidden={view !== 'table'} className="w-full min-w-0 max-w-full">
+          {showError ? (
+            <div className="flex flex-wrap items-center gap-3 px-4 py-3">
+              <p role="alert" className="text-center text-sm text-app-danger">
+                {copy.error}
+              </p>
+              <Button type="button" onClick={retryFilters}>
+                {copy.retry}
+              </Button>
+            </div>
+          ) : null}
+          {showEmpty ? <p className="px-4 py-3 text-sm text-ink/60">{copy.empty}</p> : null}
+          <div className="relative overflow-hidden rounded-b-2xl">
+            <div
+              id="shop-places-map"
+              hidden={view !== 'map'}
+              className="h-[26rem] w-full sm:h-[30rem]"
+            />
+            {showLegend ? (
+              <div className="shop-legend pointer-events-none absolute bottom-3 left-3 z-10 flex flex-wrap items-center gap-x-3 gap-y-1 rounded-full border border-ink/12 bg-paper/90 px-3 py-1.5 text-xs text-ink">
+                {HELP_ROWS.map(([labelKey, , swatch]) => (
+                  <span key={labelKey} className="inline-flex items-center gap-1.5">
+                    <span className={swatch} aria-hidden="true" />
+                    {copy[labelKey]}
+                  </span>
+                ))}
+              </div>
+            ) : null}
+          </div>
+          <div hidden={view !== 'table'} className="w-full min-w-0 max-w-full rounded-b-2xl">
             <table className="w-full table-fixed">
               <thead>
-                <tr>
-                  <th className="min-w-0 break-words align-top">{copy.colName}</th>
-                  <th className="min-w-0 break-words align-top">{copy.colLocation}</th>
-                  <th className="min-w-0 break-words align-top">{copy.colCountry}</th>
-                  <th className="min-w-0 break-words align-top">{copy.colShop}</th>
-                  <th className="min-w-0 break-words align-top">{copy.colProvider}</th>
-                  <th className="min-w-0 break-words align-top">{copy.colActivity}</th>
+                <tr className="bg-home-card text-xs font-semibold text-ink/60">
+                  {tableColumns.map((column) => {
+                    const active = sortColumn === column.key;
+                    const ariaSort = active
+                      ? sortDir === 'asc'
+                        ? 'ascending'
+                        : 'descending'
+                      : 'none';
+                    return (
+                      <th
+                        key={column.key}
+                        aria-sort={ariaSort}
+                        className={`p-0 text-left align-top ${column.key === 'country' || column.key === 'shop' ? 'hidden sm:table-cell' : ''}`}
+                      >
+                        <button
+                          type="button"
+                          className="inline-flex min-h-11 w-full items-center gap-1 px-2 py-3 text-left font-semibold sm:px-4"
+                          onClick={() => {
+                            chooseSort(column.key);
+                          }}
+                        >
+                          <span className="min-w-0 whitespace-nowrap">{column.label}</span>
+                          <span
+                            aria-hidden="true"
+                            className={`inline-block h-0 w-0 shrink-0 border-x-4 border-b-[5px] border-x-transparent border-b-current ${
+                              active && sortDir === 'desc' ? 'rotate-180' : ''
+                            } ${active ? '' : 'opacity-30'}`}
+                          />
+                        </button>
+                      </th>
+                    );
+                  })}
                 </tr>
               </thead>
               <tbody>
                 {rows.map((row) => (
-                  <tr key={row.key}>
-                    <td className="min-w-0 break-words align-top">
-                      {row.href === null ? (
-                        row.name
-                      ) : (
-                        <a href={row.href} className="font-medium underline underline-offset-2">
-                          {row.name}
-                        </a>
-                      )}
-                    </td>
-                    <td className="min-w-0 break-words align-top">{row.location}</td>
-                    <td className="min-w-0 break-words align-top">{row.country}</td>
-                    <td className="min-w-0 break-words align-top">{row.shop}</td>
-                    <td className="min-w-0 break-words align-top">{row.provider}</td>
-                    <td className="min-w-0 break-words align-top">{row.activity}</td>
+                  <tr key={row.key} className="border-t border-ink/10 bg-paper text-sm">
+                    {tableColumns.map((column) => (
+                      <td
+                        key={column.key}
+                        className={`min-w-0 break-words px-2 py-3 align-top sm:px-4 ${column.key === 'country' || column.key === 'shop' ? 'hidden sm:table-cell' : ''}`}
+                      >
+                        {column.key === 'name' ? (
+                          <>
+                            <span>
+                              {row.href === null ? (
+                                row.name
+                              ) : (
+                                <Link
+                                  href={row.href}
+                                  className="font-medium underline underline-offset-2"
+                                >
+                                  {row.name}
+                                </Link>
+                              )}
+                            </span>
+                            {showShop ? (
+                              <span className="block text-xs text-ink/60 sm:hidden">
+                                {row.shop}
+                              </span>
+                            ) : null}
+                            {showCountry ? (
+                              <span className="block text-xs text-ink/60 sm:hidden">
+                                {countryDisplayName(row.country, locale)}
+                              </span>
+                            ) : null}
+                          </>
+                        ) : (
+                          cellText(row, column.key, locale)
+                        )}
+                      </td>
+                    ))}
                   </tr>
                 ))}
               </tbody>
             </table>
+            <div className="flex justify-end px-4 py-3">
+              <Button type="button" variant="secondary" onClick={downloadCsv}>
+                {copy.csv}
+              </Button>
+            </div>
           </div>
         </div>
       </div>
+      {helpVisible ? (
+        <div
+          ref={helpPanelRef}
+          id={helpPanelId}
+          data-shops-help-panel=""
+          role="dialog"
+          aria-label={copy.helpLabel}
+          tabIndex={-1}
+          className="fixed z-40 flex flex-col rounded-xl border border-ink/10 bg-paper p-4 shadow-lg outline-none"
+          style={{
+            top: helpBox.top,
+            bottom: helpBox.bottom,
+            left: helpBox.left,
+            width: helpBox.width,
+          }}
+        >
+          <MenuScroll scrolling={helpBox.scrolls}>
+            <div ref={helpContentRef} data-shops-help-content="" className="flow-root shrink-0">
+              <dl className="grid gap-3">
+                {HELP_ROWS.map(([labelKey, helpKey, swatch]) => (
+                  <div key={labelKey}>
+                    <dt className="flex items-center gap-2 text-sm font-semibold">
+                      <span className={swatch} aria-hidden="true" />
+                      {copy[labelKey]}
+                    </dt>
+                    <dd className="mt-1 text-sm text-ink/60">{copy[helpKey]}</dd>
+                  </div>
+                ))}
+              </dl>
+              <p className="mt-3 border-t border-ink/10 pt-3 text-sm text-ink/60">
+                {copy.hierarchy}
+              </p>
+            </div>
+          </MenuScroll>
+        </div>
+      ) : null}
     </section>
   );
 }

@@ -1,5 +1,6 @@
 import { NextRequest } from 'next/server';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { CSP_SOURCES } from '@/lib/csp';
 import { config, middleware } from '@/middleware';
 
 afterEach(() => {
@@ -51,6 +52,7 @@ function requestFor(url: string, headers: Record<string, string> = {}, search = 
   return {
     nextUrl: {
       pathname: parsed.pathname,
+      hostname: parsed.hostname,
       protocol: parsed.protocol,
       search,
       clone: () => new URL(url),
@@ -287,6 +289,46 @@ describe('map redirect', () => {
     expect(policy).toContain('report-uri /monitoring/csp');
     expect(response.headers.get('content-security-policy')).toBeNull();
     expect(response.headers.get('reporting-endpoints')).toBe('csp="/monitoring/csp"');
+  });
+
+  it.each([
+    ['21.gifts', 'https://api.opencryptopay.io', 'https://dev-api.opencryptopay.io'],
+    ['www.21.gifts', 'https://api.opencryptopay.io', 'https://dev-api.opencryptopay.io'],
+    ['preview.example', 'https://dev-api.opencryptopay.io', 'https://api.opencryptopay.io'],
+  ])('selects the photo origin for %s', (hostname, allowed, disallowed) => {
+    const response = middleware(new NextRequest(`https://${hostname}/welcome`));
+    const policy = response.headers.get('content-security-policy-report-only');
+    const images = policy?.split('; ').find((directive) => directive.startsWith('img-src '));
+    expect(images?.split(' ')).toContain(allowed);
+    expect(images?.split(' ')).not.toContain(disallowed);
+    expect(images?.split(' ').slice(1)).toEqual(
+      CSP_SOURCES['img-src']?.filter((source) => source !== disallowed),
+    );
+    expect(response.headers.get('x-middleware-request-content-security-policy-report-only')).toBe(
+      policy,
+    );
+  });
+
+  it.each<{ headers: Record<string, string>; production: boolean }>([
+    { headers: { 'x-forwarded-host': '21.gifts', host: 'internal.example' }, production: true },
+    { headers: { 'x-forwarded-host': '21.gifts, proxy' }, production: true },
+    {
+      headers: { 'x-forwarded-host': ' 21.GIFTS:443, proxy', host: 'internal.example' },
+      production: true,
+    },
+    { headers: { host: 'www.21.gifts:443' }, production: true },
+    { headers: { 'x-forwarded-host': 'preview.example', host: '21.gifts' }, production: false },
+    { headers: {}, production: false },
+  ])('uses the public host headers for the photo policy: $headers', ({ headers, production }) => {
+    const response = middleware(requestFor('https://internal.example/welcome', headers));
+    const policy = response.headers.get('content-security-policy-report-only') ?? '';
+    const images = policy.split('; ').find((directive) => directive.startsWith('img-src '));
+    expect(images?.split(' ')).toContain(
+      production ? 'https://api.opencryptopay.io' : 'https://dev-api.opencryptopay.io',
+    );
+    expect(images?.split(' ')).not.toContain(
+      production ? 'https://dev-api.opencryptopay.io' : 'https://api.opencryptopay.io',
+    );
   });
 
   it('enforces the policy when CSP_MODE is enforce', () => {

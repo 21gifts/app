@@ -538,6 +538,13 @@
 - **Used by:** `setAmountUnit`.
 - **Auth:** Bearer.
 
+## Endpoint: POST /me/heart-sats
+
+- **Purpose:** Same-origin Bearer proxy of api POST `/me/heart-sats`. JSON body `{ sats }` with a whole number from 1 through 10,000,000 returns the owner Account with `heartSats`.
+- **Errors:** Upstream 401, 400 for a missing, empty, zero, fractional, negative, or too-large value, or 502 if the api is unreachable.
+- **Used by:** `saveHeartSats` through `setHeartSats`.
+- **Auth:** Bearer.
+
 ## Endpoint: POST /me/locale
 
 - **Purpose:** Same-origin Bearer proxy of api POST `/me/locale`. JSON body `{ locale, onlyIfUnset }` returns the owner Account. `onlyIfUnset: true` does not overwrite a stored locale.
@@ -673,7 +680,7 @@
 
 ## Endpoint: GET /forum/messages/[id]/replies
 
-- **Purpose:** Same-origin Bearer proxy of api GET `/messages/:id/replies` (oldest-first replies for one note).
+- **Purpose:** Same-origin Bearer proxy of api GET `/messages/:id/replies` (oldest-first replies for one note). The body also carries `hearts`, the note's paid hearts newest first; each heart has `accountId`, `name`, optional `username` and `role`, the exact `sats`, `createdAt`, and the frozen `amountUsd`, `amountChf`, `amountEur`, and `amountPhp` strings (two decimals or `null`). A missing `hearts` field is `[]`.
 - **Errors:** Upstream 401/404, or 502 if the api is unreachable.
 - **Used by:** `fetchReplies`.
 - **Auth:** Bearer.
@@ -722,7 +729,7 @@
 
 ## Endpoint: GET /public-messages/[id]/replies
 
-- **Purpose:** Same-origin public proxy of api GET `/messages/:id/replies` (oldest-first live replies, no Bearer). The HTML public thread is `/messages/[id]`.
+- **Purpose:** Same-origin public proxy of api GET `/messages/:id/replies` (oldest-first live replies, no Bearer). The body also carries the note's `hearts` newest first with the same fields as the Bearer proxy, including the frozen `amountUsd`, `amountChf`, `amountEur`, and `amountPhp` strings. The HTML public thread is `/messages/[id]`.
 - **Errors:** Upstream 404 `{ error: "Not found" }`, or 502 if the api is unreachable.
 - **Used by:** `fetchPublicReplies`.
 - **Auth:** Public.

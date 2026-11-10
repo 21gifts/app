@@ -70,9 +70,9 @@
     "fil": "Bukas ang listahan ng Aktibidad at nakikita ang opsyon sa listbox na Araw-araw. Napili pa rin ang Mapa. Hindi ipinapadala ang Aktibidad sa query ng mga lugar. Nakamaskara ang mapa."
   },
   "/:shops-activity-selected": {
-    "de": "Der Ladenblock unter dem Hero zeigt die Tabelle. Die Filter bleiben über der Umschaltung Karte/Tabelle, und Tabelle ist gewählt. Die Aktivitätsliste ist geschlossen und ihr Text enthält Täglich. Aktivität wird nicht in der Places-Abfrage gesendet.",
-    "es": "El bloque de tiendas bajo el héroe muestra la tabla. Los filtros quedan sobre el control Mapa/Tabla, con Tabla elegido. La lista Actividad está cerrada y su texto incluye Diario. Actividad no se envía en la consulta de lugares.",
-    "fil": "Ang bloke ng mga tindahan sa ilalim ng hero ay nasa talahanayan. Nananatili ang mga filter sa itaas ng kontrol na Mapa/Talaan, at napili ang Talaan. Sarado ang listahan ng Aktibidad at kasama sa teksto nito ang Araw-araw. Hindi ipinapadala ang Aktibidad sa query ng mga lugar."
+    "de": "Der Ladenblock unter dem Hero zeigt die Tabelle. Die Filter und die Umschaltung Karte/Tabelle werden angezeigt, und Tabelle ist gewählt; auf dem Handy steht die Umschaltung über den Filtern, auf einem breiteren Bildschirm stehen die Filter zuerst. Die Aktivitätsliste ist geschlossen und ihr Text enthält Täglich. Aktivität wird nicht in der Places-Abfrage gesendet.",
+    "es": "El bloque de tiendas bajo el héroe muestra la tabla. Se muestran los filtros y el control Mapa/Tabla, con Tabla elegido; en el móvil el control queda sobre los filtros y en una pantalla más ancha los filtros van primero. La lista Actividad está cerrada y su texto incluye Diario. Actividad no se envía en la consulta de lugares.",
+    "fil": "Ang bloke ng mga tindahan sa ilalim ng hero ay nasa talahanayan. Ipinapakita ang mga filter at ang kontrol na Mapa/Talaan, at napili ang Talaan; sa telepono, nasa itaas ng mga filter ang kontrol, at sa mas malapad na screen, nauuna ang mga filter. Sarado ang listahan ng Aktibidad at kasama sa teksto nito ang Araw-araw. Hindi ipinapadala ang Aktibidad sa query ng mga lugar."
   },
   "/:shops-asset": {
     "de": "Bitcoin ist bereits gewählt. Die Asset-Liste ist geöffnet und die Listbox-Option BTC ist sichtbar. Karte bleibt gewählt. Die Karte ist maskiert.",
@@ -80,14 +80,14 @@
     "fil": "Napili na ang Bitcoin. Bukas ang listahan ng Asset at nakikita ang opsyon sa listbox na BTC. Napili pa rin ang Mapa. Nakamaskara ang mapa."
   },
   "/:shops-asset-selected": {
-    "de": "Der Ladenblock unter dem Hero zeigt die Tabelle. Die Filter bleiben über der Umschaltung Karte/Tabelle, und Tabelle ist gewählt. Blockchain Bitcoin ist gewählt. Die Asset-Liste ist geschlossen und der Text der Asset-Combobox enthält BTC.",
-    "es": "El bloque de tiendas bajo el héroe muestra la tabla. Los filtros quedan sobre el control Mapa/Tabla, con Tabla elegido. Blockchain Bitcoin está elegido. La lista Activo está cerrada y el texto del cuadro combinado Activo incluye BTC.",
-    "fil": "Ang bloke ng mga tindahan sa ilalim ng hero ay nasa talahanayan. Nananatili ang mga filter sa itaas ng kontrol na Mapa/Talaan, at napili ang Talaan. Napili ang Blockchain na Bitcoin. Sarado ang listahan ng Asset at kasama sa teksto ng combobox na Asset ang BTC."
+    "de": "Der Ladenblock unter dem Hero zeigt die Tabelle. Die Filter und die Umschaltung Karte/Tabelle werden angezeigt, und Tabelle ist gewählt; auf dem Handy steht die Umschaltung über den Filtern, auf einem breiteren Bildschirm stehen die Filter zuerst. Blockchain Bitcoin ist gewählt. Die Asset-Liste ist geschlossen und der Text der Asset-Combobox enthält BTC.",
+    "es": "El bloque de tiendas bajo el héroe muestra la tabla. Se muestran los filtros y el control Mapa/Tabla, con Tabla elegido; en el móvil el control queda sobre los filtros y en una pantalla más ancha los filtros van primero. Blockchain Bitcoin está elegido. La lista Activo está cerrada y el texto del cuadro combinado Activo incluye BTC.",
+    "fil": "Ang bloke ng mga tindahan sa ilalim ng hero ay nasa talahanayan. Ipinapakita ang mga filter at ang kontrol na Mapa/Talaan, at napili ang Talaan; sa telepono, nasa itaas ng mga filter ang kontrol, at sa mas malapad na screen, nauuna ang mga filter. Napili ang Blockchain na Bitcoin. Sarado ang listahan ng Asset at kasama sa teksto ng combobox na Asset ang BTC."
   },
   "/:shops-attribution": {
-    "de": "Karte bleibt gewählt. Die Quellenangabe ist geöffnet und zeigt MapLibre. Die Kartenkacheln und der Shop-Pin sind ausgeblendet.",
-    "es": "Mapa sigue elegido. El control de atribución está abierto y muestra MapLibre. Las teselas del mapa y el pin de la tienda están ocultos.",
-    "fil": "Napili pa rin ang Mapa. Bukas ang kontrol ng attribution at ipinapakita ang MapLibre. Nakatago ang mga tile ng mapa at ang pin ng shop."
+    "de": "Karte bleibt gewählt. Die Quellenangabe ist geöffnet und zeigt MapLibre. Die Kartenkacheln sind ausgeblendet. Der Shop-Pin bleibt sichtbar.",
+    "es": "Mapa sigue elegido. El control de atribución está abierto y muestra MapLibre. Las teselas del mapa están ocultas. El pin de la tienda sigue visible.",
+    "fil": "Napili pa rin ang Mapa. Bukas ang kontrol ng attribution at ipinapakita ang MapLibre. Nakatago ang mga tile ng mapa. Nakikita pa rin ang pin ng tindahan."
   },
   "/:shops-blockchain": {
     "de": "Der Ladenblock unter dem Hero hat die Blockchain-Liste geöffnet. Die Listbox-Option Bitcoin ist sichtbar. Land, Name, Blockchain, Asset und Aktivität bleiben in dieser Reihenfolge, und Karte bleibt gewählt. Die Karte ist maskiert.",
@@ -95,24 +95,24 @@
     "fil": "Ang bloke ng mga tindahan sa ilalim ng hero ay bukas ang listahan ng Blockchain. Nakikita ang opsyon sa listbox na Bitcoin. Nananatili ang Bansa, Pangalan, Blockchain, Asset, at Aktibidad sa ganitong ayos, at napili pa rin ang Mapa. Nakamaskara ang mapa."
   },
   "/:shops-blockchain-selected": {
-    "de": "Der Ladenblock unter dem Hero zeigt die Tabelle. Die Filter bleiben über der Umschaltung Karte/Tabelle, und Tabelle ist gewählt. Die Blockchain-Combobox ist geschlossen und ihr Text enthält Bitcoin. Die Listbox ist nicht offen.",
-    "es": "El bloque de tiendas bajo el héroe muestra la tabla. Los filtros quedan sobre el control Mapa/Tabla, con Tabla elegido. El cuadro combinado Blockchain está cerrado y su texto incluye Bitcoin. El cuadro de lista no está abierto.",
-    "fil": "Ang bloke ng mga tindahan sa ilalim ng hero ay nasa talahanayan. Nananatili ang mga filter sa itaas ng kontrol na Mapa/Talaan, at napili ang Talaan. Sarado ang combobox na Blockchain at kasama sa teksto nito ang Bitcoin. Hindi bukas ang listbox."
+    "de": "Der Ladenblock unter dem Hero zeigt die Tabelle. Die Filter und die Umschaltung Karte/Tabelle werden angezeigt, und Tabelle ist gewählt; auf dem Handy steht die Umschaltung über den Filtern, auf einem breiteren Bildschirm stehen die Filter zuerst. Die Blockchain-Combobox ist geschlossen und ihr Text enthält Bitcoin. Die Listbox ist nicht offen.",
+    "es": "El bloque de tiendas bajo el héroe muestra la tabla. Se muestran los filtros y el control Mapa/Tabla, con Tabla elegido; en el móvil el control queda sobre los filtros y en una pantalla más ancha los filtros van primero. El cuadro combinado Blockchain está cerrado y su texto incluye Bitcoin. El cuadro de lista no está abierto.",
+    "fil": "Ang bloke ng mga tindahan sa ilalim ng hero ay nasa talahanayan. Ipinapakita ang mga filter at ang kontrol na Mapa/Talaan, at napili ang Talaan; sa telepono, nasa itaas ng mga filter ang kontrol, at sa mas malapad na screen, nauuna ang mga filter. Sarado ang combobox na Blockchain at kasama sa teksto nito ang Bitcoin. Hindi bukas ang listbox."
   },
   "/:shops-country-selected": {
-    "de": "Der Ladenblock unter dem Hero zeigt die Tabelle. Die Filter bleiben über der Umschaltung Karte/Tabelle, und Tabelle ist gewählt. Der Wert der Auswahl Land ist PH.",
-    "es": "El bloque de tiendas bajo el héroe muestra la tabla. Los filtros quedan sobre el control Mapa/Tabla, con Tabla elegido. El valor del select País es PH.",
-    "fil": "Ang bloke ng mga tindahan sa ilalim ng hero ay nasa talahanayan. Nananatili ang mga filter sa itaas ng kontrol na Mapa/Talaan, at napili ang Talaan. Ang value ng select na Bansa ay PH."
+    "de": "Der Ladenblock unter dem Hero zeigt die Tabelle. Die Filter und die Umschaltung Karte/Tabelle werden angezeigt, und Tabelle ist gewählt; auf dem Handy steht die Umschaltung über den Filtern, auf einem breiteren Bildschirm stehen die Filter zuerst. Die Combobox Land zeigt Philippinen, den ausgeschriebenen Ländernamen.",
+    "es": "El bloque de tiendas bajo el héroe muestra la tabla. Se muestran los filtros y el control Mapa/Tabla, con Tabla elegido; en el móvil el control queda sobre los filtros y en una pantalla más ancha los filtros van primero. El cuadro combinado País muestra Filipinas, el nombre del país escrito.",
+    "fil": "Ang bloke ng mga tindahan sa ilalim ng hero ay nasa talahanayan. Ipinapakita ang mga filter at ang kontrol na Mapa/Talaan, at napili ang Talaan; sa telepono, nasa itaas ng mga filter ang kontrol, at sa mas malapad na screen, nauuna ang mga filter. Ipinapakita ng combobox na Bansa ang Pilipinas, ang buong pangalan ng bansa."
   },
   "/:shops-empty-map": {
-    "de": "Die Places-Antwort ist ein leeres Array. Noch keine Standorte veröffentlicht. ist sichtbar. Die Karte bleibt sichtbar und ist maskiert.",
-    "es": "La respuesta de lugares es un array vacío. Aún no hay locales publicados. es visible. El mapa sigue visible y está enmascarado.",
-    "fil": "Ang sagot ng places ay isang walang lamang array. Nakikita ang Wala pang nailathalang lokasyon. Nanatiling nakikita ang mapa at ito ay nakamaskara."
+    "de": "Die Places-Antwort ist ein leeres Array. Noch keine Standorte veröffentlicht. ist sichtbar. Kein Filter, keine Hilfe-Schaltfläche und keine Legende werden gezeigt. Die Karte bleibt sichtbar und ist maskiert.",
+    "es": "La respuesta de lugares es un array vacío. Aún no hay locales publicados. es visible. No se muestra ningún filtro, botón de ayuda ni leyenda. El mapa sigue visible y está enmascarado.",
+    "fil": "Ang sagot ng places ay isang walang lamang array. Nakikita ang Wala pang nailathalang lokasyon. Walang ipinapakitang filter, pindutan ng tulong, o legend. Nanatiling nakikita ang mapa at ito ay nakamaskara."
   },
   "/:shops-empty-table": {
-    "de": "Die Places-Antwort ist ein leeres Array und Tabelle ist gewählt. Noch keine Standorte veröffentlicht. ist sichtbar. Es gibt keine Shop-Zeile Sample.",
-    "es": "La respuesta de lugares es un array vacío y Tabla está elegida. Aún no hay locales publicados. es visible. No hay una fila de tienda Sample.",
-    "fil": "Ang sagot ng places ay isang walang lamang array at napili ang Talaan. Nakikita ang Wala pang nailathalang lokasyon. Walang hanay ng tindahan na Sample."
+    "de": "Die Places-Antwort ist ein leeres Array und Tabelle ist gewählt. Noch keine Standorte veröffentlicht. ist sichtbar. Es gibt keine Shop-Zeile Sample. Kein Filter und keine Hilfe-Schaltfläche werden gezeigt.",
+    "es": "La respuesta de lugares es un array vacío y Tabla está elegida. Aún no hay locales publicados. es visible. No hay una fila de tienda Sample. No se muestra ningún filtro ni botón de ayuda.",
+    "fil": "Ang sagot ng places ay isang walang lamang array at napili ang Talaan. Nakikita ang Wala pang nailathalang lokasyon. Walang hanay ng tindahan na Sample. Walang ipinapakitang filter o pindutan ng tulong."
   },
   "/:shops-error": {
     "de": "Die Filter-Antwort hat den Status 500. Karte bleibt gewählt. Der Hinweis lautet Orte konnten nicht geladen werden. Bitte versuchen Sie es erneut. Erneut versuchen ist sichtbar. Noch keine Standorte veröffentlicht. ist nicht sichtbar. Die Karte ist maskiert.",
@@ -120,14 +120,14 @@
     "fil": "Ang sagot ng filter ay status 500. Napili pa rin ang Mapa. Ang alerto ay Hindi ma-load ang mga lugar. Subukan ulit. Nakikita ang Subukan ulit. Hindi nakikita ang Wala pang nailathalang lokasyon. Nakamaskara ang mapa."
   },
   "/:shops-help": {
-    "de": "Tabelle ist gewählt. Die Schaltfläche Was die Aktivitätswörter bedeuten ist geöffnet und zeigt An mindestens 5 Tagen eine Zahlung in den letzten 7 Tagen.",
-    "es": "Tabla está elegida. El botón Qué significan las palabras de actividad está abierto y muestra Al menos 5 días con un pago en los últimos 7 días.",
-    "fil": "Napili ang Talaan. Bukas ang pindutang Kahulugan ng mga salita ng aktibidad at ipinapakita ang May bayad sa hindi bababa sa 5 araw sa loob ng huling 7 araw."
+    "de": "Tabelle ist gewählt. Die Schaltfläche Was die Aktivitätswörter bedeuten ist unter dieser Schaltfläche geöffnet, bleibt im Fenster und zeigt An mindestens 5 Tagen eine Zahlung in den letzten 7 Tagen.",
+    "es": "Tabla está elegida. El botón Qué significan las palabras de actividad está abierto bajo ese botón, dentro de la ventana, y muestra Al menos 5 días con un pago en los últimos 7 días.",
+    "fil": "Napili ang Talaan. Bukas sa ilalim ng pindutang iyon, sa loob ng window, ang Kahulugan ng mga salita ng aktibidad at ipinapakita ang May bayad sa hindi bababa sa 5 araw sa loob ng huling 7 araw."
   },
   "/:shops-loading": {
-    "de": "Die Filter-Anfrage ist noch nicht fertig. Karte bleibt gewählt. Orte konnten nicht geladen werden. Bitte versuchen Sie es erneut. ist nicht sichtbar. Noch keine Standorte veröffentlicht. ist nicht sichtbar. Der Kartenbereich ist sichtbar und maskiert.",
-    "es": "La solicitud de filtros no ha terminado. Mapa sigue elegido. No se pudieron cargar los lugares. Inténtalo de nuevo. no está visible. Aún no hay locales publicados. no está visible. El panel del mapa está visible y enmascarado.",
-    "fil": "Hindi pa tapos ang kahilingan sa filter. Napili pa rin ang Mapa. Hindi nakikita ang Hindi ma-load ang mga lugar. Subukan ulit. Hindi nakikita ang Wala pang nailathalang lokasyon. Nakikita ang pane ng mapa at ito ay nakamaskara."
+    "de": "Die Filter-Anfrage ist noch nicht fertig, daher sind die Filter-Comboboxen noch nicht sichtbar. Die Überschrift lautet Diese Läden nehmen Bitcoin über 21.gifts an. Karte bleibt gewählt. Der Ladefehler ist nicht sichtbar. Noch keine Standorte veröffentlicht. ist nicht sichtbar. Der Kartenbereich ist sichtbar und maskiert.",
+    "es": "La solicitud de filtros no ha terminado, así que los cuadros combinados de filtro aún no se muestran. El título es Estas tiendas aceptan Bitcoin a través de 21.gifts. Mapa sigue elegido. El error de carga no está visible. Aún no hay locales publicados. no está visible. El panel del mapa está visible y enmascarado.",
+    "fil": "Hindi pa tapos ang kahilingan sa filter, kaya hindi pa ipinapakita ang mga combobox ng filter. Ang pamagat ay Tumatanggap ang mga tindahang ito ng Bitcoin sa pamamagitan ng 21.gifts. Napili pa rin ang Mapa. Hindi nakikita ang error sa pag-load. Hindi nakikita ang Wala pang nailathalang lokasyon. Nakikita ang pane ng mapa at ito ay nakamaskara."
   },
   "/:shops-map-failed": {
     "de": "Das MapLibre-Skript wird abgebrochen, wie im Verhaltenstest. Tabelle ist gewählt und der Ladefehler Orte konnten nicht geladen werden. Bitte versuchen Sie es erneut. ist sichtbar.",
@@ -135,19 +135,19 @@
     "fil": "Na-a-abort ang script ng MapLibre, tulad ng sa behavior test. Napili ang Talaan at nakikita ang error sa pag-load na Hindi ma-load ang mga lugar. Subukan ulit."
   },
   "/:shops-marker": {
-    "de": "Karte bleibt gewählt. Der Shop-Marker ist geöffnet und zeigt den Namen Sample als Link. Die Kartenkacheln sind maskiert.",
-    "es": "Mapa sigue elegido. El marcador de la tienda está abierto y muestra el nombre Sample como enlace. Las teselas del mapa están enmascaradas.",
-    "fil": "Napili pa rin ang Mapa. Bukas ang marker ng tindahan at ipinapakita ang pangalang Sample bilang link. Nakamaskara ang mga tile ng mapa."
+    "de": "Karte bleibt gewählt. Der Shop-Marker ist geöffnet und zeigt den Namen Sample als Link. Die Kartenkacheln sind ausgeblendet.",
+    "es": "Mapa sigue elegido. El marcador de la tienda está abierto y muestra el nombre Sample como enlace. Las teselas del mapa están ocultas.",
+    "fil": "Napili pa rin ang Mapa. Bukas ang marker ng tindahan at ipinapakita ang pangalang Sample bilang link. Nakatago ang mga tile ng mapa."
   },
   "/:shops-name-selected": {
-    "de": "Der Ladenblock unter dem Hero zeigt die Tabelle. Die Filter bleiben über der Umschaltung Karte/Tabelle, und Tabelle ist gewählt. Der Wert der Auswahl Name ist SPAR.",
-    "es": "El bloque de tiendas bajo el héroe muestra la tabla. Los filtros quedan sobre el control Mapa/Tabla, con Tabla elegido. El valor del select Nombre es SPAR.",
-    "fil": "Ang bloke ng mga tindahan sa ilalim ng hero ay nasa talahanayan. Nananatili ang mga filter sa itaas ng kontrol na Mapa/Talaan, at napili ang Talaan. Ang value ng select na Pangalan ay SPAR."
+    "de": "Der Ladenblock unter dem Hero zeigt die Tabelle. Die Filter und die Umschaltung Karte/Tabelle werden angezeigt, und Tabelle ist gewählt; auf dem Handy steht die Umschaltung über den Filtern, auf einem breiteren Bildschirm stehen die Filter zuerst. Die Combobox Name zeigt SPAR.",
+    "es": "El bloque de tiendas bajo el héroe muestra la tabla. Se muestran los filtros y el control Mapa/Tabla, con Tabla elegido; en el móvil el control queda sobre los filtros y en una pantalla más ancha los filtros van primero. El cuadro combinado Nombre muestra SPAR.",
+    "fil": "Ang bloke ng mga tindahan sa ilalim ng hero ay nasa talahanayan. Ipinapakita ang mga filter at ang kontrol na Mapa/Talaan, at napili ang Talaan; sa telepono, nasa itaas ng mga filter ang kontrol, at sa mas malapad na screen, nauuna ang mga filter. Ipinapakita ng combobox na Pangalan ang SPAR."
   },
   "/:shops-table": {
-    "de": "Der Ladenblock unter dem Hero zeigt die Tabelle. Die Filter bleiben über der Umschaltung Karte/Tabelle, und Tabelle ist gewählt. Die Tabelle listet nur Läden, deren Tech-Anbieter genau 21.gifts ist, und zeigt Name, Ort, Land, Shop, Tech-Anbieter und Aktivität.",
-    "es": "El bloque de tiendas bajo el héroe muestra la tabla. Los filtros quedan sobre el control Mapa/Tabla, con Tabla elegido. La tabla lista solo tiendas cuyo proveedor técnico es exactamente 21.gifts y muestra Nombre, Lugar, País, Tienda, Proveedor técnico y Actividad.",
-    "fil": "Ang bloke ng mga tindahan sa ilalim ng hero ay nasa talahanayan. Nananatili ang mga filter sa itaas ng kontrol na Mapa/Talaan, at napili ang Talaan. Ang talahanayan ay naglilista lamang ng mga tindahan na ang tech provider ay eksaktong 21.gifts at nagpapakita ng Pangalan, Lugar, Bansa, Tindahan, Tech provider, at Aktibidad."
+    "de": "Der Ladenblock unter dem Hero zeigt die Tabelle. Die sichtbaren Filter und die Umschaltung Karte/Tabelle werden angezeigt, und Tabelle ist gewählt; auf dem Handy steht die Umschaltung über den Filtern, auf einem breiteren Bildschirm stehen die Filter zuerst. Die Tabelle listet nur Läden, deren Tech-Anbieter genau 21.gifts ist. Mit diesen Daten sind die Spalten Name, Ort, Land, Shop und Aktivität. Die Tabelle hat keine Spalte Tech-Anbieter. Der CSV-Download enthält Tech-Anbieter weiter.",
+    "es": "El bloque de tiendas bajo el héroe muestra la tabla. Se muestran los filtros visibles y el control Mapa/Tabla, con Tabla elegido; en el móvil el control queda sobre los filtros y en una pantalla más ancha los filtros van primero. La tabla lista solo tiendas cuyo proveedor técnico es exactamente 21.gifts. Con estos datos las columnas son Nombre, Lugar, País, Tienda y Actividad. La tabla no tiene columna de proveedor técnico. La descarga CSV sigue incluyendo el proveedor técnico.",
+    "fil": "Ang bloke ng mga tindahan sa ilalim ng hero ay nasa talahanayan. Ipinapakita ang nakikitang mga filter at ang kontrol na Mapa/Talaan, at napili ang Talaan; sa telepono, nasa itaas ng mga filter ang kontrol, at sa mas malapad na screen, nauuna ang mga filter. Ang talahanayan ay naglilista lamang ng mga tindahan na ang tech provider ay eksaktong 21.gifts. Sa datos na ito ang mga hanay ay Pangalan, Lugar, Bansa, Tindahan, at Aktibidad. Walang hanay na Tech provider ang talahanayan. Kasama pa rin ang Tech provider sa CSV."
   },
   "/[npub]:copied": {
     "de": "Nach dem Drücken der reinen Symbolsteuerung Kopieren hat das Häkchen den zugänglichen Namen Kopiert. Der npub bleibt sichtbar.",
@@ -1560,19 +1560,19 @@
     "fil": "Tarheta ng pagkakakilanlan ng miyembro na may pilula ng tungkulin Na-verify at, sa tabi nito, isang pindutan ng programa ng tulong na icon lang kapag ang fundingReviewedAt ay isang numero. Ang pangalang pantulong ay Kasali sa programa ng tulong ng 21.gifts mula noong {date}, o ang parehong pangungusap na may sinuri ni {name} kapag nagpadala ang API ng fundingReviewedByName. Ang tarheta ng miyembro at ang sariling profile ay pinangalanan ang taong tumanggap sa kanila kapag ipinadala ng API ang pangalang iyon. Hindi nakikita ang pangungusap hangga't hindi pinipindot ang icon. Ang kuha sa pahinga ay hindi tinatakpan ang pindot."
   },
   "/members/[accountId]:heart-cannot-receive": {
-    "de": "Ada auf Carols Profil, Beiträge geöffnet, nach ?visual=heart-cannot-receive (nur Playwright-Builds) und Klick auf ₿1 senden bei Carols Notiz: die API lehnte das Herz ab, weil der Autor nicht empfangen kann (cannot_receive). Der Tipp wird zurückgenommen und unter dem Herz steht Die Wallet des Autors kann diese Bitcoin-Zahlung nicht empfangen, an der Stelle der Guthaben-Zeile.",
-    "es": "Ada en el perfil de Carol, publicaciones abiertas, tras ?visual=heart-cannot-receive (solo builds de Playwright) y pulsar Enviar ₿1 en la nota de Carol: la API rechazó el corazón porque el autor no puede recibir (cannot_receive). El toque se deshace y bajo el corazón aparece La wallet del autor no puede recibir este pago en Bitcoin, en el lugar de la línea de saldo.",
-    "fil": "Si Ada sa profile ni Carol, bukas ang mga post, matapos ang ?visual=heart-cannot-receive (Playwright build lang) at i-click ang Magpadala ng ₿1 sa tala ni Carol: tinanggihan ng API ang puso dahil hindi makatanggap ang may-akda (cannot_receive). Binabawi ang tap at lumalabas sa ilalim ng puso ang Hindi matanggap ng wallet ng may-akda ang Bitcoin payment na ito, sa puwesto ng linya ng balanse."
+    "de": "Ada auf Carols Profil, Beiträge geöffnet, nach ?visual=heart-cannot-receive (nur Playwright-Builds) und Klick auf Herz senden bei Carols Notiz: die API lehnte das Herz ab, weil der Autor nicht empfangen kann (cannot_receive). Der Tipp wird zurückgenommen und unter dem Herz steht Die Wallet des Autors kann diese Bitcoin-Zahlung nicht empfangen, an der Stelle der Guthaben-Zeile.",
+    "es": "Ada en el perfil de Carol, publicaciones abiertas, tras ?visual=heart-cannot-receive (solo builds de Playwright) y pulsar Enviar un corazón en la nota de Carol: la API rechazó el corazón porque el autor no puede recibir (cannot_receive). El toque se deshace y bajo el corazón aparece La wallet del autor no puede recibir este pago en Bitcoin, en el lugar de la línea de saldo.",
+    "fil": "Si Ada sa profile ni Carol, bukas ang mga post, matapos ang ?visual=heart-cannot-receive (Playwright build lang) at i-click ang Magpadala ng puso sa tala ni Carol: tinanggihan ng API ang puso dahil hindi makatanggap ang may-akda (cannot_receive). Binabawi ang tap at lumalabas sa ilalim ng puso ang Hindi matanggap ng wallet ng may-akda ang Bitcoin payment na ito, sa puwesto ng linya ng balanse."
   },
   "/members/[accountId]:heart-needs-balance": {
-    "de": "Derselbe deutsche Beitrag im Beitragsfeed nach dem Öffnen von ?visual=heart-needs-balance (bereite Wallet unter 1 Sat) und dem Klick auf ₿1 senden. Kein Drücken und kein +1; nichts wird gesendet. Text Dafür ist ein Bitcoin-Guthaben nötig.",
-    "es": "La misma publicación en alemán en el feed de publicaciones tras abrir ?visual=heart-needs-balance (billetera lista con menos de 1 sat) y pulsar Enviar ₿1. Sin pulsación ni +1; no se envía nada. Texto Para esto hace falta saldo de Bitcoin.",
-    "fil": "Parehong post sa German sa feed ng mga post pagkatapos buksan ang ?visual=heart-needs-balance (handang wallet na kulang sa 1 sat) at pindutin ang Magpadala ng ₿1. Walang pindot at walang +1; walang naipapadala. Sipi Kailangan ng Bitcoin balance para dito."
+    "de": "Derselbe deutsche Beitrag im Beitragsfeed nach dem Öffnen von ?visual=heart-needs-balance (bereite Wallet unter dem gespeicherten Herz-Betrag) und dem Klick auf Herz senden. Kein Drücken und kein +1; nichts wird gesendet. Text Dafür ist ein Bitcoin-Guthaben nötig.",
+    "es": "La misma publicación en alemán en el feed de publicaciones tras abrir ?visual=heart-needs-balance (billetera lista con menos saldo que el importe guardado del corazón) y pulsar Enviar un corazón. Sin pulsación ni +1; no se envía nada. Texto Para esto hace falta saldo de Bitcoin.",
+    "fil": "Parehong post sa German sa feed ng mga post pagkatapos buksan ang ?visual=heart-needs-balance (handang wallet na kulang sa naka-save na halaga ng puso) at pindutin ang Magpadala ng puso. Walang pindot at walang +1; walang naipapadala. Sipi Kailangan ng Bitcoin balance para dito."
   },
   "/members/[accountId]:heart-paid": {
-    "de": "Derselbe deutsche Beitrag nach dem Öffnen von ?visual=heart-paid und dem Klick auf ₿1 senden. Das gefüllte Herz und das +1, das jedes Tippen zeigt, bleiben für die Aufnahme stehen.",
-    "es": "La misma publicación en alemán tras abrir ?visual=heart-paid y pulsar Enviar ₿1. El corazón relleno y el +1 que muestra cada toque se mantienen para la captura.",
-    "fil": "Parehong post sa German pagkatapos buksan ang ?visual=heart-paid at pindutin ang Magpadala ng ₿1. Nananatili para sa kuha ang punong puso at ang +1 na ipinapakita ng bawat pindot."
+    "de": "Derselbe deutsche Beitrag nach dem Öffnen von ?visual=heart-paid und dem Klick auf Herz senden. Das gefüllte Herz und das +1, das jedes Tippen zeigt, bleiben für die Aufnahme stehen.",
+    "es": "La misma publicación en alemán tras abrir ?visual=heart-paid y pulsar Enviar un corazón. El corazón relleno y el +1 que muestra cada toque se mantienen para la captura.",
+    "fil": "Parehong post sa German pagkatapos buksan ang ?visual=heart-paid at pindutin ang Magpadala ng puso. Nananatili para sa kuha ang punong puso at ang +1 na ipinapakita ng bawat pindot."
   },
   "/members/[accountId]:images": {
     "de": "Mitgliedskarte mit beiden öffentlichen Bildern über der Überschrift: das breite Bild und das runde Profilfoto, das den unteren Rand überlappt. Keines ist das Über-mich-Foto. Keine Hinzufügen-Schaltflächen.",
@@ -1773,6 +1773,16 @@
     "de": "Identitätskarte; Antworten gedrückt; keine angeheftete Profilnotiz-Karte; Antwortkarte A reply from Carol.",
     "es": "Tarjeta de identidad; respuestas pulsadas; ninguna tarjeta de nota de perfil fijada; tarjeta de respuesta A reply from Carol.",
     "fil": "Kard ng pagkakakilanlan; pinindot ang mga sagot; walang nakaangkla na kard ng tala sa pagkakakilanlan; kard ng sagot A reply from Carol."
+  },
+  "/members/[accountId]:replies-open-hearts": {
+    "de": "Im Mitgliederprofil sind die Beiträge offen und die Profilnotiz Hello from my profile note. zeigt ♡ 2. Reaktionen anzeigen ist gedrückt. Unter der Antwortkarte steht Herzen (2): Grace mit dem Rollen-Pill Verifiziert und ₿21, dann ein gelöschtes Konto mit dem Platzhalter und ₿1'000, jeweils mit Zeit und neueste zuerst.",
+    "es": "En el perfil del miembro, las publicaciones están abiertas y la nota de perfil Hello from my profile note. muestra ♡ 2. Mostrar reacciones está pulsado. Bajo la tarjeta de respuesta aparece Corazones (2): Grace con la pastilla Verificado y ₿21, después una cuenta eliminada con el marcador y ₿1'000, cada una con su hora y la más reciente primero.",
+    "fil": "Sa profile ng miyembro, bukas ang mga post at ang tala sa profile na Hello from my profile note. ay nagpapakita ng ♡ 2. Nakapindot ang Ipakita ang mga reaksyon. Sa ilalim ng kard ng sagot ang Mga puso (2): si Grace na may pildorang Beripikado at ₿21, pagkatapos ang natanggal na account na may placeholder at ₿1'000, bawat isa may oras at pinakabago muna."
+  },
+  "/members/[accountId]:replies-open-hearts-role": {
+    "de": "Im Mitgliederprofil ist die Herzen-Liste unter der Antwort sichtbar. Die Rolle Verifiziert in Graces Herz-Zeile ist gedrückt, und darunter steht der Hinweis Ein Moderator hat diese Person persönlich getroffen und bestätigt, dass sie echt ist. Die übrigen Zeilen bleiben unverändert.",
+    "es": "En el perfil del miembro se ve la lista Corazones bajo la respuesta. La pastilla Verificado de la fila de Grace está pulsada y debajo aparece Un moderador ha conocido a esta persona en la vida real y ha confirmado que es real. Las demás filas no cambian.",
+    "fil": "Nakikita sa profile ng miyembro ang listahang Mga puso sa ilalim ng sagot. Nakapindot ang pill na Beripikado sa hilera ni Grace, at nasa ibaba ang Personal na nakilala ng isang moderator ang taong ito at kinumpirmang totoo siya. Hindi nagbabago ang ibang hilera."
   },
   "/members/[accountId]:replies-truncated": {
     "de": "Identitätskarte; Antworten-Zähler 3 gedrückt; eine aufgeführte Antwort; gedämpftes Zeigt die neuesten 1 von 3.; keine angeheftete Profilnotiz-Karte.",
@@ -2315,19 +2325,19 @@
     "fil": "Hindi naka-sign-in na permalink ng isang Ingles na tala na tinukoy bilang $1.50 na may frozen na ₿1'000 at label na 0%. Walang pangalawang halaga sa dolyar. Tumutugma ang tala sa wika ng UI, kaya hindi nag-aalok ang kard ng Isalin. Ang natanggap na halaga ay ₿0 · $0.00. Walang Hiling sa pambuo."
   },
   "/messages/[id]:heart-cannot-receive": {
-    "de": "Angemeldeter Permalink der Notiz eines anderen Mitglieds nach ?visual=heart-cannot-receive (nur Playwright-Builds) und Klick auf ₿1 senden: die API lehnte das Herz ab, weil der Autor nicht empfangen kann (cannot_receive). Der Tipp wird zurückgenommen und unter dem Herz steht Die Wallet des Autors kann diese Bitcoin-Zahlung nicht empfangen, an der Stelle der Guthaben-Zeile.",
-    "es": "Permalink con sesión iniciada de la nota de otro miembro tras ?visual=heart-cannot-receive (solo builds de Playwright) y pulsar Enviar ₿1: la API rechazó el corazón porque el autor no puede recibir (cannot_receive). El toque se deshace y bajo el corazón aparece La wallet del autor no puede recibir este pago en Bitcoin, en el lugar de la línea de saldo.",
-    "fil": "Naka-sign na permalink ng tala ng ibang miyembro, matapos ang ?visual=heart-cannot-receive (Playwright build lang) at i-click ang Magpadala ng ₿1: tinanggihan ng API ang puso dahil hindi makatanggap ang may-akda (cannot_receive). Binabawi ang tap at lumalabas sa ilalim ng puso ang Hindi matanggap ng wallet ng may-akda ang Bitcoin payment na ito, sa puwesto ng linya ng balanse."
+    "de": "Angemeldeter Permalink der Notiz eines anderen Mitglieds nach ?visual=heart-cannot-receive (nur Playwright-Builds) und Klick auf Herz senden: die API lehnte das Herz ab, weil der Autor nicht empfangen kann (cannot_receive). Der Tipp wird zurückgenommen und unter dem Herz steht Die Wallet des Autors kann diese Bitcoin-Zahlung nicht empfangen, an der Stelle der Guthaben-Zeile.",
+    "es": "Permalink con sesión iniciada de la nota de otro miembro tras ?visual=heart-cannot-receive (solo builds de Playwright) y pulsar Enviar un corazón: la API rechazó el corazón porque el autor no puede recibir (cannot_receive). El toque se deshace y bajo el corazón aparece La wallet del autor no puede recibir este pago en Bitcoin, en el lugar de la línea de saldo.",
+    "fil": "Naka-sign na permalink ng tala ng ibang miyembro, matapos ang ?visual=heart-cannot-receive (Playwright build lang) at i-click ang Magpadala ng puso: tinanggihan ng API ang puso dahil hindi makatanggap ang may-akda (cannot_receive). Binabawi ang tap at lumalabas sa ilalim ng puso ang Hindi matanggap ng wallet ng may-akda ang Bitcoin payment na ito, sa puwesto ng linya ng balanse."
   },
   "/messages/[id]:heart-needs-balance": {
-    "de": "Derselbe angemeldete öffentliche Thread nach dem Öffnen von ?visual=heart-needs-balance (bereite Wallet unter 1 Sat) und dem Klick auf ₿1 senden. Kein Drücken und kein +1; nichts wird gesendet. Text Dafür ist ein Bitcoin-Guthaben nötig.",
-    "es": "El mismo hilo público con sesión iniciada tras abrir ?visual=heart-needs-balance (billetera lista con menos de 1 sat) y pulsar Enviar ₿1. Sin pulsación ni +1; no se envía nada. Texto Para esto hace falta saldo de Bitcoin.",
-    "fil": "Parehong naka-sign-in na pampublikong thread pagkatapos buksan ang ?visual=heart-needs-balance (handang wallet na kulang sa 1 sat) at pindutin ang Magpadala ng ₿1. Walang pindot at walang +1; walang naipapadala. Sipi Kailangan ng Bitcoin balance para dito."
+    "de": "Derselbe angemeldete öffentliche Thread nach dem Öffnen von ?visual=heart-needs-balance (bereite Wallet unter dem gespeicherten Herz-Betrag) und dem Klick auf Herz senden. Kein Drücken und kein +1; nichts wird gesendet. Text Dafür ist ein Bitcoin-Guthaben nötig.",
+    "es": "El mismo hilo público con sesión iniciada tras abrir ?visual=heart-needs-balance (billetera lista con menos saldo que el importe guardado del corazón) y pulsar Enviar un corazón. Sin pulsación ni +1; no se envía nada. Texto Para esto hace falta saldo de Bitcoin.",
+    "fil": "Parehong naka-sign-in na pampublikong thread pagkatapos buksan ang ?visual=heart-needs-balance (handang wallet na kulang sa naka-save na halaga ng puso) at pindutin ang Magpadala ng puso. Walang pindot at walang +1; walang naipapadala. Sipi Kailangan ng Bitcoin balance para dito."
   },
   "/messages/[id]:heart-paid": {
-    "de": "Derselbe angemeldete öffentliche Thread nach dem Öffnen von ?visual=heart-paid und dem Klick auf ₿1 senden. Das gefüllte Herz und das +1, das jedes Tippen zeigt, bleiben für die Aufnahme stehen.",
-    "es": "El mismo hilo público con sesión iniciada tras abrir ?visual=heart-paid y pulsar Enviar ₿1. El corazón relleno y el +1 que muestra cada toque se mantienen para la captura.",
-    "fil": "Parehong naka-sign-in na pampublikong thread pagkatapos buksan ang ?visual=heart-paid at pindutin ang Magpadala ng ₿1. Nananatili para sa kuha ang punong puso at ang +1 na ipinapakita ng bawat pindot."
+    "de": "Derselbe angemeldete öffentliche Thread nach dem Öffnen von ?visual=heart-paid und dem Klick auf Herz senden. Das gefüllte Herz und das +1, das jedes Tippen zeigt, bleiben für die Aufnahme stehen.",
+    "es": "El mismo hilo público con sesión iniciada tras abrir ?visual=heart-paid y pulsar Enviar un corazón. El corazón relleno y el +1 que muestra cada toque se mantienen para la captura.",
+    "fil": "Parehong naka-sign-in na pampublikong thread pagkatapos buksan ang ?visual=heart-paid at pindutin ang Magpadala ng puso. Nananatili para sa kuha ang punong puso at ang +1 na ipinapakita ng bawat pindot."
   },
   "/messages/[id]:hidden": {
     "de": "Hydrierte Gründer- oder Moderatorsitzung bei einer weich ausgeblendeten Notiz. Der Verlauf zeigt den Originaltext plus Diese Notiz wurde von {name} am {time} ausgeblendet. Reagieren, Schenken, Löschen und das Antwortfeld fehlen.",
@@ -2428,6 +2438,16 @@
     "de": "Derselbe Verlauf geöffnet auf der Antwort-UUID. Übergeordnet + Geschenk; Permalink-Zielring (data-permalink-target=\"true\", ring-1 ring-app-fg) auf der Geschenk-Antwort.",
     "es": "El mismo hilo abierto en el UUID de la respuesta. Superior + regalo; anillo de destino del enlace permanente (data-permalink-target=\"true\", ring-1 ring-app-fg) en la respuesta-regalo.",
     "fil": "Parehong usapan na binuksan sa UUID ng sagot. Magulang + regalo; singsing ng target ng permalink (data-permalink-target=\"true\", ring-1 ring-app-fg) sa sagot-regalo."
+  },
+  "/messages/[id]:reply-hearts": {
+    "de": "Der öffentliche Beitrag ist geöffnet und die Reaktionen sind aufgeklappt. Die Elternnotiz zeigt ♡ 2. Unter den Antworten steht die Sektion Herzen mit dem Namen Grace als Profil-Link, dem Rollen-Pill Moderator, dem exakten Betrag ₿21 und dem Zeitstempel; darunter ein gelöschtes Konto mit dem übersetzten Platzhalter und ₿1'000.",
+    "es": "La publicación pública está abierta y las reacciones están desplegadas. La nota principal muestra ♡ 2. Bajo las respuestas aparece la sección Corazones con Grace enlazada a su perfil, la pastilla Moderador, el importe exacto ₿21 y la hora; debajo, una cuenta eliminada con el marcador traducido y ₿1'000.",
+    "fil": "Bukas ang pampublikong post at naka-expand ang mga reaksyon. Ang pangunahing tala ay nagpapakita ng ♡ 2. Sa ilalim ng mga sagot ang seksyong Mga puso na may Grace na naka-link sa profile, ang pildorang Moderator, ang eksaktong ₿21 at oras; sa ibaba ang natanggal na account na may isinaling placeholder at ₿1'000."
+  },
+  "/messages/[id]:reply-hearts-role": {
+    "de": "Der öffentliche Beitrag zeigt die aufgeklappte Herzen (2)-Liste. Die Rolle Moderator in Graces Zeile ist gedrückt, und darunter steht der Hinweis Diese Person hilft, das Wohnzimmer in Ordnung zu halten. Die gelöschte Zeile darunter behält ihren Platzhalter und ₿1'000.",
+    "es": "La publicación pública muestra la lista Corazones (2) desplegada. La pastilla Moderador de la fila de Grace está pulsada y debajo aparece Esta persona ayuda a mantener el salón en orden. La fila eliminada de abajo conserva su marcador y ₿1'000.",
+    "fil": "Ipinapakita ng pampublikong post ang nakabukas na listahang Mga puso (2). Nakapindot ang pill na Moderator sa hilera ni Grace, at nasa ibaba ang Tumutulong ang taong ito na panatilihing maayos ang living room. Ang natanggal na hilera sa ibaba ay may placeholder at ₿1'000 pa rin."
   },
   "/messages/[id]:reply-rate-loading": {
     "de": "Angemeldeter Verlauf. Der Reaktionsbetrag ist 1.00 USD, und Senden wurde gedrückt, während der Kurs des Geschenktags noch lädt. Der Eingabebereich zeigt Der Wechselkurs für USD wird noch geladen. Senden ist deaktiviert.",
@@ -3689,6 +3709,16 @@
     "es": "1 reacción está pulsada y la lista muestra A reply from Ada. Aguja A reply from Ada.",
     "fil": "1 reaksyon ang nakapindot at ipinapakita ng listahan ang A reply from Ada. Karayom A reply from Ada."
   },
+  "/profile:replies-open-hearts": {
+    "de": "Im eigenen Profil sind die Beiträge offen und die Notiz Second post from Ada. zeigt ♡ 2. Reaktionen anzeigen ist gedrückt. Unter der Antwort steht Herzen (2): Grace mit dem Rollen-Pill Moderator und ₿21, dann ein gelöschtes Konto mit ₿1'000, jeweils mit Zeit und neueste zuerst.",
+    "es": "En el perfil propio están abiertas las publicaciones y la nota Second post from Ada. muestra ♡ 2. Mostrar reacciones está pulsado. Bajo la respuesta aparece Corazones (2): Grace con la pastilla Moderador y ₿21, después una cuenta eliminada con ₿1'000, cada una con su hora y la más reciente primero.",
+    "fil": "Sa sariling profile, bukas ang mga post at ang talang Second post from Ada. ay nagpapakita ng ♡ 2. Nakapindot ang Ipakita ang mga reaksyon. Sa ilalim ng sagot ang Mga puso (2): si Grace na may pill na Moderator at ₿21, pagkatapos ang natanggal na account na may ₿1'000, bawat isa may oras at pinakabago muna."
+  },
+  "/profile:replies-open-hearts-role": {
+    "de": "Im eigenen Profil ist die Herzen-Liste unter der Antwort sichtbar. Die Rolle Moderator in Graces Herz-Zeile ist gedrückt, und darunter steht der Hinweis Diese Person hilft, das Wohnzimmer in Ordnung zu halten. Die Beträge und Zeiten bleiben sichtbar.",
+    "es": "En el perfil propio se ve la lista Corazones bajo la respuesta. La pastilla Moderador de la fila de Grace está pulsada y debajo aparece Esta persona ayuda a mantener el salón en orden. Los importes y las horas siguen visibles.",
+    "fil": "Nakikita sa sariling profile ang listahang Mga puso sa ilalim ng sagot. Nakapindot ang pill na Moderator sa hilera ni Grace, at nasa ibaba ang Tumutulong ang taong ito na panatilihing maayos ang living room. Nakikita pa rin ang mga halaga at oras."
+  },
   "/profile:role-open": {
     "de": "Angemeldeter Inhaber auf /profile mit der Rolle Verifiziert. Die Rollen-Pille ist gedrückt und ihr Satz ist sichtbar. Link kopieren schreibt /view/:viewKey.",
     "es": "Titular con sesión en /profile con el rol Verificado. La píldora de rol está pulsada y su frase es visible. Copiar enlace escribe /view/:viewKey.",
@@ -4314,6 +4344,41 @@
     "es": "Tras pulsar el código fiat bajo Importe predeterminado: queda pulsado en lugar de ₿ y los campos de importe empiezan ahora en fiat.",
     "fil": "Pagkatapos pindutin ang fiat code sa ilalim ng Default na halaga: ito na ang nakapindot sa halip na ₿, at nagsisimula na sa fiat ang mga field ng halaga."
   },
+  "/settings:heart-amount": {
+    "de": "Einstellungen mit der Wallet-Sektion: unter Standardbetrag steht Herz-Betrag. Die kleine Überschrift steht über dem AmountEntry mit dem gespeicherten Wert 21, dem ₿/Fiat-Schalter neben dem Feld und dem Fiat-Zähler $0.02 bei geladenem USD-Kurs darunter; es folgen der Hinweis, dass jedes gedrückte Herz diesen Betrag sendet, der Beitrag aber nur ein Herz zählt, und Speichern.",
+    "es": "Ajustes con la sección Wallet: bajo Importe predeterminado aparece Importe del corazón. El pequeño encabezado está sobre el AmountEntry con el valor guardado 21, el selector ₿/fiat junto al campo y el contador fiat $0.02 con el tipo de cambio USD cargado debajo; después la nota de que cada corazón pulsado envía ese importe aunque la publicación cuente solo un corazón, y Guardar.",
+    "fil": "Mga setting na may seksyong Wallet: sa ilalim ng Default na halaga ang Halaga ng puso. Ang maliit na pamagat ay nasa itaas ng AmountEntry na may naka-save na 21, ang ₿/fiat na switch sa tabi ng field at ang fiat counter na $0.02 kapag naka-load ang USD rate sa ibaba; pagkatapos ang paalala na ganoon kalaking halaga ang ipinapadala ng bawat pusong pinindot kahit isang puso lang ang bilang sa post, at I-save."
+  },
+  "/settings:heart-amount-fiat": {
+    "de": "Einstellungen mit der Wallet-Sektion: Herz-Betrag mit dem gespeicherten Wert 21 bei geladenem USD-Kurs, nach dem Drücken der Fiat-Seite des ₿/USD-Schalters in dieser Zeile. Der Schalter zeigt USD gedrückt, im Feld steht der exakte Fiat-Entwurf 0.021 und der Zähler darunter zeigt ₿21. Hinweis und Speichern bleiben sichtbar; der gespeicherte Betrag ist unverändert und Speichern bleibt aktiv.",
+    "es": "Ajustes con la sección Wallet: Importe del corazón con el valor guardado 21 y el tipo de cambio USD cargado, tras pulsar el lado fiat del selector ₿/USD de esa fila. El selector muestra USD pulsado, el campo contiene el borrador fiat exacto 0.021 y el contador inferior muestra ₿21. La nota y Guardar siguen visibles; el importe guardado no cambia y Guardar sigue activo.",
+    "fil": "Mga setting na may seksyong Wallet: Halaga ng puso na may naka-save na 21 at naka-load na USD rate, pagkatapos pindutin ang fiat side ng ₿/USD switch sa hanay na iyon. Nakapindot ang USD sa switch, ang eksaktong fiat draft na 0.021 ang nasa field, at ₿21 ang counter sa ibaba. Nananatiling nakikita ang paalala at I-save; hindi nagbabago ang naka-save na halaga at aktibo pa rin ang I-save."
+  },
+  "/settings:heart-amount-invalid": {
+    "de": "Einstellungen, Wallet: Im Feld Herz-Betrag steht 0 im ₿-Modus. Der live unter dem Feld stehende Fehler Gib ganze ₿ von ₿1 bis ₿10'000'000 ein. ist sichtbar, das Feld meldet aria-invalid, und Speichern ist deaktiviert. Im Fiat-Modus sind Dezimalen erlaubt; sein Fehler Gib einen Betrag von ₿1 bis ₿10'000'000 ein. nennt dieselbe Bitcoin-Grenze.",
+    "es": "Ajustes, Wallet: el campo Importe del corazón contiene 0 en modo ₿. El error en vivo bajo el campo Introduce ₿ enteros de ₿1 a ₿10'000'000. está visible, el campo informa aria-invalid y Guardar está desactivado. El modo fiat admite decimales; su error Introduce un importe de ₿1 a ₿10'000'000. nombra el mismo límite en bitcoin.",
+    "fil": "Mga setting, Wallet: ang field na Halaga ng puso ay may 0 sa ₿ mode. Nakikita ang live na error sa ilalim ng field na Maglagay ng buong ₿ mula ₿1 hanggang ₿10'000'000., nag-uulat ang field ng aria-invalid, at naka-disable ang I-save. Tumatanggap ng decimal ang fiat mode; ang error nitong Maglagay ng halagang mula ₿1 hanggang ₿10'000'000. ay nagpapangalan ng parehong limit sa bitcoin."
+  },
+  "/settings:heart-amount-saved": {
+    "de": "Einstellungen, Wallet: Der Herz-Betrag 21 wurde gespeichert. Unter dem Formular steht die Erfolgsmeldung Gespeichert: ₿21 pro Herz., Speichern ist wieder aktiviert und das Feld zeigt 21.",
+    "es": "Ajustes, Wallet: se guardó el importe del corazón 21. Bajo el formulario aparece el mensaje de éxito Guardado: ₿21 por corazón., Guardar vuelve a estar activo y el campo muestra 21.",
+    "fil": "Mga setting, Wallet: na-save ang halaga ng puso na 21. Sa ibaba ng form ang mensaheng tagumpay na Naka-save: ₿21 bawat puso., aktibo muli ang I-save at 21 ang nasa field."
+  },
+  "/settings:heart-amount-error": {
+    "de": "Einstellungen, Wallet: Das Speichern des Herz-Betrags ist fehlgeschlagen, nachdem POST /me/heart-sats mit 500 geantwortet hat. Die rote role=\"alert\"-Meldung Der Herz-Betrag konnte nicht gespeichert werden. steht unter dem Hinweis, und das Feld bleibt bearbeitbar.",
+    "es": "Ajustes, Wallet: falló el guardado del importe del corazón después de que POST /me/heart-sats respondiera 500. El mensaje rojo role=\"alert\" No se pudo guardar el importe del corazón. aparece bajo la nota y el campo sigue editable.",
+    "fil": "Mga setting, Wallet: nabigo ang pag-save ng halaga ng puso matapos tumugon ang POST /me/heart-sats ng 500. Ang pulang role=\"alert\" na mensaheng Hindi na-save ang halaga ng puso. ay nasa ilalim ng paalala, at nae-edit pa rin ang field."
+  },
+  "/settings:heart-amount-saving": {
+    "de": "Einstellungen, Wallet: Nach dem Drücken von Speichern läuft POST /me/heart-sats noch. Unter dem Formular steht die Statuszeile mit Spinner Wird gespeichert…, das Feld ist deaktiviert und Speichern bleibt gesperrt.",
+    "es": "Ajustes, Wallet: tras pulsar Guardar, POST /me/heart-sats sigue pendiente. Bajo el formulario aparece la línea de estado con spinner Guardando…, el campo está desactivado y Guardar sigue bloqueado.",
+    "fil": "Mga setting, Wallet: pagkatapos pindutin ang I-save, tumatakbo pa ang POST /me/heart-sats. Sa ibaba ng form ang status line na may spinner na Sine-save…, naka-disable ang field at naka-lock pa rin ang I-save."
+  },
+  "/settings:heart-amount-no-rate": {
+    "de": "Einstellungen, Wallet: Die bevorzugte Währung USD hat keinen Kurs. Der Fiat-Schalter im Herz-Betrag ist deaktiviert, das Feld zeigt die gespeicherten 21 in ₿, und die Zeile darunter sagt Noch kein Wechselkurs. Speichern bleibt aktiv, solange der große Betrag gilt.",
+    "es": "Ajustes, Wallet: la moneda preferida USD no tiene tipo de cambio. El selector fiat del Importe del corazón está desactivado, el campo muestra el valor guardado 21 en ₿ y la línea inferior dice Aún no hay tipo de cambio. Guardar sigue activo mientras el importe en ₿ sea válido.",
+    "fil": "Mga setting, Wallet: walang palitan ang gustong currency na USD. Naka-disable ang fiat switch sa Halaga ng puso, ipinapakita ng field ang naka-save na 21 sa ₿, at sinasabi ng linya sa ibaba ang Wala pang halaga ng palitan. Aktibo pa rin ang I-save habang valid ang halaga sa ₿."
+  },
   "/settings:heart-notify-error": {
     "de": "Abschnitt Benachrichtigungen mit Speicherfehler role=\"alert\" nach dem Stubben von POST /me/heart-notifications auf 500 und dem Klick auf Aus in Herzen. Text Die Herzen-Einstellung konnte nicht gespeichert werden.",
     "es": "Sección de notificaciones con error de guardado role=\"alert\" tras simular POST /me/heart-notifications a 500 y pulsar Desactivado dentro de Corazones. Texto No se pudo guardar el ajuste de corazones.",
@@ -4654,6 +4719,16 @@
     "es": "Encabezado Tiendas. Cada fila es una página de tienda, no una nota del foro. La pastilla Lista / Mapa / Tabla / Publicación con Lista seleccionada. Una fila Cafe Luna enlaza a la página de la tienda. Añadir una tienda no está. No hay pastilla #Shop ni #21GiftsShop en bruto. No hay pista de leyes.",
     "fil": "Heading na Mga Tindahan. Bawat hilera ay pahina ng shop, hindi tala sa forum. Ang pill na Listahan / Mapa / Talahanayan / Post na napili ang Listahan. Isang hilera na Cafe Luna ang naka-link sa pahina ng shop. Wala ang Magdagdag ng shop. Walang pill na #Shop at walang hilaw na #21GiftsShop. Walang pahiwatig sa mga batas."
   },
+  "/shops:expanded-hearts": {
+    "de": "Im Post-Tab der Shops ist die Notiz Cafe Luna aufgeklappt und zeigt ♡ 2. Unter der Antwort steht Herzen (2) mit Grace, ihrer Rolle Moderator und ₿21 sowie einem gelöschten Konto mit ₿1'000; jede Zeile zeigt Name, exakten Betrag und Zeit, neueste zuerst.",
+    "es": "En la pestaña Publicación de Tiendas, la nota Cafe Luna está expandida y muestra ♡ 2. Bajo la respuesta aparece Corazones (2) con Grace, su rol Moderador y ₿21, y una cuenta eliminada con ₿1'000; cada fila muestra nombre, importe exacto y hora, la más reciente primero.",
+    "fil": "Sa tab na Post ng Mga Tindahan, naka-expand ang talang Cafe Luna at nagpapakita ng ♡ 2. Sa ilalim ng sagot ang Mga puso (2) na may Grace, ang role niyang Moderator at ₿21, at isang natanggal na account na may ₿1'000; ipinapakita ng bawat hilera ang pangalan, eksaktong halaga at oras, pinakabago muna."
+  },
+  "/shops:expanded-hearts-role": {
+    "de": "Im Post-Tab der Shops ist die Notiz Cafe Luna aufgeklappt, und in der Herzen (2)-Liste ist die Rolle Moderator in Graces Zeile gedrückt. Darunter steht der Hinweis Diese Person hilft, das Wohnzimmer in Ordnung zu halten. Die Beträge und Zeiten bleiben sichtbar.",
+    "es": "En la pestaña Publicación de Tiendas, la nota Cafe Luna está expandida y en la lista Corazones (2) está pulsada la pastilla Moderador de la fila de Grace. Debajo aparece Esta persona ayuda a mantener el salón en orden. Los importes y las horas siguen visibles.",
+    "fil": "Sa tab na Post ng Mga Tindahan, naka-expand ang talang Cafe Luna, at sa listahang Mga puso (2) ay nakapindot ang pill na Moderator sa hilera ni Grace. Nasa ibaba ang Tumutulong ang taong ito na panatilihing maayos ang living room. Nakikita pa rin ang mga halaga at oras."
+  },
   "/shops:edit-account-required": {
     "de": "Ein Moderator hat den Shop-Text geändert, in Schritt 4 von 5 · 21.gifts-Nutzer luna eingetragen und Änderungen speichern gedrückt. Die API lehnte das Speichern ab, weil die Shop-Notiz ein Shop-Konto braucht. Der Editor kehrt zu Schritt 4 von 5 · 21.gifts-Nutzer zurück, das Feld zeigt @luna, und die Meldung Wählen Sie einen 21.gifts-Nutzer, um fortzufahren. ist sichtbar. Weiter ist deaktiviert.",
     "es": "Un moderador cambió el Texto de la tienda, introdujo luna en 4 de 5 · Usuario de 21.gifts y pulsó Guardar cambios. La API rechazó el guardado porque la nota de la tienda necesita una cuenta de tienda. El editor vuelve a 4 de 5 · Usuario de 21.gifts, el campo muestra @luna, y se ve Elige un usuario de 21.gifts para continuar. Siguiente está deshabilitado.",
@@ -4845,9 +4920,9 @@
     "fil": "Hindi ma-load ang mga mensahe. Subukan ulit. at Subukan ulit."
   },
   "/shops:heart-cannot-receive": {
-    "de": "Angemeldete Shop-Notiz eines anderen Mitglieds nach ?visual=heart-cannot-receive (nur Playwright-Builds) und Klick auf ₿1 senden: die API lehnte das Herz ab, weil der Autor nicht empfangen kann (cannot_receive). Der Tipp wird zurückgenommen und unter dem Herz steht Die Wallet des Autors kann diese Bitcoin-Zahlung nicht empfangen, an der Stelle der Guthaben-Zeile.",
-    "es": "Nota de tienda de otro miembro con sesión iniciada tras ?visual=heart-cannot-receive (solo builds de Playwright) y pulsar Enviar ₿1: la API rechazó el corazón porque el autor no puede recibir (cannot_receive). El toque se deshace y bajo el corazón aparece La wallet del autor no puede recibir este pago en Bitcoin, en el lugar de la línea de saldo.",
-    "fil": "Shop note ng ibang miyembro habang naka-sign in, matapos ang ?visual=heart-cannot-receive (Playwright build lang) at i-click ang Magpadala ng ₿1: tinanggihan ng API ang puso dahil hindi makatanggap ang may-akda (cannot_receive). Binabawi ang tap at lumalabas sa ilalim ng puso ang Hindi matanggap ng wallet ng may-akda ang Bitcoin payment na ito, sa puwesto ng linya ng balanse."
+    "de": "Angemeldete Shop-Notiz eines anderen Mitglieds nach ?visual=heart-cannot-receive (nur Playwright-Builds) und Klick auf Herz senden: die API lehnte das Herz ab, weil der Autor nicht empfangen kann (cannot_receive). Der Tipp wird zurückgenommen und unter dem Herz steht Die Wallet des Autors kann diese Bitcoin-Zahlung nicht empfangen, an der Stelle der Guthaben-Zeile.",
+    "es": "Nota de tienda de otro miembro con sesión iniciada tras ?visual=heart-cannot-receive (solo builds de Playwright) y pulsar Enviar un corazón: la API rechazó el corazón porque el autor no puede recibir (cannot_receive). El toque se deshace y bajo el corazón aparece La wallet del autor no puede recibir este pago en Bitcoin, en el lugar de la línea de saldo.",
+    "fil": "Shop note ng ibang miyembro habang naka-sign in, matapos ang ?visual=heart-cannot-receive (Playwright build lang) at i-click ang Magpadala ng puso: tinanggihan ng API ang puso dahil hindi makatanggap ang may-akda (cannot_receive). Binabawi ang tap at lumalabas sa ilalim ng puso ang Hindi matanggap ng wallet ng may-akda ang Bitcoin payment na ito, sa puwesto ng linya ng balanse."
   },
   "/shops:heart-cannot-receive-older-api": {
     "de": "Der Zustand heart-cannot-receive auf einer Shop-Notiz, aktualisiert von einer älteren API, die payable: false ohne authorCanReceive sendet. Das Herz fehlt, es gibt kein Kann noch nicht empfangen, und die Zeile Die Wallet des Autors kann diese Bitcoin-Zahlung nicht empfangen bleibt bis zum nächsten Tippen.",
@@ -4860,14 +4935,14 @@
     "fil": "Ang kalagayang heart-cannot-receive sa isang shop note. Pagkatapos ng tinanggihang puso, sinasabi ng pag-refresh na hindi pa makatanggap ang may-akda (authorCanReceive: false). Naka-disable ang puso at ang bilang nito kasama ang Hindi pa makatanggap, at nananatili sa ilalim ng puso ang linyang Hindi matanggap ng wallet ng may-akda ang Bitcoin payment na ito hanggang sa susunod na tap."
   },
   "/shops:heart-needs-balance": {
-    "de": "Shop-Beitragsfeed mit Cafe Luna nach dem Öffnen von ?visual=heart-needs-balance (bereite Wallet unter 1 Sat) und dem Klick auf ₿1 senden. Kein Drücken und kein +1; nichts wird gesendet. Text Dafür ist ein Bitcoin-Guthaben nötig.",
-    "es": "Feed de publicaciones de tienda con Cafe Luna tras abrir ?visual=heart-needs-balance (billetera lista con menos de 1 sat) y pulsar Enviar ₿1. Sin pulsación ni +1; no se envía nada. Texto Para esto hace falta saldo de Bitcoin.",
-    "fil": "Feed ng post ng tindahan na may Cafe Luna pagkatapos buksan ang ?visual=heart-needs-balance (handang wallet na kulang sa 1 sat) at pindutin ang Magpadala ng ₿1. Walang pindot at walang +1; walang naipapadala. Sipi Kailangan ng Bitcoin balance para dito."
+    "de": "Shop-Beitragsfeed mit Cafe Luna nach dem Öffnen von ?visual=heart-needs-balance (bereite Wallet unter dem gespeicherten Herz-Betrag) und dem Klick auf Herz senden. Kein Drücken und kein +1; nichts wird gesendet. Text Dafür ist ein Bitcoin-Guthaben nötig.",
+    "es": "Feed de publicaciones de tienda con Cafe Luna tras abrir ?visual=heart-needs-balance (billetera lista con menos saldo que el importe guardado del corazón) y pulsar Enviar un corazón. Sin pulsación ni +1; no se envía nada. Texto Para esto hace falta saldo de Bitcoin.",
+    "fil": "Feed ng post ng tindahan na may Cafe Luna pagkatapos buksan ang ?visual=heart-needs-balance (handang wallet na kulang sa naka-save na halaga ng puso) at pindutin ang Magpadala ng puso. Walang pindot at walang +1; walang naipapadala. Sipi Kailangan ng Bitcoin balance para dito."
   },
   "/shops:heart-paid": {
-    "de": "Dieselbe Cafe-Luna-Notiz nach dem Öffnen von ?visual=heart-paid und dem Klick auf ₿1 senden. Das gefüllte Herz und das +1, das jedes Tippen zeigt, bleiben für die Aufnahme stehen.",
-    "es": "La misma publicación de Cafe Luna tras abrir ?visual=heart-paid y pulsar Enviar ₿1. El corazón relleno y el +1 que muestra cada toque se mantienen para la captura.",
-    "fil": "Parehong post ng Cafe Luna pagkatapos buksan ang ?visual=heart-paid at pindutin ang Magpadala ng ₿1. Nananatili para sa kuha ang punong puso at ang +1 na ipinapakita ng bawat pindot."
+    "de": "Dieselbe Cafe-Luna-Notiz nach dem Öffnen von ?visual=heart-paid und dem Klick auf Herz senden. Das gefüllte Herz und das +1, das jedes Tippen zeigt, bleiben für die Aufnahme stehen.",
+    "es": "La misma publicación de Cafe Luna tras abrir ?visual=heart-paid y pulsar Enviar un corazón. El corazón relleno y el +1 que muestra cada toque se mantienen para la captura.",
+    "fil": "Parehong post ng Cafe Luna pagkatapos buksan ang ?visual=heart-paid at pindutin ang Magpadala ng puso. Nananatili para sa kuha ang punong puso at ang +1 na ipinapakita ng bawat pindot."
   },
   "/shops:list-empty": {
     "de": "Liste ist ausgewählt und es gibt keine Shops. Leerer Text Noch keine Shops — fügen Sie den ersten hinzu. Der Eingabebereich ist weg.",
@@ -5753,6 +5828,16 @@
     "de": "Gültiger bekannter Schlüssel. Überschrift Profil, kein FiatPicker; leere Serie zeigt profile.chartEmpty (Noch keine Gaben., keine Legende/SVG / keine ₿|Fiat-Skala; nie Wird geladen… am Diagramm) (ein fehlgeschlagener Aktivitätsabruf ist profile.chartError auf dem Spenden-Diagramm und profile.loanChartError auf dem Darlehens-Diagramm; LoanBalanceChart sitzt direkt unter dem Spenden-Diagramm, leer oder während des Ladens zeigt nichts, und seine Achse schließt null ein und kann unter null fallen), Über mich in der Karte wenn aboutMe eine Zeichenkette ist (kein Forum-Post), nur-Icon Link zu diesem Profil kopieren, Name, Ort und 21.gifts-Adresse, gelbes Aktion erforderlich, der Account muss aktiviert werden / Banner Aktivieren unter der Karte wenn nicht beansprucht (auch wenn angemeldet), keine sichtbare view-key-URL/Text. Die Karte hat keine Zurück-Steuerung; der Seitenkopf hat den einen Pfeil oben links. Dieses Bild zeichnet Schuld und Guthaben unter dem Spenden-Diagramm: Schuld ₿100'000, ₿60'000, dann ₿-20'000, und Guthaben ₿20'000, ₿120'000, dann ₿-30'000.",
     "es": "Clave conocida válida. Encabezado Perfil, sin FiatPicker; la serie vacía muestra profile.chartEmpty (Aún no hay regalos., sin leyenda/SVG / sin escala ₿|fiat; nunca Cargando… en el gráfico) (una carga de actividad fallida es profile.chartError en el gráfico de regalos y profile.loanChartError en el gráfico de préstamo; LoanBalanceChart está justo debajo del gráfico de regalos, vacío o en curso no muestra nada, y su eje incluye cero y puede bajar de cero), Sobre mí dentro de la tarjeta cuando aboutMe es una cadena (no un post del foro), solo icono Copiar enlace a este perfil, nombre, ubicación y dirección de 21.gifts, banner amarillo Acción requerida, la cuenta debe activarse / Activar bajo la tarjeta cuando no está reclamada (incluso con sesión), sin URL/texto visible de view-key. La tarjeta no tiene control atrás; el encabezado de la página tiene la única flecha arriba a la izquierda. Esta captura dibuja Deuda y Crédito bajo el gráfico de regalos: deuda ₿100'000, ₿60'000, luego ₿-20'000, y crédito ₿20'000, ₿120'000, luego ₿-30'000.",
     "fil": "Wasto at kilalang susi. Ulo ng pahina Profile, walang FiatPicker; ang walang laman na serye ay nagpapakita ng profile.chartEmpty (Wala pang mga regalo., walang alamat/SVG / walang ₿|fiat na iskala; hindi kailanman Naglo-load… sa tsart) (ang bigong pagkarga ng aktibidad ay profile.chartError sa tsart ng regalo at profile.loanChartError sa tsart ng utang; ang LoanBalanceChart ay nasa ilalim mismo ng tsart ng regalo, ang walang laman o isinasagawa ay walang ipinapakita, at kasama sa axis nito ang zero at maaari itong bumaba sa ilalim ng zero), Tungkol sa akin sa loob ng kard kapag string ang aboutMe (hindi post sa forum), icon lang na Kopyahin ang link sa profile na ito, pangalan, lugar, at 21.gifts address, dilaw na Kailangan ng aksyon, kailangang i-activate ang account / I-activate na banner sa ilalim ng kard kapag hindi pa nakuha (kahit naka-sign in), walang kitang view-key URL/teksto. Walang pangkontrol na pabalik ang kard; ang ulo ng pahina ang may iisang palaso sa itaas-kaliwa. Ipinapakita ng shot na ito ang Utang at Kredito sa ilalim ng tsart ng regalo: utang ₿100'000, ₿60'000, tapos ₿-20'000, at kredito ₿20'000, ₿120'000, tapos ₿-30'000."
+  },
+  "/view/[viewKey]:replies-open-hearts": {
+    "de": "Ein angemeldetes Mitglied sieht das Profil über den View-Key. Die Beiträge sind offen und Second post from Ada. zeigt ♡ 2; Reaktionen anzeigen ist gedrückt. Unter der Antwort steht Herzen (2) mit Grace, ihrer Rolle Moderator und ₿21 sowie einem gelöschten Konto mit ₿1'000, jeweils mit Zeit und neueste zuerst.",
+    "es": "Un miembro con sesión ve el perfil mediante la clave de vista. Las publicaciones están abiertas y Second post from Ada. muestra ♡ 2; Mostrar reacciones está pulsado. Bajo la respuesta aparece Corazones (2) con Grace, su rol Moderador y ₿21, y una cuenta eliminada con ₿1'000, cada una con su hora y la más reciente primero.",
+    "fil": "Nakikita ng naka-sign in na miyembro ang profile sa pamamagitan ng view key. Bukas ang mga post at nagpapakita ang Second post from Ada. ng ♡ 2; nakapindot ang Ipakita ang mga reaksyon. Sa ilalim ng sagot ang Mga puso (2) na may Grace, ang role niyang Moderator at ₿21, at isang natanggal na account na may ₿1'000, bawat isa may oras at pinakabago muna."
+  },
+  "/view/[viewKey]:replies-open-hearts-role": {
+    "de": "Im über den View-Key geöffneten Profil ist die Herzen-Liste unter der Antwort sichtbar. Die Rolle Moderator in Graces Herz-Zeile ist gedrückt, und darunter steht der Hinweis Diese Person hilft, das Wohnzimmer in Ordnung zu halten. Die Beträge und Zeiten bleiben sichtbar.",
+    "es": "En el perfil abierto mediante la clave de vista se ve la lista Corazones bajo la respuesta. La pastilla Moderador de la fila de Grace está pulsada y debajo aparece Esta persona ayuda a mantener el salón en orden. Los importes y las horas siguen visibles.",
+    "fil": "Sa profile na binuksan gamit ang view key, nakikita ang listahang Mga puso sa ilalim ng sagot. Nakapindot ang pill na Moderator sa hilera ni Grace, at nasa ibaba ang Tumutulong ang taong ito na panatilihing maayos ang living room. Nakikita pa rin ang mga halaga at oras."
   },
   "/view/[viewKey]:error": {
     "de": "Das Laden des Profils ist fehlgeschlagen. Text Profil konnte nicht geladen werden. Bitte versuchen Sie es erneut. und Erneut versuchen.",
@@ -7069,6 +7154,16 @@
     "es": "En Todos, Mostrar reacciones está pulsado en una nota — el importe ₿ de la nota y el texto del recuento de reacciones también se despliegan — la tarjeta se despliega (aria-expanded), la lista de respuestas carga vía fetchReplies, y el cuadro de redacción de respuesta dentro de la tarjeta muestra Escribe una reacción más un campo Importe sats. Las respuestas solo de regalo se muestran como envía ₿… más la misma preferred-fiat · opcional que las notas (una cadena guardada tal cual, el tipo de cambio actual cuando ese campo guardado es null o falta); una respuesta con texto y un regalo muestra ambos. Los autores de respuesta muestran las mismas pastillas Fundador / Moderador / Iniciador / Verificado que las notas (basis no tiene ninguna); pulsar una pastilla alterna la misma explicación breve. Texto de respuesta vacío y un importe vacío factura 21 sats (predeterminado de la hoja de pago) y abre la hoja de pago; una respuesta con texto y un importe vacío queda impagada para un miembro verificado, de lo contrario 1 sat a 21.gifts; un importe de 0 se cobra como 1 sat.",
     "fil": "Sa Lahat, napindot ang Ipakita ang mga reaksyon sa isang tala — ang halagang ₿ ng tala at ang teksto ng bilang ng reaksyon ay bumubuka rin — bumubuka ang kard (aria-expanded), naglo-load ang listahan ng sagot sa pamamagitan ng fetchReplies, at ang kahon ng pagsulat ng sagot sa loob ng kard ay nagpapakita ng Sumulat ng reaksyon plus isang field na Halaga sats. Ang mga sagot na regalo lang ay ipinapakita bilang magpadala ng ₿… plus ang parehong opsyonal na preferred-fiat · tulad ng mga tala (isang naka-imbak na string kung ano, ang kasalukuyang rate kapag null o wala ang naka-imbak na field); ang sagot na may teksto at regalo ay nagpapakita ng dalawa. Ang mga may-akda ng sagot ay nagpapakita ng parehong mga pildoras Tagapagtatag / Tagapamagitan / Tagapagsimula / Beripikado tulad ng mga tala (wala ang basis); ang pagpindot sa isang pildoras ay nagpapalit ng parehong maikling paliwanag. Walang laman na teksto ng sagot at walang laman na halaga ay singil ng 21 sats (default ng panel ng bayad) at nagbubukas ng panel ng bayad; ang sagot na may teksto at walang laman na halaga ay hindi pa bayad para sa beripikadong miyembro, kung hindi 1 sat sa 21.gifts; ang halagang 0 ay sinisingil bilang 1 sat."
   },
+  "/welcome:expanded-hearts": {
+    "de": "Im Forum ist die Notiz von Ada aufgeklappt und zeigt ♡ 2. Unter den Antworten steht die Sektion Herzen (2) mit Grace, ihrer Rolle Moderator und ₿21 sowie einem gelöschten Konto mit ₿1'000; jede Zeile zeigt Name, exakten Betrag und Zeit, neueste zuerst.",
+    "es": "En el foro, la nota de Ada está expandida y muestra ♡ 2. Bajo las respuestas aparece la sección Corazones (2) con Grace, su rol Moderador y ₿21, y una cuenta eliminada con ₿1'000; cada fila muestra nombre, importe exacto y hora, la más reciente primero.",
+    "fil": "Sa forum, naka-expand ang tala ni Ada at nagpapakita ng ♡ 2. Sa ilalim ng mga sagot ang seksyong Mga puso (2) na may Grace, ang role niyang Moderator at ₿21, at isang natanggal na account na may ₿1'000; ipinapakita ng bawat hilera ang pangalan, eksaktong halaga at oras, pinakabago muna."
+  },
+  "/welcome:expanded-hearts-role": {
+    "de": "Im Forum ist die Notiz von Ada aufgeklappt, und in der Herzen (2)-Liste ist die Rolle Moderator in Graces Zeile gedrückt. Darunter steht der Hinweis Diese Person hilft, das Wohnzimmer in Ordnung zu halten. Die Beträge und Zeiten der Zeilen bleiben sichtbar.",
+    "es": "En el foro, la nota de Ada está expandida y en la lista Corazones (2) está pulsada la pastilla Moderador de la fila de Grace. Debajo aparece Esta persona ayuda a mantener el salón en orden. Los importes y las horas de las filas siguen visibles.",
+    "fil": "Sa forum, naka-expand ang tala ni Ada, at sa listahang Mga puso (2) ay nakapindot ang pill na Moderator sa hilera ni Grace. Nasa ibaba ang Tumutulong ang taong ito na panatilihing maayos ang living room. Nakikita pa rin ang mga halaga at oras ng mga hilera."
+  },
   "/welcome:expanded-donated": {
     "de": "Adas Notiz ist aufgeklappt. Cyrills Antwort hat keinen Text. Sie zeigt senden ₿21'000 · $18.14 und keine Empfangen-Zeile. Die Notizfußzeile ist ₿21'000 · $18.14, dasselbe Geschenk, keine zweite Zahlung. Nichts an dieser Antwort wird in ₿21'100 eingerechnet.",
     "es": "La nota de Ada está desplegada. La respuesta de Cyrill no tiene texto. Muestra enviar ₿21'000 · $18.14 y ninguna línea de recibido. El pie de la nota es ₿21'000 · $18.14, el mismo regalo, no un segundo pago. Nada de esta respuesta se suma a ₿21'100.",
@@ -7140,9 +7235,9 @@
     "fil": "Sa Lahat: isang pangunahing tala sa Ingles na tinukoy bilang ₱200.00, na may nagyeyelong ₿1'000. Ang default na fiat ng tumitingin ay USD, hindi piso, kaya ipinapakita rin ng bar ang dolyar na naka-imbak para sa tumitinging iyon, $1.50. Label 0%. Tumutugma ang tala sa wika ng UI, kaya hindi nag-aalok ang kard ng Isalin. Ang natanggap na halaga ay ₿0 · $0.00."
   },
   "/welcome:heart-cannot-receive": {
-    "de": "Angemeldete Notiz eines anderen Mitglieds nach dem Öffnen von ?visual=heart-cannot-receive (nur Playwright-Builds) und Klick auf ₿1 senden. Die API lehnte das Herz ab, weil der Autor nicht empfangen kann (cannot_receive). Der Tipp wird zurückgenommen und unter dem Herz steht Die Wallet des Autors kann diese Bitcoin-Zahlung nicht empfangen, an der Stelle der Guthaben-Zeile.",
-    "es": "Nota de otro miembro con sesión iniciada tras abrir ?visual=heart-cannot-receive (solo builds de Playwright) y pulsar Enviar ₿1. La API rechazó el corazón porque el autor no puede recibir (cannot_receive). El toque se deshace y bajo el corazón aparece La wallet del autor no puede recibir este pago en Bitcoin, en el lugar de la línea de saldo.",
-    "fil": "Tala ng ibang miyembro habang naka-sign in, matapos buksan ang ?visual=heart-cannot-receive (Playwright build lang) at i-click ang Magpadala ng ₿1. Tinanggihan ng API ang puso dahil hindi makatanggap ang may-akda (cannot_receive). Binabawi ang tap at lumalabas sa ilalim ng puso ang Hindi matanggap ng wallet ng may-akda ang Bitcoin payment na ito, sa puwesto ng linya ng balanse."
+    "de": "Angemeldete Notiz eines anderen Mitglieds nach dem Öffnen von ?visual=heart-cannot-receive (nur Playwright-Builds) und Klick auf Herz senden. Die API lehnte das Herz ab, weil der Autor nicht empfangen kann (cannot_receive). Der Tipp wird zurückgenommen und unter dem Herz steht Die Wallet des Autors kann diese Bitcoin-Zahlung nicht empfangen, an der Stelle der Guthaben-Zeile.",
+    "es": "Nota de otro miembro con sesión iniciada tras abrir ?visual=heart-cannot-receive (solo builds de Playwright) y pulsar Enviar un corazón. La API rechazó el corazón porque el autor no puede recibir (cannot_receive). El toque se deshace y bajo el corazón aparece La wallet del autor no puede recibir este pago en Bitcoin, en el lugar de la línea de saldo.",
+    "fil": "Tala ng ibang miyembro habang naka-sign in, matapos buksan ang ?visual=heart-cannot-receive (Playwright build lang) at i-click ang Magpadala ng puso. Tinanggihan ng API ang puso dahil hindi makatanggap ang may-akda (cannot_receive). Binabawi ang tap at lumalabas sa ilalim ng puso ang Hindi matanggap ng wallet ng may-akda ang Bitcoin payment na ito, sa puwesto ng linya ng balanse."
   },
   "/welcome:heart-cannot-receive-older-api": {
     "de": "Der Zustand heart-cannot-receive auf Erins Notiz, aktualisiert von einer älteren API, die payable: false ohne authorCanReceive sendet. Das Herz fehlt, es gibt kein Kann noch nicht empfangen, und die Zeile Die Wallet des Autors kann diese Bitcoin-Zahlung nicht empfangen bleibt bis zum nächsten Tippen.",
@@ -7155,14 +7250,14 @@
     "fil": "Ang kalagayang heart-cannot-receive sa tala ni Erin. Pagkatapos ng tinanggihang puso, sinasabi ng pag-refresh na hindi pa makatanggap ang may-akda (authorCanReceive: false). Naka-disable ang puso at ang bilang nito kasama ang Hindi pa makatanggap, at nananatili sa ilalim ng puso ang linyang Hindi matanggap ng wallet ng may-akda ang Bitcoin payment na ito hanggang sa susunod na tap."
   },
   "/welcome:heart-needs-balance": {
-    "de": "Dieselbe angemeldete deutsche Notiz nach dem Öffnen von ?visual=heart-needs-balance (bereite Wallet unter 1 Sat) und dem Klick auf ₿1 senden. Kein Drücken und kein +1; nichts wird gesendet. Text Dafür ist ein Bitcoin-Guthaben nötig.",
-    "es": "La misma nota en alemán con sesión iniciada tras abrir ?visual=heart-needs-balance (billetera lista con menos de 1 sat) y pulsar Enviar ₿1. Sin pulsación ni +1; no se envía nada. Texto Para esto hace falta saldo de Bitcoin.",
-    "fil": "Parehong naka-sign-in na notang Aleman pagkatapos buksan ang ?visual=heart-needs-balance (handang wallet na kulang sa 1 sat) at pindutin ang Magpadala ng ₿1. Walang pindot at walang +1; walang naipapadala. Sipi Kailangan ng Bitcoin balance para dito."
+    "de": "Dieselbe angemeldete deutsche Notiz nach dem Öffnen von ?visual=heart-needs-balance (bereite Wallet unter dem gespeicherten Herz-Betrag) und dem Klick auf Herz senden. Kein Drücken und kein +1; nichts wird gesendet. Text Dafür ist ein Bitcoin-Guthaben nötig.",
+    "es": "La misma nota en alemán con sesión iniciada tras abrir ?visual=heart-needs-balance (billetera lista con menos saldo que el importe guardado del corazón) y pulsar Enviar un corazón. Sin pulsación ni +1; no se envía nada. Texto Para esto hace falta saldo de Bitcoin.",
+    "fil": "Parehong naka-sign-in na notang Aleman pagkatapos buksan ang ?visual=heart-needs-balance (handang wallet na kulang sa naka-save na halaga ng puso) at pindutin ang Magpadala ng puso. Walang pindot at walang +1; walang naipapadala. Sipi Kailangan ng Bitcoin balance para dito."
   },
   "/welcome:heart-paid": {
-    "de": "Dieselbe angemeldete deutsche Notiz nach dem Öffnen von ?visual=heart-paid und dem Klick auf ₿1 senden. Das gefüllte Herz und das +1, das jedes Tippen zeigt, bleiben für die Aufnahme stehen.",
-    "es": "La misma nota en alemán con sesión iniciada tras abrir ?visual=heart-paid y pulsar Enviar ₿1. El corazón relleno y el +1 que muestra cada toque se mantienen para la captura.",
-    "fil": "Parehong naka-sign-in na notang Aleman pagkatapos buksan ang ?visual=heart-paid at pindutin ang Magpadala ng ₿1. Nananatili para sa kuha ang punong puso at ang +1 na ipinapakita ng bawat pindot."
+    "de": "Dieselbe angemeldete deutsche Notiz nach dem Öffnen von ?visual=heart-paid und dem Klick auf Herz senden. Das gefüllte Herz und das +1, das jedes Tippen zeigt, bleiben für die Aufnahme stehen.",
+    "es": "La misma nota en alemán con sesión iniciada tras abrir ?visual=heart-paid y pulsar Enviar un corazón. El corazón relleno y el +1 que muestra cada toque se mantienen para la captura.",
+    "fil": "Parehong naka-sign-in na notang Aleman pagkatapos buksan ang ?visual=heart-paid at pindutin ang Magpadala ng puso. Nananatili para sa kuha ang punong puso at ang +1 na ipinapakita ng bawat pindot."
   },
   "/welcome:held-session": {
     "de": "Ein angemeldetes Mitglied hat die Seite neu geladen (fixiert mit ?visual=held-session, nur Playwright-Builds): Die gespeicherte Sitzung wird zurückgehalten, bis die Wallet wieder offen ist, also zeigt die Forum-Startseite die Anmeldekarte anstelle des Feeds, nicht die Gastansicht. Die Karte grüßt Willkommen zurück, Ada über Mit Ihrem Gerät anmelden, mit der gedämpften Zeile Bestätigen Sie, um Ihre Wallet zu öffnen über Anmelden, Neu bei 21.gifts? und Ein neues Konto eröffnen, und ohne Abmelden. Oben rechts steht weder Anmelden noch das Menü. Ein Tipp auf Anmelden, eine Passkey-Abfrage, und das Mitglied ist zurück auf /welcome, angemeldet und mit offener Wallet. Ein Besucher ohne gespeicherte Sitzung sieht weiterhin das Gast-Forum mit Anmelden oben rechts.",
@@ -8003,6 +8098,81 @@
     "de": "Aktiv wird geschlossen angezeigt; der Zeitstempel des letzten Besuchs ist älter als Bobs unbezahlte Notiz; der Zählerchip 1 sitzt auf diesem geschlossenen Steuerelement.",
     "es": "Activo se muestra cerrado; el sello de la última visita es más antiguo que la nota impaga de Bob; la ficha de recuento 1 está sobre ese control cerrado.",
     "fil": "Ipinapakita ang Aktibo na sarado; mas luma ang selyo ng huling pagdalaw kaysa sa hindi pa bayad na tala ni Bob; ang marka ng bilang 1 ay nakaupo sa saradong kontrol na iyon."
+  },
+  "/:shops-country-open": {
+    "de": "Die Länderliste ist geöffnet. Die Option Philippinen ist sichtbar. Kenia steht in der Liste. Schweiz nicht, weil kein geladener 21.gifts-Laden in der Schweiz liegt. Karte bleibt gewählt. Die Karte ist maskiert.",
+    "es": "La lista País está abierta. La opción Filipinas es visible. Kenia está en la lista. Suiza no, porque ninguna tienda 21.gifts cargada está en Suiza. Mapa sigue elegido. El mapa está enmascarado.",
+    "fil": "Bukas ang listahan ng Bansa. Nakikita ang opsyong Pilipinas. Nasa listahan ang Kenya. Wala ang Switzerland, dahil walang na-load na tindahan ng 21.gifts sa Switzerland. Napili pa rin ang Mapa. Nakamaskara ang mapa."
+  },
+  "/:shops-name-open": {
+    "de": "Die Namensliste ist geöffnet. Die Option Andere ist sichtbar. SPAR steht in der Liste. Karte bleibt gewählt. Die Karte ist maskiert.",
+    "es": "La lista Nombre está abierta. La opción Otros es visible. SPAR está en la lista. Mapa sigue elegido. El mapa está enmascarado.",
+    "fil": "Bukas ang listahan ng Pangalan. Nakikita ang opsyong Iba pa. Nasa listahan ang SPAR. Napili pa rin ang Mapa. Nakamaskara ang mapa."
+  },
+  "/:shops-sorted-desc": {
+    "de": "Die Tabelle ist nach Ort absteigend sortiert. Die Spaltenüberschrift Ort hat aria-sort descending, und ihr Dreieck zeigt nach unten. Name ist nicht die aktive Sortierspalte.",
+    "es": "La tabla está ordenada por Lugar, descendente. El encabezado de columna Lugar tiene aria-sort descending, y su triángulo apunta hacia abajo. Nombre no es la columna de orden activa.",
+    "fil": "Ang talahanayan ay nakaayos ayon sa Lugar, pababa. Ang pamagat ng hanay na Lugar ay may aria-sort descending, at pababa ang tatsulok nito. Hindi ang Pangalan ang aktibong hanay ng pag-aayos."
+  },
+  "/:shops-sorted-name-desc": {
+    "de": "Die Tabelle ist nach Name absteigend sortiert. Die Spaltenüberschrift Name hat aria-sort descending, und ihr Dreieck zeigt nach unten. Ort ist nicht die aktive Sortierspalte.",
+    "es": "La tabla está ordenada por Nombre, descendente. El encabezado de columna Nombre tiene aria-sort descending, y su triángulo apunta hacia abajo. Lugar no es la columna de orden activa.",
+    "fil": "Ang talahanayan ay nakaayos ayon sa Pangalan, pababa. Ang pamagat ng hanay na Pangalan ay may aria-sort descending, at pababa ang tatsulok nito. Hindi ang Lugar ang aktibong hanay ng pag-aayos."
+  },
+  "/:shops-sorted-location-asc": {
+    "de": "Die Tabelle ist nach Ort aufsteigend sortiert. Die Spaltenüberschrift Ort hat aria-sort ascending, und ihr Dreieck zeigt nach oben. Name ist nicht die aktive Sortierspalte.",
+    "es": "La tabla está ordenada por Lugar, ascendente. El encabezado de columna Lugar tiene aria-sort ascending, y su triángulo apunta hacia arriba. Nombre no es la columna de orden activa.",
+    "fil": "Ang talahanayan ay nakaayos ayon sa Lugar, pataas. Ang pamagat ng hanay na Lugar ay may aria-sort ascending, at pataas ang tatsulok nito. Hindi ang Pangalan ang aktibong hanay ng pag-aayos."
+  },
+  "/:shops-sorted-country-asc": {
+    "de": "Die Tabelle ist nach Land aufsteigend sortiert. Die Spaltenüberschrift Land hat aria-sort ascending, und ihr Dreieck zeigt nach oben. Name ist nicht die aktive Sortierspalte.",
+    "es": "La tabla está ordenada por País, ascendente. El encabezado de columna País tiene aria-sort ascending, y su triángulo apunta hacia arriba. Nombre no es la columna de orden activa.",
+    "fil": "Ang talahanayan ay nakaayos ayon sa Bansa, pataas. Ang pamagat ng hanay na Bansa ay may aria-sort ascending, at pataas ang tatsulok nito. Hindi ang Pangalan ang aktibong hanay ng pag-aayos."
+  },
+  "/:shops-sorted-country-desc": {
+    "de": "Die Tabelle ist nach Land absteigend sortiert. Die Spaltenüberschrift Land hat aria-sort descending, und ihr Dreieck zeigt nach unten. Name ist nicht die aktive Sortierspalte.",
+    "es": "La tabla está ordenada por País, descendente. El encabezado de columna País tiene aria-sort descending, y su triángulo apunta hacia abajo. Nombre no es la columna de orden activa.",
+    "fil": "Ang talahanayan ay nakaayos ayon sa Bansa, pababa. Ang pamagat ng hanay na Bansa ay may aria-sort descending, at pababa ang tatsulok nito. Hindi ang Pangalan ang aktibong hanay ng pag-aayos."
+  },
+  "/:shops-sorted-shop-asc": {
+    "de": "Die Tabelle ist nach Shop aufsteigend sortiert. Die Spaltenüberschrift Shop hat aria-sort ascending, und ihr Dreieck zeigt nach oben. Name ist nicht die aktive Sortierspalte.",
+    "es": "La tabla está ordenada por Tienda, ascendente. El encabezado de columna Tienda tiene aria-sort ascending, y su triángulo apunta hacia arriba. Nombre no es la columna de orden activa.",
+    "fil": "Ang talahanayan ay nakaayos ayon sa Tindahan, pataas. Ang pamagat ng hanay na Tindahan ay may aria-sort ascending, at pataas ang tatsulok nito. Hindi ang Pangalan ang aktibong hanay ng pag-aayos."
+  },
+  "/:shops-sorted-shop-desc": {
+    "de": "Die Tabelle ist nach Shop absteigend sortiert. Die Spaltenüberschrift Shop hat aria-sort descending, und ihr Dreieck zeigt nach unten. Name ist nicht die aktive Sortierspalte.",
+    "es": "La tabla está ordenada por Tienda, descendente. El encabezado de columna Tienda tiene aria-sort descending, y su triángulo apunta hacia abajo. Nombre no es la columna de orden activa.",
+    "fil": "Ang talahanayan ay nakaayos ayon sa Tindahan, pababa. Ang pamagat ng hanay na Tindahan ay may aria-sort descending, at pababa ang tatsulok nito. Hindi ang Pangalan ang aktibong hanay ng pag-aayos."
+  },
+  "/:shops-sorted-activity-asc": {
+    "de": "Die Tabelle ist nach Aktivität aufsteigend sortiert. Die Spaltenüberschrift Aktivität hat aria-sort ascending, und ihr Dreieck zeigt nach oben. Name ist nicht die aktive Sortierspalte.",
+    "es": "La tabla está ordenada por Actividad, ascendente. El encabezado de columna Actividad tiene aria-sort ascending, y su triángulo apunta hacia arriba. Nombre no es la columna de orden activa.",
+    "fil": "Ang talahanayan ay nakaayos ayon sa Aktibidad, pataas. Ang pamagat ng hanay na Aktibidad ay may aria-sort ascending, at pataas ang tatsulok nito. Hindi ang Pangalan ang aktibong hanay ng pag-aayos."
+  },
+  "/:shops-sorted-activity-desc": {
+    "de": "Die Tabelle ist nach Aktivität absteigend sortiert. Die Spaltenüberschrift Aktivität hat aria-sort descending, und ihr Dreieck zeigt nach unten. Name ist nicht die aktive Sortierspalte.",
+    "es": "La tabla está ordenada por Actividad, descendente. El encabezado de columna Actividad tiene aria-sort descending, y su triángulo apunta hacia abajo. Nombre no es la columna de orden activa.",
+    "fil": "Ang talahanayan ay nakaayos ayon sa Aktibidad, pababa. Ang pamagat ng hanay na Aktibidad ay may aria-sort descending, at pababa ang tatsulok nito. Hindi ang Pangalan ang aktibong hanay ng pag-aayos."
+  },
+  "/:shops-marker-no-photo": {
+    "de": "Karte bleibt gewählt. Der Shop-Marker ist geöffnet und zeigt den Namen North ohne Link und ohne Foto. Die Kartenkacheln sind ausgeblendet.",
+    "es": "Mapa sigue elegido. El marcador de la tienda está abierto y muestra el nombre North sin enlace y sin foto. Las teselas del mapa están ocultas.",
+    "fil": "Napili pa rin ang Mapa. Bukas ang marker ng tindahan at ipinapakita ang pangalang North na walang link at walang larawan. Nakatago ang mga tile ng mapa."
+  },
+  "/:shops-cluster": {
+    "de": "Karte bleibt gewählt und ist herausgezoomt. Drei Läden in Manila teilen sich eine Cluster-Schaltfläche mit der Beschriftung 3 Läden. Der Laden in Nairobi bleibt ein eigener Pin. Die Kartenkacheln sind ausgeblendet.",
+    "es": "Mapa sigue elegido y está alejado. Tres tiendas en Manila comparten un botón de grupo con la etiqueta 3 tiendas. La tienda de Nairobi sigue siendo su propio pin. Las teselas del mapa están ocultas.",
+    "fil": "Napili pa rin ang Mapa at naka-zoom out ito. Tatlong tindahan sa Maynila ang magkasalo sa isang pindutan ng kumpol na may label na 3 mga tindahan. Sariling pin pa rin ang tindahan sa Nairobi. Nakatago ang mga tile ng mapa."
+  },
+  "/:shops-pins": {
+    "de": "Karte bleibt gewählt, nachdem der Cluster geöffnet wurde. Die drei Läden in Manila sind eigene Pins im Bildausschnitt. Der Laden in Nairobi ist ebenfalls ein eigener Pin und liegt außerhalb dieses Ausschnitts. Die Schaltfläche 3 Läden ist weg. Das ist ein anderer Zustand als der herausgezoomte Cluster. Die Kartenkacheln sind ausgeblendet.",
+    "es": "Mapa sigue elegido después de abrir el grupo. Las tres tiendas de Manila son pines separados dentro del encuadre. La tienda de Nairobi también es su propio pin y queda fuera de este encuadre. El botón 3 tiendas ha desaparecido. Es un estado distinto del grupo alejado. Las teselas del mapa están ocultas.",
+    "fil": "Napili pa rin ang Mapa pagkatapos buksan ang kumpol. Hiwalay na mga pin sa loob ng kuwadro ang tatlong tindahan sa Maynila. Sariling pin din ang tindahan sa Nairobi at nasa labas ng kuwadrong ito. Wala na ang pindutang 3 mga tindahan. Iba itong estado kaysa sa naka-zoom out na kumpol. Nakatago ang mga tile ng mapa."
+  },
+  "/:shops-filters-hidden": {
+    "de": "Die geladenen Läden unterscheiden sich nicht nach Land, Name, Blockchain, Asset oder Aktivität, daher wird keine Filter-Combobox gezeigt. Tabelle ist gewählt. Die Spalten sind Name, Ort und Aktivität. Die Hilfe-Schaltfläche bleibt, weil Läden geladen sind.",
+    "es": "Las tiendas cargadas no se distinguen por país, nombre, blockchain, activo o actividad, así que no se muestra ningún cuadro combinado de filtro. Tabla está elegida. Las columnas son Nombre, Lugar y Actividad. El botón de ayuda permanece, porque hay tiendas cargadas.",
+    "fil": "Hindi nagkakaiba ang mga na-load na tindahan ayon sa bansa, pangalan, blockchain, asset, o aktibidad, kaya walang ipinapakitang combobox ng filter. Napili ang Talaan. Ang mga hanay ay Pangalan, Lugar, at Aktibidad. Nanatili ang pindutan ng tulong, dahil may mga na-load na tindahan."
   },
   "/welcome:validation-error": {
     "de": "Senden bei leerem Verfassen und ohne Foto oder Video anklicken → Bitte schreiben Sie eine Nachricht oder fügen Sie ein Foto oder Video hinzu, und Senden bleibt aus. Das Verfassen schneidet den Entwurf nicht ab.",

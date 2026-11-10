@@ -178,6 +178,7 @@ const E2E_ACCOUNT = {
   rulesAgreedAt: null as number | null,
   viewKey: 'a'.repeat(64),
   aboutMe: null as string | null,
+  heartSats: 1,
   setup: 'name' as 'wallet' | 'name' | 'username' | 'lightning-address' | 'rules' | null,
   missing: ['name', 'username', 'lightning-address', 'rules'] as Array<
     'wallet' | 'name' | 'username' | 'lightning-address' | 'rules'
@@ -1073,6 +1074,60 @@ async function openProfile(page: Page): Promise<void> {
   await expect(page.getByRole('button', { name: '14 posts' })).toBeVisible();
 }
 
+const VISUAL_HEARTS = [
+  {
+    accountId: 'acc_grace',
+    name: 'Grace',
+    role: 'moderator',
+    sats: 21,
+    createdAt: '2026-08-03T10:07:00.000Z',
+    amountUsd: '0.02',
+    amountChf: null,
+    amountEur: null,
+    amountPhp: null,
+  },
+  {
+    accountId: 'acc_deleted',
+    name: '',
+    sats: 1000,
+    createdAt: '2026-08-03T10:06:00.000Z',
+    amountUsd: null,
+    amountChf: null,
+    amountEur: null,
+    amountPhp: null,
+  },
+];
+
+/** Replies fixture whose two paid hearts exercise the shared sender section. */
+async function fulfillVisualHeartReplies(page: Page, parentId: string): Promise<void> {
+  await page.route(`**/forum/messages/${parentId}/replies`, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        messages: [
+          {
+            id: '55555555-5555-4555-8555-555555555555',
+            parentId,
+            accountId: 'acc_carol',
+            name: 'Carol',
+            text: 'A reply from Carol.',
+            createdAt: '2026-08-03T10:00:00.000Z',
+            sats: 0,
+            payable: false,
+            hasPhoto: false,
+            hasVideo: false,
+            videoContentType: null,
+            role: 'verified',
+            replyCount: 0,
+          },
+        ],
+        hearts: VISUAL_HEARTS,
+      }),
+    });
+  });
+}
+
 test.beforeEach(async ({ page }, testInfo) => {
   const theme = testInfo.project.name.endsWith('dark') ? 'dark' : 'light';
   await page.context().addCookies([{ name: 'theme', value: theme, url: 'http://localhost:3000' }]);
@@ -1106,6 +1161,24 @@ async function expandScrollportForFullShot(page: Page): Promise<void> {
     if (!(port instanceof HTMLElement)) {
       return;
     }
+    const panel = document.querySelector('[data-shops-help-panel]');
+    const button =
+      panel instanceof HTMLElement && panel.id !== ''
+        ? document.querySelector(`[aria-controls="${CSS.escape(panel.id)}"]`)
+        : null;
+    const anchor = button instanceof HTMLElement ? button.getBoundingClientRect() : null;
+    const portBox = port.getBoundingClientRect();
+    const panelBox = panel instanceof HTMLElement ? panel.getBoundingClientRect() : null;
+    // Fixed `top` is a viewport offset. The capture stretches the page, so
+    // that offset paints on the hero. Keep the content offset under the button.
+    const pin =
+      anchor === null || panelBox === null
+        ? null
+        : {
+            top: anchor.bottom - portBox.top + port.scrollTop + 8,
+            left: anchor.left - portBox.left + port.scrollLeft,
+            width: panelBox.width,
+          };
     const height = Math.max(port.scrollHeight, document.documentElement.clientHeight);
     port.style.setProperty('overflow', 'visible', 'important');
     port.style.flex = 'none';
@@ -1114,6 +1187,30 @@ async function expandScrollportForFullShot(page: Page): Promise<void> {
     document.body.style.setProperty('overflow', 'visible', 'important');
     document.documentElement.style.height = `${height}px`;
     document.body.style.height = `${height}px`;
+    if (pin === null || !(panel instanceof HTMLElement)) return;
+    port.scrollTop = 0;
+    port.scrollLeft = 0;
+    const margin = 16;
+    let left = pin.left;
+    if (left + pin.width > port.clientWidth - margin) {
+      left = Math.max(margin, port.clientWidth - margin - pin.width);
+    }
+    panel.style.setProperty('position', 'absolute', 'important');
+    const host =
+      panel.offsetParent instanceof HTMLElement ? panel.offsetParent : document.documentElement;
+    const hostBox = host.getBoundingClientRect();
+    const portNow = port.getBoundingClientRect();
+    const top = portNow.top + pin.top - hostBox.top + host.scrollTop;
+    const side = portNow.left + left - hostBox.left + host.scrollLeft;
+    const rule = document.createElement('style');
+    rule.setAttribute('data-shot-help-pin', '');
+    rule.textContent = [
+      '[data-shops-help-panel]{position:absolute !important;',
+      `top:${top}px !important;left:${side}px !important;`,
+      'bottom:auto !important;right:auto !important;',
+      `width:${pin.width}px !important;margin:0 !important;}`,
+    ].join('');
+    document.head.appendChild(rule);
   });
 }
 
@@ -1132,6 +1229,172 @@ async function scrollAddFormIntoShot(page: Page): Promise<void> {
   const form = page.locator('form').filter({ has: field });
   await form.evaluate((node) => {
     node.scrollIntoView({ block: 'end', inline: 'nearest' });
+  });
+}
+
+async function sortHomeShops(
+  page: Page,
+  column: string,
+  direction: 'ascending' | 'descending',
+): Promise<void> {
+  await page.getByRole('button', { name: 'Table' }).click();
+  const header = page.getByRole('button', { name: column, exact: true });
+  const presses = direction === 'descending' ? (column === 'Name' ? 1 : 2) : 1;
+  for (let press = 0; press < presses; press += 1) {
+    await header.click();
+  }
+  await expect(page.getByRole('columnheader', { name: column })).toHaveAttribute(
+    'aria-sort',
+    direction,
+  );
+}
+
+/**
+ * Sorts a desktop-only column, then restores the phone layout before capture.
+ *
+ * @param page - Page under test.
+ * @param column - Column whose sort button is hidden below sm.
+ * @param direction - Sort direction to capture.
+ */
+async function sortHomeShopsDesktopColumn(
+  page: Page,
+  column: 'Country' | 'Shop',
+  direction: 'ascending' | 'descending',
+): Promise<void> {
+  const viewport = page.viewportSize();
+  if (viewport === null || viewport.width >= 640) {
+    await sortHomeShops(page, column, direction);
+    return;
+  }
+  await page.setViewportSize({ width: 1280, height: viewport.height });
+  try {
+    await sortHomeShops(page, column, direction);
+  } finally {
+    await page.setViewportSize(viewport);
+  }
+  const table = page.locator('#shops table');
+  await expect(table).toBeVisible();
+  await expect(table.getByRole('columnheader')).toHaveCount(3);
+  const header = table.locator('th').filter({ hasText: column });
+  await expect(header).toBeHidden();
+  await expect(header).toHaveAttribute('aria-sort', direction);
+}
+
+async function waitForShopPopupInsideMap(page: Page): Promise<void> {
+  await page.waitForFunction(() => {
+    const map = document.querySelector('#shop-places-map');
+    const popup = document.querySelector('#shop-places-map .maplibregl-popup');
+    if (!(map instanceof HTMLElement) || !(popup instanceof HTMLElement)) return false;
+    const mapBox = map.getBoundingClientRect();
+    const popupBox = popup.getBoundingClientRect();
+    return (
+      popupBox.width > 8 &&
+      popupBox.height > 8 &&
+      popupBox.left >= mapBox.left - 1 &&
+      popupBox.right <= mapBox.right + 1 &&
+      popupBox.top >= mapBox.top - 1 &&
+      popupBox.bottom <= mapBox.bottom + 1
+    );
+  });
+}
+
+async function settleShopMarkers(page: Page): Promise<void> {
+  await page.evaluate(() => {
+    const holder = document.documentElement;
+    delete holder.dataset['shopMarkerSig'];
+    delete holder.dataset['shopMarkerStable'];
+  });
+  await page.waitForFunction(
+    () => {
+      const holder = document.documentElement;
+      const map = document.querySelector('#shop-places-map');
+      const mapWidth = map instanceof HTMLElement ? map.clientWidth : 0;
+      const mapHeight = map instanceof HTMLElement ? map.clientHeight : 0;
+      if (mapWidth < 2 || mapHeight < 2) {
+        holder.dataset['shopMarkerSig'] = '';
+        holder.dataset['shopMarkerStable'] = '0';
+        return false;
+      }
+      const nodes = document.querySelectorAll(
+        '#shop-places-map .shop-place-marker, #shop-places-map .shop-cluster-marker, #shop-places-map .maplibregl-popup',
+      );
+      const signature = `${mapWidth}x${mapHeight}|${Array.from(nodes)
+        .map((node) => {
+          const rect = node.getBoundingClientRect();
+          return [rect.left, rect.top, rect.width, rect.height]
+            .map((value) => value.toFixed(2))
+            .join(',');
+        })
+        .join('|')}`;
+      const previous = holder.dataset['shopMarkerSig'] ?? '';
+      const stable = Number(holder.dataset['shopMarkerStable'] ?? '0');
+      if (signature !== '' && signature === previous) {
+        holder.dataset['shopMarkerStable'] = String(stable + 1);
+      } else {
+        holder.dataset['shopMarkerSig'] = signature;
+        holder.dataset['shopMarkerStable'] = '0';
+      }
+      return Number(holder.dataset['shopMarkerStable']) >= 12;
+    },
+    undefined,
+    { timeout: 10_000, polling: 50 },
+  );
+}
+
+const SHOP_PHOTO_PNG = Buffer.from(
+  'iVBORw0KGgoAAAANSUhEUgAAAAgAAAAFCAYAAAB4ka1VAAAAH0lEQVR4AWP8+unNfwY8gImBAGBiIACYGAgAJgYCAABwvQPcvej1igAAAABJRU5ErkJggg==',
+  'base64',
+);
+
+/** The browser's broken-image icon moves between captures. Serve one flat picture. */
+async function stubShopPhoto(page: Page): Promise<void> {
+  await page.route(
+    (url) =>
+      url.origin === 'https://dev-api.opencryptopay.io' && url.pathname.startsWith('/map/photos/'),
+    async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'image/png',
+        body: SHOP_PHOTO_PNG,
+      });
+    },
+  );
+}
+
+async function waitForShopPhoto(page: Page): Promise<void> {
+  const photo = page.locator('.shop-popup-photo');
+  await expect(photo).toBeVisible();
+  await photo.evaluate(async (node) => {
+    const image = node as HTMLImageElement;
+    image.loading = 'eager';
+    if (image.complete && image.naturalWidth > 0) return;
+    const src = image.currentSrc || image.src;
+    image.src = src;
+    await image.decode();
+  });
+}
+
+/**
+ * Whole pixels for the open card. The eased pan stops a fraction apart
+ * between two captures, and rounding that fraction moves the card by a pixel.
+ */
+async function snapShopPopup(page: Page): Promise<void> {
+  await page.evaluate(() => {
+    const map = document.querySelector('#shop-places-map');
+    const popup = document.querySelector('#shop-places-map .maplibregl-popup');
+    if (!(map instanceof HTMLElement) || !(popup instanceof HTMLElement)) return;
+    popup.style.pointerEvents = 'none';
+    popup.style.translate = '0px 0px';
+    const popupBox = popup.getBoundingClientRect();
+    const dx = Math.floor(popupBox.left) - popupBox.left;
+    const dy = Math.floor(popupBox.top) - popupBox.top;
+    popup.style.translate = `${dx}px ${dy}px`;
+  });
+}
+
+async function hideMapTiles(page: Page): Promise<void> {
+  await page.addStyleTag({
+    content: '#shop-places-map .maplibregl-canvas { visibility: hidden; }',
   });
 }
 
@@ -1177,6 +1440,7 @@ async function shotScreen(
   if (captureFullPage) {
     await expandScrollportForFullShot(page);
   }
+  await snapShopPopup(page);
   await expect(page).toHaveScreenshot(`${arg}.png`, {
     fullPage: captureFullPage,
     maxDiffPixelRatio: 0,
@@ -1413,12 +1677,13 @@ async function fulfillPublicThreadReplies(
   page: Page,
   id: string,
   messages: unknown[] = [],
+  hearts: unknown[] = [],
 ): Promise<void> {
   await page.route(`**/public-messages/${id}/replies`, async (route) => {
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
-      body: JSON.stringify({ messages }),
+      body: JSON.stringify({ messages, hearts }),
     });
   });
 }
@@ -2075,44 +2340,51 @@ async function advanceRulesChapters(page: Page, clicks: number): Promise<void> {
 }
 
 /** Newest-first mixed-sats forum fixture for `/welcome` Active / All / Most popular. */
-async function fulfillMixedSatsMessages(page: Page): Promise<void> {
+async function fulfillMixedSatsMessages(
+  page: Page,
+  heartCounts: Readonly<Record<string, number>> = {},
+): Promise<void> {
   await page.route(/\/messages(?:\?|$)/, async (route) => {
+    const messages = [
+      {
+        id: 'm3',
+        name: 'Ada',
+        text: 'Thank you both — that helps.',
+        createdAt: '2026-08-28T12:00:00.000Z',
+        sats: 5,
+        payable: true,
+        hasPhoto: false,
+        role: 'moderator',
+      },
+      {
+        id: 'm2',
+        name: 'Carol',
+        text: 'I can send a small gift tomorrow.',
+        createdAt: '2026-08-28T11:00:00.000Z',
+        sats: 21,
+        payable: true,
+        hasPhoto: false,
+        role: 'verified',
+      },
+      {
+        id: 'm1',
+        name: 'Bob',
+        text: 'Does anyone have spare sats this week?',
+        createdAt: '2026-08-28T10:00:00.000Z',
+        sats: 0,
+        payable: true,
+        hasPhoto: false,
+        role: 'basis',
+      },
+    ];
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
       body: JSON.stringify({
-        messages: [
-          {
-            id: 'm3',
-            name: 'Ada',
-            text: 'Thank you both — that helps.',
-            createdAt: '2026-08-28T12:00:00.000Z',
-            sats: 5,
-            payable: true,
-            hasPhoto: false,
-            role: 'moderator',
-          },
-          {
-            id: 'm2',
-            name: 'Carol',
-            text: 'I can send a small gift tomorrow.',
-            createdAt: '2026-08-28T11:00:00.000Z',
-            sats: 21,
-            payable: true,
-            hasPhoto: false,
-            role: 'verified',
-          },
-          {
-            id: 'm1',
-            name: 'Bob',
-            text: 'Does anyone have spare sats this week?',
-            createdAt: '2026-08-28T10:00:00.000Z',
-            sats: 0,
-            payable: true,
-            hasPhoto: false,
-            role: 'basis',
-          },
-        ],
+        messages: messages.map((message) => {
+          const heartCount = heartCounts[message.id];
+          return heartCount === undefined ? message : { ...message, heartCount };
+        }),
       }),
     });
   });
@@ -2219,7 +2491,130 @@ function isHomeMapRequest(url: URL): boolean {
   return api && (url.pathname === '/map/filters' || url.pathname === '/map/places');
 }
 
-async function fulfillHomeMap(route: Route): Promise<void> {
+function homeMapFilters(): Record<string, unknown> {
+  return {
+    activities: ['daily', 'within7Days', 'within30Days', 'olderThan30Days', 'none'],
+    countries: ['CH', 'KE', 'PH'],
+    shopNames: ['Mini', 'SPAR'],
+    techProviders: [
+      {
+        name: '21.gifts',
+        blockchains: ['Bitcoin'],
+        assets: ['BTC'],
+        pairs: [{ blockchain: 'Bitcoin', asset: 'BTC' }],
+      },
+      {
+        name: 'DFX.swiss',
+        blockchains: ['Liquid'],
+        assets: ['L-BTC'],
+        pairs: [{ blockchain: 'Liquid', asset: 'L-BTC' }],
+      },
+    ],
+  };
+}
+
+/** Four 21.gifts shops that differ, plus one hidden DFX desk. */
+function variedHomePlaces(): Record<string, unknown> {
+  return {
+    places: [
+      {
+        id: `npub1${'q'.repeat(58)}`,
+        name: 'Sample',
+        shopName: 'SPAR',
+        country: 'PH',
+        activity: 'daily',
+        category: 'shopping',
+        street: 'Nairobi road',
+        lat: -1.29,
+        lon: 36.82,
+        techProvider: '21.gifts',
+        coverPhoto: { url: 'https://dev-api.opencryptopay.io/map/photos/sample.jpg' },
+        supports: [{ blockchain: 'Bitcoin', asset: 'BTC' }],
+      },
+      {
+        name: 'North',
+        shopName: null,
+        country: 'PH',
+        activity: 'within7Days',
+        category: 'cafe',
+        street: 'Manila north',
+        lat: 14.6203,
+        lon: 120.958,
+        techProvider: '21.gifts',
+        supports: [{ blockchain: 'Tron', asset: 'USDT' }],
+      },
+      {
+        name: 'Mid',
+        shopName: null,
+        country: 'PH',
+        activity: 'within30Days',
+        category: 'grocery',
+        street: 'Manila mid',
+        lat: 14.62035,
+        lon: 120.95805,
+        techProvider: '21.gifts',
+        supports: [{ blockchain: 'Bitcoin', asset: 'BTC' }],
+      },
+      {
+        name: 'South',
+        shopName: null,
+        country: 'KE',
+        activity: 'none',
+        category: 'cafe',
+        street: 'Manila south',
+        lat: 14.6204,
+        lon: 120.9581,
+        techProvider: '21.gifts',
+        supports: [{ blockchain: 'Lightning', asset: 'BTC' }],
+      },
+      {
+        name: 'Other desk',
+        techProvider: 'DFX.swiss',
+        id: 'dfx-hidden',
+        country: 'PH',
+        activity: 'daily',
+        lat: 14.7,
+        lon: 121.1,
+      },
+    ],
+  };
+}
+
+/** Two 21.gifts shops that do not differ on any filter field. */
+function identicalHomePlaces(): Record<string, unknown> {
+  return {
+    places: [
+      {
+        id: `npub1${'a'.repeat(58)}`,
+        name: 'Ann',
+        shopName: null,
+        country: 'PH',
+        activity: 'daily',
+        category: 'shopping',
+        street: 'Nairobi road',
+        lat: -1.29,
+        lon: 36.82,
+        techProvider: '21.gifts',
+        coverPhoto: { url: 'https://dev-api.opencryptopay.io/map/photos/ann.jpg' },
+        supports: [{ blockchain: 'Bitcoin', asset: 'BTC' }],
+      },
+      {
+        name: 'Bea',
+        shopName: null,
+        country: 'PH',
+        activity: 'daily',
+        category: 'shopping',
+        street: 'Manila north',
+        lat: 14.6203,
+        lon: 120.958,
+        techProvider: '21.gifts',
+        supports: [{ blockchain: 'Bitcoin', asset: 'BTC' }],
+      },
+    ],
+  };
+}
+
+async function fulfillHomeMapKind(route: Route, kind: 'varied' | 'identical'): Promise<void> {
   const url = new URL(route.request().url());
   if (url.hostname.includes('openfreemap.org')) {
     await route.fulfill({ status: 200, body: '' });
@@ -2227,48 +2622,10 @@ async function fulfillHomeMap(route: Route): Promise<void> {
   }
   const body =
     url.pathname === '/map/filters'
-      ? {
-          activities: ['daily', 'within7Days', 'within30Days', 'olderThan30Days', 'none'],
-          countries: ['PH'],
-          shopNames: ['SPAR'],
-          techProviders: [
-            {
-              name: '21.gifts',
-              blockchains: ['Bitcoin'],
-              assets: ['BTC'],
-              pairs: [{ blockchain: 'Bitcoin', asset: 'BTC' }],
-            },
-            {
-              name: 'DFX.swiss',
-              blockchains: ['Liquid'],
-              assets: ['L-BTC'],
-              pairs: [{ blockchain: 'Liquid', asset: 'L-BTC' }],
-            },
-          ],
-        }
-      : {
-          places: [
-            {
-              id: `npub1${'q'.repeat(58)}`,
-              name: 'Sample',
-              shopName: 'SPAR',
-              country: 'PH',
-              activity: 'daily',
-              lat: 14.6,
-              lon: 121.0,
-              techProvider: '21.gifts',
-            },
-            {
-              name: 'Other desk',
-              techProvider: 'DFX.swiss',
-              id: 'dfx-hidden',
-              country: 'PH',
-              activity: 'daily',
-              lat: 14.7,
-              lon: 121.1,
-            },
-          ],
-        };
+      ? homeMapFilters()
+      : kind === 'identical'
+        ? identicalHomePlaces()
+        : variedHomePlaces();
   await route.fulfill({
     status: 200,
     contentType: 'application/json',
@@ -2276,8 +2633,27 @@ async function fulfillHomeMap(route: Route): Promise<void> {
   });
 }
 
+async function fulfillHomeMap(route: Route): Promise<void> {
+  await fulfillHomeMapKind(route, 'varied');
+}
+
+async function fulfillIdenticalHomeMap(route: Route): Promise<void> {
+  await fulfillHomeMapKind(route, 'identical');
+}
+
 async function stubHomeMap(page: Page): Promise<void> {
   await page.route((url) => isHomeMapRequest(url), fulfillHomeMap);
+}
+
+async function stubIdenticalHomeMap(page: Page): Promise<void> {
+  await page.route((url) => isHomeMapRequest(url), fulfillIdenticalHomeMap);
+}
+
+/** One pin stays outside the Manila cluster when the map is framed on every shop. */
+async function expectOneShopPin(page: Page): Promise<void> {
+  const pin = page.locator('#shop-places-map .shop-place-marker:not(.is-clustered)');
+  await expect(pin).toHaveCount(1, { timeout: 20_000 });
+  await expect(pin).toBeVisible();
 }
 
 test.describe('screen baselines', () => {
@@ -2285,9 +2661,7 @@ test.describe('screen baselines', () => {
     await stubHomeMap(page);
     await page.goto('/');
     await expect(page.getByRole('heading', { name: /Help people with Bitcoin/i })).toBeVisible();
-    await expect(page.locator('#shop-places-map .shop-place-marker')).toBeVisible({
-      timeout: 20_000,
-    });
+    await expectOneShopPin(page);
     await shotScreen(page, 'screen-root', true, page.locator('#shop-places-map'));
   });
 
@@ -2317,7 +2691,17 @@ test.describe('screen baselines', () => {
     await stubHomeMap(page);
     await page.goto('/');
     await page.getByRole('button', { name: 'Table' }).click();
-    await expect(page.getByRole('cell', { name: 'Sample', exact: true })).toBeVisible();
+    const table = page.locator('#shops table');
+    await expect(table.getByRole('link', { name: 'Sample', exact: true })).toBeVisible();
+    const viewport = page.viewportSize();
+    if (viewport !== null && viewport.width < 640) {
+      const country = table.locator('th').filter({ hasText: 'Country' });
+      await expect(country).toHaveCount(1);
+      await expect(country).toBeHidden();
+    } else {
+      await expect(table.getByRole('columnheader', { name: 'Country' })).toBeVisible();
+    }
+    await expect(page.getByRole('columnheader', { name: 'Tech provider' })).toHaveCount(0);
     await shotScreen(page, 'state-root-shops-table');
   });
 
@@ -2344,7 +2728,8 @@ test.describe('screen baselines', () => {
     await page.goto('/');
     await page.getByRole('combobox', { name: 'Blockchain', exact: true }).click();
     await expect(page.getByRole('option', { name: 'Bitcoin' })).toBeVisible();
-    await shotScreen(page, 'state-root-shops-blockchain', true, page.locator('#shop-places-map'));
+    await hideMapTiles(page);
+    await shotScreen(page, 'state-root-shops-blockchain');
   });
 
   test('state / shops-asset', async ({ page }) => {
@@ -2352,9 +2737,17 @@ test.describe('screen baselines', () => {
     await page.goto('/');
     await page.getByRole('combobox', { name: 'Blockchain', exact: true }).click();
     await page.getByRole('option', { name: 'Bitcoin' }).click();
-    await page.getByRole('combobox', { name: 'Asset', exact: true }).click();
+    const asset = page.getByRole('combobox', { name: 'Asset', exact: true });
+    // The pill sits on the first window's lower edge. The open list is a few
+    // pixels taller than the old one, so one capture flips it above the
+    // heading and the next opens it below. Centering the pill keeps it below.
+    await asset.evaluate((node) => {
+      node.scrollIntoView({ block: 'center', inline: 'nearest' });
+    });
+    await asset.click();
     await expect(page.getByRole('option', { name: 'BTC' })).toBeVisible();
-    await shotScreen(page, 'state-root-shops-asset', true, page.locator('#shop-places-map'));
+    await hideMapTiles(page);
+    await shotScreen(page, 'state-root-shops-asset');
   });
 
   test('state / shops-activity', async ({ page }) => {
@@ -2362,15 +2755,40 @@ test.describe('screen baselines', () => {
     await page.goto('/');
     await page.getByRole('combobox', { name: 'Activity', exact: true }).click();
     await expect(page.getByRole('option', { name: 'Daily' })).toBeVisible();
-    await shotScreen(page, 'state-root-shops-activity', true, page.locator('#shop-places-map'));
+    await hideMapTiles(page);
+    await shotScreen(page, 'state-root-shops-activity');
+  });
+
+  test('state / shops-country-open', async ({ page }) => {
+    await stubHomeMap(page);
+    await page.goto('/');
+    await page.getByRole('combobox', { name: 'Country', exact: true }).click();
+    await expect(page.getByRole('option', { name: 'Philippines' })).toBeVisible();
+    await expect(page.getByRole('option', { name: 'Kenya' })).toBeVisible();
+    await expect(page.getByRole('option', { name: 'Switzerland' })).toHaveCount(0);
+    await hideMapTiles(page);
+    await shotScreen(page, 'state-root-shops-country-open');
+  });
+
+  test('state / shops-name-open', async ({ page }) => {
+    await stubHomeMap(page);
+    await page.goto('/');
+    await page.getByRole('combobox', { name: 'Name', exact: true }).click();
+    await expect(page.getByRole('option', { name: 'Others' })).toBeVisible();
+    await expect(page.getByRole('option', { name: 'SPAR' })).toBeVisible();
+    await hideMapTiles(page);
+    await shotScreen(page, 'state-root-shops-name-open');
   });
 
   test('state / shops-country-selected', async ({ page }) => {
     await stubHomeMap(page);
     await page.goto('/');
     await page.getByRole('button', { name: 'Table' }).click();
-    await page.getByLabel('Country').selectOption('PH');
-    await expect(page.getByLabel('Country')).toHaveValue('PH');
+    await page.getByRole('combobox', { name: 'Country', exact: true }).click();
+    await page.getByRole('option', { name: 'Philippines' }).click();
+    await expect(page.getByRole('combobox', { name: 'Country', exact: true })).toContainText(
+      'Philippines',
+    );
     await shotScreen(page, 'state-root-shops-country-selected');
   });
 
@@ -2378,8 +2796,9 @@ test.describe('screen baselines', () => {
     await stubHomeMap(page);
     await page.goto('/');
     await page.getByRole('button', { name: 'Table' }).click();
-    await page.getByLabel('Name').selectOption('SPAR');
-    await expect(page.getByLabel('Name')).toHaveValue('SPAR');
+    await page.getByRole('combobox', { name: 'Name', exact: true }).click();
+    await page.getByRole('option', { name: 'SPAR' }).click();
+    await expect(page.getByRole('combobox', { name: 'Name', exact: true })).toContainText('SPAR');
     await shotScreen(page, 'state-root-shops-name-selected');
   });
 
@@ -2422,14 +2841,134 @@ test.describe('screen baselines', () => {
     await shotScreen(page, 'state-root-shops-activity-selected');
   });
 
-  test('state / shops-marker', async ({ page }) => {
+  test('state / shops-sorted-desc', async ({ page }) => {
     await stubHomeMap(page);
     await page.goto('/');
-    const marker = page.locator('#shop-places-map .shop-place-marker');
-    await expect(marker).toBeVisible({ timeout: 20_000 });
+    await page.getByRole('button', { name: 'Table' }).click();
+    await page.getByRole('button', { name: 'Location', exact: true }).click();
+    await page.getByRole('button', { name: 'Location', exact: true }).click();
+    const locationHeader = page.getByRole('columnheader', { name: 'Location' });
+    await expect(locationHeader).toHaveAttribute('aria-sort', 'descending');
+    await shotScreen(page, 'state-root-shops-sorted-desc');
+  });
+
+  test('state / shops-sorted-name-desc', async ({ page }) => {
+    await stubHomeMap(page);
+    await page.goto('/');
+    await sortHomeShops(page, 'Name', 'descending');
+    await shotScreen(page, 'state-root-shops-sorted-name-desc');
+  });
+
+  test('state / shops-sorted-location-asc', async ({ page }) => {
+    await stubHomeMap(page);
+    await page.goto('/');
+    await sortHomeShops(page, 'Location', 'ascending');
+    await shotScreen(page, 'state-root-shops-sorted-location-asc');
+  });
+
+  test('state / shops-sorted-country-asc', async ({ page }) => {
+    await stubHomeMap(page);
+    await page.goto('/');
+    await sortHomeShopsDesktopColumn(page, 'Country', 'ascending');
+    await shotScreen(page, 'state-root-shops-sorted-country-asc');
+  });
+
+  test('state / shops-sorted-country-desc', async ({ page }) => {
+    await stubHomeMap(page);
+    await page.goto('/');
+    await sortHomeShopsDesktopColumn(page, 'Country', 'descending');
+    await shotScreen(page, 'state-root-shops-sorted-country-desc');
+  });
+
+  test('state / shops-sorted-shop-asc', async ({ page }) => {
+    await stubHomeMap(page);
+    await page.goto('/');
+    await sortHomeShopsDesktopColumn(page, 'Shop', 'ascending');
+    await shotScreen(page, 'state-root-shops-sorted-shop-asc');
+  });
+
+  test('state / shops-sorted-shop-desc', async ({ page }) => {
+    await stubHomeMap(page);
+    await page.goto('/');
+    await sortHomeShopsDesktopColumn(page, 'Shop', 'descending');
+    await shotScreen(page, 'state-root-shops-sorted-shop-desc');
+  });
+
+  test('state / shops-sorted-activity-asc', async ({ page }) => {
+    await stubHomeMap(page);
+    await page.goto('/');
+    await sortHomeShops(page, 'Activity', 'ascending');
+    await shotScreen(page, 'state-root-shops-sorted-activity-asc');
+  });
+
+  test('state / shops-sorted-activity-desc', async ({ page }) => {
+    await stubHomeMap(page);
+    await page.goto('/');
+    await sortHomeShops(page, 'Activity', 'descending');
+    await shotScreen(page, 'state-root-shops-sorted-activity-desc');
+  });
+
+  test('state / shops-marker', async ({ page }) => {
+    await stubHomeMap(page);
+    await stubShopPhoto(page);
+    await page.goto('/');
+    const marker = page.locator('#shop-places-map .shop-place-marker:not(.is-clustered)');
+    await expect(marker).toHaveCount(1, { timeout: 20_000 });
+    await settleShopMarkers(page);
     await marker.click();
     await expect(page.getByRole('link', { name: 'Sample' })).toBeVisible();
-    await shotScreen(page, 'state-root-shops-marker', true, page.locator('.maplibregl-canvas'));
+    await waitForShopPhoto(page);
+    // The click leaves the pointer on the card. Move it off so a phone hover
+    // style is not part of the shot.
+    await page.mouse.move(0, 0);
+    await hideMapTiles(page);
+    await unstickStickyChrome(page);
+    await waitForShopPopupInsideMap(page);
+    await settleShopMarkers(page);
+    await shotScreen(page, 'state-root-shops-marker');
+  });
+
+  test('state / shops-marker-no-photo', async ({ page }) => {
+    await stubHomeMap(page);
+    await page.goto('/');
+    await page.getByRole('button', { name: '3 shops' }).click({ timeout: 20_000 });
+    await page.getByRole('button', { name: 'North, Weekly' }).click();
+    await expect(page.locator('.shop-popup-name')).toHaveText('North');
+    await expect(page.locator('.maplibregl-popup a.shop-popup-name')).toHaveCount(0);
+    await expect(page.locator('.shop-popup-photo')).toHaveCount(0);
+    await page.mouse.move(0, 0);
+    await hideMapTiles(page);
+    await unstickStickyChrome(page);
+    await waitForShopPopupInsideMap(page);
+    await settleShopMarkers(page);
+    await shotScreen(page, 'state-root-shops-marker-no-photo');
+  });
+
+  test('state / shops-cluster', async ({ page }) => {
+    await stubHomeMap(page);
+    await page.goto('/');
+    await expect(page.getByRole('button', { name: '3 shops' })).toBeVisible({ timeout: 20_000 });
+    await expect(
+      page.locator('#shop-places-map .shop-place-marker:not(.is-clustered)'),
+    ).toHaveCount(1);
+    await hideMapTiles(page);
+    await unstickStickyChrome(page);
+    await settleShopMarkers(page);
+    await shotScreen(page, 'state-root-shops-cluster');
+  });
+
+  test('state / shops-pins', async ({ page }) => {
+    await stubHomeMap(page);
+    await page.goto('/');
+    await page.getByRole('button', { name: '3 shops' }).click();
+    await expect(
+      page.locator('#shop-places-map .shop-place-marker:not(.is-clustered)'),
+    ).toHaveCount(4);
+    await expect(page.getByRole('button', { name: '3 shops' })).toHaveCount(0);
+    await hideMapTiles(page);
+    await unstickStickyChrome(page);
+    await settleShopMarkers(page);
+    await shotScreen(page, 'state-root-shops-pins');
   });
 
   test('state / shops-attribution', async ({ page }) => {
@@ -2441,7 +2980,7 @@ test.describe('screen baselines', () => {
     // resolve that summary as a button, so the test clicks the summary itself.
     const toggleAttribution = attribution.locator('summary');
     await expect(toggleAttribution).toHaveAttribute('aria-label', 'Toggle attribution');
-    await expect(page.locator('#shop-places-map .shop-place-marker')).toBeVisible();
+    await expectOneShopPin(page);
     const mapLibre = attribution.getByRole('link', { name: 'MapLibre', exact: true });
     // A pointer click on the summary is a drag on the map and moves the pin.
     // The DOM click still runs MapLibre's toggle listener.
@@ -2455,17 +2994,9 @@ test.describe('screen baselines', () => {
     await pressToggle();
     await expect(mapLibre).toBeVisible();
     await expect(attribution).toHaveClass(/maplibregl-compact-show/);
-    await page.locator('#shop-places-map canvas').evaluate((node: HTMLCanvasElement) => {
-      node.style.visibility = 'hidden';
-    });
-    // The empty style leaves the projected pin a few pixels off between runs.
-    await page.locator('#shop-places-map .shop-place-marker').evaluateAll((nodes) => {
-      for (const node of nodes) {
-        if (node instanceof HTMLElement) {
-          node.style.visibility = 'hidden';
-        }
-      }
-    });
+    await hideMapTiles(page);
+    await unstickStickyChrome(page);
+    await settleShopMarkers(page);
     await shotScreen(page, 'state-root-shops-attribution');
   });
 
@@ -2492,7 +3023,12 @@ test.describe('screen baselines', () => {
       },
     );
     await page.goto('/');
-    await expect(page.getByRole('heading', { name: 'Shops', exact: true })).toBeVisible();
+    await expect(
+      page.getByRole('heading', {
+        name: 'These shops accept Bitcoin through 21.gifts',
+        exact: true,
+      }),
+    ).toBeVisible();
     await expect(page.getByText('Could not load places. Please try again.')).toHaveCount(0);
     await expect(page.getByText('No locations published yet.')).toHaveCount(0);
     await expect(page.locator('#shop-places-map')).toBeVisible();
@@ -2557,12 +3093,24 @@ test.describe('screen baselines', () => {
     await shotScreen(page, 'state-root-shops-empty-table');
   });
 
+  test('state / shops-filters-hidden', async ({ page }) => {
+    await stubIdenticalHomeMap(page);
+    await page.goto('/');
+    await page.getByRole('button', { name: 'Table' }).click();
+    await expect(page.getByRole('cell', { name: 'Ann', exact: true })).toBeVisible();
+    await expect(page.getByRole('combobox', { name: 'Country', exact: true })).toHaveCount(0);
+    await expect(page.getByRole('columnheader', { name: 'Name' })).toBeVisible();
+    await expect(page.getByRole('columnheader', { name: 'Location' })).toBeVisible();
+    await expect(page.getByRole('columnheader', { name: 'Activity' })).toBeVisible();
+    await expect(page.getByRole('columnheader', { name: 'Country' })).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'What the activity words mean' })).toBeVisible();
+    await shotScreen(page, 'state-root-shops-filters-hidden');
+  });
+
   test('state / faq-account-open', async ({ page }) => {
     await stubHomeMap(page);
     await page.goto('/');
-    await expect(page.locator('#shop-places-map .shop-place-marker')).toBeVisible({
-      timeout: 20_000,
-    });
+    await expectOneShopPin(page);
     const faq = page.locator('#faq');
     await faq.getByText('Do I need an account to see the forum?').click();
     await expect(
@@ -2576,9 +3124,7 @@ test.describe('screen baselines', () => {
   test('state / faq-share-open', async ({ page }) => {
     await stubHomeMap(page);
     await page.goto('/');
-    await expect(page.locator('#shop-places-map .shop-place-marker')).toBeVisible({
-      timeout: 20_000,
-    });
+    await expectOneShopPin(page);
     const faq = page.locator('#faq');
     await faq.getByText('Does 21.gifts keep any of my donation?').click();
     await expect(
@@ -2592,9 +3138,7 @@ test.describe('screen baselines', () => {
   test('state / faq-password-open', async ({ page }) => {
     await stubHomeMap(page);
     await page.goto('/');
-    await expect(page.locator('#shop-places-map .shop-place-marker')).toBeVisible({
-      timeout: 20_000,
-    });
+    await expectOneShopPin(page);
     const faq = page.locator('#faq');
     await faq.getByText('Does 21.gifts store my password?').click();
     await expect(
@@ -2608,9 +3152,7 @@ test.describe('screen baselines', () => {
   test('state / faq-device-open', async ({ page }) => {
     await stubHomeMap(page);
     await page.goto('/');
-    await expect(page.locator('#shop-places-map .shop-place-marker')).toBeVisible({
-      timeout: 20_000,
-    });
+    await expectOneShopPin(page);
     const faq = page.locator('#faq');
     await faq.getByText('What if I lose my device?').click();
     await expect(
@@ -2624,9 +3166,7 @@ test.describe('screen baselines', () => {
   test('state / faq-recipient-open', async ({ page }) => {
     await stubHomeMap(page);
     await page.goto('/');
-    await expect(page.locator('#shop-places-map .shop-place-marker')).toBeVisible({
-      timeout: 20_000,
-    });
+    await expectOneShopPin(page);
     const faq = page.locator('#faq');
     await faq.getByText('Who receives the Bitcoin?').click();
     await expect(
@@ -2640,9 +3180,7 @@ test.describe('screen baselines', () => {
   test('state / faq-bitcoin-open', async ({ page }) => {
     await stubHomeMap(page);
     await page.goto('/');
-    await expect(page.locator('#shop-places-map .shop-place-marker')).toBeVisible({
-      timeout: 20_000,
-    });
+    await expectOneShopPin(page);
     const faq = page.locator('#faq');
     await faq.getByText('Why Bitcoin?').click();
     await expect(
@@ -2656,9 +3194,7 @@ test.describe('screen baselines', () => {
   test('state / faq-taxes-open', async ({ page }) => {
     await stubHomeMap(page);
     await page.goto('/');
-    await expect(page.locator('#shop-places-map .shop-place-marker')).toBeVisible({
-      timeout: 20_000,
-    });
+    await expectOneShopPin(page);
     const faq = page.locator('#faq');
     await faq.getByText('Is this regulated, and how do taxes work?').click();
     await expect(
@@ -2672,9 +3208,7 @@ test.describe('screen baselines', () => {
   test('state / faq-sat-open', async ({ page }) => {
     await stubHomeMap(page);
     await page.goto('/');
-    await expect(page.locator('#shop-places-map .shop-place-marker')).toBeVisible({
-      timeout: 20_000,
-    });
+    await expectOneShopPin(page);
     const faq = page.locator('#faq');
     await faq.getByText('What does ₿1 mean here?').click();
     await expect(
@@ -2699,9 +3233,7 @@ test.describe('screen baselines', () => {
     });
     await stubHomeMap(page);
     await page.goto('/');
-    await expect(page.locator('#shop-places-map .shop-place-marker')).toBeVisible({
-      timeout: 20_000,
-    });
+    await expectOneShopPin(page);
     const install = page.locator('main').getByRole('button', { name: 'Install app' });
     await expect(install).toBeVisible();
     await install.click();
@@ -9632,6 +10164,137 @@ test.describe('onboarding screens', () => {
     await shotScreen(page, 'state-welcome-expanded');
   });
 
+  test('state /welcome expanded-hearts', async ({ page }) => {
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          name: 'Ada',
+          location: null,
+          username: 'alice',
+          lightningAddress: null,
+          rulesAgreedAt: 1_700_000_001,
+          viewKey: 'a'.repeat(64),
+          aboutMe: null,
+          setup: null,
+          missing: [],
+          heartSats: 21,
+        }),
+      });
+    });
+    await fulfillMixedSatsMessages(page, { m3: 2 });
+    await page.route('**/forum/messages/**/replies', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [],
+          hearts: [
+            {
+              accountId: 'acc_grace',
+              name: 'Grace',
+              role: 'moderator',
+              sats: 21,
+              createdAt: '2026-08-28T12:07:00.000Z',
+              amountUsd: '0.02',
+              amountChf: null,
+              amountEur: null,
+              amountPhp: null,
+            },
+            {
+              accountId: 'acc_deleted',
+              name: '',
+              sats: 1000,
+              createdAt: '2026-08-28T12:06:00.000Z',
+              amountUsd: null,
+              amountChf: null,
+              amountEur: null,
+              amountPhp: null,
+            },
+          ],
+        }),
+      });
+    });
+    await page.goto('/welcome');
+    await page.getByText('Thank you both — that helps.').click();
+    await expect(page.getByRole('heading', { name: 'Hearts (2)' })).toBeVisible();
+    await page.getByRole('heading', { name: 'Hearts (2)' }).scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-welcome-expanded-hearts');
+  });
+
+  test('state /welcome expanded-hearts-role', async ({ page }) => {
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          name: 'Ada',
+          location: null,
+          username: 'alice',
+          lightningAddress: null,
+          rulesAgreedAt: 1_700_000_001,
+          viewKey: 'a'.repeat(64),
+          aboutMe: null,
+          setup: null,
+          missing: [],
+          heartSats: 21,
+        }),
+      });
+    });
+    await fulfillMixedSatsMessages(page, { m3: 2 });
+    await page.route('**/forum/messages/**/replies', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [],
+          hearts: [
+            {
+              accountId: 'acc_grace',
+              name: 'Grace',
+              role: 'moderator',
+              sats: 21,
+              createdAt: '2026-08-28T12:07:00.000Z',
+              amountUsd: '0.02',
+              amountChf: null,
+              amountEur: null,
+              amountPhp: null,
+            },
+            {
+              accountId: 'acc_deleted',
+              name: '',
+              sats: 1000,
+              createdAt: '2026-08-28T12:06:00.000Z',
+              amountUsd: null,
+              amountChf: null,
+              amountEur: null,
+              amountPhp: null,
+            },
+          ],
+        }),
+      });
+    });
+    await page.goto('/welcome');
+    await page.getByText('Thank you both — that helps.').click();
+    await expect(page.getByRole('heading', { name: 'Hearts (2)' })).toBeVisible();
+    const hearts = page.getByRole('region', { name: 'Hearts (2)' });
+    await hearts.getByRole('button', { name: 'Moderator' }).click();
+    await expect(
+      hearts.getByText('This person helps keep the living room in order.'),
+    ).toBeVisible();
+    await centreAtRest(page.getByRole('heading', { name: 'Hearts (2)' }));
+    await shotScreen(page, 'state-welcome-expanded-hearts-role');
+  });
+
   test('state /welcome expanded-gifts', async ({ page }) => {
     await page.addInitScript(() => {
       localStorage.setItem('21gifts.session', 'sess-e2e');
@@ -12101,6 +12764,59 @@ test.describe('onboarding screens', () => {
     await page.getByRole('button', { name: '1 reaction' }).click();
     await expect(page.getByText('A reply from Ada.')).toBeVisible();
     await shotScreen(page, 'state-profile-replies-open');
+  });
+
+  async function openProfileHearts(page: Page): Promise<void> {
+    const parentId = '44444444-4444-4444-8444-444444444444';
+    await seedProfilePage(page);
+    await page.route(/\/forum\/members\/acc_e2e\/posts$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [
+            {
+              id: parentId,
+              accountId: 'acc_e2e',
+              name: 'Ada',
+              text: 'Second post from Ada.',
+              createdAt: '2026-08-02T10:00:00.000Z',
+              sats: 0,
+              payable: true,
+              hasPhoto: false,
+              hasVideo: false,
+              videoContentType: null,
+              role: 'basis',
+              replyCount: 1,
+              heartCount: 2,
+            },
+          ],
+        }),
+      });
+    });
+    await fulfillVisualHeartReplies(page, parentId);
+    await openProfile(page);
+    await page.getByRole('button', { name: '14 posts' }).click();
+    await expect(page.getByText('Second post from Ada.')).toBeVisible();
+    await page.getByRole('button', { name: 'Show reactions' }).click();
+    await expect(page.getByRole('heading', { name: 'Hearts (2)' })).toBeVisible();
+    await centreAtRest(page.getByRole('heading', { name: 'Hearts (2)' }));
+  }
+
+  test('state /profile replies-open-hearts', async ({ page }) => {
+    await openProfileHearts(page);
+    await shotScreen(page, 'state-profile-replies-open-hearts');
+  });
+
+  test('state /profile replies-open-hearts-role', async ({ page }) => {
+    await openProfileHearts(page);
+    const hearts = page.getByRole('region', { name: 'Hearts (2)' });
+    await hearts.getByRole('button', { name: 'Moderator' }).click();
+    await expect(
+      hearts.getByText('This person helps keep the living room in order.'),
+    ).toBeVisible();
+    await centreAtRest(page.getByRole('heading', { name: 'Hearts (2)' }));
+    await shotScreen(page, 'state-profile-replies-open-hearts-role');
   });
 
   test('state /profile shops-open', async ({ page }) => {
@@ -16261,6 +16977,290 @@ test.describe('onboarding screens', () => {
     await expect(page.getByText('Hello from my profile note.')).toHaveCount(0);
     await page.getByText('A reply from Carol.').scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-members-replies-open');
+  });
+
+  test('state /members replies-open-hearts', async ({ page }) => {
+    const memberId = '22222222-2222-4222-8222-222222222222';
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          name: 'Ada',
+          username: 'alice',
+          lightningAddress: null,
+          rulesAgreedAt: 1_700_000_001,
+          setup: null,
+          missing: [],
+          heartSats: 21,
+        }),
+      });
+    });
+    await page.route(`**/forum/members/${memberId}`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          id: memberId,
+          name: 'Carol',
+          location: null,
+          role: 'verified',
+          username: 'carol',
+          lightningAddress: 'member@21.gifts',
+          createdAt: '2026-01-15T12:00:00.000Z',
+          aboutMe: null,
+          profileMessage: {
+            id: '33333333-3333-4333-8333-333333333333',
+            accountId: memberId,
+            name: 'Carol',
+            text: 'Hello from my profile note.',
+            createdAt: '2026-08-01T10:00:00.000Z',
+            sats: 21,
+            payable: true,
+            hasPhoto: false,
+            role: 'verified',
+            replyCount: 0,
+            heartCount: 2,
+          },
+          postCount: 1,
+          replyCount: 1,
+        }),
+      });
+    });
+    await page.route('**/forum/messages/**/replies', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [
+            {
+              id: '66666666-6666-4666-8666-666666666666',
+              accountId: memberId,
+              name: 'Carol',
+              text: 'A reply from Carol.',
+              createdAt: '2026-08-03T10:00:00.000Z',
+              sats: 0,
+              payable: false,
+              hasPhoto: false,
+              hasVideo: false,
+              videoContentType: null,
+              role: 'verified',
+              replyCount: 0,
+              parentId: '33333333-3333-4333-8333-333333333333',
+            },
+          ],
+          hearts: [
+            {
+              accountId: 'acc_grace',
+              name: 'Grace',
+              role: 'verified',
+              sats: 21,
+              createdAt: '2026-08-03T10:07:00.000Z',
+              amountUsd: '0.02',
+              amountChf: null,
+              amountEur: null,
+              amountPhp: null,
+            },
+            {
+              accountId: 'acc_deleted',
+              name: '',
+              sats: 1000,
+              createdAt: '2026-08-03T10:06:00.000Z',
+              amountUsd: null,
+              amountChf: null,
+              amountEur: null,
+              amountPhp: null,
+            },
+          ],
+        }),
+      });
+    });
+    await page.route(`**/forum/members/${memberId}/posts`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [
+            {
+              id: '33333333-3333-4333-8333-333333333333',
+              accountId: memberId,
+              name: 'Carol',
+              text: 'Hello from my profile note.',
+              createdAt: '2026-08-01T10:00:00.000Z',
+              sats: 21,
+              payable: true,
+              hasPhoto: false,
+              role: 'verified',
+              replyCount: 0,
+              heartCount: 2,
+            },
+          ],
+        }),
+      });
+    });
+    await page.route(`**/forum/members/${memberId}/activity`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(EMPTY_ACTIVITY),
+      });
+    });
+    await page.goto(`/members/${memberId}`);
+    await page.getByRole('button', { name: '1 post' }).click();
+    await expect(page.getByText('Hello from my profile note.')).toBeVisible();
+    await page.getByRole('button', { name: 'Show reactions' }).click();
+    await expect(page.getByText('A reply from Carol.')).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Hearts (2)' })).toBeVisible();
+    await centreAtRest(page.getByRole('heading', { name: 'Hearts (2)' }));
+    await shotScreen(page, 'state-members-replies-open-hearts');
+  });
+
+  test('state /members replies-open-hearts-role', async ({ page }) => {
+    const memberId = '22222222-2222-4222-8222-222222222222';
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          name: 'Ada',
+          username: 'alice',
+          lightningAddress: null,
+          rulesAgreedAt: 1_700_000_001,
+          setup: null,
+          missing: [],
+          heartSats: 21,
+        }),
+      });
+    });
+    await page.route(`**/forum/members/${memberId}`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          id: memberId,
+          name: 'Carol',
+          location: null,
+          role: 'verified',
+          username: 'carol',
+          lightningAddress: 'member@21.gifts',
+          createdAt: '2026-01-15T12:00:00.000Z',
+          aboutMe: null,
+          profileMessage: {
+            id: '33333333-3333-4333-8333-333333333333',
+            accountId: memberId,
+            name: 'Carol',
+            text: 'Hello from my profile note.',
+            createdAt: '2026-08-01T10:00:00.000Z',
+            sats: 21,
+            payable: true,
+            hasPhoto: false,
+            role: 'verified',
+            replyCount: 0,
+            heartCount: 2,
+          },
+          postCount: 1,
+          replyCount: 1,
+        }),
+      });
+    });
+    await page.route('**/forum/messages/**/replies', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [
+            {
+              id: '66666666-6666-4666-8666-666666666666',
+              accountId: memberId,
+              name: 'Carol',
+              text: 'A reply from Carol.',
+              createdAt: '2026-08-03T10:00:00.000Z',
+              sats: 0,
+              payable: false,
+              hasPhoto: false,
+              hasVideo: false,
+              videoContentType: null,
+              role: 'verified',
+              replyCount: 0,
+              parentId: '33333333-3333-4333-8333-333333333333',
+            },
+          ],
+          hearts: [
+            {
+              accountId: 'acc_grace',
+              name: 'Grace',
+              role: 'verified',
+              sats: 21,
+              createdAt: '2026-08-03T10:07:00.000Z',
+              amountUsd: '0.02',
+              amountChf: null,
+              amountEur: null,
+              amountPhp: null,
+            },
+            {
+              accountId: 'acc_deleted',
+              name: '',
+              sats: 1000,
+              createdAt: '2026-08-03T10:06:00.000Z',
+              amountUsd: null,
+              amountChf: null,
+              amountEur: null,
+              amountPhp: null,
+            },
+          ],
+        }),
+      });
+    });
+    await page.route(`**/forum/members/${memberId}/posts`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [
+            {
+              id: '33333333-3333-4333-8333-333333333333',
+              accountId: memberId,
+              name: 'Carol',
+              text: 'Hello from my profile note.',
+              createdAt: '2026-08-01T10:00:00.000Z',
+              sats: 21,
+              payable: true,
+              hasPhoto: false,
+              role: 'verified',
+              replyCount: 0,
+              heartCount: 2,
+            },
+          ],
+        }),
+      });
+    });
+    await page.route(`**/forum/members/${memberId}/activity`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(EMPTY_ACTIVITY),
+      });
+    });
+    await page.goto(`/members/${memberId}`);
+    await page.getByRole('button', { name: '1 post' }).click();
+    await expect(page.getByText('Hello from my profile note.')).toBeVisible();
+    await page.getByRole('button', { name: 'Show reactions' }).click();
+    await expect(page.getByRole('heading', { name: 'Hearts (2)' })).toBeVisible();
+    const hearts = page.getByRole('region', { name: 'Hearts (2)' });
+    await hearts.getByRole('button', { name: 'Verified' }).click();
+    await expect(
+      hearts.getByText('A moderator has met this person in real life and confirmed they are real.'),
+    ).toBeVisible();
+    await centreAtRest(page.getByRole('heading', { name: 'Hearts (2)' }));
+    await shotScreen(page, 'state-members-replies-open-hearts-role');
   });
 
   test('state /members shops-open', async ({ page }) => {
@@ -23788,6 +24788,161 @@ test.describe('onboarding screens', () => {
     await shotScreen(page, 'state-messages-id-reply');
   });
 
+  test('state /messages/[id] reply-hearts', async ({ page }) => {
+    const parentId = '11111111-1111-4111-8111-111111111111';
+    const replyId = '22222222-2222-4222-8222-222222222222';
+    const parent = {
+      id: parentId,
+      name: 'Ada',
+      text: 'Hello from Ada',
+      createdAt: '2026-08-28T12:00:00.000Z',
+      sats: 0,
+      payable: false,
+      hasPhoto: false,
+      role: 'basis',
+      replyCount: 1,
+      heartCount: 2,
+    };
+    const reply = {
+      id: replyId,
+      parentId,
+      name: 'Pater Severin',
+      text: '',
+      sats: 3000,
+      payable: false,
+      hasPhoto: false,
+      role: 'basis',
+      replyCount: 0,
+      createdAt: '2026-08-28T12:01:00.000Z',
+    };
+    await fulfillPublicThreadReplies(
+      page,
+      parentId,
+      [reply],
+      [
+        {
+          accountId: 'acc_grace',
+          name: 'Grace',
+          role: 'moderator',
+          sats: 21,
+          createdAt: '2026-08-28T12:07:00.000Z',
+          amountUsd: '0.02',
+          amountChf: null,
+          amountEur: null,
+          amountPhp: null,
+        },
+        {
+          accountId: 'acc_deleted',
+          name: '',
+          sats: 1000,
+          createdAt: '2026-08-28T12:06:00.000Z',
+          amountUsd: null,
+          amountChf: null,
+          amountEur: null,
+          amountPhp: null,
+        },
+      ],
+    );
+    await page.route(`**/public-messages/${replyId}`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(reply),
+      });
+    });
+    await page.route(`**/public-messages/${parentId}`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(parent),
+      });
+    });
+    await page.goto(`/messages/${replyId}`);
+    await expect(page.getByRole('heading', { name: 'Hearts (2)' })).toBeVisible();
+    await page.getByRole('heading', { name: 'Hearts (2)' }).scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-messages-id-reply-hearts');
+  });
+
+  test('state /messages/[id] reply-hearts-role', async ({ page }) => {
+    const parentId = '11111111-1111-4111-8111-111111111111';
+    const replyId = '22222222-2222-4222-8222-222222222222';
+    const parent = {
+      id: parentId,
+      name: 'Ada',
+      text: 'Hello from Ada',
+      createdAt: '2026-08-28T12:00:00.000Z',
+      sats: 0,
+      payable: false,
+      hasPhoto: false,
+      role: 'basis',
+      replyCount: 1,
+      heartCount: 2,
+    };
+    const reply = {
+      id: replyId,
+      parentId,
+      name: 'Pater Severin',
+      text: '',
+      sats: 3000,
+      payable: false,
+      hasPhoto: false,
+      role: 'basis',
+      replyCount: 0,
+      createdAt: '2026-08-28T12:01:00.000Z',
+    };
+    await fulfillPublicThreadReplies(
+      page,
+      parentId,
+      [reply],
+      [
+        {
+          accountId: 'acc_grace',
+          name: 'Grace',
+          role: 'moderator',
+          sats: 21,
+          createdAt: '2026-08-28T12:07:00.000Z',
+          amountUsd: '0.02',
+          amountChf: null,
+          amountEur: null,
+          amountPhp: null,
+        },
+        {
+          accountId: 'acc_deleted',
+          name: '',
+          sats: 1000,
+          createdAt: '2026-08-28T12:06:00.000Z',
+          amountUsd: null,
+          amountChf: null,
+          amountEur: null,
+          amountPhp: null,
+        },
+      ],
+    );
+    await page.route(`**/public-messages/${replyId}`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(reply),
+      });
+    });
+    await page.route(`**/public-messages/${parentId}`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(parent),
+      });
+    });
+    await page.goto(`/messages/${replyId}`);
+    await expect(page.getByRole('heading', { name: 'Hearts (2)' })).toBeVisible();
+    const hearts = page.getByRole('region', { name: 'Hearts (2)' });
+    await hearts.getByRole('button', { name: 'Moderator' }).click();
+    await expect(
+      hearts.getByText('This person helps keep the living room in order.'),
+    ).toBeVisible();
+    await centreAtRest(page.getByRole('heading', { name: 'Hearts (2)' }));
+    await shotScreen(page, 'state-messages-id-reply-hearts-role');
+  });
+
   test('state /messages/[id] reply-received', async ({ page }) => {
     const parentId = '11111111-1111-4111-8111-111111111111';
     const replyId = '44444444-4444-4444-8444-444444444444';
@@ -23875,6 +25030,80 @@ test.describe('onboarding screens', () => {
     await expect(page.getByRole('button', { name: 'Activate' })).toBeVisible();
     await expectDebtAndCreditLines(page);
     await shotScreen(page, 'screen-view-viewKey');
+  });
+
+  async function openViewHearts(page: Page): Promise<void> {
+    const parentId = '44444444-4444-4444-8444-444444444444';
+    await seedProfilePage(page);
+    await page.route(new RegExp(`/view-key/${E2E_ACCOUNT.viewKey}$`), async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          id: 'acc_e2e',
+          name: 'Ada',
+          location: null,
+          username: 'alice',
+          role: 'basis',
+          lightningAddress: 'member@21.gifts',
+          lightningAddressVerified: true,
+          createdAt: 1,
+          hasPasskey: true,
+          aboutMe: null,
+          postCount: 14,
+          replyCount: 0,
+        }),
+      });
+    });
+    await page.route(/\/forum\/members\/acc_e2e\/posts$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [
+            {
+              id: parentId,
+              accountId: 'acc_e2e',
+              name: 'Ada',
+              text: 'Second post from Ada.',
+              createdAt: '2026-08-02T10:00:00.000Z',
+              sats: 0,
+              payable: true,
+              hasPhoto: false,
+              hasVideo: false,
+              videoContentType: null,
+              role: 'basis',
+              replyCount: 1,
+              heartCount: 2,
+            },
+          ],
+        }),
+      });
+    });
+    await fulfillVisualHeartReplies(page, parentId);
+    await page.goto(`/view/${E2E_ACCOUNT.viewKey}`);
+    await expect(page.getByRole('button', { name: '14 posts' })).toBeVisible();
+    await page.getByRole('button', { name: '14 posts' }).click();
+    await expect(page.getByText('Second post from Ada.')).toBeVisible();
+    await page.getByRole('button', { name: 'Show reactions' }).click();
+    await expect(page.getByRole('heading', { name: 'Hearts (2)' })).toBeVisible();
+    await centreAtRest(page.getByRole('heading', { name: 'Hearts (2)' }));
+  }
+
+  test('state /view/[viewKey] replies-open-hearts', async ({ page }) => {
+    await openViewHearts(page);
+    await shotScreen(page, 'state-view-replies-open-hearts');
+  });
+
+  test('state /view/[viewKey] replies-open-hearts-role', async ({ page }) => {
+    await openViewHearts(page);
+    const hearts = page.getByRole('region', { name: 'Hearts (2)' });
+    await hearts.getByRole('button', { name: 'Moderator' }).click();
+    await expect(
+      hearts.getByText('This person helps keep the living room in order.'),
+    ).toBeVisible();
+    await centreAtRest(page.getByRole('heading', { name: 'Hearts (2)' }));
+    await shotScreen(page, 'state-view-replies-open-hearts-role');
   });
 
   test('state /view images', async ({ page }) => {
@@ -25692,7 +26921,11 @@ test.describe('profile activity chart variants', () => {
       .locator('input[name="profile-banner"]')
       .setInputFiles(path.join(process.cwd(), 'e2e/fixtures/profile-portrait.jpg'));
     await expect(page.getByText('Drag the photo to choose the wide image')).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Use this crop' })).toBeEnabled();
+    // The hint is up before the photo is placed. An unplaced photo is its
+    // full file size and leaves the phone window.
+    await expect(page.getByRole('button', { name: 'Use this crop' })).toBeEnabled({
+      timeout: 15000,
+    });
     await expect(page.getByRole('button', { name: 'Add a wide image' })).toHaveCount(0);
     await expect(page.getByRole('button', { name: 'Add a profile photo' })).toBeVisible();
     await shotScreen(page, 'state-view-banner-not-wide');
@@ -32553,6 +33786,58 @@ test.describe('shops screens', () => {
     await expect(page.getByRole('link', { name: '#Shop' })).toHaveCount(0);
     await expect(page.getByText('#21GiftsShop')).toHaveCount(0);
     await shotScreen(page, 'screen-shops');
+  });
+
+  async function openShopsHearts(page: Page): Promise<void> {
+    const parentId = '44444444-4444-4444-8444-444444444444';
+    await seedAda(page);
+    await page.route(/\/messages(?:\?|$)/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [
+            {
+              id: parentId,
+              accountId: 'acc_shop',
+              name: 'Ada',
+              text: 'Cafe Luna\n\n#21GiftsShop',
+              createdAt: '2026-08-28T12:00:00.000Z',
+              sats: 21,
+              payable: true,
+              hasPhoto: false,
+              hasVideo: false,
+              videoContentType: null,
+              role: 'basis',
+              replyCount: 1,
+              heartCount: 2,
+            },
+          ],
+        }),
+      });
+    });
+    await fulfillVisualHeartReplies(page, parentId);
+    await page.goto('/shops#post');
+    await expect(page.getByText('Cafe Luna')).toBeVisible();
+    await page.getByRole('button', { name: 'Show reactions' }).click();
+    await expect(page.getByRole('heading', { name: 'Hearts (2)' })).toBeVisible();
+    await centreAtRest(page.getByRole('heading', { name: 'Hearts (2)' }));
+  }
+
+  test('state /shops expanded-hearts', async ({ page }) => {
+    await openShopsHearts(page);
+    await shotScreen(page, 'state-shops-expanded-hearts');
+  });
+
+  test('state /shops expanded-hearts-role', async ({ page }) => {
+    await openShopsHearts(page);
+    const hearts = page.getByRole('region', { name: 'Hearts (2)' });
+    await hearts.getByRole('button', { name: 'Moderator' }).click();
+    await expect(
+      hearts.getByText('This person helps keep the living room in order.'),
+    ).toBeVisible();
+    await centreAtRest(page.getByRole('heading', { name: 'Hearts (2)' }));
+    await shotScreen(page, 'state-shops-expanded-hearts-role');
   });
 
   test('state /shops heart-needs-balance', async ({ page }) => {
@@ -43218,6 +44503,140 @@ test.describe('settings states', () => {
     await fiat.click();
     await expect(fiat).toHaveAttribute('aria-pressed', 'true');
     await shotScreen(page, 'state-settings-default-amount-fiat');
+  });
+
+  test('settings heart-amount', async ({ page }) => {
+    await seedSettingsAccount(page, { heartSats: 21 });
+    await fulfillSpot(page);
+    await openSettings(page);
+    await expect(page.getByLabel('Heart amount')).toHaveValue('21');
+    await expect(page.getByText('$0.02').first()).toBeVisible();
+    await page.getByLabel('Heart amount').scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-settings-heart-amount');
+  });
+
+  test('settings heart-amount-fiat', async ({ page }) => {
+    await seedSettingsAccount(page, { heartSats: 21 });
+    await fulfillSpot(page);
+    await page.route(/\/me\/amount-unit$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          name: 'Ada',
+          username: 'ada',
+          lightningAddress: null,
+          rulesAgreedAt: 1,
+          setup: null,
+          missing: [],
+          walletRequired: true,
+          walletBackupSeenAt: 1,
+          passkeyCredentialId: 'cred-seed',
+          heartSats: 21,
+          amountUnit: 'fiat',
+        }),
+      });
+    });
+    await openSettings(page);
+    const wallet = page.getByRole('region', { name: 'Wallet' });
+    const field = wallet.getByLabel('Heart amount');
+    await expect(field).toHaveValue('21');
+    await expect(wallet.getByText('$0.02').first()).toBeVisible();
+    const fiat = wallet.getByRole('group', { name: 'Bitcoin or fiat' }).getByRole('button', {
+      name: 'USD',
+    });
+    const saved = page.waitForResponse(
+      (response) => response.url().includes('/me/amount-unit') && response.ok(),
+    );
+    await fiat.click();
+    await saved;
+    await expect(fiat).toHaveAttribute('aria-pressed', 'true');
+    await expect(field).toHaveValue('0.021');
+    await expect(wallet.getByText('₿21').first()).toBeVisible();
+    await field.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-settings-heart-amount-fiat');
+  });
+
+  test('settings heart-amount-invalid', async ({ page }) => {
+    await seedSettingsAccount(page, { heartSats: 21 });
+    await fulfillSpot(page);
+    await openSettings(page);
+    const wallet = page.getByRole('region', { name: 'Wallet' });
+    const field = wallet.getByLabel('Heart amount');
+    await field.fill('0');
+    await expect(wallet.getByText("Enter whole ₿ from ₿1 to ₿10'000'000.")).toBeVisible();
+    await expect(field).toHaveAttribute('aria-invalid', 'true');
+    await expect(wallet.getByRole('button', { name: 'Save' })).toBeDisabled();
+    await field.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-settings-heart-amount-invalid');
+  });
+
+  test('settings heart-amount-saved', async ({ page }) => {
+    await seedSettingsAccount(page, { heartSats: 1 });
+    await fulfillSpot(page);
+    await page.route(/\/me\/heart-sats$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ ...E2E_ACCOUNT, heartSats: 21 }),
+      });
+    });
+    await openSettings(page);
+    const wallet = page.getByRole('region', { name: 'Wallet' });
+    const field = wallet.getByLabel('Heart amount');
+    await field.fill('21');
+    await wallet.getByRole('button', { name: 'Save' }).click();
+    await expect(wallet.getByText(/^Saved: ₿21/)).toBeVisible();
+    await field.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-settings-heart-amount-saved');
+  });
+
+  test('settings heart-amount-error', async ({ page }) => {
+    await seedSettingsAccount(page, { heartSats: 1 });
+    await fulfillSpot(page);
+    await page.route(/\/me\/heart-sats$/, async (route) => {
+      await route.fulfill({ status: 500, body: '' });
+    });
+    await openSettings(page);
+    const wallet = page.getByRole('region', { name: 'Wallet' });
+    const field = wallet.getByLabel('Heart amount');
+    await field.fill('21');
+    await wallet.getByRole('button', { name: 'Save' }).click();
+    await expect(wallet.getByRole('alert')).toHaveText('Could not save the heart amount.');
+    await field.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-settings-heart-amount-error');
+  });
+
+  test('settings heart-amount-saving', async ({ page }) => {
+    await seedSettingsAccount(page, { heartSats: 1 });
+    await fulfillSpot(page);
+    await page.route(/\/me\/heart-sats$/, () => new Promise(() => undefined));
+    await openSettings(page);
+    const wallet = page.getByRole('region', { name: 'Wallet' });
+    const field = wallet.getByLabel('Heart amount');
+    await field.fill('21');
+    await wallet.getByRole('button', { name: 'Save' }).click();
+    await expect(wallet.getByRole('status')).toHaveText('Saving…');
+    await expect(field).toBeDisabled();
+    await expect(wallet.getByRole('button', { name: 'Save' })).toBeDisabled();
+    await field.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-settings-heart-amount-saving');
+  });
+
+  test('settings heart-amount-no-rate', async ({ page }) => {
+    await seedSettingsAccount(page, { heartSats: 21 });
+    await fulfillSpot(page, {});
+    await openSettings(page);
+    const wallet = page.getByRole('region', { name: 'Wallet' });
+    const field = wallet.getByLabel('Heart amount');
+    await expect(field).toHaveValue('21');
+    await expect(wallet.getByText('No exchange rate yet')).toBeVisible();
+    await expect(
+      wallet.getByRole('group', { name: 'Bitcoin or fiat' }).getByRole('button', { name: 'USD' }),
+    ).toBeDisabled();
+    await field.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-settings-heart-amount-no-rate');
   });
 
   test('settings notification-level-gifted', async ({ page }) => {

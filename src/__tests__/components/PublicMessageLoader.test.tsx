@@ -2,7 +2,7 @@ import { cleanup, fireEvent, screen, waitFor } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { PublicMessageLoader } from '@/components/PublicMessageLoader';
-import type { ForumMessage } from '@/lib/api-types';
+import type { ForumMessage, ForumReplies } from '@/lib/api-types';
 import { useAuthStore } from '@/stores/auth-store';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
 
@@ -982,6 +982,94 @@ describe('PublicMessageLoader', () => {
     expect(screen.getByText('Carol')).toBeTruthy();
     expect(document.querySelector('[data-permalink-target="true"]')).toBeNull();
     expect(fetchRepliesPublic).toHaveBeenCalledWith(MESSAGE_ID);
+  });
+
+  it('uses the locale-default CHF string for hearts under an unsigned German thread', async () => {
+    vi.mocked(fetchFxSpot).mockResolvedValue({
+      asOf: '2026-10-07T00:00:00.000Z',
+      source: 'test',
+      rates: { USD: '100000.00', CHF: '80000.00', EUR: '90000.00', PHP: '5600000.00' },
+    });
+    fetchMessage.mockResolvedValue(sample);
+    fetchRepliesPublic.mockResolvedValue(
+      Object.assign([] as ForumMessage[], {
+        hearts: [
+          {
+            accountId: 'acc_grace',
+            name: 'Grace',
+            role: 'moderator' as const,
+            sats: 21,
+            createdAt: '2026-08-28T12:02:00.000Z',
+            amountUsd: '5.00',
+            amountChf: '4.00',
+            amountEur: null,
+            amountPhp: null,
+          },
+        ],
+      }) as ForumReplies,
+    );
+    renderWithLocale(<PublicMessageLoader id={MESSAGE_ID} />, 'de', 'ch', 'USD');
+    expect(await screen.findByRole('heading', { name: 'Herzen (1)' })).toBeTruthy();
+    const hearts = screen.getByRole('region', { name: 'Herzen (1)' });
+    expect(hearts.textContent).toContain('Grace');
+    expect(hearts.textContent).toContain('₿21');
+    expect(hearts.textContent).toContain('CHF 4.00');
+    expect(hearts.textContent).not.toContain('$5.00');
+    expect(screen.getByRole('link', { name: 'Grace' }).getAttribute('href')).toBe(
+      '/members/acc_grace',
+    );
+  });
+
+  it('keeps the USD preference for hearts under a signed-in German thread', async () => {
+    useAuthStore.setState({
+      session: 'sess',
+      account: {
+        id: 'acc_1',
+        linkingKey: null,
+        role: 'basis',
+        name: 'Ada',
+        location: null,
+        lightningAddress: null,
+        lightningAddressVerified: false,
+        forumLawsDismissed: false,
+        createdAt: 1,
+        rulesAgreedAt: 1,
+        viewKey: 'a'.repeat(64),
+        aboutMe: null,
+        aboutMeHasPhoto: false,
+        setup: null,
+        missing: [],
+        fiat: 'USD',
+      },
+    });
+    vi.mocked(fetchFxSpot).mockResolvedValue({
+      asOf: '2026-10-07T00:00:00.000Z',
+      source: 'test',
+      rates: { USD: '100000.00', CHF: '80000.00', EUR: '90000.00', PHP: '5600000.00' },
+    });
+    fetchMessageBearer.mockResolvedValue(sample);
+    fetchRepliesBearer.mockResolvedValue(
+      Object.assign([] as ForumMessage[], {
+        hearts: [
+          {
+            accountId: 'acc_grace',
+            name: 'Grace',
+            role: 'moderator' as const,
+            sats: 21,
+            createdAt: '2026-08-28T12:02:00.000Z',
+            amountUsd: '5.00',
+            amountChf: '4.00',
+            amountEur: null,
+            amountPhp: null,
+          },
+        ],
+      }) as ForumReplies,
+    );
+    renderWithLocale(<PublicMessageLoader id={MESSAGE_ID} />, 'de', 'ch', 'USD');
+    expect(await screen.findByRole('heading', { name: 'Herzen (1)' })).toBeTruthy();
+    const hearts = screen.getByRole('region', { name: 'Herzen (1)' });
+    expect(hearts.textContent).toContain('$5.00');
+    expect(hearts.textContent).not.toContain('CHF 4.00');
   });
 
   it('keeps only the first two cards first still eager', async () => {

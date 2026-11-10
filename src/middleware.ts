@@ -39,7 +39,13 @@ function applyCsp(request: NextRequest): {
   requestHeaders: Headers;
 } {
   const nonce = createCspNonce();
-  const policy = buildCsp(nonce);
+  const rawHost =
+    request.headers?.get('x-forwarded-host') ??
+    request.headers?.get('host') ??
+    request.nextUrl.hostname ??
+    '';
+  const hostname = rawHost.replace(/,.*$/, '').trim().replace(/:\d+$/, '').toLowerCase();
+  const policy = buildCsp(nonce, hostname);
   const header = cspHeaderName(getCspMode());
   const requestHeaders = new Headers(request.headers);
   requestHeaders.set(CSP_NONCE_HEADER, nonce);

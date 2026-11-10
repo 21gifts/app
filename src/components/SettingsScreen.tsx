@@ -1,24 +1,37 @@
 'use client';
 
 import { Check, Copy } from 'lucide-react';
+import { AmountEntry } from '@/components/AmountEntry';
+import { BusyLine } from '@/components/BusyLine';
 import Link from 'next/link';
-import { useEffect, type ReactElement, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactElement, type ReactNode } from 'react';
 import { useFiatPreference } from '@/components/FiatPreferenceProvider';
 import { FiatPreferenceSwitcher } from '@/components/FiatPreferenceSwitcher';
 import { LanguagePreferenceSwitcher } from '@/components/LanguagePreferenceSwitcher';
 import { useTranslations } from '@/components/LocaleProvider';
 import { LogoutButton } from '@/components/LogoutButton';
+import { useNumberFormat } from '@/components/NumberFormatProvider';
 import { NumberFormatSwitcher } from '@/components/NumberFormatSwitcher';
+import { preferredFiatSuffix } from '@/components/PreferredFiatSuffix';
 import { PushToggle } from '@/components/PushToggle';
 import { ThemeSwitcher } from '@/components/ThemeSwitcher';
 import { UsernameForm } from '@/components/UsernameForm';
-import { Card, IconButton, SegmentedControl } from '@/components/ui';
+import { Button, Card, IconButton, SegmentedControl } from '@/components/ui';
 import { useCopied } from '@/hooks/useCopied';
+import { useSpotRate } from '@/hooks/useSpotRate';
 import { saveAmountUnit } from '@/lib/amount-unit';
-import type { AmountUnit } from '@/lib/api-types';
+import { accountHeartSats, type AmountUnit } from '@/lib/api-types';
 import { getAppVersion } from '@/lib/config';
 import { giftsLightningAddress } from '@/lib/gifts-address';
+import { MAX_HEART_SATS, saveHeartSats } from '@/lib/heart-sats';
 import type { MessageKey } from '@/lib/messages';
+import {
+  fiatDraftForSats,
+  formatBitcoin,
+  parseAmountDraft,
+  type FiatCode,
+  type FiatRateDay,
+} from '@/lib/stats-money';
 import { useAuthStore } from '@/stores/auth-store';
 
 /** Links of the About & legal section, in the marketing footer's order. */
@@ -148,10 +161,180 @@ function DefaultAmountRow(): ReactElement {
 }
 
 /**
+ * Whole sats every heart click sends, stored as `account.heartSats`.
+ *
+ * The field is the app's {@link AmountEntry}: the account's ₿ / fiat switch,
+ * the other unit under the value, and **No exchange rate yet** when that
+ * fiat has no rate. The submitted value is always whole sats. Empty, zero,
+ * a non-integer, and a value above {@link MAX_HEART_SATS} stay local and
+ * show a short error; a valid value saves through {@link saveHeartSats} and
+ * shows the stored confirmation with the preferred-fiat spot beside bitcoin,
+ * or bitcoin alone while that spot is unavailable.
+ *
+ * In fiat mode the draft is re-converted from the sats it stands for when
+ * the preferred fiat or the spot rate changes, so an untouched draft never
+ * saves a different amount than the stored one. While `POST /me/heart-sats`
+ * runs, the row shows the saving line in place of the saved confirmation.
+ *
+ * @returns The Heart amount row.
+ */
+function HeartAmountRow(): ReactElement {
+  const { t } = useTranslations();
+  const { fiat } = useFiatPreference();
+  const { numberFormat } = useNumberFormat();
+  const session = useAuthStore((state) => state.session);
+  const account = useAuthStore((state) => state.account);
+  const savedSats = accountHeartSats(account);
+  const [draft, setDraft] = useState(String(savedSats));
+  // The draft as it is rendered now, for the re-conversion below; a state
+  // update from the same event must not hide what the field showed.
+  const draftRef = useRef(draft);
+  draftRef.current = draft;
+  // Start in bitcoin so the stored whole-sats draft is never read as fiat before
+  // a rate can convert it. AmountEntry then follows the account unit and calls
+  // `onUnitChange` after the conversion succeeds.
+  const [shownUnit, setShownUnit] = useState<AmountUnit>('btc');
+  // Remounts AmountEntry after a fallback from fiat to bitcoin, so its own
+  // unit state cannot keep showing the old fiat figure without a rate.
+  const [entryRevision, setEntryRevision] = useState(0);
+  const [busy, setBusy] = useState(false);
+  const [touched, setTouched] = useState(false);
+  const [serverError, setServerError] = useState(false);
+  const [saved, setSaved] = useState(false);
+  const rateDay = useSpotRate(account !== null);
+  const parsed = parseAmountDraft(shownUnit, draft, rateDay, fiat);
+  // Invalid drafts fall back to 0, which is outside the allowed range.
+  const nextSats = parsed.kind === 'sats' ? parsed.sats : 0;
+  const valid = nextSats >= 1 && nextSats <= MAX_HEART_SATS;
+  const limits = {
+    min: formatBitcoin(1, numberFormat),
+    max: formatBitcoin(MAX_HEART_SATS, numberFormat),
+  };
+  const error =
+    touched && !valid
+      ? t(
+          shownUnit === 'btc' ? 'settings.heartAmountErrorBitcoin' : 'settings.heartAmountError',
+          limits,
+        )
+      : null;
+  const savedMessage = t('settings.heartAmountSaved', { amount: '{amount}' });
+  const [savedBeforeAmount, savedAfterAmount] = savedMessage.split('{amount}');
+
+  const syncedSats = useRef(savedSats);
+  useEffect(() => {
+    if (syncedSats.current === savedSats) {
+      return;
+    }
+    syncedSats.current = savedSats;
+    const fiatDraft = shownUnit === 'btc' ? null : fiatDraftForSats(savedSats, rateDay, fiat);
+    /* v8 ignore next -- fiat mode keeps a usable rate, so the whole-sat fallback is defensive */
+    setDraft(fiatDraft ?? String(savedSats));
+  }, [fiat, rateDay, savedSats, shownUnit]);
+
+  const syncedRate = useRef<{ fiat: FiatCode; rateDay: FiatRateDay | null }>({ fiat, rateDay });
+  useEffect(() => {
+    const previous = syncedRate.current;
+    syncedRate.current = { fiat, rateDay };
+    if (shownUnit !== 'fiat' || (previous.fiat === fiat && previous.rateDay === rateDay)) {
+      return;
+    }
+    // Read the draft on the previous rate, so an untouched draft keeps the
+    // stored sats and a typed one keeps the sats it already stood for.
+    const before = parseAmountDraft('fiat', draftRef.current, previous.rateDay, previous.fiat);
+    const sats = before.kind === 'sats' && before.sats >= 1 ? before.sats : savedSats;
+    const fiatDraft = fiatDraftForSats(sats, rateDay, fiat);
+    if (fiatDraft === null) {
+      // The new fiat cannot price the amount. Show the exact sats it stands
+      // for, and let AmountEntry fall back to bitcoin instead of keeping a
+      // figure that would be read under a currency without a rate.
+      setShownUnit('btc');
+      setEntryRevision((revision) => revision + 1);
+      setDraft(String(sats));
+      return;
+    }
+    setDraft(fiatDraft);
+  }, [fiat, rateDay, savedSats, shownUnit]);
+
+  const submit = async (): Promise<void> => {
+    /* v8 ignore next 3 -- the screen renders this row only with a session and an account */
+    if (session === null || account === null) {
+      return;
+    }
+    setBusy(true);
+    setServerError(false);
+    setSaved(false);
+    const ok = await saveHeartSats(session, account, nextSats);
+    if (ok) {
+      setSaved(true);
+    } else {
+      setServerError(true);
+    }
+    setBusy(false);
+  };
+
+  return (
+    <div className="flex w-full flex-col items-stretch gap-3 border-t border-app-border pt-6">
+      <p className="text-center text-xs tracking-widest text-app-subtle uppercase">
+        {t('settings.heartAmount')}
+      </p>
+      <form
+        className="flex flex-col gap-2"
+        onSubmit={(event) => {
+          event.preventDefault();
+          void submit();
+        }}
+      >
+        <AmountEntry
+          id="heart-sats"
+          key={entryRevision}
+          layout="composer"
+          label={t('settings.heartAmount')}
+          value={draft}
+          valueUnit={shownUnit}
+          disabled={busy}
+          rateDay={rateDay}
+          onValueChange={(next) => {
+            setDraft(next);
+            setSaved(false);
+            setTouched(true);
+            setServerError(false);
+          }}
+          onUnitChange={setShownUnit}
+          {...(error === null ? {} : { error })}
+        />
+        <p className="text-center text-xs text-app-muted">{t('settings.heartAmountHint')}</p>
+        {serverError ? (
+          <p role="alert" className="text-center text-sm text-app-danger">
+            {t('settings.heartAmountSaveError')}
+          </p>
+        ) : null}
+        <Button type="submit" size="lg" disabled={busy || !valid}>
+          {t('name.save')}
+        </Button>
+      </form>
+      {busy ? (
+        <BusyLine label={t('settings.heartAmountSaving')} />
+      ) : (
+        <p role="status" className="min-h-5 text-center text-sm text-app-success">
+          {saved ? (
+            <>
+              {savedBeforeAmount}
+              {formatBitcoin(savedSats, numberFormat)}
+              {preferredFiatSuffix(savedSats, rateDay, fiat, numberFormat)}
+              {savedAfterAmount}
+            </>
+          ) : null}
+        </p>
+      )}
+    </div>
+  );
+}
+
+/**
  * Signed-in settings page: the member's preferences and account actions, in
  * five sections. **Wallet**:
  * the 21.gifts address with Copy (or the username form while no username is
- * set), and the default amount unit. **Display**: language, theme, fiat
+ * set), the default amount unit, and the heart amount. **Display**: language, theme, fiat
  * currency, and number format. **Notifications**: {@link PushToggle}.
  * **Account**: {@link LogoutButton}. **About & legal**: the handbook, legal,
  * terms, rules, and contact links and the app version. Each section and the
@@ -190,6 +373,7 @@ export function SettingsScreen(): ReactElement | null {
       <SettingsSection id="wallet" heading={t('wallet.title')}>
         <AddressRow />
         <DefaultAmountRow />
+        <HeartAmountRow />
       </SettingsSection>
       <SettingsSection id="display" heading={t('settings.display')}>
         <LanguagePreferenceSwitcher />
