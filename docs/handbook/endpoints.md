@@ -1212,9 +1212,9 @@
 
 ## Endpoint: GET /fond/payouts
 
-- **Purpose:** Same-origin Bearer proxy of api `GET /fond/payouts`. Lists today's open Fond payout rows (`id`, `kind`, `status`, `utcDay`) in the api's order; it carries no amounts.
+- **Purpose:** Same-origin Bearer proxy of api `GET /fond/payouts`. Lists today's open Fond payout rows (`id`, `kind`, `status`, `utcDay`, `paymentHash`) in the api's order; it carries no amounts. `paymentHash` is a string or null and may be absent from an older api.
 - **Auth:** Bearer session of the account named `FOND_USERNAME`. The api answers 403 `Fond only` for another session and 404 when its Fond surface is off.
-- **Returns:** Upstream 200 `{ payouts: [{ id, kind, status, utcDay }] }`.
+- **Returns:** Upstream 200 `{ payouts: [{ id, kind, status, utcDay, paymentHash }] }`, where `paymentHash` is a string or null and may be absent from an older api.
 - **Errors:** Upstream 401 without a Bearer session, 403 for another account, 404 when the surface is off, 503 when the queue is unavailable, or 502 when this proxy cannot reach the api.
 - **Used by:** `fetchFondPayouts` through `runFondPayoutTick`; the route is also covered by the e2e proxy spec.
 

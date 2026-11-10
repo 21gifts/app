@@ -1,9 +1,13 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { fetchFondPayouts, postFondPayoutInvoice, postFondPayoutProof } from '@/lib/api';
 import { roleAtLeast } from '@/lib/roles';
-import { runFondPayoutTickOnce, waitForFondPayoutRead } from '@/lib/wallet/fond-payouts';
+import {
+  fondE2eWallet,
+  runFondPayoutTickOnce,
+  waitForFondPayoutRead,
+} from '@/lib/wallet/fond-payouts';
 import { listWalletPayments, payFromWallet } from '@/lib/wallet/wallet-service';
 import { useAuthStore } from '@/stores/auth-store';
 import { useWalletStore } from '@/stores/wallet-store';
@@ -16,7 +20,8 @@ export const FOND_PAYOUT_INTERVAL_MS = 60_000;
  * with an open wallet.
  *
  * Active only for an account at rank `fond` or above with a session and a
- * `ready` wallet. It runs one tick on activation and then every
+ * `ready` wallet, or in a Playwright build where {@link fondE2eWallet}
+ * supplies a fake wallet. It runs one tick on activation and then every
  * {@link FOND_PAYOUT_INTERVAL_MS}. Ticks are single-flight across effect
  * re-runs, so a changed wallet status, session, or account during a tick
  * shares the running tick instead of paying a row twice. A tick that answers
@@ -30,6 +35,7 @@ export function FondPayoutSync(): null {
   const accountId = useAuthStore((state) => state.account?.id ?? null);
   const accountRole = useAuthStore((state) => state.account?.role ?? null);
   const walletStatus = useWalletStore((state) => state.status);
+  const [e2eWallet] = useState(() => fondE2eWallet());
   /**
    * `session:accountId` whose last tick stopped the loop on 403/404. It
    * survives a wallet reconnect in this tab, so only another account or
@@ -41,7 +47,7 @@ export function FondPayoutSync(): null {
     session !== null &&
     accountId !== null &&
     roleAtLeast(accountRole, 'fond') &&
-    walletStatus === 'ready';
+    (walletStatus === 'ready' || e2eWallet !== null);
 
   useEffect(() => {
     if (session === null || accountId === null) {
@@ -64,8 +70,8 @@ export function FondPayoutSync(): null {
           fetchFondPayouts,
           postFondPayoutInvoice,
           postFondPayoutProof,
-          payFromWallet,
-          listWalletPayments,
+          payFromWallet: e2eWallet?.payFromWallet ?? payFromWallet,
+          listWalletPayments: e2eWallet?.listWalletPayments ?? listWalletPayments,
           sleep: waitForFondPayoutRead,
         });
         stop = result.stop;
@@ -94,7 +100,7 @@ export function FondPayoutSync(): null {
         timer = null;
       }
     };
-  }, [active, session, accountId]);
+  }, [active, session, accountId, e2eWallet]);
 
   return null;
 }

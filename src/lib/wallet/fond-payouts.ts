@@ -1,9 +1,10 @@
 import type { FondPayout, FondPayoutInvoice } from '@/lib/api-types';
 import type { FondPayoutFailure } from '@/lib/api';
+import { getE2eNow } from '@/lib/config';
 import { PAY_POLL_MS } from '@/lib/payment-link';
 import { reportPaymentFailure, type PaymentFailure } from '@/lib/wallet/payment-failure';
 import type { WalletPayResult, WalletSendResult } from '@/lib/wallet/wallet-service';
-import type { WalletPayment, WalletPayRequest } from '@/lib/wallet/wallet-sdk';
+import type { WalletPayment, WalletPayRequest, WalletPaymentPage } from '@/lib/wallet/wallet-sdk';
 
 /** How many newest wallet payments one history read covers. */
 const FOND_PAYOUT_HISTORY_LIMIT = 100;
@@ -24,6 +25,89 @@ export function waitForFondPayoutRead(ms: number): Promise<void> {
   return new Promise((resolve) => {
     setTimeout(resolve, ms);
   });
+}
+
+/** The fixed 64-hex preimage the Playwright Fond wallet reports after a send. */
+const FOND_E2E_PREIMAGE = '11'.repeat(32);
+
+/** Sent payments the Playwright Fond wallet remembers for this tab. */
+const e2eSends: WalletPayment[] = [];
+
+/** How many history reads follow each Playwright Fond send. */
+let e2eReadsAfterSend = 0;
+
+/**
+ * The fake Fond wallet for a Playwright build: a prepare that sends the
+ * BOLT11 it is given, and a history where the first read after that send is
+ * `pending` without a preimage and later reads are `completed` with
+ * {@link FOND_E2E_PREIMAGE}. This makes the payout loop poll through
+ * {@link waitForFondPayoutRead} exactly as it does for a wallet. Returns
+ * `null` in every other build, so production and unit tests keep the real
+ * wallet functions.
+ *
+ * @returns The Playwright wallet fakes, or `null` outside a Playwright build.
+ */
+export function fondE2eWallet(): {
+  payFromWallet: (request: WalletPayRequest) => Promise<WalletPayResult>;
+  listWalletPayments: (page: WalletPaymentPage) => Promise<WalletPayment[]>;
+} | null {
+  if (getE2eNow() === null) {
+    return null;
+  }
+  return {
+    payFromWallet: async (request) => {
+      if (request.type !== 'input') {
+        return {
+          kind: 'failed',
+          failure: {
+            stage: 'prepare',
+            reason: 'sdk_error',
+            method: 'lnurl',
+            amountSats: request.amountSats,
+            feeSats: null,
+          },
+        };
+      }
+      const invoice = request.input;
+      return {
+        kind: 'confirm',
+        amountSats: 21,
+        feeSats: 0,
+        method: 'lightning',
+        send: async () => {
+          e2eReadsAfterSend = 0;
+          e2eSends.unshift({
+            id: `fond-e2e-${String(e2eSends.length + 1)}`,
+            direction: 'sent',
+            amountSats: 21,
+            feesSats: 0,
+            timestamp: Date.now(),
+            status: 'pending',
+            method: 'lightning',
+            senderComment: null,
+            info: { invoice },
+          });
+          return { kind: 'paid' };
+        },
+      };
+    },
+    listWalletPayments: async () => {
+      if (e2eSends.length === 0) {
+        return [];
+      }
+      e2eReadsAfterSend += 1;
+      const completed = e2eReadsAfterSend > 1;
+      return e2eSends.map((sent) =>
+        completed
+          ? {
+              ...sent,
+              status: 'completed' as const,
+              info: { ...sent.info, preimage: FOND_E2E_PREIMAGE },
+            }
+          : sent,
+      );
+    },
+  };
 }
 
 /**

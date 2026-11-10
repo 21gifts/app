@@ -1,5 +1,6 @@
 // @vitest-environment node
-import { beforeEach, describe, expect, it, vi, type Mocked } from 'vitest';
+import { createHash } from 'node:crypto';
+import { afterEach, beforeEach, describe, expect, it, vi, type Mocked } from 'vitest';
 import type { FondPayoutFailure } from '@/lib/api';
 import type { FondPayout } from '@/lib/api-types';
 import { PAY_POLL_MS } from '@/lib/payment-link';
@@ -134,16 +135,28 @@ function failure(status: number, error: string | null = null): FondPayoutFailure
 
 let tick: typeof runFondPayoutTick;
 let tickOnce: (deps: FondPayoutTickDeps) => Promise<FondPayoutTickResult>;
+let e2eWallet: typeof import('@/lib/wallet/fond-payouts').fondE2eWallet;
 let report: typeof import('@/lib/wallet/payment-failure').reportPaymentFailure;
+const ORIGINAL_E2E_NOW = process.env.NEXT_PUBLIC_E2E_NOW;
+
+afterEach(() => {
+  if (ORIGINAL_E2E_NOW === undefined) {
+    delete process.env.NEXT_PUBLIC_E2E_NOW;
+  } else {
+    process.env.NEXT_PUBLIC_E2E_NOW = ORIGINAL_E2E_NOW;
+  }
+});
 
 beforeEach(async () => {
   vi.resetModules();
+  delete process.env.NEXT_PUBLIC_E2E_NOW;
   const failureModule = await import('@/lib/wallet/payment-failure');
   report = failureModule.reportPaymentFailure;
   vi.mocked(report).mockClear();
   const fondPayouts = await import('@/lib/wallet/fond-payouts');
   tick = fondPayouts.runFondPayoutTick;
   tickOnce = fondPayouts.runFondPayoutTickOnce;
+  e2eWallet = fondPayouts.fondE2eWallet;
 });
 
 describe('runFondPayoutTick list failures', () => {
@@ -190,6 +203,61 @@ describe('waitForFondPayoutRead', () => {
     await waiting;
     expect(done).toBe(true);
     vi.useRealTimers();
+  });
+});
+
+describe('fondE2eWallet', () => {
+  it('is inert outside a Playwright build', () => {
+    expect(e2eWallet()).toBeNull();
+  });
+
+  it('pays an input invoice, then reports it pending once and completed with a preimage', async () => {
+    process.env.NEXT_PUBLIC_E2E_NOW = '2026-01-07T12:00:00.000Z';
+    const wallet = e2eWallet();
+    expect(wallet).not.toBeNull();
+    if (wallet === null) {
+      return;
+    }
+    await expect(wallet.listWalletPayments({ offset: 0, limit: 100 })).resolves.toEqual([]);
+    const prepared = await wallet.payFromWallet({ type: 'input', input: 'lnbc1e2efondpayout' });
+    expect(prepared.kind).toBe('confirm');
+    if (prepared.kind !== 'confirm') {
+      return;
+    }
+    await expect(prepared.send()).resolves.toEqual({ kind: 'paid' });
+    const first = await wallet.listWalletPayments({ offset: 0, limit: 100 });
+    expect(first).toHaveLength(1);
+    expect(first[0]).toMatchObject({
+      direction: 'sent',
+      status: 'pending',
+      info: { invoice: 'lnbc1e2efondpayout' },
+    });
+    expect(first[0]?.info.preimage).toBeUndefined();
+    const later = await wallet.listWalletPayments({ offset: 0, limit: 100 });
+    const preimage = later[0]?.info.preimage;
+    expect(later[0]).toMatchObject({
+      direction: 'sent',
+      status: 'completed',
+      info: { invoice: 'lnbc1e2efondpayout', preimage: '11'.repeat(32) },
+    });
+    expect(
+      createHash('sha256').update(Buffer.from(preimage ?? '', 'hex')).digest('hex'),
+    ).toHaveLength(64);
+  });
+
+  it('refuses a request that is not a pasted invoice', async () => {
+    process.env.NEXT_PUBLIC_E2E_NOW = '2026-01-07T12:00:00.000Z';
+    const wallet = e2eWallet();
+    if (wallet === null) {
+      throw new Error('expected the Playwright wallet');
+    }
+    await expect(
+      wallet.payFromWallet({
+        type: 'lnurl',
+        request: { details: null },
+        amountSats: 21,
+      }),
+    ).resolves.toMatchObject({ kind: 'failed', failure: { reason: 'sdk_error' } });
   });
 });
 

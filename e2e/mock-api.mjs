@@ -59,13 +59,7 @@ function heldShareBoxIdFromPath(pathName) {
 /** Same order as `ROLE_ORDER` in `src/lib/roles.ts`: a named role means that role or higher. */
 const ROLE_ORDER = ['basis', 'verified', 'moderator', 'fond', 'initiator', 'founder'];
 
-/**
- * Fixture session of the Fond payout account. The three `/fond/payouts`
- * handlers accept it and refuse every other bearer with `Fond only`.
- */
-const FOND_SESSION = 'e2e-fond-session';
-
-/** The one open payout the fixture Fond account sees today. */
+/** The one open payout each Fond fixture account sees today. */
 const FOND_PAYOUT_ROW = {
   id: '11111111-1111-4111-8111-111111111111',
   kind: 'daily',
@@ -74,19 +68,47 @@ const FOND_PAYOUT_ROW = {
   paymentHash: null,
 };
 
-/** BOLT11 and payment hash the fixture invoice handler returns. */
+/** BOLT11 and preimage the fixture invoice and Playwright wallet use together. */
 const FOND_INVOICE = {
   bolt11: 'lnbc1e2efondpayout',
-  paymentHash: 'ab'.repeat(32),
+  preimage: '11'.repeat(32),
 };
+
+/** SHA-256 of {@link FOND_INVOICE.preimage}, as the invoice's payment hash. */
+const FOND_PAYMENT_HASH = createHash('sha256')
+  .update(Buffer.from(FOND_INVOICE.preimage, 'hex'))
+  .digest('hex');
+
+/**
+ * Per-session Fond fixture state. Keeping it per bearer lets parallel tests
+ * each invoice and prove their own fixture row.
+ *
+ * @type {Map<string, { lists: number, invoices: number, proofs: Array<{ id: string, preimage: string, paymentHash: string }> }>}
+ */
+const fondPayoutStates = new Map();
+
+/**
+ * The Fond fixture state of one session, created empty on first use.
+ *
+ * @param {string} token - Bearer session.
+ * @returns {{ lists: number, invoices: number, proofs: Array<{ id: string, preimage: string, paymentHash: string }> }}
+ */
+function fondPayoutState(token) {
+  let state = fondPayoutStates.get(token);
+  if (state === undefined) {
+    state = { lists: 0, invoices: 0, proofs: [] };
+    fondPayoutStates.set(token, state);
+  }
+  return state;
+}
 
 function roleAtLeast(role, min) {
   return ROLE_ORDER.indexOf(role) >= ROLE_ORDER.indexOf(min);
 }
 
 /**
- * Whether a bearer may use the Fond payout fixtures: the fixed fixture session
- * or an account minted by `/e2e/role-session` at rank `fond` or above.
+ * Whether a bearer may use the Fond payout fixtures: an account minted by
+ * `/e2e/role-session` at rank `fond` or above.
  *
  * @param {string | null} token - Bearer session.
  * @returns {boolean} Whether the three `/fond/payouts` handlers answer it.
@@ -94,9 +116,6 @@ function roleAtLeast(role, min) {
 function fondPayer(token) {
   if (token === null) {
     return false;
-  }
-  if (token === FOND_SESSION) {
-    return true;
   }
   const account = byToken.get(token);
   return account !== undefined && roleAtLeast(account.role, 'fond');
@@ -3940,7 +3959,9 @@ const server = http.createServer(async (req, res) => {
       json(res, 403, { error: 'Fond only' });
       return;
     }
-    json(res, 200, { payouts: [FOND_PAYOUT_ROW] });
+    const state = fondPayoutState(token);
+    state.lists += 1;
+    json(res, 200, { payouts: state.proofs.length === 0 ? [FOND_PAYOUT_ROW] : [] });
     return;
   }
 
@@ -3961,11 +3982,13 @@ const server = http.createServer(async (req, res) => {
     } catch {
       id = '';
     }
-    if (id !== FOND_PAYOUT_ROW.id) {
+    const state = fondPayoutState(token);
+    if (id !== FOND_PAYOUT_ROW.id || state.proofs.length > 0) {
       json(res, 404, { error: 'Not found' });
       return;
     }
-    json(res, 200, { id, ...FOND_INVOICE });
+    state.invoices += 1;
+    json(res, 200, { id, bolt11: FOND_INVOICE.bolt11, paymentHash: FOND_PAYMENT_HASH });
     return;
   }
 
@@ -3995,7 +4018,31 @@ const server = http.createServer(async (req, res) => {
       json(res, 400, { error: 'Expected a JSON body with preimage' });
       return;
     }
+    const preimage = body.preimage.toLowerCase();
+    const paymentHash = createHash('sha256').update(Buffer.from(preimage, 'hex')).digest('hex');
+    if (paymentHash !== FOND_PAYMENT_HASH) {
+      json(res, 400, { error: 'Preimage does not match payment hash' });
+      return;
+    }
+    const state = fondPayoutState(token);
+    state.proofs.push({ id, preimage, paymentHash });
     json(res, 200, { status: 'paid', id });
+    return;
+  }
+
+  if (method === 'GET' && pathName === '/e2e/fond-payouts') {
+    const token = bearer(req);
+    if (token === null || !fondPayer(token)) {
+      json(res, 401, { error: 'Unauthorized' });
+      return;
+    }
+    const state = fondPayoutState(token);
+    json(res, 200, {
+      lists: state.lists,
+      invoices: state.invoices,
+      proofs: state.proofs,
+      paid: state.proofs.length > 0,
+    });
     return;
   }
 

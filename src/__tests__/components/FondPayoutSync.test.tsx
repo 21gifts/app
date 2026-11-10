@@ -3,13 +3,25 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { FOND_PAYOUT_INTERVAL_MS, FondPayoutSync } from '@/components/FondPayoutSync';
 import type { Account } from '@/lib/api-types';
 import {
+  fondE2eWallet,
   runFondPayoutTickOnce as runFondPayoutTick,
   waitForFondPayoutRead,
+  type FondPayoutTickDeps,
 } from '@/lib/wallet/fond-payouts';
 import { useAuthStore } from '@/stores/auth-store';
 import { useWalletStore } from '@/stores/wallet-store';
 
+const E2E_PAY = vi.fn<FondPayoutTickDeps['payFromWallet']>(async () => ({
+  kind: 'confirm',
+  amountSats: 21,
+  feeSats: 0,
+  method: 'lightning',
+  send: async () => ({ kind: 'paid' }),
+}));
+const E2E_LIST = vi.fn<FondPayoutTickDeps['listWalletPayments']>(async () => []);
+
 vi.mock('@/lib/wallet/fond-payouts', () => ({
+  fondE2eWallet: vi.fn(() => null),
   runFondPayoutTickOnce: vi.fn(async () => ({ paid: 0, proved: 0, skipped: 0, stop: null })),
   waitForFondPayoutRead: vi.fn(async () => undefined),
 }));
@@ -75,6 +87,7 @@ async function flush(): Promise<void> {
 }
 
 beforeEach(() => {
+  vi.mocked(fondE2eWallet).mockReturnValue(null);
   vi.mocked(runFondPayoutTick).mockReset();
   vi.mocked(runFondPayoutTick).mockResolvedValue({
     paid: 0,
@@ -120,6 +133,31 @@ describe('FondPayoutSync', () => {
     expect(vi.mocked(runFondPayoutTick).mock.calls[0]?.[0]).toMatchObject({ session: 'sess' });
     expect(vi.mocked(runFondPayoutTick).mock.calls[0]?.[0]?.sleep).toBe(waitForFondPayoutRead);
     expect(vi.mocked(runFondPayoutTick).mock.calls[0]?.[0]?.isCancelled()).toBe(false);
+  });
+
+  it('runs for the Playwright fake wallet without a ready wallet', async () => {
+    vi.mocked(fondE2eWallet).mockReturnValue({
+      payFromWallet: E2E_PAY,
+      listWalletPayments: E2E_LIST,
+    });
+    setState('fond', 'sess', 'locked');
+    render(<FondPayoutSync />);
+    await flush();
+    expect(runFondPayoutTick).toHaveBeenCalledTimes(1);
+    const deps = vi.mocked(runFondPayoutTick).mock.calls[0]?.[0];
+    expect(deps?.payFromWallet).toBe(E2E_PAY);
+    expect(deps?.listWalletPayments).toBe(E2E_LIST);
+  });
+
+  it('keeps the Playwright fake inactive below the fond rank', async () => {
+    vi.mocked(fondE2eWallet).mockReturnValue({
+      payFromWallet: E2E_PAY,
+      listWalletPayments: E2E_LIST,
+    });
+    setState('moderator', 'sess', 'locked');
+    render(<FondPayoutSync />);
+    await flush();
+    expect(runFondPayoutTick).not.toHaveBeenCalled();
   });
 
   it('cancels the running tick on unmount', async () => {
