@@ -79,10 +79,14 @@ describe('sanitizeErrorMessage', () => {
     );
     expect(sanitizeErrorMessage('(/a/b#frag)')).toBe('(/a/b?[q]');
     expect(sanitizeErrorMessage('what? and/or #1')).toBe('what? and/or #1');
+    expect(sanitizeErrorMessage('GET api.example.com/v1/auth?k=AbCd1234EfGh5678 x')).toBe(
+      'GET api.example.com/v1/auth?[q] x',
+    );
+    expect(sanitizeErrorMessage('GET:/x?t=abc ./y#z')).toBe('GET:/x?[q] ./y?[q]');
   });
 
   it('reads a very long message without a digit in linear time', () => {
-    const long = `${'a'.repeat(100_000)} ${'x.'.repeat(50_000)} ${'b'.repeat(100_000)}@`;
+    const long = `${'a'.repeat(100_000)} ${'x.'.repeat(50_000)} ${'b'.repeat(100_000)}@ ${'http://a,'.repeat(12_000)} ${'(/a'.repeat(30_000)} ${'=/a'.repeat(30_000)}`;
     const started = performance.now();
     sanitizeErrorMessage(long);
     expect(performance.now() - started).toBeLessThan(1_000);

@@ -19,16 +19,13 @@ const MIN_WORD_RUN = 3;
 const LETTERS = /[A-Za-z]+/g;
 
 /**
- * Value patterns after the recovery words, in order. Each match is replaced
+ * Value patterns after the recovery words and the URL queries, in order. Each match is replaced
  * as given. Earlier patterns take the larger shapes, so a later one never
  * leaves a readable part of a key behind.
  */
 const REPLACEMENTS: ReadonlyArray<readonly [RegExp, string]> = [
   // User name and password in an absolute URL.
   [/(?<![a-z0-9+.-])([a-z][a-z0-9+.-]*:\/\/)[^\s/?#@"'<>]+@/gi, '$1[addr]@'],
-  // Query string and fragment of an absolute URL, and of a path (the path stays).
-  [/(?<![a-z0-9+.-])([a-z][a-z0-9+.-]*:\/\/[^\s?#"'<>]*)[?#][^\s"'<>]*/gi, '$1?[q]'],
-  [/(?<![^\s"'(<>=])(\/[^\s?#"'<>]*)[?#][^\s"'<>]*/g, '$1?[q]'],
   // E-mail and Lightning addresses, also without a top-level domain.
   [/(?<![A-Za-z0-9._%+-])[A-Za-z0-9._%+-]+@[A-Za-z0-9-]+(?:\.[A-Za-z0-9-]+)*/g, '[addr]'],
   // JSON web tokens and other dotted three-part tokens.
@@ -53,6 +50,28 @@ const REPLACEMENTS: ReadonlyArray<readonly [RegExp, string]> = [
     '[token]',
   ],
 ];
+
+/** One word of a message: everything between whitespace and quotes. */
+const TOKEN = /[^\s"'<>]+/g;
+
+/**
+ * Replaces the query string and fragment of every URL or path, with or
+ * without a scheme, by `?[q]`: a word that holds a `/` is cut at the first
+ * `?` or `#` after it. Each character is read once.
+ *
+ * @param text - Error message.
+ * @returns The message with the queries replaced.
+ */
+function replaceQueries(text: string): string {
+  return text.replace(TOKEN, (word) => {
+    const slash = word.indexOf('/');
+    if (slash === -1) {
+      return word;
+    }
+    const query = word.slice(slash).search(/[?#]/);
+    return query === -1 ? word : `${word.slice(0, slash + query)}?[q]`;
+  });
+}
 
 /**
  * Replaces every run of {@link MIN_WORD_RUN} or more BIP-39 English words in
@@ -95,8 +114,9 @@ function replaceWordRuns(text: string): string {
 /**
  * Makes an error message safe to report. In this order it replaces every run
  * of three or more BIP-39 English words (any case, any separator) with
- * `[words]`; the user name and password of an absolute URL with `[addr]`;
- * the query string and fragment of an absolute URL or a path with `?[q]`;
+ * `[words]`; the query string and fragment of a URL or path (any word that
+ * holds a `/`, cut at the first `?` or `#` after it) with `?[q]`; the user
+ * name and password of an absolute URL with `[addr]`;
  * e-mail and `name@host` addresses with `[addr]`; JSON web tokens and dotted
  * three-part tokens, invoices, offers, LNURL strings, Spark and base-chain
  * addresses, and extended keys (`xprv`, `xpub`, `tprv`, `tpub`, …) with
@@ -111,7 +131,7 @@ function replaceWordRuns(text: string): string {
 export function sanitizeErrorMessage(message: string): string {
   const replaced = REPLACEMENTS.reduce(
     (text, [pattern, replacement]) => text.replace(pattern, replacement),
-    replaceWordRuns(message),
+    replaceQueries(replaceWordRuns(message)),
   );
   return replaced.slice(0, ERROR_MESSAGE_MAX_LENGTH);
 }
