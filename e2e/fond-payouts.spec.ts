@@ -1,9 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import {
-  fetchFondPayouts,
-  postFondPayoutInvoice,
-  postFondPayoutProof,
-} from '../src/lib/api';
+import { fetchFondPayouts, postFondPayoutInvoice, postFondPayoutProof } from '../src/lib/api';
 import { runFondPayoutTick } from '../src/lib/wallet/fond-payouts';
 import type { WalletPayment } from '../src/lib/wallet/wallet-sdk';
 
@@ -144,9 +140,7 @@ test('Function: postFondPayoutProof — the fixture accepts a preimage as proof'
     postFondPayoutProof(FOND_SESSION, ROW_ID, PREIMAGE),
   );
   expect(posted).toEqual({ ok: true });
-  const refused = await withSameOriginFetch(() =>
-    postFondPayoutProof(FOND_SESSION, ROW_ID, ''),
-  );
+  const refused = await withSameOriginFetch(() => postFondPayoutProof(FOND_SESSION, ROW_ID, ''));
   expect(refused).toEqual({
     ok: false,
     status: 400,

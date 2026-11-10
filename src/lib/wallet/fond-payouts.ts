@@ -287,9 +287,7 @@ async function payAndProve(
  * @param deps - Session, api calls, wallet calls, and sleep.
  * @returns Counts of paid, proved, and skipped rows and the reason to stop.
  */
-export async function runFondPayoutTick(
-  deps: FondPayoutTickDeps,
-): Promise<FondPayoutTickResult> {
+export async function runFondPayoutTick(deps: FondPayoutTickDeps): Promise<FondPayoutTickResult> {
   const summary: FondPayoutTickResult = { paid: 0, proved: 0, skipped: 0, stop: null };
   const list = await deps.fetchFondPayouts(deps.session);
   if (!list.ok) {
@@ -334,9 +332,7 @@ let inFlightTick: Promise<FondPayoutTickResult> | null = null;
  * @param deps - Session, api calls, wallet calls, and sleep for a new tick.
  * @returns The settled result of the single in-flight tick.
  */
-export function runFondPayoutTickOnce(
-  deps: FondPayoutTickDeps,
-): Promise<FondPayoutTickResult> {
+export function runFondPayoutTickOnce(deps: FondPayoutTickDeps): Promise<FondPayoutTickResult> {
   if (inFlightTick !== null) {
     return inFlightTick;
   }

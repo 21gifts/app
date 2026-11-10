@@ -1,10 +1,6 @@
 // @vitest-environment node
 import { afterEach, describe, expect, it, vi, type Mock } from 'vitest';
-import {
-  fetchFondPayouts,
-  postFondPayoutInvoice,
-  postFondPayoutProof,
-} from '@/lib/api';
+import { fetchFondPayouts, postFondPayoutInvoice, postFondPayoutProof } from '@/lib/api';
 
 const PAYOUTS = {
   payouts: [{ id: 'row-1', kind: 'daily', status: 'owed', utcDay: '2026-11-10' }],

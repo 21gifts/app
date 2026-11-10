@@ -5221,11 +5221,10 @@ export async function postFondPayoutProof(
   id: string,
   preimage: string,
 ): Promise<{ ok: true } | FondPayoutFailure> {
-  const result = await fondPayoutRequest(
-    `/fond/payouts/${encodeURIComponent(id)}/proof`,
-    session,
-    { method: 'POST', body: { preimage } },
-  );
+  const result = await fondPayoutRequest(`/fond/payouts/${encodeURIComponent(id)}/proof`, session, {
+    method: 'POST',
+    body: { preimage },
+  });
   if ('ok' in result) {
     return result;
   }

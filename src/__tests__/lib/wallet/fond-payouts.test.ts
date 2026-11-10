@@ -218,9 +218,7 @@ describe('runFondPayoutTick rows', () => {
     vi.mocked(deps.listWalletPayments)
       .mockResolvedValueOnce([])
       .mockResolvedValueOnce([sentPayment({ status: 'pending', info: { paymentHash: HASH_A } })])
-      .mockResolvedValue([
-        sentPayment({ info: { paymentHash: HASH_A, preimage: PREIMAGE_A } }),
-      ]);
+      .mockResolvedValue([sentPayment({ info: { paymentHash: HASH_A, preimage: PREIMAGE_A } })]);
     await expect(tick(deps)).resolves.toEqual({
       paid: 1,
       proved: 1,

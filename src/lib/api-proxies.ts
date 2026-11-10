@@ -419,10 +419,7 @@ export async function proxyFondPayoutsGet(request: Request): Promise<Response> {
  * @param id - Payout row id from the path.
  * @returns The upstream response.
  */
-export async function proxyFondPayoutInvoicePost(
-  request: Request,
-  id: string,
-): Promise<Response> {
+export async function proxyFondPayoutInvoicePost(request: Request, id: string): Promise<Response> {
   return proxyApiRequest(request, `/fond/payouts/${encodeURIComponent(id)}/invoice`);
 }
 

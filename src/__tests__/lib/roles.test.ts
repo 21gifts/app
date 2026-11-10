@@ -19,14 +19,7 @@ describe('roleRank', () => {
     expect(roleRank('fond')).toBe(3);
     expect(roleRank('initiator')).toBe(4);
     expect(roleRank('founder')).toBe(5);
-    expect(ROLE_ORDER).toEqual([
-      'basis',
-      'verified',
-      'moderator',
-      'fond',
-      'initiator',
-      'founder',
-    ]);
+    expect(ROLE_ORDER).toEqual(['basis', 'verified', 'moderator', 'fond', 'initiator', 'founder']);
   });
 });
 

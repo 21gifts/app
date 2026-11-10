@@ -773,9 +773,7 @@ test('Function: GET — healthz is ok', async ({ request }) => {
   expect(await res.json()).toEqual({ status: 'ok' });
 });
 
-test('Function: FondPayoutSync — the loop requests nothing while signed out', async ({
-  page,
-}) => {
+test('Function: FondPayoutSync — the loop requests nothing while signed out', async ({ page }) => {
   expect(FOND_PAYOUT_INTERVAL_MS).toBe(60_000);
   await page.addInitScript(() => {
     localStorage.removeItem('21gifts.session');
