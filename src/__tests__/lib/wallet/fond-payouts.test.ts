@@ -79,9 +79,10 @@ function confirmResult(sent: { kind: 'paid' }): WalletPayResult {
 function depsFor(payouts: FondPayout[]): Mocked<FondPayoutTickDeps> {
   return {
     session: 'sess',
-    fetchFondPayouts: vi.fn<FondPayoutTickDeps['fetchFondPayouts']>(
-      async (_session: string) => ({ ok: true, payouts }),
-    ),
+    fetchFondPayouts: vi.fn<FondPayoutTickDeps['fetchFondPayouts']>(async (_session: string) => ({
+      ok: true,
+      payouts,
+    })),
     postFondPayoutInvoice: vi.fn<FondPayoutTickDeps['postFondPayoutInvoice']>(
       async (_session: string, id: string) => ({
         ok: true,
@@ -95,8 +96,8 @@ function depsFor(payouts: FondPayout[]): Mocked<FondPayoutTickDeps> {
     postFondPayoutProof: vi.fn<FondPayoutTickDeps['postFondPayoutProof']>(
       async (_session: string, _id: string, _preimage: string) => ({ ok: true }),
     ),
-    payFromWallet: vi.fn<FondPayoutTickDeps['payFromWallet']>(
-      async (_request: WalletPayRequest) => confirmResult({ kind: 'paid' }),
+    payFromWallet: vi.fn<FondPayoutTickDeps['payFromWallet']>(async (_request: WalletPayRequest) =>
+      confirmResult({ kind: 'paid' }),
     ),
     listWalletPayments: vi.fn<FondPayoutTickDeps['listWalletPayments']>(
       async (_page: { offset: number; limit: number }) => [] as WalletPayment[],
