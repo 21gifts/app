@@ -69,9 +69,7 @@ describe('ForumRoleHint', () => {
   });
 
   it('returns the Software Developer sentence for a verified member with the staff tag', () => {
-    renderWithLocale(
-      <ForumRoleHint role="verified" staffTag="software_developer" />,
-    );
+    renderWithLocale(<ForumRoleHint role="verified" staffTag="software_developer" />);
     expect(
       screen.getByText('This person builds 21.gifts and moderates the living room.'),
     ).toBeTruthy();

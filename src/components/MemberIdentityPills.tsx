@@ -73,8 +73,7 @@ export function MemberIdentityPills({
   if (profile === null) {
     return children(null, null);
   }
-  const hasRoleTag =
-    forumTaggedRole(effectiveRole(profile.role, profile.staffTag)) !== null;
+  const hasRoleTag = forumTaggedRole(effectiveRole(profile.role, profile.staffTag)) !== null;
   const roleTag = (
     <ForumRoleTag
       role={profile.role}
