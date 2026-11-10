@@ -3,6 +3,7 @@ import type { TrustChain } from '@/lib/api-types';
 import { layoutTrustChain, mergeTrustChain } from '@/lib/trust-chain';
 
 const FOUNDER = { id: 'f', name: 'Cyrill', role: 'founder' as const };
+const FOUNDER_SIBLING = { id: 'f2', name: 'Fran', role: 'founder' as const };
 const MODERATOR = { id: 'm', name: 'Severin', role: 'moderator' as const };
 const FOND = { id: 'fond', name: 'Fiona', role: 'fond' as const };
 const SOFTWARE_DEVELOPER = { id: 's', name: 'Sam', role: 'software_developer' as const };
@@ -108,7 +109,7 @@ describe('layoutTrustChain', () => {
     expect(laid.nodes.find((node) => node.id === 'ada')).toMatchObject({ x: 280, y: 112 });
   });
 
-  it('stacks a software developer in the moderator group and keeps sibling edge order', () => {
+  it('stacks a software developer between initiator and moderator by role rank', () => {
     const founderSibling = { id: 'f2', name: 'Fabian', role: 'founder' as const };
     const edges: TrustChain['edges'] = [
       { from: 'f', to: 'ada', kind: 'verify' },
@@ -183,6 +184,24 @@ describe('layoutTrustChain', () => {
     });
     expect(initFirst.nodes.find((node) => node.id === 'i')).toMatchObject({ x: 280, y: 16 });
     expect(initFirst.nodes.find((node) => node.id === 'm')).toMatchObject({ x: 280, y: 112 });
+  });
+
+  it('stacks siblings of every role by descending role rank regardless of edge order', () => {
+    const nodes = [FOUNDER, ADA, MODERATOR, SOFTWARE_DEVELOPER, INITIATOR, FOUNDER_SIBLING];
+    const expected = [FOUNDER_SIBLING, INITIATOR, SOFTWARE_DEVELOPER, MODERATOR, ADA];
+    const edgeOrders = [
+      [ADA, MODERATOR, SOFTWARE_DEVELOPER, INITIATOR, FOUNDER_SIBLING],
+      [FOUNDER_SIBLING, INITIATOR, SOFTWARE_DEVELOPER, MODERATOR, ADA],
+    ];
+    for (const siblings of edgeOrders) {
+      const laid = layoutTrustChain({
+        nodes,
+        edges: siblings.map((node) => ({ from: 'f', to: node.id, kind: 'verify' as const })),
+      });
+      expect(expected.map((node) => laid.nodes.find((row) => row.id === node.id)?.y)).toEqual([
+        16, 112, 208, 304, 400,
+      ]);
+    }
   });
 
   it('places a nested stack below the first child subtree, not in the same cell', () => {

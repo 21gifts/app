@@ -3154,7 +3154,7 @@ Builds the country list of the Shops filter from the pins of `GET /forum/message
 
 - **Purpose:** Client-side filter and sort of the already-loaded forum thread for the Active / No gifts yet / All / Most popular selector. Does not call the api; ranking is among the messages the loader already holds.
 - **Inputs:** `messages` (newest-first list from the api / loader merge) and `mode` (`active` | `unpaid` | `all` | `popular`).
-- **Returns / side effects:** A new array. `all` keeps input order including unpaid (`sats === 0`) notes. `active` keeps paid notes (`sats > 0`) and unpaid notes whose api role is at least `moderator`, so an unpaid note with `role: 'software_developer'` counts as a software developer, newest-first. A zero-sat ask is not active. `popular` keeps only paid notes, ordered by sats descending, then `createdAt` descending, then `id` descending. Never mutates the input array.
+- **Returns / side effects:** A new array. `all` keeps input order including unpaid (`sats === 0`) notes. `active` keeps paid notes (`sats > 0`) and unpaid notes without an ask (`goalSats` undefined) whose api role is at least `moderator`, so an unpaid note with `role: 'software_developer'` counts as a software developer, newest-first. A zero-sat ask is not active. `popular` keeps only paid notes, ordered by sats descending, then `createdAt` descending, then `id` descending. Never mutates the input array.
 - **Used by:** `ForumBoard`, `ForumLoader`.
 
 The No gifts yet mode keeps only loaded messages with exactly zero sats, including notes without a wallet, preserving input order. The board displays them newest first (same as Active/All). Active remains the default.

@@ -1,4 +1,5 @@
 import type { TrustChain, TrustChainEdge, TrustChainNode } from '@/lib/api-types';
+import { roleRank } from '@/lib/roles';
 
 /** Laid-out node width in CSS pixels. */
 export const TRUST_NODE_WIDTH = 176;
@@ -20,19 +21,6 @@ export const TRUST_CHAIN_ARC_LIFT = 56;
 
 /** Outer padding around the graph in CSS pixels. */
 const PAD = 16;
-
-/**
- * Stacked-sibling order follows descending role rank: founder, initiator,
- * software developer, fond, moderator, then verified.
- */
-const TRUST_STACK_ROLE_RANK: Record<TrustChainNode['role'], number> = {
-  founder: 0,
-  initiator: 1,
-  software_developer: 2,
-  fond: 3,
-  moderator: 4,
-  verified: 5,
-};
 
 /**
  * A Trust Chain node with chain-layout coordinates.
@@ -166,7 +154,7 @@ export function layoutTrustChain(chain: TrustChain): {
       if (leftNode === undefined || rightNode === undefined) {
         return 0;
       }
-      const byRole = TRUST_STACK_ROLE_RANK[leftNode.role] - TRUST_STACK_ROLE_RANK[rightNode.role];
+      const byRole = roleRank(rightNode.role) - roleRank(leftNode.role);
       if (byRole !== 0) {
         return byRole;
       }

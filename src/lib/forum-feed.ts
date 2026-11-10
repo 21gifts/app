@@ -5,8 +5,8 @@ import { roleAtLeast } from '@/lib/roles';
 export type ForumFeedMode = 'active' | 'unpaid' | 'all' | 'popular';
 
 /**
- * Default feed mode on the welcome forum (paid notes plus unpaid
- * moderator-group notes, newest-first).
+ * Default feed mode on the welcome forum (paid notes, or unpaid notes
+ * without an ask whose api role is at least moderator, newest-first).
  */
 export const DEFAULT_FORUM_FEED_MODE: ForumFeedMode = 'active';
 
@@ -84,7 +84,9 @@ export function hasUnseenForumPosts(
 }
 
 function isActiveForumMessage(message: ForumMessage): boolean {
-  return message.sats > 0 || roleAtLeast(message.role, 'moderator');
+  return (
+    message.sats > 0 || (message.goalSats === undefined && roleAtLeast(message.role, 'moderator'))
+  );
 }
 
 /**
@@ -93,7 +95,7 @@ function isActiveForumMessage(message: ForumMessage): boolean {
  * Ranking is among the already-loaded messages only. Does not mutate `messages`.
  *
  * @param messages - Newest-first list from the api / loader merge.
- * @param mode - Active (paid, or an unpaid moderator-group note, newest-first; a zero-sat ask stays out), No gifts yet (zero sats), All (unchanged), or Most popular (paid, sats desc).
+ * @param mode - Active (paid notes, or unpaid notes without an ask whose api role is at least moderator, newest-first), No gifts yet (zero sats), All (unchanged), or Most popular (paid, sats desc).
  * @returns A new array of visible messages for the mode.
  */
 export function visibleForumMessages(
