@@ -214,12 +214,58 @@ describe('sanitizeErrorMessage', () => {
     expect(sanitizeErrorMessage('GET:/x?t=abc ./y#z')).toBe('GET:/x?[q] ./y?[q]');
   });
 
-  it('reads a very long message without a digit in linear time', () => {
-    const long = `${'a'.repeat(100_000)} ${'x.'.repeat(50_000)} ${'b'.repeat(100_000)}@ ${'http://a,'.repeat(12_000)} ${'(/a'.repeat(30_000)} ${'=/a'.repeat(30_000)} ${'a:'.repeat(50_000)} ${"é'".repeat(50_000)}@ ${'add add add x '.repeat(70_000)} ${'eyJ-'.repeat(250_000)} ${'"a'.repeat(100_000)} ${'\\"'.repeat(250_000)} ${'&a'.repeat(100_000)} ${'%2'.repeat(70_000)} ${'\u200B'.repeat(100_000)} ${'ab\u200B'.repeat(150_000)} ${'x/?'.repeat(70_000)} ${'/x?a= '.repeat(40_000)}`;
+  it('reads hostile messages in linear time', () => {
+    // A ratio, not a fixed time: CI runners vary several-fold in speed, but a
+    // quadratic step still grows about 16-fold when its input grows 4-fold.
+    const hostile: ReadonlyArray<readonly [string, string, string]> = [
+      ['letters', 'a', ''],
+      ['dotted letters', 'x.', ''],
+      ['a long name before @', 'b', '@'],
+      ['URLs', 'http://a,', ''],
+      ['paths', '(/a', ''],
+      ['paths after =', '=/a', ''],
+      ['colons', 'a:', ''],
+      ['accents before @', "é'", '@'],
+      ['recovery words', 'add add add x ', ''],
+      ['JWT starts', 'eyJ-', ''],
+      ['quotes', '"a', ''],
+      ['escaped quotes', '\\"', ''],
+      ['ampersands', '&a', ''],
+      ['percent signs', '%2', ''],
+      ['zero-width spaces', '\u200B', ''],
+      ['split words', 'ab\u200B', ''],
+      ['query marks', 'x/?', ''],
+      ['query values', '/x?a= ', ''],
+      ['spaces', ' ', 'x'],
+      ['labels with open brackets', 'token: [', ''],
+      ['labels with spaces', 'seed   ', ''],
+    ];
+    const message = (unit: string, end: string, length: number): string =>
+      unit.repeat(Math.ceil(length / unit.length)) + end;
+    const bestOfThree = (text: string): number => {
+      let best = Number.POSITIVE_INFINITY;
+      for (let run = 0; run < 3; run += 1) {
+        const started = performance.now();
+        sanitizeErrorMessage(text);
+        best = Math.min(best, performance.now() - started);
+      }
+      return best;
+    };
+    for (const [name, unit, end] of hostile) {
+      const small = bestOfThree(message(unit, end, 50_000));
+      const large = bestOfThree(message(unit, end, 200_000));
+      // Under 5 ms the timer and the collector decide the ratio, and nothing
+      // that fast at 200,000 characters is quadratic.
+      if (large >= 5) {
+        expect(large / Math.max(small, 0.1), name).toBeLessThan(8);
+      }
+    }
+    // Backstop: about 1 MB of all patterns together stays far below 10 s.
+    const all = hostile.map(([, unit, end]) => message(unit, end, 50_000)).join(' ');
     const started = performance.now();
-    sanitizeErrorMessage(long);
-    expect(performance.now() - started).toBeLessThan(1_000);
-  });
+    sanitizeErrorMessage(all);
+    expect(performance.now() - started).toBeLessThan(10_000);
+  }, 120_000);
 
   it('replaces the whole name of an address in any script', () => {
     expect(sanitizeErrorMessage('Failed to send to andré@example.com')).toBe(
@@ -373,6 +419,10 @@ describe('sanitizeErrorMessage', () => {
     ['username=alice next', 'username=[token] next'],
     ['PRF output: 7,7,7,7', 'PRF output: [token]'],
     ['seed: 1, 2, 3; ok', 'seed: [token]; ok'],
+    ['PRF output: Uint8Array(4) [17, 34, 51, 68] done', 'PRF output: [token] done'],
+    ['seed=[17, 34] x', 'seed=[token] x'],
+    ['PRF    = 17, 34, 51, 68', 'PRF    = [token]'],
+    ['token\t:\n  abc def', 'token\t:\n  [token] def'],
     ['bad password = hunter2;', 'bad password = [token];'],
     ['Authorization:Bearer xyz', 'Authorization:[token] xyz'],
     ['x-api-key= qwerty end', 'x-api-key= [token] end'],

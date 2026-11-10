@@ -164,12 +164,17 @@ const QUERY_GOES_ON = /[=&]$/;
  */
 const LABEL_PARTS: readonly string[] = ['key', 'auth', 'session', 'user', 'credential', 'pass'];
 
-/** Separator after a label: an optional closing quote, then `=` or `:` with up to three spaces around it. */
-const LABEL_SEPARATOR = /["']?\s{0,3}[:=]\s{0,3}/g;
+/**
+ * Separator after a label: an optional closing quote, then `=` or `:` with
+ * any whitespace around it. It starts right after the label, never inside a
+ * run of whitespace, so each run is read once.
+ */
+const LABEL_SEPARATOR = /(?<!\s)["']?\s*[:=]\s*/g;
 
 /**
  * A label of one or two words at the start of a word (`token`, `PRF output`),
- * right at the end of the text it is matched against.
+ * right at the end of the text it is matched against. A label of three or more
+ * words is read by its last two.
  */
 const LABEL_BEFORE =
   /(?<![A-Za-z0-9_.-])[A-Za-z][A-Za-z0-9_.-]{0,40}(?: [A-Za-z][A-Za-z0-9_.-]{0,20})?$/;
@@ -178,11 +183,14 @@ const LABEL_BEFORE =
 const LABEL_MAX_LENGTH = 63;
 
 /**
- * The value after a label: a quoted string of up to 200 characters, or
- * everything up to a space, `;`, or `&`, also a list joined by `,` whose
- * further items hold only key characters (`7,7,7` or `7, 7, 7`, not `, "n":`).
+ * The value after a label: a bracketed list of up to 1000 characters that is
+ * not a placeholder, also after a typed-array name (`[17, 34]`, `Uint8Array(4) [17, 34, 51, 68]`), a
+ * quoted string of up to 200 characters, or everything up to a space, `;`, or
+ * `&`, also a list joined by `,` whose further items hold only key characters
+ * (`7,7,7` or `7, 7, 7`, not `, "n":`).
  */
-const LABEL_VALUE = /"[^"\n]{0,200}"|'[^'\n]{0,200}'|[^\s,;&]+(?:,\s?[A-Za-z0-9_.+/=-]+)*/y;
+const LABEL_VALUE =
+  /(?:[A-Za-z][A-Za-z0-9]{0,30}\(\d{1,9}\)\s?)?(?!\[(?:addr|hex|q|token|words)\])\[[^\]\n]{0,1000}\]|"[^"\n]{0,200}"|'[^'\n]{0,200}'|[^\s,;&]+(?:,\s?[A-Za-z0-9_.+/=-]+)*/y;
 
 /** A value that is only a placeholder this module wrote, which a label may already hold. */
 const PLACEHOLDER = /^\[(?:addr|hex|q|token|words)\]$/;
