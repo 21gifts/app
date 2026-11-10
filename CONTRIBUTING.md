@@ -1289,7 +1289,7 @@ online and the page visible, and the error's message only after
 an address (e-mail, `name@host`, a URL with a user name) becomes `[addr]`,
 URL and path query strings `?[q]`, invoices, addresses, extended keys, JSON
 web tokens, and other long base58, base64, or bech32 tokens `[token]`, 16 or
-more hex digits (also in `:` or `-` groups) `[hex]`, and last runs of three
+more hex digits (also in `:`, `-`, `.`, or `_` groups) `[hex]`, and last runs of three
 or more BIP-39 words `[words]`, cut to 200 characters. The error report passes it
 through that sanitizer once more before the scrubber. The thrown error
 itself, its other fields, and the SDK config are never sent.

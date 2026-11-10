@@ -60,6 +60,28 @@ describe('sanitizeErrorMessage', () => {
     );
   });
 
+  it.each([
+    ['sk_live_abcdef12345.abcdefghijklmnopqrstu1', '[token]'],
+    ['abcdefghijklmnopqrstu1.sfx12345678', '[token]'],
+    ['bc1qar0srrr7xfkvy5l643lydnw9re-59gtzzwf5mdq', '[token]'],
+    ['bc1qar0srrr7xfkvy5l643lydnw9re_59gtzzwf5mdq', '[token]'],
+    ['0123456789.abcdef', '[hex]'],
+    ['0123456789_abcdef', '[hex]'],
+    ['id_token_eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxIn0.c2lnbmF0dXJlLXRhaWw', '[token]'],
+  ])('replaces the whole split key %s', (key, placeholder) => {
+    expect(sanitizeErrorMessage(`k ${key} x`)).toBe(`k ${placeholder} x`);
+  });
+
+  it('reads a bracketed recovery word as a word', () => {
+    expect(sanitizeErrorMessage('[abandon] [ability] [able] [about]')).toBe('[[words]]');
+  });
+
+  it('keeps a base64 key with a slash whole and a sentence stop after it', () => {
+    expect(sanitizeErrorMessage('key AbC1/defghijklmnopqrstuvwxyz0123/xYz9q. Next')).toBe(
+      'key [token]. Next',
+    );
+  });
+
   it('replaces a dotted key with a digit and every part of a JWE', () => {
     expect(sanitizeErrorMessage('key sk_live.4eC39HqLyjWDarjtT1 bad')).toBe('key [token] bad');
     expect(sanitizeErrorMessage('key sk_live.4ec39hqlyjwdarjt bad')).toBe('key [token] bad');
@@ -102,6 +124,8 @@ describe('sanitizeErrorMessage', () => {
     'alice.smith＠example.com',
     'alice.smith﹫example.com',
     '"verylongname here"@example.com',
+    '"zzzzzzzzzz last"%40host.com',
+    `"${'z'.repeat(64)} z"@host.example`,
     'https://x.example/u/alice.smith%40example.com',
   ])('replaces the whole address %s', (address) => {
     expect(sanitizeErrorMessage(`to ${address} failed`)).toBe('to [addr] failed');
@@ -112,6 +136,8 @@ describe('sanitizeErrorMessage', () => {
     expect(sanitizeErrorMessage('example.com#abcdefghijkl')).toBe('example.com?[q]');
     expect(sanitizeErrorMessage('example.com？token=abcdefghijkl')).toBe('example.com?[q]');
     expect(sanitizeErrorMessage('example.com＃abcdefghijkl')).toBe('example.com?[q]');
+    expect(sanitizeErrorMessage('x%3Fsecretvalue y')).toBe('x?[q] y');
+    expect(sanitizeErrorMessage('x%23secretvalue')).toBe('x?[q]');
     expect(sanitizeErrorMessage("https://x.com/cb?code=abc'defghijklmnop")).toBe(
       'https://x.com/cb?[q]',
     );
@@ -136,7 +162,7 @@ describe('sanitizeErrorMessage', () => {
   });
 
   it('reads a very long message without a digit in linear time', () => {
-    const long = `${'a'.repeat(100_000)} ${'x.'.repeat(50_000)} ${'b'.repeat(100_000)}@ ${'http://a,'.repeat(12_000)} ${'(/a'.repeat(30_000)} ${'=/a'.repeat(30_000)} ${'a:'.repeat(50_000)} ${"é'".repeat(50_000)}@ ${'add add add x '.repeat(70_000)} ${'eyJ-'.repeat(250_000)}`;
+    const long = `${'a'.repeat(100_000)} ${'x.'.repeat(50_000)} ${'b'.repeat(100_000)}@ ${'http://a,'.repeat(12_000)} ${'(/a'.repeat(30_000)} ${'=/a'.repeat(30_000)} ${'a:'.repeat(50_000)} ${"é'".repeat(50_000)}@ ${'add add add x '.repeat(70_000)} ${'eyJ-'.repeat(250_000)} ${'"a'.repeat(100_000)}`;
     const started = performance.now();
     sanitizeErrorMessage(long);
     expect(performance.now() - started).toBeLessThan(1_000);
