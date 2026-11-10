@@ -179,13 +179,13 @@ const LABEL_MAX_LENGTH = 63;
 
 /**
  * The value after a label: a quoted string of up to 200 characters, or
- * everything up to a space, `;`, or `&`, also a list joined by `,` (`7,7,7`
- * or `7, 7, 7`).
+ * everything up to a space, `;`, or `&`, also a list joined by `,` whose
+ * further items hold only key characters (`7,7,7` or `7, 7, 7`, not `, "n":`).
  */
-const LABEL_VALUE = /"[^"\n]{0,200}"|'[^'\n]{0,200}'|[^\s,;&]+(?:,\s?[^\s,;&]+)*/y;
+const LABEL_VALUE = /"[^"\n]{0,200}"|'[^'\n]{0,200}'|[^\s,;&]+(?:,\s?[A-Za-z0-9_.+/=-]+)*/y;
 
-/** A placeholder this module wrote at the start of a value, which a label may already hold. */
-const PLACEHOLDER = /^\[(?:addr|hex|q|token|words)\]/;
+/** A value that is only a placeholder this module wrote, which a label may already hold. */
+const PLACEHOLDER = /^\[(?:addr|hex|q|token|words)\]$/;
 
 /**
  * Whether a label names a secret: one of {@link SENSITIVE_KEYS}, or it holds
@@ -207,7 +207,7 @@ function isSecretLabel(label: string): boolean {
  * Replaces the value after every label that names a secret
  * ({@link isSecretLabel}: `api_key=`, `token:`, `"secret": "…"`,
  * `password=`, `username=`, `PRF output:` and the like) by `[token]`, whatever
- * its characters are, unless it already starts with a placeholder. The label stays
+ * its characters are, unless it already is a placeholder. The label stays
  * readable. Each character is read a
  * bounded number of times.
  *

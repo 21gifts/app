@@ -377,6 +377,8 @@ describe('sanitizeErrorMessage', () => {
     ['Authorization:Bearer xyz', 'Authorization:[token] xyz'],
     ['x-api-key= qwerty end', 'x-api-key= [token] end'],
     ['user: [addr]', 'user: [addr]'],
+    ['user: [addr], bob', 'user: [token]'],
+    ['token: [hex], bob', 'token: [token]'],
   ])('replaces the value after a secret-naming label in %j', (message, sent) => {
     expect(sanitizeErrorMessage(message)).toBe(sent);
     expect(sanitizeErrorMessage(sent)).toBe(sent);
