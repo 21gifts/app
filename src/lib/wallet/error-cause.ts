@@ -32,6 +32,20 @@ const ESCAPED_SEPARATOR = /^(?:%[0-9A-Fa-f]{2}|\\[nrt]|&[a-z]+;)$/;
 /** Invisible format characters (soft hyphen, zero-width space and joiners). */
 const INVISIBLE = /[\u00AD\u200B-\u200D\u2060\uFEFF]/g;
 
+/** Whether a word holds an invisible format character. */
+const INVISIBLE_IN = /[\u00AD\u200B-\u200D\u2060\uFEFF]/;
+
+/**
+ * Whether a word is a recovery word once its invisible characters are removed
+ * and its fullwidth letters are read as ASCII.
+ *
+ * @param word - A word of {@link LETTERS}.
+ * @returns Whether it is one of {@link BIP39_WORDS}.
+ */
+function isRecoveryWord(word: string): boolean {
+  return BIP39_WORDS.has(word.replace(INVISIBLE, '').normalize('NFKC').toLowerCase());
+}
+
 /**
  * One run of characters a key, hash, token, or address can hold (letters,
  * digits, `+ / = _ . : -`), matched whole from its start, so each character
@@ -232,7 +246,9 @@ function replaceKeys(text: string): string {
 /**
  * Replaces every run of {@link MIN_WORD_RUN} or more BIP-39 English words in
  * a row, in any letter case and with any separator between them, by
- * `[words]`.
+ * `[words]`. A word with invisible format characters is one recovery word
+ * when it is one without them (`aban\u200Bdon`); otherwise each piece between
+ * them is a word of its own (`abandon\u200Bability`).
  *
  * @param text - Error message.
  * @returns The message with the runs replaced.
@@ -248,18 +264,32 @@ function replaceWordRuns(text: string): string {
     }
     count = 0;
   };
-  for (const match of text.matchAll(LETTERS)) {
-    if (ESCAPED_SEPARATOR.test(match[0])) {
-      continue;
-    }
-    if (BIP39_WORDS.has(match[0].replace(INVISIBLE, '').normalize('NFKC').toLowerCase())) {
+  const visit = (word: string, at: number): void => {
+    if (isRecoveryWord(word)) {
       if (count === 0) {
-        start = match.index;
+        start = at;
       }
-      end = match.index + match[0].length;
+      end = at + word.length;
       count += 1;
     } else {
       close();
+    }
+  };
+  for (const match of text.matchAll(LETTERS)) {
+    const word = match[0];
+    if (ESCAPED_SEPARATOR.test(word)) {
+      continue;
+    }
+    if (!INVISIBLE_IN.test(word) || isRecoveryWord(word)) {
+      visit(word, match.index);
+      continue;
+    }
+    let at = match.index;
+    for (const piece of word.split(INVISIBLE)) {
+      if (piece !== '') {
+        visit(piece, at);
+      }
+      at += piece.length + 1;
     }
   }
   close();

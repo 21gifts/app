@@ -59,6 +59,15 @@ describe('sanitizeErrorMessage', () => {
     expect(sanitizeErrorMessage('bad ｌｅｇａｌ ｗｉｎｎｅｒ ＴＨＡＮＫ here')).toBe(
       'bad [words] here',
     );
+    expect(sanitizeErrorMessage('bad abandon\u200Bability\u2060able here')).toBe(
+      'bad [words] here',
+    );
+    expect(sanitizeErrorMessage('x\u200Babandon\u200Bability\u200Bable\u200By')).toBe(
+      'x\u200B[words]\u200By',
+    );
+    expect(sanitizeErrorMessage('\u200B\u200Babandon\u200Bability\u200Bable')).toBe(
+      '\u200B\u200B[words]',
+    );
     expect(sanitizeErrorMessage('100%25 done, see &lt;x&gt; and C:\\temp')).toBe(
       '100%25 done, see &lt;x&gt; and C:\\temp',
     );
