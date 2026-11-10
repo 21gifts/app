@@ -1698,6 +1698,48 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/settings:heart-amount",
+    "label": "/settings heart-amount",
+    "visual": "state-settings-heart-amount",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/settings:heart-amount-fiat",
+    "label": "/settings heart-amount-fiat",
+    "visual": "state-settings-heart-amount-fiat",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/settings:heart-amount-invalid",
+    "label": "/settings heart-amount-invalid",
+    "visual": "state-settings-heart-amount-invalid",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/settings:heart-amount-saved",
+    "label": "/settings heart-amount-saved",
+    "visual": "state-settings-heart-amount-saved",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/settings:heart-amount-error",
+    "label": "/settings heart-amount-error",
+    "visual": "state-settings-heart-amount-error",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/settings:heart-amount-saving",
+    "label": "/settings heart-amount-saving",
+    "visual": "state-settings-heart-amount-saving",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/settings:heart-amount-no-rate",
+    "label": "/settings heart-amount-no-rate",
+    "visual": "state-settings-heart-amount-no-rate",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/settings:notification-level-gifted",
     "label": "/settings notification-level-gifted",
     "visual": "state-settings-notification-level-gifted",
@@ -4698,6 +4740,18 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/profile:replies-open-hearts",
+    "label": "/profile replies-open-hearts",
+    "visual": "state-profile-replies-open-hearts",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/profile:replies-open-hearts-role",
+    "label": "/profile replies-open-hearts-role",
+    "visual": "state-profile-replies-open-hearts-role",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/profile:shops-open",
     "label": "/profile shops-open",
     "visual": "state-profile-shops-open",
@@ -4851,6 +4905,18 @@
     "id": "/members/[accountId]:replies-open",
     "label": "/members/[accountId] replies-open",
     "visual": "state-members-replies-open",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/members/[accountId]:replies-open-hearts",
+    "label": "/members/[accountId] replies-open-hearts",
+    "visual": "state-members-replies-open-hearts",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/members/[accountId]:replies-open-hearts-role",
+    "label": "/members/[accountId] replies-open-hearts-role",
+    "visual": "state-members-replies-open-hearts-role",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
@@ -6351,6 +6417,18 @@
     "id": "/view/[viewKey]:default",
     "label": "/view/[viewKey] default",
     "visual": "screen-view-viewKey",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/view/[viewKey]:replies-open-hearts",
+    "label": "/view/[viewKey] replies-open-hearts",
+    "visual": "state-view-replies-open-hearts",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/view/[viewKey]:replies-open-hearts-role",
+    "label": "/view/[viewKey] replies-open-hearts-role",
+    "visual": "state-view-replies-open-hearts-role",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
@@ -7890,6 +7968,18 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/welcome:expanded-hearts",
+    "label": "/welcome expanded-hearts",
+    "visual": "state-welcome-expanded-hearts",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:expanded-hearts-role",
+    "label": "/welcome expanded-hearts-role",
+    "visual": "state-welcome-expanded-hearts-role",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/welcome:expanded-gifts",
     "label": "/welcome expanded-gifts",
     "visual": "state-welcome-expanded-gifts",
@@ -8481,6 +8571,18 @@
     "id": "/shops:default",
     "label": "/shops default",
     "visual": "screen-shops",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/shops:expanded-hearts",
+    "label": "/shops expanded-hearts",
+    "visual": "state-shops-expanded-hearts",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/shops:expanded-hearts-role",
+    "label": "/shops expanded-hearts-role",
+    "visual": "state-shops-expanded-hearts-role",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
@@ -9855,6 +9957,18 @@
     "id": "/messages/[id]:reply",
     "label": "/messages/[id] reply",
     "visual": "state-messages-id-reply",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/messages/[id]:reply-hearts",
+    "label": "/messages/[id] reply-hearts",
+    "visual": "state-messages-id-reply-hearts",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/messages/[id]:reply-hearts-role",
+    "label": "/messages/[id] reply-hearts-role",
+    "visual": "state-messages-id-reply-hearts-role",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {

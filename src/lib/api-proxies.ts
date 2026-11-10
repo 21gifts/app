@@ -676,6 +676,16 @@ export function proxyMeAmountUnitPost(request: Request): Promise<Response> {
 }
 
 /**
+ * Proxies POST /me/heart-sats to the 21.gifts api.
+ *
+ * @param request - Incoming App Router request (Bearer session + JSON `{ sats }`).
+ * @returns The upstream response.
+ */
+export function proxyMeHeartSatsPost(request: Request): Promise<Response> {
+  return proxyApiRequest(request, '/me/heart-sats');
+}
+
+/**
  * Proxies POST /me/locale to the 21.gifts api.
  *
  * @param request - Incoming App Router request (Bearer session + JSON body).

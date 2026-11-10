@@ -11,6 +11,7 @@ import {
   conversationResponseSchema,
   conversationSchema,
   conversationThreadSchema,
+  forumRepliesSchema,
   notificationListSchema,
   notificationSchema,
   forumListSchema,
@@ -61,6 +62,8 @@ import {
   type Notification,
   type NotificationList,
   type ForumMessage,
+  type ForumReplies,
+  type HeartSender,
   type ExternalAuthorProfile,
   type ForumPlacePin,
   type ForumPlaceRow,
@@ -1223,6 +1226,30 @@ export async function setAmountUnit(session: string, unit: AmountUnit): Promise<
   });
   if (!response.ok) {
     throw new Error('Could not save amount unit.');
+  }
+  return accountSchema.parse(await response.json());
+}
+
+/**
+ * Sets the whole-sat amount each heart click sends on the signed-in account.
+ *
+ * @param session - A bearer token from a completed challenge.
+ * @param sats - Whole sats from 1 through 10,000,000.
+ * @returns The updated {@link Account}.
+ * @throws Error on a non-2xx status or a body that fails {@link accountSchema}
+ * validation.
+ */
+export async function setHeartSats(session: string, sats: number): Promise<Account> {
+  const response = await fetch('/me/heart-sats', {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${session}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ sats }),
+  });
+  if (!response.ok) {
+    throw new Error('Could not save the heart amount.');
   }
   return accountSchema.parse(await response.json());
 }
@@ -2683,13 +2710,14 @@ export async function fetchShortLink(
  * error (not empty): the parent GET already 404s unknown ids.
  *
  * @param id - Parent forum message UUID.
- * @returns Reply list oldest-first (Damus authors may omit role; schema
- * defaults to basis).
+ * @returns Reply list oldest-first with the parent note's `hearts` newest
+ * first (Damus authors may omit role; schema defaults to basis). A missing
+ * `hearts` field is `[]`.
  * @throws Error with visitor-facing copy when the api is unavailable, the
  * id is unknown (404), the body is not JSON, or the body is not
  * `{ messages: array }`.
  */
-export async function fetchPublicReplies(id: string): Promise<ForumMessage[]> {
+export async function fetchPublicReplies(id: string): Promise<ForumReplies> {
   try {
     const response = await fetch(`/public-messages/${encodeURIComponent(id)}/replies`);
     if (!response.ok) {
@@ -2704,10 +2732,31 @@ export async function fetchPublicReplies(id: string): Promise<ForumMessage[]> {
     ) {
       throw new Error('Could not load messages. Please try again.');
     }
-    return forumMessageRowsSchema.parse(body.messages);
+    const parsed = forumRepliesSchema.parse(body);
+    return withReplyHearts(parsed.messages, parsed.hearts);
   } catch {
     throw new Error('Could not load messages. Please try again.');
   }
+}
+
+/**
+ * Attaches the parent note's paid hearts to a reply array.
+ *
+ * The property is non-enumerable so existing callers and tests that compare
+ * the reply rows as a plain array keep their meaning, while `.hearts` is
+ * still available everywhere.
+ *
+ * @param messages - Parsed replies, oldest first.
+ * @param hearts - Paid hearts, newest first.
+ * @returns The same array with `hearts` attached.
+ */
+function withReplyHearts(messages: ForumMessage[], hearts: HeartSender[]): ForumReplies {
+  Object.defineProperty(messages, 'hearts', {
+    value: hearts,
+    enumerable: false,
+    configurable: true,
+  });
+  return messages;
 }
 
 /**
@@ -2715,13 +2764,14 @@ export async function fetchPublicReplies(id: string): Promise<ForumMessage[]> {
  *
  * @param sessionToken - A bearer token from a completed challenge.
  * @param id - Parent forum message UUID.
- * @returns Reply list (Damus authors may omit role; schema defaults to basis).
- * Items that fail {@link forumMessageSchema} are skipped; none surviving
- * returns `[]`.
+ * @returns Reply list oldest-first with the parent note's `hearts` newest
+ * first (Damus authors may omit role; schema defaults to basis). A missing
+ * `hearts` field is `[]`. Items that fail {@link forumMessageSchema} are
+ * skipped; none surviving returns an empty list.
  * @throws Error with visitor-facing copy when the api is unavailable, the
  * body is not JSON, or the body is not `{ messages: array }`.
  */
-export async function fetchReplies(sessionToken: string, id: string): Promise<ForumMessage[]> {
+export async function fetchReplies(sessionToken: string, id: string): Promise<ForumReplies> {
   try {
     const response = await fetch(`/forum/messages/${encodeURIComponent(id)}/replies`, {
       headers: { Authorization: `Bearer ${sessionToken}` },
@@ -2738,7 +2788,10 @@ export async function fetchReplies(sessionToken: string, id: string): Promise<Fo
     ) {
       throw new Error('Could not load messages. Please try again.');
     }
-    return forumMessageRowsSchema.parse(body.messages);
+    const parsed = forumRepliesSchema.parse(body);
+    const messages = parsed.messages;
+    const hearts: HeartSender[] = parsed.hearts;
+    return withReplyHearts(messages, hearts);
   } catch {
     throw new Error('Could not load messages. Please try again.');
   }
@@ -3069,7 +3122,8 @@ export async function fetchComposeTarget(
  * @param sats - Whole satoshis to pay (≥ 1).
  * @param text - Optional NIP-57 comment shown as the gift reply body.
  * @param shown - Fiat on screen for these sats. Stored with the payment and not recomputed.
- * @param heart - When true, the body includes `heart: true` (a 1-sat heart with
+ * @param heart - When true, the body includes `heart: true` (a heart of `sats`
+ *   with
  *   no comment). Omitted by existing callers.
  * @returns `{ pr, amountSats }` for the in-app wallet. The body may also carry
  *   `sparkInvoice`, which the in-app wallet pays instead of `pr`.

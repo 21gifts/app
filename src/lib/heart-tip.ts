@@ -4,6 +4,7 @@ import { captureMessage } from '@sentry/nextjs';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useSpotRate } from '@/hooks/useSpotRate';
 import { CannotReceiveError, postMessageInvoice, WalletRequiredError } from '@/lib/api';
+import { accountHeartSats } from '@/lib/api-types';
 import { shownFiatForSats, type FiatRateDay } from '@/lib/stats-money';
 import { logInteraction } from '@/lib/interaction-log';
 import { visualPin } from '@/lib/visual-pin';
@@ -190,7 +191,7 @@ export type HeartTipOutcome =
  * A heart whose send timed out: the Spark invoice it paid, when, and `sent`
  * once the SDK reported that the late send went out.
  */
-type UnsettledHeart = { invoice: string; sinceMs: number; sent: boolean };
+type UnsettledHeart = { invoice: string; sinceMs: number; sent: boolean; notified: boolean };
 
 /**
  * Hearts whose send timed out, by note id, for this tab. The payment may still
@@ -224,6 +225,8 @@ export type HeartTipInput = {
   canUnlockWallet: boolean;
   /** Spot at the click, or missing when that price is not loaded. */
   rateDay?: FiatRateDay | null;
+  /** Whole sats this heart sends, read from `account.heartSats ?? 1` at the click. */
+  heartSats: number;
 };
 
 /**
@@ -284,7 +287,7 @@ function mapInvoiceError(err: unknown): HeartTipFailure {
 
 /**
  * True when the wallet snapshot already shows that the balance cannot cover
- * a 1-sat heart: the wallet is ready with less than 1 sat. In a Playwright
+ * this heart: the wallet is ready with less than `input.heartSats`. In a Playwright
  * build, `?visual=heart-needs-balance` (via {@link visualPin}) forces it for
  * the screenshot; production ignores that pin.
  *
@@ -296,7 +299,9 @@ function lacksHeartBalance(input: HeartTipInput): boolean {
     return true;
   }
   return (
-    input.walletStatus === 'ready' && typeof input.balanceSats === 'number' && input.balanceSats < 1
+    input.walletStatus === 'ready' &&
+    typeof input.balanceSats === 'number' &&
+    input.balanceSats < input.heartSats
   );
 }
 
@@ -318,18 +323,20 @@ function reportHeartFailure(messageId: string, reason: HeartTipFailure): void {
 }
 
 /**
- * True when the live wallet is ready with a confirmed zero balance.
+ * True when the live wallet is ready with a confirmed balance below the
+ * amount this heart needs.
  *
+ * @param heartSats - Whole sats the click sends.
  * @returns Whether a heart must stop with `insufficient_balance`.
  */
-function liveReadyBalanceIsZero(): boolean {
+function liveBalanceBelow(heartSats: number): boolean {
   const { status, balanceSats } = useWalletStore.getState();
-  return status === 'ready' && balanceSats === 0;
+  return status === 'ready' && typeof balanceSats === 'number' && balanceSats < heartSats;
 }
 
 /**
  * Records a heart payment that did not go out as the member event
- * `payment_failed` (flow `heart`, 1 sat). Hearts are not sent to error
+ * `payment_failed` (flow `heart`, the click's `heartSats`). Hearts are not sent to error
  * reporting as `Payment failed`: {@link sendHeartTip} reports them as
  * `Heart not sent`.
  *
@@ -342,7 +349,7 @@ function recordHeartPaymentFailure(
   input: HeartTipInput,
   sentLate?: Promise<boolean>,
 ): void {
-  reportPaymentFailure({ ...failure, amountSats: 1 }, 'heart', {
+  reportPaymentFailure({ ...failure, amountSats: input.heartSats }, 'heart', {
     session: input.sessionToken,
     sentLate,
   });
@@ -350,56 +357,59 @@ function recordHeartPaymentFailure(
 
 /**
  * Pays a prepared heart invoice. `confirm` sends at once, but only when the
- * prepared payment is exactly 1 sat with a fee of ₿0; anything else is
- * `heart_unavailable` and nothing is sent. `insufficient` or a ready zero
- * balance is `insufficient_balance`. A sent heart is recorded as `heart_sent` under the session
- * of the click, also when the SDK finishes a send the app stopped waiting for.
+ * prepared payment is exactly `input.heartSats` with a fee of ₿0; anything else is
+ * `heart_unavailable` and nothing is sent. `insufficient` or a ready balance
+ * below `input.heartSats` is `insufficient_balance`. A sent heart is recorded
+ * as `heart_sent` under the session of the click, also when the SDK finishes
+ * a send the app stopped waiting for.
  * A send that timed out (`sentLate`) is remembered for this note until its
  * outcome is known, so a retap waits instead of paying again: `sentLate`
  * `true` marks it sent, `false` forgets it. Every outcome that is not paid is
  * also recorded as `payment_failed` (see {@link recordHeartPaymentFailure}),
- * a prepared heart that is not 1 sat at ₿0 as `amount_mismatch`.
+ * a prepared heart that is not `input.heartSats` at ₿0 as `amount_mismatch`.
  *
  * @param result - Outcome of {@link payFromWallet}.
  * @param input - Click snapshot: the message id and the session.
  * @param invoice - Spark invoice that was prepared.
+ * @param onPaid - Called once when this send pays later after the app stopped waiting.
  * @returns Paid, or why the heart was not sent.
  */
 async function finishPreparedPay(
   result: WalletPayResult,
   input: HeartTipInput,
   invoice: string,
+  onPaid?: (messageId: string) => void,
 ): Promise<HeartTipOutcome> {
   if (result.kind !== 'confirm') {
     recordHeartPaymentFailure(result.failure, input);
     return {
       kind: 'failed',
       reason:
-        result.kind === 'insufficient' || liveReadyBalanceIsZero()
+        result.kind === 'insufficient' || liveBalanceBelow(input.heartSats)
           ? 'insufficient_balance'
           : 'payment_failed',
     };
   }
-  if (liveReadyBalanceIsZero()) {
+  if (liveBalanceBelow(input.heartSats)) {
     recordHeartPaymentFailure(
       {
         stage: 'prepare',
         reason: 'insufficient',
         method: result.method,
-        amountSats: 1,
+        amountSats: input.heartSats,
         feeSats: result.feeSats,
       },
       input,
     );
     return { kind: 'failed', reason: 'insufficient_balance' };
   }
-  if (result.amountSats !== 1 || result.feeSats > 0) {
+  if (result.amountSats !== input.heartSats || result.feeSats > 0) {
     recordHeartPaymentFailure(
       {
         stage: 'prepare',
         reason: 'amount_mismatch',
         method: result.method,
-        amountSats: 1,
+        amountSats: input.heartSats,
         feeSats: result.feeSats,
       },
       input,
@@ -408,7 +418,11 @@ async function finishPreparedPay(
   }
   const sent = await result.send();
   const recordHeart = (): void => {
-    logInteraction('heart_sent', { messageId: input.messageId, amountSats: 1 }, input.sessionToken);
+    logInteraction(
+      'heart_sent',
+      { messageId: input.messageId, amountSats: input.heartSats },
+      input.sessionToken,
+    );
   };
   if (sent.kind === 'paid') {
     recordHeart();
@@ -420,12 +434,24 @@ async function finishPreparedPay(
     return { kind: 'failed', reason: 'insufficient_balance' };
   }
   if (sentLate !== undefined) {
-    const held: UnsettledHeart = { invoice, sinceMs: Date.now(), sent: false };
+    const held: UnsettledHeart = {
+      invoice,
+      sinceMs: Date.now(),
+      sent: false,
+      notified: false,
+    };
     unsettledHearts.set(input.messageId, held);
     void sentLate.then((late) => {
       if (late) {
         recordHeart();
         held.sent = true;
+        if (!held.notified) {
+          held.notified = true;
+          onPaid?.(input.messageId);
+        }
+        if (unsettledHearts.get(input.messageId) === held) {
+          unsettledHearts.delete(input.messageId);
+        }
       } else if (unsettledHearts.get(input.messageId) === held) {
         unsettledHearts.delete(input.messageId);
       }
@@ -437,11 +463,14 @@ async function finishPreparedPay(
 
 /**
  * Settles a heart on this note whose send timed out. A late send the SDK
- * reported as sent counts as paid and nothing new is sent. Otherwise the
- * wallet's newest payments decide: a completed payment is the heart that was asked for, so it counts
- * as paid and nothing new is sent. A failed payment, or one still missing
- * after {@link HEART_TIP_UNSETTLED_MS}, clears the note. A pending payment, a
- * payment not listed yet, or a list that cannot be read keeps it waiting.
+ * reported as sent and booked while the wallet was read clears the old heart,
+ * so the retap sends its own new heart. Otherwise the wallet's newest payments
+ * decide: a completed payment is the heart that was asked for, so it counts as
+ * paid and nothing new is sent. Marking that payment notified keeps a later
+ * `sentLate` callback silent.
+ * A failed payment, or one still missing after {@link HEART_TIP_UNSETTLED_MS},
+ * clears the note. A pending payment, a payment not listed yet, or a list that
+ * cannot be read keeps it waiting.
  *
  * @param messageId - Note the heart is for.
  * @returns `clear` to send a new heart, `paid`, or `pending`.
@@ -451,20 +480,16 @@ async function settleUnsettledHeart(messageId: string): Promise<'clear' | 'paid'
   if (held === undefined) {
     return 'clear';
   }
-  if (held.sent) {
-    unsettledHearts.delete(messageId);
-    return 'paid';
-  }
   let payments;
   try {
     payments = await listWalletPayments({ offset: 0, limit: HEART_TIP_LOOKUP_LIMIT });
   } catch {
     return 'pending';
   }
-  // `sentLate` may have reported the send while the list was being read.
+  // `sentLate` may have booked the old heart while the list was being read. In
+  // that case this retap is still a new click and must send its own heart.
   if (held.sent) {
-    unsettledHearts.delete(messageId);
-    return 'paid';
+    return 'clear';
   }
   const match = payments.find(
     (payment) => payment.direction === 'sent' && payment.info.invoice === held.invoice,
@@ -479,8 +504,12 @@ async function settleUnsettledHeart(messageId: string): Promise<'clear' | 'paid'
   if (match.status === 'pending') {
     return 'pending';
   }
+  const completed = match.status === 'completed';
+  if (completed) {
+    held.notified = true;
+  }
   unsettledHearts.delete(messageId);
-  return match.status === 'completed' ? 'paid' : 'clear';
+  return completed ? 'paid' : 'clear';
 }
 
 /**
@@ -489,11 +518,13 @@ async function settleUnsettledHeart(messageId: string): Promise<'clear' | 'paid'
  *
  * @param sparkInvoice - The api's fee-free Spark invoice for this heart.
  * @param input - Click snapshot, including unlock eligibility.
+ * @param onPaid - Called once when this send pays later after the app stopped waiting.
  * @returns Paid, or why the heart was not sent.
  */
 async function payHeartInvoice(
   sparkInvoice: string,
   input: HeartTipInput,
+  onPaid?: (messageId: string) => void,
 ): Promise<HeartTipOutcome> {
   const first = await payFromWallet({ type: 'input', input: sparkInvoice });
   if (first.kind === 'unlock') {
@@ -501,20 +532,20 @@ async function payHeartInvoice(
       const unlocked = await unlockWalletPhrase();
       if (unlocked === 'unlocked') {
         const second = await payFromWallet({ type: 'input', input: sparkInvoice });
-        return finishPreparedPay(second, input, sparkInvoice);
+        return finishPreparedPay(second, input, sparkInvoice, onPaid);
       }
     }
     recordHeartPaymentFailure(first.failure, input);
     return { kind: 'failed', reason: 'payment_failed' };
   }
-  return finishPreparedPay(first, input, sparkInvoice);
+  return finishPreparedPay(first, input, sparkInvoice, onPaid);
 }
 
 /**
- * Sends a 1-sat heart on a forum note or reply. No amount dialog, no gift
+ * Sends a heart of `input.heartSats` on a forum note or reply. No amount dialog, no gift
  * sheet, no comment text. A missing session or a read-only board is silent.
  * A heart is paid only through the api's fee-free Spark invoice, for exactly
- * 1 sat and a fee of ₿0: without a Spark invoice, or when the prepared payment
+ * `input.heartSats` and a fee of ₿0: without a Spark invoice, or when the prepared payment
  * differs, nothing is sent and the reason is `heart_unavailable` (never the
  * Lightning `pr`). While an earlier heart on the same note timed out and its
  * outcome is not known, nothing is invoiced and the reason is
@@ -530,10 +561,14 @@ async function payHeartInvoice(
  * clock cannot hide the shot.
  *
  * @param input - Click snapshot for one `messageId`.
+ * @param onPaid - Called once when a send that timed out later pays.
  * @returns `noop`, `paid`, or why the heart was not sent.
  */
-export async function sendHeartTip(input: HeartTipInput): Promise<HeartTipOutcome> {
-  const outcome = await runHeartTip(input);
+export async function sendHeartTip(
+  input: HeartTipInput,
+  onPaid?: (messageId: string) => void,
+): Promise<HeartTipOutcome> {
+  const outcome = await runHeartTip(input, onPaid);
   if (outcome.kind === 'failed' && outcome.reason !== 'no_balance') {
     reportHeartFailure(input.messageId, outcome.reason);
   }
@@ -544,9 +579,13 @@ export async function sendHeartTip(input: HeartTipInput): Promise<HeartTipOutcom
  * The checks and the payment of {@link sendHeartTip}, without the report.
  *
  * @param input - Click snapshot for one `messageId`.
+ * @param onPaid - Called once when a send that timed out later pays.
  * @returns `noop`, `paid`, or why the heart was not sent.
  */
-async function runHeartTip(input: HeartTipInput): Promise<HeartTipOutcome> {
+async function runHeartTip(
+  input: HeartTipInput,
+  onPaid?: (messageId: string) => void,
+): Promise<HeartTipOutcome> {
   if (input.sessionToken === null || input.readOnly) {
     return { kind: 'noop' };
   }
@@ -571,7 +610,7 @@ async function runHeartTip(input: HeartTipInput): Promise<HeartTipOutcome> {
   }
   heartsInFlight.add(input.messageId);
   try {
-    return await invoiceAndPayHeart(input.messageId, input.sessionToken, input);
+    return await invoiceAndPayHeart(input.messageId, input.sessionToken, input, onPaid);
   } finally {
     heartsInFlight.delete(input.messageId);
   }
@@ -584,12 +623,14 @@ async function runHeartTip(input: HeartTipInput): Promise<HeartTipOutcome> {
  * @param messageId - Note the heart is for.
  * @param sessionToken - Bearer session.
  * @param input - Click snapshot.
+ * @param onPaid - Called once when a send that timed out later pays.
  * @returns Paid, or why the heart was not sent.
  */
 async function invoiceAndPayHeart(
   messageId: string,
   sessionToken: string,
   input: HeartTipInput,
+  onPaid?: (messageId: string) => void,
 ): Promise<HeartTipOutcome> {
   const held = await settleUnsettledHeart(messageId);
   if (held === 'paid') {
@@ -603,15 +644,22 @@ async function invoiceAndPayHeart(
     const shown =
       input.rateDay === undefined || input.rateDay === null
         ? undefined
-        : shownFiatForSats(1, input.rateDay);
-    invoice = await postMessageInvoice(sessionToken, messageId, 1, undefined, shown, true);
+        : shownFiatForSats(input.heartSats, input.rateDay);
+    invoice = await postMessageInvoice(
+      sessionToken,
+      messageId,
+      input.heartSats,
+      undefined,
+      shown,
+      true,
+    );
   } catch (err) {
     return { kind: 'failed', reason: mapInvoiceError(err) };
   }
   if (typeof invoice.sparkInvoice !== 'string' || invoice.sparkInvoice === '') {
     return { kind: 'failed', reason: 'heart_unavailable' };
   }
-  return payHeartInvoice(invoice.sparkInvoice, input);
+  return payHeartInvoice(invoice.sparkInvoice, input, onPaid);
 }
 
 /**
@@ -798,16 +846,18 @@ export function heartFailureView(
  *
  * @param options - `readOnly` matches the board (`true` when signed out).
  *   `heartCounts` maps shown note ids to the server heart count; omit for `{}`.
+ *   `onPaid` runs after this click's payment succeeded, with its message id.
  * @returns Click handler and the per-id views to pass to the forum board.
  */
 export function useHeartTip(options: {
   readOnly: boolean;
   heartCounts?: Readonly<Record<string, number>>;
+  onPaid?: (messageId: string) => void;
 }): {
   onHeartTip: (messageId: string) => void;
   heartTipViews: Readonly<Record<string, HeartTipView>>;
 } {
-  const { readOnly } = options;
+  const { readOnly, onPaid } = options;
   const rateDay = useSpotRate();
   const heartCounts = options.heartCounts ?? {};
   const [heartTipViews, setHeartTipViews] = useState<Record<string, HeartTipView>>({});
@@ -865,6 +915,7 @@ export function useHeartTip(options: {
         needsWalletSetup: needsWalletSetup(account),
         canUnlockWallet: canUnlockWallet(account),
         rateDay,
+        heartSats: accountHeartSats(account),
       };
       const existingTimer = timersRef.current.get(messageId);
       if (existingTimer !== undefined) {
@@ -903,15 +954,9 @@ export function useHeartTip(options: {
       const map = sentRef.current;
       const existing = map[messageId];
       const extra = existing === undefined ? 1 : existing.extra + 1;
-      if (existing === undefined) {
-        const server = heartCountsRef.current[messageId];
-        map[messageId] = {
-          base: server === undefined ? 0 : server,
-          extra,
-        };
-      } else {
-        map[messageId] = { base: existing.base, extra };
-      }
+      const baseAtTap =
+        existing === undefined ? (heartCountsRef.current[messageId] ?? 0) : existing.base;
+      map[messageId] = { base: baseAtTap, extra };
       writeHeartSentMap(map);
       setHeartTipViews((prev) => ({
         ...prev,
@@ -924,12 +969,50 @@ export function useHeartTip(options: {
         }, HEART_TIP_PLUS_ONE_MS);
         timersRef.current.set(messageId, timer);
       }
-      void sendHeartTip(input).then((outcome) => {
+      let outcomeDone = false;
+      let latePaid = false;
+      let extraRolledBack = false;
+      const restoreLateExtra = (): void => {
+        if (!outcomeDone) {
+          return;
+        }
+        if (extraRolledBack) {
+          extraRolledBack = false;
+          const sent = sentRef.current;
+          const entry = sent[messageId];
+          sent[messageId] =
+            entry === undefined
+              ? { base: baseAtTap, extra: 1 }
+              : { base: entry.base, extra: entry.extra + 1 };
+          writeHeartSentMap(sent);
+          reconcileHeartCounts(
+            heartCountsRef.current,
+            true,
+            sentRef,
+            lastSignatureRef,
+            lastAppliedRef,
+            setHeartTipViews,
+          );
+        }
+        onPaid?.(messageId);
+      };
+      const noteLatePaid = (): void => {
+        latePaid = true;
+        restoreLateExtra();
+      };
+      void sendHeartTip(input, noteLatePaid).then((outcome) => {
+        outcomeDone = true;
         if (outcome.kind === 'paid') {
+          onPaid?.(messageId);
+          return;
+        }
+        if (latePaid) {
+          restoreLateExtra();
           return;
         }
         const sent = sentRef.current;
         const entry = sent[messageId];
+        extraRolledBack = true;
         if (entry !== undefined) {
           const nextExtra = entry.extra - 1;
           if (nextExtra <= 0) {
@@ -949,7 +1032,7 @@ export function useHeartTip(options: {
         }));
       });
     },
-    [readOnly, rateDay],
+    [onPaid, readOnly, rateDay],
   );
 
   return { onHeartTip, heartTipViews };

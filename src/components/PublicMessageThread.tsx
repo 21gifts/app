@@ -21,7 +21,13 @@ import {
   postMessageInvoice,
   WalletRequiredError,
 } from '@/lib/api';
-import { FORUM_MESSAGE_MAX_LENGTH, type AmountUnit, type ForumMessage } from '@/lib/api-types';
+import {
+  FORUM_MESSAGE_MAX_LENGTH,
+  accountHeartSats,
+  type AmountUnit,
+  type ForumMessage,
+  type HeartSender,
+} from '@/lib/api-types';
 import { replyTextIsTooLong } from '@/lib/entry-text';
 import { useHeartTip } from '@/lib/heart-tip';
 import { MissingRequirementsError, nextPostRequirement } from '@/lib/missing-requirements';
@@ -201,8 +207,10 @@ export function PublicMessageThread(props: {
   expandedIdRef.current = expandedId;
   const expandGen = useRef(0);
   const [replies, setReplies] = useState<ForumMessage[] | null>(null);
+  const [replyHearts, setReplyHearts] = useState<HeartSender[]>([]);
   const repliesRef = useRef(replies);
   repliesRef.current = replies;
+  const reloadRepliesRef = useRef<() => void>(() => undefined);
   const heartCounts = useMemo(() => {
     const counts: Record<string, number> = { [note.id]: note.heartCount };
     const boardReplies = expandedId === null ? null : replies;
@@ -216,6 +224,9 @@ export function PublicMessageThread(props: {
   const { onHeartTip, heartTipViews } = useHeartTip({
     readOnly: session === null,
     heartCounts,
+    onPaid: () => {
+      reloadRepliesRef.current();
+    },
   });
   const [repliesLoading, setRepliesLoading] = useState(true);
   const [repliesError, setRepliesError] = useState(false);
@@ -355,6 +366,7 @@ export function PublicMessageThread(props: {
     const gen = ++expandGen.current;
     setExpandedId(root.id);
     setReplies(null);
+    setReplyHearts([]);
     setRepliesLoading(true);
     setRepliesError(false);
     setReplyDraft('');
@@ -372,6 +384,7 @@ export function PublicMessageThread(props: {
         const next = await fetchReplies(token, messageId);
         if (expandGen.current === gen) {
           setReplies(withSeededHiddenReply(next, seedReply, root.id, messageId));
+          setReplyHearts(next.hearts ?? []);
         }
       } catch {
         if (expandGen.current === gen) {
@@ -516,6 +529,7 @@ export function PublicMessageThread(props: {
                   const repliesNext = await fetchReplies(current.session, threadId);
                   if (expandGen.current === gen) {
                     setReplies(withSeededHiddenReply(repliesNext, seedReply, root.id, threadId));
+                    setReplyHearts(repliesNext.hearts ?? []);
                   }
                 } catch {
                   if (expandGen.current === gen) {
@@ -979,6 +993,7 @@ export function PublicMessageThread(props: {
       ++expandGen.current;
       setExpandedId(null);
       setReplies(null);
+      setReplyHearts([]);
       setRepliesError(false);
       setRepliesLoading(false);
       setReplyDraft('');
@@ -989,6 +1004,7 @@ export function PublicMessageThread(props: {
     const gen = ++expandGen.current;
     setExpandedId(messageId);
     setReplies(null);
+    setReplyHearts([]);
     setRepliesLoading(true);
     setRepliesError(false);
     setReplyDraft('');
@@ -1007,6 +1023,7 @@ export function PublicMessageThread(props: {
         const next = await fetchReplies(session, messageId);
         if (expandGen.current === gen) {
           setReplies(withSeededHiddenReply(next, seedReply, root.id, messageId));
+          setReplyHearts(next.hearts ?? []);
         }
       } catch {
         if (expandGen.current === gen) {
@@ -1122,6 +1139,7 @@ export function PublicMessageThread(props: {
         const next = await fetchReplies(session, messageId);
         if (expandGen.current === gen) {
           setReplies(withSeededHiddenReply(next, seedReply, root.id, messageId));
+          setReplyHearts(next.hearts ?? []);
         }
       } catch {
         if (expandGen.current === gen) {
@@ -1134,6 +1152,8 @@ export function PublicMessageThread(props: {
       }
     })();
   };
+
+  reloadRepliesRef.current = handleRetryReplies;
 
   const handleDeleted = (messageId: string): void => {
     if (messageId === note.id) {
@@ -1243,6 +1263,7 @@ export function PublicMessageThread(props: {
         onPayOpen={handlePayOpen}
         viewerAccountId={account?.id ?? null}
         heartViewerId={account?.id ?? null}
+        heartViewerSats={account === null ? null : accountHeartSats(account)}
         onHeartTip={onHeartTip}
         heartTipViews={heartTipViews}
         onPayDraftChange={(value: string): void => {
@@ -1256,6 +1277,7 @@ export function PublicMessageThread(props: {
         expandedId={expandedId}
         onToggleExpand={handleToggleExpand}
         replies={expandedId === null ? null : replies}
+        replyHearts={expandedId === null ? [] : replyHearts}
         repliesLoading={expandedId !== null && repliesLoading}
         repliesError={expandedId !== null && repliesError}
         replyDraft={replyDraft}

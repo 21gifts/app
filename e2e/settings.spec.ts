@@ -235,7 +235,7 @@ test('settings offers the username form while no username is set', async ({ page
   await page.goto('/settings');
   const wallet = page.getByRole('region', { name: 'Wallet' });
   await expect(wallet.getByText('Set a username first.')).toBeVisible();
-  await wallet.getByRole('textbox').fill('grace');
+  await wallet.getByRole('textbox', { name: 'Your 21.gifts name' }).fill('grace');
   await wallet.getByRole('button', { name: 'Continue' }).click();
   await expect(wallet.getByText('grace@21.gifts')).toBeVisible();
   await expect(wallet.getByText('Set a username first.')).toHaveCount(0);
@@ -280,6 +280,48 @@ test('Function: saveAmountUnit — the Settings default amount saves fiat on the
   await group.getByRole('button', { name: 'USD' }).click();
   expect((await saved).postDataJSON()).toEqual({ unit: 'fiat' });
   await expect(group.getByRole('button', { name: 'USD' })).toHaveAttribute('aria-pressed', 'true');
+});
+
+test('Function: saveHeartSats — the Settings heart amount saves 21 on the account', async ({
+  page,
+}) => {
+  await signIn(page, 'cred-seed');
+  await page.route(/\/me\/heart-sats$/, async (route) => {
+    const body = route.request().postDataJSON() as { sats?: number };
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        id: 'acc_e2e',
+        linkingKey: `02${'a'.repeat(62)}`,
+        role: 'basis',
+        name: 'Ada',
+        username: 'ada',
+        location: null,
+        lightningAddress: null,
+        lightningAddressVerified: false,
+        forumLawsDismissed: false,
+        createdAt: 1_700_000_000,
+        rulesAgreedAt: 1,
+        viewKey: 'a'.repeat(64),
+        aboutMe: null,
+        aboutMeHasPhoto: false,
+        setup: null,
+        missing: [],
+        heartSats: body.sats,
+      }),
+    });
+  });
+  await page.goto('/settings');
+  const field = page.getByLabel('Heart amount');
+  await expect(field).toHaveValue('1');
+  const saved = page.waitForRequest(
+    (req) => req.method() === 'POST' && req.url().includes('/me/heart-sats'),
+  );
+  await field.fill('21');
+  await page.getByRole('button', { name: 'Save', exact: true }).click();
+  expect((await saved).postDataJSON()).toEqual({ sats: 21 });
+  await expect(page.getByText('Saved: ₿21 per heart.')).toBeVisible();
 });
 
 test('the notifications page links to the Settings notifications section', async ({ page }) => {

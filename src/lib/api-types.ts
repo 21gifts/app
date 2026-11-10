@@ -156,6 +156,11 @@ export const accountSchema = z.object({
    * bodies still parse. Missing means bitcoin in the UI.
    */
   amountUnit: z.enum(['btc', 'fiat']).optional(),
+  /**
+   * Whole sats one heart click sends. Optional so older api bodies still
+   * parse; missing means 1 in the UI.
+   */
+  heartSats: z.number().int().min(1).max(10_000_000).optional(),
   /** Stored UI language. Missing means an older api; `null` means unset. */
   locale: z.enum(['en', 'de', 'es', 'fil']).nullable().optional(),
   /** Stored preferred currency. Missing means an older api; `null` means unset. */
@@ -231,6 +236,8 @@ export const accountSchema = z.object({
  * heart. Omitted on older api builds; treat as true.
  * `amountUnit` is `btc` or `fiat` for amount fields. Omitted on older api
  * builds; treat as `btc`.
+ * `heartSats` is the whole-sat amount one heart sends. Omitted on older api
+ * builds; treat as 1.
  * `locale` is the stored UI language and `fiat` is the stored preferred
  * currency. For either field, omitted means an older api response that must
  * not be synchronized, while `null` means the account preference is unset.
@@ -248,6 +255,18 @@ export type Account = z.infer<typeof accountSchema>;
  */
 export function accountNotificationLevel(account: Account): NotificationLevel {
   return account.notificationLevel ?? 'all';
+}
+
+/**
+ * Whole sats one heart click sends for this account.
+ *
+ * A missing field on an older api body means 1, not 0.
+ *
+ * @param account - Parsed account, or `null` before it loaded.
+ * @returns `account.heartSats`, or 1 when the field is missing.
+ */
+export function accountHeartSats(account: Pick<Account, 'heartSats'> | null): number {
+  return account?.heartSats ?? 1;
 }
 
 /**
@@ -1027,6 +1046,32 @@ function keepForumMessageRows(rows: readonly unknown[]): z.infer<typeof forumMes
 export const forumMessageRowsSchema = z.array(z.unknown()).transform(keepForumMessageRows);
 
 /**
+ * Runtime schema for one paid heart returned with `GET /messages/:id/replies`.
+ *
+ * `name` may be empty for a live unnamed member. A deleted account has no
+ * `role` or `username`. `sats` is the exact amount that heart paid.
+ */
+export const heartSenderSchema = z.object({
+  accountId: z.string().min(1),
+  name: z.string(),
+  username: z.string().min(1).optional(),
+  role: z.enum(ROLE_ORDER).optional(),
+  sats: z.number().int().positive().max(10_000_000),
+  createdAt: z.string().datetime({ offset: true }),
+  /** Fiat frozen when the heart was paid. Missing means null. */
+  amountUsd: fiatAmountSchema.optional().default(null),
+  /** Fiat frozen when the heart was paid. Missing means null. */
+  amountChf: fiatAmountSchema.optional().default(null),
+  /** Fiat frozen when the heart was paid. Missing means null. */
+  amountEur: fiatAmountSchema.optional().default(null),
+  /** Fiat frozen when the heart was paid. Missing means null. */
+  amountPhp: fiatAmountSchema.optional().default(null),
+});
+
+/** One paid heart on a forum note, newest first. */
+export type HeartSender = z.infer<typeof heartSenderSchema>;
+
+/**
  * Runtime schema for `GET /messages` and member posts/replies payloads.
  *
  * The forum feed may include a cursor for the next page; member activity
@@ -1091,11 +1136,22 @@ export type HiddenMessage = z.infer<typeof hiddenMessageSchema>;
 /**
  * Runtime schema for `GET /messages/:id/replies` (oldest-first).
  *
- * Rows are parsed with {@link forumMessageRowsSchema}.
+ * Rows are parsed with {@link forumMessageRowsSchema}. `hearts` lists every
+ * paid heart on the parent note, newest first; a missing field on an older api
+ * means `[]`.
  */
 export const forumRepliesSchema = z.object({
   messages: forumMessageRowsSchema,
+  hearts: z.array(heartSenderSchema).optional().default([]),
 });
+
+/**
+ * Reply rows plus the parent note's paid hearts.
+ *
+ * Kept as an array so existing reply iteration and filtering keep working.
+ * `hearts` is optional because older callers and fixtures predate the field.
+ */
+export type ForumReplies = ForumMessage[] & { hearts?: HeartSender[] };
 
 /**
  * One public forum message from the api.
@@ -1415,7 +1471,7 @@ export type ConversationInvoice = z.infer<typeof conversationInvoiceSchema>;
  * Runtime schema for one notification from `GET /notifications`.
  *
  * `type` is `forum_post` (new living-room post), `forum_reply`, `zap`
- * (payment), `heart` (a 1-sat heart), `moderator_appointed` (the session was
+ * (payment), `heart` (a paid heart), `moderator_appointed` (the session was
  * appointed moderator), or `moderator_proposal` (a staff member proposed a
  * moderator). Unknown `type` values fail parse. `text` may be empty when a
  * post or reply is photo-only, when a zap has no amount string, when a heart

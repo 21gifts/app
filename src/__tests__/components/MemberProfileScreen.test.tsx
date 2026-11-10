@@ -35,6 +35,7 @@ import {
   memberProfileSchema,
   type Account,
   type ForumMessage,
+  type ForumReplies,
   type MemberProfile,
 } from '@/lib/api-types';
 import { formatForumTimeFromMs } from '@/lib/forum-time';
@@ -1242,6 +1243,48 @@ describe('MemberProfileScreen', () => {
     fireEvent.click(screen.getByRole('button', { name: '1 reaction', pressed: false }));
     expect(await screen.findByText('A reply from Carol.')).toBeTruthy();
     expect(fetchMemberReplies).toHaveBeenCalledTimes(1);
+  });
+
+  it('renders the hearts section inside an expanded profile note', async () => {
+    vi.mocked(fetchReplies).mockResolvedValue(
+      Object.assign([{ ...activityReply, parentId: note.id }], {
+        hearts: [
+          {
+            accountId: 'acc_grace',
+            name: 'Grace',
+            role: 'verified' as const,
+            sats: 21,
+            createdAt: '2026-08-28T12:02:00.000Z',
+            amountUsd: '0.02',
+            amountChf: null,
+            amountEur: null,
+            amountPhp: null,
+          },
+          {
+            accountId: 'acc_deleted',
+            name: '',
+            sats: 1000,
+            createdAt: '2026-08-28T12:01:00.000Z',
+            amountUsd: null,
+            amountChf: null,
+            amountEur: null,
+            amountPhp: null,
+          },
+        ],
+      }) as ForumReplies,
+    );
+    renderWithLocale(
+      <MemberProfileScreen profile={{ ...profileWithNote, replyCount: 1 }} received={[]} />,
+    );
+    await expandNote();
+    expect(await screen.findByRole('heading', { name: 'Hearts (2)' })).toBeTruthy();
+    const heartsSection = screen.getByRole('region', { name: 'Hearts (2)' });
+    const heartRows = within(within(heartsSection).getByRole('list')).getAllByRole('listitem');
+    expect(heartRows).toHaveLength(2);
+    expect(within(heartsSection).getByText('Grace').closest('li')?.textContent).toContain('₿21');
+    expect(within(heartsSection).getByText('Deleted account').closest('li')?.textContent).toContain(
+      "₿1'000",
+    );
   });
 
   it('updates a replies-feed card after a pay-sheet gift confirms', async () => {
@@ -5573,6 +5616,33 @@ describe('MemberProfileScreen in-app wallet pay', () => {
   });
 
   afterEach(resetWallet);
+
+  it('reloads the expanded replies after a heart on the note is paid', async () => {
+    vi.mocked(postMessageInvoice).mockResolvedValue({
+      pr: 'lnbc1',
+      amountSats: 1,
+      sparkInvoice: SPARK_INVOICE,
+    });
+    vi.mocked(payFromWallet).mockResolvedValue(confirmResult(undefined, 1));
+    renderWithLocale(
+      <MemberProfileScreen
+        profile={{ ...profileWithNote, replyCount: 1 }}
+        received={[]}
+        donated={[]}
+      />,
+    );
+    await expandNote();
+    expect(fetchReplies).toHaveBeenCalledTimes(1);
+    const noteCard = document.querySelector(`[data-message-id="${note.id}"]`) as HTMLElement;
+
+    fireEvent.click(within(noteCard).getByRole('button', { name: 'Send ₿1' }));
+
+    await waitFor(() => {
+      expect(fetchReplies).toHaveBeenCalledTimes(2);
+    });
+    expect(fetchReplies).toHaveBeenLastCalledWith('sess', note.id);
+    expect(postMessageInvoice).toHaveBeenCalledWith('sess', note.id, 1, undefined, undefined, true);
+  });
 
   it('pays a Gift from the wallet when the api issues a sparkInvoice', async () => {
     vi.mocked(postMessageInvoice).mockResolvedValue({

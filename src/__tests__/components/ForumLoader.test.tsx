@@ -14,6 +14,7 @@ import {
   forumListSchema,
   type Account,
   type ForumMessage,
+  type ForumReplies,
   type Notification,
   type NotificationList,
 } from '@/lib/api-types';
@@ -6242,6 +6243,38 @@ describe('ForumLoader', () => {
     });
   });
 
+  it('renders the hearts section for the expanded note', async () => {
+    fetchMock.mockResolvedValue(forumPage([{ ...SAMPLE, replyCount: 1 }]));
+    repliesMock.mockResolvedValue(
+      Object.assign([{ ...NESTED_REPLY }], {
+        hearts: [
+          {
+            accountId: 'acc_grace',
+            name: 'Grace',
+            role: 'moderator' as const,
+            sats: 21,
+            createdAt: '2026-08-28T12:02:00.000Z',
+            amountUsd: '0.02',
+            amountChf: null,
+            amountEur: null,
+            amountPhp: null,
+          },
+        ],
+      }),
+    );
+    renderWithLocale(<ForumLoader />);
+    await act(async () => {
+      await Promise.resolve();
+    });
+    await revealAll();
+    fireEvent.click(screen.getByRole('button', { name: 'Show reactions' }));
+    expect(await screen.findByRole('heading', { name: 'Hearts (1)' })).toBeTruthy();
+    expect(screen.getByRole('link', { name: 'Grace' }).getAttribute('href')).toBe(
+      '/members/acc_grace',
+    );
+    expect(screen.getByRole('region', { name: 'Hearts (1)' }).textContent).toContain('₿21');
+  });
+
   it('clears the pay sheet when a public fetch returns more sats', async () => {
     vi.useFakeTimers();
     fetchMock.mockResolvedValue(forumPage([{ ...SAMPLE, replyCount: 2 }]));
@@ -7907,24 +7940,43 @@ describe('ForumLoader', () => {
         },
       ]),
     );
-    repliesMock.mockResolvedValueOnce([
-      {
-        id: 'r1',
-        name: 'Bob',
-        text: 'A reply',
-        createdAt: '2026-08-28T12:30:00.000Z',
-        sats: 0,
-        payable: false,
-        hasPhoto: false,
-        photoCount: 0,
-        hasVideo: false,
-        videoContentType: null,
-        role: 'basis',
-        replyCount: 0,
-        heartCount: 0,
-        hearted: false,
-      },
-    ]);
+    repliesMock.mockResolvedValueOnce(
+      Object.assign(
+        [
+          {
+            id: 'r1',
+            name: 'Bob',
+            text: 'A reply',
+            createdAt: '2026-08-28T12:30:00.000Z',
+            sats: 0,
+            payable: false,
+            hasPhoto: false,
+            photoCount: 0,
+            hasVideo: false,
+            videoContentType: null,
+            role: 'basis' as const,
+            replyCount: 0,
+            heartCount: 0,
+            hearted: false,
+          },
+        ],
+        {
+          hearts: [
+            {
+              accountId: 'acc_grace',
+              name: 'Grace',
+              role: 'moderator' as const,
+              sats: 21,
+              createdAt: '2026-08-28T12:02:00.000Z',
+              amountUsd: '0.02',
+              amountChf: null,
+              amountEur: null,
+              amountPhp: null,
+            },
+          ],
+        },
+      ) as ForumReplies,
+    );
     repliesMock.mockImplementationOnce(() => new Promise(() => undefined));
     renderWithLocale(<ForumLoader />);
     await revealAll();
@@ -7935,9 +7987,11 @@ describe('ForumLoader', () => {
     await waitFor(() => {
       expect(screen.getByText('A reply')).toBeTruthy();
     });
+    expect(screen.getByRole('heading', { name: 'Hearts (1)' })).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Show reactions' }));
-    expect(screen.queryByText('A reply')).toBeNull();
     expect(screen.getByText('Loading reactions…')).toBeTruthy();
+    expect(screen.queryByText('A reply')).toBeNull();
+    expect(screen.queryByRole('heading', { name: /^Hearts/ })).toBeNull();
   });
 
   // Composer is disabled while replies are missing/loading (submit never
@@ -12675,6 +12729,29 @@ describe('ForumLoader in-app wallet pay', () => {
   });
 
   afterEach(resetWallet);
+
+  it('reloads the expanded replies after a heart on the note is paid', async () => {
+    setWalletUsable('ready');
+    const heartNote = { ...FOREIGN, id: 'm-heart-note' };
+    fetchMock.mockResolvedValue(forumPage([heartNote]));
+    repliesMock.mockResolvedValue([]);
+    invoiceMock.mockResolvedValue({ pr: 'lnbc1', amountSats: 1, sparkInvoice: SPARK_INVOICE });
+    vi.mocked(payFromWallet).mockResolvedValue(confirmResult(undefined, 1));
+    renderWithLocale(<ForumLoader />);
+    await revealAll();
+    expect(await screen.findByText(heartNote.text)).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Show reactions' }));
+    expect(await screen.findByLabelText('Your reaction')).toBeTruthy();
+    expect(repliesMock).toHaveBeenCalledTimes(1);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Send ₿1' }));
+
+    await waitFor(() => {
+      expect(repliesMock).toHaveBeenCalledTimes(2);
+    });
+    expect(repliesMock).toHaveBeenLastCalledWith('sess', heartNote.id);
+    expect(invoiceMock).toHaveBeenCalledWith('sess', heartNote.id, 1, undefined, undefined, true);
+  });
 
   it('pays a gift on a payable reply from the wallet when the api issues a sparkInvoice', async () => {
     setWalletUsable('ready');

@@ -9866,7 +9866,7 @@ describe('ForumBoard in-app wallet pay', () => {
     expect(payFromWallet).toHaveBeenCalledWith({ type: 'input', input: SPARK_INVOICE });
   });
 
-  it('shows Send ₿1 on a post and on a reply', () => {
+  it('shows Send ₿1 on a post and on a reply without a loaded account amount', () => {
     renderWithLocale(
       <ForumBoard
         messages={[{ ...SAMPLE, accountId: 'acc-ada' }]}
@@ -9898,6 +9898,80 @@ describe('ForumBoard in-app wallet pay', () => {
     );
     expect(screen.getAllByRole('button', { name: 'Send ₿1' })).toHaveLength(2);
     expect(screen.queryByText('Send ₿1')).toBeNull();
+  });
+
+  it.each([
+    ['en', 'Send ₿21'],
+    ['de', '₿21 senden'],
+    ['es', 'Enviar ₿21'],
+    ['fil', 'Magpadala ng ₿21'],
+  ] as const)('names the stored heart amount in %s', (locale, label) => {
+    renderWithLocale(
+      <ForumBoard
+        messages={[{ ...SAMPLE, accountId: 'acc-ada' }]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        heartViewerId="acc_viewer"
+        heartViewerSats={21}
+        onHeartTip={() => undefined}
+        {...modeProps('all')}
+      />,
+      locale,
+    );
+    const heart = screen.getByRole('button', { name: label });
+    expect(heart.getAttribute('title')).toBe(label);
+  });
+
+  it('keeps the plain heart name without an account', () => {
+    renderWithLocale(
+      <ForumBoard
+        messages={[{ ...SAMPLE, accountId: 'acc-ada' }]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        heartViewerId="acc_viewer"
+        onHeartTip={() => undefined}
+        {...modeProps('all')}
+      />,
+    );
+    expect(screen.getByRole('button', { name: 'Send ₿1' })).toBeTruthy();
+  });
+
+  it('formats the named heart amount with the app grouping style', () => {
+    renderWithLocale(
+      <ForumBoard
+        messages={[{ ...SAMPLE, accountId: 'acc-ada' }]}
+        error={false}
+        loading={false}
+        posting={false}
+        draft=""
+        onDraftChange={() => undefined}
+        onPost={() => undefined}
+        onRetry={() => undefined}
+        formError={null}
+        {...idleProps}
+        heartViewerId="acc_viewer"
+        heartViewerSats={1_000}
+        onHeartTip={() => undefined}
+        {...modeProps('all')}
+      />,
+      'en',
+    );
+    const heart = screen.getByRole('button', { name: "Send ₿1'000" });
+    expect(heart.getAttribute('title')).toBe("Send ₿1'000");
   });
 
   it('hides Send ₿1 on a post and a reply whose author cannot receive', () => {
@@ -11044,6 +11118,97 @@ describe('ForumBoard author who cannot receive', () => {
   it('disables the amount of a reaction on that note', () => {
     renderWithLocale(board({ expandedId: 'm1', replies: [] }));
     expect((screen.getByLabelText('Amount') as HTMLInputElement).disabled).toBe(true);
+  });
+
+  it('renders the shared hearts section under an expanded thread and hides it when empty', () => {
+    const { rerender } = renderWithLocale(
+      board({
+        expandedId: 'm1',
+        replies: [],
+        replyHearts: [
+          {
+            accountId: 'acc_grace',
+            name: 'Grace',
+            role: 'moderator' as const,
+            sats: 21,
+            createdAt: '2026-08-28T12:02:00.000Z',
+            amountUsd: '0.02',
+            amountChf: null,
+            amountEur: null,
+            amountPhp: null,
+          },
+        ],
+      }),
+    );
+    expect(screen.getByRole('heading', { name: 'Hearts (1)' })).toBeTruthy();
+    expect(screen.getByRole('link', { name: 'Grace' }).getAttribute('href')).toBe(
+      '/members/acc_grace',
+    );
+    expect(screen.getByRole('region', { name: 'Hearts (1)' }).textContent).toContain('₿21');
+    rerender(
+      <LocaleProvider locale="en" messages={getCatalog('en')}>
+        <ThemeProvider>{board({ expandedId: 'm1', replies: [] })}</ThemeProvider>
+      </LocaleProvider>,
+    );
+    expect(screen.queryByRole('heading', { name: /^Hearts/ })).toBeNull();
+  });
+
+  it('uses USD for signed-out hearts on an English surface despite a stale CHF preference', () => {
+    renderWithLocale(
+      board({
+        viewerAccountId: null,
+        expandedId: 'm1',
+        replies: [],
+        replyHearts: [
+          {
+            accountId: 'acc_grace',
+            name: 'Grace',
+            role: 'moderator',
+            sats: 21,
+            createdAt: '2026-08-28T12:02:00.000Z',
+            amountUsd: '0.02',
+            amountChf: '0.01',
+            amountEur: null,
+            amountPhp: null,
+          },
+        ],
+      }),
+      'en',
+      'ch',
+      'CHF',
+    );
+    const hearts = screen.getByRole('region', { name: 'Hearts (1)' });
+    expect(hearts.textContent).toContain('$0.02');
+    expect(hearts.textContent).not.toContain('CHF 0.01');
+  });
+
+  it('uses the signed-in member fiat preference for hearts', () => {
+    renderWithLocale(
+      board({
+        heartViewerId: 'acc-ada',
+        expandedId: 'm1',
+        replies: [],
+        replyHearts: [
+          {
+            accountId: 'acc_grace',
+            name: 'Grace',
+            role: 'moderator',
+            sats: 21,
+            createdAt: '2026-08-28T12:02:00.000Z',
+            amountUsd: '0.02',
+            amountChf: '0.01',
+            amountEur: null,
+            amountPhp: null,
+          },
+        ],
+      }),
+      'en',
+      'ch',
+      'CHF',
+    );
+    const hearts = screen.getByRole('region', { name: 'Hearts (1)' });
+    expect(hearts.textContent).toContain('CHF 0.01');
+    expect(hearts.textContent).not.toContain('$0.02');
   });
 
   it('shows the label and a disabled gift on a reply in the thread', () => {
