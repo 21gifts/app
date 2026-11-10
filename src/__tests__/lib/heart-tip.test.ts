@@ -837,7 +837,7 @@ describe('sendHeartTip after a send timed out', () => {
     expect(send).toHaveBeenCalledTimes(1);
   });
 
-  it('records a heart sent late and counts it as paid on the retap without a new invoice', async () => {
+  it('records a heart sent late and starts a new heart on the next tap', async () => {
     let late: (sent: boolean) => void = () => undefined;
     const sentLate = new Promise<boolean>((resolve) => {
       late = resolve;
@@ -864,10 +864,13 @@ describe('sendHeartTip after a send timed out', () => {
       'sess',
     );
     vi.mocked(postMessageInvoice).mockClear();
+    const send = payNext();
     await expect(sendHeartTip({ ...BASE, messageId: 't-late' })).resolves.toEqual({
       kind: 'paid',
     });
-    expect(postMessageInvoice).not.toHaveBeenCalled();
+    expect(postMessageInvoice).toHaveBeenCalledTimes(1);
+    expect(send).toHaveBeenCalledTimes(1);
+    expect(logInteraction).toHaveBeenCalledTimes(2);
     expect(listWalletPayments).not.toHaveBeenCalled();
   });
 
@@ -896,7 +899,7 @@ describe('sendHeartTip after a send timed out', () => {
     expect(listWalletPayments).not.toHaveBeenCalled();
   });
 
-  it('reports a late heart whose onPaid already ran as paid without notifying twice', async () => {
+  it('starts a new heart after a late heart was fully booked and reported', async () => {
     let late: (sent: boolean) => void = () => undefined;
     const sentLate = new Promise<boolean>((resolve) => {
       late = resolve;
@@ -919,12 +922,14 @@ describe('sendHeartTip after a send timed out', () => {
     await Promise.resolve();
     expect(onPaid).toHaveBeenCalledTimes(1);
     vi.mocked(postMessageInvoice).mockClear();
+    const send = payNext();
     await expect(sendHeartTip({ ...BASE, messageId: 't-notified' }, onPaid)).resolves.toEqual({
       kind: 'paid',
-      notified: true,
     });
     expect(onPaid).toHaveBeenCalledTimes(1);
-    expect(postMessageInvoice).not.toHaveBeenCalled();
+    expect(postMessageInvoice).toHaveBeenCalledTimes(1);
+    expect(send).toHaveBeenCalledTimes(1);
+    expect(logInteraction).toHaveBeenCalledTimes(2);
     expect(listWalletPayments).not.toHaveBeenCalled();
   });
 
@@ -963,6 +968,50 @@ describe('sendHeartTip after a send timed out', () => {
     await Promise.resolve();
     vi.mocked(postMessageInvoice).mockClear();
     await expect(sendHeartTip({ ...BASE, messageId: 't-two' })).resolves.toEqual({
+      kind: 'failed',
+      reason: 'timeout_pending',
+    });
+    expect(postMessageInvoice).not.toHaveBeenCalled();
+  });
+
+  it('books an older late send without clearing a newer timed-out heart', async () => {
+    let lateOld: (sent: boolean) => void = () => undefined;
+    const oldSentLate = new Promise<boolean>((resolve) => {
+      lateOld = resolve;
+    });
+    const onPaid = vi.fn();
+    vi.mocked(postMessageInvoice).mockResolvedValue(HEART_INVOICE);
+    vi.mocked(payFromWallet).mockResolvedValueOnce({
+      kind: 'confirm',
+      amountSats: 1,
+      feeSats: 0,
+      method: 'spark',
+      send: async () => ({ kind: 'failed', failure: TIMEOUT, sentLate: oldSentLate }),
+    });
+    await sendHeartTip({ ...BASE, messageId: 't-two-late' }, onPaid);
+    vi.mocked(listWalletPayments).mockResolvedValueOnce([sentPayment('spark1heart', 'failed')]);
+    vi.mocked(payFromWallet).mockResolvedValueOnce({
+      kind: 'confirm',
+      amountSats: 1,
+      feeSats: 0,
+      method: 'spark',
+      send: async () => ({
+        kind: 'failed',
+        failure: TIMEOUT,
+        sentLate: new Promise<boolean>(() => undefined),
+      }),
+    });
+    await expect(sendHeartTip({ ...BASE, messageId: 't-two-late' })).resolves.toEqual({
+      kind: 'failed',
+      reason: 'timeout_pending',
+    });
+    lateOld(true);
+    await oldSentLate;
+    await Promise.resolve();
+    expect(onPaid).toHaveBeenCalledTimes(1);
+    expect(logInteraction).toHaveBeenCalledTimes(1);
+    vi.mocked(postMessageInvoice).mockClear();
+    await expect(sendHeartTip({ ...BASE, messageId: 't-two-late' })).resolves.toEqual({
       kind: 'failed',
       reason: 'timeout_pending',
     });
@@ -1519,20 +1568,29 @@ describe('useHeartTip', () => {
     expect(onPaid).toHaveBeenLastCalledWith('h-late-existing');
   });
 
-  it('does not call onPaid again when retapping a late heart already reported', async () => {
+  it('starts a new paid heart when retapping after a late heart was fully booked', async () => {
     let late: ((sent: boolean) => void) | undefined;
     const sentLate = new Promise<boolean>((resolve) => {
       late = resolve;
     });
     const onPaid = vi.fn();
     vi.mocked(postMessageInvoice).mockResolvedValue(HEART_INVOICE);
-    vi.mocked(payFromWallet).mockResolvedValue({
-      kind: 'confirm',
-      amountSats: 1,
-      feeSats: 0,
-      method: 'spark',
-      send: async () => ({ kind: 'failed', failure: TIMEOUT, sentLate }),
-    });
+    const send = vi.fn(async () => ({ kind: 'paid' as const }));
+    vi.mocked(payFromWallet)
+      .mockResolvedValueOnce({
+        kind: 'confirm',
+        amountSats: 1,
+        feeSats: 0,
+        method: 'spark',
+        send: async () => ({ kind: 'failed', failure: TIMEOUT, sentLate }),
+      })
+      .mockResolvedValue({
+        kind: 'confirm',
+        amountSats: 1,
+        feeSats: 0,
+        method: 'spark',
+        send,
+      });
     const { result } = renderHook(() => useHeartTip({ readOnly: false, onPaid }));
     await clickHeart(result, 'h-late-notified');
     await act(async () => {
@@ -1541,10 +1599,16 @@ describe('useHeartTip', () => {
       await Promise.resolve();
     });
     expect(onPaid).toHaveBeenCalledTimes(1);
+    expect(result.current.heartTipViews['h-late-notified']?.extra).toBe(1);
+    expect(JSON.parse(String(sessionStorage.getItem('21gifts.heart.sent')))).toEqual({
+      'h-late-notified': { base: 0, extra: 1 },
+    });
     vi.mocked(postMessageInvoice).mockClear();
     await clickHeart(result, 'h-late-notified');
-    expect(postMessageInvoice).not.toHaveBeenCalled();
-    expect(onPaid).toHaveBeenCalledTimes(1);
+    expect(postMessageInvoice).toHaveBeenCalledTimes(1);
+    expect(send).toHaveBeenCalledTimes(1);
+    expect(payFromWallet).toHaveBeenCalledTimes(2);
+    expect(onPaid).toHaveBeenCalledTimes(2);
     expect(result.current.heartTipViews['h-late-notified']).toEqual({
       pressed: true,
       plusOne: true,
@@ -1554,6 +1618,48 @@ describe('useHeartTip', () => {
     expect(JSON.parse(String(sessionStorage.getItem('21gifts.heart.sent')))).toEqual({
       'h-late-notified': { base: 0, extra: 2 },
     });
+    expect(logInteraction).toHaveBeenCalledTimes(2);
+  });
+
+  it('keeps only the late heart when the new heart after it does not pay', async () => {
+    let late: ((sent: boolean) => void) | undefined;
+    const sentLate = new Promise<boolean>((resolve) => {
+      late = resolve;
+    });
+    const onPaid = vi.fn();
+    vi.mocked(postMessageInvoice).mockResolvedValueOnce(HEART_INVOICE);
+    vi.mocked(payFromWallet).mockResolvedValueOnce({
+      kind: 'confirm',
+      amountSats: 1,
+      feeSats: 0,
+      method: 'spark',
+      send: async () => ({ kind: 'failed', failure: TIMEOUT, sentLate }),
+    });
+    const { result } = renderHook(() => useHeartTip({ readOnly: false, onPaid }));
+    await clickHeart(result, 'h-late-retry-fail');
+    await act(async () => {
+      late?.(true);
+      await sentLate;
+      await Promise.resolve();
+    });
+    expect(result.current.heartTipViews['h-late-retry-fail']?.extra).toBe(1);
+    const send = vi.fn(async () => ({ kind: 'failed' as const, failure: SEND_FAILED }));
+    vi.mocked(payFromWallet).mockResolvedValueOnce({
+      kind: 'confirm',
+      amountSats: 1,
+      feeSats: 0,
+      method: 'spark',
+      send,
+    });
+    await clickHeart(result, 'h-late-retry-fail');
+    expect(postMessageInvoice).toHaveBeenCalledTimes(2);
+    expect(send).toHaveBeenCalledTimes(1);
+    expect(result.current.heartTipViews['h-late-retry-fail']?.extra).toBe(1);
+    expect(JSON.parse(String(sessionStorage.getItem('21gifts.heart.sent')))).toEqual({
+      'h-late-retry-fail': { base: 0, extra: 1 },
+    });
+    expect(onPaid).toHaveBeenCalledTimes(1);
+    expect(logInteraction).toHaveBeenCalledTimes(1);
   });
 
   it('restores a late-paid extra when the caller passes no onPaid', async () => {
