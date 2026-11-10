@@ -555,28 +555,47 @@ export async function runFondPayoutTick(deps: FondPayoutTickDeps): Promise<FondP
   return summary;
 }
 
-/** The tick that is currently paying, shared by every caller until it settles. */
-let inFlightTick: Promise<FondPayoutTickResult> | null = null;
+/** The tick that is currently paying, and the session that started it. */
+let inFlightTick: { session: string; promise: Promise<FondPayoutTickResult> } | null = null;
 
 /**
  * Runs at most one {@link runFondPayoutTick} at a time.
  *
  * An effect re-run while a tick is still in flight must not start a second
  * tick against the same rows: overlapping ticks could both read the same
- * stored BOLT11, see no send yet, and pay it twice. Every caller during a tick
- * receives that tick's promise; the guard is cleared when it settles, whether
- * it resolves or throws, so the next caller starts a fresh tick.
+ * stored BOLT11, see no send yet, and pay it twice. A caller with the same
+ * session receives the running tick's promise. A caller with a different
+ * session waits for that tick to settle, ignoring its result or rejection,
+ * and then starts its own tick. The guard is cleared when a tick settles,
+ * whether it resolves or throws, so the next caller can start a fresh tick.
  *
  * @param deps - Session, api calls, wallet calls, and sleep for a new tick.
- * @returns The settled result of the single in-flight tick.
+ * @returns The result of the caller's own session's tick.
  */
 export function runFondPayoutTickOnce(deps: FondPayoutTickDeps): Promise<FondPayoutTickResult> {
-  if (inFlightTick !== null) {
-    return inFlightTick;
+  const running = inFlightTick;
+  if (running === null) {
+    return startFondPayoutTick(deps);
   }
+  if (running.session === deps.session) {
+    return running.promise;
+  }
+  return running.promise.then(
+    () => runFondPayoutTickOnce(deps),
+    () => runFondPayoutTickOnce(deps),
+  );
+}
+
+/**
+ * Starts one tick and installs it as the module-level guard.
+ *
+ * @param deps - Session, api calls, wallet calls, and sleep for the new tick.
+ * @returns The running tick's promise.
+ */
+function startFondPayoutTick(deps: FondPayoutTickDeps): Promise<FondPayoutTickResult> {
   const running = runFondPayoutTick(deps).finally(() => {
     inFlightTick = null;
   });
-  inFlightTick = running;
+  inFlightTick = { session: deps.session, promise: running };
   return running;
 }

@@ -1,6 +1,7 @@
 import { act, cleanup, render } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { FOND_PAYOUT_INTERVAL_MS, FondPayoutSync } from '@/components/FondPayoutSync';
+import { fetchFondPayouts } from '@/lib/api';
 import type { Account } from '@/lib/api-types';
 import {
   fondE2eWallet,
@@ -88,6 +89,7 @@ async function flush(): Promise<void> {
 
 beforeEach(() => {
   vi.mocked(fondE2eWallet).mockReturnValue(null);
+  vi.mocked(fetchFondPayouts).mockReset();
   vi.mocked(runFondPayoutTick).mockReset();
   vi.mocked(runFondPayoutTick).mockResolvedValue({
     paid: 0,
@@ -327,6 +329,56 @@ describe('FondPayoutSync', () => {
       vi.advanceTimersByTime(FOND_PAYOUT_INTERVAL_MS);
     });
     expect(runFondPayoutTick).toHaveBeenCalledTimes(1);
+  });
+
+  it('ticks the new session after the old session resolves forbidden', async () => {
+    vi.useFakeTimers();
+    let releaseOld: ((value: Awaited<ReturnType<typeof fetchFondPayouts>>) => void) | null = null;
+    const oldList = new Promise<Awaited<ReturnType<typeof fetchFondPayouts>>>((resolve) => {
+      releaseOld = resolve;
+    });
+    vi.mocked(fetchFondPayouts).mockImplementation((session) =>
+      session === 'sess' ? oldList : Promise.resolve({ ok: true, payouts: [] }),
+    );
+    const actual = await vi.importActual<typeof import('@/lib/wallet/fond-payouts')>(
+      '@/lib/wallet/fond-payouts',
+    );
+    vi.mocked(runFondPayoutTick).mockImplementation(actual.runFondPayoutTickOnce);
+    setState('fond', 'sess', 'ready');
+    render(<FondPayoutSync />);
+    await act(async () => {
+      await Promise.resolve();
+    });
+    expect(runFondPayoutTick).toHaveBeenCalledTimes(1);
+    expect(fetchFondPayouts).toHaveBeenCalledWith('sess');
+
+    act(() => {
+      useAuthStore.setState({
+        session: 'new-sess',
+        account: { ...account('fond'), id: 'acc_new' },
+      });
+    });
+    await act(async () => {
+      await Promise.resolve();
+    });
+    expect(runFondPayoutTick).toHaveBeenCalledTimes(2);
+    expect(vi.mocked(runFondPayoutTick).mock.calls[1]?.[0]?.session).toBe('new-sess');
+    expect(fetchFondPayouts).toHaveBeenCalledTimes(1);
+
+    await act(async () => {
+      releaseOld?.({ ok: false, status: 403, error: 'Fond only' });
+      await Promise.resolve();
+    });
+    await act(async () => {
+      await Promise.resolve();
+    });
+    expect(fetchFondPayouts).toHaveBeenCalledWith('new-sess');
+    expect(fetchFondPayouts).toHaveBeenCalledTimes(2);
+    await act(async () => {
+      vi.advanceTimersByTime(FOND_PAYOUT_INTERVAL_MS);
+    });
+    expect(fetchFondPayouts).toHaveBeenCalledTimes(3);
+    expect(fetchFondPayouts).toHaveBeenLastCalledWith('new-sess');
   });
 
   it('stops the loop after off and starts again for another account', async () => {

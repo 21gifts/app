@@ -22,11 +22,11 @@ export const FOND_PAYOUT_INTERVAL_MS = 60_000;
  * Active only for an account at rank `fond` or above with a session and a
  * `ready` wallet, or in a Playwright build where {@link fondE2eWallet}
  * supplies a fake wallet. It runs one tick on activation and then every
- * {@link FOND_PAYOUT_INTERVAL_MS}. Ticks are single-flight across effect
- * re-runs, so a changed wallet status, session, or account during a tick
- * shares the running tick instead of paying a row twice. A tick that answers
- * `forbidden` (403) or `off` (404) stops the loop until the account or session
- * changes. Unmount and sign-out stop it.
+ * {@link FOND_PAYOUT_INTERVAL_MS}. Ticks are single-flight: an effect re-run
+ * with the same session shares the running tick, while a new session waits
+ * for it to settle and then runs its own tick. A tick that answers `forbidden`
+ * (403) or `off` (404) stops only the effect run that started it. Unmount and
+ * sign-out stop it.
  *
  * @returns `null` because the loop has no visual surface.
  */

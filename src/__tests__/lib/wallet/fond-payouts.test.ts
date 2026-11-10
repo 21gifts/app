@@ -264,7 +264,7 @@ describe('fondE2eWallet', () => {
 });
 
 describe('runFondPayoutTickOnce', () => {
-  it('shares one tick while it is in flight', async () => {
+  it('shares one tick with a caller of the same session while it is in flight', async () => {
     let release = (_value: { ok: true; payouts: FondPayout[] }): void => undefined;
     const gate = new Promise<{ ok: true; payouts: FondPayout[] }>((resolve) => {
       release = resolve;
@@ -283,6 +283,49 @@ describe('runFondPayoutTickOnce', () => {
     release({ ok: true, payouts: [] });
     await expect(firstRun).resolves.toEqual({ paid: 0, proved: 0, skipped: 0, stop: null });
     await expect(secondRun).resolves.toEqual({ paid: 0, proved: 0, skipped: 0, stop: null });
+  });
+
+  it('waits for a different session, then runs and returns its own tick', async () => {
+    const order: string[] = [];
+    let release = (_value: FondPayoutFailure): void => undefined;
+    const gate = new Promise<FondPayoutFailure>((resolve) => {
+      release = resolve;
+    });
+    const first = depsFor([]);
+    first.session = 'sess-a';
+    vi.mocked(first.fetchFondPayouts).mockImplementation(() => {
+      order.push('a:start');
+      return gate;
+    });
+    const second = depsFor([]);
+    second.session = 'sess-b';
+    vi.mocked(second.fetchFondPayouts).mockImplementation(async () => {
+      order.push('b:start');
+      return { ok: true, payouts: [] };
+    });
+
+    const firstRun = tickOnce(first);
+    const secondRun = tickOnce(second);
+
+    expect(secondRun).not.toBe(firstRun);
+    expect(second.fetchFondPayouts).not.toHaveBeenCalled();
+    expect(order).toEqual(['a:start']);
+
+    release(failure(403, 'Fond only'));
+    await expect(firstRun).resolves.toEqual({
+      paid: 0,
+      proved: 0,
+      skipped: 0,
+      stop: 'forbidden',
+    });
+    await expect(secondRun).resolves.toEqual({
+      paid: 0,
+      proved: 0,
+      skipped: 0,
+      stop: null,
+    });
+    expect(order).toEqual(['a:start', 'b:start']);
+    expect(second.fetchFondPayouts).toHaveBeenCalledWith('sess-b');
   });
 
   it('starts a new tick after the first settled', async () => {
@@ -310,6 +353,27 @@ describe('runFondPayoutTickOnce', () => {
       stop: null,
     });
     expect(retry.fetchFondPayouts).toHaveBeenCalledTimes(1);
+  });
+
+  it('starts the different session after the in-flight tick rejects', async () => {
+    let reject = (_reason: Error): void => undefined;
+    const gate = new Promise<{ ok: true; payouts: FondPayout[] }>((_resolve, rejectGate) => {
+      reject = rejectGate;
+    });
+    const failed = depsFor([]);
+    failed.session = 'sess-a';
+    vi.mocked(failed.fetchFondPayouts).mockReturnValue(gate);
+    const next = depsFor([]);
+    next.session = 'sess-b';
+
+    const failedRun = tickOnce(failed);
+    const nextRun = tickOnce(next);
+    expect(next.fetchFondPayouts).not.toHaveBeenCalled();
+
+    reject(new Error('boom'));
+    await expect(failedRun).rejects.toThrow('boom');
+    await expect(nextRun).resolves.toEqual({ paid: 0, proved: 0, skipped: 0, stop: null });
+    expect(next.fetchFondPayouts).toHaveBeenCalledWith('sess-b');
   });
 });
 
