@@ -74,6 +74,16 @@ function confirmResult(sent: { kind: 'paid' }): WalletPayResult {
 }
 
 /**
+ * A timed-out send whose late outcome the wallet still owes.
+ *
+ * @param sentLate - Promise of the wallet's late outcome.
+ * @returns The failed send.
+ */
+function failedLate(sentLate: Promise<boolean>): WalletSendResult {
+  return { kind: 'failed', failure: TIMEOUT, sentLate };
+}
+
+/**
  * Builds tick deps whose calls all succeed unless a test replaces one.
  *
  * @param payouts - Rows the list answers.
@@ -391,7 +401,7 @@ describe('runFondPayoutTick rows', () => {
       amountSats: 10,
       feeSats: 0,
       method: 'lightning',
-      send: vi.fn(async () => ({ kind: 'failed', failure: TIMEOUT, sentLate })),
+      send: vi.fn(async () => failedLate(sentLate)),
     });
     await expect(tick(first)).resolves.toEqual({
       paid: 0,
@@ -428,7 +438,7 @@ describe('runFondPayoutTick rows', () => {
       amountSats: 10,
       feeSats: 0,
       method: 'lightning',
-      send: vi.fn(async () => ({ kind: 'failed', failure: TIMEOUT, sentLate })),
+      send: vi.fn(async () => failedLate(sentLate)),
     });
     await tick(first);
     settle(true);
@@ -460,7 +470,7 @@ describe('runFondPayoutTick rows', () => {
       amountSats: 10,
       feeSats: 0,
       method: 'lightning',
-      send: vi.fn(async () => ({ kind: 'failed', failure: TIMEOUT, sentLate })),
+      send: vi.fn(async () => failedLate(sentLate)),
     });
     await tick(first);
     settle(false);
@@ -486,7 +496,7 @@ describe('runFondPayoutTick rows', () => {
       amountSats: 10,
       feeSats: 0,
       method: 'lightning',
-      send: vi.fn(async () => ({ kind: 'failed', failure: TIMEOUT, sentLate: rejectedLate })),
+      send: vi.fn(async () => failedLate(rejectedLate)),
     });
     await tick(third);
     await Promise.resolve();
@@ -511,7 +521,7 @@ describe('runFondPayoutTick rows', () => {
       amountSats: 10,
       feeSats: 0,
       method: 'lightning',
-      send: vi.fn(async () => ({ kind: 'failed', failure: TIMEOUT, sentLate: rejectedLate })),
+      send: vi.fn(async () => failedLate(rejectedLate)),
     });
     await tick(first);
     await Promise.resolve();
@@ -844,6 +854,27 @@ describe('runFondPayoutTick rows', () => {
     });
     expect(deps.postFondPayoutInvoice).toHaveBeenCalledTimes(1);
     expect(deps.payFromWallet).toHaveBeenCalledTimes(1);
+  });
+
+  it('stops at the next row when cancelled after the first proof', async () => {
+    let cancelled = false;
+    const deps = depsFor([OWED, OWED_B]);
+    vi.mocked(deps.isCancelled).mockImplementation(() => cancelled);
+    vi.mocked(deps.listWalletPayments)
+      .mockResolvedValueOnce([])
+      .mockResolvedValue([sentPayment({ info: { paymentHash: HASH_A, preimage: PREIMAGE_A } })]);
+    vi.mocked(deps.postFondPayoutProof).mockImplementation(async () => {
+      cancelled = true;
+      return { ok: true };
+    });
+    await expect(tick(deps)).resolves.toEqual({
+      paid: 1,
+      proved: 1,
+      skipped: 0,
+      stop: null,
+    });
+    expect(deps.postFondPayoutInvoice).toHaveBeenCalledTimes(1);
+    expect(deps.postFondPayoutInvoice).not.toHaveBeenCalledWith('sess', 'row-b');
   });
 
   it('does not pay when cancelled before payFromWallet', async () => {
