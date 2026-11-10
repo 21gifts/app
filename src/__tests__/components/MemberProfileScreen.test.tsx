@@ -531,19 +531,48 @@ describe('MemberProfileScreen', () => {
     expect(screen.getByText('carol@21.gifts')).toBeTruthy();
   });
 
-  it('shows Software Developer on a basis full card with only the staff tag', () => {
+  it.each([
+    ['old api body', { role: 'verified' as const, staffTag: 'software_developer' as const }],
+    ['new api body', { role: 'software_developer' as const }],
+  ])('shows one Software Developer pill with hint on the full card (%s)', (_label, fields) => {
     renderWithLocale(
+      <MemberProfileScreen profile={{ ...profile, ...fields }} received={[]} donated={[]} />,
+    );
+    const tag = screen.getByRole('button', { name: 'Software Developer' });
+    expect(screen.getAllByText('Software Developer')).toHaveLength(1);
+    expect(screen.queryByRole('button', { name: 'Verified' })).toBeNull();
+    fireEvent.click(tag);
+    expect(
+      screen.getByText('This person builds 21.gifts and moderates the living room.'),
+    ).toBeTruthy();
+  });
+
+  it.each([
+    ['old api body', { role: 'verified' as const, staffTag: 'software_developer' as const }],
+    ['new api body', { role: 'software_developer' as const }],
+  ])('factsOnly shows one Software Developer pill (%s)', (_label, fields) => {
+    renderWithLocale(
+      <MemberProfileScreen
+        factsOnly
+        profile={{ ...profile, ...fields }}
+        received={[]}
+        donated={[]}
+      />,
+    );
+    expect(screen.getByRole('button', { name: 'Software Developer' })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Verified' })).toBeNull();
+  });
+
+  it('promotes a basis member with only the staff tag on the full card and factsOnly', () => {
+    const { unmount } = renderWithLocale(
       <MemberProfileScreen
         profile={{ ...profile, role: 'basis', staffTag: 'software_developer' }}
         received={[]}
         donated={[]}
       />,
     );
-    expect(screen.getByText('Software Developer')).toBeTruthy();
-    expect(screen.queryByRole('button', { name: 'Software Developer' })).toBeNull();
-  });
-
-  it('factsOnly shows Software Developer for a basis profile with only the staff tag', () => {
+    expect(screen.getByRole('button', { name: 'Software Developer' })).toBeTruthy();
+    unmount();
     renderWithLocale(
       <MemberProfileScreen
         factsOnly
@@ -552,10 +581,10 @@ describe('MemberProfileScreen', () => {
         donated={[]}
       />,
     );
-    expect(screen.getByText('Software Developer')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Software Developer' })).toBeTruthy();
   });
 
-  it('omits Software Developer on the full card and factsOnly when staffTag is absent', () => {
+  it('omits Software Developer when role and staffTag are absent', () => {
     const { unmount } = renderWithLocale(
       <MemberProfileScreen profile={{ ...profile, role: 'basis' }} received={[]} donated={[]} />,
     );
@@ -572,32 +601,7 @@ describe('MemberProfileScreen', () => {
     expect(screen.queryByText('Software Developer')).toBeNull();
   });
 
-  it('hides the Verified button when Software Developer is shown on a verified profile', () => {
-    renderWithLocale(
-      <MemberProfileScreen
-        profile={{ ...profile, staffTag: 'software_developer' }}
-        received={[]}
-        donated={[]}
-      />,
-    );
-    expect(screen.getByText('Software Developer')).toBeTruthy();
-    expect(screen.queryByRole('button', { name: 'Verified' })).toBeNull();
-  });
-
-  it('factsOnly hides the Verified button when Software Developer is shown on a verified profile', () => {
-    renderWithLocale(
-      <MemberProfileScreen
-        factsOnly
-        profile={{ ...profile, staffTag: 'software_developer' }}
-        received={[]}
-        donated={[]}
-      />,
-    );
-    expect(screen.getByText('Software Developer')).toBeTruthy();
-    expect(screen.queryByRole('button', { name: 'Verified' })).toBeNull();
-  });
-
-  it('keeps the Moderator button and Software Developer label on a moderator profile', () => {
+  it('shows one Software Developer pill on a staff-tagged moderator profile', () => {
     renderWithLocale(
       <MemberProfileScreen
         profile={{ ...profile, role: 'moderator', staffTag: 'software_developer' }}
@@ -605,8 +609,8 @@ describe('MemberProfileScreen', () => {
         donated={[]}
       />,
     );
-    expect(screen.getByRole('button', { name: 'Moderator' })).toBeTruthy();
-    expect(screen.getByText('Software Developer')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Software Developer' })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Moderator' })).toBeNull();
   });
 
   it('factsOnly shows the reviewed pill without a role pill', () => {

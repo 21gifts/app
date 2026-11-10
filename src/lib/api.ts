@@ -1939,7 +1939,7 @@ async function postFundingAction(
 /**
  * Admits a member to daily grant payouts (staff). Target pending or trial.
  *
- * @param sessionToken - Bearer session of a founder or moderator.
+ * @param sessionToken - Bearer session of at least moderator.
  * @param accountId - Subject account id.
  * @returns The updated account snapshot.
  * @throws Error({@link FUNDING_PLACES_FULL_ERROR}) when the round has no free
@@ -1956,7 +1956,7 @@ export async function postFundingAdmit(
 /**
  * Rejects a grant application (staff). The subject may re-apply.
  *
- * @param sessionToken - Bearer session of a founder or moderator.
+ * @param sessionToken - Bearer session of at least moderator.
  * @param accountId - Subject account id.
  * @returns The updated account snapshot.
  * @throws Error with visitor-facing copy on 401/403/404/409/503 or any other failure.

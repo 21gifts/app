@@ -62,17 +62,23 @@ describe('MemberIdentityPills', () => {
     expect(screen.getByRole('status').textContent).toMatch(/confirmed they are real/i);
   });
 
-  it('shows the Fond pill and its sentence', () => {
-    renderPills({ ...profile, role: 'fond' });
-    fireEvent.click(screen.getByRole('button', { name: 'Fond' }));
-    expect(screen.getByRole('status').textContent).toBe(
-      'This account pays the daily gifts from the 21.gifts fund.',
-    );
+  it.each([
+    ['old api body', { role: 'verified' as const, staffTag: 'software_developer' as const }],
+    ['new api body', { role: 'software_developer' as const }],
+  ])('shows one clickable Software Developer pill (%s)', (_label, fields) => {
+    renderPills({ ...profile, ...fields });
+    const tag = screen.getByRole('button', { name: 'Software Developer' });
+    expect(screen.getAllByText('Software Developer')).toHaveLength(1);
+    expect(screen.queryByRole('button', { name: 'Verified' })).toBeNull();
+    fireEvent.click(tag);
+    expect(
+      screen.getByText('This person builds 21.gifts and moderates the living room.'),
+    ).toBeTruthy();
   });
 
-  it('hides the verified pill when the software developer label is shown', () => {
-    renderPills({ ...profile, staffTag: 'software_developer' });
-    expect(screen.getByText('Software Developer')).toBeTruthy();
+  it('promotes a basis member with only the staff tag to one Software Developer pill', () => {
+    renderPills({ ...profile, role: 'basis', staffTag: 'software_developer' });
+    expect(screen.getByRole('button', { name: 'Software Developer' })).toBeTruthy();
     expect(screen.queryByRole('button', { name: 'Verified' })).toBeNull();
   });
 

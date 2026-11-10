@@ -86,8 +86,8 @@ export function TrustChainScreen({
           <p className="mt-2 text-app-muted">{t('trustChain.explainModerator')}</p>
         </div>
         <div>
-          <h2 className="text-xl font-semibold">{t('forum.role.fond')}</h2>
-          <p className="mt-2 text-app-muted">{t('trustChain.explainFond')}</p>
+          <h2 className="text-xl font-semibold">{t('forum.role.softwareDeveloper')}</h2>
+          <p className="mt-2 text-app-muted">{t('trustChain.explainSoftwareDeveloper')}</p>
         </div>
         <div>
           <h2 className="text-xl font-semibold">{t('forum.role.initiator')}</h2>

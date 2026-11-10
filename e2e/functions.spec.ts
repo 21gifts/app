@@ -17174,7 +17174,7 @@ test('Function: postLnurlInvoice — amount and comment refusals', async ({ requ
   expect(await comment.json()).toEqual({ error: 'Comment too long' });
 });
 
-test('Function: verifiedChipHiddenByStaffTag — a verified author with the staff label has no Verified pill', async ({
+test('Function: effectiveRole — a staff-tagged author shows one Software Developer pill', async ({
   page,
 }) => {
   await seedAdaSession(page);
@@ -17213,9 +17213,9 @@ test('Function: verifiedChipHiddenByStaffTag — a verified author with the staf
   await page.goto('/welcome');
   await chooseForumView(page, 'All');
   await expect(page.getByText('Hello from the developer')).toBeVisible();
-  await expect(page.getByText('Software Developer')).toHaveCount(2);
+  await expect(page.getByRole('button', { name: 'Software Developer' })).toHaveCount(2);
   await expect(page.getByRole('button', { name: 'Verified' })).toHaveCount(0);
-  await expect(page.getByRole('button', { name: 'Moderator' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Moderator' })).toHaveCount(0);
 });
 
 async function seedSignedInAda(page: Page): Promise<void> {

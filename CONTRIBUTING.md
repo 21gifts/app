@@ -574,7 +574,7 @@ update stuff
   values; explicitly optional ones (`getE2eNow`, `getBreezApiKey`,
   `getPlatformUsername`, `getSentryDsn`, `getSentryEnvironment`,
   `getSentryTracesSampleRate`) return `null`. No silent fallbacks.
-- **Viewer permission checks use `roleAtLeast`** (`src/lib/roles.ts`), never an equality test on the viewer's role — a higher role must always do and see everything a lower role can. Every viewer permission check, including the daily payout roster (`canEditDailyPayoutRoster` in `src/lib/roles.ts`), is a `roleAtLeast` minimum; the roster's minimum is `initiator`. No equality checks.
+- **Viewer permission checks use `roleAtLeast`** (`src/lib/roles.ts`), never an equality test on the viewer's role — a higher role can always do and see everything a lower role can. There is no exception: the daily payout roster is `roleAtLeast(role, 'initiator')`. The rank order is basis < verified < moderator < software_developer < initiator < founder. The software developer is in the moderators' group and has every moderator permission, but cannot edit the daily payout roster because it ranks below initiator.
 
 ### Styling
 
@@ -749,7 +749,7 @@ The open wallet keeps its recovery phrase in the tab's memory only. A document l
 
 ### Staff actions (hard requirement)
 
-A stack of labeled moderator or founder actions on a member card is not shown as loose buttons. One closed disclosure (`staff.functions`, English "Moderator functions") is a `details` / `summary` row, not a full-width button, and reveals only the actions that viewer may take on that person. Founder-only actions such as appoint use the same disclosure. Delete on a note stays the icon in the footer icon row. Routes under `/moderate` are the opened workspace and do not wrap their own tools again. The Menu **Moderation** row stays. The staff inbox origin filter stays. Role pills are not actions. A new labeled staff-action stack on a member card that renders before this disclosure is opened is an undeclared deviation. The closed row and the screen after that control is pressed are separate screenshot states. Reviewers follow `docs/ui.md` principle **Staff action stacks stay closed.**
+A stack of labeled actions available to accounts at least moderator on a member card is not shown as loose buttons. One closed disclosure (`staff.functions`, English "Moderator functions") is a `details` / `summary` row, not a full-width button, and reveals only the actions that viewer may take on that person. Founder-only actions such as appoint use the same disclosure. Delete on a note stays the icon in the footer icon row. Routes under `/moderate` are the opened workspace and do not wrap their own tools again. The Menu **Moderation** row stays. The staff inbox origin filter stays. Role pills are not actions. A new labeled staff-action stack on a member card that renders before this disclosure is opened is an undeclared deviation. The closed row and the screen after that control is pressed are separate screenshot states. Reviewers follow `docs/ui.md` principle **Staff action stacks stay closed.**
 
 ### Amount entry (hard requirement)
 

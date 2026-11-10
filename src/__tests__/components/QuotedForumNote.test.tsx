@@ -1092,11 +1092,13 @@ describe('ForumQuotedBody', () => {
     expect(screen.queryByText('Founder')).toBeNull();
   });
 
-  it('hides Verified when Software Developer is shown on a quoted note with the staff tag', async () => {
+  it.each([
+    ['old api body', { role: 'verified' as const, staffTag: 'software_developer' as const }],
+    ['new api body', { role: 'software_developer' as const }],
+  ])('shows one Software Developer badge and no Verified (%s)', async (_label, fields) => {
     const tagged: ForumMessage = {
       ...quotedNote,
-      role: 'verified',
-      staffTag: 'software_developer',
+      ...fields,
       hasPhoto: false,
       photoCount: 0,
     };
@@ -1110,7 +1112,7 @@ describe('ForumQuotedBody', () => {
       />,
     );
     await waitFor(() => {
-      expect(screen.getByText('Software Developer')).toBeTruthy();
+      expect(screen.getAllByText('Software Developer')).toHaveLength(1);
     });
     expect(screen.queryByText('Verified')).toBeNull();
   });
@@ -1140,7 +1142,7 @@ describe('ForumQuotedBody', () => {
     expect(screen.queryByText('External')).toBeNull();
   });
 
-  it('shows External and Software Developer on a quoted nostr note with the staff tag', async () => {
+  it('shows only Software Developer, not External, on a staff-tagged nostr note', async () => {
     const tagged: ForumMessage = {
       ...quotedNote,
       role: 'basis',
@@ -1159,9 +1161,9 @@ describe('ForumQuotedBody', () => {
       />,
     );
     await waitFor(() => {
-      expect(screen.getByText('External')).toBeTruthy();
+      expect(screen.getByText('Software Developer')).toBeTruthy();
     });
-    expect(screen.getByText('Software Developer')).toBeTruthy();
+    expect(screen.queryByText('External')).toBeNull();
   });
 
   it('shows an external quoted author as a View profile link without a member link', async () => {

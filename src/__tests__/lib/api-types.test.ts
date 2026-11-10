@@ -402,9 +402,9 @@ describe('trustChainSchema', () => {
     expect(trustChainSchema.parse(body)).toEqual(body);
   });
 
-  it('accepts a fond node', () => {
+  it('accepts a software developer node', () => {
     const body = {
-      nodes: [{ id: 'fond', name: 'Fiona', role: 'fond' as const }],
+      nodes: [{ id: 's', name: 'Sam', role: 'software_developer' as const }],
       edges: [],
     };
     expect(trustChainSchema.parse(body)).toEqual(body);
@@ -1726,9 +1726,11 @@ describe('accountSchema', () => {
     expect(() => accountSchema.parse({ ...account, name: '' })).toThrow();
   });
 
-  it('accepts founder, fond, and verified roles', () => {
+  it('accepts founder, software developer, and verified roles', () => {
     expect(accountSchema.parse({ ...account, role: 'founder' }).role).toBe('founder');
-    expect(accountSchema.parse({ ...account, role: 'fond' }).role).toBe('fond');
+    expect(accountSchema.parse({ ...account, role: 'software_developer' }).role).toBe(
+      'software_developer',
+    );
     expect(accountSchema.parse({ ...account, role: 'verified' }).role).toBe('verified');
   });
 
@@ -2061,9 +2063,11 @@ describe('forumMessageSchema', () => {
     });
   });
 
-  it('accepts founder, fond, verified, and moderator roles', () => {
+  it('accepts founder, software developer, verified, and moderator roles', () => {
     expect(forumMessageSchema.parse({ ...message, role: 'founder' }).role).toBe('founder');
-    expect(forumMessageSchema.parse({ ...message, role: 'fond' }).role).toBe('fond');
+    expect(forumMessageSchema.parse({ ...message, role: 'software_developer' }).role).toBe(
+      'software_developer',
+    );
     expect(forumMessageSchema.parse({ ...message, role: 'verified' }).role).toBe('verified');
     expect(forumMessageSchema.parse({ ...message, role: 'moderator' }).role).toBe('moderator');
   });
