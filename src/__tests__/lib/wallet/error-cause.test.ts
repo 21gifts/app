@@ -60,6 +60,18 @@ describe('sanitizeErrorMessage', () => {
     );
   });
 
+  it('replaces a dotted mixed-case key and every part of a JWE', () => {
+    expect(sanitizeErrorMessage('key sk_live.4eC39HqLyjWDarjtT1 bad')).toBe('key [token] bad');
+    expect(
+      sanitizeErrorMessage(
+        'jwe eyJhbGciOiJSU0EtT0FFUCJ9.OKOawDo13gRp2ojaHV7LFpZcgV7T6DVZKTyKOMTYUmKoTCVJRgckCL9kiMT03JGeipsEdY3mx_etLbbWSrFr05kLzcSr4qKAq7YN7e9jwQRb23nfa6c9d-StnImGyFDbSv04uVuxIp5Zms1gNxKKK2Da14B8S4rzVRltdYwam_lDp5XnZAYpQdb76FdIKLaVmqgfwX7XWRxv2322i-vDxRfqNzo_tETKzpVLzfiwQyeyPGLBIO56YJ7eObdv0je81860ppamavo35UgoRdbYaBcoh9QcfylQr66oc6vFWXRcZ_ZT2LawVCWTIy3brGPi6UklfCpIMfIjf7iGdXKHzg.48V1_ALb6US04U3b.5eym8TW_c8SuK0ltJ3rpYIzOeDQz7TALvtu6UG9oMo4vpzs9tX_EFShS8iB7j6jiSdiwkIr3ajwQzaBtQD_A.XFBoMYUZodetZdvTiFvSkQ end',
+      ),
+    ).toBe('jwe [token] end');
+    expect(sanitizeErrorMessage('see 21.gifts/static/WebAssembly.instantiate')).toBe(
+      'see 21.gifts/static/WebAssembly.instantiate',
+    );
+  });
+
   it('replaces a 40-character mixed-case token without a digit', () => {
     expect(sanitizeErrorMessage('key AbCdEfGhIjKlMnOpQrStUvWxYzAbCdEfGhIjKlMn end')).toBe(
       'key [token] end',
@@ -86,6 +98,8 @@ describe('sanitizeErrorMessage', () => {
     'user/@mail.com/x',
     'https://user:password/@host.com',
     'alice.smith＠example.com',
+    'alice.smith﹫example.com',
+    'https://x.example/u/alice.smith%40example.com',
   ])('replaces the whole address %s', (address) => {
     expect(sanitizeErrorMessage(`to ${address} failed`)).toBe('to [addr] failed');
   });
@@ -94,6 +108,7 @@ describe('sanitizeErrorMessage', () => {
     expect(sanitizeErrorMessage('example.com?secretvalue1 x')).toBe('example.com?[q] x');
     expect(sanitizeErrorMessage('example.com#abcdefghijkl')).toBe('example.com?[q]');
     expect(sanitizeErrorMessage('example.com？token=abcdefghijkl')).toBe('example.com?[q]');
+    expect(sanitizeErrorMessage('example.com＃abcdefghijkl')).toBe('example.com?[q]');
     expect(sanitizeErrorMessage("https://x.com/cb?code=abc'defghijklmnop")).toBe(
       'https://x.com/cb?[q]',
     );
@@ -171,6 +186,18 @@ describe('sanitizeErrorMessage', () => {
     expect(sanitizeErrorMessage('open https://h.example/p#secret')).toBe(
       'open https://h.example/p?[q]',
     );
+  });
+
+  it('changes nothing on a second run, so the error report can run it again', () => {
+    const inputs = [
+      ...KEY_MATERIAL.map(([, secret]) => `x ${secret} y`),
+      '[addr] x?[q] [hex] [token] [words]',
+      'sdk_load connect first_sync deadline visible hidden none TypeError network',
+    ];
+    for (const input of inputs) {
+      const once = sanitizeErrorMessage(input);
+      expect(sanitizeErrorMessage(once)).toBe(once);
+    }
   });
 
   it('cuts the result to 200 characters after the replacements', () => {

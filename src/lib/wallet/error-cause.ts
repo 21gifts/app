@@ -28,7 +28,7 @@ const LETTERS = /\[[a-z]+\]|[A-Za-z]+/g;
  */
 const KEY_PATTERNS: ReadonlyArray<readonly [RegExp, string]> = [
   // JSON web tokens and other dotted three-part tokens.
-  [/(?<![A-Za-z0-9_.-])eyJ[A-Za-z0-9_-]*(?:\.[A-Za-z0-9_-]*){1,2}/g, '[token]'],
+  [/(?<![A-Za-z0-9_.-])eyJ[A-Za-z0-9_-]*(?:\.[A-Za-z0-9_-]*)+/g, '[token]'],
   [
     /(?<![A-Za-z0-9_.-])(?=[A-Za-z0-9_.-]*\d)[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{4,}\b/g,
     '[token]',
@@ -51,6 +51,12 @@ const TOKEN_PATTERNS: ReadonlyArray<readonly [RegExp, string]> = [
   [/(?<![A-Za-z0-9+/=_-])(?=[A-Za-z0-9+/=_-]*\d)[A-Za-z0-9+/=_-]{20,}/g, '[token]'],
   [
     /(?<![A-Za-z0-9+/=_-])(?=[A-Za-z0-9+/=_-]*[a-z])(?=[A-Za-z0-9+/=_-]*[A-Z])[A-Za-z0-9+/=_-]{40,}/g,
+    '[token]',
+  ],
+  // A dotted key of 20 or more characters that mixes digits, upper, and lower
+  // case (`sk_live.4eC39HqLy…`); a host name such as `21.gifts` is not mixed.
+  [
+    /(?<![A-Za-z0-9_.-])(?=[A-Za-z0-9_.-]*\d)(?=[A-Za-z0-9_.-]*[a-z])(?=[A-Za-z0-9_.-]*[A-Z])[A-Za-z0-9_.-]{20,}/g,
     '[token]',
   ],
 ];
@@ -85,11 +91,13 @@ const MIN_QUERY_LENGTH = 4;
 
 /**
  * Replaces whole words that hold an address or a query. A word with an `@`
- * that is not a {@link PACKAGE_SCOPE} (an e-mail or `name@host` address in
- * any script, quoted or not, or a URL with a user name and password) becomes
- * `[addr]`. Otherwise a word is cut at its first `?` or `#`, and the rest
- * becomes `?[q]`, when a `/` comes before it, an `=` after it, or at least
- * {@link MIN_QUERY_LENGTH} characters follow it; `what?` and `#1` stay.
+ * (also `＠`, `﹫`, or the URL-encoded `%40`) that is not a
+ * {@link PACKAGE_SCOPE} (an e-mail or `name@host` address in any script,
+ * quoted or not, or a URL with a user name and password) becomes `[addr]`.
+ * Otherwise a word is cut at its first `?` or `#` (also the fullwidth `？`
+ * and `＃`), and the rest becomes `?[q]`, when a `/` comes before it, an `=`
+ * after it, or at least {@link MIN_QUERY_LENGTH} characters follow it;
+ * `what?` and `#1` stay.
  * Each character is read once.
  *
  * @param text - Error message.
@@ -97,7 +105,7 @@ const MIN_QUERY_LENGTH = 4;
  */
 function replaceAddressesAndQueries(text: string): string {
   return text.replace(WORD, (word) => {
-    if (/[@＠]/.test(word.replace(PACKAGE_SCOPE, '/'))) {
+    if (/[@＠﹫]|%40/i.test(word.replace(PACKAGE_SCOPE, '/'))) {
       return '[addr]';
     }
     const query = word.search(/[?#？＃]/);
@@ -182,21 +190,20 @@ function replaceWordRuns(text: string): string {
 }
 
 /**
- * Makes an error message safe to report. In this order it replaces every
- * word that holds an address (any `@` but a package scope such as
- * `/@breeztech/`: e-mail and `name@host` addresses in any script, a URL with
- * a user name) with
- * `[addr]`; the query string and fragment of a URL or path (a word cut at
- * its first `?` or `#` when a `/` comes before it, an `=` after it, or at
- * least four characters follow) with `?[q]`; JSON web tokens and dotted
- * three-part tokens, invoices, offers, LNURL strings, Spark and base-chain
- * addresses, and extended keys (`xprv`, `xpub`, `tprv`, `tpub`, …) with
- * `[token]`; 16 or more hex digits, also in groups joined by `:` or `-`, with
- * `[hex]` (the whole run around them); any other run of 20 or more base58, base64, or bech32 characters
- * that holds a digit, or of 40 or more in mixed case without one, with
- * `[token]`; and last every run of three or
- * more BIP-39 English words (any case, any separator) with `[words]`, so a
- * word run never cuts a key short. Then it cuts the result to
+ * Makes an error message safe to report. In this order it replaces every word
+ * that holds an address (any `@`, `＠`, `﹫`, or `%40` but a package scope such
+ * as `/@breeztech/`: e-mail and `name@host` addresses in any script, a URL with
+ * a user name) with `[addr]`; the query string and fragment of a URL or path (a
+ * word cut at its first `?` or `#`, or fullwidth `？` or `＃`, when a `/` comes
+ * before it, an `=` after it, or at least four characters follow) with `?[q]`;
+ * JSON web tokens and dotted three-part tokens, invoices, offers, LNURL
+ * strings, Spark and base-chain addresses, and extended keys (`xprv`, `xpub`,
+ * `tprv`, `tpub`, …) with `[token]`; 16 or more hex digits, also in groups
+ * joined by `:` or `-`, with `[hex]` (the whole run around them); any other run
+ * of 20 or more base58, base64, or bech32 characters that holds a digit, or of
+ * 40 or more in mixed case without one, with `[token]`; and last every run of
+ * three or more BIP-39 English words (any case, any separator) with `[words]`,
+ * so a word run never cuts a key short. Then it cuts the result to
  * {@link ERROR_MESSAGE_MAX_LENGTH} characters. Plain messages such as
  * `Failed to fetch` stay readable.
  *
