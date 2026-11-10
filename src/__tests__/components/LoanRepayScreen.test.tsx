@@ -675,6 +675,50 @@ describe('LoanRepayScreen', () => {
     expect(screen.queryByRole('button', { name: 'Send ₿0 · $0.00' })).toBeNull();
   });
 
+  it('keeps both payable loans in a full send when one loaded ledger has no due rows', async () => {
+    vi.mocked(getRepayment).mockImplementation(async (id) =>
+      id === 'php-1'
+        ? ledger({
+            currency: 'PHP',
+            repayments: [
+              { ...ledger().repayments[0]!, amount: '30.00', sats: 1_000, dueSats: null },
+            ],
+          })
+        : ledger({ currency: 'PHP', repayments: [] }),
+    );
+    const state = repay({ balanceSats: 2_000 });
+    const view = show(
+      {
+        sundayRest: false,
+        loans: [
+          loan({
+            messageId: 'php-1',
+            goalCurrency: 'PHP',
+            goalAmount: '900.00',
+            due: { ...loan().due, payableSats: 1_000, payableAmount: '30.00' },
+          }),
+          loan({
+            messageId: 'php-2',
+            goalCurrency: 'PHP',
+            goalAmount: '450.00',
+            due: { ...loan().due, payableSats: 500, payableAmount: '15.00' },
+          }),
+        ],
+      },
+      state,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Who gets paid' }));
+    await waitFor(() => expect(screen.queryByRole('status')).toBeNull());
+    const send = screen.getByRole('button', { name: "Send ₱45.00 · ₿1'500" });
+    expect(screen.queryByRole('button', { name: "Send ₱30.00 · ₿1'000" })).toBeNull();
+    fireEvent.click(send);
+    vi.mocked(useLoanRepay).mockReturnValue(
+      repay({ balanceSats: 2_000, phase: 'preparing', pay: state.pay }),
+    );
+    view.rerender(<LoanRepayScreen />);
+    expect(screen.getByRole('status').textContent).toContain("Sending ₱45.00 · ₿1'500…");
+  });
+
   it('hides send-now when a loan repayment list has not loaded', async () => {
     vi.mocked(getRepayment).mockImplementation(async (id) =>
       id === 'loan-1'
@@ -1305,6 +1349,55 @@ describe('LoanRepayScreen', () => {
       ],
     });
     expect(screen.getByText("Next: tomorrow, ₱30.00 + $1.00 · ₿2'000")).toBeTruthy();
+  });
+
+  it('counts next recipients only for loans included in the next summary', async () => {
+    let resolveFirst: (value: RepaymentLedger | null) => void = () => undefined;
+    let resolveSecond: (value: RepaymentLedger | null) => void = () => undefined;
+    vi.mocked(getRepayment).mockImplementation(
+      (id) =>
+        new Promise<RepaymentLedger | null>((resolve) => {
+          if (id === 'php-next-1') {
+            resolveFirst = resolve;
+          } else {
+            resolveSecond = resolve;
+          }
+        }),
+    );
+    const clearDue = { ...loan().due, payableSats: 0, payablePeople: 0 };
+    show({
+      sundayRest: false,
+      loans: [
+        loan({
+          messageId: 'php-next-1',
+          goalCurrency: 'PHP',
+          due: clearDue,
+          next: { dueOn: '2026-10-11', amount: '2.00', sats: 40 },
+        }),
+        loan({
+          messageId: 'php-next-2',
+          goalCurrency: 'PHP',
+          due: clearDue,
+          next: { dueOn: '2026-10-11', amount: '3.00', sats: null },
+        }),
+      ],
+    });
+    await waitFor(() => expect(getRepayment).toHaveBeenCalledTimes(2));
+    await act(async () => {
+      resolveFirst(
+        ledger({
+          repayments: [{ ...ledger().repayments[1]!, accountId: 'giver-1' }],
+        }),
+      );
+      resolveSecond(
+        ledger({
+          repayments: [{ ...ledger().repayments[1]!, accountId: 'giver-2', name: 'Carla' }],
+        }),
+      );
+      await Promise.resolve();
+    });
+    expect(screen.getByText('Next: tomorrow, ₱2.00 · ₿40 to 1 person')).toBeTruthy();
+    expect(screen.queryByText('Next: tomorrow, ₱2.00 · ₿40 to 2 people')).toBeNull();
   });
 
   it('shows tomorrow and later next lines for several recipients', async () => {

@@ -79,7 +79,8 @@ const DUE_BILLS_PER_REQUEST = 60;
  * a danger error line when it failed to load; each list is applied as it arrives.
  * A share whose lender cannot receive yet (`waiting`) is a muted line that names the
  * lender and is left out of the amount to send; when every due share waits, no
- * amount is asked. Behind follows the api's `behindDays`.
+ * amount is asked. A capped full-send total is used only when every payable loan
+ * contributes a share with known satoshis. Behind follows the api's `behindDays`.
  *
  * @returns The repayment screen body.
  */
@@ -239,6 +240,13 @@ export function LoanRepayScreen(): ReactElement {
     ).format(new Date(`${dueOn}T12:00:00`));
   const nextPeople = new Set(
     loans.loans.flatMap((loan, index) => {
+      if (
+        loan.next === null ||
+        loan.next.sats === null ||
+        loan.next.dueOn !== summary.next?.dueOn
+      ) {
+        return [];
+      }
       const ledger = ledgers[index];
       if (!ledger) {
         return [];
@@ -386,13 +394,16 @@ export function LoanRepayScreen(): ReactElement {
     keptByLoan.set(share.messageId, kept + 1);
     return true;
   });
-  const payableLoanAmounts = loans.loans
-    .filter((loan) => loan.due.payableSats > 0)
-    .map((loan) => ({ code: loan.goalCurrency, amount: loan.due.payableAmount }));
+  const payableLoans = loans.loans.filter((loan) => loan.due.payableSats > 0);
+  const payableLoanAmounts = payableLoans.map((loan) => ({
+    code: loan.goalCurrency,
+    amount: loan.due.payableAmount,
+  }));
+  const payableWithinDueLoanIds = new Set(payableWithinDue.map((share) => share.messageId));
   // The full send asks each loan's due endpoint once, which returns at most 60 bills.
   const fullSendFromShares =
-    !ledgersMissing &&
     payableWithinDue.length > 0 &&
+    payableLoans.every((loan) => payableWithinDueLoanIds.has(loan.messageId)) &&
     payableWithinDue.every((share) => share.sats !== null);
   const fullSendSats = fullSendFromShares
     ? payableWithinDue.reduce((sum, share) => sum + (share.sats as number), 0)
