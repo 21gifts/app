@@ -152,9 +152,27 @@ describe('WalletPaymentDetails', () => {
     });
     showPayment(fixture(ADDRESS_SEND));
     expect(screen.getAllByText('To', { selector: 'dt' })).toHaveLength(1);
+    expect(row('To').textContent).toBe('bob@example.com');
     expect(screen.queryByRole('link', { name: 'bob@21.gifts' })).toBeNull();
     openDetails();
     expect(screen.getByText('Payment request')).toBeTruthy();
+  });
+
+  it('prefers the existing member address and member link over the lookup', () => {
+    vi.mocked(usePaymentCounterparty).mockReturnValue({
+      id: 'p1',
+      accountId: 'acc_bob',
+      username: 'bob',
+    });
+    showPayment({
+      ...fixture(SPARK_SEND),
+      info: { lnAddress: 'alice@21.gifts', memberAccountId: 'acc_alice' },
+    });
+    expect(screen.getAllByText('To', { selector: 'dt' })).toHaveLength(1);
+    expect(
+      within(row('To')).getByRole('link', { name: 'alice@21.gifts' }).getAttribute('href'),
+    ).toBe('/members/acc_alice');
+    expect(screen.queryByRole('link', { name: 'bob@21.gifts' })).toBeNull();
   });
 
   it('keeps a Spark request for an unknown counterparty', () => {

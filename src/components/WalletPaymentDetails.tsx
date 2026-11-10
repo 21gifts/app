@@ -136,12 +136,15 @@ function PaymentView(props: { payment: WalletPayment }): ReactElement {
   const [leaving, setLeaving] = useState(false);
   const [open, setOpen] = useState(false);
   const received = payment.direction === 'received';
-  const sender = usePaymentCounterparty(payment);
+  const counterparty = usePaymentCounterparty(payment);
   const host = typeof window === 'undefined' ? '21.gifts' : window.location.hostname;
-  const senderAddress = sender === null ? null : giftsLightningAddress(sender.username, host);
+  const counterpartyAddress =
+    counterparty === null ? null : giftsLightningAddress(counterparty.username, host);
   const Icon = received ? ArrowDownLeft : ArrowUpRight;
   const title = paymentTitle(payment);
   const { info } = payment;
+  const toAddress = info.lnAddress ?? (received ? null : counterpartyAddress);
+  const toAccountId = info.lnAddress === undefined ? counterparty?.accountId : info.memberAccountId;
   const lookupHash = paymentLookupHash(payment);
   const heartContext = useHeartContext(lookupHash === null ? [] : [lookupHash]);
   const heart = lookupHash === null ? undefined : heartContext.byHash.get(lookupHash);
@@ -313,39 +316,26 @@ function PaymentView(props: { payment: WalletPayment }): ReactElement {
       <dl className="divide-y divide-app-border rounded-2xl border border-app-border px-4">
         <Row label={t('wallet.payment.date')}>{date}</Row>
         <Row label={t('wallet.payment.type')}>{t(METHOD_KEY[payment.method])}</Row>
-        {!received || sender === null || senderAddress === null ? null : (
+        {!received || counterparty === null || counterpartyAddress === null ? null : (
           <Row label={t('wallet.payment.from')}>
             <Link
-              href={`/members/${sender.accountId}`}
+              href={`/members/${counterparty.accountId}`}
               className="break-all text-app-fg font-medium underline underline-offset-2"
             >
-              {senderAddress}
+              {counterpartyAddress}
             </Link>
           </Row>
         )}
-        {received ||
-        info.lnAddress !== undefined ||
-        sender === null ||
-        senderAddress === null ? null : (
+        {toAddress === null ? null : (
           <Row label={t('wallet.payment.to')}>
-            <Link
-              href={`/members/${sender.accountId}`}
-              className="break-all text-app-fg font-medium underline underline-offset-2"
-            >
-              {senderAddress}
-            </Link>
-          </Row>
-        )}
-        {info.lnAddress === undefined ? null : (
-          <Row label={t('wallet.payment.to')}>
-            {info.memberAccountId === undefined ? (
-              <span className="break-all">{info.lnAddress}</span>
+            {toAccountId === undefined ? (
+              <span className="break-all">{toAddress}</span>
             ) : (
               <Link
-                href={`/members/${info.memberAccountId}`}
+                href={`/members/${toAccountId}`}
                 className="break-all text-app-fg font-medium underline underline-offset-2"
               >
-                {info.lnAddress}
+                {toAddress}
               </Link>
             )}
           </Row>
@@ -416,7 +406,7 @@ function PaymentView(props: { payment: WalletPayment }): ReactElement {
               <CopyRow label={t('wallet.payment.output')} value={String(info.vout)} />
             )}
             {info.invoice === undefined ||
-            (senderAddress !== null && isSparkPaymentRequest(info.invoice)) ? null : (
+            (counterpartyAddress !== null && isSparkPaymentRequest(info.invoice)) ? null : (
               <CopyRow label={t('wallet.payment.invoice')} value={info.invoice} />
             )}
             {info.paymentHash === undefined ? null : (
