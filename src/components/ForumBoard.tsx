@@ -203,32 +203,6 @@ function deadStillKey(messageId: string, photoIndex: number, version: string | u
     : `${messageId}:${photoIndex}:${version}`;
 }
 
-/** Roles that show a clickable tag beside the author name. */
-type ForumTaggedRole = 'founder' | 'moderator' | 'fond' | 'initiator' | 'verified';
-
-/** Catalog keys for a tagged role's label and explanation. */
-const ROLE_TAG_KEYS: Record<ForumTaggedRole, { label: MessageKey; hint: MessageKey }> = {
-  founder: { label: 'forum.role.founder', hint: 'forum.role.founderHint' },
-  moderator: { label: 'forum.role.moderator', hint: 'forum.role.moderatorHint' },
-  fond: { label: 'forum.role.fond', hint: 'forum.role.fondHint' },
-  initiator: { label: 'forum.role.initiator', hint: 'forum.role.initiatorHint' },
-  verified: { label: 'forum.role.verified', hint: 'forum.role.verifiedHint' },
-};
-
-function isForumTaggedRole(role: string): role is ForumTaggedRole {
-  return role in ROLE_TAG_KEYS;
-}
-
-/**
- * Role that shows a forum tag, or `null` for basis / missing.
- *
- * @param role - Live account role from the api, if present.
- * @returns Tagged role or `null`.
- */
-function forumTaggedRole(role: string): ForumTaggedRole | null {
-  return isForumTaggedRole(role) ? role : null;
-}
-
 const COPY_RESET_MS = 1200;
 
 /** The forum home's writer: whether it is open, and how it opens and closes. */

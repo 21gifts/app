@@ -10,21 +10,6 @@ import { formatForumTimeFromMs } from '@/lib/forum-time';
 import type { MessageKey } from '@/lib/messages';
 import { verifiedChipHiddenByStaffTag } from '@/lib/roles';
 
-/** Roles that show a clickable tag beside the author name. */
-type MemberTaggedRole = 'founder' | 'moderator' | 'fond' | 'initiator' | 'verified';
-
-const ROLE_TAG_KEYS: Record<MemberTaggedRole, { label: MessageKey; hint: MessageKey }> = {
-  founder: { label: 'forum.role.founder', hint: 'forum.role.founderHint' },
-  moderator: { label: 'forum.role.moderator', hint: 'forum.role.moderatorHint' },
-  fond: { label: 'forum.role.fond', hint: 'forum.role.fondHint' },
-  initiator: { label: 'forum.role.initiator', hint: 'forum.role.initiatorHint' },
-  verified: { label: 'forum.role.verified', hint: 'forum.role.verifiedHint' },
-};
-
-function isMemberTaggedRole(role: string): role is MemberTaggedRole {
-  return role in ROLE_TAG_KEYS;
-}
-
 function fundingParticipationLabel(
   t: (key: MessageKey, vars?: Record<string, string | number>) => string,
   locale: string,

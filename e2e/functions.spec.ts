@@ -14222,7 +14222,7 @@ test('Function: forumTaggedRole — untagged notes show no role pill', async ({ 
   await page.goto('/welcome');
   await expect(page.getByText('Hello from the heart list.')).toBeVisible();
   await expect(
-    page.getByRole('button', { name: /^(?:Founder|Moderator|Initiator|Verified)$/ }),
+    page.getByRole('button', { name: /^(?:Founder|Moderator|Fond|Initiator|Verified)$/ }),
   ).toHaveCount(0);
 });
 
