@@ -32,10 +32,10 @@ vi.mock('@/lib/wallet/wallet-service', () => ({
  * @returns The account.
  */
 function account(role: Account['role']): Account {
-  return {
+  const baseAccount: Account = {
     id: 'acc_fond',
     linkingKey: null,
-    role,
+    role: 'fond',
     name: 'Fond',
     location: null,
     lightningAddress: null,
@@ -45,9 +45,11 @@ function account(role: Account['role']): Account {
     rulesAgreedAt: null,
     viewKey: 'a'.repeat(64),
     aboutMe: null,
+    aboutMeHasPhoto: false,
     setup: null,
     missing: [],
-  } as Account;
+  };
+  return { ...baseAccount, role };
 }
 
 /**

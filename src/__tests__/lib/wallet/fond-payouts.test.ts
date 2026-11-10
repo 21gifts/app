@@ -10,11 +10,12 @@ import {
 } from '@/lib/wallet/fond-payouts';
 import type { PaymentFailure } from '@/lib/wallet/payment-failure';
 import type { WalletPayResult, WalletSendResult } from '@/lib/wallet/wallet-service';
-import type { WalletPayment } from '@/lib/wallet/wallet-sdk';
+import type { WalletPayment, WalletPayRequest } from '@/lib/wallet/wallet-sdk';
 
 const HASH_A = 'aa'.repeat(32);
 const HASH_B = 'bb'.repeat(32);
 const PREIMAGE_A = '11'.repeat(32);
+const PREIMAGE_B = '22'.repeat(32);
 const FAILURE: PaymentFailure = {
   stage: 'prepare',
   reason: 'sdk_error',
@@ -78,20 +79,30 @@ function confirmResult(sent: { kind: 'paid' }): WalletPayResult {
 function depsFor(payouts: FondPayout[]): Mocked<FondPayoutTickDeps> {
   return {
     session: 'sess',
-    fetchFondPayouts: vi.fn(async () => ({ ok: true, payouts })),
-    postFondPayoutInvoice: vi.fn(async (_session: string, id: string) => ({
-      ok: true,
-      invoice: {
-        id,
-        bolt11: `lnbc-${id}`,
-        paymentHash: id === 'row-b' ? HASH_B : HASH_A,
-      },
-    })),
-    postFondPayoutProof: vi.fn(async () => ({ ok: true })),
-    payFromWallet: vi.fn(async () => confirmResult({ kind: 'paid' })),
-    listWalletPayments: vi.fn(async () => []),
-    sleep: vi.fn(async () => undefined),
-  } as Mocked<FondPayoutTickDeps>;
+    fetchFondPayouts: vi.fn<FondPayoutTickDeps['fetchFondPayouts']>(
+      async (_session: string) => ({ ok: true, payouts }),
+    ),
+    postFondPayoutInvoice: vi.fn<FondPayoutTickDeps['postFondPayoutInvoice']>(
+      async (_session: string, id: string) => ({
+        ok: true,
+        invoice: {
+          id,
+          bolt11: `lnbc-${id}`,
+          paymentHash: id === 'row-b' ? HASH_B : HASH_A,
+        },
+      }),
+    ),
+    postFondPayoutProof: vi.fn<FondPayoutTickDeps['postFondPayoutProof']>(
+      async (_session: string, _id: string, _preimage: string) => ({ ok: true }),
+    ),
+    payFromWallet: vi.fn<FondPayoutTickDeps['payFromWallet']>(
+      async (_request: WalletPayRequest) => confirmResult({ kind: 'paid' }),
+    ),
+    listWalletPayments: vi.fn<FondPayoutTickDeps['listWalletPayments']>(
+      async (_page: { offset: number; limit: number }) => [] as WalletPayment[],
+    ),
+    sleep: vi.fn<FondPayoutTickDeps['sleep']>(async (_ms: number) => undefined),
+  };
 }
 
 /**
@@ -273,6 +284,27 @@ describe('runFondPayoutTick rows', () => {
       stop: null,
     });
     expect(deps.payFromWallet).not.toHaveBeenCalled();
+    expect(deps.postFondPayoutProof).toHaveBeenCalledWith('sess', 'row-a', PREIMAGE_A);
+  });
+
+  it("does not treat a received payment as the row's send", async () => {
+    const deps = depsFor([OWED]);
+    vi.mocked(deps.listWalletPayments)
+      .mockResolvedValueOnce([
+        sentPayment({
+          direction: 'received',
+          info: { paymentHash: HASH_A, preimage: PREIMAGE_B },
+        }),
+      ])
+      .mockResolvedValue([sentPayment({ info: { paymentHash: HASH_A, preimage: PREIMAGE_A } })]);
+    await expect(tick(deps)).resolves.toEqual({
+      paid: 1,
+      proved: 1,
+      skipped: 0,
+      stop: null,
+    });
+    expect(deps.payFromWallet).toHaveBeenCalledTimes(1);
+    expect(deps.payFromWallet).toHaveBeenCalledWith({ type: 'input', input: 'lnbc-row-a' });
     expect(deps.postFondPayoutProof).toHaveBeenCalledWith('sess', 'row-a', PREIMAGE_A);
   });
 
