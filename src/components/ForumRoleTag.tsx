@@ -6,13 +6,14 @@ import type { MessageKey } from '@/lib/messages';
 import { verifiedChipHiddenByStaffTag } from '@/lib/roles';
 
 /** Roles that show a clickable tag beside a forum member's name. */
-export type ForumTaggedRole = 'founder' | 'moderator' | 'initiator' | 'verified';
+export type ForumTaggedRole = 'founder' | 'moderator' | 'fond' | 'initiator' | 'verified';
 
 /** Catalog keys for a tagged forum role's label and explanation. */
 export const FORUM_ROLE_TAG_KEYS: Record<ForumTaggedRole, { label: MessageKey; hint: MessageKey }> =
   {
     founder: { label: 'forum.role.founder', hint: 'forum.role.founderHint' },
     moderator: { label: 'forum.role.moderator', hint: 'forum.role.moderatorHint' },
+    fond: { label: 'forum.role.fond', hint: 'forum.role.fondHint' },
     initiator: { label: 'forum.role.initiator', hint: 'forum.role.initiatorHint' },
     verified: { label: 'forum.role.verified', hint: 'forum.role.verifiedHint' },
   };

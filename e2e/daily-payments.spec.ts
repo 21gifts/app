@@ -36,7 +36,7 @@ const EMPTY_ROSTER = {
 
 async function seedAdaSession(
   page: Page,
-  role: 'basis' | 'verified' | 'moderator' | 'initiator' | 'founder' = 'basis',
+  role: 'basis' | 'verified' | 'moderator' | 'fond' | 'initiator' | 'founder' = 'basis',
 ): Promise<void> {
   await page.addInitScript(() => {
     localStorage.setItem('21gifts.session', 'sess-e2e');
@@ -116,6 +116,17 @@ test('Function: canEditDailyPayoutRoster — initiator sees both daily links and
   await expect(page.getByRole('link', { name: 'Daily payment amounts' })).toHaveCount(0);
   await expect(page.getByRole('link', { name: 'Moderator payments' })).toHaveCount(0);
   await expect(page.getByText('No open applications.')).toBeVisible();
+});
+
+test('Function: canEditDailyPayoutRoster — a fond account cannot edit the roster', async ({
+  page,
+}) => {
+  await seedAdaSession(page, 'fond');
+  await stubApplications(page);
+  await page.goto('/grants');
+  await expect(page.getByRole('link', { name: 'Daily payment text' })).toHaveCount(0);
+  await expect(page.getByRole('link', { name: 'Daily payment amounts' })).toHaveCount(0);
+  await expect(page.getByRole('link', { name: 'Moderator payments' })).toHaveCount(0);
 });
 
 test('verified and basis grants pages have no daily payment links', async ({ page }) => {

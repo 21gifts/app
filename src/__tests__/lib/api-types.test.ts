@@ -39,6 +39,8 @@ import {
   fundingPayoutDaysResponseSchema,
   fundingApplicationDetailSchema,
   fundingDecisionResultSchema,
+  fondPayoutInvoiceSchema,
+  fondPayoutListSchema,
   trustActionResultSchema,
   trustChainSchema,
   passkeyBeginSchema,
@@ -395,6 +397,14 @@ describe('trustChainSchema', () => {
   it('accepts an initiator node', () => {
     const body = {
       nodes: [{ id: 'i', name: 'Ivy', role: 'initiator' as const }],
+      edges: [],
+    };
+    expect(trustChainSchema.parse(body)).toEqual(body);
+  });
+
+  it('accepts a fond node', () => {
+    const body = {
+      nodes: [{ id: 'fond', name: 'Fiona', role: 'fond' as const }],
       edges: [],
     };
     expect(trustChainSchema.parse(body)).toEqual(body);
@@ -1716,8 +1726,9 @@ describe('accountSchema', () => {
     expect(() => accountSchema.parse({ ...account, name: '' })).toThrow();
   });
 
-  it('accepts founder and verified roles', () => {
+  it('accepts founder, fond, and verified roles', () => {
     expect(accountSchema.parse({ ...account, role: 'founder' }).role).toBe('founder');
+    expect(accountSchema.parse({ ...account, role: 'fond' }).role).toBe('fond');
     expect(accountSchema.parse({ ...account, role: 'verified' }).role).toBe('verified');
   });
 
@@ -2050,8 +2061,9 @@ describe('forumMessageSchema', () => {
     });
   });
 
-  it('accepts founder, verified, and moderator roles', () => {
+  it('accepts founder, fond, verified, and moderator roles', () => {
     expect(forumMessageSchema.parse({ ...message, role: 'founder' }).role).toBe('founder');
+    expect(forumMessageSchema.parse({ ...message, role: 'fond' }).role).toBe('fond');
     expect(forumMessageSchema.parse({ ...message, role: 'verified' }).role).toBe('verified');
     expect(forumMessageSchema.parse({ ...message, role: 'moderator' }).role).toBe('moderator');
   });
@@ -2608,5 +2620,61 @@ describe('lnurlInvoiceSchema', () => {
   it('parses { pr } and rejects an empty pr', () => {
     expect(lnurlInvoiceSchema.parse({ pr: 'lnbc1' })).toEqual({ pr: 'lnbc1' });
     expect(() => lnurlInvoiceSchema.parse({ pr: '' })).toThrow();
+  });
+});
+
+describe('fondPayoutListSchema', () => {
+  const row = { id: 'row-1', kind: 'daily', status: 'owed', utcDay: '2026-11-10' };
+
+  it('parses every kind and status', () => {
+    const payouts = [
+      row,
+      { ...row, id: 'r2', kind: 'moderator', status: 'issuing' },
+      { ...row, id: 'r3', kind: 'welcome', status: 'invoiced', paymentHash: 'aa'.repeat(32) },
+      { ...row, id: 'r4', status: 'settling', paymentHash: 'bb'.repeat(32) },
+    ];
+    expect(fondPayoutListSchema.parse({ payouts })).toEqual({ payouts });
+  });
+
+  it('accepts a null or absent payment hash and rejects another type', () => {
+    expect(fondPayoutListSchema.parse({ payouts: [{ ...row, paymentHash: null }] })).toEqual({
+      payouts: [{ ...row, paymentHash: null }],
+    });
+    expect(fondPayoutListSchema.parse({ payouts: [row] })).toEqual({ payouts: [row] });
+    expect(() => fondPayoutListSchema.parse({ payouts: [{ ...row, paymentHash: 7 }] })).toThrow();
+  });
+
+  it('rejects an unknown kind, status, or empty id', () => {
+    expect(() => fondPayoutListSchema.parse({ payouts: [{ ...row, kind: 'gift' }] })).toThrow();
+    expect(() => fondPayoutListSchema.parse({ payouts: [{ ...row, status: 'paid' }] })).toThrow();
+    expect(() => fondPayoutListSchema.parse({ payouts: [{ ...row, id: '' }] })).toThrow();
+  });
+});
+
+describe('fondPayoutInvoiceSchema', () => {
+  const invoice = {
+    id: 'row-1',
+    bolt11: 'lnbc1',
+    paymentHash: 'aa'.repeat(32),
+    sparkInvoice: 'spark1invoice',
+  };
+
+  it('parses one invoice with a Spark invoice or null', () => {
+    expect(fondPayoutInvoiceSchema.parse(invoice)).toEqual(invoice);
+    expect(fondPayoutInvoiceSchema.parse({ ...invoice, sparkInvoice: null })).toEqual({
+      ...invoice,
+      sparkInvoice: null,
+    });
+  });
+
+  it('rejects an empty invoice or hash and a missing Spark invoice field', () => {
+    expect(() => fondPayoutInvoiceSchema.parse({ ...invoice, bolt11: '' })).toThrow();
+    expect(() => fondPayoutInvoiceSchema.parse({ ...invoice, paymentHash: '' })).toThrow();
+    const withoutSparkInvoice = {
+      id: invoice.id,
+      bolt11: invoice.bolt11,
+      paymentHash: invoice.paymentHash,
+    };
+    expect(() => fondPayoutInvoiceSchema.parse(withoutSparkInvoice)).toThrow();
   });
 });

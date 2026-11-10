@@ -403,6 +403,27 @@ export async function proxyMeHeldShareDelete(request: Request, id: string): Prom
 }
 
 /**
+ * Proxies GET /fond/payouts to the 21.gifts api.
+ *
+ * @param request - Incoming App Router request (Bearer session).
+ * @returns The upstream response.
+ */
+export async function proxyFondPayoutsGet(request: Request): Promise<Response> {
+  return proxyApiRequest(request, '/fond/payouts');
+}
+
+/**
+ * Proxies POST /fond/payouts/:id/invoice to the 21.gifts api.
+ *
+ * @param request - Incoming App Router request (Bearer session).
+ * @param id - Payout row id from the path.
+ * @returns The upstream response.
+ */
+export async function proxyFondPayoutInvoicePost(request: Request, id: string): Promise<Response> {
+  return proxyApiRequest(request, `/fond/payouts/${encodeURIComponent(id)}/invoice`);
+}
+
+/**
  * Proxies POST /me/wallet/report (wallet data report) to the 21.gifts api.
  *
  * @param request - Incoming App Router request (Bearer session + JSON
@@ -889,7 +910,7 @@ export async function proxyFundingApplicationsGet(request: Request): Promise<Res
 }
 
 /**
- * Proxies GET /funding/daily-roster to the 21.gifts api (founder/initiator Bearer).
+ * Proxies GET /funding/daily-roster to the 21.gifts api (at least initiator).
  *
  * @param request - Incoming App Router request (Bearer session).
  * @returns The upstream response.

@@ -12,13 +12,14 @@ import {
 } from '@/lib/roles';
 
 describe('roleRank', () => {
-  it('ranks basis through founder as 0 through 3', () => {
+  it('ranks basis through founder as 0 through 5', () => {
     expect(roleRank('basis')).toBe(0);
     expect(roleRank('verified')).toBe(1);
     expect(roleRank('moderator')).toBe(2);
-    expect(roleRank('initiator')).toBe(2);
-    expect(roleRank('founder')).toBe(3);
-    expect(ROLE_ORDER).toEqual(['basis', 'verified', 'moderator', 'initiator', 'founder']);
+    expect(roleRank('fond')).toBe(3);
+    expect(roleRank('initiator')).toBe(4);
+    expect(roleRank('founder')).toBe(5);
+    expect(ROLE_ORDER).toEqual(['basis', 'verified', 'moderator', 'fond', 'initiator', 'founder']);
   });
 });
 
@@ -27,26 +28,37 @@ describe('roleAtLeast', () => {
     ['basis', 'basis', true],
     ['basis', 'verified', false],
     ['basis', 'moderator', false],
+    ['basis', 'fond', false],
     ['basis', 'initiator', false],
     ['basis', 'founder', false],
     ['verified', 'basis', true],
     ['verified', 'verified', true],
     ['verified', 'moderator', false],
+    ['verified', 'fond', false],
     ['verified', 'initiator', false],
     ['verified', 'founder', false],
     ['moderator', 'basis', true],
     ['moderator', 'verified', true],
     ['moderator', 'moderator', true],
-    ['moderator', 'initiator', true],
+    ['moderator', 'fond', false],
+    ['moderator', 'initiator', false],
     ['moderator', 'founder', false],
+    ['fond', 'basis', true],
+    ['fond', 'verified', true],
+    ['fond', 'moderator', true],
+    ['fond', 'fond', true],
+    ['fond', 'initiator', false],
+    ['fond', 'founder', false],
     ['initiator', 'basis', true],
     ['initiator', 'verified', true],
     ['initiator', 'moderator', true],
+    ['initiator', 'fond', true],
     ['initiator', 'initiator', true],
     ['initiator', 'founder', false],
     ['founder', 'basis', true],
     ['founder', 'verified', true],
     ['founder', 'moderator', true],
+    ['founder', 'fond', true],
     ['founder', 'initiator', true],
     ['founder', 'founder', true],
   ] as const)('roleAtLeast(%s, %s) is %s', (role, min, expected) => {
@@ -62,9 +74,10 @@ describe('roleAtLeast', () => {
 });
 
 describe('canEditDailyPayoutRoster', () => {
-  it('is true only for initiator and founder', () => {
+  it('allows at least initiator (initiator and founder)', () => {
     expect(canEditDailyPayoutRoster('initiator')).toBe(true);
     expect(canEditDailyPayoutRoster('founder')).toBe(true);
+    expect(canEditDailyPayoutRoster('fond')).toBe(false);
     expect(canEditDailyPayoutRoster('moderator')).toBe(false);
     expect(canEditDailyPayoutRoster('verified')).toBe(false);
     expect(canEditDailyPayoutRoster('basis')).toBe(false);
@@ -116,7 +129,7 @@ describe('isReplyPaymentExempt', () => {
     expect(isReplyPaymentExempt(null, undefined)).toBe(false);
   });
 
-  it.each(['verified', 'moderator', 'initiator', 'founder'] as const)(
+  it.each(['verified', 'moderator', 'fond', 'initiator', 'founder'] as const)(
     'is true for a %s account regardless of parent author',
     (role) => {
       expect(isReplyPaymentExempt(account(role), undefined)).toBe(true);
@@ -147,7 +160,7 @@ describe('verifiedChipHiddenByStaffTag', () => {
     },
   );
 
-  it.each(['basis', 'moderator', 'initiator', 'founder'] as const)(
+  it.each(['basis', 'moderator', 'fond', 'initiator', 'founder'] as const)(
     'is false for %s with the software_developer staff tag',
     (role) => {
       expect(verifiedChipHiddenByStaffTag(role, 'software_developer')).toBe(false);

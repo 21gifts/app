@@ -19,8 +19,8 @@ export type PayMethod = 'lightning' | 'spark' | 'onchain' | 'lnurl' | 'unknown';
  * habit comment (`gift`), a paid reaction (`reaction`), the posting fee
  * (`post_fee`), a loan repayment on `/loans/repay` (`repay`), the inbox pay sheet
  * (`inbox`), a heart (`heart`), the balance move of a social recovery on
- * `/recover` (`recovery`), or **Transfer remaining balance** of a previous
- * wallet (`previous_wallet`).
+ * `/recover` (`recovery`), **Transfer remaining balance** of a previous wallet
+ * (`previous_wallet`), or the automatic Fond payout loop (`fond_payout`).
  */
 export type PayFlow =
   | 'send'
@@ -32,7 +32,8 @@ export type PayFlow =
   | 'inbox'
   | 'heart'
   | 'recovery'
-  | 'previous_wallet';
+  | 'previous_wallet'
+  | 'fond_payout';
 
 /**
  * Short code for why a payment did not go out. Never the error text itself.

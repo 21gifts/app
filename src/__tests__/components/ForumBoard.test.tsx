@@ -3956,12 +3956,13 @@ describe('ForumBoard', () => {
     expect(screen.queryByRole('status')).toBeNull();
   });
 
-  it('shows Founder, Moderator, and Verified tags for those roles', () => {
+  it('shows Founder, Moderator, Fond, Initiator, and Verified tags for those roles', () => {
     renderWithLocale(
       <ForumBoard
         messages={[
           { ...SAMPLE, id: 'm-founder', role: 'founder' },
           { ...SAMPLE, id: 'm-mod', name: 'Bob', role: 'moderator' },
+          { ...SAMPLE, id: 'm-fond', name: 'Fiona', role: 'fond' },
           { ...SAMPLE, id: 'm-init', name: 'Ivy', role: 'initiator' },
           { ...SAMPLE, id: 'm-ver', name: 'Carol', role: 'verified' },
         ]}
@@ -3979,8 +3980,14 @@ describe('ForumBoard', () => {
     );
     expect(screen.getByRole('button', { name: 'Founder' })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Moderator' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Fond' })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Initiator' })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Verified' })).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Fond' }));
+    expect(screen.getByRole('status').textContent).toBe(
+      'This account pays the daily gifts from the 21.gifts fund.',
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Fond' }));
     fireEvent.click(screen.getByRole('button', { name: 'Initiator' }));
     expect(screen.getByRole('status').textContent).toBe('This person was named an initiator.');
   });

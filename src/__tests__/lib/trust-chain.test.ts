@@ -4,6 +4,7 @@ import { layoutTrustChain, mergeTrustChain } from '@/lib/trust-chain';
 
 const FOUNDER = { id: 'f', name: 'Cyrill', role: 'founder' as const };
 const MODERATOR = { id: 'm', name: 'Severin', role: 'moderator' as const };
+const FOND = { id: 'fond', name: 'Fiona', role: 'fond' as const };
 const INITIATOR = { id: 'i', name: 'Ivy', role: 'initiator' as const };
 const ADA = { id: 'ada', name: 'Ada', role: 'verified' as const };
 const BOB = { id: 'bob', name: 'Bob', role: 'verified' as const };
@@ -106,7 +107,23 @@ describe('layoutTrustChain', () => {
     expect(laid.nodes.find((node) => node.id === 'ada')).toMatchObject({ x: 280, y: 112 });
   });
 
-  it('keeps edge order when a moderator and an initiator hang off the founder', () => {
+  it('stacks founder, initiator, fond, moderator, then verified by display rank', () => {
+    const laid = layoutTrustChain({
+      nodes: [FOUNDER, ADA, MODERATOR, FOND, INITIATOR],
+      edges: [
+        { from: 'f', to: 'ada', kind: 'verify' },
+        { from: 'f', to: 'm', kind: 'moderator_appoint' },
+        { from: 'f', to: 'fond', kind: 'moderator_appoint' },
+        { from: 'f', to: 'i', kind: 'moderator_appoint' },
+      ],
+    });
+    expect(laid.nodes.find((node) => node.id === 'i')).toMatchObject({ x: 280, y: 16 });
+    expect(laid.nodes.find((node) => node.id === 'fond')).toMatchObject({ x: 280, y: 112 });
+    expect(laid.nodes.find((node) => node.id === 'm')).toMatchObject({ x: 280, y: 208 });
+    expect(laid.nodes.find((node) => node.id === 'ada')).toMatchObject({ x: 280, y: 304 });
+  });
+
+  it('stacks an initiator above a moderator regardless of edge order', () => {
     const modFirst = layoutTrustChain({
       nodes: [FOUNDER, MODERATOR, INITIATOR],
       edges: [
@@ -114,8 +131,8 @@ describe('layoutTrustChain', () => {
         { from: 'f', to: 'i', kind: 'moderator_appoint' },
       ],
     });
-    expect(modFirst.nodes.find((node) => node.id === 'm')).toMatchObject({ x: 280, y: 16 });
-    expect(modFirst.nodes.find((node) => node.id === 'i')).toMatchObject({ x: 280, y: 112 });
+    expect(modFirst.nodes.find((node) => node.id === 'i')).toMatchObject({ x: 280, y: 16 });
+    expect(modFirst.nodes.find((node) => node.id === 'm')).toMatchObject({ x: 280, y: 112 });
 
     const initFirst = layoutTrustChain({
       nodes: [FOUNDER, INITIATOR, MODERATOR],

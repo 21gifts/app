@@ -146,6 +146,16 @@ describe('HabitComments', () => {
     expect(onPaySubmit).not.toHaveBeenCalled();
   });
 
+  it.each(['moderator', 'fond'] as const)('offers delete to a %s account', (role) => {
+    renderComments({ account: { ...owner, role }, habit: habit([otherComment]) });
+    expect(screen.getByRole('button', { name: 'Delete comment' })).toBeTruthy();
+  });
+
+  it('does not offer delete to a verified account', () => {
+    renderComments({ account: { ...owner, role: 'verified' }, habit: habit([otherComment]) });
+    expect(screen.queryByRole('button', { name: 'Delete comment' })).toBeNull();
+  });
+
   it('gates the label and the disabled gift like a live gift on the local Sunday', () => {
     document.documentElement.dataset['localSunday'] = '1';
     try {

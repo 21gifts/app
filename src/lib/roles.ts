@@ -1,15 +1,22 @@
 /**
- * Account roles as membership order, not the rank sequence: basis, verified,
- * moderator, initiator, founder.
+ * Account roles in rank order: basis, verified, moderator, fond, initiator,
+ * founder.
  *
- * Numeric ranks: basis 0, verified 1, moderator 2, initiator 2, founder 3.
- * Viewer permission checks use {@link roleAtLeast}; an equality test on the
- * viewer's role is a defect. The named exception is
- * {@link canEditDailyPayoutRoster}, which is true only for `initiator` and
- * `founder`. Do not write "moderator or initiator" or
- * „Moderator oder Initiator“; permission checks name the minimum rank only.
+ * Numeric ranks: basis 0, verified 1, moderator 2, fond 3, initiator 4,
+ * founder 5. Every viewer permission check, including the daily payout roster
+ * in {@link canEditDailyPayoutRoster}, is a {@link roleAtLeast} minimum; an
+ * equality test on the viewer's role is a defect. Do not write "moderator or
+ * initiator" or „Moderator oder Initiator“; permission checks name the minimum
+ * rank only.
  */
-export const ROLE_ORDER = ['basis', 'verified', 'moderator', 'initiator', 'founder'] as const;
+export const ROLE_ORDER = [
+  'basis',
+  'verified',
+  'moderator',
+  'fond',
+  'initiator',
+  'founder',
+] as const;
 
 /** One of {@link ROLE_ORDER}. */
 export type Role = (typeof ROLE_ORDER)[number];
@@ -18,8 +25,9 @@ const ROLE_RANK: Record<Role, number> = {
   basis: 0,
   verified: 1,
   moderator: 2,
-  initiator: 2,
-  founder: 3,
+  fond: 3,
+  initiator: 4,
+  founder: 5,
 };
 
 /**
@@ -27,7 +35,7 @@ const ROLE_RANK: Record<Role, number> = {
  * index).
  *
  * @param role - A live account role.
- * @returns Rank from 0 through 3.
+ * @returns Rank from 0 through 5.
  */
 export function roleRank(role: Role): number {
   return ROLE_RANK[role];
@@ -124,15 +132,14 @@ export function isReplyPaymentExempt(
 /**
  * True when the signed-in account may edit the daily payout roster.
  *
- * False for `null` and `undefined`. True only for `initiator` and `founder`.
- * This is not {@link roleAtLeast}: initiator and moderator share rank 2, and
- * this page is closed to moderators.
+ * The roster's minimum rank is `initiator`: true for `initiator` and
+ * `founder`, false for every lower role and for `null` / `undefined`.
  *
  * @param role - Viewer role, or missing when the account snapshot is absent.
  * @returns Whether the viewer may edit the daily payout roster.
  */
 export function canEditDailyPayoutRoster(role: Role | null | undefined): boolean {
-  return role === 'initiator' || role === 'founder';
+  return roleAtLeast(role, 'initiator');
 }
 
 /**

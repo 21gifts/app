@@ -766,6 +766,29 @@ test('Function: GET — healthz is ok', async ({ request }) => {
   expect(await res.json()).toEqual({ status: 'ok' });
 });
 
+test('Function: FondPayoutSync — the loop requests nothing while signed out', async ({ page }) => {
+  await page.addInitScript(() => {
+    localStorage.removeItem('21gifts.session');
+  });
+  let requests = 0;
+  page.on('request', (request) => {
+    if (new URL(request.url()).pathname === '/fond/payouts') {
+      requests += 1;
+    }
+  });
+  await page.route(/\/forum\/messages(?:\?|$)/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ messages: [] }),
+    });
+  });
+  await page.goto('/welcome');
+  await expect(page.getByRole('heading', { name: 'Welcome' })).toBeVisible();
+  await page.waitForTimeout(250);
+  expect(requests).toBe(0);
+});
+
 test('Function: getApiUrl — proxy reaches the stub', async ({ request }) => {
   const res = await request.post('/auth/passkey/register/begin', { headers: APP_BUILD });
   expect(res.status()).toBe(200);
@@ -14199,7 +14222,7 @@ test('Function: forumTaggedRole — untagged notes show no role pill', async ({ 
   await page.goto('/welcome');
   await expect(page.getByText('Hello from the heart list.')).toBeVisible();
   await expect(
-    page.getByRole('button', { name: /^(?:Founder|Moderator|Initiator|Verified)$/ }),
+    page.getByRole('button', { name: /^(?:Founder|Moderator|Fond|Initiator|Verified)$/ }),
   ).toHaveCount(0);
 });
 

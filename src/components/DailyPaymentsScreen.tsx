@@ -164,8 +164,9 @@ type RosterLoad = {
 };
 
 /**
- * Load the daily roster for an initiator or founder. Everyone else is refused
- * without a fetch. A missing session is `null` so the page renders nothing.
+ * Load the daily roster for at least initiator (initiator and founder).
+ * Everyone else is refused without a fetch. A missing session is `null` so the
+ * page renders nothing.
  *
  * @returns The load, or `null` without a session.
  */
@@ -322,11 +323,12 @@ function DailyRosterCard({
 /**
  * Signed-in editor for the daily payout comment only.
  *
- * An initiator or founder loads `GET /funding/daily-roster` and may edit the
- * comment (pencil opens, check saves, X cancels). Amounts, the payments
- * switch, and the recipient list are not on this page. Everyone else who is
- * signed in sees the heading and a short refusal, and this screen does not
- * fetch. Renders nothing without a session. The page chrome owns the back.
+ * A viewer at least initiator (initiator and founder) loads
+ * `GET /funding/daily-roster` and may edit the comment (pencil opens, check
+ * saves, X cancels). Amounts, the payments switch, and the recipient list are
+ * not on this page. Everyone else who is signed in sees the heading and a
+ * short refusal, and this screen does not fetch. Renders nothing without a
+ * session. The page chrome owns the back.
  *
  * @returns The comment card, refusal copy, or `null` without a session.
  */
@@ -455,12 +457,13 @@ export function DailyPaymentCommentScreen(): ReactElement | null {
 /**
  * Signed-in editor for daily payout amounts only.
  *
- * An initiator or founder loads `GET /funding/daily-roster` and may turn the
- * payments switch and add, update, or delete a recipient. The comment is not
- * on this page. A row pencil opens the amount (`Field`, not `AmountEntry`);
- * the check saves and the X cancels. Everyone else who is signed in sees the
- * heading and a short refusal, and this screen does not fetch. Renders nothing
- * without a session. The page chrome owns the back.
+ * A viewer at least initiator (initiator and founder) loads
+ * `GET /funding/daily-roster` and may turn the payments switch and add,
+ * update, or delete a recipient. The comment is not on this page. A row pencil
+ * opens the amount (`Field`, not `AmountEntry`); the check saves and the X
+ * cancels. Everyone else who is signed in sees the heading and a short
+ * refusal, and this screen does not fetch. Renders nothing without a session.
+ * The page chrome owns the back.
  *
  * @returns The amounts card, refusal copy, or `null` without a session.
  */
@@ -881,13 +884,14 @@ export function DailyPaymentAmountsScreen(): ReactElement | null {
 /**
  * Signed-in editor for moderator stipend amounts only.
  *
- * An initiator or founder loads `GET /funding/daily-roster` and may turn the
- * moderator payments switch and add, update, or delete a moderator. The
- * comment, the recipient list, and the daily payments switch are not on this
- * page. A row pencil opens the amount (`Field`, not `AmountEntry`); the check
- * saves and the X cancels. Everyone else who is signed in sees the heading
- * and a short refusal, and this screen does not fetch. Renders nothing
- * without a session. The page chrome owns the back.
+ * A viewer at least initiator (initiator and founder) loads
+ * `GET /funding/daily-roster` and may turn the moderator payments switch and
+ * add, update, or delete a moderator. The comment, the recipient list, and the
+ * daily payments switch are not on this page. A row pencil opens the amount
+ * (`Field`, not `AmountEntry`); the check saves and the X cancels. Everyone
+ * else who is signed in sees the heading and a short refusal, and this screen
+ * does not fetch. Renders nothing without a session. The page chrome owns the
+ * back.
  *
  * @returns The moderator card, refusal copy, or `null` without a session.
  */
