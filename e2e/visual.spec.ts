@@ -10237,7 +10237,7 @@ test.describe('onboarding screens', () => {
     await expect(
       hearts.getByText('This person helps keep the living room in order.'),
     ).toBeVisible();
-    await page.getByRole('heading', { name: 'Hearts (2)' }).scrollIntoViewIfNeeded();
+    await centreAtRest(page.getByRole('heading', { name: 'Hearts (2)' }));
     await shotScreen(page, 'state-welcome-expanded-hearts-role');
   });
 
@@ -17008,7 +17008,7 @@ test.describe('onboarding screens', () => {
     await page.getByRole('button', { name: 'Show reactions' }).click();
     await expect(page.getByText('A reply from Carol.')).toBeVisible();
     await expect(page.getByRole('heading', { name: 'Hearts (2)' })).toBeVisible();
-    await page.getByRole('heading', { name: 'Hearts (2)' }).scrollIntoViewIfNeeded();
+    await centreAtRest(page.getByRole('heading', { name: 'Hearts (2)' }));
     await shotScreen(page, 'state-members-replies-open-hearts');
   });
 
@@ -17152,7 +17152,7 @@ test.describe('onboarding screens', () => {
     await expect(
       hearts.getByText('A moderator has met this person in real life and confirmed they are real.'),
     ).toBeVisible();
-    await page.getByRole('heading', { name: 'Hearts (2)' }).scrollIntoViewIfNeeded();
+    await centreAtRest(page.getByRole('heading', { name: 'Hearts (2)' }));
     await shotScreen(page, 'state-members-replies-open-hearts-role');
   });
 
@@ -24831,7 +24831,7 @@ test.describe('onboarding screens', () => {
     await expect(
       hearts.getByText('This person helps keep the living room in order.'),
     ).toBeVisible();
-    await page.getByRole('heading', { name: 'Hearts (2)' }).scrollIntoViewIfNeeded();
+    await centreAtRest(page.getByRole('heading', { name: 'Hearts (2)' }));
     await shotScreen(page, 'state-messages-id-reply-hearts-role');
   });
 
