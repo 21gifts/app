@@ -57,7 +57,7 @@ function heldShareBoxIdFromPath(pathName) {
 }
 
 /** Same order as `ROLE_ORDER` in `src/lib/roles.ts`: a named role means that role or higher. */
-const ROLE_ORDER = ['basis', 'verified', 'moderator', 'initiator', 'founder'];
+const ROLE_ORDER = ['basis', 'verified', 'moderator', 'software_developer', 'initiator', 'founder'];
 
 function roleAtLeast(role, min) {
   return ROLE_ORDER.indexOf(role) >= ROLE_ORDER.indexOf(min);
