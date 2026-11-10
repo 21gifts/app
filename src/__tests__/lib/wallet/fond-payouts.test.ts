@@ -1,12 +1,9 @@
 // @vitest-environment node
-import { createHash } from 'node:crypto';
 import { afterEach, beforeEach, describe, expect, it, vi, type Mocked } from 'vitest';
 import type { FondPayoutFailure } from '@/lib/api';
 import type { FondPayout } from '@/lib/api-types';
-import { PAY_POLL_MS } from '@/lib/payment-link';
 import {
   runFondPayoutTick,
-  waitForFondPayoutRead,
   type FondPayoutTickDeps,
   type FondPayoutTickResult,
 } from '@/lib/wallet/fond-payouts';
@@ -18,8 +15,10 @@ vi.mock('@/lib/wallet/payment-failure', () => ({ reportPaymentFailure: vi.fn() }
 
 const HASH_A = 'aa'.repeat(32);
 const HASH_B = 'bb'.repeat(32);
-const PREIMAGE_A = '11'.repeat(32);
-const PREIMAGE_B = '22'.repeat(32);
+const BOLT_A = 'lnbc-row-a';
+const BOLT_B = 'lnbc-row-b';
+const SPARK_A = 'spark-row-a';
+const SPARK_B = 'spark-row-b';
 const FAILURE: PaymentFailure = {
   stage: 'prepare',
   reason: 'sdk_error',
@@ -52,9 +51,9 @@ function sentPayment(overrides: Partial<WalletPayment> = {}): WalletPayment {
     feesSats: 0,
     timestamp: 1,
     status: 'completed',
-    method: 'lightning',
+    method: 'spark',
     senderComment: null,
-    info: { paymentHash: HASH_A, invoice: 'lnbc1a', preimage: PREIMAGE_A },
+    info: { paymentHash: HASH_A, invoice: SPARK_A },
     ...overrides,
   };
 }
@@ -62,16 +61,16 @@ function sentPayment(overrides: Partial<WalletPayment> = {}): WalletPayment {
 /**
  * A confirmed prepare result.
  *
- * @param sent - Result of `send`.
+ * @param send - Result of `send`.
  * @returns The prepare result.
  */
-function confirmResult(sent: { kind: 'paid' }): WalletPayResult {
+function confirmResult(send: () => Promise<WalletSendResult>): WalletPayResult {
   return {
     kind: 'confirm',
     amountSats: 10,
     feeSats: 0,
-    method: 'lightning',
-    send: vi.fn(async () => sent),
+    method: 'spark',
+    send: vi.fn(send),
   };
 }
 
@@ -104,21 +103,18 @@ function depsFor(payouts: FondPayout[]): Mocked<FondPayoutTickDeps> {
         ok: true,
         invoice: {
           id,
-          bolt11: `lnbc-${id}`,
+          bolt11: id === 'row-b' ? BOLT_B : BOLT_A,
           paymentHash: id === 'row-b' ? HASH_B : HASH_A,
+          sparkInvoice: id === 'row-b' ? SPARK_B : SPARK_A,
         },
       }),
     ),
-    postFondPayoutProof: vi.fn<FondPayoutTickDeps['postFondPayoutProof']>(
-      async (_session: string, _id: string, _preimage: string) => ({ ok: true }),
-    ),
     payFromWallet: vi.fn<FondPayoutTickDeps['payFromWallet']>(async (_request: WalletPayRequest) =>
-      confirmResult({ kind: 'paid' }),
+      confirmResult(async () => ({ kind: 'paid' })),
     ),
     listWalletPayments: vi.fn<FondPayoutTickDeps['listWalletPayments']>(
       async (_page: { offset: number; limit: number }) => [] as WalletPayment[],
     ),
-    sleep: vi.fn<FondPayoutTickDeps['sleep']>(async (_ms: number) => undefined),
   };
 }
 
@@ -163,46 +159,16 @@ describe('runFondPayoutTick list failures', () => {
   it('stops as off on 404 and forbidden on 403', async () => {
     const off = depsFor([]);
     vi.mocked(off.fetchFondPayouts).mockResolvedValue(failure(404));
-    await expect(tick(off)).resolves.toEqual({
-      paid: 0,
-      proved: 0,
-      skipped: 0,
-      stop: 'off',
-    });
+    await expect(tick(off)).resolves.toEqual({ paid: 0, skipped: 0, stop: 'off' });
     const forbidden = depsFor([]);
     vi.mocked(forbidden.fetchFondPayouts).mockResolvedValue(failure(403));
-    await expect(tick(forbidden)).resolves.toEqual({
-      paid: 0,
-      proved: 0,
-      skipped: 0,
-      stop: 'forbidden',
-    });
+    await expect(tick(forbidden)).resolves.toEqual({ paid: 0, skipped: 0, stop: 'forbidden' });
   });
 
   it('returns quietly on any other list failure so the next tick retries', async () => {
     const deps = depsFor([]);
     vi.mocked(deps.fetchFondPayouts).mockResolvedValue(failure(503));
-    await expect(tick(deps)).resolves.toEqual({
-      paid: 0,
-      proved: 0,
-      skipped: 0,
-      stop: null,
-    });
-  });
-});
-
-describe('waitForFondPayoutRead', () => {
-  it('resolves after the given wait', async () => {
-    vi.useFakeTimers();
-    let done = false;
-    const waiting = waitForFondPayoutRead(PAY_POLL_MS).then(() => {
-      done = true;
-    });
-    expect(done).toBe(false);
-    await vi.advanceTimersByTimeAsync(PAY_POLL_MS);
-    await waiting;
-    expect(done).toBe(true);
-    vi.useRealTimers();
+    await expect(tick(deps)).resolves.toEqual({ paid: 0, skipped: 0, stop: null });
   });
 });
 
@@ -211,7 +177,7 @@ describe('fondE2eWallet', () => {
     expect(e2eWallet()).toBeNull();
   });
 
-  it('pays an input invoice, then reports it pending once and completed with a preimage', async () => {
+  it('pays an input invoice and records it as a completed send', async () => {
     process.env.NEXT_PUBLIC_E2E_NOW = '2026-01-07T12:00:00.000Z';
     const wallet = e2eWallet();
     expect(wallet).not.toBeNull();
@@ -219,32 +185,19 @@ describe('fondE2eWallet', () => {
       return;
     }
     await expect(wallet.listWalletPayments({ offset: 0, limit: 100 })).resolves.toEqual([]);
-    const prepared = await wallet.payFromWallet({ type: 'input', input: 'lnbc1e2efondpayout' });
+    const prepared = await wallet.payFromWallet({ type: 'input', input: SPARK_A });
     expect(prepared.kind).toBe('confirm');
     if (prepared.kind !== 'confirm') {
       return;
     }
     await expect(prepared.send()).resolves.toEqual({ kind: 'paid' });
-    const first = await wallet.listWalletPayments({ offset: 0, limit: 100 });
-    expect(first).toHaveLength(1);
-    expect(first[0]).toMatchObject({
-      direction: 'sent',
-      status: 'pending',
-      info: { invoice: 'lnbc1e2efondpayout' },
-    });
-    expect(first[0]?.info.preimage).toBeUndefined();
-    const later = await wallet.listWalletPayments({ offset: 0, limit: 100 });
-    const preimage = later[0]?.info.preimage;
-    expect(later[0]).toMatchObject({
-      direction: 'sent',
-      status: 'completed',
-      info: { invoice: 'lnbc1e2efondpayout', preimage: '11'.repeat(32) },
-    });
-    expect(
-      createHash('sha256')
-        .update(Buffer.from(preimage ?? '', 'hex'))
-        .digest('hex'),
-    ).toHaveLength(64);
+    await expect(wallet.listWalletPayments({ offset: 0, limit: 100 })).resolves.toEqual([
+      expect.objectContaining({
+        direction: 'sent',
+        status: 'completed',
+        info: { invoice: SPARK_A },
+      }),
+    ]);
   });
 
   it('refuses a request that is not a pasted invoice', async () => {
@@ -281,8 +234,8 @@ describe('runFondPayoutTickOnce', () => {
     expect(secondRun).toBe(firstRun);
 
     release({ ok: true, payouts: [] });
-    await expect(firstRun).resolves.toEqual({ paid: 0, proved: 0, skipped: 0, stop: null });
-    await expect(secondRun).resolves.toEqual({ paid: 0, proved: 0, skipped: 0, stop: null });
+    await expect(firstRun).resolves.toEqual({ paid: 0, skipped: 0, stop: null });
+    await expect(secondRun).resolves.toEqual({ paid: 0, skipped: 0, stop: null });
   });
 
   it('waits for a different session, then runs and returns its own tick', async () => {
@@ -312,18 +265,8 @@ describe('runFondPayoutTickOnce', () => {
     expect(order).toEqual(['a:start']);
 
     release(failure(403, 'Fond only'));
-    await expect(firstRun).resolves.toEqual({
-      paid: 0,
-      proved: 0,
-      skipped: 0,
-      stop: 'forbidden',
-    });
-    await expect(secondRun).resolves.toEqual({
-      paid: 0,
-      proved: 0,
-      skipped: 0,
-      stop: null,
-    });
+    await expect(firstRun).resolves.toEqual({ paid: 0, skipped: 0, stop: 'forbidden' });
+    await expect(secondRun).resolves.toEqual({ paid: 0, skipped: 0, stop: null });
     expect(order).toEqual(['a:start', 'b:start']);
     expect(second.fetchFondPayouts).toHaveBeenCalledWith('sess-b');
   });
@@ -346,12 +289,7 @@ describe('runFondPayoutTickOnce', () => {
     await expect(tickOnce(failed)).rejects.toThrow('boom');
 
     const retry = depsFor([]);
-    await expect(tickOnce(retry)).resolves.toEqual({
-      paid: 0,
-      proved: 0,
-      skipped: 0,
-      stop: null,
-    });
+    await expect(tickOnce(retry)).resolves.toEqual({ paid: 0, skipped: 0, stop: null });
     expect(retry.fetchFondPayouts).toHaveBeenCalledTimes(1);
   });
 
@@ -372,29 +310,28 @@ describe('runFondPayoutTickOnce', () => {
 
     reject(new Error('boom'));
     await expect(failedRun).rejects.toThrow('boom');
-    await expect(nextRun).resolves.toEqual({ paid: 0, proved: 0, skipped: 0, stop: null });
+    await expect(nextRun).resolves.toEqual({ paid: 0, skipped: 0, stop: null });
     expect(next.fetchFondPayouts).toHaveBeenCalledWith('sess-b');
   });
 });
 
 describe('runFondPayoutTick rows', () => {
-  it('pays a fresh invoice and posts the polled preimage', async () => {
+  it('pays a fresh invoice with its Spark invoice', async () => {
     const deps = depsFor([OWED]);
-    vi.mocked(deps.listWalletPayments)
-      .mockResolvedValueOnce([])
-      .mockResolvedValueOnce([sentPayment({ status: 'pending', info: { paymentHash: HASH_A } })])
-      .mockResolvedValue([sentPayment({ info: { paymentHash: HASH_A, preimage: PREIMAGE_A } })]);
-    await expect(tick(deps)).resolves.toEqual({
-      paid: 1,
-      proved: 1,
-      skipped: 0,
-      stop: null,
-    });
+    await expect(tick(deps)).resolves.toEqual({ paid: 1, skipped: 0, stop: null });
     expect(deps.postFondPayoutInvoice).toHaveBeenCalledWith('sess', 'row-a');
-    expect(deps.payFromWallet).toHaveBeenCalledWith({ type: 'input', input: 'lnbc-row-a' });
-    expect(deps.sleep).toHaveBeenCalledTimes(2);
-    expect(deps.sleep).toHaveBeenCalledWith(PAY_POLL_MS);
-    expect(deps.postFondPayoutProof).toHaveBeenCalledWith('sess', 'row-a', PREIMAGE_A);
+    expect(deps.listWalletPayments).toHaveBeenCalledWith({ offset: 0, limit: 100 });
+    expect(deps.payFromWallet).toHaveBeenCalledWith({ type: 'input', input: SPARK_A });
+  });
+
+  it('pays the BOLT11 when the api returns no Spark invoice', async () => {
+    const deps = depsFor([OWED]);
+    vi.mocked(deps.postFondPayoutInvoice).mockResolvedValue({
+      ok: true,
+      invoice: { id: 'row-a', bolt11: BOLT_A, paymentHash: HASH_A, sparkInvoice: null },
+    });
+    await expect(tick(deps)).resolves.toEqual({ paid: 1, skipped: 0, stop: null });
+    expect(deps.payFromWallet).toHaveBeenCalledWith({ type: 'input', input: BOLT_A });
   });
 
   it('handles rows in list order, one at a time', async () => {
@@ -402,84 +339,117 @@ describe('runFondPayoutTick rows', () => {
     const order: string[] = [];
     vi.mocked(deps.postFondPayoutInvoice).mockImplementation(async (_session, id) => {
       order.push(`invoice:${id}`);
+      const rowB = id === 'row-b';
       return {
         ok: true,
-        invoice: { id, bolt11: `lnbc-${id}`, paymentHash: id === 'row-b' ? HASH_B : HASH_A },
+        invoice: {
+          id,
+          bolt11: rowB ? BOLT_B : BOLT_A,
+          paymentHash: rowB ? HASH_B : HASH_A,
+          sparkInvoice: rowB ? SPARK_B : SPARK_A,
+        },
       };
     });
-    vi.mocked(deps.listWalletPayments).mockResolvedValue([
-      sentPayment({ info: { paymentHash: HASH_A, preimage: PREIMAGE_A } }),
-    ]);
-    await tick(deps);
+    vi.mocked(deps.listWalletPayments)
+      .mockResolvedValueOnce([sentPayment({ info: { paymentHash: HASH_A } })])
+      .mockResolvedValueOnce([]);
+    await expect(tick(deps)).resolves.toEqual({ paid: 1, skipped: 1, stop: null });
     expect(order).toEqual(['invoice:row-a', 'invoice:row-b']);
   });
 
   it('skips a row whose invoice is not payable now', async () => {
     const deps = depsFor([OWED]);
     vi.mocked(deps.postFondPayoutInvoice).mockResolvedValue(failure(409, 'Invoice in progress'));
-    await expect(tick(deps)).resolves.toEqual({
-      paid: 0,
-      proved: 0,
-      skipped: 1,
-      stop: null,
-    });
+    await expect(tick(deps)).resolves.toEqual({ paid: 0, skipped: 1, stop: null });
     expect(deps.payFromWallet).not.toHaveBeenCalled();
   });
 
   it('stops as forbidden on an invoice 403', async () => {
     const deps = depsFor([OWED, OWED_B]);
     vi.mocked(deps.postFondPayoutInvoice).mockResolvedValue(failure(403, 'Fond only'));
-    await expect(tick(deps)).resolves.toEqual({
-      paid: 0,
-      proved: 0,
-      skipped: 0,
-      stop: 'forbidden',
-    });
+    await expect(tick(deps)).resolves.toEqual({ paid: 0, skipped: 0, stop: 'forbidden' });
     expect(deps.postFondPayoutInvoice).toHaveBeenCalledTimes(1);
     expect(deps.payFromWallet).not.toHaveBeenCalled();
+  });
+
+  it('keeps the paid count when a later invoice answers 403', async () => {
+    const deps = depsFor([OWED, OWED_B]);
+    vi.mocked(deps.postFondPayoutInvoice).mockImplementation(async (_session, id) => {
+      if (id === 'row-b') {
+        return failure(403, 'Fond only');
+      }
+      return {
+        ok: true,
+        invoice: { id, bolt11: BOLT_A, paymentHash: HASH_A, sparkInvoice: SPARK_A },
+      };
+    });
+    await expect(tick(deps)).resolves.toEqual({ paid: 1, skipped: 0, stop: 'forbidden' });
+    expect(deps.payFromWallet).toHaveBeenCalledTimes(1);
   });
 
   it('skips an invoice 404 because that row is gone', async () => {
     const deps = depsFor([OWED]);
     vi.mocked(deps.postFondPayoutInvoice).mockResolvedValue(failure(404, 'Not found'));
-    await expect(tick(deps)).resolves.toEqual({
-      paid: 0,
-      proved: 0,
-      skipped: 1,
-      stop: null,
-    });
+    await expect(tick(deps)).resolves.toEqual({ paid: 0, skipped: 1, stop: null });
     expect(deps.payFromWallet).not.toHaveBeenCalled();
   });
 
-  it('proves a completed send without paying again', async () => {
+  it('skips a completed send matched by payment hash without paying again', async () => {
     const deps = depsFor([OWED]);
     vi.mocked(deps.listWalletPayments).mockResolvedValue([
-      sentPayment({ info: { paymentHash: HASH_A.toUpperCase(), preimage: PREIMAGE_A } }),
+      sentPayment({ info: { paymentHash: HASH_A.toUpperCase() } }),
     ]);
-    await expect(tick(deps)).resolves.toEqual({
-      paid: 1,
-      proved: 1,
-      skipped: 0,
-      stop: null,
-    });
+    await expect(tick(deps)).resolves.toEqual({ paid: 0, skipped: 1, stop: null });
     expect(deps.payFromWallet).not.toHaveBeenCalled();
-    expect(deps.postFondPayoutProof).toHaveBeenCalledWith('sess', 'row-a', PREIMAGE_A);
   });
 
-  it('proves an older completed send with a preimage after a newer failed send', async () => {
+  it('skips a pending send matched by BOLT11 without paying again', async () => {
     const deps = depsFor([OWED]);
     vi.mocked(deps.listWalletPayments).mockResolvedValue([
-      sentPayment({ id: 'pay-new', status: 'failed', info: { paymentHash: HASH_A } }),
-      sentPayment({ id: 'pay-old', info: { paymentHash: HASH_A, preimage: PREIMAGE_A } }),
+      sentPayment({ status: 'pending', info: { invoice: BOLT_A } }),
     ]);
-    await expect(tick(deps)).resolves.toEqual({
-      paid: 1,
-      proved: 1,
-      skipped: 0,
-      stop: null,
-    });
+    await expect(tick(deps)).resolves.toEqual({ paid: 0, skipped: 1, stop: null });
     expect(deps.payFromWallet).not.toHaveBeenCalled();
-    expect(deps.postFondPayoutProof).toHaveBeenCalledWith('sess', 'row-a', PREIMAGE_A);
+  });
+
+  it('skips a completed send matched by the Spark invoice string', async () => {
+    const deps = depsFor([OWED]);
+    vi.mocked(deps.listWalletPayments).mockResolvedValue([
+      sentPayment({ info: { invoice: SPARK_A } }),
+    ]);
+    await expect(tick(deps)).resolves.toEqual({ paid: 0, skipped: 1, stop: null });
+    expect(deps.payFromWallet).not.toHaveBeenCalled();
+  });
+
+  it('does not treat an unmatched Spark invoice as this row', async () => {
+    const deps = depsFor([OWED]);
+    vi.mocked(deps.listWalletPayments).mockResolvedValue([
+      sentPayment({ info: { invoice: 'spark-other' } }),
+    ]);
+    await expect(tick(deps)).resolves.toEqual({ paid: 1, skipped: 0, stop: null });
+    expect(deps.payFromWallet).toHaveBeenCalledWith({ type: 'input', input: SPARK_A });
+  });
+
+  it('does not match on Spark when the api returned null', async () => {
+    const deps = depsFor([OWED]);
+    vi.mocked(deps.postFondPayoutInvoice).mockResolvedValue({
+      ok: true,
+      invoice: { id: 'row-a', bolt11: BOLT_A, paymentHash: HASH_A, sparkInvoice: null },
+    });
+    vi.mocked(deps.listWalletPayments).mockResolvedValue([
+      sentPayment({ info: { invoice: SPARK_A } }),
+    ]);
+    await expect(tick(deps)).resolves.toEqual({ paid: 1, skipped: 0, stop: null });
+    expect(deps.payFromWallet).toHaveBeenCalledWith({ type: 'input', input: BOLT_A });
+  });
+
+  it('pays when only a failed send matches', async () => {
+    const deps = depsFor([OWED]);
+    vi.mocked(deps.listWalletPayments).mockResolvedValue([
+      sentPayment({ status: 'failed', info: { paymentHash: HASH_A } }),
+    ]);
+    await expect(tick(deps)).resolves.toEqual({ paid: 1, skipped: 0, stop: null });
+    expect(deps.payFromWallet).toHaveBeenCalledWith({ type: 'input', input: SPARK_A });
   });
 
   it('skips an older pending send after a newer failed send', async () => {
@@ -488,342 +458,77 @@ describe('runFondPayoutTick rows', () => {
       sentPayment({ id: 'pay-new', status: 'failed', info: { paymentHash: HASH_A } }),
       sentPayment({ id: 'pay-old', status: 'pending', info: { paymentHash: HASH_A } }),
     ]);
-    await expect(tick(deps)).resolves.toEqual({
-      paid: 0,
-      proved: 0,
-      skipped: 1,
-      stop: null,
-    });
+    await expect(tick(deps)).resolves.toEqual({ paid: 0, skipped: 1, stop: null });
     expect(deps.payFromWallet).not.toHaveBeenCalled();
-    expect(deps.postFondPayoutProof).not.toHaveBeenCalled();
-  });
-
-  it('skips an older completed send without a preimage after a newer failed send', async () => {
-    const deps = depsFor([OWED]);
-    vi.mocked(deps.listWalletPayments).mockResolvedValue([
-      sentPayment({ id: 'pay-new', status: 'failed', info: { paymentHash: HASH_A } }),
-      sentPayment({ id: 'pay-old', info: { paymentHash: HASH_A } }),
-    ]);
-    await expect(tick(deps)).resolves.toEqual({
-      paid: 0,
-      proved: 0,
-      skipped: 1,
-      stop: null,
-    });
-    expect(deps.payFromWallet).not.toHaveBeenCalled();
-    expect(deps.postFondPayoutProof).not.toHaveBeenCalled();
-  });
-
-  it('pays when only a failed send matches and finds an older preimage after paying', async () => {
-    const deps = depsFor([OWED]);
-    vi.mocked(deps.listWalletPayments)
-      .mockResolvedValueOnce([
-        sentPayment({ id: 'pay-new', status: 'failed', info: { paymentHash: HASH_A } }),
-      ])
-      .mockResolvedValue([
-        sentPayment({ id: 'pay-newer', status: 'failed', info: { paymentHash: HASH_A } }),
-        sentPayment({ id: 'pay-old', info: { paymentHash: HASH_A, preimage: PREIMAGE_A } }),
-      ]);
-    await expect(tick(deps)).resolves.toEqual({
-      paid: 1,
-      proved: 1,
-      skipped: 0,
-      stop: null,
-    });
-    expect(deps.payFromWallet).toHaveBeenCalledWith({ type: 'input', input: 'lnbc-row-a' });
-    expect(deps.postFondPayoutProof).toHaveBeenCalledWith('sess', 'row-a', PREIMAGE_A);
   });
 
   it("does not treat a received payment as the row's send", async () => {
     const deps = depsFor([OWED]);
-    vi.mocked(deps.listWalletPayments)
-      .mockResolvedValueOnce([
-        sentPayment({
-          direction: 'received',
-          info: { paymentHash: HASH_A, preimage: PREIMAGE_B },
-        }),
-      ])
-      .mockResolvedValue([sentPayment({ info: { paymentHash: HASH_A, preimage: PREIMAGE_A } })]);
-    await expect(tick(deps)).resolves.toEqual({
-      paid: 1,
-      proved: 1,
-      skipped: 0,
-      stop: null,
-    });
-    expect(deps.payFromWallet).toHaveBeenCalledTimes(1);
-    expect(deps.payFromWallet).toHaveBeenCalledWith({ type: 'input', input: 'lnbc-row-a' });
-    expect(deps.postFondPayoutProof).toHaveBeenCalledWith('sess', 'row-a', PREIMAGE_A);
+    vi.mocked(deps.listWalletPayments).mockResolvedValue([
+      sentPayment({ direction: 'received', info: { paymentHash: HASH_A } }),
+    ]);
+    await expect(tick(deps)).resolves.toEqual({ paid: 1, skipped: 0, stop: null });
+    expect(deps.payFromWallet).toHaveBeenCalledWith({ type: 'input', input: SPARK_A });
   });
 
-  it('matches an earlier send by its BOLT11 when the hash is absent', async () => {
+  it('pays when a sent match carries neither a matching hash nor invoice', async () => {
     const deps = depsFor([OWED]);
     vi.mocked(deps.listWalletPayments).mockResolvedValue([
-      sentPayment({ info: { invoice: 'lnbc-row-a', preimage: PREIMAGE_A } }),
+      sentPayment({ info: { paymentHash: HASH_B } }),
     ]);
-    await tick(deps);
-    expect(deps.payFromWallet).not.toHaveBeenCalled();
-    expect(deps.postFondPayoutProof).toHaveBeenCalledWith('sess', 'row-a', PREIMAGE_A);
-  });
-
-  it('never pays a pending send again', async () => {
-    const deps = depsFor([OWED]);
-    vi.mocked(deps.listWalletPayments).mockResolvedValue([sentPayment({ status: 'pending' })]);
-    await expect(tick(deps)).resolves.toEqual({
-      paid: 0,
-      proved: 0,
-      skipped: 1,
-      stop: null,
-    });
-    expect(deps.payFromWallet).not.toHaveBeenCalled();
-  });
-
-  it('skips a completed send whose preimage is not readable or not 64-hex', async () => {
-    for (const info of [{ paymentHash: HASH_A }, { paymentHash: HASH_A, preimage: 'not-hex' }]) {
-      const deps = depsFor([OWED]);
-      vi.mocked(deps.listWalletPayments).mockResolvedValue([sentPayment({ info })]);
-      await expect(tick(deps)).resolves.toEqual({
-        paid: 0,
-        proved: 0,
-        skipped: 1,
-        stop: null,
-      });
-      expect(deps.postFondPayoutInvoice).toHaveBeenCalledTimes(1);
-      expect(deps.payFromWallet).not.toHaveBeenCalled();
-      expect(deps.postFondPayoutProof).not.toHaveBeenCalled();
-    }
-  });
-
-  it('skips a row while its timed-out send is unresolved', async () => {
-    let settle: (sent: boolean) => void = () => undefined;
-    const sentLate = new Promise<boolean>((resolve) => {
-      settle = resolve;
-    });
-    const first = depsFor([OWED]);
-    vi.mocked(first.payFromWallet).mockResolvedValue({
-      kind: 'confirm',
-      amountSats: 10,
-      feeSats: 0,
-      method: 'lightning',
-      send: vi.fn(async () => failedLate(sentLate)),
-    });
-    await expect(tick(first)).resolves.toEqual({
-      paid: 0,
-      proved: 0,
-      skipped: 1,
-      stop: null,
-    });
-    expect(report).toHaveBeenCalledWith(TIMEOUT, 'fond_payout', {
-      session: 'sess',
-      sentLate,
-    });
-
-    const second = depsFor([OWED]);
-    await expect(tick(second)).resolves.toEqual({
-      paid: 0,
-      proved: 0,
-      skipped: 1,
-      stop: null,
-    });
-    expect(second.postFondPayoutInvoice).not.toHaveBeenCalled();
-    expect(second.payFromWallet).not.toHaveBeenCalled();
-    settle(true);
-    await sentLate;
-  });
-
-  it('never pays a timed-out send the wallet confirms, only proves it from history', async () => {
-    let settle: (sent: boolean) => void = () => undefined;
-    const sentLate = new Promise<boolean>((resolve) => {
-      settle = resolve;
-    });
-    const first = depsFor([OWED]);
-    vi.mocked(first.payFromWallet).mockResolvedValue({
-      kind: 'confirm',
-      amountSats: 10,
-      feeSats: 0,
-      method: 'lightning',
-      send: vi.fn(async () => failedLate(sentLate)),
-    });
-    await tick(first);
-    settle(true);
-    await sentLate;
-    await Promise.resolve();
-
-    const second = depsFor([OWED]);
-    vi.mocked(second.listWalletPayments).mockResolvedValue([
-      sentPayment({ info: { paymentHash: HASH_A, preimage: PREIMAGE_A } }),
-    ]);
-    await expect(tick(second)).resolves.toEqual({
-      paid: 1,
-      proved: 1,
-      skipped: 0,
-      stop: null,
-    });
-    expect(second.payFromWallet).not.toHaveBeenCalled();
-    expect(second.postFondPayoutProof).toHaveBeenCalledWith('sess', 'row-a', PREIMAGE_A);
-  });
-
-  it('pays again after a timed-out send the wallet rejects, and after one that rejects late', async () => {
-    let settle: (sent: boolean) => void = () => undefined;
-    const sentLate = new Promise<boolean>((resolve) => {
-      settle = resolve;
-    });
-    const first = depsFor([OWED]);
-    vi.mocked(first.payFromWallet).mockResolvedValue({
-      kind: 'confirm',
-      amountSats: 10,
-      feeSats: 0,
-      method: 'lightning',
-      send: vi.fn(async () => failedLate(sentLate)),
-    });
-    await tick(first);
-    settle(false);
-    await sentLate;
-
-    const second = depsFor([OWED]);
-    vi.mocked(second.listWalletPayments)
-      .mockResolvedValueOnce([])
-      .mockResolvedValue([sentPayment({ info: { paymentHash: HASH_A, preimage: PREIMAGE_A } })]);
-    await expect(tick(second)).resolves.toEqual({
-      paid: 1,
-      proved: 1,
-      skipped: 0,
-      stop: null,
-    });
-    expect(second.payFromWallet).toHaveBeenCalledWith({ type: 'input', input: 'lnbc-row-a' });
-
-    const rejectedLate = Promise.reject(new Error('wallet-connect'));
-    rejectedLate.catch(() => undefined);
-    const third = depsFor([OWED]);
-    vi.mocked(third.payFromWallet).mockResolvedValue({
-      kind: 'confirm',
-      amountSats: 10,
-      feeSats: 0,
-      method: 'lightning',
-      send: vi.fn(async () => failedLate(rejectedLate)),
-    });
-    await tick(third);
-    await Promise.resolve();
-    const fourth = depsFor([OWED]);
-    vi.mocked(fourth.listWalletPayments)
-      .mockResolvedValueOnce([])
-      .mockResolvedValue([sentPayment({ info: { paymentHash: HASH_A, preimage: PREIMAGE_A } })]);
-    await expect(tick(fourth)).resolves.toEqual({
-      paid: 1,
-      proved: 1,
-      skipped: 0,
-      stop: null,
-    });
-  });
-
-  it('forgets a timed-out send whose sentLate rejects', async () => {
-    const rejectedLate = Promise.reject(new Error('wallet-connect'));
-    rejectedLate.catch(() => undefined);
-    const first = depsFor([OWED]);
-    vi.mocked(first.payFromWallet).mockResolvedValue({
-      kind: 'confirm',
-      amountSats: 10,
-      feeSats: 0,
-      method: 'lightning',
-      send: vi.fn(async () => failedLate(rejectedLate)),
-    });
-    await tick(first);
-    await Promise.resolve();
-    const second = depsFor([OWED]);
-    vi.mocked(second.listWalletPayments)
-      .mockResolvedValueOnce([])
-      .mockResolvedValue([sentPayment({ info: { paymentHash: HASH_A, preimage: PREIMAGE_A } })]);
-    await expect(tick(second)).resolves.toEqual({
-      paid: 1,
-      proved: 1,
-      skipped: 0,
-      stop: null,
-    });
+    await expect(tick(deps)).resolves.toEqual({ paid: 1, skipped: 0, stop: null });
+    expect(deps.payFromWallet).toHaveBeenCalledWith({ type: 'input', input: SPARK_A });
   });
 
   it('skips the row when history cannot be read', async () => {
     const deps = depsFor([OWED]);
     vi.mocked(deps.listWalletPayments).mockRejectedValue(new Error('wallet-connect'));
-    await expect(tick(deps)).resolves.toEqual({
-      paid: 0,
-      proved: 0,
-      skipped: 1,
-      stop: null,
-    });
+    await expect(tick(deps)).resolves.toEqual({ paid: 0, skipped: 1, stop: null });
+    expect(deps.payFromWallet).not.toHaveBeenCalled();
+  });
+
+  it('skips a settling row without asking for an invoice', async () => {
+    const deps = depsFor([{ ...SETTLING, paymentHash: HASH_A }]);
+    vi.mocked(deps.listWalletPayments).mockResolvedValue([sentPayment()]);
+    await expect(tick(deps)).resolves.toEqual({ paid: 0, skipped: 1, stop: null });
+    expect(deps.postFondPayoutInvoice).not.toHaveBeenCalled();
+    expect(deps.listWalletPayments).not.toHaveBeenCalled();
     expect(deps.payFromWallet).not.toHaveBeenCalled();
   });
 
   it('stops the whole tick when prepare or send reports no balance', async () => {
     const preparer = depsFor([OWED, OWED_B]);
     vi.mocked(preparer.payFromWallet).mockResolvedValue({ kind: 'insufficient', failure: FAILURE });
-    await expect(tick(preparer)).resolves.toEqual({
-      paid: 0,
-      proved: 0,
-      skipped: 0,
-      stop: null,
-    });
+    await expect(tick(preparer)).resolves.toEqual({ paid: 0, skipped: 0, stop: null });
     expect(preparer.postFondPayoutInvoice).toHaveBeenCalledTimes(1);
 
     const sender = depsFor([OWED, OWED_B]);
-    const insufficient: WalletSendResult = { kind: 'insufficient', failure: FAILURE };
-    vi.mocked(sender.payFromWallet).mockResolvedValue({
-      kind: 'confirm',
-      amountSats: 10,
-      feeSats: 0,
-      method: 'lightning',
-      send: vi.fn(async () => insufficient),
-    });
-    await expect(tick(sender)).resolves.toEqual({
-      paid: 0,
-      proved: 0,
-      skipped: 0,
-      stop: null,
-    });
+    vi.mocked(sender.payFromWallet).mockResolvedValue(
+      confirmResult(async () => ({ kind: 'insufficient', failure: FAILURE })),
+    );
+    await expect(tick(sender)).resolves.toEqual({ paid: 0, skipped: 0, stop: null });
     expect(sender.postFondPayoutInvoice).toHaveBeenCalledTimes(1);
   });
 
   it('skips every other prepare and send outcome', async () => {
-    const failed: WalletSendResult = { kind: 'failed', failure: FAILURE };
-    const expired: WalletSendResult = { kind: 'expired', failure: FAILURE };
     const outcomes: WalletPayResult[] = [
       { kind: 'belowMinimum', minSats: 100, failure: FAILURE },
       { kind: 'failed', failure: FAILURE },
       { kind: 'unlock', failure: FAILURE },
-      {
-        kind: 'confirm',
-        amountSats: 10,
-        feeSats: 0,
-        method: 'lightning',
-        send: vi.fn(async () => failed),
-      },
-      {
-        kind: 'confirm',
-        amountSats: 10,
-        feeSats: 0,
-        method: 'lightning',
-        send: vi.fn(async () => expired),
-      },
+      confirmResult(async () => ({ kind: 'failed', failure: FAILURE })),
+      confirmResult(async () => ({ kind: 'expired', failure: FAILURE })),
     ];
     for (const outcome of outcomes) {
       const deps = depsFor([OWED]);
       vi.mocked(deps.payFromWallet).mockResolvedValue(outcome);
-      await expect(tick(deps)).resolves.toEqual({
-        paid: 0,
-        proved: 0,
-        skipped: 1,
-        stop: null,
-      });
+      await expect(tick(deps)).resolves.toEqual({ paid: 0, skipped: 1, stop: null });
     }
   });
 
   it('skips the row when prepare or send throws', async () => {
     const preparer = depsFor([OWED]);
     vi.mocked(preparer.payFromWallet).mockRejectedValue(new Error('boom'));
-    await expect(tick(preparer)).resolves.toEqual({
-      paid: 0,
-      proved: 0,
-      skipped: 1,
-      stop: null,
-    });
+    await expect(tick(preparer)).resolves.toEqual({ paid: 0, skipped: 1, stop: null });
     expect(report).toHaveBeenLastCalledWith(
       expect.objectContaining({ stage: 'prepare', reason: 'sdk_error' }),
       'fond_payout',
@@ -831,21 +536,12 @@ describe('runFondPayoutTick rows', () => {
     );
 
     const sender = depsFor([OWED]);
-    vi.mocked(sender.payFromWallet).mockResolvedValue({
-      kind: 'confirm',
-      amountSats: 10,
-      feeSats: 0,
-      method: 'lightning',
-      send: vi.fn(async () => {
+    vi.mocked(sender.payFromWallet).mockResolvedValue(
+      confirmResult(async () => {
         throw new Error('boom');
       }),
-    });
-    await expect(tick(sender)).resolves.toEqual({
-      paid: 0,
-      proved: 0,
-      skipped: 1,
-      stop: null,
-    });
+    );
+    await expect(tick(sender)).resolves.toEqual({ paid: 0, skipped: 1, stop: null });
     expect(report).toHaveBeenLastCalledWith(
       expect.objectContaining({ stage: 'send', reason: 'sdk_error' }),
       'fond_payout',
@@ -859,20 +555,8 @@ describe('runFondPayoutTick rows', () => {
       { kind: 'failed', failure: FAILURE },
       { kind: 'unlock', failure: FAILURE },
       { kind: 'insufficient', failure: FAILURE },
-      {
-        kind: 'confirm',
-        amountSats: 10,
-        feeSats: 0,
-        method: 'lightning',
-        send: vi.fn(async () => ({ kind: 'failed', failure: FAILURE }) as WalletSendResult),
-      },
-      {
-        kind: 'confirm',
-        amountSats: 10,
-        feeSats: 0,
-        method: 'lightning',
-        send: vi.fn(async () => ({ kind: 'expired', failure: FAILURE }) as WalletSendResult),
-      },
+      confirmResult(async () => ({ kind: 'failed', failure: FAILURE })),
+      confirmResult(async () => ({ kind: 'expired', failure: FAILURE })),
     ];
     for (const outcome of outcomes) {
       vi.mocked(report).mockClear();
@@ -880,163 +564,125 @@ describe('runFondPayoutTick rows', () => {
       vi.mocked(deps.payFromWallet).mockResolvedValue(outcome);
       await tick(deps);
       expect(report).toHaveBeenCalledTimes(1);
-      expect(report).toHaveBeenCalledWith(FAILURE, 'fond_payout', {
-        session: 'sess',
-      });
+      expect(report).toHaveBeenCalledWith(FAILURE, 'fond_payout', { session: 'sess' });
     }
   });
 
-  it('skips a row whose preimage never appears, so the next tick finds it', async () => {
-    const deps = depsFor([OWED]);
-    await expect(tick(deps)).resolves.toEqual({
-      paid: 0,
-      proved: 0,
-      skipped: 1,
-      stop: null,
+  it('skips a row while its timed-out send is unresolved', async () => {
+    let settle: (sent: boolean) => void = () => undefined;
+    const sentLate = new Promise<boolean>((resolve) => {
+      settle = resolve;
     });
-    expect(deps.sleep).toHaveBeenCalledTimes(5);
-    expect(deps.postFondPayoutProof).not.toHaveBeenCalled();
-  });
-
-  it('skips a row when the history read fails while it waits for a preimage', async () => {
-    const deps = depsFor([OWED]);
-    vi.mocked(deps.listWalletPayments)
-      .mockResolvedValueOnce([])
-      .mockRejectedValue(new Error('wallet-connect'));
-    await expect(tick(deps)).resolves.toEqual({
-      paid: 0,
-      proved: 0,
-      skipped: 1,
-      stop: null,
-    });
-  });
-
-  it('skips a row whose proof is refused', async () => {
-    const deps = depsFor([OWED]);
-    vi.mocked(deps.listWalletPayments).mockResolvedValue([
-      sentPayment({ info: { paymentHash: HASH_A, preimage: PREIMAGE_A } }),
-    ]);
-    vi.mocked(deps.postFondPayoutProof).mockResolvedValue(failure(409, 'Proof in progress'));
-    await expect(tick(deps)).resolves.toEqual({
-      paid: 0,
-      proved: 0,
-      skipped: 1,
-      stop: null,
-    });
-  });
-
-  it('stops as forbidden on a proof 403', async () => {
-    const deps = depsFor([OWED, OWED_B]);
-    vi.mocked(deps.listWalletPayments).mockResolvedValue([
-      sentPayment({ info: { paymentHash: HASH_A, preimage: PREIMAGE_A } }),
-    ]);
-    vi.mocked(deps.postFondPayoutProof).mockResolvedValue(failure(403, 'Fond only'));
-    await expect(tick(deps)).resolves.toEqual({
-      paid: 0,
-      proved: 0,
-      skipped: 0,
-      stop: 'forbidden',
-    });
-    expect(deps.postFondPayoutProof).toHaveBeenCalledTimes(1);
-  });
-
-  it('skips a proof 404 because that row is gone', async () => {
-    const deps = depsFor([OWED]);
-    vi.mocked(deps.listWalletPayments).mockResolvedValue([
-      sentPayment({ info: { paymentHash: HASH_A, preimage: PREIMAGE_A } }),
-    ]);
-    vi.mocked(deps.postFondPayoutProof).mockResolvedValue(failure(404, 'Not found'));
-    await expect(tick(deps)).resolves.toEqual({
-      paid: 0,
-      proved: 0,
-      skipped: 1,
-      stop: null,
-    });
-  });
-
-  it('skips a settling row this tab does not remember', async () => {
-    const deps = depsFor([SETTLING]);
-    await expect(tick(deps)).resolves.toEqual({
-      paid: 0,
-      proved: 0,
-      skipped: 1,
-      stop: null,
-    });
-    expect(deps.postFondPayoutInvoice).not.toHaveBeenCalled();
-  });
-
-  it('proves a settling row from the list payment hash without paying', async () => {
-    const deps = depsFor([{ ...SETTLING, paymentHash: HASH_B }]);
-    vi.mocked(deps.listWalletPayments).mockResolvedValue([
-      sentPayment({ info: { paymentHash: HASH_B, preimage: PREIMAGE_B } }),
-    ]);
-    await expect(tick(deps)).resolves.toEqual({
-      paid: 1,
-      proved: 1,
-      skipped: 0,
-      stop: null,
-    });
-    expect(deps.postFondPayoutInvoice).not.toHaveBeenCalled();
-    expect(deps.payFromWallet).not.toHaveBeenCalled();
-    expect(deps.postFondPayoutProof).toHaveBeenCalledWith('sess', 'row-a', PREIMAGE_B);
-  });
-
-  it('finishes a settling row this tab invoiced earlier, from its remembered hash', async () => {
     const first = depsFor([OWED]);
-    await tick(first);
-    const second = depsFor([SETTLING]);
-    vi.mocked(second.listWalletPayments).mockResolvedValue([
-      sentPayment({ info: { paymentHash: HASH_A, preimage: PREIMAGE_A } }),
-    ]);
-    await expect(tick(second)).resolves.toEqual({
-      paid: 1,
-      proved: 1,
-      skipped: 0,
-      stop: null,
-    });
+    vi.mocked(first.payFromWallet).mockResolvedValue(
+      confirmResult(async () => failedLate(sentLate)),
+    );
+    await expect(tick(first)).resolves.toEqual({ paid: 0, skipped: 1, stop: null });
+    expect(report).toHaveBeenCalledWith(TIMEOUT, 'fond_payout', { session: 'sess', sentLate });
+
+    const second = depsFor([OWED]);
+    await expect(tick(second)).resolves.toEqual({ paid: 0, skipped: 1, stop: null });
     expect(second.postFondPayoutInvoice).not.toHaveBeenCalled();
+    expect(second.payFromWallet).not.toHaveBeenCalled();
+    settle(true);
+    await sentLate;
   });
 
-  it('leaves a remembered settling row alone until its send has a preimage', async () => {
+  it('never pays a timed-out send the wallet confirms, even before history shows it', async () => {
+    let settle: (sent: boolean) => void = () => undefined;
+    const sentLate = new Promise<boolean>((resolve) => {
+      settle = resolve;
+    });
     const first = depsFor([OWED]);
+    vi.mocked(first.payFromWallet).mockResolvedValue(
+      confirmResult(async () => failedLate(sentLate)),
+    );
     await tick(first);
-    const second = depsFor([SETTLING]);
-    vi.mocked(second.listWalletPayments).mockResolvedValue([
+    settle(true);
+    await sentLate;
+    await Promise.resolve();
+
+    const second = depsFor([OWED]);
+    await expect(tick(second)).resolves.toEqual({ paid: 0, skipped: 1, stop: null });
+    expect(second.postFondPayoutInvoice).toHaveBeenCalledTimes(1);
+    expect(second.payFromWallet).not.toHaveBeenCalled();
+
+    const third = depsFor([OWED]);
+    vi.mocked(third.listWalletPayments).mockResolvedValue([
       sentPayment({ status: 'pending', info: { paymentHash: HASH_A } }),
     ]);
-    await expect(tick(second)).resolves.toEqual({
-      paid: 0,
-      proved: 0,
-      skipped: 1,
-      stop: null,
+    await expect(tick(third)).resolves.toEqual({ paid: 0, skipped: 1, stop: null });
+    expect(third.payFromWallet).not.toHaveBeenCalled();
+  });
+
+  it('does not pay a confirmed late send even when the history has no match', async () => {
+    let settle: (sent: boolean) => void = () => undefined;
+    const sentLate = new Promise<boolean>((resolve) => {
+      settle = resolve;
     });
+    const first = depsFor([OWED]);
+    vi.mocked(first.payFromWallet).mockResolvedValue(
+      confirmResult(async () => failedLate(sentLate)),
+    );
+    await tick(first);
+    settle(true);
+    await sentLate;
+    await Promise.resolve();
+
+    const second = depsFor([OWED]);
+    vi.mocked(second.listWalletPayments).mockResolvedValue([
+      sentPayment({ status: 'failed', info: { paymentHash: HASH_A } }),
+    ]);
+    await expect(tick(second)).resolves.toEqual({ paid: 0, skipped: 1, stop: null });
     expect(second.payFromWallet).not.toHaveBeenCalled();
   });
 
-  it('leaves a remembered settling row alone with no matching send', async () => {
-    const first = depsFor([OWED]);
-    vi.mocked(first.listWalletPayments).mockResolvedValue([]);
-    await tick(first);
-    const second = depsFor([SETTLING]);
-    vi.mocked(second.payFromWallet).mockResolvedValue(confirmResult({ kind: 'paid' }));
-    await expect(tick(second)).resolves.toEqual({
-      paid: 0,
-      proved: 0,
-      skipped: 1,
-      stop: null,
+  it('pays again after a timed-out send the wallet rejects, and after a late reject', async () => {
+    let settle: (sent: boolean) => void = () => undefined;
+    const sentLate = new Promise<boolean>((resolve) => {
+      settle = resolve;
     });
-    expect(second.payFromWallet).not.toHaveBeenCalled();
+    const first = depsFor([OWED]);
+    vi.mocked(first.payFromWallet).mockResolvedValue(
+      confirmResult(async () => failedLate(sentLate)),
+    );
+    await tick(first);
+    settle(false);
+    await sentLate;
+
+    const second = depsFor([OWED]);
+    await expect(tick(second)).resolves.toEqual({ paid: 1, skipped: 0, stop: null });
+    expect(second.payFromWallet).toHaveBeenCalledWith({ type: 'input', input: SPARK_A });
+
+    const rejectedLate = Promise.reject(new Error('wallet-connect'));
+    rejectedLate.catch(() => undefined);
+    const third = depsFor([OWED]);
+    vi.mocked(third.payFromWallet).mockResolvedValue(
+      confirmResult(async () => failedLate(rejectedLate)),
+    );
+    await tick(third);
+    await Promise.resolve();
+    const fourth = depsFor([OWED]);
+    await expect(tick(fourth)).resolves.toEqual({ paid: 1, skipped: 0, stop: null });
+  });
+
+  it('forgets a timed-out send whose sentLate rejects', async () => {
+    const rejectedLate = Promise.reject(new Error('wallet-connect'));
+    rejectedLate.catch(() => undefined);
+    const first = depsFor([OWED]);
+    vi.mocked(first.payFromWallet).mockResolvedValue(
+      confirmResult(async () => failedLate(rejectedLate)),
+    );
+    await tick(first);
+    await Promise.resolve();
+    const second = depsFor([OWED]);
+    await expect(tick(second)).resolves.toEqual({ paid: 1, skipped: 0, stop: null });
   });
 
   it('returns before the list when already cancelled', async () => {
     const deps = depsFor([OWED]);
     vi.mocked(deps.isCancelled).mockReturnValue(true);
-    await expect(tick(deps)).resolves.toEqual({
-      paid: 0,
-      proved: 0,
-      skipped: 0,
-      stop: null,
-    });
+    await expect(tick(deps)).resolves.toEqual({ paid: 0, skipped: 0, stop: null });
     expect(deps.fetchFondPayouts).not.toHaveBeenCalled();
   });
 
@@ -1044,107 +690,65 @@ describe('runFondPayoutTick rows', () => {
     let cancelled = false;
     const deps = depsFor([OWED, OWED_B]);
     vi.mocked(deps.isCancelled).mockImplementation(() => cancelled);
-    vi.mocked(deps.listWalletPayments).mockResolvedValue([]);
     vi.mocked(deps.payFromWallet).mockImplementation(async () => {
       cancelled = true;
-      return confirmResult({ kind: 'paid' });
+      return confirmResult(async () => ({ kind: 'paid' }));
     });
-    await expect(tick(deps)).resolves.toEqual({
-      paid: 0,
-      proved: 0,
-      skipped: 0,
-      stop: null,
-    });
+    await expect(tick(deps)).resolves.toEqual({ paid: 0, skipped: 0, stop: null });
     expect(deps.postFondPayoutInvoice).toHaveBeenCalledTimes(1);
     expect(deps.payFromWallet).toHaveBeenCalledTimes(1);
   });
 
-  it('stops at the next row when cancelled after the first proof', async () => {
+  it('stops before the next row when cancellation follows a skipped row', async () => {
     let cancelled = false;
     const deps = depsFor([OWED, OWED_B]);
     vi.mocked(deps.isCancelled).mockImplementation(() => cancelled);
-    vi.mocked(deps.listWalletPayments)
-      .mockResolvedValueOnce([])
-      .mockResolvedValue([sentPayment({ info: { paymentHash: HASH_A, preimage: PREIMAGE_A } })]);
-    vi.mocked(deps.postFondPayoutProof).mockImplementation(async () => {
+    vi.mocked(deps.listWalletPayments).mockImplementation(async () => {
       cancelled = true;
-      return { ok: true };
+      return [sentPayment({ info: { paymentHash: HASH_A } })];
     });
-    await expect(tick(deps)).resolves.toEqual({
-      paid: 1,
-      proved: 1,
-      skipped: 0,
-      stop: null,
-    });
+    await expect(tick(deps)).resolves.toEqual({ paid: 0, skipped: 1, stop: null });
     expect(deps.postFondPayoutInvoice).toHaveBeenCalledTimes(1);
-    expect(deps.postFondPayoutInvoice).not.toHaveBeenCalledWith('sess', 'row-b');
+    expect(deps.payFromWallet).not.toHaveBeenCalled();
   });
 
   it('does not pay when cancelled before payFromWallet', async () => {
     let cancelled = false;
     const deps = depsFor([OWED]);
     vi.mocked(deps.isCancelled).mockImplementation(() => cancelled);
-    vi.mocked(deps.postFondPayoutInvoice).mockImplementation(async (_session, id) => {
-      cancelled = true;
-      return { ok: true, invoice: { id, bolt11: `lnbc-${id}`, paymentHash: HASH_A } };
-    });
-    await expect(tick(deps)).resolves.toEqual({
-      paid: 0,
-      proved: 0,
-      skipped: 0,
-      stop: null,
-    });
-    expect(deps.postFondPayoutInvoice).toHaveBeenCalledTimes(1);
-    expect(deps.payFromWallet).not.toHaveBeenCalled();
-  });
-
-  it('does not post a proof when cancelled before it', async () => {
-    let cancelled = false;
-    const deps = depsFor([OWED]);
-    vi.mocked(deps.isCancelled).mockImplementation(() => cancelled);
     vi.mocked(deps.listWalletPayments).mockImplementation(async () => {
       cancelled = true;
-      return [sentPayment({ info: { paymentHash: HASH_A, preimage: PREIMAGE_A } })];
+      return [];
     });
-    await expect(tick(deps)).resolves.toEqual({
-      paid: 0,
-      proved: 0,
-      skipped: 0,
-      stop: null,
-    });
-    expect(deps.postFondPayoutProof).not.toHaveBeenCalled();
-  });
-
-  it('does not pay when a completed send appears after the invoice request', async () => {
-    const deps = depsFor([OWED]);
-    vi.mocked(deps.listWalletPayments).mockResolvedValue([
-      sentPayment({ info: { paymentHash: HASH_A, preimage: PREIMAGE_A } }),
-    ]);
-    await expect(tick(deps)).resolves.toEqual({
-      paid: 1,
-      proved: 1,
-      skipped: 0,
-      stop: null,
-    });
+    await expect(tick(deps)).resolves.toEqual({ paid: 0, skipped: 0, stop: null });
     expect(deps.postFondPayoutInvoice).toHaveBeenCalledTimes(1);
     expect(deps.payFromWallet).not.toHaveBeenCalled();
-    expect(deps.postFondPayoutProof).toHaveBeenCalledWith('sess', 'row-a', PREIMAGE_A);
   });
 
-  it('cancels while it waits for a fresh preimage', async () => {
+  it('does not send when cancelled after prepare', async () => {
     let cancelled = false;
     const deps = depsFor([OWED]);
     vi.mocked(deps.isCancelled).mockImplementation(() => cancelled);
-    vi.mocked(deps.sleep).mockImplementation(async () => {
+    const send = vi.fn(async () => ({ kind: 'paid' }) as WalletSendResult);
+    vi.mocked(deps.payFromWallet).mockImplementation(async () => {
       cancelled = true;
+      return confirmResult(send);
     });
-    await expect(tick(deps)).resolves.toEqual({
-      paid: 0,
-      proved: 0,
-      skipped: 0,
-      stop: null,
-    });
-    expect(deps.sleep).toHaveBeenCalledTimes(1);
-    expect(deps.postFondPayoutProof).not.toHaveBeenCalled();
+    await expect(tick(deps)).resolves.toEqual({ paid: 0, skipped: 0, stop: null });
+    expect(send).not.toHaveBeenCalled();
+  });
+
+  it('reports no paid row when cancelled after the send went out', async () => {
+    let cancelled = false;
+    const deps = depsFor([OWED]);
+    vi.mocked(deps.isCancelled).mockImplementation(() => cancelled);
+    vi.mocked(deps.payFromWallet).mockResolvedValue(
+      confirmResult(async () => {
+        cancelled = true;
+        return { kind: 'paid' };
+      }),
+    );
+    await expect(tick(deps)).resolves.toEqual({ paid: 0, skipped: 0, stop: null });
+    expect(deps.payFromWallet).toHaveBeenCalledTimes(1);
   });
 });

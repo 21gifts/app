@@ -41,7 +41,6 @@ import {
   fundingDecisionResultSchema,
   fondPayoutInvoiceSchema,
   fondPayoutListSchema,
-  fondPayoutProofSchema,
   trustActionResultSchema,
   trustChainSchema,
   passkeyBeginSchema,
@@ -2653,28 +2652,29 @@ describe('fondPayoutListSchema', () => {
 });
 
 describe('fondPayoutInvoiceSchema', () => {
-  const invoice = { id: 'row-1', bolt11: 'lnbc1', paymentHash: 'aa'.repeat(32) };
+  const invoice = {
+    id: 'row-1',
+    bolt11: 'lnbc1',
+    paymentHash: 'aa'.repeat(32),
+    sparkInvoice: 'spark1invoice',
+  };
 
-  it('parses one invoice', () => {
+  it('parses one invoice with a Spark invoice or null', () => {
     expect(fondPayoutInvoiceSchema.parse(invoice)).toEqual(invoice);
-  });
-
-  it('rejects an empty invoice or hash', () => {
-    expect(() => fondPayoutInvoiceSchema.parse({ ...invoice, bolt11: '' })).toThrow();
-    expect(() => fondPayoutInvoiceSchema.parse({ ...invoice, paymentHash: '' })).toThrow();
-  });
-});
-
-describe('fondPayoutProofSchema', () => {
-  it('parses a paid proof acknowledgement', () => {
-    expect(fondPayoutProofSchema.parse({ status: 'paid', id: 'row-1' })).toEqual({
-      status: 'paid',
-      id: 'row-1',
+    expect(fondPayoutInvoiceSchema.parse({ ...invoice, sparkInvoice: null })).toEqual({
+      ...invoice,
+      sparkInvoice: null,
     });
   });
 
-  it('rejects another status or a non-string id', () => {
-    expect(() => fondPayoutProofSchema.parse({ status: 'ok', id: 'row-1' })).toThrow();
-    expect(() => fondPayoutProofSchema.parse({ status: 'paid', id: 7 })).toThrow();
+  it('rejects an empty invoice or hash and a missing Spark invoice field', () => {
+    expect(() => fondPayoutInvoiceSchema.parse({ ...invoice, bolt11: '' })).toThrow();
+    expect(() => fondPayoutInvoiceSchema.parse({ ...invoice, paymentHash: '' })).toThrow();
+    const withoutSparkInvoice = {
+      id: invoice.id,
+      bolt11: invoice.bolt11,
+      paymentHash: invoice.paymentHash,
+    };
+    expect(() => fondPayoutInvoiceSchema.parse(withoutSparkInvoice)).toThrow();
   });
 });

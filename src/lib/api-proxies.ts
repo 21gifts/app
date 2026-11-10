@@ -424,17 +424,6 @@ export async function proxyFondPayoutInvoicePost(request: Request, id: string): 
 }
 
 /**
- * Proxies POST /fond/payouts/:id/proof to the 21.gifts api.
- *
- * @param request - Incoming App Router request (Bearer session + JSON `{ preimage }`).
- * @param id - Payout row id from the path.
- * @returns The upstream response.
- */
-export async function proxyFondPayoutProofPost(request: Request, id: string): Promise<Response> {
-  return proxyApiRequest(request, `/fond/payouts/${encodeURIComponent(id)}/proof`);
-}
-
-/**
  * Proxies POST /me/wallet/report (wallet data report) to the 21.gifts api.
  *
  * @param request - Incoming App Router request (Bearer session + JSON

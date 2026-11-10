@@ -1869,7 +1869,7 @@ export type DailyRoster = z.infer<typeof dailyRosterSchema>;
  * Runtime schema for one open row of `GET /fond/payouts`.
  *
  * The api owns every amount, so a row carries no amount: the app asks for the
- * row's BOLT11 and pays what that invoice says. `paymentHash` is present for
+ * row's invoice and pays what it says. `paymentHash` is present for
  * `invoiced` and `settling` rows and null for `owed` and `issuing`; it is
  * optional so an api without the field still parses.
  */
@@ -1905,22 +1905,11 @@ export const fondPayoutInvoiceSchema = z.object({
   id: z.string().min(1),
   bolt11: z.string().min(1),
   paymentHash: z.string().min(1),
+  sparkInvoice: z.string().nullable(),
 });
 
 /**
- * One payout invoice: the BOLT11 to pay and the hash that proves the payment.
+ * One payout invoice: the BOLT11, the fee-free Spark invoice when the
+ * recipient's wallet has one, and the payment hash that identifies the send.
  */
 export type FondPayoutInvoice = z.infer<typeof fondPayoutInvoiceSchema>;
-
-/**
- * Runtime schema for a `POST /fond/payouts/:id/proof` success body.
- */
-export const fondPayoutProofSchema = z.object({
-  status: z.literal('paid'),
-  id: z.string(),
-});
-
-/**
- * The proof confirmation for a successfully marked daily payout.
- */
-export type FondPayoutProof = z.infer<typeof fondPayoutProofSchema>;

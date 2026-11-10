@@ -1,12 +1,11 @@
 import { act, cleanup, render } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { FOND_PAYOUT_INTERVAL_MS, FondPayoutSync } from '@/components/FondPayoutSync';
-import { fetchFondPayouts } from '@/lib/api';
+import { fetchFondPayouts, postFondPayoutInvoice } from '@/lib/api';
 import type { Account } from '@/lib/api-types';
 import {
   fondE2eWallet,
   runFondPayoutTickOnce as runFondPayoutTick,
-  waitForFondPayoutRead,
   type FondPayoutTickDeps,
 } from '@/lib/wallet/fond-payouts';
 import { useAuthStore } from '@/stores/auth-store';
@@ -23,14 +22,12 @@ const E2E_LIST = vi.fn<FondPayoutTickDeps['listWalletPayments']>(async () => [])
 
 vi.mock('@/lib/wallet/fond-payouts', () => ({
   fondE2eWallet: vi.fn(() => null),
-  runFondPayoutTickOnce: vi.fn(async () => ({ paid: 0, proved: 0, skipped: 0, stop: null })),
-  waitForFondPayoutRead: vi.fn(async () => undefined),
+  runFondPayoutTickOnce: vi.fn(async () => ({ paid: 0, skipped: 0, stop: null })),
 }));
 
 vi.mock('@/lib/api', () => ({
   fetchFondPayouts: vi.fn(),
   postFondPayoutInvoice: vi.fn(),
-  postFondPayoutProof: vi.fn(),
 }));
 
 vi.mock('@/lib/wallet/wallet-service', () => ({
@@ -93,7 +90,6 @@ beforeEach(() => {
   vi.mocked(runFondPayoutTick).mockReset();
   vi.mocked(runFondPayoutTick).mockResolvedValue({
     paid: 0,
-    proved: 0,
     skipped: 0,
     stop: null,
   });
@@ -132,9 +128,11 @@ describe('FondPayoutSync', () => {
     render(<FondPayoutSync />);
     await flush();
     expect(runFondPayoutTick).toHaveBeenCalledTimes(1);
-    expect(vi.mocked(runFondPayoutTick).mock.calls[0]?.[0]).toMatchObject({ session: 'sess' });
-    expect(vi.mocked(runFondPayoutTick).mock.calls[0]?.[0]?.sleep).toBe(waitForFondPayoutRead);
-    expect(vi.mocked(runFondPayoutTick).mock.calls[0]?.[0]?.isCancelled()).toBe(false);
+    const deps = vi.mocked(runFondPayoutTick).mock.calls[0]?.[0];
+    expect(deps).toMatchObject({ session: 'sess' });
+    expect(deps?.fetchFondPayouts).toBe(fetchFondPayouts);
+    expect(deps?.postFondPayoutInvoice).toBe(postFondPayoutInvoice);
+    expect(deps?.isCancelled()).toBe(false);
   });
 
   it('runs for the Playwright fake wallet without a ready wallet', async () => {
@@ -167,7 +165,7 @@ describe('FondPayoutSync', () => {
     vi.mocked(runFondPayoutTick).mockImplementation(
       () =>
         new Promise((resolve) => {
-          finish = () => resolve({ paid: 0, proved: 0, skipped: 0, stop: null });
+          finish = () => resolve({ paid: 0, skipped: 0, stop: null });
         }),
     );
     setState('fond', 'sess', 'ready');
@@ -189,7 +187,7 @@ describe('FondPayoutSync', () => {
     vi.mocked(runFondPayoutTick).mockImplementation(
       () =>
         new Promise((resolve) => {
-          finish = () => resolve({ paid: 0, proved: 0, skipped: 0, stop: null });
+          finish = () => resolve({ paid: 0, skipped: 0, stop: null });
         }),
     );
     setState('fond', 'sess', 'ready');
@@ -223,7 +221,7 @@ describe('FondPayoutSync', () => {
     vi.mocked(runFondPayoutTick).mockImplementation(
       () =>
         new Promise((resolve) => {
-          finish = () => resolve({ paid: 0, proved: 0, skipped: 0, stop: null });
+          finish = () => resolve({ paid: 0, skipped: 0, stop: null });
         }),
     );
     setState('fond', 'sess', 'ready');
@@ -261,7 +259,7 @@ describe('FondPayoutSync', () => {
     vi.mocked(runFondPayoutTick).mockImplementation(
       () =>
         new Promise((resolve) => {
-          finish = () => resolve({ paid: 0, proved: 0, skipped: 0, stop: null });
+          finish = () => resolve({ paid: 0, skipped: 0, stop: null });
         }),
     );
     setState('fond', 'sess', 'ready');
@@ -291,7 +289,7 @@ describe('FondPayoutSync', () => {
     vi.mocked(runFondPayoutTick).mockImplementation(
       () =>
         new Promise((resolve) => {
-          finish = () => resolve({ paid: 0, proved: 0, skipped: 0, stop: null });
+          finish = () => resolve({ paid: 0, skipped: 0, stop: null });
         }),
     );
     setState('fond', 'sess', 'ready');
@@ -315,7 +313,6 @@ describe('FondPayoutSync', () => {
     vi.useFakeTimers();
     vi.mocked(runFondPayoutTick).mockResolvedValue({
       paid: 0,
-      proved: 0,
       skipped: 0,
       stop: 'forbidden',
     });
@@ -385,7 +382,6 @@ describe('FondPayoutSync', () => {
     vi.useFakeTimers();
     vi.mocked(runFondPayoutTick).mockResolvedValue({
       paid: 0,
-      proved: 0,
       skipped: 0,
       stop: 'off',
     });
@@ -402,7 +398,6 @@ describe('FondPayoutSync', () => {
 
     vi.mocked(runFondPayoutTick).mockResolvedValue({
       paid: 0,
-      proved: 0,
       skipped: 0,
       stop: null,
     });
@@ -415,11 +410,10 @@ describe('FondPayoutSync', () => {
     expect(runFondPayoutTick).toHaveBeenCalledTimes(2);
   });
 
-  it('starts again for the same account after a sign-out and sign-in with a new session', async () => {
+  it('starts again for the same account after a sign-out and sign-in', async () => {
     vi.useFakeTimers();
     vi.mocked(runFondPayoutTick).mockResolvedValue({
       paid: 0,
-      proved: 0,
       skipped: 0,
       stop: 'forbidden',
     });
@@ -437,7 +431,6 @@ describe('FondPayoutSync', () => {
     });
     vi.mocked(runFondPayoutTick).mockResolvedValue({
       paid: 0,
-      proved: 0,
       skipped: 0,
       stop: null,
     });

@@ -1,49 +1,20 @@
 import type { FondPayout, FondPayoutInvoice } from '@/lib/api-types';
 import type { FondPayoutFailure } from '@/lib/api';
 import { getE2eNow } from '@/lib/config';
-import { PAY_POLL_MS } from '@/lib/payment-link';
 import { reportPaymentFailure, type PaymentFailure } from '@/lib/wallet/payment-failure';
 import type { WalletPayResult, WalletSendResult } from '@/lib/wallet/wallet-service';
-import type { WalletPayment, WalletPayRequest, WalletPaymentPage } from '@/lib/wallet/wallet-sdk';
+import type { WalletPayment, WalletPaymentPage, WalletPayRequest } from '@/lib/wallet/wallet-sdk';
 
 /** How many newest wallet payments one history read covers. */
 const FOND_PAYOUT_HISTORY_LIMIT = 100;
 
-/** How many history reads one fresh send waits for its preimage. */
-const FOND_PAYOUT_PREIMAGE_READS = 5;
-
-/** A 64-hex Lightning preimage, case-insensitive. */
-const PREIMAGE = /^[0-9a-f]{64}$/i;
-
-/**
- * Waits before the next wallet history read while a fresh send settles.
- *
- * @param ms - Milliseconds to wait.
- * @returns Resolves after that wait.
- */
-export function waitForFondPayoutRead(ms: number): Promise<void> {
-  return new Promise((resolve) => {
-    setTimeout(resolve, ms);
-  });
-}
-
-/** The fixed 64-hex preimage the Playwright Fond wallet reports after a send. */
-const FOND_E2E_PREIMAGE = '11'.repeat(32);
-
 /** Sent payments the Playwright Fond wallet remembers for this tab. */
 const e2eSends: WalletPayment[] = [];
 
-/** How many history reads follow each Playwright Fond send. */
-let e2eReadsAfterSend = 0;
-
 /**
- * The fake Fond wallet for a Playwright build: a prepare that sends the
- * BOLT11 it is given, and a history where the first read after that send is
- * `pending` without a preimage and later reads are `completed` with
- * {@link FOND_E2E_PREIMAGE}. This makes the payout loop poll through
- * {@link waitForFondPayoutRead} exactly as it does for a wallet. Returns
- * `null` in every other build, so production and unit tests keep the real
- * wallet functions.
+ * The fake Fond wallet for a Playwright build: a prepare that pays the input it
+ * is given and records it as a completed send. Returns `null` in every other
+ * build, so production and unit tests keep the real wallet functions.
  *
  * @returns The Playwright wallet fakes, or `null` outside a Playwright build.
  */
@@ -75,14 +46,13 @@ export function fondE2eWallet(): {
         feeSats: 0,
         method: 'lightning',
         send: async () => {
-          e2eReadsAfterSend = 0;
           e2eSends.unshift({
             id: `fond-e2e-${String(e2eSends.length + 1)}`,
             direction: 'sent',
             amountSats: 21,
             feesSats: 0,
             timestamp: Date.now(),
-            status: 'pending',
+            status: 'completed',
             method: 'lightning',
             senderComment: null,
             info: { invoice },
@@ -91,22 +61,7 @@ export function fondE2eWallet(): {
         },
       };
     },
-    listWalletPayments: async () => {
-      if (e2eSends.length === 0) {
-        return [];
-      }
-      e2eReadsAfterSend += 1;
-      const completed = e2eReadsAfterSend > 1;
-      return e2eSends.map((sent) =>
-        completed
-          ? {
-              ...sent,
-              status: 'completed' as const,
-              info: { ...sent.info, preimage: FOND_E2E_PREIMAGE },
-            }
-          : sent,
-      );
-    },
+    listWalletPayments: async () => e2eSends,
   };
 }
 
@@ -123,41 +78,28 @@ export interface FondPayoutTickDeps {
   fetchFondPayouts: (
     session: string,
   ) => Promise<{ ok: true; payouts: FondPayout[] } | FondPayoutFailure>;
-  /** Asks the api for one payout's BOLT11. */
+  /** Asks the api for one payout's invoice. */
   postFondPayoutInvoice: (
     session: string,
     id: string,
   ) => Promise<{ ok: true; invoice: FondPayoutInvoice } | FondPayoutFailure>;
-  /** Posts the preimage as proof of one payout. */
-  postFondPayoutProof: (
-    session: string,
-    id: string,
-    preimage: string,
-  ) => Promise<{ ok: true } | FondPayoutFailure>;
   /** Prepares a payment from the in-app wallet. */
   payFromWallet: (request: WalletPayRequest) => Promise<WalletPayResult>;
   /** Reads the connected wallet's newest payments. */
   listWalletPayments: (page: { offset: number; limit: number }) => Promise<WalletPayment[]>;
-  /** Waits before the next history read. */
-  sleep: (ms: number) => Promise<void>;
 }
 
 /**
  * Summary of one loop step.
  */
 export interface FondPayoutTickResult {
-  /** Rows paid and proven in this step. */
+  /** Rows paid in this step. */
   paid: number;
-  /** Rows whose preimage the api accepted as proof. */
-  proved: number;
   /** Rows left alone in this step. */
   skipped: number;
   /** `forbidden` on an api 403, `off` on a list 404, otherwise `null`. */
   stop: 'forbidden' | 'off' | null;
 }
-
-/** Payment hashes this tab remembers per payout id, filled when it asks for the invoice. */
-const rememberedHashes = new Map<string, string>();
 
 /**
  * Sends that timed out (`sentLate`) and did not resolve yet. While an id is
@@ -165,17 +107,19 @@ const rememberedHashes = new Map<string, string>();
  */
 const unresolvedSentLate = new Map<string, Promise<boolean>>();
 
-/** Rows whose timed-out send the wallet confirmed as sent but not yet proven. */
+/** Rows whose timed-out send the wallet confirmed before its history showed it. */
 const lateSends = new Set<string>();
 
 /** How the tick finds the wallet send for one row. */
 interface PayoutTarget {
   /** Payout row id. */
   id: string;
-  /** Payment hash, when the row was invoiced by this tab. */
+  /** Payment hash of the invoice. */
   paymentHash: string;
-  /** BOLT11 to pay, absent for a `settling` row remembered by its hash. */
-  bolt11: string | null;
+  /** BOLT11 to pay when the Spark invoice is absent. */
+  bolt11: string;
+  /** Fee-free Spark invoice to pay when the api returned one. */
+  sparkInvoice: string | null;
 }
 
 /** What one row's invoice lookup found. */
@@ -183,7 +127,7 @@ type PayoutTargetLookup =
   { kind: 'target'; target: PayoutTarget } | { kind: 'stop'; stop: 'forbidden' } | { kind: 'skip' };
 
 /**
- * The invoice to pay for one row, from this tab's memory or from the api.
+ * The invoice to pay for one row, from the api.
  *
  * @param deps - Tick collaborators.
  * @param row - Payout row to invoice.
@@ -192,33 +136,26 @@ type PayoutTargetLookup =
  */
 async function targetFor(deps: FondPayoutTickDeps, row: FondPayout): Promise<PayoutTargetLookup> {
   if (row.status === 'settling') {
-    const listed = row.paymentHash;
-    const paymentHash =
-      typeof listed === 'string' && listed !== '' ? listed : rememberedHashes.get(row.id);
-    if (paymentHash === undefined) {
-      return { kind: 'skip' };
-    }
-    rememberedHashes.set(row.id, paymentHash);
-    return { kind: 'target', target: { id: row.id, paymentHash, bolt11: null } };
+    return { kind: 'skip' };
   }
   const result = await deps.postFondPayoutInvoice(deps.session, row.id);
   if (!result.ok) {
     return result.status === 403 ? { kind: 'stop', stop: 'forbidden' } : { kind: 'skip' };
   }
-  rememberedHashes.set(row.id, result.invoice.paymentHash);
   return {
     kind: 'target',
     target: {
       id: row.id,
       paymentHash: result.invoice.paymentHash,
       bolt11: result.invoice.bolt11,
+      sparkInvoice: result.invoice.sparkInvoice,
     },
   };
 }
 
 /**
  * Whether a listed send belongs to this payout, matched by payment hash
- * (case-insensitive) or by BOLT11.
+ * (case-insensitive), by BOLT11, or by Spark invoice.
  *
  * @param payment - One wallet payment.
  * @param target - The payout target.
@@ -232,10 +169,12 @@ function matchesPayment(payment: WalletPayment, target: PayoutTarget): boolean {
   if (typeof hash === 'string' && hash.toLowerCase() === target.paymentHash.toLowerCase()) {
     return true;
   }
+  const invoice = payment.info.invoice;
+  if (typeof invoice !== 'string') {
+    return false;
+  }
   return (
-    target.bolt11 !== null &&
-    typeof payment.info.invoice === 'string' &&
-    payment.info.invoice === target.bolt11
+    invoice === target.bolt11 || (target.sparkInvoice !== null && invoice === target.sparkInvoice)
   );
 }
 
@@ -255,63 +194,8 @@ async function findPayments(
 }
 
 /**
- * A preimage from one matching send, or `null` when it is missing or not 64-hex.
- *
- * @param payment - Matching payment.
- * @returns The normalized preimage, or `null`.
- */
-function preimageOf(payment: WalletPayment): string | null {
-  const preimage = payment.info.preimage;
-  return typeof preimage === 'string' && PREIMAGE.test(preimage) ? preimage.toLowerCase() : null;
-}
-
-/**
- * The first readable preimage among completed matching sends.
- *
- * @param payments - All matching sends, newest first.
- * @returns The normalized preimage, or `null` when no completed send has one.
- */
-function completedPreimage(payments: WalletPayment[]): string | null {
-  for (const payment of payments) {
-    if (payment.status !== 'completed') {
-      continue;
-    }
-    const preimage = preimageOf(payment);
-    if (preimage !== null) {
-      return preimage;
-    }
-  }
-  return null;
-}
-
-/**
- * Polls the history for a fresh send's preimage.
- *
- * @param deps - Tick collaborators.
- * @param target - The payout target.
- * @returns The normalized preimage, `cancelled`, or `null` after the last read.
- */
-async function waitForPreimage(
-  deps: FondPayoutTickDeps,
-  target: PayoutTarget,
-): Promise<string | 'cancelled' | null> {
-  for (let read = 0; read < FOND_PAYOUT_PREIMAGE_READS; read += 1) {
-    if (deps.isCancelled()) {
-      return 'cancelled';
-    }
-    await deps.sleep(PAY_POLL_MS);
-    const preimage = completedPreimage(await findPayments(deps, target));
-    if (preimage !== null) {
-      return preimage;
-    }
-  }
-  return null;
-}
-
-/**
  * Reports one wallet outcome that did not pay the invoice. The failure carries
- * codes, amounts, and the rejection only; the BOLT11 and preimage never enter
- * it.
+ * codes, amounts, and the rejection only; the invoice never enters it.
  *
  * @param session - Session the payment ran under.
  * @param failure - What the wallet saw.
@@ -366,29 +250,29 @@ function rememberSentLate(id: string, sentLate: Promise<boolean>): void {
   );
 }
 
+/** What one row left the tick with. */
+type RowOutcome = 'paid' | 'insufficient' | 'cancelled' | 'skipped';
+
 /**
- * Pays one BOLT11 once and waits for its preimage.
+ * Pays one invoice once through the in-app wallet.
  *
- * Only a `confirm` prepare proceeds to `send`, and only `paid` proceeds to the
- * preimage poll. No balance stops the whole tick (`insufficient`); every other
- * outcome skips the row.
+ * Only a `confirm` prepare proceeds to `send`. No balance stops the whole tick
+ * (`insufficient`); every other outcome skips the row.
  *
  * @param deps - Tick collaborators.
- * @param target - The payout target (its BOLT11 is present here).
- * @param bolt11 - The invoice to pay.
- * @returns The preimage, `insufficient`, `cancelled`, or `skipped`.
+ * @param target - The payout target.
+ * @returns `paid`, `insufficient`, `cancelled`, or `skipped`.
  */
-async function payAndWait(
-  deps: FondPayoutTickDeps,
-  target: PayoutTarget,
-  bolt11: string,
-): Promise<string | 'insufficient' | 'cancelled' | 'skipped'> {
+async function payInvoice(deps: FondPayoutTickDeps, target: PayoutTarget): Promise<RowOutcome> {
   if (deps.isCancelled()) {
     return 'cancelled';
   }
   let prepared: WalletPayResult;
   try {
-    prepared = await deps.payFromWallet({ type: 'input', input: bolt11 });
+    prepared = await deps.payFromWallet({
+      type: 'input',
+      input: target.sparkInvoice ?? target.bolt11,
+    });
   } catch (error) {
     reportFondPayoutFailure(deps.session, thrownFailure('prepare', error));
     return 'skipped';
@@ -423,91 +307,70 @@ async function payAndWait(
     }
     return 'skipped';
   }
-  try {
-    const waited = await waitForPreimage(deps, target);
-    return waited === 'cancelled' ? 'cancelled' : (waited ?? 'skipped');
-  } catch {
-    return 'skipped';
-  }
-}
-
-/**
- * Finds every earlier send for one payout row, proves a completed one when
- * possible, and otherwise pays only when none is completed or pending.
- *
- * Any `completed` match with a 64-hex preimage is proven without paying again.
- * Without such a preimage, any `completed` or `pending` match skips the row;
- * no match or only `failed` matches falls through to paying the row once. A row
- * whose timed-out send the wallet confirmed is never paid, only proven once its
- * preimage appears. A `settling` row has no BOLT11 of its own, so it is skipped
- * when its hash matches no listed send.
- *
- * @param deps - Tick collaborators.
- * @param target - The payout target.
- * @returns `paid`, `insufficient`, `forbidden`, `cancelled`, or `skipped`.
- */
-async function payAndProve(
-  deps: FondPayoutTickDeps,
-  target: PayoutTarget,
-): Promise<'paid' | 'insufficient' | 'forbidden' | 'cancelled' | 'skipped'> {
-  let preimage: string | null = null;
-  try {
-    const matching = await findPayments(deps, target);
-    preimage = completedPreimage(matching);
-    const settled = matching.some(
-      (payment) => payment.status === 'completed' || payment.status === 'pending',
-    );
-    if (preimage === null && settled) {
-      return 'skipped';
-    }
-  } catch {
-    return 'skipped';
-  }
-  if (preimage === null) {
-    if (target.bolt11 === null || lateSends.has(target.id)) {
-      return 'skipped';
-    }
-    const paid = await payAndWait(deps, target, target.bolt11);
-    if (paid === 'insufficient' || paid === 'skipped' || paid === 'cancelled') {
-      return paid;
-    }
-    preimage = paid;
-  }
   if (deps.isCancelled()) {
     return 'cancelled';
   }
-  const proof = await deps.postFondPayoutProof(deps.session, target.id, preimage);
-  if (!proof.ok) {
-    return proof.status === 403 ? 'forbidden' : 'skipped';
-  }
-  rememberedHashes.delete(target.id);
-  lateSends.delete(target.id);
   return 'paid';
 }
 
-/** What one row left the tick with. */
-type RowOutcome = 'paid' | 'insufficient' | 'forbidden' | 'cancelled' | 'skipped';
+/**
+ * Reads every earlier send for one payout row and pays it only when none is
+ * completed or pending.
+ *
+ * Any `completed` or `pending` match skips the row, because the api worker will
+ * mark it paid. No match or only `failed` matches falls through to paying the
+ * row once. A row whose timed-out send the wallet confirmed is never paid again
+ * while its history does not yet show that send.
+ *
+ * @param deps - Tick collaborators.
+ * @param target - The payout target.
+ * @returns `paid`, `insufficient`, `cancelled`, or `skipped`.
+ */
+async function payAndCheckHistory(
+  deps: FondPayoutTickDeps,
+  target: PayoutTarget,
+): Promise<RowOutcome> {
+  try {
+    const matching = await findPayments(deps, target);
+    if (
+      matching.some(
+        (payment) => payment.status === 'completed' || payment.status === 'pending',
+      )
+    ) {
+      return 'skipped';
+    }
+  } catch {
+    return 'skipped';
+  }
+  if (lateSends.has(target.id)) {
+    return 'skipped';
+  }
+  return payInvoice(deps, target);
+}
 
 /**
- * Runs one Fond payout loop step: lists today's open rows, pays each one once
- * from the in-app wallet, and posts the preimage as proof.
+ * Runs one Fond payout loop step: lists today's open rows and pays each one
+ * once from the in-app wallet.
  *
  * A `403` or `404` from the list stops the loop (`forbidden` / `off`). A `403`
- * from an invoice or proof request also stops it as `forbidden`; a `404` there
- * means that row is gone and is skipped, because the api answers an unknown id
- * the same way as an off surface. Every other list failure is retried by the
- * next tick. Rows are handled in list order, one at a time. A row that is
- * already pending, completed without a readable preimage, timed out, or whose
- * history cannot be read is skipped and never paid twice. An empty wallet
- * stops the whole tick. Cancellation returns at once at its next check.
- * Amounts come only from the BOLT11; the app never computes or rounds one.
- * The BOLT11, preimage, and address are never logged.
+ * from an invoice request also stops it as `forbidden`; a `404` there means
+ * that row is gone and is skipped, because the api answers an unknown id the
+ * same way as an off surface. Every other list failure is retried by the next
+ * tick. `settling` rows are skipped without asking for an invoice. Rows are
+ * handled in list order, one at a time. Before paying, the newest 100 wallet
+ * sends are read and every send that matches the payment hash, BOLT11, or
+ * Spark invoice is collected: any `completed` or `pending` match skips the row,
+ * and only no match or only `failed` matches pays it. A row whose history
+ * cannot be read is skipped and never paid twice. An empty wallet stops the
+ * whole tick. Cancellation returns at once at its next check. Amounts come only
+ * from the invoice; the app never computes or rounds one. The invoice and
+ * address are never logged.
  *
- * @param deps - Session, api calls, wallet calls, and sleep.
- * @returns Counts of paid, proved, and skipped rows and the reason to stop.
+ * @param deps - Session, api calls, and wallet calls.
+ * @returns Counts of paid and skipped rows and the reason to stop.
  */
 export async function runFondPayoutTick(deps: FondPayoutTickDeps): Promise<FondPayoutTickResult> {
-  const summary: FondPayoutTickResult = { paid: 0, proved: 0, skipped: 0, stop: null };
+  const summary: FondPayoutTickResult = { paid: 0, skipped: 0, stop: null };
   if (deps.isCancelled()) {
     return summary;
   }
@@ -537,16 +400,10 @@ export async function runFondPayoutTick(deps: FondPayoutTickDeps): Promise<FondP
       summary.skipped += 1;
       continue;
     }
-    const outcome: RowOutcome = await payAndProve(deps, lookup.target);
+    const outcome = await payAndCheckHistory(deps, lookup.target);
     if (outcome === 'paid') {
       summary.paid += 1;
-      summary.proved += 1;
-    } else if (outcome === 'forbidden') {
-      summary.stop = 'forbidden';
-      return summary;
-    } else if (outcome === 'insufficient') {
-      return summary;
-    } else if (outcome === 'cancelled') {
+    } else if (outcome === 'insufficient' || outcome === 'cancelled') {
       return summary;
     } else {
       summary.skipped += 1;
@@ -563,13 +420,13 @@ let inFlightTick: { session: string; promise: Promise<FondPayoutTickResult> } | 
  *
  * An effect re-run while a tick is still in flight must not start a second
  * tick against the same rows: overlapping ticks could both read the same
- * stored BOLT11, see no send yet, and pay it twice. A caller with the same
+ * stored invoice, see no send yet, and pay it twice. A caller with the same
  * session receives the running tick's promise. A caller with a different
  * session waits for that tick to settle, ignoring its result or rejection,
  * and then starts its own tick. The guard is cleared when a tick settles,
  * whether it resolves or throws, so the next caller can start a fresh tick.
  *
- * @param deps - Session, api calls, wallet calls, and sleep for a new tick.
+ * @param deps - Session, api calls, and wallet calls for a new tick.
  * @returns The result of the caller's own session's tick.
  */
 export function runFondPayoutTickOnce(deps: FondPayoutTickDeps): Promise<FondPayoutTickResult> {
@@ -589,7 +446,7 @@ export function runFondPayoutTickOnce(deps: FondPayoutTickDeps): Promise<FondPay
 /**
  * Starts one tick and installs it as the module-level guard.
  *
- * @param deps - Session, api calls, wallet calls, and sleep for the new tick.
+ * @param deps - Session, api calls, and wallet calls for the new tick.
  * @returns The running tick's promise.
  */
 function startFondPayoutTick(deps: FondPayoutTickDeps): Promise<FondPayoutTickResult> {

@@ -1,12 +1,17 @@
 // @vitest-environment node
 import { afterEach, describe, expect, it, vi, type Mock } from 'vitest';
-import { fetchFondPayouts, postFondPayoutInvoice, postFondPayoutProof } from '@/lib/api';
+import { fetchFondPayouts, postFondPayoutInvoice } from '@/lib/api';
 
 const PAYOUTS = {
   payouts: [{ id: 'row-1', kind: 'daily', status: 'owed', utcDay: '2026-11-10' }],
 };
 
-const INVOICE = { id: 'row-1', bolt11: 'lnbc1invoice', paymentHash: 'aa'.repeat(32) };
+const INVOICE = {
+  id: 'row-1',
+  bolt11: 'lnbc1invoice',
+  paymentHash: 'aa'.repeat(32),
+  sparkInvoice: 'spark1invoice',
+};
 
 afterEach(() => {
   vi.unstubAllGlobals();
@@ -117,70 +122,28 @@ describe('postFondPayoutInvoice', () => {
   });
 
   it('returns a failure for an invoice body that fails the schema', async () => {
-    stubFetch(200, { id: 'row-1', bolt11: '', paymentHash: '' });
+    stubFetch(200, { ...INVOICE, bolt11: '' });
     await expect(postFondPayoutInvoice('sess', 'row-1')).resolves.toEqual({
       ok: false,
       status: 200,
       error: null,
     });
   });
-});
 
-describe('postFondPayoutProof', () => {
-  it('posts the preimage JSON with Bearer auth', async () => {
-    const fetchMock = stubFetch(200, { status: 'paid', id: 'row-1' });
-    await expect(postFondPayoutProof('sess', 'row-1', 'bb'.repeat(32))).resolves.toEqual({
+  it('requires the Spark invoice field, which may be null', async () => {
+    stubFetch(200, { ...INVOICE, sparkInvoice: null });
+    await expect(postFondPayoutInvoice('sess', 'row-1')).resolves.toEqual({
       ok: true,
+      invoice: { ...INVOICE, sparkInvoice: null },
     });
-    expect(fetchMock).toHaveBeenCalledWith('/fond/payouts/row-1/proof', {
-      method: 'POST',
-      headers: {
-        Authorization: 'Bearer sess',
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ preimage: 'bb'.repeat(32) }),
+    stubFetch(200, {
+      id: INVOICE.id,
+      bolt11: INVOICE.bolt11,
+      paymentHash: INVOICE.paymentHash,
     });
-  });
-
-  it('returns a failure for a success body that fails the schema', async () => {
-    stubFetch(200, { status: 'ok', id: 'row-1' });
-    await expect(postFondPayoutProof('sess', 'row-1', 'bb'.repeat(32))).resolves.toEqual({
+    await expect(postFondPayoutInvoice('sess', 'row-1')).resolves.toEqual({
       ok: false,
       status: 200,
-      error: null,
-    });
-  });
-
-  it('returns a failure for a success body that is not JSON', async () => {
-    vi.stubGlobal(
-      'fetch',
-      vi.fn().mockResolvedValue({
-        ok: true,
-        status: 200,
-        json: () => Promise.reject(new SyntaxError('bad json')),
-      }),
-    );
-    await expect(postFondPayoutProof('sess', 'row-1', 'bb'.repeat(32))).resolves.toEqual({
-      ok: false,
-      status: 200,
-      error: null,
-    });
-  });
-
-  it('returns the failure status without throwing', async () => {
-    stubFetch(409, { error: 'Proof in progress' });
-    await expect(postFondPayoutProof('sess', 'row-1', 'bb'.repeat(32))).resolves.toEqual({
-      ok: false,
-      status: 409,
-      error: 'Proof in progress',
-    });
-  });
-
-  it('treats a network failure as status 0', async () => {
-    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new TypeError('Failed to fetch')));
-    await expect(postFondPayoutProof('sess', 'row-1', 'bb'.repeat(32))).resolves.toEqual({
-      ok: false,
-      status: 0,
       error: null,
     });
   });

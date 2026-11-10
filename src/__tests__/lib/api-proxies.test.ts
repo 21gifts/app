@@ -29,7 +29,6 @@ import {
   proxyMeHeldSharePut,
   proxyMeHeldSharesGet,
   proxyFondPayoutInvoicePost,
-  proxyFondPayoutProofPost,
   proxyFondPayoutsGet,
   proxyMePreviousWalletDelete,
   proxyMePreviousWalletsGet,
@@ -425,22 +424,6 @@ describe('api proxy wrappers', () => {
     );
     const [url, init] = fetchMock.mock.calls[0] as [URL, RequestInit];
     expect(url.pathname).toBe('/fond/payouts/a%2Fb/invoice');
-    expect(init.method).toBe('POST');
-    expect(new Headers(init.headers).get('authorization')).toBe('Bearer token');
-  });
-
-  it('proxyFondPayoutProofPost hits the encoded /fond/payouts/:id/proof', async () => {
-    const fetchMock = stubApi();
-    await proxyFondPayoutProofPost(
-      new Request('http://localhost/fond/payouts/x/proof', {
-        method: 'POST',
-        headers: { authorization: 'Bearer token', 'content-type': 'application/json' },
-        body: JSON.stringify({ preimage: 'ab' }),
-      }),
-      'a/b',
-    );
-    const [url, init] = fetchMock.mock.calls[0] as [URL, RequestInit];
-    expect(url.pathname).toBe('/fond/payouts/a%2Fb/proof');
     expect(init.method).toBe('POST');
     expect(new Headers(init.headers).get('authorization')).toBe('Bearer token');
   });

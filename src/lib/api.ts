@@ -42,7 +42,6 @@ import {
   dailyRosterSchema,
   fondPayoutListSchema,
   fondPayoutInvoiceSchema,
-  fondPayoutProofSchema,
   trustActionResultSchema,
   trustChainSchema,
   passkeyBeginSchema,
@@ -5124,18 +5123,18 @@ export interface FondPayoutFailure {
 
 /**
  * Calls one `/fond/payouts` endpoint and reads its body without logging the
- * BOLT11, preimage, or address.
+ * invoice or address.
  *
  * @param path - Same-origin path.
  * @param session - Bearer session.
- * @param init - Method and optional JSON body.
+ * @param init - Method, `GET` when omitted.
  * @returns The raw response and its parsed JSON body, or a status `0` failure
  *   when the request did not answer.
  */
 async function fondPayoutRequest(
   path: string,
   session: string,
-  init: { method?: 'POST'; body?: unknown } = {},
+  init: { method?: 'POST' } = {},
 ): Promise<{ response: Response; body: unknown } | FondPayoutFailure> {
   let response: Response;
   try {
@@ -5143,9 +5142,7 @@ async function fondPayoutRequest(
       ...(init.method === undefined ? {} : { method: init.method }),
       headers: {
         Authorization: `Bearer ${session}`,
-        ...(init.body === undefined ? {} : { 'Content-Type': 'application/json' }),
       },
-      ...(init.body === undefined ? {} : { body: JSON.stringify(init.body) }),
     });
   } catch {
     return { ok: false, status: 0, error: null };
@@ -5182,10 +5179,11 @@ export async function fetchFondPayouts(
 }
 
 /**
- * Asks the api for one payout's BOLT11 through `POST /fond/payouts/:id/invoice`.
+ * Asks the api for one payout's invoice through `POST /fond/payouts/:id/invoice`.
  *
  * The api computes the amount from its stored USD amount; the app pays the
- * invoice as sent and never rounds an amount itself.
+ * returned Spark invoice when there is one and the BOLT11 otherwise, and never
+ * rounds an amount itself.
  *
  * @param session - Bearer session of the Fond account.
  * @param id - Payout row id (URL-encoded into the path).
@@ -5208,34 +5206,4 @@ export async function postFondPayoutInvoice(
     return { ok: false, status: result.response.status, error: null };
   }
   return { ok: true, invoice: parsed.data };
-}
-
-/**
- * Posts the preimage as proof of one payout through
- * `POST /fond/payouts/:id/proof`.
- *
- * @param session - Bearer session of the Fond account.
- * @param id - Payout row id (URL-encoded into the path).
- * @param preimage - 64-hex preimage of the paid invoice.
- * @returns `{ ok: true }` when the body is `{ status: 'paid', id }`, or a
- *   {@link FondPayoutFailure}. A 2xx with an unreadable or schema-invalid body
- *   is a failure with that HTTP status and a `null` error.
- */
-export async function postFondPayoutProof(
-  session: string,
-  id: string,
-  preimage: string,
-): Promise<{ ok: true } | FondPayoutFailure> {
-  const result = await fondPayoutRequest(`/fond/payouts/${encodeURIComponent(id)}/proof`, session, {
-    method: 'POST',
-    body: { preimage },
-  });
-  if ('ok' in result) {
-    return result;
-  }
-  const parsed = fondPayoutProofSchema.safeParse(result.body);
-  if (!parsed.success) {
-    return { ok: false, status: result.response.status, error: null };
-  }
-  return { ok: true };
 }

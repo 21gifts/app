@@ -1,13 +1,9 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { fetchFondPayouts, postFondPayoutInvoice, postFondPayoutProof } from '@/lib/api';
+import { fetchFondPayouts, postFondPayoutInvoice } from '@/lib/api';
 import { roleAtLeast } from '@/lib/roles';
-import {
-  fondE2eWallet,
-  runFondPayoutTickOnce,
-  waitForFondPayoutRead,
-} from '@/lib/wallet/fond-payouts';
+import { fondE2eWallet, runFondPayoutTickOnce } from '@/lib/wallet/fond-payouts';
 import { listWalletPayments, payFromWallet } from '@/lib/wallet/wallet-service';
 import { useAuthStore } from '@/stores/auth-store';
 import { useWalletStore } from '@/stores/wallet-store';
@@ -69,10 +65,8 @@ export function FondPayoutSync(): null {
           isCancelled: () => stopped,
           fetchFondPayouts,
           postFondPayoutInvoice,
-          postFondPayoutProof,
           payFromWallet: e2eWallet?.payFromWallet ?? payFromWallet,
           listWalletPayments: e2eWallet?.listWalletPayments ?? listWalletPayments,
-          sleep: waitForFondPayoutRead,
         });
         stop = result.stop;
       } catch {
