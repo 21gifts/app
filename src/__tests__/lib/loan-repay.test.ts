@@ -384,6 +384,17 @@ describe('dueShares', () => {
   it('treats a missing matching ledger as empty', () => {
     expect(dueShares([loan()], [])).toEqual([]);
   });
+
+  it('keeps no amount when the ledger currency differs from the loan currency', () => {
+    const phpLoan = loan({ goalCurrency: 'PHP', goalAmount: '900.00' });
+    const usdLedger = ledger({
+      currency: 'USD',
+      repayments: [{ ...ledger().repayments[0]!, amount: '1.00', sats: 90 }],
+    });
+    expect(dueShares([phpLoan], [usdLedger])).toEqual([
+      expect.objectContaining({ amount: null, sats: 90 }),
+    ]);
+  });
 });
 
 describe('fittingPrefix', () => {
@@ -429,7 +440,16 @@ describe('definedDueLabel', () => {
     expect(definedDueLabel([none, php('30.00', '1.50')], 'waiting', 'ch')).toBe('₱1.50');
   });
 
-  it('is null for bitcoin, mixed currencies, a missing amount, or nothing due', () => {
+  it('sums each fiat currency and joins the payable or waiting totals', () => {
+    const usd = loan({
+      goalCurrency: 'USD',
+      due: { ...loan().due, payableAmount: '3.00', waitingAmount: '0.50' },
+    });
+    expect(definedDueLabel([php('30.00', '1.50'), usd], 'payable', 'ch')).toBe('₱30.00 + $3.00');
+    expect(definedDueLabel([php('30.00', '1.50'), usd], 'waiting', 'ch')).toBe('₱1.50 + $0.50');
+  });
+
+  it('is null for bitcoin, a missing amount, or nothing due', () => {
     expect(definedDueLabel([loan()], 'waiting', 'ch')).toBeNull();
     expect(
       definedDueLabel([php('30.00', '1.50'), loan({ goalCurrency: 'USD' })], 'waiting', 'ch'),

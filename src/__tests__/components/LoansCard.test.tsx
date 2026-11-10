@@ -329,6 +329,28 @@ describe('LoansCard', () => {
     expect(screen.queryByText(PRODUCTION_SPOT)).toBeNull();
   });
 
+  it('shows every payable fiat currency with its own sum', () => {
+    show({
+      sundayRest: false,
+      loans: [
+        loan({
+          messageId: 'php',
+          goalCurrency: 'PHP',
+          goalAmount: '900.00',
+          due: { ...loan().due, payableSats: 536, payableAmount: '30.00' },
+        }),
+        loan({
+          messageId: 'usd',
+          goalCurrency: 'USD',
+          goalAmount: '900.00',
+          due: { ...loan().due, payableSats: 464, payableAmount: '3.00' },
+        }),
+      ],
+    });
+    expect(screen.getByText('₱30.00 + $3.00')).toBeTruthy();
+    expect(screen.queryByText("₿1'000")).toBeNull();
+  });
+
   it('shows the stored next amount beside its bitcoin', () => {
     show({
       sundayRest: false,

@@ -281,10 +281,6 @@ export function LoanRepayScreen(): ReactElement {
   const waitingLabel =
     definedWaiting === null ? money(waiting) : `${definedWaiting} · ${bitcoinText(waiting)}`;
   const bigAmount = definedPayableLabel ?? formatBitcoin(payable, numberFormat);
-  const payLabel =
-    definedPayableLabel !== null
-      ? `${definedPayableLabel} · ${bitcoinText(payable)}`
-      : money(payable);
   const smallAmount = definedPayableLabel !== null ? null : fiatOnly(payable);
 
   const rowAmount = (share: DueShare): string => {
@@ -381,6 +377,22 @@ export function LoanRepayScreen(): ReactElement {
     keptByLoan.set(share.messageId, kept + 1);
     return true;
   });
+  const payableLoanAmounts = loans.loans
+    .filter((loan) => loan.due.payableSats > 0)
+    .map((loan) => ({ code: loan.goalCurrency, amount: loan.due.payableAmount }));
+  // The full send asks each loan's due endpoint once, which returns at most 60 bills.
+  const fullSendFromShares =
+    !ledgersMissing && payableWithinDue.every((share) => share.sats !== null);
+  const fullSendSats = fullSendFromShares
+    ? payableWithinDue.reduce((sum, share) => sum + (share.sats as number), 0)
+    : payable;
+  const fullSendAmounts = fullSendFromShares
+    ? payableWithinDue.map((share) => ({
+        code: loans.loans[share.loanIndex]!.goalCurrency,
+        amount: share.amount,
+      }))
+    : payableLoanAmounts;
+  const fullSendLabel = fiatPayLabel(fullSendAmounts, fullSendSats);
   const balanceSats = repay.balanceSats;
   const fitting =
     balanceSats === null ? [] : fittingPrefix(payableWithinDue, (share) => share.sats, balanceSats);
@@ -392,21 +404,12 @@ export function LoanRepayScreen(): ReactElement {
   }));
   const fittingNames = [...new Set(fitting.map((share) => share.name))].join(', ');
   const shareAmounts = new Map(shares.map((share) => [shareKey(share), share.amount] as const));
-  const payableLoanAmounts = loans.loans
-    .filter((loan) => loan.due.payableSats > 0)
-    .map((loan) => ({ code: loan.goalCurrency, amount: loan.due.payableAmount }));
-  const activeSendingAmounts = sendingAmounts.length === 0 ? payableLoanAmounts : sendingAmounts;
+  const activeSendingAmounts = sendingAmounts.length === 0 ? fullSendAmounts : sendingAmounts;
   const hasMissingSats = repay.missingSats !== null && repay.missingSats > 0;
   const rememberAndPay = (onlyShares?: ReadonlySet<string>): void => {
     setPaidLoans(loans.loans);
-    setSendingSats(onlyShares === undefined ? payable : fittingSats);
-    const amounts =
-      onlyShares === undefined
-        ? payableWithinDue.map((share) => ({
-            code: loans.loans[share.loanIndex]!.goalCurrency,
-            amount: share.amount,
-          }))
-        : fittingAmounts;
+    setSendingSats(onlyShares === undefined ? fullSendSats : fittingSats);
+    const amounts = onlyShares === undefined ? fullSendAmounts : fittingAmounts;
     setSendingAmounts(amounts);
     repay.pay(loans.loans, onlyShares, shareAmounts);
   };
@@ -418,7 +421,7 @@ export function LoanRepayScreen(): ReactElement {
           {t('loans.fromWallet', { amount: holding(balanceSats) })}
         </p>
         <Button variant="primary" size="lg" onClick={() => rememberAndPay()}>
-          {t('loans.sendAmount', { amount: payLabel })}
+          {t('loans.sendAmount', { amount: fullSendLabel })}
         </Button>
       </>
     ) : (

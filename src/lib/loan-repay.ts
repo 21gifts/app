@@ -194,7 +194,7 @@ export interface DueShare {
   name: string;
   /** row.sats when not null, else row.dueSats; null when neither is known. */
   sats: number | null;
-  /** row.amount (loan currency) or null. */
+  /** row.amount when the ledger is in the loan's goal currency; otherwise null. */
   amount: string | null;
   /**
    * row.waiting: the giver cannot receive yet, so the share is not sent now. Without it
@@ -235,7 +235,7 @@ export function dueShares(
         accountId: row.accountId,
         name: row.name,
         sats: row.sats ?? row.dueSats,
-        amount: row.amount,
+        amount: ledger.currency === loan.goalCurrency ? row.amount : null,
         waiting: row.waiting ?? canReceive.get(row.accountId) === false,
         rowIndex,
       });
@@ -290,14 +290,14 @@ export function centsString(cents: bigint): string {
 }
 
 /**
- * The stored fiat figure of what is payable or waiting across loans, when every
- * loan with that part above zero was asked in one fiat currency and the api
- * sent its amount; otherwise the caller shows bitcoin with the current spot.
+ * The stored fiat figure of what is payable or waiting across loans. The stored
+ * amounts are summed per currency and joined in first-seen order, like the
+ * sending line; otherwise the caller shows bitcoin with the current spot.
  *
  * @param loans - Loans of `GET /me/loans`.
  * @param part - `payable` (`due.payableAmount`) or `waiting` (`due.waitingAmount`).
  * @param style - Visitor number format.
- * @returns The summed amount in that currency, or null.
+ * @returns The per-currency sums (for example `₱30.00 + $3.00`), or null.
  */
 export function definedDueLabel(
   loans: readonly MyLoan[],
@@ -305,13 +305,8 @@ export function definedDueLabel(
   style: NumberFormatStyle,
 ): string | null {
   const active = loans.filter((loan) => loan.due[`${part}Sats`] > 0);
-  const code = active[0]?.goalCurrency;
-  if (!active.every((loan) => loan.goalCurrency === code)) {
-    return null;
-  }
-  return definedFiatSum(
-    code,
-    active.map((loan) => loan.due[`${part}Amount`]),
+  return definedFiatAmounts(
+    active.map((loan) => ({ code: loan.goalCurrency, amount: loan.due[`${part}Amount`] })),
     style,
   );
 }

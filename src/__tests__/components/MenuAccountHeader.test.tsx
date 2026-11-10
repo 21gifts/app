@@ -204,6 +204,55 @@ describe('MenuAccountHeader', () => {
     expect(screen.queryByText("₿1'000")).toBeNull();
   });
 
+  it('shows each payable fiat currency in the Menu row', () => {
+    signIn();
+    vi.mocked(useMyLoans).mockReturnValue({
+      loans: {
+        sundayRest: false,
+        loans: [
+          {
+            due: {
+              payableSats: 536,
+              payablePeople: 1,
+              waitingSats: 0,
+              waitingPeople: 0,
+              behindDays: 0,
+              payableAmount: '30.00',
+              waitingAmount: null,
+              lastPayment: false,
+            },
+            fundedAt: '2026-10-01',
+            goalCurrency: 'PHP',
+            goalSats: 10_000,
+            sats: 10_000,
+            next: null,
+          } as never,
+          {
+            due: {
+              payableSats: 464,
+              payablePeople: 1,
+              waitingSats: 0,
+              waitingPeople: 0,
+              behindDays: 0,
+              payableAmount: '3.00',
+              waitingAmount: null,
+              lastPayment: false,
+            },
+            fundedAt: '2026-10-01',
+            goalCurrency: 'USD',
+            goalSats: 10_000,
+            sats: 10_000,
+            next: null,
+          } as never,
+        ],
+      },
+      reload: vi.fn(),
+    });
+    renderWithLocale(<MenuAccountHeader onNavigate={vi.fn()} tight={false} open />);
+    expect(screen.getByText('₱30.00 + $3.00')).toBeTruthy();
+    expect(screen.queryByText("₿1'000")).toBeNull();
+  });
+
   it('re-reads loans once whenever the Menu opens', () => {
     signIn();
     const reload = vi.fn().mockResolvedValue(null);
