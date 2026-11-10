@@ -973,15 +973,9 @@ export function useHeartTip(options: {
       const map = sentRef.current;
       const existing = map[messageId];
       const extra = existing === undefined ? 1 : existing.extra + 1;
-      if (existing === undefined) {
-        const server = heartCountsRef.current[messageId];
-        map[messageId] = {
-          base: server === undefined ? 0 : server,
-          extra,
-        };
-      } else {
-        map[messageId] = { base: existing.base, extra };
-      }
+      const baseAtTap =
+        existing === undefined ? (heartCountsRef.current[messageId] ?? 0) : existing.base;
+      map[messageId] = { base: baseAtTap, extra };
       writeHeartSentMap(map);
       setHeartTipViews((prev) => ({
         ...prev,
@@ -994,15 +988,52 @@ export function useHeartTip(options: {
         }, HEART_TIP_PLUS_ONE_MS);
         timersRef.current.set(messageId, timer);
       }
-      void sendHeartTip(input, onPaid).then((outcome) => {
+      let outcomeDone = false;
+      let latePaid = false;
+      let extraRolledBack = false;
+      const restoreLateExtra = (): void => {
+        if (!outcomeDone) {
+          return;
+        }
+        if (extraRolledBack) {
+          extraRolledBack = false;
+          const sent = sentRef.current;
+          const entry = sent[messageId];
+          sent[messageId] =
+            entry === undefined
+              ? { base: baseAtTap, extra: 1 }
+              : { base: entry.base, extra: entry.extra + 1 };
+          writeHeartSentMap(sent);
+          reconcileHeartCounts(
+            heartCountsRef.current,
+            true,
+            sentRef,
+            lastSignatureRef,
+            lastAppliedRef,
+            setHeartTipViews,
+          );
+        }
+        onPaid?.(messageId);
+      };
+      const noteLatePaid = (): void => {
+        latePaid = true;
+        restoreLateExtra();
+      };
+      void sendHeartTip(input, noteLatePaid).then((outcome) => {
+        outcomeDone = true;
         if (outcome.kind === 'paid') {
           if (outcome.notified !== true) {
             onPaid?.(messageId);
           }
           return;
         }
+        if (latePaid) {
+          restoreLateExtra();
+          return;
+        }
         const sent = sentRef.current;
         const entry = sent[messageId];
+        extraRolledBack = true;
         if (entry !== undefined) {
           const nextExtra = entry.extra - 1;
           if (nextExtra <= 0) {
