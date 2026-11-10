@@ -144,23 +144,36 @@ describe('useHeartContext', () => {
 
   it('resolves repayments into their own map, pending until the lookup returns', async () => {
     let resolve!: (found: HeartLookup) => void;
-    vi.mocked(fetchHeartPosts).mockReturnValueOnce(
-      new Promise<HeartLookup>((done) => {
-        resolve = done;
-      }),
+    const HASH_C = 'c'.repeat(64);
+    vi.mocked(fetchHeartPosts)
+      .mockReturnValueOnce(
+        new Promise<HeartLookup>((done) => {
+          resolve = done;
+        }),
+      )
+      .mockReturnValueOnce(new Promise<HeartLookup>(() => undefined));
+    const { result, rerender } = renderHook(
+      ({ hashes }: { hashes: string[] }) => useHeartContext(hashes),
+      { initialProps: { hashes: [HASH_A, HASH_B] } },
     );
-    const { result } = renderHook(() => useHeartContext([HASH_A, HASH_B]));
     expect([...result.current.pending]).toEqual([HASH_A, HASH_B]);
     expect([...result.current.repaymentsByHash]).toEqual([]);
 
     await act(async () => {
-      resolve(lookup([heart(HASH_A)], [repayment(HASH_B, 'borrower'), repayment('c'.repeat(64))]));
+      resolve(lookup([heart(HASH_A)], [repayment(HASH_B, 'borrower'), repayment(HASH_C)]));
     });
     expect(result.current.byHash.get(HASH_A)).toEqual(heart(HASH_A));
     expect(result.current.byHash.has(HASH_B)).toBe(false);
     expect(result.current.repaymentsByHash.get(HASH_B)).toEqual(repayment(HASH_B, 'borrower'));
-    expect(result.current.repaymentsByHash.has('c'.repeat(64))).toBe(false);
+    expect(result.current.repaymentsByHash.has(HASH_C)).toBe(false);
     expect(result.current.pending.size).toBe(0);
+
+    // A repayment for a hash that was not asked about is not cached: once the view
+    // asks for it, it is still pending rather than already resolved.
+    rerender({ hashes: [HASH_A, HASH_B, HASH_C] });
+    expect(result.current.repaymentsByHash.has(HASH_C)).toBe(false);
+    expect(result.current.pending.has(HASH_C)).toBe(true);
+    expect(fetchHeartPosts).toHaveBeenNthCalledWith(2, 'session', [HASH_C]);
   });
 
   it('keeps a heart when a misbehaving api also lists its hash as a repayment', async () => {

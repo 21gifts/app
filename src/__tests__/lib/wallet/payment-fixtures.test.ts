@@ -213,6 +213,8 @@ describe('WALLET_PAYMENT_FIXTURES', () => {
     expect(REPAYMENT_VISUAL_CONTEXTS[1]).toMatchObject({
       paymentHash: REPAYMENT_BORROWER_VISUAL_HASH,
       messageId: REPAYMENT_BORROWER_VISUAL_MESSAGE_ID,
+      dayIndex: 4,
+      termDays: 10,
       role: 'borrower',
     });
     const ids = [REPAYMENT_GIVER_VISUAL_PAYMENT.id, REPAYMENT_BORROWER_VISUAL_PAYMENT.id];

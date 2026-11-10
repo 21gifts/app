@@ -448,7 +448,11 @@ describe('WalletPaymentDetails', () => {
 
   it('shows a repayment received as giver: title, credit note, repayment day, and the repayment list, without the marker', async () => {
     const mapped = toFixturePayment(REPAYMENT_GIVER_VISUAL_PAYMENT);
-    const payment = { ...mapped, info: { ...mapped.info, description: 'Lightning memo' } };
+    const payment = {
+      ...mapped,
+      senderComment: 'See you tomorrow',
+      info: { ...mapped.info, description: 'Lightning memo' },
+    };
     useAuthStore.setState({ session: 'session', account: null });
     vi.stubGlobal(
       'fetch',
@@ -484,6 +488,7 @@ describe('WalletPaymentDetails', () => {
     );
     expect(screen.queryByText('Gift on your post')).toBeNull();
     expect(screen.queryByText('Message')).toBeNull();
+    expect(screen.queryByText('See you tomorrow')).toBeNull();
     expect(screen.queryByText('Description')).toBeNull();
     expect(screen.queryByText('Lightning memo')).toBeNull();
     expect(screen.queryByText(/repay:/)).toBeNull();
@@ -513,8 +518,17 @@ describe('WalletPaymentDetails', () => {
       ),
     );
 
-    showPayment(toFixturePayment(REPAYMENT_BORROWER_VISUAL_PAYMENT));
+    showPayment({
+      ...toFixturePayment(REPAYMENT_BORROWER_VISUAL_PAYMENT),
+      senderComment: 'Day five',
+    });
     const note = await screen.findByRole('link', { name: 'Mia' });
+    const icon = document.querySelector('.lucide-hand-coins');
+    expect(icon?.getAttribute('class')).toContain('text-app-accent');
+    expect(document.querySelector('.lucide-heart')).toBeNull();
+    expect(document.querySelector('.lucide-arrow-up-right')).toBeNull();
+    expect(screen.queryByText('Message')).toBeNull();
+    expect(screen.queryByText('Day five')).toBeNull();
     expect(note.getAttribute('href')).toBe(`/messages/${REPAYMENT_BORROWER_VISUAL_MESSAGE_ID}`);
     expect(screen.getByText('Loan repayment')).toBeTruthy();
     expect(screen.queryByText('Gift')).toBeNull();
