@@ -7,14 +7,17 @@ import { useFiatPreference } from '@/components/FiatPreferenceProvider';
 import { useNumberFormat } from '@/components/NumberFormatProvider';
 import { Button, SegmentedControl } from '@/components/ui';
 import { useHydrateSession } from '@/hooks/useHydrateSession';
-import type { GiftStats, PostStats } from '@/lib/api-types';
+import { useSpotRate } from '@/hooks/useSpotRate';
+import type { GiftStats, PostStats, WalletStats } from '@/lib/api-types';
 import { formatGroupedNumber, type NumberFormatStyle } from '@/lib/number-format';
 import {
   formatBitcoin,
   formatFiatDisplay,
   formatFiatTick,
   formatUsdDisplay,
+  satsToFiatAmount,
   type FiatCode,
+  type FiatRateDay,
 } from '@/lib/stats-money';
 import { useAuthStore } from '@/stores/auth-store';
 
@@ -33,6 +36,8 @@ export interface StatsDashboardProps {
    * Omitted in tests that only cover gifts.
    */
   posts?: PostStats | null;
+  /** Self-reported wallet totals, or `null` when that fetch failed. */
+  wallets?: WalletStats | null;
 }
 
 type BarScale = 'btc' | 'fiat';
@@ -220,25 +225,51 @@ function fiatFootnote(fiat: FiatCode): string {
 }
 
 /**
- * Cumulative spend-over-time area chart for one money series.
+ * One point in an over-time money chart.
+ */
+type OverTimePoint = {
+  day: string;
+  value: number;
+};
+
+/**
+ * Precomputed layout for one over-time point.
  *
- * Days with spend are SVG links to `/stats/{day}` on the series (not a text list).
+ * `hitX`/`hitWidth` describe the column around the point, so a caller can
+ * draw a wide hit target without repeating the chart's geometry.
+ */
+type OverTimePointLayout = {
+  point: OverTimePoint;
+  index: number;
+  x: number;
+  y: number;
+  hitX: number;
+  hitWidth: number;
+  top: number;
+  height: number;
+};
+
+/**
+ * Draws the shared cumulative line/area chart over UTC days.
  *
- * @param series - Daily cumulative points.
- * @param valueAt - Extract the numeric cumulative value used for scale only.
+ * The caller supplies the point marker so gift days can stay links while a
+ * wallet series has no day page.
+ *
+ * @param points - Daily points with the value used for the scale.
  * @param formatTick - Axis tick label formatter.
  * @param ariaLabel - Accessible chart title.
+ * @param renderPoint - Draws the marker for one point.
  * @returns SVG figure.
  */
-function CumulativeOverTimeChart(
-  series: GiftStats['spendOverTime'],
-  valueAt: (point: GiftStats['spendOverTime'][number]) => number,
+function OverTimeChart(
+  points: OverTimePoint[],
   formatTick: (value: number) => string,
   ariaLabel: string,
+  renderPoint: (layout: OverTimePointLayout) => ReactElement | null,
 ): ReactElement {
   const width = 800;
   const height = 280;
-  if (series.length === 0) {
+  if (points.length === 0) {
     return (
       <svg
         viewBox={`0 0 ${width} ${height}`}
@@ -254,18 +285,33 @@ function CumulativeOverTimeChart(
   const padB = 36;
   const innerW = width - padL - padR;
   const innerH = height - padT - padB;
-  const values = series.map(valueAt);
+  const values = points.map((point) => point.value);
   const dataMax = Math.max(...values, 0);
   const maxY = dataMax === 0 ? 1 : dataMax;
-  const n = series.length;
+  const n = points.length;
   const xAt = (i: number): number => padL + (n <= 1 ? innerW / 2 : (i / (n - 1)) * innerW);
   const yAt = (v: number): number => padT + innerH - (v / maxY) * innerH;
+  const hitXAt = (i: number): number => (i === 0 ? padL : (xAt(i - 1) + xAt(i)) / 2);
+  const hitEndAt = (i: number): number => (i === n - 1 ? padL + innerW : (xAt(i) + xAt(i + 1)) / 2);
+  const layouts = points.map((point, index) => {
+    const hitX = hitXAt(index);
+    return {
+      point,
+      index,
+      x: xAt(index),
+      y: yAt(values[index] as number),
+      hitX,
+      hitWidth: hitEndAt(index) - hitX,
+      top: padT,
+      height: innerH,
+    };
+  });
   const bottom = (padT + innerH).toFixed(1);
   const firstY = yAt(values[0] as number).toFixed(1);
   const line =
     n === 1
       ? `${padL},${firstY} ${(padL + innerW).toFixed(1)},${firstY}`
-      : series
+      : points
           .map((_, i) => `${xAt(i).toFixed(1)},${yAt(values[i] as number).toFixed(1)}`)
           .join(' ');
   const area =
@@ -314,29 +360,9 @@ function CumulativeOverTimeChart(
       ))}
       <polygon points={area} className="fill-accent/25" />
       <polyline points={line} fill="none" className="stroke-accent" strokeWidth="2" />
-      {series.map((point, i) => {
-        if (point.sats <= 0) {
-          return null;
-        }
-        const cx = xAt(i);
-        const cy = yAt(values[i] as number);
-        const hitX = i === 0 ? padL : (xAt(i - 1) + cx) / 2;
-        const hitEnd = i === n - 1 ? padL + innerW : (cx + xAt(i + 1)) / 2;
-        return (
-          <Link
-            key={`${ariaLabel}-day-${point.day}`}
-            href={`/stats/${point.day}`}
-            prefetch={false}
-            aria-label={point.day}
-            className="cursor-pointer"
-          >
-            <rect x={hitX} y={padT} width={hitEnd - hitX} height={innerH} fill="transparent" />
-            <circle cx={cx} cy={cy} r={3.5} className="fill-accent" pointerEvents="none" />
-          </Link>
-        );
-      })}
+      {layouts.map((layout) => renderPoint(layout))}
       {xIdx.map((i, tickIndex) => {
-        const point = series[i] as (typeof series)[number];
+        const point = points[i] as OverTimePoint;
         const anchor =
           xIdx.length > 1 && tickIndex === 0
             ? 'start'
@@ -357,6 +383,121 @@ function CumulativeOverTimeChart(
         );
       })}
     </svg>
+  );
+}
+
+/**
+ * Cumulative spend-over-time area chart for one money series.
+ *
+ * Days with spend are SVG links to `/stats/{day}` on the series (not a text list).
+ *
+ * @param series - Daily cumulative points.
+ * @param valueAt - Extract the numeric cumulative value used for scale only.
+ * @param formatTick - Axis tick label formatter.
+ * @param ariaLabel - Accessible chart title.
+ * @returns SVG figure.
+ */
+function CumulativeOverTimeChart(
+  series: GiftStats['spendOverTime'],
+  valueAt: (point: GiftStats['spendOverTime'][number]) => number,
+  formatTick: (value: number) => string,
+  ariaLabel: string,
+): ReactElement {
+  return OverTimeChart(
+    series.map((point) => ({ day: point.day, value: valueAt(point) })),
+    formatTick,
+    ariaLabel,
+    ({ point, index, x, y, hitX, hitWidth, top, height }) => {
+      if ((series[index] as GiftStats['spendOverTime'][number]).sats <= 0) {
+        return null;
+      }
+      return (
+        <Link
+          key={`${ariaLabel}-day-${point.day}`}
+          href={`/stats/${point.day}`}
+          prefetch={false}
+          aria-label={point.day}
+          className="cursor-pointer"
+        >
+          <rect x={hitX} y={top} width={hitWidth} height={height} fill="transparent" />
+          <circle cx={x} cy={y} r={3.5} className="fill-accent" pointerEvents="none" />
+        </Link>
+      );
+    },
+  );
+}
+
+/**
+ * Self-reported wallet totals plus the daily total balance chart.
+ *
+ * @param props - Wallet stats and the visitor's number format.
+ * @returns The wallets section.
+ */
+function WalletsSummary({
+  wallets,
+  fiat,
+  rateDay,
+  numberFormat,
+}: {
+  wallets: WalletStats;
+  fiat: FiatCode;
+  rateDay: FiatRateDay | null;
+  numberFormat: NumberFormatStyle;
+}): ReactElement {
+  const fiatText = (sats: number): string | null => {
+    const amount = satsToFiatAmount(sats, rateDay, fiat);
+    return amount === null ? null : formatFiatDisplay(amount, fiat, numberFormat);
+  };
+  const totalFiat = fiatText(wallets.totalSats);
+  const points = wallets.balanceOverTime.map((point) => ({
+    day: point.day,
+    value: point.totalSats,
+  }));
+  return (
+    <section aria-label="Wallets" className="space-y-3">
+      <h2 className="text-sm font-medium tracking-widest text-accent uppercase">Wallets</h2>
+      <dl className="grid gap-4 sm:grid-cols-2">
+        <div className="rounded-2xl border border-paper/10 p-5">
+          <dt className="text-sm text-paper/60">In wallets</dt>
+          <dd className="mt-2 tabular-nums lining-nums">
+            <div className="text-2xl font-semibold">
+              {formatBitcoin(wallets.totalSats, numberFormat)}
+            </div>
+            {totalFiat === null ? null : <div className="text-2xl font-semibold">{totalFiat}</div>}
+          </dd>
+        </div>
+        <div className="rounded-2xl border border-paper/10 p-5">
+          <dt className="text-sm text-paper/60">Wallets with balance</dt>
+          <dd className="mt-2 text-2xl font-semibold tabular-nums lining-nums">
+            {formatCount(wallets.fundedWalletCount, numberFormat)}
+          </dd>
+        </div>
+      </dl>
+      <p className="text-sm text-paper/60">
+        Total of all 21.gifts wallets at the end of each UTC day, as reported by the wallets
+        themselves. Fiat figures use today&apos;s spot, not the day&apos;s price.
+      </p>
+      {points.length > 0
+        ? OverTimeChart(
+            points,
+            (value) => formatBitcoin(value, numberFormat),
+            'Wallet balance over time in ₿',
+            ({ point, x, y }) => {
+              if (point.value <= 0) {
+                return null;
+              }
+              const pointFiat = fiatText(point.value);
+              return (
+                <circle key={point.day} cx={x} cy={y} r={3.5} className="fill-accent">
+                  <title>{`${point.day}: ${formatBitcoin(point.value, numberFormat)}${
+                    pointFiat === null ? '' : ` · ${pointFiat}`
+                  }`}</title>
+                </circle>
+              );
+            },
+          )
+        : null}
+    </section>
   );
 }
 
@@ -646,9 +787,11 @@ export function StatsDashboard({
   loading,
   onRetry,
   posts = null,
+  wallets = null,
 }: StatsDashboardProps): ReactElement {
   const { numberFormat } = useNumberFormat();
   const { fiat, setFiat } = useFiatPreference();
+  const rateDay = useSpotRate(wallets !== null);
   const { ready } = useHydrateSession();
   const session = useAuthStore((state) => state.session);
   const showFiatSwitcher = ready && session === null;
@@ -681,6 +824,14 @@ export function StatsDashboard({
         <FiatPicker value={fiat} onChange={setFiat} ariaLabel="Fiat currency" />
       ) : null}
       {posts !== null ? <PostsSummary posts={posts} numberFormat={numberFormat} /> : null}
+      {wallets !== null ? (
+        <WalletsSummary
+          wallets={wallets}
+          fiat={fiat}
+          rateDay={rateDay}
+          numberFormat={numberFormat}
+        />
+      ) : null}
       <dl className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <div className="rounded-2xl border border-paper/10 p-5">
           <dt className="text-sm text-paper/60">Total spent</dt>

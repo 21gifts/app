@@ -185,6 +185,15 @@
 - **Used by:** `fetchGiftStats` on `/stats` and the people-count chart on `/statistics` (every visitor, including signed-out, no goal). Historical amounts there stay on each day's rate; live amounts use `GET /fx/spot`.
 - **Auth:** Public.
 
+## Endpoint: GET /wallets/stats
+
+- **Purpose:** Same-origin proxy of api `GET /wallets/stats` (self-reported member-wallet totals and the gap-free UTC-day balance series).
+- **Inputs:** None.
+- **Outputs:** `{ walletCount, fundedWalletCount, totalSats, totalBtc, asOf, balanceOverTime }` from the api. `walletCount` counts wallets that ever reported a balance; `fundedWalletCount` counts those with a current balance above zero. Empty data is `[]`, `asOf: null`, and zeros.
+- **Errors:** The proxy forwards the upstream status, including 503 `{ error: "Wallet stats are unavailable" }`, or answers 502 if the api is unreachable.
+- **Used by:** `fetchWalletStats` on `/stats`. A failed fetch omits the Wallets section without breaking the gift stats.
+- **Auth:** Public.
+
 ## Endpoint: GET /habits
 
 - **Purpose:** Same-origin proxy of api `GET /habits` (public habit list, review week, and comments). Forwards `Authorization` when the browser sent it, so the owner can receive internal notes.
@@ -203,7 +212,7 @@
 
 - **Purpose:** Same-origin proxy of api `GET /fx/spot`: the current price of 1 BTC in USD, CHF, EUR, and PHP with `asOf` and `source`. A code the api could not price is left out of `rates`. Without any quote the body is `{ "asOf": null, "source": null, "rates": {} }`; the route has no error status of its own.
 - **Errors:** The proxy forwards the upstream status, or 502 if this proxy cannot reach the api.
-- **Used by:** `fetchFxSpot` through `useSpotRate`, on every screen that enters or converts an amount live (the amount field, `/pos`, gift and reaction amounts, the wallet, and the payment fiat suffixes).
+- **Used by:** `fetchFxSpot` through `useSpotRate`, on every screen that enters or converts an amount live (the amount field, `/pos`, gift and reaction amounts, the wallet, the payment fiat suffixes, and the `/stats` wallet totals and point tooltips).
 - **Auth:** Public. No bearer.
 
 ## Endpoint: GET /shops/activity

@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { fulfillSpot } from './fx-spot';
 
 async function seedAdaSession(
   page: import('@playwright/test').Page,
@@ -248,4 +249,126 @@ test('Function: ShopActivityChart — the Shops by UTC day SVG is visible', asyn
   await stubPayoutGoal(page);
   await page.goto('/statistics');
   await expect(page.getByRole('img', { name: 'Shops by UTC day' })).toBeVisible();
+});
+
+test('Function: fetchWalletStats — public stats show the wallet totals and chart', async ({
+  page,
+}) => {
+  await page.route('**/gifts/stats', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        totalSats: 0,
+        totalBtc: '0.00000000',
+        totalUsd: '0.00',
+        totalChf: '0.00',
+        totalEur: '0.00',
+        totalPhp: '0.00',
+        giftCount: 0,
+        recipientCount: 0,
+        firstPaidAt: null,
+        lastPaidAt: null,
+        spendOverTime: [],
+        byRecipient: [],
+        byMonth: [],
+        fx: {
+          quote: 'BTC-USD',
+          dayBasis: 'utc',
+          source: 'coinbase-exchange-daily-close',
+          quotes: [{ code: 'USD', pair: 'BTC-USD', source: 'coinbase-exchange-daily-close' }],
+        },
+      }),
+    });
+  });
+  await page.route('**/messages/stats', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ postCount: 0, postsOverTime: [] }),
+    });
+  });
+  await page.route('**/wallets/stats', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        walletCount: 61,
+        fundedWalletCount: 32,
+        totalSats: 89096,
+        totalBtc: '0.00089096',
+        asOf: '2026-11-10T06:21:04.985Z',
+        balanceOverTime: [
+          {
+            day: '2026-11-09',
+            totalSats: 80000,
+            totalBtc: '0.00080000',
+            walletCount: 55,
+            fundedWalletCount: 30,
+          },
+          {
+            day: '2026-11-10',
+            totalSats: 89096,
+            totalBtc: '0.00089096',
+            walletCount: 61,
+            fundedWalletCount: 32,
+          },
+        ],
+      }),
+    });
+  });
+  await fulfillSpot(page);
+  await page.goto('/stats');
+  const wallets = page.getByRole('region', { name: 'Wallets' });
+  await expect(wallets).toContainText("₿89'096");
+  await expect(wallets).toContainText('$89.10');
+  await expect(wallets).toContainText('32');
+  const chart = page.getByLabel('Wallet balance over time in ₿');
+  await expect(chart).toBeVisible();
+  await expect(chart.locator('circle title').last()).toHaveText("2026-11-10: ₿89'096 · $89.10");
+});
+
+test('Function: StatsLoader — a failed wallet fetch keeps the public gift stats', async ({
+  page,
+}) => {
+  await page.route('**/gifts/stats', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        totalSats: 1500,
+        totalBtc: '0.00001500',
+        totalUsd: '1.43',
+        totalChf: '1.20',
+        totalEur: '1.30',
+        totalPhp: '80.00',
+        giftCount: 1,
+        recipientCount: 1,
+        firstPaidAt: '2026-06-01T00:00:00.000Z',
+        lastPaidAt: '2026-06-01T00:00:00.000Z',
+        spendOverTime: [],
+        byRecipient: [],
+        byMonth: [],
+        fx: {
+          quote: 'BTC-USD',
+          dayBasis: 'utc',
+          source: 'coinbase-exchange-daily-close',
+          quotes: [{ code: 'USD', pair: 'BTC-USD', source: 'coinbase-exchange-daily-close' }],
+        },
+      }),
+    });
+  });
+  await page.route('**/messages/stats', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ postCount: 0, postsOverTime: [] }),
+    });
+  });
+  await page.route('**/wallets/stats', async (route) => {
+    await route.fulfill({ status: 503, contentType: 'application/json', body: '{}' });
+  });
+  await page.goto('/stats');
+  await expect(page.getByText("₿1'500").first()).toBeVisible();
+  await expect(page.getByRole('region', { name: 'Wallets' })).toHaveCount(0);
 });

@@ -27,6 +27,7 @@ import {
   forumPlacesResponseSchema,
   hiddenMessageSchema,
   giftStatsSchema,
+  walletStatsSchema,
   shopActivitySchema,
   shopResponseSchema,
   memberProfileSchema,
@@ -2329,6 +2330,62 @@ describe('giftStatsSchema', () => {
         ...stats,
         spendOverTime: [{ ...day, usd: null }],
       }),
+    ).toThrow();
+  });
+});
+
+describe('walletStatsSchema', () => {
+  const stats = {
+    walletCount: 61,
+    fundedWalletCount: 32,
+    totalSats: 89096,
+    totalBtc: '0.00089096',
+    asOf: '2026-11-10T06:21:04.985Z',
+    balanceOverTime: [
+      {
+        day: '2026-11-09',
+        totalSats: 80000,
+        totalBtc: '0.00080000',
+        walletCount: 55,
+        fundedWalletCount: 30,
+      },
+    ],
+  };
+
+  it('accepts the wallet stats payload', () => {
+    expect(walletStatsSchema.parse(stats)).toEqual(stats);
+  });
+
+  it('accepts the empty payload', () => {
+    const empty = {
+      walletCount: 0,
+      fundedWalletCount: 0,
+      totalSats: 0,
+      totalBtc: '0.00000000',
+      asOf: null,
+      balanceOverTime: [],
+    };
+    expect(walletStatsSchema.parse(empty)).toEqual(empty);
+  });
+
+  it('rejects negative counts, a bad day, and a bad BTC string', () => {
+    expect(() => walletStatsSchema.parse({ ...stats, walletCount: -1 })).toThrow();
+    expect(() => walletStatsSchema.parse({ ...stats, fundedWalletCount: -1 })).toThrow();
+    expect(() => walletStatsSchema.parse({ ...stats, totalSats: -1 })).toThrow();
+    expect(() => walletStatsSchema.parse({ ...stats, totalBtc: '0.0008909' })).toThrow();
+    expect(() =>
+      walletStatsSchema.parse({
+        ...stats,
+        balanceOverTime: [{ ...stats.balanceOverTime[0], day: '2026-11-9' }],
+      }),
+    ).toThrow();
+  });
+
+  it('rejects a missing field', () => {
+    expect(() =>
+      walletStatsSchema.parse(
+        Object.fromEntries(Object.entries(stats).filter(([key]) => key !== 'balanceOverTime')),
+      ),
     ).toThrow();
   });
 });

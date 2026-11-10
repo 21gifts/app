@@ -7903,6 +7903,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/stats',
+    id: 'wallets',
+    image: 'stats-wallets.png',
+    visual: 'state-stats-wallets',
+    needle: 'Wallet balance over time in ₿',
+  },
+  {
+    route: '/stats',
     id: 'empty',
     image: 'stats-empty.png',
     visual: 'state-stats-empty',

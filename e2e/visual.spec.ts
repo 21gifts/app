@@ -919,6 +919,49 @@ const STATS_EMPTY = {
   fx: FX_USD,
 };
 
+const WALLET_STATS_DEFAULT = {
+  walletCount: 61,
+  fundedWalletCount: 32,
+  totalSats: 89096,
+  totalBtc: '0.00089096',
+  asOf: '2026-11-10T06:21:04.985Z',
+  balanceOverTime: [
+    {
+      day: '2026-11-09',
+      totalSats: 80000,
+      totalBtc: '0.00080000',
+      walletCount: 55,
+      fundedWalletCount: 30,
+    },
+    {
+      day: '2026-11-10',
+      totalSats: 89096,
+      totalBtc: '0.00089096',
+      walletCount: 61,
+      fundedWalletCount: 32,
+    },
+  ],
+};
+
+/**
+ * Serves the self-reported wallet series so `/stats` wallet baselines include it.
+ *
+ * @param page - Playwright page.
+ * @param body - Wallet stats payload. Defaults to {@link WALLET_STATS_DEFAULT}.
+ */
+async function stubWalletStats(
+  page: Page,
+  body: { walletCount: number } = WALLET_STATS_DEFAULT,
+): Promise<void> {
+  await page.route('**/wallets/stats', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(body),
+    });
+  });
+}
+
 /**
  * True when this visual run is a mobile combo project.
  *
@@ -42325,6 +42368,26 @@ test.describe('trust-chain screens', () => {
 });
 
 test.describe('stats variant baselines', () => {
+  test('stats wallets', async ({ page }) => {
+    await stubPostStats(page);
+    await stubWalletStats(page);
+    await fulfillSpot(page);
+    await page.route('**/gifts/stats', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(STATS_DEFAULT),
+      });
+    });
+    await page.goto('/stats');
+    const wallets = page.getByRole('region', { name: 'Wallets' });
+    await expect(wallets).toBeVisible();
+    await expect(page.getByLabel('Wallet balance over time in ₿')).toBeVisible();
+    // The In wallets fiat line appears only after GET /fx/spot resolves.
+    await expect(wallets.getByText('$89.10', { exact: true })).toBeVisible();
+    await shotScreen(page, 'state-stats-wallets');
+  });
+
   test('stats usd-scale', async ({ page }) => {
     await stubPostStats(page);
     await page.route('**/gifts/stats', async (route) => {
