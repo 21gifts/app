@@ -37,6 +37,7 @@ export function lightningHref(request: string): string {
 
 /**
  * Pause between two reads of a pay poll (ms): the forum's pay and payable
- * polls and the payment page's status and pay-link reads.
+ * polls, the payment page's status and pay-link reads, and the Fond payout
+ * loop's wait for a fresh send's preimage.
  */
 export const PAY_POLL_MS = 2000;

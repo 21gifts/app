@@ -1,5 +1,6 @@
 import type { FondPayout, FondPayoutInvoice } from '@/lib/api-types';
 import type { FondPayoutFailure } from '@/lib/api';
+import { PAY_POLL_MS } from '@/lib/payment-link';
 import { reportPaymentFailure, type PaymentFailure } from '@/lib/wallet/payment-failure';
 import type { WalletPayResult, WalletSendResult } from '@/lib/wallet/wallet-service';
 import type { WalletPayment, WalletPayRequest } from '@/lib/wallet/wallet-sdk';
@@ -9,9 +10,6 @@ const FOND_PAYOUT_HISTORY_LIMIT = 100;
 
 /** How many history reads one fresh send waits for its preimage. */
 const FOND_PAYOUT_PREIMAGE_READS = 5;
-
-/** How long the tick sleeps between those history reads. */
-const FOND_PAYOUT_PREIMAGE_WAIT_MS = 2_000;
 
 /** A 64-hex Lightning preimage, case-insensitive. */
 const PREIMAGE = /^[0-9a-f]{64}$/i;
@@ -217,7 +215,7 @@ async function waitForPreimage(
     if (deps.isCancelled()) {
       return 'cancelled';
     }
-    await deps.sleep(FOND_PAYOUT_PREIMAGE_WAIT_MS);
+    await deps.sleep(PAY_POLL_MS);
     const preimage = completedPreimage(await findPayments(deps, target));
     if (preimage !== null) {
       return preimage;

@@ -5298,7 +5298,7 @@ const es = {
     'Verificado significa que una persona moderadora conoció a esta persona en la vida real y confirmó que es real. No es una prueba de monedero.',
   'trustChain.explainModerator':
     'Para ser moderadora o moderador, una persona moderadora existente propone a la persona y otra distinta confirma — o una persona fundadora la nombra directamente.',
-  'trustChain.explainFond': 'Fond: Paga los regalos diarios del fondo de 21.gifts.',
+  'trustChain.explainFond': 'Fondo: Paga los regalos diarios del fondo de 21.gifts.',
   'trustChain.explainInitiator':
     'Un iniciador se nombra directamente. No hay un paso de propuesta.',
   'trustChain.explainFounder':

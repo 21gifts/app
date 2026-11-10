@@ -2,6 +2,7 @@
 import { beforeEach, describe, expect, it, vi, type Mocked } from 'vitest';
 import type { FondPayoutFailure } from '@/lib/api';
 import type { FondPayout } from '@/lib/api-types';
+import { PAY_POLL_MS } from '@/lib/payment-link';
 import {
   runFondPayoutTick,
   waitForFondPayoutRead,
@@ -181,11 +182,11 @@ describe('waitForFondPayoutRead', () => {
   it('resolves after the given wait', async () => {
     vi.useFakeTimers();
     let done = false;
-    const waiting = waitForFondPayoutRead(2_000).then(() => {
+    const waiting = waitForFondPayoutRead(PAY_POLL_MS).then(() => {
       done = true;
     });
     expect(done).toBe(false);
-    await vi.advanceTimersByTimeAsync(2_000);
+    await vi.advanceTimersByTimeAsync(PAY_POLL_MS);
     await waiting;
     expect(done).toBe(true);
     vi.useRealTimers();
@@ -258,7 +259,7 @@ describe('runFondPayoutTick rows', () => {
     expect(deps.postFondPayoutInvoice).toHaveBeenCalledWith('sess', 'row-a');
     expect(deps.payFromWallet).toHaveBeenCalledWith({ type: 'input', input: 'lnbc-row-a' });
     expect(deps.sleep).toHaveBeenCalledTimes(2);
-    expect(deps.sleep).toHaveBeenCalledWith(2_000);
+    expect(deps.sleep).toHaveBeenCalledWith(PAY_POLL_MS);
     expect(deps.postFondPayoutProof).toHaveBeenCalledWith('sess', 'row-a', PREIMAGE_A);
   });
 
