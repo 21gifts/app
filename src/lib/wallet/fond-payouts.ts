@@ -98,9 +98,7 @@ interface PayoutTarget {
 
 /** What one row's invoice lookup found. */
 type PayoutTargetLookup =
-  | { kind: 'target'; target: PayoutTarget }
-  | { kind: 'stop'; stop: 'forbidden' }
-  | { kind: 'skip' };
+  { kind: 'target'; target: PayoutTarget } | { kind: 'stop'; stop: 'forbidden' } | { kind: 'skip' };
 
 /**
  * The invoice to pay for one row, from this tab's memory or from the api.

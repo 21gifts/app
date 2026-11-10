@@ -2641,9 +2641,7 @@ describe('fondPayoutListSchema', () => {
       payouts: [{ ...row, paymentHash: null }],
     });
     expect(fondPayoutListSchema.parse({ payouts: [row] })).toEqual({ payouts: [row] });
-    expect(() =>
-      fondPayoutListSchema.parse({ payouts: [{ ...row, paymentHash: 7 }] }),
-    ).toThrow();
+    expect(() => fondPayoutListSchema.parse({ payouts: [{ ...row, paymentHash: 7 }] })).toThrow();
   });
 
   it('rejects an unknown kind, status, or empty id', () => {

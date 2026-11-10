@@ -7108,7 +7108,8 @@ const fil = {
     'Ang Verified ay nangangahulugang isang moderator ang nakilala ang tao sa totoo at kinumpirmang totoo siya. Hindi ito patunay ng wallet.',
   'trustChain.explainModerator':
     'Para maging moderator, nagmumungkahi ang isang kasalukuyang moderator at ibang moderator ang kumukumpirma — o diretsong itinatalaga sila ng founder.',
-  'trustChain.explainFond': 'Fond: Nagbabayad ng mga araw-araw na regalo mula sa pondo ng 21.gifts.',
+  'trustChain.explainFond':
+    'Fond: Nagbabayad ng mga araw-araw na regalo mula sa pondo ng 21.gifts.',
   'trustChain.explainInitiator':
     'Ang Initiator ay direktang pinangalanan. Walang hakbang ng panukala.',
   'trustChain.explainFounder':

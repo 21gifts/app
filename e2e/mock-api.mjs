@@ -3021,11 +3021,7 @@ const server = http.createServer(async (req, res) => {
     }
     const role = parsed?.role;
     const name = parsed?.name;
-    if (
-      !ROLE_ORDER.includes(role) ||
-      typeof name !== 'string' ||
-      name === ''
-    ) {
+    if (!ROLE_ORDER.includes(role) || typeof name !== 'string' || name === '') {
       json(res, 400, { error: 'Expected a JSON body with role and name' });
       return;
     }
