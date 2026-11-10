@@ -8,7 +8,7 @@ import { openCryptoPayQrValue } from '../src/lib/gifts-address';
 import { fulfillSpot, SPOT_RATES, spotRatesFromStats } from './fx-spot';
 import { motionSettled } from './motion';
 import { fulfillStablecoinUnavailable, stubShopPayment } from './shop-payment';
-import { definedFiatSum } from '../src/lib/loan-repay';
+import { definedFiatAmounts, definedFiatSum } from '../src/lib/loan-repay';
 import {
   buildShopStickerPdf,
   buildShopStickerSvg,
@@ -16250,6 +16250,24 @@ test('Function: summarizeLoans — the production PHP pair keeps its next amount
 test('Function: definedFiatSum — stored PHP amounts add in their currency', async ({ page }) => {
   expect(definedFiatSum('PHP', ['199.99', '200.48'], 'ch')).toBe('₱400.47');
   expect(definedFiatSum('PHP', ['199.99', null], 'ch')).toBeNull();
+  expect(definedFiatSum('PHP', [], 'ch')).toBeNull();
+  expect(definedFiatSum('PHP', ['not-an-amount'], 'ch')).toBeNull();
+  await openLoanUi(page, '/loans/repay?visual=repay-ready', myLoans([loanB]), false);
+  await expect(page.getByText('₱30.00', { exact: true })).toBeVisible();
+});
+
+test('Function: definedFiatAmounts — stored amounts add per currency', async ({ page }) => {
+  expect(
+    definedFiatAmounts(
+      [
+        { code: 'PHP', amount: '1.00' },
+        { code: 'USD', amount: '2.00' },
+        { code: 'PHP', amount: '1.50' },
+      ],
+      'ch',
+    ),
+  ).toBe('₱2.50 + $2.00');
+  expect(definedFiatAmounts([{ code: 'BTC', amount: null }], 'ch')).toBeNull();
   await openLoanUi(page, '/loans/repay?visual=repay-ready', myLoans([loanB]), false);
   await expect(page.getByText('₱30.00', { exact: true })).toBeVisible();
 });

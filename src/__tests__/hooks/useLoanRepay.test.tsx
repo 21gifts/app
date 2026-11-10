@@ -103,6 +103,7 @@ function bill(
   amountSats = 500,
   dayIndex = 0,
   sparkInvoice?: string | null,
+  amount: string | null = null,
 ): RepaymentBill {
   invoiceSeq += 1;
   return {
@@ -111,7 +112,7 @@ function bill(
     name,
     username: name.toLowerCase(),
     amountSats,
-    amount: null,
+    amount,
     pr: `pr-${name}-${invoiceSeq}`,
     sparkInvoice: sparkInvoice === undefined ? `spark-${name}-${invoiceSeq}` : sparkInvoice,
   };
@@ -714,6 +715,55 @@ describe('useLoanRepay preparation', () => {
     expect(sendFirst).toHaveBeenCalledTimes(1);
     expect(sendSecond).toHaveBeenCalledTimes(1);
     expect(result.current.sentSats).toBe(900);
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(WALLET_PAY_BALANCE_POLL_MS);
+    });
+    expect(result.current.phase).toBe('repaid');
+  });
+
+  it('collects the stored sent amounts of the bills that actually went out', async () => {
+    vi.useFakeTimers();
+    const first = bill('PHP prvi', 500, 0, undefined, '30.00');
+    const second = bill('PHP drugi', 400, 1);
+    const third = bill('PHP tretji', 100, 2);
+    vi.mocked(postRepaymentDue).mockResolvedValue({
+      bills: [first, second, third],
+      waiting: [],
+    });
+    vi.mocked(payFromWallet).mockImplementation(async (request) =>
+      confirmed(
+        request.type === 'input' && request.input === invoiceOf(first)
+          ? 500
+          : request.type === 'input' && request.input === invoiceOf(second)
+            ? 400
+            : 100,
+      ),
+    );
+    const reload = vi
+      .fn<() => Promise<MyLoans>>()
+      .mockResolvedValueOnce(body([loan('m1', 900, 0)]))
+      .mockResolvedValue(body([loan('m1', 0, 1_000)]));
+    const phpLoan = loan('m1', 900, 0);
+    phpLoan.goalCurrency = 'PHP';
+    const { result } = renderHook(() => useLoanRepay({ reload }));
+    act(() =>
+      result.current.pay(
+        [phpLoan],
+        undefined,
+        new Map([
+          [`m1:0:${first.recipientAccountId}`, 'never-used'],
+          [`m1:1:${second.recipientAccountId}`, '24.00'],
+          [`m1:2:${third.recipientAccountId}`, null],
+        ]),
+      ),
+    );
+    await act(async () => undefined);
+    expect(result.current.sentAmounts).toEqual([
+      { code: 'PHP', amount: '30.00' },
+      { code: 'PHP', amount: '24.00' },
+      { code: 'PHP', amount: null },
+    ]);
+    expect(result.current.sentSats).toBe(1_000);
     await act(async () => {
       await vi.advanceTimersByTimeAsync(WALLET_PAY_BALANCE_POLL_MS);
     });

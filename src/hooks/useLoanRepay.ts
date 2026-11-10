@@ -54,6 +54,12 @@ export interface LoanRepayResult {
   balanceSats: number | null;
   /** Sats of bills that went out in the last run (0 before any). */
   sentSats: number;
+  /**
+   * Stored amount of every bill that went out in the last run, in send order.
+   * A bill's own `amount` wins; otherwise the screen's `shareAmounts` entry for
+   * the same loan, day, and recipient supplies its stored loan-currency amount.
+   */
+  sentAmounts: { code: MyLoan['goalCurrency']; amount: string | null }[];
   /** Names of the recipients paid in the last run, in pay order, without duplicates. */
   sentNames: string[];
   /** Sum of prepared fees of the bills that went out (0 when none). */
@@ -100,8 +106,16 @@ export interface LoanRepayResult {
    * @param onlyShares - Optional exact share keys to pay; only those named shares are
    *   prepared. An insufficient prepare in the set, fees that do not fit the
    *   balance, or a named share missing from the due answer, send nothing.
+   * @param shareAmounts - Stored loan-currency amounts by share key
+   *   (`messageId:dayIndex:recipientAccountId`). Used for a bill whose own `amount` is
+   *   null; the screen derives these from the matching `DueShare` rows (same loan, day,
+   *   and recipient).
    */
-  pay: (loans: readonly MyLoan[], onlyShares?: ReadonlySet<string>) => void;
+  pay: (
+    loans: readonly MyLoan[],
+    onlyShares?: ReadonlySet<string>,
+    shareAmounts?: ReadonlyMap<string, string | null>,
+  ) => void;
   /** True while a `repay-*` visual pin, including its fixed sent totals, applies. */
   pinned: boolean;
 }
@@ -157,6 +171,7 @@ interface SettlementTarget {
 
 interface SendRun {
   sentSats: number;
+  sentAmounts: { code: MyLoan['goalCurrency']; amount: string | null }[];
   feeSats: number;
   names: string[];
   seenNames: Set<string>;
@@ -173,6 +188,7 @@ type PinnedLoanRepay = Pick<
   | 'phase'
   | 'balanceSats'
   | 'sentSats'
+  | 'sentAmounts'
   | 'sentNames'
   | 'feeSats'
   | 'missingSats'
@@ -182,6 +198,7 @@ type PinnedLoanRepay = Pick<
 
 const PIN_BASE = {
   sentSats: 0,
+  sentAmounts: [] as { code: MyLoan['goalCurrency']; amount: string | null }[],
   sentNames: [] as string[],
   feeSats: 0,
   missingSats: null,
@@ -287,6 +304,9 @@ export function useLoanRepay(options: {
   const setupFailed = useWalletSetup().failed;
   const [livePhase, setLivePhase] = useState<LivePhase>('idle');
   const [sentSats, setSentSats] = useState(0);
+  const [sentAmounts, setSentAmounts] = useState<
+    { code: MyLoan['goalCurrency']; amount: string | null }[]
+  >([]);
   const [sentNames, setSentNames] = useState<string[]>([]);
   const [feeSats, setFeeSats] = useState(0);
   const [missingSats, setMissingSats] = useState<number | null>(null);
@@ -322,6 +342,7 @@ export function useLoanRepay(options: {
     clearSettlement();
     setLivePhase('idle');
     setSentSats(0);
+    setSentAmounts([]);
     setSentNames([]);
     setFeeSats(0);
     missingBalance.current = undefined;
@@ -379,7 +400,11 @@ export function useLoanRepay(options: {
   }, [pinned]);
 
   const pay = useCallback(
-    (loans: readonly MyLoan[], onlyShares?: ReadonlySet<string>): void => {
+    (
+      loans: readonly MyLoan[],
+      onlyShares?: ReadonlySet<string>,
+      shareAmounts?: ReadonlyMap<string, string | null>,
+    ): void => {
       const allowed = new Set<LoanRepayPhase>(['idle', 'failed', 'repaid', 'unconfirmed']);
       const session = useAuthStore.getState().session;
       if (pinned || !allowed.has(phaseRef.current) || session === null) {
@@ -390,6 +415,7 @@ export function useLoanRepay(options: {
       clearSettlement();
       phaseRef.current = 'preparing';
       setSentSats(0);
+      setSentAmounts([]);
       setSentNames([]);
       setFeeSats(0);
       missingBalance.current = undefined;
@@ -415,6 +441,7 @@ export function useLoanRepay(options: {
       };
 
       void (async (): Promise<void> => {
+        const currencyByMessage = new Map(loans.map((loan) => [loan.messageId, loan.goalCurrency]));
         const perLoan: Array<{ messageId: string; bills: readonly RepaymentBill[] }> = [];
         try {
           for (const loan of loans) {
@@ -565,6 +592,7 @@ export function useLoanRepay(options: {
         setLivePhase('sending');
         const sent: SendRun = {
           sentSats: 0,
+          sentAmounts: [],
           feeSats: 0,
           names: [],
           seenNames: new Set<string>(),
@@ -578,11 +606,18 @@ export function useLoanRepay(options: {
 
         const publishSent = (): void => {
           setSentSats(sent.sentSats);
+          setSentAmounts([...sent.sentAmounts]);
           setFeeSats(sent.feeSats);
           setSentNames([...sent.names]);
         };
         const countSent = (item: PreparedBill): void => {
           sent.sentSats += item.bill.amountSats;
+          const amount = item.bill.amount ?? shareAmounts?.get(shareKey(item.bill)) ?? null;
+          sent.sentAmounts.push({
+            // Every bill comes from a loan in `loans`, which supplied its currency above.
+            code: currencyByMessage.get(item.bill.messageId)!,
+            amount,
+          });
           sent.feeSats += item.feeSats;
           if (!sent.seenNames.has(item.bill.name)) {
             sent.seenNames.add(item.bill.name);
@@ -758,6 +793,7 @@ export function useLoanRepay(options: {
     phase,
     balanceSats,
     sentSats,
+    sentAmounts,
     sentNames,
     feeSats,
     missingSats,

@@ -122,6 +122,7 @@ function repay(overrides: Partial<LoanRepayResult> = {}): LoanRepayResult {
     phase: 'idle',
     balanceSats: 21_000,
     sentSats: 0,
+    sentAmounts: [],
     sentNames: [],
     feeSats: 0,
     missingSats: null,
@@ -232,6 +233,7 @@ describe('LoanRepayScreen', () => {
     expect(state.pay).toHaveBeenCalledWith(
       [expect.objectContaining({ messageId: 'loan-1' })],
       undefined,
+      expect.any(Map),
     );
     const list = screen.getByRole('region', { name: 'Your loan' });
     expect(within(list).getByText("Repaid ₿11'000 · $11.00 of ₿30'000 · $30.00")).toBeTruthy();
@@ -325,7 +327,7 @@ describe('LoanRepayScreen', () => {
     ).toBeTruthy();
   });
 
-  it('falls back to zero defined units for an unusable payable-amount value', () => {
+  it('falls back to bitcoin and spot for an unusable payable-amount value', () => {
     show({
       sundayRest: false,
       loans: [
@@ -336,9 +338,10 @@ describe('LoanRepayScreen', () => {
         }),
       ],
     });
-    expect(screen.getByText('EUR 0.00')).toBeTruthy();
-    expect(screen.getByRole('button', { name: "Send EUR 0.00 · ₿1'000" })).toBeTruthy();
-    expect(screen.queryByText('$1.00')).toBeNull();
+    expect(screen.getByText("₿1'000")).toBeTruthy();
+    expect(screen.getByText('$1.00')).toBeTruthy();
+    expect(screen.getByRole('button', { name: "Send ₿1'000 · $1.00" })).toBeTruthy();
+    expect(screen.queryByText('EUR 0.00')).toBeNull();
   });
 
   it('sums two PHP payable amounts in their currency for the due box', () => {
@@ -477,7 +480,11 @@ describe('LoanRepayScreen', () => {
     expect(sendNow.className).toContain('items-center');
     expect(sendNow.className).toContain('justify-center');
     fireEvent.click(sendNow);
-    expect(state.pay).toHaveBeenCalledWith(expect.any(Array), new Set(['loan-1:11:giver-1']));
+    expect(state.pay).toHaveBeenCalledWith(
+      expect.any(Array),
+      new Set(['loan-1:11:giver-1']),
+      expect.any(Map),
+    );
     vi.mocked(useLoanRepay).mockReturnValue({ ...state, phase: 'preparing' });
     view.rerender(<LoanRepayScreen />);
     expect(screen.getByRole('status').textContent).toContain('Sending ₿500 · $0.50…');
@@ -527,6 +534,7 @@ describe('LoanRepayScreen', () => {
     expect(state.pay).toHaveBeenCalledWith(
       expect.any(Array),
       new Set(Array.from({ length: 60 }, (_, index) => `loan-1:${index}:giver-${index}`)),
+      expect.any(Map),
     );
   });
 
@@ -656,6 +664,7 @@ describe('LoanRepayScreen', () => {
             dayIndex: 0,
             status: 'paid',
             amount: '30.00',
+            sats: 3_000,
             dueSats: null,
           },
           {
@@ -663,6 +672,7 @@ describe('LoanRepayScreen', () => {
             dayIndex: 1,
             status: 'paid',
             amount: '29.99',
+            sats: 2_999,
             dueSats: null,
           },
           {
@@ -688,6 +698,93 @@ describe('LoanRepayScreen', () => {
     expect(await screen.findByText("Repaid ₱59.99 · ₿5'999 of ₱900.00")).toBeTruthy();
     expect(screen.queryByText('Repaid ₱59.99 of ₱900.00')).toBeNull();
     expect(screen.queryByText("Repaid ₿5'999 · $6.00 of ₱900.00")).toBeNull();
+    cleanup();
+    vi.mocked(getRepayment).mockResolvedValue(null);
+    show({
+      sundayRest: false,
+      loans: [loan({ goalCurrency: 'PHP', goalAmount: '900.00', repaidSats: 5_999 })],
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Who gets paid' }));
+    expect(await screen.findByText('Could not load who gets paid for this loan.')).toBeTruthy();
+    expect(screen.queryByText(/Repaid ₱/)).toBeNull();
+    expect(screen.getByText("Repaid ₿5'999 · $6.00 of ₱900.00")).toBeTruthy();
+  });
+
+  it('shows stored paid fiat while the paid sats still match repaidSats', async () => {
+    vi.mocked(getRepayment).mockResolvedValue(
+      ledger({
+        currency: 'PHP',
+        repayments: [
+          {
+            ...ledger().repayments[0]!,
+            dayIndex: 0,
+            status: 'paid',
+            amount: '59.99',
+            sats: 5_999,
+            dueSats: null,
+          },
+        ],
+      }),
+    );
+    show({
+      sundayRest: false,
+      loans: [loan({ goalCurrency: 'PHP', goalAmount: '900.00', repaidSats: 5_999 })],
+    });
+    expect(await screen.findByText("Repaid ₱59.99 · ₿5'999 of ₱900.00")).toBeTruthy();
+  });
+
+  it('falls back to bitcoin and spot when a paid ledger row has no sats', async () => {
+    vi.mocked(getRepayment).mockResolvedValue(
+      ledger({
+        currency: 'PHP',
+        repayments: [
+          {
+            ...ledger().repayments[0]!,
+            dayIndex: 0,
+            status: 'paid',
+            amount: '59.99',
+            sats: null,
+            dueSats: null,
+          },
+          { ...ledger().repayments[0]!, dayIndex: 3, status: 'due' },
+        ],
+      }),
+    );
+    show({
+      sundayRest: false,
+      loans: [loan({ goalCurrency: 'PHP', goalAmount: '900.00', repaidSats: 5_999 })],
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Who gets paid' }));
+    expect(await screen.findByText('Bruno')).toBeTruthy();
+    expect(screen.queryByText(/Repaid ₱/)).toBeNull();
+    expect(screen.getByText("Repaid ₿5'999 · $6.00 of ₱900.00")).toBeTruthy();
+  });
+
+  it('falls back while the paid ledger sats do not match repaidSats', async () => {
+    vi.mocked(getRepayment).mockResolvedValue(
+      ledger({
+        currency: 'PHP',
+        repayments: [
+          {
+            ...ledger().repayments[0]!,
+            dayIndex: 0,
+            status: 'paid',
+            amount: '59.99',
+            sats: 5_000,
+            dueSats: null,
+          },
+          { ...ledger().repayments[0]!, dayIndex: 3, status: 'due' },
+        ],
+      }),
+    );
+    show({
+      sundayRest: false,
+      loans: [loan({ goalCurrency: 'PHP', goalAmount: '900.00', repaidSats: 5_999 })],
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Who gets paid' }));
+    expect(await screen.findByText('Bruno')).toBeTruthy();
+    expect(screen.queryByText("Repaid ₱59.99 · ₿5'999 of ₱900.00")).toBeNull();
+    expect(screen.getByText("Repaid ₿5'999 · $6.00 of ₱900.00")).toBeTruthy();
   });
 
   it('falls back to bitcoin for a PHP loan whose ledger uses another currency', async () => {
@@ -700,8 +797,10 @@ describe('LoanRepayScreen', () => {
             dayIndex: 0,
             status: 'paid',
             amount: '59.99',
+            sats: 5_999,
             dueSats: null,
           },
+          { ...ledger().repayments[0]!, dayIndex: 3, status: 'due' },
         ],
       }),
     );
@@ -709,7 +808,10 @@ describe('LoanRepayScreen', () => {
       sundayRest: false,
       loans: [loan({ goalCurrency: 'PHP', goalAmount: '900.00', repaidSats: 5_999 })],
     });
-    expect(await screen.findByText("Repaid ₿5'999 · $6.00 of ₱900.00")).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Who gets paid' }));
+    expect(await screen.findByText('Bruno')).toBeTruthy();
+    expect(screen.queryByText("Repaid ₱59.99 · ₿5'999 of ₱900.00")).toBeNull();
+    expect(screen.getByText("Repaid ₿5'999 · $6.00 of ₱900.00")).toBeTruthy();
   });
 
   it('falls back to bitcoin for a PHP loan without a ledger or with a missing amount', async () => {
@@ -718,7 +820,10 @@ describe('LoanRepayScreen', () => {
       sundayRest: false,
       loans: [loan({ goalCurrency: 'PHP', goalAmount: '900.00', repaidSats: 5_999 })],
     });
-    expect(await screen.findByText("Repaid ₿5'999 · $6.00 of ₱900.00")).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Who gets paid' }));
+    expect(await screen.findByText('Could not load who gets paid for this loan.')).toBeTruthy();
+    expect(screen.queryByText(/Repaid ₱/)).toBeNull();
+    expect(screen.getByText("Repaid ₿5'999 · $6.00 of ₱900.00")).toBeTruthy();
     cleanup();
     vi.mocked(getRepayment).mockResolvedValue(
       ledger({
@@ -729,8 +834,10 @@ describe('LoanRepayScreen', () => {
             dayIndex: 0,
             status: 'paid',
             amount: null,
+            sats: 5_999,
             dueSats: null,
           },
+          { ...ledger().repayments[0]!, dayIndex: 3, status: 'due' },
         ],
       }),
     );
@@ -738,7 +845,10 @@ describe('LoanRepayScreen', () => {
       sundayRest: false,
       loans: [loan({ goalCurrency: 'PHP', goalAmount: '900.00', repaidSats: 5_999 })],
     });
-    expect(await screen.findByText("Repaid ₿5'999 · $6.00 of ₱900.00")).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Who gets paid' }));
+    expect(await screen.findByText('Bruno')).toBeTruthy();
+    expect(screen.queryByText(/Repaid ₱/)).toBeNull();
+    expect(screen.getByText("Repaid ₿5'999 · $6.00 of ₱900.00")).toBeTruthy();
   });
 
   it('shows the stored next amount beside the next bitcoin amount', () => {
@@ -777,6 +887,89 @@ describe('LoanRepayScreen', () => {
     expect(screen.queryByRole('button', { name: /^Send ₿/ })).toBeNull();
     expect(screen.queryByText("₿1'000")).toBeNull();
     expect(screen.queryByText(/^to \d+ people$/)).toBeNull();
+  });
+
+  it('names the stored amount of the fitting shares in the send-now link', async () => {
+    const dueRow = ledger().repayments[0]!;
+    const carla = {
+      ...ledger().givers[0]!,
+      accountId: 'giver-2',
+      name: 'Carla',
+      username: 'carla',
+    };
+    vi.mocked(getRepayment).mockResolvedValue(
+      ledger({
+        currency: 'PHP',
+        givers: [ledger().givers[0]!, carla],
+        repayments: [
+          { ...dueRow, amount: '18.00', sats: 500, dueSats: null },
+          {
+            ...dueRow,
+            accountId: 'giver-2',
+            name: 'Carla',
+            username: 'carla',
+            amount: '18.00',
+            sats: 500,
+            dueSats: null,
+          },
+        ],
+      }),
+    );
+    show(
+      {
+        sundayRest: false,
+        loans: [
+          loan({
+            goalCurrency: 'PHP',
+            goalAmount: '900.00',
+            due: { ...loan().due, payableSats: 1_000, payableAmount: '36.00' },
+          }),
+        ],
+      },
+      repay({ balanceSats: 600 }),
+    );
+    expect(
+      await screen.findByRole('button', {
+        name: 'Send ₱18.00 · ₿500 now to Bruno, the rest after your top-up',
+      }),
+    ).toBeTruthy();
+    cleanup();
+    vi.mocked(getRepayment).mockResolvedValue(
+      ledger({
+        currency: 'PHP',
+        givers: [ledger().givers[0]!, carla],
+        repayments: [
+          { ...dueRow, amount: null, sats: 500, dueSats: null },
+          {
+            ...dueRow,
+            accountId: 'giver-2',
+            name: 'Carla',
+            username: 'carla',
+            amount: null,
+            sats: 500,
+            dueSats: null,
+          },
+        ],
+      }),
+    );
+    show(
+      {
+        sundayRest: false,
+        loans: [
+          loan({
+            goalCurrency: 'PHP',
+            goalAmount: '900.00',
+            due: { ...loan().due, payableSats: 1_000, payableAmount: '36.00' },
+          }),
+        ],
+      },
+      repay({ balanceSats: 600 }),
+    );
+    expect(
+      await screen.findByRole('button', {
+        name: 'Send ₿500 · $0.50 now to Bruno, the rest after your top-up',
+      }),
+    ).toBeTruthy();
   });
 
   it('follows the api days behind and counts the summary people without ledgers', () => {
@@ -856,6 +1049,23 @@ describe('LoanRepayScreen', () => {
     vi.mocked(useLoanRepay).mockReturnValue(repay({ phase: 'sending' }));
     view.rerender(<LoanRepayScreen />);
     expect(screen.getByRole('status').textContent).toContain('Sending ₱30.00 · ₿536…');
+  });
+
+  it('names mixed stored amounts while a multi-currency payment is sending', () => {
+    const phpLoan = loan({
+      messageId: 'php',
+      goalCurrency: 'PHP',
+      goalAmount: '900.00',
+      due: { ...loan().due, payableSats: 536, payableAmount: '30.00' },
+    });
+    const usdLoan = loan({
+      messageId: 'usd',
+      goalCurrency: 'USD',
+      goalAmount: '900.00',
+      due: { ...loan().due, payableSats: 464, payableAmount: '3.00' },
+    });
+    show({ sundayRest: false, loans: [phpLoan, usdLoan] }, repay({ phase: 'sending' }));
+    expect(screen.getByRole('status').textContent).toContain("Sending ₱30.00 + $3.00 · ₿1'000…");
   });
 
   it('shows setup failure and a failed run with retry controls', () => {
@@ -938,7 +1148,7 @@ describe('LoanRepayScreen', () => {
     expect(screen.getByText("Next: Tuesday, October 13, ₿1'000 · $1.00")).toBeTruthy();
   });
 
-  it('leaves the next amount undefined when mixed currencies share a day', () => {
+  it('shows a mixed-currency next amount instead of dropping the stored figures', () => {
     vi.mocked(getRepayment).mockResolvedValue(null);
     const clearDue = { ...loan().due, payableSats: 0, payablePeople: 0 };
     show({
@@ -957,7 +1167,7 @@ describe('LoanRepayScreen', () => {
         }),
       ],
     });
-    expect(screen.getByText("Next: tomorrow, ₿2'000 · $2.00")).toBeTruthy();
+    expect(screen.getByText("Next: tomorrow, ₱30.00 + $1.00 · ₿2'000")).toBeTruthy();
   });
 
   it('shows tomorrow and later next lines for several recipients', async () => {
@@ -1110,6 +1320,73 @@ describe('LoanRepayScreen', () => {
     );
     expect(screen.getByText('Still due today')).toBeTruthy();
     expect(screen.getByText('Sent ₿500 · $0.50 to Bruno')).toBeTruthy();
+  });
+
+  it('shows the stored sent amounts for a fiat repayment and partial send', () => {
+    const clearDue = { ...loan().due, payableSats: 0, payablePeople: 0 };
+    show(
+      {
+        sundayRest: false,
+        loans: [loan({ goalCurrency: 'PHP', goalAmount: '900.00', due: clearDue })],
+      },
+      repay({
+        phase: 'repaid',
+        sentSats: 1_000,
+        sentAmounts: [{ code: 'PHP', amount: '30.00' }],
+        sentNames: ['Bruno'],
+      }),
+    );
+    expect(screen.getByText("Repaid ₱30.00 · ₿1'000")).toBeTruthy();
+    cleanup();
+    show(
+      {
+        sundayRest: false,
+        loans: [
+          loan({
+            goalCurrency: 'PHP',
+            goalAmount: '900.00',
+            due: { ...loan().due, payableSats: 1_000, payableAmount: '30.00' },
+          }),
+        ],
+      },
+      repay({
+        phase: 'sending',
+        sentSats: 1_000,
+        sentAmounts: [],
+        sentNames: [],
+      }),
+    );
+    expect(screen.getByRole('status').textContent).toContain("Sending ₱30.00 · ₿1'000…");
+    cleanup();
+    show(
+      {
+        sundayRest: false,
+        loans: [loan({ goalCurrency: 'PHP', goalAmount: '900.00', due: clearDue })],
+      },
+      repay({
+        phase: 'repaid',
+        sentSats: 1_000,
+        sentAmounts: [{ code: 'PHP', amount: null }],
+        sentNames: ['Bruno'],
+      }),
+    );
+    expect(screen.queryByText(/Repaid ₱/)).toBeNull();
+    expect(screen.getByText("Repaid ₿1'000 · $1.00")).toBeTruthy();
+    cleanup();
+    show(
+      {
+        sundayRest: false,
+        loans: [loan({ goalCurrency: 'PHP', goalAmount: '900.00' })],
+      },
+      repay({
+        phase: 'idle',
+        sentSats: 500,
+        sentAmounts: [{ code: 'PHP', amount: '15.00' }],
+        sentNames: ['Bruno'],
+      }),
+    );
+    expect(screen.getByText('Still due today')).toBeTruthy();
+    expect(screen.getByText('Sent ₱15.00 · ₿500 to Bruno')).toBeTruthy();
   });
 
   it('asks for nothing after a partial send when only waiting shares remain', () => {

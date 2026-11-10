@@ -342,7 +342,7 @@ describe('LoansCard', () => {
     expect(screen.getByText("Next: tomorrow, ₱199.99 · ₿19'999")).toBeTruthy();
   });
 
-  it('leaves the next line in mixed currencies on the same day without a stored total', () => {
+  it('shows the next line in mixed currencies with each stored amount', () => {
     show({
       sundayRest: false,
       loans: [
@@ -359,7 +359,7 @@ describe('LoansCard', () => {
         }),
       ],
     });
-    expect(screen.getByText("Next: tomorrow, ₿2'000 · $2.00")).toBeTruthy();
+    expect(screen.getByText("Next: tomorrow, ₱199.99 + $2.00 · ₿2'000")).toBeTruthy();
   });
 
   it('falls back to bitcoin and spot for missing stored strings', () => {

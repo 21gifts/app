@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { MyLoan, RepaymentLedger } from '@/lib/api';
 import {
   centsString,
+  definedFiatAmounts,
   definedDueLabel,
   definedFiatSum,
   dueShares,
@@ -211,7 +212,7 @@ describe('summarizeLoans', () => {
     ).toEqual({ dueOn, sats: 40, amount: '₱2.00' });
   });
 
-  it('leaves the next amount null for mixed currencies, a missing string, or bitcoin', () => {
+  it('sums mixed same-day currencies in first-seen order and leaves undefined parts null', () => {
     const dueOn = '2026-10-11';
     const mixed = summarizeLoans(
       {
@@ -219,11 +220,12 @@ describe('summarizeLoans', () => {
         loans: [
           loan({ goalCurrency: 'PHP', next: { dueOn, sats: 40, amount: '2.00' } }),
           loan({ goalCurrency: 'USD', next: { dueOn, sats: 60, amount: '3.00' } }),
+          loan({ goalCurrency: 'PHP', next: { dueOn, sats: 20, amount: '1.00' } }),
         ],
       },
       'ch',
     );
-    expect(mixed.next).toEqual({ dueOn, sats: 100, amount: null });
+    expect(mixed.next).toEqual({ dueOn, sats: 120, amount: '₱3.00 + $3.00' });
     const missing = summarizeLoans(
       {
         sundayRest: false,
@@ -240,6 +242,17 @@ describe('summarizeLoans', () => {
       'ch',
     );
     expect(bitcoin.next).toEqual({ dueOn, sats: 100, amount: null });
+    const mixedBitcoin = summarizeLoans(
+      {
+        sundayRest: false,
+        loans: [
+          loan({ goalCurrency: 'PHP', next: { dueOn, sats: 40, amount: '2.00' } }),
+          loan({ goalCurrency: 'BTC', next: { dueOn, sats: 60, amount: null } }),
+        ],
+      },
+      'ch',
+    );
+    expect(mixedBitcoin.next).toEqual({ dueOn, sats: 100, amount: null });
   });
 });
 
@@ -249,12 +262,34 @@ describe('definedFiatSum', () => {
     expect(definedFiatSum('USD', ['10.125'], 'us')).toBe('$10.13');
   });
 
-  it('is null for bitcoin, a missing code, or a missing amount, and 0.00 for no rows', () => {
+  it('is null for bitcoin, a missing code or amount, an empty list, or an invalid amount', () => {
     expect(definedFiatSum('BTC', ['1.00'], 'ch')).toBeNull();
     expect(definedFiatSum(undefined, ['1.00'], 'ch')).toBeNull();
     expect(definedFiatSum('PHP', ['1.00', null], 'ch')).toBeNull();
-    expect(definedFiatSum('PHP', ['not-an-amount'], 'ch')).toBe('₱0.00');
-    expect(definedFiatSum('PHP', [], 'ch')).toBe('₱0.00');
+    expect(definedFiatSum('PHP', ['not-an-amount'], 'ch')).toBeNull();
+    expect(definedFiatSum('PHP', [], 'ch')).toBeNull();
+  });
+});
+
+describe('definedFiatAmounts', () => {
+  it('sums each currency and keeps first-seen currency order', () => {
+    expect(
+      definedFiatAmounts(
+        [
+          { code: 'PHP', amount: '1.00' },
+          { code: 'USD', amount: '2.00' },
+          { code: 'PHP', amount: '1.50' },
+        ],
+        'ch',
+      ),
+    ).toBe('₱2.50 + $2.00');
+  });
+
+  it('is null when any part is bitcoin, missing, invalid, or the list is empty', () => {
+    expect(definedFiatAmounts([], 'ch')).toBeNull();
+    expect(definedFiatAmounts([{ code: 'BTC', amount: '1.00' }], 'ch')).toBeNull();
+    expect(definedFiatAmounts([{ code: 'PHP', amount: null }], 'ch')).toBeNull();
+    expect(definedFiatAmounts([{ code: 'PHP', amount: 'not-an-amount' }], 'ch')).toBeNull();
   });
 });
 

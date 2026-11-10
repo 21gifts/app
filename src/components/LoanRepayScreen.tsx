@@ -19,6 +19,7 @@ import { formatDefinedGoalAmount } from '@/lib/forum-goal';
 import type { NumberFormatStyle } from '@/lib/number-format';
 import {
   centsString,
+  definedFiatAmounts,
   definedDueLabel,
   definedFiatSum,
   dueShares,
@@ -95,6 +96,9 @@ export function LoanRepayScreen(): ReactElement {
   const [whoOpen, setWhoOpen] = useState(false);
   const [paidLoans, setPaidLoans] = useState<MyLoan[]>([]);
   const [sendingSats, setSendingSats] = useState<number | null>(null);
+  const [sendingAmounts, setSendingAmounts] = useState<
+    { code: MyLoan['goalCurrency']; amount: string | null }[]
+  >([]);
   const whoId = useId();
 
   const reloadAfterPayment = useCallback(async (): Promise<MyLoans | null> => {
@@ -299,6 +303,14 @@ export function LoanRepayScreen(): ReactElement {
     return defined;
   };
 
+  const fiatPayLabel = (
+    amounts: readonly { code: MyLoan['goalCurrency']; amount: string | null }[],
+    sats: number,
+  ): string => {
+    const defined = definedFiatAmounts(amounts, numberFormat);
+    return defined === null ? money(sats) : `${defined} · ${bitcoinText(sats)}`;
+  };
+
   const partial =
     repay.sentSats > 0 &&
     (repay.phase === 'idle' ||
@@ -309,7 +321,7 @@ export function LoanRepayScreen(): ReactElement {
     (repay.phase === 'repaid' && repay.sentSats > 0 && payable === 0);
   const paidSource = paidLoans.length > 0 ? paidLoans : loans.loans;
   const lastLoan = paidSource.find((loan) => loan.due.lastPayment);
-  const sentAmount = repay.sentSats;
+  const sentAmount = fiatPayLabel(repay.sentAmounts, repay.sentSats);
   const successBox = showRepaid ? (
     <div className="w-full rounded-2xl border border-app-success/50 bg-app-card-muted p-4">
       {lastLoan !== undefined && paidSource.length === 1 ? (
@@ -326,7 +338,7 @@ export function LoanRepayScreen(): ReactElement {
         <>
           <p className="flex items-center gap-2 font-semibold text-app-success">
             <Check aria-hidden="true" className="h-5 w-5" />
-            {t('loans.repaid', { amount: money(sentAmount) })}
+            {t('loans.repaid', { amount: sentAmount })}
           </p>
           <p className="mt-2 text-sm text-app-fg">
             {t('loans.lastFor', {
@@ -339,7 +351,7 @@ export function LoanRepayScreen(): ReactElement {
         <>
           <p className="flex items-center gap-2 font-semibold text-app-success">
             <Check aria-hidden="true" className="h-5 w-5" />
-            {t('loans.repaid', { amount: money(sentAmount) })}
+            {t('loans.repaid', { amount: sentAmount })}
           </p>
           {repay.feeSats > 0 ? (
             <p className="mt-1 text-xs tabular-nums lining-nums text-app-muted">
@@ -374,12 +386,29 @@ export function LoanRepayScreen(): ReactElement {
     balanceSats === null ? [] : fittingPrefix(payableWithinDue, (share) => share.sats, balanceSats);
   // `fittingPrefix` stops before the first share whose satoshi amount is unknown.
   const fittingSats = fitting.reduce((sum, share) => sum + (share.sats as number), 0);
+  const fittingAmounts = fitting.map((share) => ({
+    code: loans.loans[share.loanIndex]!.goalCurrency,
+    amount: share.amount,
+  }));
   const fittingNames = [...new Set(fitting.map((share) => share.name))].join(', ');
+  const shareAmounts = new Map(shares.map((share) => [shareKey(share), share.amount] as const));
+  const payableLoanAmounts = loans.loans
+    .filter((loan) => loan.due.payableSats > 0)
+    .map((loan) => ({ code: loan.goalCurrency, amount: loan.due.payableAmount }));
+  const activeSendingAmounts = sendingAmounts.length === 0 ? payableLoanAmounts : sendingAmounts;
   const hasMissingSats = repay.missingSats !== null && repay.missingSats > 0;
   const rememberAndPay = (onlyShares?: ReadonlySet<string>): void => {
     setPaidLoans(loans.loans);
     setSendingSats(onlyShares === undefined ? payable : fittingSats);
-    repay.pay(loans.loans, onlyShares);
+    const amounts =
+      onlyShares === undefined
+        ? payableWithinDue.map((share) => ({
+            code: loans.loans[share.loanIndex]!.goalCurrency,
+            amount: share.amount,
+          }))
+        : fittingAmounts;
+    setSendingAmounts(amounts);
+    repay.pay(loans.loans, onlyShares, shareAmounts);
   };
 
   const idleControls =
@@ -425,7 +454,7 @@ export function LoanRepayScreen(): ReactElement {
             onClick={() => rememberAndPay(new Set(fitting.map(shareKey)))}
           >
             {t('loans.sendNow', {
-              amount: money(fittingSats),
+              amount: fiatPayLabel(fittingAmounts, fittingSats),
               names: fittingNames,
             })}
           </button>
@@ -460,10 +489,7 @@ export function LoanRepayScreen(): ReactElement {
         <p role="status" className="flex items-center justify-center gap-2 text-sm text-app-muted">
           <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" />
           {t('loans.sending', {
-            amount:
-              definedPayableLabel !== null && (sendingSats === null || sendingSats === payable)
-                ? payLabel
-                : money(sendingSats ?? payable),
+            amount: fiatPayLabel(activeSendingAmounts, sendingSats ?? payable),
           })}
         </p>
       );
@@ -627,7 +653,7 @@ export function LoanRepayScreen(): ReactElement {
         <p className="mt-3 flex items-center gap-2 text-sm text-app-success">
           <Check aria-hidden="true" className="h-4 w-4" />
           {t('loans.sent', {
-            amount: money(repay.sentSats),
+            amount: fiatPayLabel(repay.sentAmounts, repay.sentSats),
             names: repay.sentNames.join(', '),
           })}
         </p>
@@ -696,10 +722,17 @@ export function LoanRepayScreen(): ReactElement {
               ledger !== null &&
               ledger.currency === loan.goalCurrency
             ) {
-              const paidAmounts = ledger.repayments
-                .filter((row) => row.status === 'paid')
-                .map((row) => row.amount);
-              definedRepaid = definedFiatSum(loan.goalCurrency, paidAmounts, numberFormat);
+              const paid = ledger.repayments.filter((row) => row.status === 'paid');
+              const paidSats = paid.every((row) => row.sats !== null)
+                ? paid.reduce((sum, row) => sum + (row.sats as number), 0)
+                : null;
+              if (paid.length > 0 && paidSats === loan.repaidSats) {
+                definedRepaid = definedFiatSum(
+                  loan.goalCurrency,
+                  paid.map((row) => row.amount),
+                  numberFormat,
+                );
+              }
             }
             const repaid =
               definedRepaid === null

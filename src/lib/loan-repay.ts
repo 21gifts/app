@@ -25,8 +25,9 @@ export interface LoansSummary {
   lastPayment: boolean;
   /**
    * Earliest next.dueOn among loans whose next is non-null with sats !== null, and the sum of
-   * next.sats of every loan whose next.dueOn equals it. The amount is the summed stored next.amount
-   * strings when every loan on that day uses one fiat currency and carries one; otherwise null.
+   * next.sats of every loan whose next.dueOn equals it. The amount is the sum per fiat currency of
+   * every stored next.amount string on that day, in first-seen currency order, joined with " + ";
+   * null when a BTC loan, a missing string, or an invalid string keeps the total undefined.
    */
   next: { dueOn: string; sats: number; amount: string | null } | null;
   /**
@@ -80,16 +81,13 @@ export function summarizeLoans(data: MyLoans, style: NumberFormatStyle): LoansSu
 
   let nextAmount: string | null = null;
   if (nextDueOn !== null) {
-    const amounts: (string | null)[] = [];
-    const currencies: MyLoan['goalCurrency'][] = [];
+    const amounts: { code: MyLoan['goalCurrency']; amount: string | null }[] = [];
     for (const loan of data.loans) {
       if (loan.next !== null && loan.next.sats !== null && loan.next.dueOn === nextDueOn) {
-        amounts.push(loan.next.amount);
-        currencies.push(loan.goalCurrency);
+        amounts.push({ code: loan.goalCurrency, amount: loan.next.amount });
       }
     }
-    const mixed = currencies.some((currency) => currency !== currencies[0]);
-    nextAmount = mixed ? null : definedFiatSum(currencies[0], amounts, style);
+    nextAmount = definedFiatAmounts(amounts, style);
   }
   const next = nextDueOn === null ? null : { dueOn: nextDueOn, sats: nextSats, amount: nextAmount };
 
@@ -129,7 +127,7 @@ export function definedFiatSum(
   amounts: readonly (string | null)[],
   style: NumberFormatStyle,
 ): string | null {
-  if (code === undefined || code === 'BTC') {
+  if (code === undefined || code === 'BTC' || amounts.length === 0) {
     return null;
   }
   let cents = 0n;
@@ -137,9 +135,52 @@ export function definedFiatSum(
     if (amount === null) {
       return null;
     }
-    cents += creditSmallestUnits(amount, false) ?? 0n;
+    const units = creditSmallestUnits(amount, false);
+    if (units === null) {
+      return null;
+    }
+    cents += units;
   }
   return formatDefinedGoalAmount(centsString(cents), code, style);
+}
+
+/**
+ * Sums stored fiat amounts per currency and joins the formatted totals with
+ * ` + ` in first-seen currency order. A bitcoin amount, a missing amount, or an
+ * invalid amount makes the whole result null.
+ *
+ * @param amounts - Stored amount and currency pairs, in display order.
+ * @param style - Visitor number format.
+ * @returns For example `PHP 2.00 + $3.00`, or null when any part is undefined.
+ */
+export function definedFiatAmounts(
+  amounts: readonly { code: MyLoan['goalCurrency']; amount: string | null }[],
+  style: NumberFormatStyle,
+): string | null {
+  if (amounts.length === 0) {
+    return null;
+  }
+  const byCode = new Map<Exclude<MyLoan['goalCurrency'], 'BTC'>, (string | null)[]>();
+  for (const item of amounts) {
+    if (item.code === 'BTC' || item.amount === null) {
+      return null;
+    }
+    const group = byCode.get(item.code);
+    if (group === undefined) {
+      byCode.set(item.code, [item.amount]);
+    } else {
+      group.push(item.amount);
+    }
+  }
+  const parts: string[] = [];
+  for (const [code, group] of byCode) {
+    const sum = definedFiatSum(code, group, style);
+    if (sum === null) {
+      return null;
+    }
+    parts.push(sum);
+  }
+  return parts.join(' + ');
 }
 
 /** One due share of one loan, oldest first across loans. */
