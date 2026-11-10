@@ -61,6 +61,13 @@ describe('fetchHeartPosts', () => {
       deleted: false,
     };
     const borrower = { ...giver, paymentHash: 'b'.repeat(64), role: 'borrower', termDays: null };
+    const shortest = {
+      ...giver,
+      paymentHash: 'c'.repeat(64),
+      dayIndex: 5,
+      termDays: 1,
+      deleted: true,
+    };
     vi.stubGlobal(
       'fetch',
       vi.fn().mockResolvedValue(
@@ -69,6 +76,7 @@ describe('fetchHeartPosts', () => {
           repayments: [
             giver,
             borrower,
+            shortest,
             null,
             'row',
             { ...giver, paymentHash: 1 },
@@ -93,7 +101,7 @@ describe('fetchHeartPosts', () => {
 
     await expect(fetchHeartPosts('session', [HASH])).resolves.toEqual({
       hearts: [],
-      repayments: [giver, borrower],
+      repayments: [giver, borrower, shortest],
     });
   });
 

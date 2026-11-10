@@ -202,6 +202,7 @@ describe('WALLET_PAYMENT_FIXTURES', () => {
     expect(borrower.direction).toBe('sent');
     expect(borrower.info.purpose).toBe('gift');
     expect(borrower.info.paymentHash).toBe(REPAYMENT_BORROWER_VISUAL_HASH);
+    expect(REPAYMENT_BORROWER_VISUAL_HASH).toMatch(/^[0-9a-f]{64}$/);
 
     expect(REPAYMENT_VISUAL_CONTEXTS).toHaveLength(2);
     expect(REPAYMENT_VISUAL_CONTEXTS[0]).toMatchObject({

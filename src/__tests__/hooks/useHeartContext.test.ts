@@ -81,6 +81,7 @@ describe('useHeartContext', () => {
         text: HEART_VISUAL_TEXT,
         deleted: false,
       });
+      expect([...result.current.repaymentsByHash]).toEqual([]);
       expect([...result.current.pending]).toEqual([]);
       expect(fetchHeartPosts).not.toHaveBeenCalled();
     },
@@ -93,6 +94,7 @@ describe('useHeartContext', () => {
       window.history.replaceState({}, '', `/wallet?visual=${pin}`);
       const { result } = renderHook(() => useHeartContext([HEART_VISUAL_HASH]));
       expect(result.current.byHash.has(HEART_VISUAL_HASH)).toBe(false);
+      expect([...result.current.repaymentsByHash]).toEqual([]);
       expect([...result.current.pending]).toEqual([HEART_VISUAL_HASH]);
       expect(fetchHeartPosts).not.toHaveBeenCalled();
     },
