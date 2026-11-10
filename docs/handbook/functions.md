@@ -6220,14 +6220,14 @@ The class exists so the composer can tell a refused free first post from any oth
 - **Purpose:** Product-rule primitive for every viewer permission/visibility check, including the daily payout roster: true when `role` meets or exceeds `min` by numeric rank. An equal rank meets the minimum. A missing account (`null`/`undefined` role) is never at least any role.
 - **Inputs:** `role` — live account role, or `null`/`undefined` when the account snapshot is absent; `min` — inclusive minimum role.
 - **Returns / side effects:** Boolean. Pure, no side effects; delegates to `roleRank`.
-- **Used by:** `ModerateScreen`, `ModeratorGroupScreen`, `InboxLoader`, `HiddenNotesScreen`, `ProposalsScreen`, `FundingApplicationsScreen`, `FundingApplicationDetailScreen`, `FundingStatusCard`, `DeletePostControl`, `HabitComments`, `ForumLoader`, `MemberProfileScreen`, `MemberTrustActions`, `SignedInChrome`, `useUnreadCount`, `isReplyPaymentExempt`, `canEditDailyPayoutRoster`.
+- **Used by:** `HabitComments`, `DeletePostControl`, `ForumLoader`, `FundingApplicationDetailScreen`, `FundingApplicationsScreen`, `OpenGrantApply`, `FundingPayoutsScreen`, `FundingStatusCard`, `GrantsScreen`, `HiddenNotesScreen`, `InboxLoader`, `MemberProfileScreen`, `MemberTrustActions`, `MemberVerifyScreen`, `ModerateHandbookScreen`, `ModerateScreen`, `ModeratorGroupScreen`, `setHomeScreenBadgeToRemainingUnread`, `ShopPinEdit`, `ProposalsScreen`, `PublicMessageThread`, `ShopAccountControl`, `ShopNoteEditControl`, `ShopPlaceControl`, `SignedInMenu`, `StatisticsScreen`, `useUnreadCount`, `refreshUnreadAppBadge`, `isActiveForumMessage`, `canEditDailyPayoutRoster`, `isReplyPaymentExempt`.
 
 ## Function: canEditDailyPayoutRoster
 
 - **Purpose:** True when `roleAtLeast(role, 'initiator')`: `initiator` and `founder`. `software_developer` is below `initiator` and the daily payout roster stays closed to them. `null` and `undefined` are false.
 - **Inputs:** `role` — live account role, or `null`/`undefined` when the account snapshot is absent.
 - **Returns / side effects:** Boolean. Pure, no side effects.
-- **Used by:** `GrantsScreen`, `DailyPaymentCommentScreen`, `DailyPaymentAmountsScreen`.
+- **Used by:** `useDailyRoster`, `GrantsScreen`.
 
 ## Function: effectiveRole
 
