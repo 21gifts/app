@@ -101,7 +101,7 @@ import { shortResourceUrl } from '@/lib/short-link';
 import { formatForumTime } from '@/lib/forum-time';
 import type { HeartTipView } from '@/lib/heart-tip';
 import type { MessageKey } from '@/lib/messages';
-import { authorCannotReceive, isOwnNote, verifiedChipHiddenByStaffTag } from '@/lib/roles';
+import { authorCannotReceive, effectiveRole, isOwnNote, type Role } from '@/lib/roles';
 import { useFiatPreference } from '@/components/FiatPreferenceProvider';
 import { formatBitcoin, type FiatRateDay } from '@/lib/stats-money';
 
@@ -202,12 +202,16 @@ function deadStillKey(messageId: string, photoIndex: number, version: string | u
 }
 
 /** Roles that show a clickable tag beside the author name. */
-type ForumTaggedRole = 'founder' | 'moderator' | 'initiator' | 'verified';
+type ForumTaggedRole = 'founder' | 'moderator' | 'software_developer' | 'initiator' | 'verified';
 
 /** Catalog keys for a tagged role's label and explanation. */
 const ROLE_TAG_KEYS: Record<ForumTaggedRole, { label: MessageKey; hint: MessageKey }> = {
   founder: { label: 'forum.role.founder', hint: 'forum.role.founderHint' },
   moderator: { label: 'forum.role.moderator', hint: 'forum.role.moderatorHint' },
+  software_developer: {
+    label: 'forum.role.softwareDeveloper',
+    hint: 'forum.role.softwareDeveloperHint',
+  },
   initiator: { label: 'forum.role.initiator', hint: 'forum.role.initiatorHint' },
   verified: { label: 'forum.role.verified', hint: 'forum.role.verifiedHint' },
 };
@@ -222,7 +226,7 @@ function isForumTaggedRole(role: string): role is ForumTaggedRole {
  * @param role - Live account role from the api, if present.
  * @returns Tagged role or `null`.
  */
-function forumTaggedRole(role: string): ForumTaggedRole | null {
+function forumTaggedRole(role: Role): ForumTaggedRole | null {
   return isForumTaggedRole(role) ? role : null;
 }
 
@@ -1543,9 +1547,8 @@ export function ForumBoard({
             message.hasVideo && !deadVideoIds.has(message.id)
               ? (videoUrls[message.id] ?? forumVideoSrc(message.id, message.videoContentType))
               : undefined;
-          const taggedRole = forumTaggedRole(message.role);
-          const hideVerified = verifiedChipHiddenByStaffTag(message.role, message.staffTag);
-          const roleKeys = taggedRole === null || hideVerified ? null : ROLE_TAG_KEYS[taggedRole];
+          const taggedRole = forumTaggedRole(effectiveRole(message.role, message.staffTag));
+          const roleKeys = taggedRole === null ? null : ROLE_TAG_KEYS[taggedRole];
           const roleHintOpen = openRoleMessageId === message.id;
           const expanded = expandedId === message.id;
           const cannotReceive = authorCannotReceive(message, viewerAccountId);
@@ -1673,7 +1676,7 @@ export function ForumBoard({
                         >
                           {t(roleKeys.label)}
                         </button>
-                      ) : message.via === 'nostr' && !hideVerified ? (
+                      ) : message.via === 'nostr' ? (
                         <button
                           type="button"
                           aria-expanded={roleHintOpen}
@@ -1685,11 +1688,6 @@ export function ForumBoard({
                         >
                           {t('forum.via.nostr')}
                         </button>
-                      ) : null}
-                      {message.staffTag === 'software_developer' ? (
-                        <span className="rounded-full border border-app-border-strong px-2 py-0.5 text-xs font-medium text-app-muted">
-                          {t('forum.staff.softwareDeveloper')}
-                        </span>
                       ) : null}
                     </MessageKindTags>
                     <time dateTime={message.createdAt} className="text-xs text-app-subtle">
@@ -2066,16 +2064,12 @@ export function ForumBoard({
                     {replies !== null && !repliesError ? (
                       <ul className="flex flex-col gap-3">
                         {(Array.isArray(replies) ? replies : []).map((reply) => {
-                          const replyTaggedRole = forumTaggedRole(reply.role);
-                          const replyCannotReceive = authorCannotReceive(reply, viewerAccountId);
-                          const hideReplyVerified = verifiedChipHiddenByStaffTag(
-                            reply.role,
-                            reply.staffTag,
+                          const replyTaggedRole = forumTaggedRole(
+                            effectiveRole(reply.role, reply.staffTag),
                           );
+                          const replyCannotReceive = authorCannotReceive(reply, viewerAccountId);
                           const replyRoleKeys =
-                            replyTaggedRole === null || hideReplyVerified
-                              ? null
-                              : ROLE_TAG_KEYS[replyTaggedRole];
+                            replyTaggedRole === null ? null : ROLE_TAG_KEYS[replyTaggedRole];
                           const replyHintOpen = openRoleMessageId === reply.id;
                           return (
                             <li
@@ -2135,7 +2129,7 @@ export function ForumBoard({
                                     >
                                       {t(replyRoleKeys.label)}
                                     </button>
-                                  ) : reply.via === 'nostr' && !hideReplyVerified ? (
+                                  ) : reply.via === 'nostr' ? (
                                     <button
                                       type="button"
                                       aria-expanded={replyHintOpen}
@@ -2147,11 +2141,6 @@ export function ForumBoard({
                                     >
                                       {t('forum.via.nostr')}
                                     </button>
-                                  ) : null}
-                                  {reply.staffTag === 'software_developer' ? (
-                                    <span className="rounded-full border border-app-border-strong px-2 py-0.5 text-xs font-medium text-app-muted">
-                                      {t('forum.staff.softwareDeveloper')}
-                                    </span>
                                   ) : null}
                                 </div>
                                 <time

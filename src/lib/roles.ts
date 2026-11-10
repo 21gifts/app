@@ -1,15 +1,21 @@
 /**
  * Account roles as membership order, not the rank sequence: basis, verified,
- * moderator, initiator, founder.
+ * moderator, software_developer, initiator, founder.
  *
- * Numeric ranks: basis 0, verified 1, moderator 2, initiator 2, founder 3.
- * Viewer permission checks use {@link roleAtLeast}; an equality test on the
- * viewer's role is a defect. The named exception is
- * {@link canEditDailyPayoutRoster}, which is true only for `initiator` and
- * `founder`. Do not write "moderator or initiator" or
+ * Numeric ranks: basis 0, verified 1, moderator 2, software_developer 3,
+ * initiator 4, founder 5.
+ * Every viewer permission check uses {@link roleAtLeast}; an equality test on
+ * the viewer's role is a defect. Do not write "moderator or initiator" or
  * „Moderator oder Initiator“; permission checks name the minimum rank only.
  */
-export const ROLE_ORDER = ['basis', 'verified', 'moderator', 'initiator', 'founder'] as const;
+export const ROLE_ORDER = [
+  'basis',
+  'verified',
+  'moderator',
+  'software_developer',
+  'initiator',
+  'founder',
+] as const;
 
 /** One of {@link ROLE_ORDER}. */
 export type Role = (typeof ROLE_ORDER)[number];
@@ -18,8 +24,9 @@ const ROLE_RANK: Record<Role, number> = {
   basis: 0,
   verified: 1,
   moderator: 2,
-  initiator: 2,
-  founder: 3,
+  software_developer: 3,
+  initiator: 4,
+  founder: 5,
 };
 
 /**
@@ -27,10 +34,33 @@ const ROLE_RANK: Record<Role, number> = {
  * index).
  *
  * @param role - A live account role.
- * @returns Rank from 0 through 3.
+ * @returns Rank from 0 through 5.
  */
 export function roleRank(role: Role): number {
   return ROLE_RANK[role];
+}
+
+/**
+ * Role including the older api's `staffTag` compatibility bridge.
+ *
+ * Before the api sends `role: 'software_developer'`, it sends a lower role
+ * (usually `verified`) plus `staffTag: 'software_developer'`. This promotes
+ * that member to `software_developer` for display only: role tags and the
+ * Active feed filter. Viewer permission checks deliberately use `account.role`
+ * from the api. A role already at or above `software_developer`
+ * (`initiator`, `founder`, and `software_developer` itself) is unchanged, as
+ * is a member without the compatibility label or with an unknown value.
+ *
+ * @param role - Live account role from the api.
+ * @param staffTag - Older api compatibility label when present, otherwise null
+ *   or omitted.
+ * @returns The effective role, including the compatibility bridge.
+ */
+export function effectiveRole(role: Role, staffTag?: string | null): Role {
+  if (staffTag === 'software_developer' && roleRank(role) < roleRank('software_developer')) {
+    return 'software_developer';
+  }
+  return role;
 }
 
 /**
@@ -124,28 +154,13 @@ export function isReplyPaymentExempt(
 /**
  * True when the signed-in account may edit the daily payout roster.
  *
- * False for `null` and `undefined`. True only for `initiator` and `founder`.
- * This is not {@link roleAtLeast}: initiator and moderator share rank 2, and
- * this page is closed to moderators.
+ * True for `initiator` and above (`initiator`, `founder`); the software
+ * developer ranks below `initiator` and cannot edit the roster. False for
+ * `null` and `undefined`.
  *
  * @param role - Viewer role, or missing when the account snapshot is absent.
  * @returns Whether the viewer may edit the daily payout roster.
  */
 export function canEditDailyPayoutRoster(role: Role | null | undefined): boolean {
-  return role === 'initiator' || role === 'founder';
-}
-
-/**
- * Whether the verified role chip is redundant beside a staff feature tag.
- *
- * A feature tag is shown only for someone already treated as verified, so
- * the verified chip is not shown next to it. Higher role chips stay. An
- * absent tag does not hide verified.
- *
- * @param role - Live account role.
- * @param staffTag - Staff feature tag when present, otherwise null or omitted.
- * @returns True only for role `verified` with staff tag `software_developer`.
- */
-export function verifiedChipHiddenByStaffTag(role: string, staffTag?: string | null): boolean {
-  return role === 'verified' && staffTag === 'software_developer';
+  return roleAtLeast(role, 'initiator');
 }

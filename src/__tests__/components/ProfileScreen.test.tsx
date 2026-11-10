@@ -744,7 +744,7 @@ describe('ProfileScreen', () => {
     expect(screen.getByText('Could not save. Please try again.')).toBeTruthy();
   });
 
-  it('keeps the staff label and funding mark from the account when fetchMember fails', async () => {
+  it('keeps the Software Developer pill when fetchMember fails', async () => {
     const current = useAuthStore.getState().account;
     if (current === null) {
       throw new Error('account missing');
@@ -784,13 +784,13 @@ describe('ProfileScreen', () => {
       },
     });
     renderWithLocale(<ProfileScreen />);
-    expect(screen.getByText('Software Developer')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Software Developer' })).toBeTruthy();
     expect(screen.queryByRole('button', { name: 'Verified' })).toBeNull();
     expect(
       screen.getByRole('button', { name: /Takes part in the 21.gifts funding program since/ }),
     ).toBeTruthy();
     expect(await screen.findByText('Could not load messages. Please try again.')).toBeTruthy();
-    expect(screen.getByText('Software Developer')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Software Developer' })).toBeTruthy();
     expect(
       screen.getByRole('button', { name: /Takes part in the 21.gifts funding program since/ }),
     ).toBeTruthy();
@@ -824,16 +824,23 @@ describe('ProfileScreen', () => {
     expect(screen.getAllByRole('button', { name: 'Verified' })).toHaveLength(1);
   });
 
-  it('shows Software Developer beside the name when fetchMember returns the staff tag', async () => {
+  it.each([
+    ['old api body', { role: 'verified' as const, staffTag: 'software_developer' as const }],
+    ['new api body', { role: 'software_developer' as const }],
+  ])('shows one Software Developer pill when fetchMember returns %s', async (_label, fields) => {
     vi.mocked(fetchMember).mockResolvedValue({
       ...OWN_MEMBER,
-      role: 'basis',
-      staffTag: 'software_developer',
+      ...fields,
     });
     renderWithLocale(<ProfileScreen />);
     expect(await screen.findByText('alice@21.gifts')).toBeTruthy();
-    expect(screen.getByText('Software Developer')).toBeTruthy();
+    const tag = screen.getByRole('button', { name: 'Software Developer' });
+    expect(screen.getAllByText('Software Developer')).toHaveLength(1);
     expect(screen.queryByRole('button', { name: 'Verified' })).toBeNull();
+    fireEvent.click(tag);
+    expect(
+      screen.getByText('This person builds 21.gifts and moderates the living room.'),
+    ).toBeTruthy();
   });
 
   it('shows forum.error and keeps the name editor when fetchMember rejects, and retry fetches again', async () => {

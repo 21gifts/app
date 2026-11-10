@@ -93,7 +93,7 @@ export function HabitComments(props: HabitCommentsProps): ReactElement {
     onPostComment,
     onDeleteComment,
   } = props;
-  const canDelete = account !== null && roleAtLeast(account.role, 'initiator');
+  const canDelete = account !== null && roleAtLeast(account.role, 'moderator');
   const canPay = session !== null && session !== '' && account !== null;
 
   return (
