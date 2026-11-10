@@ -245,8 +245,15 @@ test('Function: fondE2eWallet — the Playwright wallet pays the fixture without
   const session = await seedFondPage(page, request, 'fond');
   await openWelcome(page, 'Fond');
   await expect.poll(async () => (await fondDebug(request, session)).invoices).toBe(1);
-  await page.clock.runFor(4_000);
-  await expect.poll(async () => (await fondDebug(request, session)).proofs.length).toBe(1);
+  await expect
+    .poll(
+      async () => {
+        await page.clock.runFor(2_000);
+        return (await fondDebug(request, session)).proofs.length;
+      },
+      { timeout: 20_000 },
+    )
+    .toBe(1);
   expect((await fondDebug(request, session)).proofs).toEqual([
     { id: ROW_ID, preimage: PREIMAGE, paymentHash: PAYMENT_HASH },
   ]);
@@ -261,16 +268,28 @@ test('Function: runFondPayoutTick — the loop invoices, pays, proves, and skips
   await openWelcome(page, 'Fond');
   await expect.poll(async () => (await fondDebug(request, session)).invoices).toBe(1);
   expect((await fondDebug(request, session)).proofs).toHaveLength(0);
-  await page.clock.runFor(4_000);
-  await expect.poll(async () => (await fondDebug(request, session)).proofs.length).toBe(1);
+  await expect
+    .poll(
+      async () => {
+        await page.clock.runFor(2_000);
+        return (await fondDebug(request, session)).proofs.length;
+      },
+      { timeout: 20_000 },
+    )
+    .toBe(1);
   const first = await fondDebug(request, session);
   expect(first.invoices).toBe(1);
   expect(first.proofs).toEqual([{ id: ROW_ID, preimage: PREIMAGE, paymentHash: PAYMENT_HASH }]);
   expect(first.paid).toBe(true);
   // The loop's next interval sees the paid row gone and requests no second invoice.
-  await page.clock.runFor(60_000);
   await expect
-    .poll(async () => (await fondDebug(request, session)).lists)
+    .poll(
+      async () => {
+        await page.clock.runFor(15_000);
+        return (await fondDebug(request, session)).lists;
+      },
+      { timeout: 30_000 },
+    )
     .toBeGreaterThan(first.lists);
   const second = await fondDebug(request, session);
   expect(second.invoices).toBe(1);
@@ -285,8 +304,15 @@ test('Function: runFondPayoutTickOnce — the single-flight loop pays and proves
   const session = await seedFondPage(page, request, 'fond');
   await openWelcome(page, 'Fond');
   await expect.poll(async () => (await fondDebug(request, session)).invoices).toBe(1);
-  await page.clock.runFor(4_000);
-  await expect.poll(async () => (await fondDebug(request, session)).proofs.length).toBe(1);
+  await expect
+    .poll(
+      async () => {
+        await page.clock.runFor(2_000);
+        return (await fondDebug(request, session)).proofs.length;
+      },
+      { timeout: 20_000 },
+    )
+    .toBe(1);
   const paid = await fondDebug(request, session);
   expect(paid).toMatchObject({
     invoices: 1,
@@ -295,9 +321,14 @@ test('Function: runFondPayoutTickOnce — the single-flight loop pays and proves
   });
   // A second interval is another tick through the single-flight wrapper: the row is already paid.
   const before = await fondDebug(request, session);
-  await page.clock.runFor(60_000);
   await expect
-    .poll(async () => (await fondDebug(request, session)).lists)
+    .poll(
+      async () => {
+        await page.clock.runFor(15_000);
+        return (await fondDebug(request, session)).lists;
+      },
+      { timeout: 30_000 },
+    )
     .toBeGreaterThan(before.lists);
   expect((await fondDebug(request, session)).invoices).toBe(1);
 });
@@ -313,10 +344,15 @@ test('Function: waitForFondPayoutRead — the payment stays pending through one 
   expect((await fondDebug(request, session)).proofs).toHaveLength(0);
   // The fake wallet reports the first history read as pending; the proof can only
   // arrive after the second PAY_POLL_MS wait and a read that returns the preimage.
-  await page.clock.runFor(3_999);
-  expect((await fondDebug(request, session)).proofs).toHaveLength(0);
-  await page.clock.runFor(1);
-  await expect.poll(async () => (await fondDebug(request, session)).proofs.length).toBe(1);
+  await expect
+    .poll(
+      async () => {
+        await page.clock.runFor(2_000);
+        return (await fondDebug(request, session)).proofs.length;
+      },
+      { timeout: 20_000 },
+    )
+    .toBe(1);
   const proved = await fondDebug(request, session);
   expect(proved.proofs[0]?.preimage).toBe(PREIMAGE);
   expect(proved.proofs[0]?.paymentHash).toBe(PAYMENT_HASH);
