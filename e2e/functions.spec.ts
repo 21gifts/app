@@ -16343,7 +16343,7 @@ test('Function: LoansCard — a PHP and a bitcoin loan keep their own goal bars'
   await expect(card.getByRole('link', { name: loanB.text })).toBeVisible();
 });
 
-test('Function: MenuAccountHeader — a PHP payable amount shows its currency alone', async ({
+test('Function: MenuAccountHeader — a PHP payable amount shows its stored figure with bitcoin', async ({
   page,
 }) => {
   const phpDue = loanWith(loanB, {
@@ -16352,8 +16352,9 @@ test('Function: MenuAccountHeader — a PHP payable amount shows its currency al
   await openLoanUi(page, '/welcome', myLoans([phpDue]), false);
   await page.getByRole('button', { name: 'Menu' }).click();
   const menu = page.locator('#signed-in-menu');
-  await expect(menu.getByText('₱30.00', { exact: true })).toBeVisible();
-  await expect(menu.getByText("₿1'200", { exact: true })).toHaveCount(0);
+  const dueRow = menu.getByText('Loan repayment due today').locator('..');
+  await expect(dueRow.getByText("₱30.00 · ₿1'200", { exact: true })).toBeVisible();
+  await expect(dueRow).not.toContainText(/\$[\d,.'’]+/);
 });
 
 test('Function: LenderWaitingCard — the welcome screen asks a lender to open the wallet', async ({
