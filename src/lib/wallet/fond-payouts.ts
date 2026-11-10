@@ -333,9 +333,7 @@ async function payAndCheckHistory(
   try {
     const matching = await findPayments(deps, target);
     if (
-      matching.some(
-        (payment) => payment.status === 'completed' || payment.status === 'pending',
-      )
+      matching.some((payment) => payment.status === 'completed' || payment.status === 'pending')
     ) {
       return 'skipped';
     }
