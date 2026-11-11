@@ -3,6 +3,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { CreditLedger } from '@/components/CreditLedger';
 import { ForumGoalBar } from '@/components/ForumGoalBar';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
+import { ledgerClosedPartial, ledgerClosedPartialFiat } from '../../../e2e/loan-fixtures';
 
 vi.mock('next/link', () => ({
   default: ({
@@ -153,6 +154,40 @@ describe('CreditLedger', () => {
     expect(chart.querySelector('[data-testid="repayment-plan-debt"]')).toBeTruthy();
     expect(screen.getByText('Per day')).toBeTruthy();
     expect(screen.getByText('Still owed')).toBeTruthy();
+  });
+
+  it('shows partial rows, chart totals, and fiat figures from the remaining balance', async () => {
+    ledger(ledgerClosedPartial);
+    renderWithLocale(<CreditLedger messageId="partial-btc" list="page" />);
+    await screen.findByText('Paid back');
+    expect(document.body.textContent).toContain('₿400');
+    expect(document.body.textContent).not.toContain('₿500');
+    expect(screen.getByRole('img').textContent).toContain('₿400');
+    cleanup();
+
+    ledger({
+      ...ledgerClosedPartialFiat,
+      repayments: [
+        ...ledgerClosedPartialFiat.repayments,
+        {
+          ...ledgerClosedPartialFiat.repayments[0]!,
+          dayIndex: 1,
+          dueOn: '2026-10-08',
+          amount: '1.00',
+          sats: 40,
+          paidSats: 40,
+          paidAmount: '1.00',
+          dueSats: null,
+          status: 'paid' as const,
+        },
+      ],
+    });
+    renderWithLocale(<CreditLedger messageId="partial-fiat" list="page" />);
+    await screen.findByText('Paid back');
+    expect(screen.getAllByText('₱10.00').length).toBeGreaterThan(0);
+    expect(screen.queryByText('₱12.50')).toBeNull();
+    expect(screen.getByText('₱0.00')).toBeTruthy();
+    expect(screen.getByRole('img').textContent).toContain('₱10.00');
   });
 
   it('marks a due line that waits for the giver wallet in muted type', async () => {

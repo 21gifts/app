@@ -4,11 +4,24 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { LoanPayMore, type LoanPayMoreProps } from '@/components/LoanPayMore';
 import type { LoanRepayActionError } from '@/hooks/useLoanRepay';
 import type { MyLoan } from '@/lib/api';
+import { formatBitcoin, type FiatRateDay } from '@/lib/stats-money';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
 
 vi.mock('@/components/WalletSetupNote', () => ({
   WalletSetupNote: () => <p role="alert">Wallet setup failed</p>,
 }));
+
+const RATE_DAY: FiatRateDay = {
+  sats: 100_000_000,
+  usd: '100000.00',
+  chf: '80000.00',
+  eur: '90000.00',
+  php: '5600000.00',
+};
+
+function testSats(sats: number): string {
+  return formatBitcoin(sats, 'ch');
+}
 
 function loan(overrides: Partial<MyLoan> = {}): MyLoan {
   return {
@@ -71,10 +84,11 @@ function show(
       missingSats={null}
       showShortfall
       sundayRest={false}
+      rateDay={RATE_DAY}
       showWalletStatus
       topUpOpen={false}
       username="ada"
-      formatSats={(sats) => `₿${sats}`}
+      formatSats={testSats}
       onOpenTopUp={vi.fn()}
       onPay={onPay}
       onCloseCollecting={onCloseCollecting}
@@ -99,10 +113,11 @@ function payMoreState(
       missingSats={null}
       showShortfall
       sundayRest={false}
+      rateDay={RATE_DAY}
       showWalletStatus
       topUpOpen={false}
       username="ada"
-      formatSats={(sats) => `₿${sats}`}
+      formatSats={testSats}
       onOpenTopUp={vi.fn()}
       onPay={onPay}
       onCloseCollecting={onCloseCollecting}
@@ -114,16 +129,62 @@ function payMoreState(
 afterEach(cleanup);
 
 describe('LoanPayMore', () => {
+  const switchToFiat = (code: string): void => {
+    fireEvent.click(screen.getByRole('button', { name: code }));
+  };
+
   it('fills Max exactly and pays a valid BTC amount', () => {
     const { onPay } = show();
     const input = screen.getByLabelText('Amount (₿)') as HTMLInputElement;
     expect(
       (screen.getByRole('button', { name: 'Pay this amount' }) as HTMLButtonElement).disabled,
     ).toBe(true);
+    window.history.replaceState({}, '', '/loans/repay');
     fireEvent.click(screen.getByRole('button', { name: 'Max' }));
     expect(input.value).toBe('7500');
     fireEvent.click(screen.getByRole('button', { name: 'Pay this amount' }));
     expect(onPay).toHaveBeenCalledWith(expect.objectContaining({ messageId: 'loan-1' }), '7500');
+  });
+
+  it('uses AmountEntry with a unit switch, live counter, and exact BTC api amount', () => {
+    const { onPay } = show();
+    fireEvent.change(screen.getByLabelText('Amount (₿)'), { target: { value: '1000' } });
+    expect(screen.getByText('$1.00')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'USD' }));
+    expect((screen.getByLabelText('Amount (USD)') as HTMLInputElement).value).toBe('1.00');
+    expect(screen.getByText("₿1'000")).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Max' }));
+    expect((screen.getByLabelText('Amount (USD)') as HTMLInputElement).value).toBe('7.50');
+    fireEvent.click(screen.getByRole('button', { name: '₿' }));
+    expect((screen.getByLabelText('Amount (₿)') as HTMLInputElement).value).toBe('7500');
+    fireEvent.click(screen.getByRole('button', { name: 'Pay this amount' }));
+    expect(onPay).toHaveBeenCalledWith(expect.anything(), '7500');
+  });
+
+  it('shows preferred fiat beside BTC in max validation and collecting confirmation', () => {
+    const collecting = loan({ fundedAt: null, closedAt: null, maxSats: 4_000 });
+    const onPay = vi.fn();
+    const onCloseCollecting = vi.fn();
+    renderWithLocale(
+      payMoreState(collecting, onPay, onCloseCollecting, {
+        formatSats: (sats) => {
+          if (sats === 4_000) {
+            return "₿4'000 · $4.00";
+          }
+          if (sats === 1_000) {
+            return "₿1'000 · $1.00";
+          }
+          return `₿${sats}`;
+        },
+      }),
+    );
+    fireEvent.change(screen.getByLabelText('Amount (₿)'), { target: { value: '4001' } });
+    expect(screen.getByText(/Enter at most ₿4'000 · \$4.00/)).toBeTruthy();
+    fireEvent.change(screen.getByLabelText('Amount (₿)'), { target: { value: '1000' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Pay this amount' }));
+    expect(
+      screen.getByRole('button', { name: "Pay ₿1'000 · $1.00 and end collecting" }),
+    ).toBeTruthy();
   });
 
   it('validates while typing and never submits above the maximum', () => {
@@ -152,6 +213,7 @@ describe('LoanPayMore', () => {
         maxAmount: '480.28',
       }),
     );
+    switchToFiat('PHP');
     fireEvent.change(screen.getByLabelText('Amount (PHP)'), { target: { value: 'bad' } });
     expect(
       screen.getByText('Enter an amount greater than zero with at most two decimals.'),
@@ -166,6 +228,7 @@ describe('LoanPayMore', () => {
       maxAmount: '480.28',
     });
     const { onPay } = show(php);
+    switchToFiat('PHP');
     const input = screen.getByLabelText('Amount (PHP)') as HTMLInputElement;
     fireEvent.change(input, { target: { value: '480.29' } });
     expect(screen.getByText('Enter at most ₱480.28.')).toBeTruthy();
@@ -181,6 +244,76 @@ describe('LoanPayMore', () => {
     expect(
       (screen.getByRole('button', { name: 'Pay this amount' }) as HTMLButtonElement).disabled,
     ).toBe(true);
+    window.history.replaceState({}, '', '/loans/repay');
+  });
+
+  it('disables a fiat-unit maximum when the loan has no maximum amount', () => {
+    show(
+      loan({
+        goalCurrency: 'PHP',
+        goalAmount: '480.28',
+        maxSats: 9_283,
+        maxAmount: null,
+      }),
+    );
+    switchToFiat('PHP');
+    expect(screen.getByText(/No PHP exchange rate is available now/)).toBeTruthy();
+    expect((screen.getByRole('button', { name: 'Max' }) as HTMLButtonElement).disabled).toBe(true);
+  });
+
+  it('checks a BTC draft for a fiat loan against its sat maximum', () => {
+    show(
+      loan({
+        goalCurrency: 'PHP',
+        goalAmount: '480.28',
+        maxSats: 500,
+        maxAmount: '480.28',
+      }),
+    );
+    fireEvent.change(screen.getByLabelText('Amount (₿)'), { target: { value: '1000' } });
+    expect(screen.getByText('Enter at most ₱480.28.')).toBeTruthy();
+    expect(
+      (screen.getByRole('button', { name: 'Pay this amount' }) as HTMLButtonElement).disabled,
+    ).toBe(true);
+  });
+
+  it('explains missing conversion rates for fiat and BTC drafts', () => {
+    const php = loan({
+      goalCurrency: 'PHP',
+      goalAmount: '480.28',
+      maxSats: 9_283,
+      maxAmount: '480.28',
+    });
+    const fiat = renderWithLocale(payMoreState(php, vi.fn(), vi.fn()));
+    switchToFiat('PHP');
+    fireEvent.change(screen.getByLabelText('Amount (PHP)'), { target: { value: '1.00' } });
+    fiat.rerender(payMoreState(php, vi.fn(), vi.fn(), { rateDay: null }));
+    expect(screen.getByText(/No PHP exchange rate is available now/)).toBeTruthy();
+    cleanup();
+
+    renderWithLocale(payMoreState(php, vi.fn(), vi.fn(), { rateDay: null }));
+    fireEvent.change(screen.getByLabelText('Amount (₿)'), { target: { value: '1000' } });
+    expect(screen.getByText(/No PHP exchange rate is available now/)).toBeTruthy();
+  });
+
+  it('submits a fiat loan Max in the loan currency while AmountEntry shows BTC', () => {
+    const php = loan({
+      goalCurrency: 'PHP',
+      goalAmount: '480.28',
+      maxSats: 9_283,
+      maxAmount: '480.28',
+    });
+    const { onPay } = show(php);
+    fireEvent.click(screen.getByRole('button', { name: 'Max' }));
+    expect((screen.getByLabelText('Amount (₿)') as HTMLInputElement).value).toBe('9283');
+    fireEvent.click(screen.getByRole('button', { name: 'Pay this amount' }));
+    expect(onPay).toHaveBeenCalledWith(expect.anything(), '480.28');
+  });
+
+  it('uses maximum-unavailable copy instead of an exchange-rate error for BTC', () => {
+    show(loan({ maxSats: null }));
+    expect(screen.getByText(/No BTC repayment maximum is available now/)).toBeTruthy();
+    expect(screen.queryByText(/No BTC exchange rate/)).toBeNull();
   });
 
   it('confirms that a first payment ends collecting when closedAt is omitted', () => {
@@ -239,7 +372,12 @@ describe('LoanPayMore', () => {
       <LoanPayMore
         loan={item}
         phase="failed"
-        actionError={{ code: 'amount_too_high', maxSats: 6_000, maxAmount: null }}
+        actionError={{
+          messageId: 'loan-1',
+          code: 'amount_too_high',
+          maxSats: 6_000,
+          maxAmount: null,
+        }}
         errorKey="forum.payErrorRequest"
         balanceSats={21_000}
         missingSats={null}
@@ -248,7 +386,7 @@ describe('LoanPayMore', () => {
         showWalletStatus
         topUpOpen={false}
         username="ada"
-        formatSats={(sats) => `₿${sats}`}
+        formatSats={testSats}
         onOpenTopUp={vi.fn()}
         onPay={view.onPay}
         onCloseCollecting={view.onCloseCollecting}
@@ -267,7 +405,12 @@ describe('LoanPayMore', () => {
       <LoanPayMore
         loan={item}
         phase="failed"
-        actionError={{ code: 'payment_open', maxSats: null, maxAmount: null }}
+        actionError={{
+          messageId: 'loan-1',
+          code: 'payment_open',
+          maxSats: null,
+          maxAmount: null,
+        }}
         errorKey="forum.payErrorRequest"
         balanceSats={21_000}
         missingSats={null}
@@ -276,7 +419,7 @@ describe('LoanPayMore', () => {
         showWalletStatus
         topUpOpen={false}
         username="ada"
-        formatSats={(sats) => `₿${sats}`}
+        formatSats={testSats}
         onOpenTopUp={vi.fn()}
         onPay={opened.onPay}
         onCloseCollecting={opened.onCloseCollecting}
@@ -287,6 +430,39 @@ describe('LoanPayMore', () => {
     );
   });
 
+  it("does not apply another loan's action error", () => {
+    const item = loan();
+    const view = show(item);
+    fireEvent.change(screen.getByLabelText('Amount (₿)'), { target: { value: '7000' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Pay this amount' }));
+    view.rerender(
+      payMoreState(item, view.onPay, view.onCloseCollecting, {
+        phase: 'failed',
+        activeAction: { kind: 'prepay', messageId: 'loan-2' },
+        actionError: {
+          messageId: 'loan-2',
+          code: 'amount_too_high',
+          maxSats: 6_000,
+          maxAmount: null,
+        },
+      }),
+    );
+    expect((screen.getByLabelText('Amount (₿)') as HTMLInputElement).value).toBe('7000');
+    expect(screen.queryByText(/maximum changed/)).toBeNull();
+  });
+
+  it('ignores its pay-more visual pin outside a Playwright build', () => {
+    window.history.replaceState({}, '', '/loans/repay?visual=repay-pay-more-sending');
+    renderWithLocale(
+      payMoreState(loan(), vi.fn(), vi.fn(), { phase: 'sending', activeAction: null }),
+    );
+    expect(screen.queryByText('Paying more…')).toBeNull();
+    expect(
+      (screen.getByRole('button', { name: 'Pay this amount' }) as HTMLButtonElement).disabled,
+    ).toBe(true);
+    window.history.replaceState({}, '', '/loans/repay');
+  });
+
   it('applies a fiat server maximum and handles a response without a current maximum', () => {
     const php = loan({
       goalCurrency: 'PHP',
@@ -295,12 +471,18 @@ describe('LoanPayMore', () => {
       maxAmount: '480.28',
     });
     const fiat = show(php);
+    switchToFiat('PHP');
     fireEvent.change(screen.getByLabelText('Amount (PHP)'), { target: { value: '100.00' } });
     fireEvent.click(screen.getByRole('button', { name: 'Pay this amount' }));
     fiat.rerender(
       payMoreState(php, fiat.onPay, fiat.onCloseCollecting, {
         phase: 'failed',
-        actionError: { code: 'too_many_shares', maxSats: 2_000, maxAmount: '90.50' },
+        actionError: {
+          messageId: 'loan-1',
+          code: 'too_many_shares',
+          maxSats: 2_000,
+          maxAmount: '90.50',
+        },
       }),
     );
     expect((screen.getByLabelText('Amount (PHP)') as HTMLInputElement).value).toBe('90.50');
@@ -313,11 +495,17 @@ describe('LoanPayMore', () => {
     btc.rerender(
       payMoreState(loan(), btc.onPay, btc.onCloseCollecting, {
         phase: 'failed',
-        actionError: { code: 'amount_too_high', maxSats: null, maxAmount: null },
+        actionError: {
+          messageId: 'loan-1',
+          code: 'amount_too_high',
+          maxSats: null,
+          maxAmount: null,
+        },
       }),
     );
+    expect(screen.getAllByRole('alert')).toHaveLength(1);
     expect(screen.getByRole('alert').textContent).toBe(
-      'Could not start this repayment. Please try again.',
+      'No BTC repayment maximum is available now, so paying more is disabled.',
     );
   });
 
@@ -329,12 +517,18 @@ describe('LoanPayMore', () => {
       maxAmount: '480.28',
     });
     const view = show(php);
+    switchToFiat('PHP');
     fireEvent.change(screen.getByLabelText('Amount (PHP)'), { target: { value: '100.00' } });
     fireEvent.click(screen.getByRole('button', { name: 'Pay this amount' }));
     view.rerender(
       payMoreState(php, view.onPay, view.onCloseCollecting, {
         phase: 'failed',
-        actionError: { code: 'amount_too_high', maxSats: null, maxAmount: '90.50' },
+        actionError: {
+          messageId: 'loan-1',
+          code: 'amount_too_high',
+          maxSats: null,
+          maxAmount: '90.50',
+        },
       }),
     );
 
@@ -356,12 +550,18 @@ describe('LoanPayMore', () => {
       maxAmount: '480.28',
     });
     const view = show(php);
+    switchToFiat('PHP');
     fireEvent.change(screen.getByLabelText('Amount (PHP)'), { target: { value: '100.00' } });
     fireEvent.click(screen.getByRole('button', { name: 'Pay this amount' }));
     view.rerender(
       payMoreState(php, view.onPay, view.onCloseCollecting, {
         phase: 'failed',
-        actionError: { code: 'too_many_shares', maxSats: 2_000, maxAmount: '90.50' },
+        actionError: {
+          messageId: 'loan-1',
+          code: 'too_many_shares',
+          maxSats: 2_000,
+          maxAmount: '90.50',
+        },
       }),
     );
     expect((screen.getByLabelText('Amount (PHP)') as HTMLInputElement).value).toBe('90.50');
@@ -371,7 +571,12 @@ describe('LoanPayMore', () => {
     view.rerender(
       payMoreState(php, view.onPay, view.onCloseCollecting, {
         phase: 'failed',
-        actionError: { code: 'amount_too_high', maxSats: null, maxAmount: null },
+        actionError: {
+          messageId: 'loan-1',
+          code: 'amount_too_high',
+          maxSats: null,
+          maxAmount: null,
+        },
       }),
     );
     expect(screen.getByText(/No PHP exchange rate is available now/)).toBeTruthy();
@@ -387,7 +592,10 @@ describe('LoanPayMore', () => {
     fireEvent.change(screen.getByLabelText('Amount (₿)'), { target: { value: '1000' } });
     fireEvent.click(screen.getByRole('button', { name: 'Pay this amount' }));
     completed.rerender(
-      payMoreState(item, completed.onPay, completed.onCloseCollecting, { phase: 'repaid' }),
+      payMoreState(item, completed.onPay, completed.onCloseCollecting, {
+        phase: 'repaid',
+        activeAction: { kind: 'prepay', messageId: 'loan-1' },
+      }),
     );
     expect((screen.getByLabelText('Amount (₿)') as HTMLInputElement).value).toBe('');
     cleanup();
@@ -398,6 +606,7 @@ describe('LoanPayMore', () => {
     failed.rerender(
       payMoreState(item, failed.onPay, failed.onCloseCollecting, {
         phase: 'failed',
+        activeAction: { kind: 'prepay', messageId: 'loan-1' },
         errorKey: 'forum.payErrorRequest',
       }),
     );
@@ -422,7 +631,7 @@ describe('LoanPayMore', () => {
         showWalletStatus
         topUpOpen={false}
         username="ada"
-        formatSats={(sats) => `₿${sats}`}
+        formatSats={testSats}
         onOpenTopUp={openTopUp}
         onPay={onPay}
         onCloseCollecting={onCloseCollecting}
@@ -434,6 +643,7 @@ describe('LoanPayMore', () => {
       <LoanPayMore
         loan={item}
         phase="idle"
+        activeAction={{ kind: 'prepay', messageId: 'loan-1' }}
         actionError={null}
         errorKey={null}
         balanceSats={500}
@@ -443,7 +653,7 @@ describe('LoanPayMore', () => {
         showWalletStatus
         topUpOpen={false}
         username="ada"
-        formatSats={(sats) => `₿${sats}`}
+        formatSats={testSats}
         onOpenTopUp={openTopUp}
         onPay={onPay}
         onCloseCollecting={onCloseCollecting}
@@ -456,6 +666,7 @@ describe('LoanPayMore', () => {
       <LoanPayMore
         loan={item}
         phase="idle"
+        activeAction={{ kind: 'prepay', messageId: 'loan-1' }}
         actionError={null}
         errorKey={null}
         balanceSats={500}
@@ -465,7 +676,7 @@ describe('LoanPayMore', () => {
         showWalletStatus
         topUpOpen
         username={null}
-        formatSats={(sats) => `₿${sats}`}
+        formatSats={testSats}
         onOpenTopUp={openTopUp}
         onPay={onPay}
         onCloseCollecting={onCloseCollecting}
@@ -484,11 +695,19 @@ describe('LoanPayMore', () => {
       const onPay = vi.fn();
       const onCloseCollecting = vi.fn();
       const view = renderWithLocale(
-        payMoreState(item, onPay, onCloseCollecting, { phase: 'sending' }),
+        payMoreState(item, onPay, onCloseCollecting, {
+          phase: 'sending',
+          activeAction: { kind: 'prepay', messageId: 'loan-1' },
+        }),
       );
       expect(screen.getByRole('status').textContent).toBe('Paying more…');
 
-      view.rerender(payMoreState(item, onPay, onCloseCollecting, { phase: 'unconfirmed' }));
+      view.rerender(
+        payMoreState(item, onPay, onCloseCollecting, {
+          phase: 'unconfirmed',
+          activeAction: { kind: 'prepay', messageId: 'loan-1' },
+        }),
+      );
       expect(screen.getByRole('status').textContent).toContain('not confirmed');
 
       view.rerender(
@@ -496,6 +715,7 @@ describe('LoanPayMore', () => {
           balanceSats: null,
           missingSats: 500,
           topUpOpen: true,
+          activeAction: { kind: 'prepay', messageId: 'loan-1' },
         }),
       );
       expect(screen.getByText('Your wallet has –. Still missing ₿500.')).toBeTruthy();
@@ -521,6 +741,7 @@ describe('LoanPayMore', () => {
           maxAmount: '480.28',
         })}
         phase="waiting"
+        activeAction={{ kind: 'prepay', messageId: 'loan-1' }}
         actionError={null}
         errorKey={null}
         prepayWaiting={[
@@ -548,7 +769,7 @@ describe('LoanPayMore', () => {
         showWalletStatus
         topUpOpen={false}
         username="ada"
-        formatSats={(sats) => `₿${sats}`}
+        formatSats={(sats) => (sats === 200 ? '₿200 · $0.20' : `₿${sats}`)}
         onOpenTopUp={vi.fn()}
         onPay={vi.fn()}
         onCloseCollecting={vi.fn()}
@@ -556,7 +777,7 @@ describe('LoanPayMore', () => {
     );
     expect(screen.getByText('Waiting for Carla to set up their wallet')).toBeTruthy();
     expect(screen.getByText('Waiting for Diego to set up their wallet')).toBeTruthy();
-    expect(screen.getByText('₿200')).toBeTruthy();
+    expect(screen.getByText('₿200 · $0.20')).toBeTruthy();
     expect(screen.getByText('₱2.50')).toBeTruthy();
   });
 
@@ -566,14 +787,22 @@ describe('LoanPayMore', () => {
     fireEvent.click(screen.getByRole('button', { name: 'End collecting' }));
     fireEvent.click(screen.getByRole('button', { name: 'End collecting permanently' }));
     view.rerender(
-      payMoreState(collecting, view.onPay, view.onCloseCollecting, { phase: 'sending' }),
+      payMoreState(collecting, view.onPay, view.onCloseCollecting, {
+        phase: 'sending',
+        activeAction: { kind: 'close', messageId: 'loan-1' },
+      }),
     );
     expect(screen.getByRole('status').textContent).toBe('Ending collecting…');
 
     view.rerender(
       payMoreState(collecting, view.onPay, view.onCloseCollecting, {
         phase: 'failed',
-        actionError: { code: 'request_failed', maxSats: null, maxAmount: null },
+        actionError: {
+          messageId: 'loan-1',
+          code: 'request_failed',
+          maxSats: null,
+          maxAmount: null,
+        },
       }),
     );
     expect(screen.getByRole('alert')).toBeTruthy();
@@ -643,6 +872,16 @@ describe('LoanPayMore', () => {
       <LoanPayMore {...common} phase="connecting" sundayRest={false} showWalletStatus />,
     );
     expect(screen.getByRole('status').textContent).toBe('Checking your wallet…');
+    view.rerender(
+      <LoanPayMore
+        {...common}
+        phase="unavailable"
+        activeAction={{ kind: 'prepay', messageId: 'loan-2' }}
+        sundayRest={false}
+        showWalletStatus
+      />,
+    );
+    expect(screen.queryByText(/wallet is not available here/)).toBeNull();
     view.rerender(
       <LoanPayMore {...common} phase="setupFailed" sundayRest={false} showWalletStatus />,
     );

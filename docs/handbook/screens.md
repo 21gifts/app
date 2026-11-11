@@ -1223,9 +1223,9 @@ The same when the background wallet setup gave up (pin `?visual=balance-setup-fa
 ## Screen: /loans/repay
 
 - **URL:** `/loans/repay` — the signed-in member's one repayment screen for every loan still collecting or being repaid. It uses the ordinary top-left history arrow and **Menu**; there is no second Back control.
-- **What the user sees:** The due box comes first and keeps all existing due, recipient, wallet, top-up, waiting, Sunday, success, and error states. Beneath it, **Your loan** or **Your loans** lists the plan, progress and **Repayment list**. Every loan then shows **Pay more** with an amount field in ₿ or its fiat, exact **Max**, and **Pay this amount**. Validation sits directly under the field while typing; malformed, zero, over-maximum, and rate-less amounts are disabled. A collecting loan says its first payment ends collecting, confirms that permanent consequence before paying, and also offers a final **End collecting** dialog; both dialogs say a new loan is needed to collect more. A closed loan still shows **Pay more** but no collecting controls. Maximum api refusals replace the draft with the returned limit; open earlier payments, Sunday rest, throttling, unavailable service, missing requirements, and request failures have clear inline messages. The empty state says **You have no loan to repay.** A failed read says **Could not load your loans.** with **Try again**.
+- **What the user sees:** The due box comes first and keeps all existing due, recipient, wallet, top-up, waiting, Sunday, success, and error states. Beneath it, **Your loan** or **Your loans** lists the plan, progress and **Repayment list**. Every loan then shows **Pay more** with the shared `AmountEntry`: ₿ / fiat unit switch, live other-unit counter, exact **Max**, and **Pay this amount**. BTC figures in validation, server-limit, confirmation, waiting, and shortfall copy carry the preferred-fiat spot whenever it is available. Validation sits directly under the field while typing; malformed, zero, over-maximum, and rate-less amounts are disabled. A collecting loan says its first payment ends collecting, confirms that permanent consequence before paying, and also offers a final **End collecting** dialog; both dialogs say a new loan is needed to collect more. A closed loan still shows **Pay more** but no collecting controls. Maximum api refusals replace the draft with the returned limit; open earlier payments, Sunday rest, throttling, unavailable service, missing requirements, and request failures have clear inline messages. A BTC loan without an api maximum says that its repayment maximum is unavailable, not that a BTC exchange rate is missing. The empty state says **You have no loan to repay.** A failed read says **Could not load your loans.** with **Try again**.
 - **Actions:** Open or close **Who gets paid**; tap **Send** once to pay all currently payable shares; when short, open **Top up your wallet**, copy the own address, or send now exactly the shares the link names. Per loan, enter a free amount, choose exact **Max**, and use **Pay this amount**; a collecting loan confirms that its first payment ends collecting and independently confirms **End collecting** as final. Open **Repayment list**, retry a failed load, use the single top-left arrow, or open **Menu**.
-- **Correctness details:** A fiat loan needs both `maxAmount` and a non-null `maxSats` rate signal before Max or payment is enabled. If a collecting-loan pay dialog becomes invalid while open, its pay action disables and never changes into **End collecting permanently**. Waiting recipients from a free payment appear only under the loan that made that request.
+- **Correctness details:** A fiat loan needs both `maxAmount` and a non-null `maxSats` rate signal before Max or payment is enabled. The body sent to prepay remains in the loan currency: whole sats for BTC, the loan-currency decimal for fiat; validation compares bigint sats/cents and Max preserves the api's exact maximum across the shown unit. If a collecting-loan pay dialog becomes invalid while open, its pay action disables and never changes into **End collecting permanently**. The hook's active kind and message id keep prepay/close sending, failure, waiting, and shortfall inside only the matching `LoanPayMore`; the due box uses those states only for a due run. Waiting recipients and typed action errors likewise apply only to their matching loan. A final prepayment remembers the loan list before starting, so an empty refreshed list renders repayment success rather than the ordinary no-loan state.
 - **Calls:** `LoanRepayPage`, `LoanRepayScreen`, `LoanPayMore`, `useMyLoans`, `useLoanRepay`, `useSpotRate`, `getRepayment`, `postRepaymentDue`, `prepayLoan`, `closeLoan`, `checkLoanAmount`, `loanMaxInput`, `isCollecting`, `payFromWallet`, `WalletOwnAddress`, `WalletSetupNote`, `GET /me/loans`, `GET /messages/:id/repayment`, and the `due`, `prepay`, and `close` repayment POST routes.
 
 ### Variant: default
@@ -1554,61 +1554,73 @@ The same state with **Who gets paid** open. The list shows Bruno **₿500 · $0.
 
 ### Variant: collecting
 
-With Loan A still collecting, there is no due box. **Your loan** shows the sewing-machine text, **₿30'000 · $30.00 · 30 days · ₿1'000 · $1.00 per day**, **Not fully funded yet.**, and **Repayment list**; this screen does not show a funding bar. It also shows **Pay more**, the ₿ field, **Max**, the notice that the first payment ends collecting, **Pay this amount**, and **End collecting**.
+With Loan A still collecting, there is no due box. **Your loan** shows the sewing-machine text, **₿30'000 · $30.00 · 30 days · ₿1'000 · $1.00 per day**, **Not fully funded yet.**, and **Repayment list**; this screen does not show a funding bar. It also shows **Pay more**, the standard ₿ / USD amount switch and live counter, **Max**, the notice that the first payment ends collecting, **Pay this amount**, and **End collecting**.
 
 ![21.gifts loans repay collecting](images/loans-repay-collecting.png)
 
 ### Variant: pay-more-max
 
-Loan A after **Max**: the ₿ field contains the exact current maximum **19000** and **Pay this amount** is enabled. The ordinary due-payment controls remain unchanged above it.
+Loan A after **Max**: the standard AmountEntry shows the ₿ / USD switch, the ₿ field contains the exact current maximum **19000**, the live counter shows **$19.00**, and **Pay this amount** is enabled. The ordinary due-payment controls remain unchanged above it.
 
 ![21.gifts loans repay pay more maximum](images/loans-repay-pay-more-max.png)
 
+### Variant: pay-more-fiat
+
+Loan A after USD is selected in AmountEntry and **5.00** is typed. The field label is **Amount (USD)**, the switch keeps USD selected, and the live counter directly under the field shows **₿5'000**. Max and **Pay this amount** remain beside and below the shared control.
+
+![21.gifts loans repay pay more fiat](images/loans-repay-pay-more-fiat.png)
+
 ### Variant: pay-more-above-max
 
-Loan A while **19001** is entered: the field is invalid, **Enter at most ₿19'000.** sits directly below it, and **Pay this amount** is disabled.
+Loan A while **19001** is entered: the field is invalid, its live counter remains under the AmountEntry, **Enter at most ₿19'000 · $19.00.** sits directly below it, and **Pay this amount** is disabled.
 
 ![21.gifts loans repay pay more above maximum](images/loans-repay-pay-more-above-max.png)
 
 ### Variant: pay-more-no-rate
 
-A PHP loan without a current conversion rate. **Pay more** explains **No PHP exchange rate is available now, so paying more is disabled.** Both **Max** and **Pay this amount** are disabled.
+A PHP loan without a current conversion rate. The standard AmountEntry keeps ₿ selected, disables PHP in its switch, and shows **No exchange rate yet**. **Pay more** also explains **No PHP exchange rate is available now, so paying more is disabled.** Both **Max** and **Pay this amount** are disabled.
 
 ![21.gifts loans repay pay more without rate](images/loans-repay-pay-more-no-rate.png)
 
+### Variant: pay-more-no-maximum
+
+A BTC loan without a currently available repayment maximum. The standard AmountEntry keeps its ₿ / USD switch and **Pay more** explains **No BTC repayment maximum is available now, so paying more is disabled.** It does not report a missing exchange rate. Both **Max** and **Pay this amount** are disabled.
+
+![21.gifts loans repay pay more without maximum](images/loans-repay-pay-more-no-maximum.png)
+
 ### Variant: pay-more-server-max
 
-The api lowered the available maximum to **₿6'000**. The field is reset to **6000** and the red line explains that the amount was adjusted and must be reviewed before paying again.
+The api lowered the available maximum to **₿6'000 · $6.00**. The standard AmountEntry is reset to **6000**, keeps its unit switch and live **$6.00** counter, and the red line explains that the amount was adjusted and must be reviewed before paying again.
 
 ![21.gifts loans repay adjusted server maximum](images/loans-repay-pay-more-server-max.png)
 
 ### Variant: pay-more-error
 
-The free-payment request was refused because an earlier payment is still open. The red api error is visible while the amount field and controls remain available for a later retry.
+The free-payment request was refused because an earlier payment is still open. The red api error is visible while AmountEntry's unit switch, live counter, field, and controls remain available for a later retry.
 
 ![21.gifts loans repay pay more api error](images/loans-repay-pay-more-error.png)
 
 ### Variant: pay-more-sending
 
-The free payment is being sent through the wallet. **Paying more…** and its spinner replace the pay button; the amount and Max controls are disabled during the send.
+The free payment is being sent through the wallet. **Paying more…** and its spinner replace the pay button; AmountEntry's field and unit switch plus Max are disabled during the send, while its live counter remains visible.
 
 ![21.gifts loans repay pay more sending](images/loans-repay-pay-more-sending.png)
 
 ### Variant: pay-more-waiting
 
-The free payment is waiting after its payable bills were sent. A muted **Waiting for Carla to set up their wallet** line keeps the returned waiting share and **₿200** visible beside the active wallet status.
+The free payment is waiting after its payable bills were sent. A muted **Waiting for Carla to set up their wallet** line keeps the returned waiting share and **₿200 · $0.20** visible beside the matching loan's active wallet status; the due box keeps its own state.
 
 ![21.gifts loans repay pay more waiting recipient](images/loans-repay-pay-more-waiting.png)
 
 ### Variant: pay-more-shortfall
 
-The wallet is **₿500** short for the free payment and the top-up block is already open. It shows the balance, missing amount, Ada's address, exactly one Open CryptoPay QR, and **Waiting for your top-up…**.
+The wallet is **₿500 · $0.50** short for the free payment and the matching Pay-more top-up block is already open. It shows the balance and missing amount with preferred fiat, Ada's address, exactly one Open CryptoPay QR, and **Waiting for your top-up…**; the due box keeps its own Send state.
 
 ![21.gifts loans repay pay more shortfall](images/loans-repay-pay-more-shortfall.png)
 
 ### Variant: collecting-pay-confirm
 
-A still-collecting loan after Max and **Pay this amount**: the modal **Pay and end collecting?** explains that this first payment ends collecting permanently and that more collecting needs a new loan. The actions are **Pay ₿18'000 and end collecting**, **Cancel**, and icon-only **Close**.
+A still-collecting loan after Max and **Pay this amount**: behind the modal, AmountEntry keeps its unit switch and live counter. The modal **Pay and end collecting?** explains that this first payment ends collecting permanently and that more collecting needs a new loan. The actions are **Pay ₿18'000 · $18.00 and end collecting**, **Cancel**, and icon-only **Close**.
 
 ![21.gifts loans repay first payment confirmation](images/loans-repay-collecting-pay-confirm.png)
 

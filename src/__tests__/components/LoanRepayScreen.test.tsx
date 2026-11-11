@@ -123,6 +123,7 @@ function ledger(overrides: Partial<RepaymentLedger> = {}): RepaymentLedger {
 function repay(overrides: Partial<LoanRepayResult> = {}): LoanRepayResult {
   return {
     phase: 'idle',
+    activeAction: { kind: 'due', messageId: null },
     balanceSats: 21_000,
     sentSats: 0,
     sentAmounts: [],
@@ -1335,6 +1336,17 @@ describe('LoanRepayScreen', () => {
     expect(screen.getByRole('status').textContent).toContain(text);
   });
 
+  it.each(['unconfirmed', 'failed'] as const)(
+    'keeps due controls idle during a %s pay-more run',
+    (phase) => {
+      show(
+        { sundayRest: false, loans: [loan()] },
+        repay({ phase, activeAction: { kind: 'prepay', messageId: 'loan-1' } }),
+      );
+      expect(screen.getByRole('button', { name: "Send ₿1'000 · $1.00" })).toBeTruthy();
+    },
+  );
+
   it('names the defined peso amount while that loan payment is sending', () => {
     const phpLoan = loan({
       goalCurrency: 'PHP',
@@ -1778,6 +1790,38 @@ describe('LoanRepayScreen', () => {
     expect(screen.getByText('That was your last payment')).toBeTruthy();
   });
 
+  it('keeps a final prepayment success when the refreshed loan list is empty', () => {
+    const finalLoan = loan({
+      maxSats: 500,
+      due: { ...loan().due, payableSats: 0, payablePeople: 0 },
+    });
+    const data = { sundayRest: false, loans: [finalLoan] };
+    const reload = vi.fn().mockResolvedValue(data);
+    const state = repay({ activeAction: null });
+    vi.mocked(useMyLoans).mockReturnValue({ loans: data, reload });
+    vi.mocked(useLoanRepay).mockReturnValue(state);
+    const view = renderWithLocale(<LoanRepayScreen />);
+    fireEvent.change(screen.getByLabelText('Amount (₿)'), { target: { value: '500' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Pay this amount' }));
+    expect(state.prepay).toHaveBeenCalledWith(finalLoan, '500');
+
+    vi.mocked(useMyLoans).mockReturnValue({
+      loans: { sundayRest: false, loans: [] },
+      reload,
+    });
+    vi.mocked(useLoanRepay).mockReturnValue(
+      repay({
+        phase: 'repaid',
+        activeAction: { kind: 'prepay', messageId: finalLoan.messageId },
+        sentSats: 500,
+        sentNames: ['Bruno'],
+      }),
+    );
+    view.rerender(<LoanRepayScreen />);
+    expect(screen.getByText('Repaid ₿500 · $0.50')).toBeTruthy();
+    expect(screen.queryByText('You have no loan to repay.')).toBeNull();
+  });
+
   it('does not invent a completed payment for an empty list without remembered loans', () => {
     show({ sundayRest: false, loans: [] }, repay({ phase: 'repaid', sentSats: 1_000 }));
     expect(screen.getByText('You have no loan to repay.')).toBeTruthy();
@@ -1844,6 +1888,7 @@ describe('LoanRepayScreen', () => {
       { sundayRest: false, loans: [phpLoan, usdLoan] },
       repay({
         phase: 'waiting',
+        activeAction: { kind: 'prepay', messageId: 'php-waiting' },
         prepayMessageId: 'php-waiting',
         prepayWaiting: [
           {
@@ -1861,6 +1906,34 @@ describe('LoanRepayScreen', () => {
     expect(screen.getAllByText('Waiting for Carla to set up their wallet')).toHaveLength(1);
     expect(screen.getByText('₱2.50')).toBeTruthy();
     expect(screen.queryByText('$2.50')).toBeNull();
+  });
+
+  it('keeps prepay sending and shortfall state out of the due box', () => {
+    const data = { sundayRest: false, loans: [loan()] };
+    const sending = show(
+      data,
+      repay({
+        phase: 'sending',
+        activeAction: { kind: 'prepay', messageId: 'loan-1' },
+      }),
+    );
+    expect(screen.getByText('Paying more…')).toBeTruthy();
+    expect(screen.queryByText(/Sending ₿/)).toBeNull();
+    sending.unmount();
+
+    show(
+      data,
+      repay({
+        phase: 'idle',
+        activeAction: { kind: 'prepay', messageId: 'loan-1' },
+        balanceSats: 21_000,
+        missingSats: 500,
+      }),
+    );
+    expect(screen.getAllByText('Not enough in your wallet')).toHaveLength(1);
+    expect((screen.getByRole('button', { name: /^Send ₿/ }) as HTMLButtonElement).disabled).toBe(
+      false,
+    );
   });
 
   it('handles zero totals and unusable backend plan values without inventing progress', () => {

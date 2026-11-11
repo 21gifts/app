@@ -240,6 +240,7 @@ describe('useLoanRepay wallet state', () => {
     act(() => result.current.pay([current]));
     await waitFor(() => expect(result.current.phase).toBe('waiting'));
 
+    expect(result.current.activeAction).toEqual({ kind: 'due', messageId: null });
     expect(payFromWallet).toHaveBeenCalledWith({ type: 'input', input: invoiceOf(row) });
     expect(result.current.sentSats).toBe(500);
     unmount();
@@ -2167,7 +2168,12 @@ describe('useLoanRepay free repayment and collecting actions', () => {
     expect(closeLoan).not.toHaveBeenCalled();
     expect(postRepaymentDue).not.toHaveBeenCalled();
     expect(payFromWallet).toHaveBeenCalledWith({ type: 'input', input: invoiceOf(row) });
-    expect(result.current).toMatchObject({ phase: 'waiting', sentSats: 500, actionError: null });
+    expect(result.current).toMatchObject({
+      phase: 'waiting',
+      activeAction: { kind: 'prepay', messageId: 'prepay-m1' },
+      sentSats: 500,
+      actionError: null,
+    });
     await act(async () => {
       await vi.advanceTimersByTimeAsync(WALLET_PAY_BALANCE_POLL_MS);
     });
@@ -2216,6 +2222,7 @@ describe('useLoanRepay free repayment and collecting actions', () => {
     await waitFor(() => expect(result.current.phase).toBe('failed'));
 
     expect(result.current.actionError).toEqual({
+      messageId: 'm1',
       code: 'amount_too_high',
       maxSats: 750,
       maxAmount: null,
@@ -2294,7 +2301,12 @@ describe('useLoanRepay free repayment and collecting actions', () => {
     );
     act(() => result.current.closeCollecting(collecting));
     await waitFor(() => expect(result.current.phase).toBe('failed'));
-    expect(result.current.actionError).toBeNull();
+    expect(result.current.actionError).toEqual({
+      messageId: 'collecting',
+      code: 'request_failed',
+      maxSats: null,
+      maxAmount: null,
+    });
     expect(result.current.errorKey).toBe('forum.payErrorRequest');
   });
 
@@ -2384,6 +2396,11 @@ describe('useLoanRepay visual pins', () => {
     ['repay-unconfirmed', 'unconfirmed', 21_000],
     ['repay-failed', 'failed', 21_000],
     ['repay-failed-cannot-receive', 'failed', 21_000],
+    ['repay-pay-more-server-max', 'failed', 21_000],
+    ['repay-pay-more-error', 'failed', 21_000],
+    ['repay-pay-more-sending', 'sending', 21_000],
+    ['repay-pay-more-waiting', 'waiting', 21_000],
+    ['repay-pay-more-shortfall', 'idle', 500],
   ] as const;
 
   it.each(pins)('pins %s only in a Playwright build', (visual, phase, balanceSats) => {
@@ -2436,13 +2453,17 @@ describe('useLoanRepay visual pins', () => {
     }
   });
 
-  it.each(pins.map(([visual]) => visual))('ignores %s in a production build', (visual) => {
+  const productionPins = [...pins.map(([visual]) => visual), 'repay-e2e-payment'] as const;
+
+  it.each(productionPins)('ignores %s in a production build', (visual) => {
     window.history.replaceState({}, '', `/loans/repay?visual=${visual}`);
     setWallet('disabled', null);
     const { result } = renderHook(() =>
       useLoanRepay({ reload: vi.fn(async () => body([loan()])) }),
     );
     expect(result.current).toMatchObject({ phase: 'unavailable', pinned: false });
+    act(() => result.current.pay([loan()]));
+    expect(payFromWallet).not.toHaveBeenCalled();
   });
 
   it('ignores another visual value in a Playwright build', () => {

@@ -68,7 +68,7 @@ test('Function: LoanPayMore — Max fills the exact limit and above-max input is
   await page.getByRole('button', { name: 'Max' }).click();
   await expect(input).toHaveValue('19000');
   await input.fill('19001');
-  await expect(page.getByText("Enter at most ₿19'000.")).toBeVisible();
+  await expect(page.getByText("Enter at most ₿19'000 · $19.00.")).toBeVisible();
   await expect(page.getByRole('button', { name: 'Pay this amount' })).toBeDisabled();
   expect(prepayRequests).toBe(0);
 });
@@ -190,7 +190,7 @@ test('a collecting loan confirms and completes its first payment, ending collect
   await page.getByRole('button', { name: 'Pay this amount' }).click();
   const dialog = page.getByRole('dialog', { name: 'Pay and end collecting?' });
   await expect(dialog).toContainText('This first payment ends collecting permanently.');
-  await dialog.getByRole('button', { name: "Pay ₿8'000 and end collecting" }).click();
+  await dialog.getByRole('button', { name: "Pay ₿8'000 · $8.00 and end collecting" }).click();
   await expect.poll(() => prepayRequests).toBe(1);
   expect(collectingPrepayBody).toEqual({ amount: '8000' });
   await expect.poll(() => walletPayments).toBe(1);

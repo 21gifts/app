@@ -541,6 +541,8 @@ const en = {
   'loans.payMoreInvalidFiat': 'Enter an amount greater than zero with at most two decimals.',
   'loans.payMoreAboveMax': 'Enter at most {amount}.',
   'loans.payMoreNoRate': 'No {code} exchange rate is available now, so paying more is disabled.',
+  'loans.payMoreNoMaximum':
+    'No {code} repayment maximum is available now, so paying more is disabled.',
   'loans.payMoreCollectingNotice': 'The first payment ends collecting for this loan.',
   'loans.payMoreConfirmTitle': 'Pay and end collecting?',
   'loans.payMoreConfirmBody':
@@ -2369,6 +2371,8 @@ const de = {
   'loans.payMoreAboveMax': 'Geben Sie höchstens {amount} ein.',
   'loans.payMoreNoRate':
     'Der {code}-Wechselkurs ist derzeit nicht verfügbar. Deshalb ist eine zusätzliche Rückzahlung deaktiviert.',
+  'loans.payMoreNoMaximum':
+    'Der Höchstbetrag für eine {code}-Rückzahlung ist derzeit nicht verfügbar. Deshalb ist eine zusätzliche Rückzahlung deaktiviert.',
   'loans.payMoreCollectingNotice': 'Die erste Zahlung beendet das Sammeln für diesen Kredit.',
   'loans.payMoreConfirmTitle': 'Zahlen und das Sammeln beenden?',
   'loans.payMoreConfirmBody':
@@ -4257,6 +4261,8 @@ const es = {
   'loans.payMoreAboveMax': 'Introduce como máximo {amount}.',
   'loans.payMoreNoRate':
     'Ahora no hay tipo de cambio de {code}, por lo que pagar más está desactivado.',
+  'loans.payMoreNoMaximum':
+    'Ahora no hay un máximo disponible para devolver en {code}, por lo que pagar más está desactivado.',
   'loans.payMoreCollectingNotice': 'El primer pago finaliza la recaudación de este préstamo.',
   'loans.payMoreConfirmTitle': '¿Pagar y finalizar la recaudación?',
   'loans.payMoreConfirmBody':
@@ -6113,6 +6119,8 @@ const fil = {
   'loans.payMoreAboveMax': 'Maglagay ng hindi hihigit sa {amount}.',
   'loans.payMoreNoRate':
     'Walang {code} exchange rate ngayon, kaya naka-disable ang dagdag na pagbabayad.',
+  'loans.payMoreNoMaximum':
+    'Walang available na maximum para sa {code} repayment ngayon, kaya naka-disable ang dagdag na pagbabayad.',
   'loans.payMoreCollectingNotice':
     'Tatapusin ng unang bayad ang pangongolekta para sa utang na ito.',
   'loans.payMoreConfirmTitle': 'Magbayad at tapusin ang pangongolekta?',

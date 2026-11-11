@@ -95,6 +95,24 @@ describe('AmountEntry', () => {
     expect(screen.getByRole('group', { name: 'Bitcoin or fiat' })).toBeTruthy();
   });
 
+  it('can use a fixed loan currency for the switch and live counter', () => {
+    renderWithLocale(
+      <AmountEntry
+        label="Amount"
+        value="1000"
+        onValueChange={() => undefined}
+        rateDay={DAY}
+        fiatCode="PHP"
+      />,
+      'en',
+      'ch',
+      'USD',
+    );
+    expect(screen.getByRole('button', { name: 'PHP' })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'USD' })).toBeNull();
+    expect(screen.getByText('₱56.00')).toBeTruthy();
+  });
+
   it('puts the switch beside the input in a composer and hides the label', () => {
     renderWithLocale(
       <AmountEntry

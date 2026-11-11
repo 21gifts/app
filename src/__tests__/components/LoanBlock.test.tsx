@@ -171,6 +171,32 @@ describe('LoanBlock', () => {
     expect(document.querySelector('rect.fill-app-accent')).toBeNull();
   });
 
+  it('includes a partial row in bitcoin and fiat paid-back progress', () => {
+    block({
+      percent: 100,
+      funded: true,
+      ledger: ledgerOf([
+        { ...line(0, 'due', 50), paidSats: 20, dueSats: 30 },
+        line(1, 'scheduled', 50),
+      ]),
+    });
+    expect(screen.getByRole('img', { name: '20% paid back' })).toBeTruthy();
+    cleanup();
+
+    block({
+      percent: 100,
+      funded: true,
+      ledger: ledgerOf(
+        [
+          { ...line(0, 'due', null), amount: '4.00', paidAmount: '1.00' },
+          { ...line(1, 'scheduled', null), amount: '6.00', paidAmount: '0.00' },
+        ],
+        'PHP',
+      ),
+    });
+    expect(screen.getByRole('img', { name: '10% paid back' })).toBeTruthy();
+  });
+
   it('counts a fiat ledger in cents and skips rows without an amount', () => {
     const paid = { ...line(0, 'paid', null), amount: '1.00' };
     const open = { ...line(1, 'due', null), amount: '9.00' };
@@ -178,6 +204,21 @@ describe('LoanBlock', () => {
     const broken = { ...line(3, 'scheduled', null), amount: 'x' };
     block({ percent: 100, funded: true, ledger: ledgerOf([paid, open, empty, broken], 'USD') });
     expect(screen.getByRole('img', { name: '10% paid back' })).toBeTruthy();
+  });
+
+  it('treats a malformed partial fiat payment as unpaid', () => {
+    block({
+      percent: 100,
+      funded: true,
+      ledger: ledgerOf(
+        [
+          { ...line(0, 'due', null), amount: '4.00', paidAmount: 'not-an-amount' },
+          { ...line(1, 'scheduled', null), amount: '6.00' },
+        ],
+        'PHP',
+      ),
+    });
+    expect(screen.getByRole('img', { name: '0% paid back' })).toBeTruthy();
   });
 
   it('shows 0% paid back when the ledger has no amounts yet', () => {

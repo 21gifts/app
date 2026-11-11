@@ -1620,6 +1620,12 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/loans/repay:pay-more-fiat",
+    "label": "/loans/repay pay-more-fiat",
+    "visual": "state-loans-repay-pay-more-fiat",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/loans/repay:pay-more-above-max",
     "label": "/loans/repay pay-more-above-max",
     "visual": "state-loans-repay-pay-more-above-max",
@@ -1629,6 +1635,12 @@
     "id": "/loans/repay:pay-more-no-rate",
     "label": "/loans/repay pay-more-no-rate",
     "visual": "state-loans-repay-pay-more-no-rate",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/loans/repay:pay-more-no-maximum",
+    "label": "/loans/repay pay-more-no-maximum",
+    "visual": "state-loans-repay-pay-more-no-maximum",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {

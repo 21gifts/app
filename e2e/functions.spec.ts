@@ -3,7 +3,7 @@ import path from 'node:path';
 import jsQR from 'jsqr';
 import { PNG } from 'pngjs';
 import { expect, test, type APIRequestContext, type Locator, type Page } from '@playwright/test';
-import { CreditClosedError, fetchPublicMessagePhoto, LoanRepaymentError } from '../src/lib/api';
+import { fetchPublicMessagePhoto } from '../src/lib/api';
 import { openCryptoPayQrValue } from '../src/lib/gifts-address';
 import { fulfillSpot, SPOT_RATES, spotRatesFromStats } from './fx-spot';
 import { motionSettled } from './motion';
@@ -16326,27 +16326,54 @@ test('Function: closeLoan — closing returns the final collecting state', async
   expect(await response.json()).toMatchObject({ fundedAt: null, collectedSats: 8_000 });
 });
 
-test('Function: LoanRepaymentError — max refusals retain both limits', async ({ request }) => {
-  const error = new LoanRepaymentError('amount_too_high', 400, 7_900, null);
-  expect(error).toMatchObject({
-    name: 'LoanRepaymentError',
-    code: 'amount_too_high',
-    status: 400,
-    maxSats: 7_900,
-    maxAmount: null,
+test('Function: LoanRepaymentError — a max refusal updates the running repayment form', async ({
+  page,
+}) => {
+  await seedAdaSession(page);
+  await stubGiftStats(page, AMOUNT_RATE_STATS);
+  await fulfillMyLoans(page, myLoans([loanA]));
+  await fulfillLedger(page, loanA.messageId, ledgerA);
+  await page.route('**/messages/loan-a/repayment/prepay', async (route) => {
+    await route.fulfill({
+      status: 400,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        code: 'amount_too_high',
+        maxSats: 6_000,
+        maxAmount: null,
+      }),
+    });
   });
-  const response = await request.get('/');
-  expect(response.ok()).toBe(true);
+  await page.goto('/loans/repay?visual=repay-e2e-payment');
+  const input = page.getByLabel('Amount (₿)');
+  await input.fill('7000');
+  await page.getByRole('button', { name: 'Pay this amount' }).click();
+  await expect(input).toHaveValue('6000');
+  await expect(page.getByRole('alert')).toContainText("maximum changed to ₿6'000");
 });
 
-test('Function: CreditClosedError — closed gift invoices keep a typed code', async ({
-  request,
+test('Function: CreditClosedError — a closed loan invoice shows the localized refusal', async ({
+  page,
 }) => {
-  expect(new CreditClosedError()).toMatchObject({
-    name: 'CreditClosedError',
-    message: 'credit_closed',
+  await seedAdaSession(page);
+  await stubPayableNote(page);
+  await page.route('**/messages/r-pay/invoice', async (route) => {
+    await route.fulfill({
+      status: 409,
+      contentType: 'application/json',
+      body: JSON.stringify({ code: 'credit_closed' }),
+    });
   });
-  expect((await request.get('/')).ok()).toBe(true);
+  await page.goto('/welcome');
+  await chooseForumView(page, 'All');
+  await page.getByRole('button', { name: 'Show reactions' }).click();
+  const replyCard = page.locator('[data-reply-id="r-pay"]');
+  await replyCard.getByRole('button', { name: 'Send Bitcoin' }).click();
+  await replyCard.getByLabel('Amount').fill('21');
+  await submitPayAmount(page);
+  await expect(
+    page.getByText('This loan is no longer collecting and cannot receive more money.'),
+  ).toBeVisible();
 });
 
 test('Function: proxyMessagesRepaymentPrepayPost — POST /messages/[id]/repayment/prepay is forwarded', async ({

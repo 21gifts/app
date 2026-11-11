@@ -7593,6 +7593,19 @@ test.describe('loans repay screens', () => {
     await shotScreen(page, 'state-loans-repay-pay-more-max');
   });
 
+  test('state /loans/repay pay-more-fiat', async ({ page }) => {
+    await loanShot(page, {
+      loans: [loanA],
+      ledgers: { 'loan-a': ledgerA },
+      visual: 'repay-ready',
+      text: 'Pay more',
+    });
+    await page.getByRole('button', { name: 'USD' }).click();
+    await page.getByLabel('Amount (USD)').fill('5.00');
+    await expect(page.getByText("₿5'000")).toBeVisible();
+    await shotScreen(page, 'state-loans-repay-pay-more-fiat');
+  });
+
   test('state /loans/repay pay-more-above-max', async ({ page }) => {
     await loanShot(page, {
       loans: [loanA],
@@ -7601,7 +7614,7 @@ test.describe('loans repay screens', () => {
       text: 'Pay more',
     });
     await page.getByLabel('Amount (₿)').fill('19001');
-    await expect(page.getByText("Enter at most ₿19'000.")).toBeVisible();
+    await expect(page.getByText("Enter at most ₿19'000 · $19.00.")).toBeVisible();
     await shotScreen(page, 'state-loans-repay-pay-more-above-max');
   });
 
@@ -7612,6 +7625,17 @@ test.describe('loans repay screens', () => {
       text: 'No PHP exchange rate is available now',
     });
     await shotScreen(page, 'state-loans-repay-pay-more-no-rate');
+  });
+
+  test('state /loans/repay pay-more-no-maximum', async ({ page }) => {
+    await loanShot(page, {
+      loans: [{ ...loanA, maxSats: null, maxAmount: null }],
+      ledgers: { 'loan-a': ledgerA },
+      visual: 'repay-ready',
+      text: 'No BTC repayment maximum is available now',
+    });
+    await expect(page.getByText(/No BTC exchange rate/)).toHaveCount(0);
+    await shotScreen(page, 'state-loans-repay-pay-more-no-maximum');
   });
 
   test('state /loans/repay pay-more-server-max', async ({ page }) => {

@@ -1966,6 +1966,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/loans/repay',
+    id: 'pay-more-fiat',
+    image: 'loans-repay-pay-more-fiat.png',
+    visual: 'state-loans-repay-pay-more-fiat',
+    needle: 'state /loans/repay pay-more-fiat',
+  },
+  {
+    route: '/loans/repay',
     id: 'pay-more-above-max',
     image: 'loans-repay-pay-more-above-max.png',
     visual: 'state-loans-repay-pay-more-above-max',
@@ -1977,6 +1984,13 @@ export const SCREEN_VARIANTS = [
     image: 'loans-repay-pay-more-no-rate.png',
     visual: 'state-loans-repay-pay-more-no-rate',
     needle: 'state /loans/repay pay-more-no-rate',
+  },
+  {
+    route: '/loans/repay',
+    id: 'pay-more-no-maximum',
+    image: 'loans-repay-pay-more-no-maximum.png',
+    visual: 'state-loans-repay-pay-more-no-maximum',
+    needle: 'state /loans/repay pay-more-no-maximum',
   },
   {
     route: '/loans/repay',

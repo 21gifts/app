@@ -212,6 +212,7 @@ export function LoanRepayScreen(): ReactElement {
   const repaidWithEmptyList =
     loans.loans.length === 0 &&
     repay.phase === 'repaid' &&
+    (repay.activeAction?.kind === 'due' || repay.activeAction?.kind === 'prepay') &&
     (repay.sentSats > 0 || repay.pinned) &&
     paidLoans.length > 0;
 
@@ -328,65 +329,70 @@ export function LoanRepayScreen(): ReactElement {
     return defined === null ? money(sats) : `${defined} · ${bitcoinText(sats)}`;
   };
 
+  const dueRun = repay.activeAction?.kind === 'due';
+  const dueOwnsTopUp = repay.activeAction === null || dueRun;
   const partial =
+    dueRun &&
     repay.sentSats > 0 &&
     (repay.phase === 'idle' ||
       repay.phase === 'failed' ||
       (repay.phase === 'repaid' && payable > 0));
   const showRepaid =
-    (repay.pinned && repay.phase === 'repaid') ||
-    (repay.phase === 'repaid' && repay.sentSats > 0 && payable === 0);
+    dueRun &&
+    ((repay.pinned && repay.phase === 'repaid') ||
+      (repay.phase === 'repaid' && repay.sentSats > 0 && payable === 0));
   const paidSource = paidLoans.length > 0 ? paidLoans : loans.loans;
   const lastLoan = paidSource.find((loan) => loan.due.lastPayment);
   const sentAmount = fiatPayLabel(repay.sentAmounts, repay.sentSats);
-  const successBox = showRepaid ? (
-    <div className="w-full rounded-2xl border border-app-success/50 bg-app-card-muted p-4">
-      {lastLoan !== undefined && paidSource.length === 1 ? (
-        <>
-          <p className="flex items-center gap-2 font-semibold text-app-success">
-            <Check aria-hidden="true" className="h-5 w-5" />
-            {t('loans.lastTitle')}
-          </p>
-          <p className="mt-2 text-sm text-app-fg">
-            {t('loans.lastBody', { amount: wholeLoanText(lastLoan) })}
-          </p>
-        </>
-      ) : lastLoan !== undefined ? (
-        <>
-          <p className="flex items-center gap-2 font-semibold text-app-success">
-            <Check aria-hidden="true" className="h-5 w-5" />
-            {t('loans.repaid', { amount: sentAmount })}
-          </p>
-          <p className="mt-2 text-sm text-app-fg">
-            {t('loans.lastFor', {
-              text: shortLoanText(lastLoan.text),
-              amount: wholeLoanText(lastLoan),
-            })}
-          </p>
-        </>
-      ) : (
-        <>
-          <p className="flex items-center gap-2 font-semibold text-app-success">
-            <Check aria-hidden="true" className="h-5 w-5" />
-            {t('loans.repaid', { amount: sentAmount })}
-          </p>
-          {repay.feeSats > 0 ? (
-            <p className="mt-1 text-xs tabular-nums lining-nums text-app-muted">
-              {t('wallet.payFee', { amount: holding(repay.feeSats) })}
+  const successBox =
+    showRepaid || repaidWithEmptyList ? (
+      <div className="w-full rounded-2xl border border-app-success/50 bg-app-card-muted p-4">
+        {lastLoan !== undefined && paidSource.length === 1 ? (
+          <>
+            <p className="flex items-center gap-2 font-semibold text-app-success">
+              <Check aria-hidden="true" className="h-5 w-5" />
+              {t('loans.lastTitle')}
             </p>
-          ) : null}
-        </>
-      )}
-      {summary.waitingSats > 0 ? (
-        <p className="mt-2 text-sm tabular-nums lining-nums text-app-muted">
-          {t('loans.waitsLater', { amount: waitingLabel })}
-        </p>
-      ) : null}
-      {nextLine() === null ? null : (
-        <p className="mt-2 text-sm tabular-nums lining-nums text-app-muted">{nextLine()}</p>
-      )}
-    </div>
-  ) : null;
+            <p className="mt-2 text-sm text-app-fg">
+              {t('loans.lastBody', { amount: wholeLoanText(lastLoan) })}
+            </p>
+          </>
+        ) : lastLoan !== undefined ? (
+          <>
+            <p className="flex items-center gap-2 font-semibold text-app-success">
+              <Check aria-hidden="true" className="h-5 w-5" />
+              {t('loans.repaid', { amount: sentAmount })}
+            </p>
+            <p className="mt-2 text-sm text-app-fg">
+              {t('loans.lastFor', {
+                text: shortLoanText(lastLoan.text),
+                amount: wholeLoanText(lastLoan),
+              })}
+            </p>
+          </>
+        ) : (
+          <>
+            <p className="flex items-center gap-2 font-semibold text-app-success">
+              <Check aria-hidden="true" className="h-5 w-5" />
+              {t('loans.repaid', { amount: sentAmount })}
+            </p>
+            {repay.feeSats > 0 ? (
+              <p className="mt-1 text-xs tabular-nums lining-nums text-app-muted">
+                {t('wallet.payFee', { amount: holding(repay.feeSats) })}
+              </p>
+            ) : null}
+          </>
+        )}
+        {summary.waitingSats > 0 ? (
+          <p className="mt-2 text-sm tabular-nums lining-nums text-app-muted">
+            {t('loans.waitsLater', { amount: waitingLabel })}
+          </p>
+        ) : null}
+        {nextLine() === null ? null : (
+          <p className="mt-2 text-sm tabular-nums lining-nums text-app-muted">{nextLine()}</p>
+        )}
+      </div>
+    ) : null;
 
   const payableShares = shares.filter((share) => !share.waiting);
   const keptByLoan = new Map<string, number>();
@@ -437,7 +443,11 @@ export function LoanRepayScreen(): ReactElement {
   const fittingNames = [...new Set(fitting.map((share) => share.name))].join(', ');
   const shareAmounts = new Map(shares.map((share) => [shareKey(share), share.amount] as const));
   const activeSendingAmounts = sendingAmounts.length === 0 ? fullSendAmounts : sendingAmounts;
-  const hasMissingSats = repay.missingSats !== null && repay.missingSats > 0;
+  const hasMissingSats = dueRun && repay.missingSats !== null && repay.missingSats > 0;
+  const otherActionBusy =
+    repay.activeAction !== null &&
+    repay.activeAction.kind !== 'due' &&
+    (repay.phase === 'preparing' || repay.phase === 'sending' || repay.phase === 'waiting');
   const rememberAndPay = (onlyShares?: ReadonlySet<string>): void => {
     setPaidLoans(loans.loans);
     setSendingSats(onlyShares === undefined ? fullSendSats : fittingSats);
@@ -452,7 +462,12 @@ export function LoanRepayScreen(): ReactElement {
         <p className="text-center text-xs tabular-nums lining-nums text-app-muted">
           {t('loans.fromWallet', { amount: holding(balanceSats) })}
         </p>
-        <Button variant="primary" size="lg" onClick={() => rememberAndPay()}>
+        <Button
+          variant="primary"
+          size="lg"
+          disabled={otherActionBusy}
+          onClick={() => rememberAndPay()}
+        >
           {t('loans.sendAmount', { amount: fullSendLabel })}
         </Button>
       </>
@@ -466,8 +481,14 @@ export function LoanRepayScreen(): ReactElement {
               missing: holding(repay.missingSats ?? Math.max(0, payable - balanceSats)),
             })}
           </p>
-          {!repay.topUpOpen ? (
-            <Button className="mt-3" variant="primary" size="lg" onClick={repay.openTopUp}>
+          {!dueOwnsTopUp || !repay.topUpOpen ? (
+            <Button
+              className="mt-3"
+              variant="primary"
+              size="lg"
+              disabled={otherActionBusy}
+              onClick={repay.openTopUp}
+            >
               {t('loans.topUp')}
             </Button>
           ) : (
@@ -482,9 +503,10 @@ export function LoanRepayScreen(): ReactElement {
             </div>
           )}
         </div>
-        {repay.missingSats === null && !ledgersMissing && fitting.length > 0 ? (
+        {(!dueRun || repay.missingSats === null) && !ledgersMissing && fitting.length > 0 ? (
           <button
             type="button"
+            disabled={otherActionBusy}
             className="inline-flex min-h-11 items-center justify-center text-sm font-medium text-app-fg underline underline-offset-2"
             onClick={() => rememberAndPay(new Set(fitting.map(shareKey)))}
           >
@@ -520,30 +542,36 @@ export function LoanRepayScreen(): ReactElement {
     case 'preparing':
     case 'sending':
     case 'waiting':
-      payArea = (
+      payArea = dueRun ? (
         <p role="status" className="flex items-center justify-center gap-2 text-sm text-app-muted">
           <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" />
           {t('loans.sending', {
             amount: fiatPayLabel(activeSendingAmounts, sendingSats ?? payable),
           })}
         </p>
+      ) : (
+        idleControls
       );
       break;
     case 'unconfirmed':
-      payArea = (
+      payArea = dueRun ? (
         <p role="status" className="text-center text-sm text-app-muted">
           {t('wallet.payUnconfirmed')}
         </p>
+      ) : (
+        idleControls
       );
       break;
     case 'failed':
-      payArea = (
+      payArea = dueRun ? (
         <>
           <p role="alert" className="text-center text-sm text-app-danger">
             {t(repay.errorKey ?? 'forum.payErrorRequest')}
           </p>
           {idleControls}
         </>
+      ) : (
+        idleControls
       );
       break;
     case 'idle':
@@ -846,6 +874,7 @@ export function LoanRepayScreen(): ReactElement {
                 <LoanPayMore
                   loan={loan}
                   phase={repay.phase}
+                  activeAction={repay.activeAction}
                   actionError={repay.actionError}
                   errorKey={repay.errorKey}
                   prepayWaiting={
@@ -853,14 +882,22 @@ export function LoanRepayScreen(): ReactElement {
                   }
                   balanceSats={repay.balanceSats}
                   missingSats={repay.missingSats}
-                  showShortfall={payable === 0}
+                  showShortfall={
+                    payable === 0 ||
+                    (repay.activeAction?.kind === 'prepay' &&
+                      repay.activeAction.messageId === loan.messageId)
+                  }
                   sundayRest={loans.sundayRest}
+                  rateDay={rateDay}
                   showWalletStatus={payable === 0}
                   topUpOpen={repay.topUpOpen}
                   username={account?.username ?? null}
                   formatSats={holding}
                   onOpenTopUp={repay.openTopUp}
-                  onPay={repay.prepay}
+                  onPay={(item, amountText) => {
+                    setPaidLoans(loans.loans);
+                    repay.prepay(item, amountText);
+                  }}
                   onCloseCollecting={repay.closeCollecting}
                 />
               </article>

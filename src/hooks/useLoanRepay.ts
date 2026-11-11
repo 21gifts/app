@@ -56,6 +56,8 @@ export type LoanRepayPhase =
 /** State and actions of the all-loans wallet repayment flow. */
 export interface LoanRepayResult {
   phase: LoanRepayPhase;
+  /** Initiating flow and, for a per-loan action, the matching loan id. */
+  activeAction: LoanRepayActiveAction | null;
   /** Wallet balance in whole sats while the wallet is ready, else null. */
   balanceSats: number | null;
   /** Sats of bills that went out in the last run (0 before any). */
@@ -138,10 +140,16 @@ export interface LoanRepayResult {
 
 /** Close/prepay error state exposed to the repayment screen. */
 export interface LoanRepayActionError {
+  /** Loan whose close or free repayment produced this refusal. */
+  messageId: string;
   code: LoanRepaymentErrorCode | 'missing_requirements';
   maxSats: number | null;
   maxAmount: string | null;
 }
+
+/** Flow that owns the shared repayment phase and wallet result. */
+export type LoanRepayActiveAction =
+  { kind: 'due'; messageId: null } | { kind: 'prepay' | 'close'; messageId: string };
 
 type LivePhase = 'idle' | 'preparing' | 'sending' | 'waiting' | 'repaid' | 'unconfirmed' | 'failed';
 type ErrorKey = Exclude<LoanRepayResult['errorKey'], null>;
@@ -151,12 +159,17 @@ function isLoanRepaymentError(error: unknown): error is LoanRepaymentError {
   return error instanceof LoanRepaymentError;
 }
 
-function actionErrorOf(error: unknown): LoanRepayActionError | null {
+function actionErrorOf(error: unknown, messageId: string): LoanRepayActionError | null {
   if (isLoanRepaymentError(error)) {
-    return { code: error.code, maxSats: error.maxSats, maxAmount: error.maxAmount };
+    return {
+      messageId,
+      code: error.code,
+      maxSats: error.maxSats,
+      maxAmount: error.maxAmount,
+    };
   }
   if (error instanceof MissingRequirementsError) {
-    return { code: 'missing_requirements', maxSats: null, maxAmount: null };
+    return { messageId, code: 'missing_requirements', maxSats: null, maxAmount: null };
   }
   return null;
 }
@@ -223,6 +236,7 @@ interface SendRun {
 type PinnedLoanRepay = Pick<
   LoanRepayResult,
   | 'phase'
+  | 'activeAction'
   | 'balanceSats'
   | 'sentSats'
   | 'sentAmounts'
@@ -237,6 +251,7 @@ type PinnedLoanRepay = Pick<
 >;
 
 const PIN_BASE = {
+  activeAction: null as LoanRepayActiveAction | null,
   sentSats: 0,
   sentAmounts: [] as { code: MyLoan['goalCurrency']; amount: string | null }[],
   sentNames: [] as string[],
@@ -248,6 +263,7 @@ const PIN_BASE = {
   actionError: null,
   topUpOpen: false,
 };
+const PIN_DUE_ACTION: LoanRepayActiveAction = { kind: 'due', messageId: null };
 
 /** Playwright-only repayment states; completed pins carry the amount and recipients sent. */
 const PINNED_RESULTS: Record<string, PinnedLoanRepay> = {
@@ -255,20 +271,33 @@ const PINNED_RESULTS: Record<string, PinnedLoanRepay> = {
   'repay-connecting': { ...PIN_BASE, phase: 'connecting', balanceSats: null },
   'repay-setup-failed': { ...PIN_BASE, phase: 'setupFailed', balanceSats: null },
   'repay-short': { ...PIN_BASE, phase: 'idle', balanceSats: 600 },
-  'repay-fee-gap': { ...PIN_BASE, phase: 'idle', balanceSats: 1_000, missingSats: 25 },
+  'repay-fee-gap': {
+    ...PIN_BASE,
+    phase: 'idle',
+    balanceSats: 1_000,
+    activeAction: PIN_DUE_ACTION,
+    missingSats: 25,
+  },
   'repay-fee-gap-topup': {
     ...PIN_BASE,
     phase: 'idle',
     balanceSats: 1_000,
+    activeAction: PIN_DUE_ACTION,
     missingSats: 25,
     topUpOpen: true,
   },
   'repay-topup': { ...PIN_BASE, phase: 'idle', balanceSats: 600, topUpOpen: true },
-  'repay-sending': { ...PIN_BASE, phase: 'sending', balanceSats: 21_000 },
+  'repay-sending': {
+    ...PIN_BASE,
+    phase: 'sending',
+    balanceSats: 21_000,
+    activeAction: PIN_DUE_ACTION,
+  },
   'repay-partial': {
     ...PIN_BASE,
     phase: 'idle',
     balanceSats: 21_000,
+    activeAction: PIN_DUE_ACTION,
     sentSats: 500,
     sentNames: ['Bruno'],
   },
@@ -276,6 +305,7 @@ const PINNED_RESULTS: Record<string, PinnedLoanRepay> = {
     ...PIN_BASE,
     phase: 'repaid',
     balanceSats: 21_000,
+    activeAction: PIN_DUE_ACTION,
     sentSats: 1_000,
     sentNames: ['Bruno', 'Carla', 'Diego'],
   },
@@ -283,39 +313,65 @@ const PINNED_RESULTS: Record<string, PinnedLoanRepay> = {
     ...PIN_BASE,
     phase: 'repaid',
     balanceSats: 21_000,
+    activeAction: PIN_DUE_ACTION,
     sentSats: 2_200,
     sentNames: ['Bruno', 'Carla', 'Diego', 'Elena', 'Farid'],
   },
-  'repay-unconfirmed': { ...PIN_BASE, phase: 'unconfirmed', balanceSats: 21_000 },
+  'repay-unconfirmed': {
+    ...PIN_BASE,
+    phase: 'unconfirmed',
+    balanceSats: 21_000,
+    activeAction: PIN_DUE_ACTION,
+  },
   'repay-failed': {
     ...PIN_BASE,
     phase: 'failed',
     balanceSats: 21_000,
+    activeAction: PIN_DUE_ACTION,
     errorKey: 'forum.payErrorRequest',
   },
   'repay-failed-cannot-receive': {
     ...PIN_BASE,
     phase: 'failed',
     balanceSats: 21_000,
+    activeAction: PIN_DUE_ACTION,
     errorKey: 'loans.errorCannotReceive',
   },
   'repay-pay-more-server-max': {
     ...PIN_BASE,
     phase: 'failed',
     balanceSats: 21_000,
-    actionError: { code: 'amount_too_high', maxSats: 6_000, maxAmount: null },
+    activeAction: { kind: 'prepay', messageId: 'loan-a' },
+    actionError: {
+      messageId: 'loan-a',
+      code: 'amount_too_high',
+      maxSats: 6_000,
+      maxAmount: null,
+    },
   },
   'repay-pay-more-error': {
     ...PIN_BASE,
     phase: 'failed',
     balanceSats: 21_000,
-    actionError: { code: 'payment_open', maxSats: null, maxAmount: null },
+    activeAction: { kind: 'prepay', messageId: 'loan-a' },
+    actionError: {
+      messageId: 'loan-a',
+      code: 'payment_open',
+      maxSats: null,
+      maxAmount: null,
+    },
   },
-  'repay-pay-more-sending': { ...PIN_BASE, phase: 'sending', balanceSats: 21_000 },
+  'repay-pay-more-sending': {
+    ...PIN_BASE,
+    phase: 'sending',
+    balanceSats: 21_000,
+    activeAction: { kind: 'prepay', messageId: 'loan-a' },
+  },
   'repay-pay-more-waiting': {
     ...PIN_BASE,
     phase: 'waiting',
     balanceSats: 21_000,
+    activeAction: { kind: 'prepay', messageId: 'loan-a' },
     prepayWaiting: [
       {
         dayIndex: 12,
@@ -332,6 +388,7 @@ const PINNED_RESULTS: Record<string, PinnedLoanRepay> = {
     ...PIN_BASE,
     phase: 'idle',
     balanceSats: 500,
+    activeAction: { kind: 'prepay', messageId: 'loan-a' },
     missingSats: 500,
     topUpOpen: true,
   },
@@ -382,6 +439,7 @@ export function useLoanRepay(options: {
   const storeBalance = useWalletStore((state) => state.balanceSats);
   const setupFailed = useWalletSetup().failed;
   const [livePhase, setLivePhase] = useState<LivePhase>('idle');
+  const [activeAction, setActiveAction] = useState<LoanRepayActiveAction | null>(null);
   const [sentSats, setSentSats] = useState(0);
   const [sentAmounts, setSentAmounts] = useState<
     { code: MyLoan['goalCurrency']; amount: string | null }[]
@@ -426,6 +484,7 @@ export function useLoanRepay(options: {
     actionPending.current = false;
     clearSettlement();
     setLivePhase('idle');
+    setActiveAction(null);
     setSentSats(0);
     setSentAmounts([]);
     setSentNames([]);
@@ -505,6 +564,11 @@ export function useLoanRepay(options: {
       const run = ++generation.current;
       clearSettlement();
       phaseRef.current = 'preparing';
+      setActiveAction(
+        prepayRequest === undefined
+          ? { kind: 'due', messageId: null }
+          : { kind: 'prepay', messageId: prepayRequest.messageId },
+      );
       setSentSats(0);
       setSentAmounts([]);
       setSentNames([]);
@@ -531,7 +595,9 @@ export function useLoanRepay(options: {
                 ? 'forum.payErrorRateLimit'
                 : 'forum.payErrorRequest';
         setErrorKey(key);
-        setActionError(actionErrorOf(error));
+        setActionError(
+          prepayRequest === undefined ? null : actionErrorOf(error, prepayRequest.messageId),
+        );
         setLivePhase('failed');
       };
 
@@ -933,6 +999,7 @@ export function useLoanRepay(options: {
       actionPending.current = true;
       clearSettlement();
       phaseRef.current = 'preparing';
+      setActiveAction({ kind: 'close', messageId: loan.messageId });
       setErrorKey(null);
       setActionError(null);
       setLivePhase('preparing');
@@ -950,13 +1017,19 @@ export function useLoanRepay(options: {
             throw new Error('reload');
           }
           actionPending.current = false;
+          setActiveAction(null);
           setLivePhase('idle');
         } catch (error: unknown) {
           if (run !== generation.current) {
             return;
           }
           actionPending.current = false;
-          const typed = actionErrorOf(error);
+          const typed = actionErrorOf(error, loan.messageId) ?? {
+            messageId: loan.messageId,
+            code: 'request_failed' as const,
+            maxSats: null,
+            maxAmount: null,
+          };
           setActionError(typed);
           setErrorKey(
             typed?.code === 'rate_limited' ? 'forum.payErrorRateLimit' : 'forum.payErrorRequest',
@@ -973,6 +1046,7 @@ export function useLoanRepay(options: {
   }
   return {
     phase,
+    activeAction,
     balanceSats,
     sentSats,
     sentAmounts,

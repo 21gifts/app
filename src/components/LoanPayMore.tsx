@@ -1,19 +1,32 @@
 'use client';
 
 import { Loader2, X } from 'lucide-react';
-import { useEffect, useId, useState, type ReactElement } from 'react';
+import { useEffect, useRef, useState, type ReactElement } from 'react';
+import { AmountEntry } from '@/components/AmountEntry';
+import { useFiatPreference } from '@/components/FiatPreferenceProvider';
 import { useTranslations } from '@/components/LocaleProvider';
 import { useNumberFormat } from '@/components/NumberFormatProvider';
 import { WalletOwnAddress } from '@/components/WalletOwnAddress';
 import { WalletSetupNote } from '@/components/WalletSetupNote';
 import { Button, Card, IconButton } from '@/components/ui';
-import type { LoanRepayActionError, LoanRepayPhase, LoanRepayResult } from '@/hooks/useLoanRepay';
+import type {
+  LoanRepayActionError,
+  LoanRepayActiveAction,
+  LoanRepayPhase,
+  LoanRepayResult,
+} from '@/hooks/useLoanRepay';
 import type { MyLoan, RepaymentWaiting } from '@/lib/api';
+import type { AmountUnit } from '@/lib/api-types';
 import { formatDefinedGoalAmount } from '@/lib/forum-goal';
 import { checkLoanAmount, isCollecting, loanMaxInput, loanMaxUnits } from '@/lib/loan-repay';
 import type { NumberFormatStyle } from '@/lib/number-format';
-import { formatBitcoin } from '@/lib/stats-money';
-import { visualPin } from '@/lib/visual-pin';
+import {
+  fiatDraftForSats,
+  parseAmountDraft,
+  satsToFiatAmount,
+  type FiatCode,
+  type FiatRateDay,
+} from '@/lib/stats-money';
 
 /** Props for one loan's free-amount repayment and collecting controls. */
 export interface LoanPayMoreProps {
@@ -21,6 +34,8 @@ export interface LoanPayMoreProps {
   loan: MyLoan;
   /** Shared wallet/action phase from `useLoanRepay`. */
   phase: LoanRepayPhase;
+  /** Initiating flow; shared status belongs only to its matching loan. */
+  activeAction?: LoanRepayActiveAction | null;
   /** Typed refusal from the latest close or prepay request. */
   actionError: LoanRepayActionError | null;
   /** Existing wallet failure key when preparing or sending the free payment failed. */
@@ -35,6 +50,8 @@ export interface LoanPayMoreProps {
   showShortfall: boolean;
   /** The api's Sunday-rest flag; free repayment stays unavailable that day. */
   sundayRest: boolean;
+  /** Current spot used by AmountEntry and unit conversion. */
+  rateDay?: FiatRateDay | null;
   /** Shows wallet availability here when no due-payment box already shows it. */
   showWalletStatus: boolean;
   /** Whether the shared wallet top-up block is open. */
@@ -58,18 +75,33 @@ interface ServerMaximum {
   maxAmount: string | null;
 }
 
-const PAY_MORE_ACTION_PINS = new Set([
-  'repay-pay-more-server-max',
-  'repay-pay-more-error',
-  'repay-pay-more-sending',
-  'repay-pay-more-waiting',
-  'repay-pay-more-shortfall',
-]);
-
-function displayLoanAmount(text: string, loan: MyLoan, style: NumberFormatStyle): string {
+function displayLoanAmount(
+  text: string,
+  loan: MyLoan,
+  style: NumberFormatStyle,
+  formatSats: (sats: number) => string,
+): string {
   return loan.goalCurrency === 'BTC'
-    ? formatBitcoin(Number(text), style)
+    ? formatSats(Number(text))
     : formatDefinedGoalAmount(text, loan.goalCurrency, style);
+}
+
+function maxDraft(
+  loan: MyLoan,
+  unit: AmountUnit,
+  rateDay: FiatRateDay | null,
+  entryFiat: FiatCode,
+): string | null {
+  if (loan.maxSats === null || loan.maxSats === undefined) {
+    return null;
+  }
+  if (unit === 'btc') {
+    return String(loan.maxSats);
+  }
+  if (loan.goalCurrency !== 'BTC') {
+    return loan.maxAmount ?? null;
+  }
+  return fiatDraftForSats(loan.maxSats, rateDay, entryFiat);
 }
 
 const ACTION_ERROR_KEY: Record<
@@ -104,6 +136,7 @@ const ACTION_ERROR_KEY: Record<
 export function LoanPayMore({
   loan,
   phase,
+  activeAction = null,
   actionError,
   errorKey,
   prepayWaiting = [],
@@ -111,6 +144,7 @@ export function LoanPayMore({
   missingSats,
   showShortfall,
   sundayRest,
+  rateDay = null,
   showWalletStatus,
   topUpOpen,
   username,
@@ -120,40 +154,75 @@ export function LoanPayMore({
   onCloseCollecting,
 }: LoanPayMoreProps): ReactElement {
   const { t } = useTranslations();
+  const { fiat } = useFiatPreference();
   const { numberFormat } = useNumberFormat();
-  const inputId = useId();
-  const errorId = `${inputId}-error`;
-  const serverErrorId = `${inputId}-server-error`;
-  const noticeId = `${inputId}-notice`;
   const [amount, setAmount] = useState('');
-  const [pendingAction, setPendingAction] = useState<PendingAction>(() =>
-    PAY_MORE_ACTION_PINS.has(visualPin() ?? '') ? 'pay' : null,
-  );
+  const [amountUnit, setAmountUnit] = useState<AmountUnit>('btc');
+  const [exactLoanAmount, setExactLoanAmount] = useState<string | null>(null);
+  const switchingExactMaximum = useRef(false);
+  const [pendingAction, setPendingAction] = useState<PendingAction>(null);
   const [confirming, setConfirming] = useState<'pay' | 'close' | null>(null);
   const [serverError, setServerError] = useState<string | null>(null);
   const [serverMaximum, setServerMaximum] = useState<ServerMaximum | null>(null);
   const collecting = isCollecting(loan);
-  const busy = phase === 'preparing' || phase === 'sending' || phase === 'waiting';
+  const entryFiat: FiatCode = loan.goalCurrency === 'BTC' ? fiat : loan.goalCurrency;
+  const matchingAction =
+    activeAction !== null && activeAction.messageId === loan.messageId ? activeAction.kind : null;
+  const activePendingAction: PendingAction =
+    matchingAction === 'prepay' ? 'pay' : matchingAction === 'close' ? 'close' : null;
+  const shownPendingAction = activePendingAction ?? pendingAction;
+  const sharedBusy = phase === 'preparing' || phase === 'sending' || phase === 'waiting';
+  const busy = sharedBusy && (matchingAction !== null || activeAction === null);
   const canPay = phase === 'idle' || phase === 'failed' || phase === 'repaid';
   const walletReady = canPay || phase === 'unconfirmed';
   const effectiveLoan = serverMaximum === null ? loan : { ...loan, ...serverMaximum };
-  const check = checkLoanAmount(amount, effectiveLoan);
-  const maxInput = loanMaxUnits(effectiveLoan) === null ? null : loanMaxInput(effectiveLoan);
+  const parsed = parseAmountDraft(amountUnit, amount, rateDay, entryFiat);
+  let loanAmountText = exactLoanAmount;
+  if (loanAmountText === null && parsed.kind === 'sats') {
+    loanAmountText =
+      loan.goalCurrency === 'BTC'
+        ? String(parsed.sats)
+        : amountUnit === 'fiat'
+          ? amount.trim()
+          : satsToFiatAmount(parsed.sats, rateDay, loan.goalCurrency);
+  }
+  let check = checkLoanAmount(loanAmountText ?? amount, effectiveLoan);
+  if (
+    check.ok &&
+    parsed.kind === 'sats' &&
+    effectiveLoan.maxSats !== null &&
+    effectiveLoan.maxSats !== undefined &&
+    BigInt(parsed.sats) > BigInt(effectiveLoan.maxSats)
+  ) {
+    check = { ok: false, reason: 'above_max', max: loanMaxInput(effectiveLoan) };
+  }
+  const apiMaxInput = loanMaxUnits(effectiveLoan) === null ? null : loanMaxInput(effectiveLoan);
+  const maxInput = maxDraft(effectiveLoan, amountUnit, rateDay, entryFiat);
 
   let inputError: string | null = null;
   if (amount.trim() !== '' && !check.ok) {
     if (check.reason === 'above_max' && check.max !== null) {
       inputError = t('loans.payMoreAboveMax', {
-        amount: displayLoanAmount(check.max, loan, numberFormat),
+        amount: displayLoanAmount(check.max, loan, numberFormat, formatSats),
       });
     } else if (check.reason === 'invalid') {
       inputError = t(
-        loan.goalCurrency === 'BTC' ? 'loans.payMoreInvalidBitcoin' : 'loans.payMoreInvalidFiat',
+        amountUnit === 'btc' ? 'loans.payMoreInvalidBitcoin' : 'loans.payMoreInvalidFiat',
       );
     }
   }
-  if (maxInput === null || (!check.ok && check.reason === 'no_max')) {
-    inputError = t('loans.payMoreNoRate', { code: loan.goalCurrency });
+  const conversionMissing =
+    loan.goalCurrency !== 'BTC' &&
+    amountUnit === 'btc' &&
+    parsed.kind === 'sats' &&
+    loanAmountText === null;
+  if (parsed.kind === 'no-rate' || conversionMissing) {
+    inputError = t('loans.payMoreNoRate', { code: entryFiat });
+  } else if (apiMaxInput === null || (!check.ok && check.reason === 'no_max')) {
+    inputError =
+      loan.goalCurrency === 'BTC'
+        ? t('loans.payMoreNoMaximum', { code: loan.goalCurrency })
+        : t('loans.payMoreNoRate', { code: loan.goalCurrency });
   }
 
   useEffect(() => {
@@ -161,11 +230,15 @@ export function LoanPayMore({
   }, [loan.maxAmount, loan.maxSats, loan.messageId]);
 
   useEffect(() => {
-    if (actionError === null || pendingAction === null) {
+    if (
+      actionError === null ||
+      actionError.messageId !== loan.messageId ||
+      shownPendingAction === null
+    ) {
       return;
     }
     if (
-      pendingAction === 'pay' &&
+      shownPendingAction === 'pay' &&
       (actionError.code === 'amount_too_high' || actionError.code === 'too_many_shares')
     ) {
       const currentLoan = {
@@ -173,16 +246,22 @@ export function LoanPayMore({
         maxSats: actionError.maxSats,
         maxAmount: actionError.maxAmount,
       };
-      const currentMax = loanMaxUnits(currentLoan) === null ? null : loanMaxInput(currentLoan);
+      const currentMax =
+        loanMaxUnits(currentLoan) === null
+          ? null
+          : maxDraft(currentLoan, amountUnit, rateDay, entryFiat);
+      // The non-null units guard above requires the same API maximum as loanMaxInput.
+      const currentApiMax = loanMaxInput(currentLoan);
       setServerMaximum({
         maxSats: actionError.maxSats,
         maxAmount: actionError.maxAmount,
       });
       if (currentMax !== null) {
         setAmount(currentMax);
+        setExactLoanAmount(currentApiMax);
         setServerError(
           t('loans.payMoreMaxChanged', {
-            amount: displayLoanAmount(currentMax, loan, numberFormat),
+            amount: displayLoanAmount(currentApiMax as string, loan, numberFormat, formatSats),
           }),
         );
       } else {
@@ -191,26 +270,38 @@ export function LoanPayMore({
       return;
     }
     setServerError(t(ACTION_ERROR_KEY[actionError.code]));
-  }, [actionError, loan, numberFormat, pendingAction, t]);
+  }, [
+    actionError,
+    amountUnit,
+    entryFiat,
+    formatSats,
+    loan,
+    numberFormat,
+    rateDay,
+    shownPendingAction,
+    t,
+  ]);
 
   useEffect(() => {
-    if (pendingAction === 'pay' && phase === 'repaid') {
+    if (shownPendingAction === 'pay' && matchingAction === 'prepay' && phase === 'repaid') {
       setAmount('');
+      setExactLoanAmount(null);
       setPendingAction(null);
       setServerError(null);
     }
-  }, [pendingAction, phase]);
+  }, [matchingAction, phase, shownPendingAction]);
 
   useEffect(() => {
     if (
-      pendingAction === 'pay' &&
+      shownPendingAction === 'pay' &&
+      matchingAction === 'prepay' &&
       phase === 'failed' &&
       actionError === null &&
       errorKey !== null
     ) {
       setServerError(t(errorKey));
     }
-  }, [actionError, errorKey, pendingAction, phase, t]);
+  }, [actionError, errorKey, matchingAction, phase, shownPendingAction, t]);
 
   const submitPay = (amountText: string): void => {
     if (!canPay || sundayRest) {
@@ -222,16 +313,13 @@ export function LoanPayMore({
     onPay(loan, amountText);
   };
 
-  const describedBy = [
-    collecting ? noticeId : null,
-    inputError !== null ? errorId : null,
-    serverError !== null && pendingAction === 'pay' ? serverErrorId : null,
-  ]
-    .filter(Boolean)
-    .join(' ');
-  const actionErrorText = serverError;
+  const actionErrorText = shownPendingAction === 'pay' && inputError !== null ? null : serverError;
   const shortfall =
-    showShortfall && pendingAction === 'pay' && missingSats !== null && missingSats > 0
+    showShortfall &&
+    matchingAction === 'prepay' &&
+    shownPendingAction === 'pay' &&
+    missingSats !== null &&
+    missingSats > 0
       ? missingSats
       : null;
 
@@ -239,36 +327,50 @@ export function LoanPayMore({
     <div className="mt-4 flex flex-col gap-3 border-t border-app-border pt-4">
       <h3 className="text-sm font-semibold text-app-fg">{t('loans.payMoreTitle')}</h3>
       <div className="flex items-end gap-2">
-        <div className="min-w-0 flex-1">
-          <label htmlFor={inputId} className="mb-1 block text-sm text-app-fg">
-            {t('loans.payMoreAmount', {
-              unit: loan.goalCurrency === 'BTC' ? t('loans.payMoreSats') : loan.goalCurrency,
-            })}
-          </label>
-          <input
-            id={inputId}
-            type="text"
-            inputMode={loan.goalCurrency === 'BTC' ? 'numeric' : 'decimal'}
-            autoComplete="off"
-            value={amount}
-            disabled={busy}
-            aria-invalid={inputError === null ? undefined : true}
-            aria-describedby={describedBy === '' ? undefined : describedBy}
-            onChange={(event) => {
-              setAmount(event.target.value);
-              setServerError(null);
-              setPendingAction(null);
-            }}
-            className="min-h-11 w-full rounded-2xl border border-app-border-strong bg-app-card px-4 py-2 text-base tabular-nums lining-nums text-app-fg placeholder:text-app-subtle disabled:opacity-50"
-          />
-        </div>
+        <AmountEntry
+          className="min-w-0 flex-1"
+          label={t('loans.payMoreAmount', {
+            unit: amountUnit === 'btc' ? t('loans.payMoreSats') : entryFiat,
+          })}
+          value={amount}
+          valueUnit={amountUnit}
+          fiatCode={entryFiat}
+          rateDay={rateDay}
+          disabled={sharedBusy}
+          {...(inputError === null ? {} : { error: inputError })}
+          onUnitChange={(unit) => {
+            if (unit === amountUnit) {
+              return;
+            }
+            setAmountUnit(unit);
+            if (exactLoanAmount === null) {
+              return;
+            }
+            const nextMaximum = maxDraft(effectiveLoan, unit, rateDay, entryFiat);
+            if (nextMaximum !== null) {
+              switchingExactMaximum.current = true;
+              setAmount(nextMaximum);
+            }
+          }}
+          onValueChange={(value) => {
+            if (switchingExactMaximum.current) {
+              switchingExactMaximum.current = false;
+              return;
+            }
+            setAmount(value);
+            setExactLoanAmount(null);
+            setServerError(null);
+            setPendingAction(null);
+          }}
+        />
         <Button
           type="button"
           variant="secondary"
-          disabled={busy || maxInput === null}
+          disabled={sharedBusy || maxInput === null || apiMaxInput === null}
           onClick={() => {
-            if (maxInput !== null) {
+            if (maxInput !== null && apiMaxInput !== null) {
               setAmount(maxInput);
+              setExactLoanAmount(apiMaxInput);
               setServerError(null);
               setPendingAction(null);
             }
@@ -277,36 +379,34 @@ export function LoanPayMore({
           {t('loans.payMoreMax')}
         </Button>
       </div>
-      {inputError === null ? null : (
-        <p id={errorId} className="text-sm text-app-danger">
-          {inputError}
-        </p>
-      )}
-      {actionErrorText === null || pendingAction === 'close' ? null : (
-        <p id={serverErrorId} role="alert" className="text-sm text-app-danger">
+      {actionErrorText === null || shownPendingAction === 'close' ? null : (
+        <p role="alert" className="text-sm text-app-danger">
           {actionErrorText}
         </p>
       )}
       {collecting ? (
-        <p id={noticeId} className="text-sm text-app-muted">
-          {t('loans.payMoreCollectingNotice')}
-        </p>
+        <p className="text-sm text-app-muted">{t('loans.payMoreCollectingNotice')}</p>
       ) : null}
-      {prepayWaiting.map((row) => (
-        <p
-          key={`${row.dayIndex}:${row.recipientAccountId}`}
-          className="flex items-baseline justify-between gap-3 text-sm text-app-muted"
-        >
-          <span>{t('loans.waitingFor', { name: row.name })}</span>
-          <span className="shrink-0 tabular-nums lining-nums">
-            {row.amount === null
-              ? formatBitcoin(row.amountSats, numberFormat)
-              : displayLoanAmount(row.amount, loan, numberFormat)}
-          </span>
-        </p>
-      ))}
+      {matchingAction === 'prepay'
+        ? prepayWaiting.map((row) => (
+            <p
+              key={`${row.dayIndex}:${row.recipientAccountId}`}
+              className="flex items-baseline justify-between gap-3 text-sm text-app-muted"
+            >
+              <span>{t('loans.waitingFor', { name: row.name })}</span>
+              <span className="shrink-0 tabular-nums lining-nums">
+                {row.amount === null
+                  ? formatSats(row.amountSats)
+                  : displayLoanAmount(row.amount, loan, numberFormat, formatSats)}
+              </span>
+            </p>
+          ))
+        : null}
       {sundayRest ? <p className="text-sm text-app-muted">{t('loans.payMoreSunday')}</p> : null}
-      {!showWalletStatus || walletReady || busy ? null : phase === 'setupFailed' ? (
+      {!showWalletStatus ||
+      walletReady ||
+      sharedBusy ||
+      (activeAction !== null && matchingAction === null) ? null : phase === 'setupFailed' ? (
         <WalletSetupNote />
       ) : phase === 'connecting' ? (
         <p role="status" className="flex items-center gap-2 text-sm text-app-muted">
@@ -318,7 +418,7 @@ export function LoanPayMore({
           {t('wallet.payUnavailable')}
         </p>
       )}
-      {pendingAction === 'pay' && phase === 'unconfirmed' ? (
+      {matchingAction === 'prepay' && shownPendingAction === 'pay' && phase === 'unconfirmed' ? (
         <p role="status" className="text-sm text-app-muted">
           {t('wallet.payUnconfirmed')}
         </p>
@@ -347,7 +447,7 @@ export function LoanPayMore({
           )}
         </div>
       )}
-      {busy && pendingAction === 'pay' ? (
+      {busy && shownPendingAction === 'pay' ? (
         <p role="status" className="flex items-center gap-2 text-sm text-app-muted">
           <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" />
           {t('loans.payMoreSending')}
@@ -356,7 +456,7 @@ export function LoanPayMore({
         <Button
           type="button"
           size="lg"
-          disabled={!check.ok || !canPay || busy || sundayRest}
+          disabled={!check.ok || !canPay || sharedBusy || sundayRest}
           onClick={
             check.ok
               ? () => {
@@ -377,19 +477,19 @@ export function LoanPayMore({
           type="button"
           size="lg"
           variant="secondary"
-          disabled={busy}
+          disabled={sharedBusy}
           onClick={() => setConfirming('close')}
         >
           {t('loans.endCollecting')}
         </Button>
       ) : null}
-      {busy && pendingAction === 'close' ? (
+      {busy && shownPendingAction === 'close' ? (
         <p role="status" className="flex items-center gap-2 text-sm text-app-muted">
           <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" />
           {t('loans.endCollectingClosing')}
         </p>
       ) : null}
-      {actionErrorText === null || pendingAction !== 'close' ? null : (
+      {actionErrorText === null || shownPendingAction !== 'close' ? null : (
         <p role="alert" className="text-sm text-app-danger">
           {actionErrorText}
         </p>
@@ -426,7 +526,7 @@ export function LoanPayMore({
               check.ok ? (
                 <Button type="button" size="lg" onClick={() => submitPay(check.text)}>
                   {t('loans.payMoreConfirmAction', {
-                    amount: displayLoanAmount(check.text, loan, numberFormat),
+                    amount: displayLoanAmount(check.text, loan, numberFormat, formatSats),
                   })}
                 </Button>
               ) : (

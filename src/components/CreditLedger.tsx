@@ -9,6 +9,8 @@ import { preferredFiatSuffix } from '@/components/PreferredFiatSuffix';
 import { RepaymentPlanChart } from '@/components/RepaymentPlanChart';
 import { useSpotRate } from '@/hooks/useSpotRate';
 import { getRepayment, type RepaymentLedger, type RepaymentLine } from '@/lib/api';
+import { creditSmallestUnits } from '@/lib/credit-plan';
+import { centsString } from '@/lib/loan-repay';
 import type { MessageKey } from '@/lib/messages';
 import type { NumberFormatStyle } from '@/lib/number-format';
 import {
@@ -29,7 +31,8 @@ import {
  * link to the repayment list. `list="page"` omits that link. A short plan, or
  * one that is not fully given or is missing a date, lists each day. A fully
  * given plan with more than 7 dated days shows the month overview instead.
- * Still owed there counts only unpaid shares. A month names one status only
+ * Still owed there counts only unpaid shares. Partial rows use `dueSats` and
+ * `amount - paidAmount` in rows, charts, splits, and totals. A month names one status only
  * when every share in that month has it. A fiat plan, share, still-owed
  * total, and chart total stay in the ask currency, with no bitcoin. Money
  * already given keeps that currency and bitcoin. A bitcoin amount shows the
@@ -669,11 +672,28 @@ function withWaiting(ledger: RepaymentLedger): RepaymentLedger {
   );
   return {
     ...ledger,
-    repayments: ledger.repayments.map((row) =>
-      row.waiting !== undefined || row.status !== 'due'
-        ? row
-        : { ...row, waiting: cannotReceive.has(row.accountId) },
-    ),
+    repayments: ledger.repayments.map((row) => {
+      const remaining = remainingLine(row);
+      return remaining.waiting !== undefined || remaining.status !== 'due'
+        ? remaining
+        : { ...remaining, waiting: cannotReceive.has(remaining.accountId) };
+    }),
+  };
+}
+
+function remainingLine(row: RepaymentLine): RepaymentLine {
+  let amount = row.amount;
+  if (row.amount !== null && row.amount !== undefined) {
+    const total = creditSmallestUnits(row.amount, false);
+    const paid = creditSmallestUnits(row.paidAmount ?? '0', false);
+    if (total !== null && paid !== null) {
+      amount = centsString(total > paid ? total - paid : 0n);
+    }
+  }
+  return {
+    ...row,
+    amount,
+    sats: row.dueSats ?? row.sats,
   };
 }
 
