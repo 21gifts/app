@@ -403,7 +403,7 @@ Founder seed **Cyrill** only. Lead tells the visitor to click a person to load e
 
 ### Variant: expanded
 
-Click **Cyrill**, then **Severin**. The chain grows left to right: Cyrill appointed Severin, who verified Ada and Bob.
+Click **Cyrill**, then **Severin**. The chain grows left to right: Cyrill appointed Severin, who verified Ada and Bob. The six explanations stay under the diagram: **Verified**, **Moderator**, **Fond**, **Software Developer**, **Initiator**, and **Founder**.
 
 ![21.gifts Trust Chain expanded](images/trust-chain-expanded.png)
 
