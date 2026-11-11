@@ -361,7 +361,7 @@ Fetch failed. Button **Try again**.
 
 Loaded stats. **Posts** shows notes and replies as one total, with a bar on days that have posts and a gap on days that have none. One cumulative over-time chart is visible. Scale defaults to ₿.
 
-When `GET /wallets/stats` fails, the **Wallets** section is omitted and the page is this default `/stats` variant. The e2e mock answers `/wallets/stats` with 503 for every other `/stats` variant, so those baselines show exactly this state.
+When `GET /wallets/stats` fails, the **Wallets** section is omitted and the page is this default `/stats` variant. The e2e mock answers `/wallets/stats` with 503 by default, so every `/stats` variant except `wallets` and `wallets-no-rate` shows this state.
 
 ![21.gifts stats](images/stats.png)
 
