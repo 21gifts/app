@@ -23,9 +23,13 @@ type ShortHit = { code: string; messageId: string };
 /** Stable empty list so a body with no short codes does not rerender. */
 const NO_SHORT_HITS: ShortHit[] = [];
 
-const ROLE_LABEL_KEYS: Record<'founder' | 'moderator' | 'initiator' | 'verified', MessageKey> = {
+const ROLE_LABEL_KEYS: Record<
+  'founder' | 'moderator' | 'fond' | 'initiator' | 'verified',
+  MessageKey
+> = {
   founder: 'forum.role.founder',
   moderator: 'forum.role.moderator',
+  fond: 'forum.role.fond',
   initiator: 'forum.role.initiator',
   verified: 'forum.role.verified',
 };

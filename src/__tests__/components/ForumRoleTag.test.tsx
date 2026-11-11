@@ -8,9 +8,10 @@ afterEach(() => {
 });
 
 describe('forumTaggedRole', () => {
-  it('returns only the four tagged roles', () => {
+  it('returns only the five tagged roles', () => {
     expect(forumTaggedRole('founder')).toBe('founder');
     expect(forumTaggedRole('moderator')).toBe('moderator');
+    expect(forumTaggedRole('fond')).toBe('fond');
     expect(forumTaggedRole('initiator')).toBe('initiator');
     expect(forumTaggedRole('verified')).toBe('verified');
     expect(forumTaggedRole('basis')).toBeNull();
@@ -35,6 +36,11 @@ describe('ForumRoleTag', () => {
     expect(container.innerHTML).toBe('');
   });
 
+  it('draws the Fond pill', () => {
+    renderWithLocale(<ForumRoleTag role="fond" expanded={false} onToggle={vi.fn()} />);
+    expect(screen.getByRole('button', { name: 'Fond' })).toBeTruthy();
+  });
+
   it('hides Verified behind the Software Developer label', () => {
     const { container } = renderWithLocale(
       <ForumRoleTag
@@ -57,6 +63,13 @@ describe('ForumRoleHint', () => {
   it('returns nothing for an untagged role', () => {
     const { container } = renderWithLocale(<ForumRoleHint role="basis" />);
     expect(container.innerHTML).toBe('');
+  });
+
+  it('returns the Fond explanation', () => {
+    renderWithLocale(<ForumRoleHint role="fond" />);
+    expect(
+      screen.getByText('This account pays the daily gifts from the 21.gifts fund.'),
+    ).toBeTruthy();
   });
 
   it('returns nothing for Verified behind the Software Developer label', () => {

@@ -178,9 +178,9 @@ export const accountSchema = z.object({
 /**
  * An authenticated 21.gifts account.
  *
- * `role` is the live membership tier (`basis`, `verified`, `moderator`, or
- * `founder`); `linkingKey` is a leftover wallet public key from the retired
- * LNURL-auth login, or `null` for passkey-created accounts.
+ * `role` is the live membership tier (`basis`, `verified`, `moderator`,
+ * `fond`, `initiator`, or `founder`); `linkingKey` is a leftover wallet public
+ * key from the retired LNURL-auth login, or `null` for passkey-created accounts.
  * `name` is the non-empty display name, or `null` until the giver sets one.
  * `location` is an optional free-text place (never `""`; empty clears to `null`).
  * `lightningAddress` and `lightningAddressVerified` are accepted from the api
@@ -1640,7 +1640,7 @@ export type MemberProfile = z.infer<typeof memberProfileSchema>;
 export const trustChainNodeSchema = z.object({
   id: z.string(),
   name: z.string().nullable(),
-  role: z.enum(['verified', 'moderator', 'initiator', 'founder']),
+  role: z.enum(['verified', 'moderator', 'fond', 'initiator', 'founder']),
 });
 
 /**
@@ -1864,3 +1864,52 @@ export const dailyRosterSchema = z.object({
  * moderator payments switch, and moderator stipend list.
  */
 export type DailyRoster = z.infer<typeof dailyRosterSchema>;
+
+/**
+ * Runtime schema for one open row of `GET /fond/payouts`.
+ *
+ * The api owns every amount, so a row carries no amount: the app asks for the
+ * row's invoice and pays what it says. `paymentHash` is present for
+ * `invoiced` and `settling` rows and null for `owed` and `issuing`; it is
+ * optional so an api without the field still parses.
+ */
+export const fondPayoutSchema = z.object({
+  id: z.string().min(1),
+  kind: z.enum(['daily', 'moderator', 'welcome']),
+  status: z.enum(['owed', 'issuing', 'invoiced', 'settling']),
+  utcDay: z.string(),
+  paymentHash: z.string().nullable().optional(),
+});
+
+/**
+ * Runtime schema for the `GET /fond/payouts` body: today's open rows in list order.
+ */
+export const fondPayoutListSchema = z.object({
+  payouts: z.array(fondPayoutSchema),
+});
+
+/**
+ * One open Fond payout row: what to pay, in which state, and for which UTC day.
+ */
+export type FondPayout = z.infer<typeof fondPayoutSchema>;
+
+/**
+ * The open Fond payouts for today, in the order the api lists them.
+ */
+export type FondPayoutList = z.infer<typeof fondPayoutListSchema>;
+
+/**
+ * Runtime schema for a `POST /fond/payouts/:id/invoice` success body.
+ */
+export const fondPayoutInvoiceSchema = z.object({
+  id: z.string().min(1),
+  bolt11: z.string().min(1),
+  paymentHash: z.string().min(1),
+  sparkInvoice: z.string().nullable(),
+});
+
+/**
+ * One payout invoice: the BOLT11, the fee-free Spark invoice when the
+ * recipient's wallet has one, and the payment hash that identifies the send.
+ */
+export type FondPayoutInvoice = z.infer<typeof fondPayoutInvoiceSchema>;

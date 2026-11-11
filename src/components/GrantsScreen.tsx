@@ -15,11 +15,12 @@ import { useAuthStore } from '@/stores/auth-store';
  * the daily-payment text and amounts links, plus the staff queue for moderators.
  *
  * Renders nothing without a session. A signed-in account sees a secondary link
- * to `/grants/goals` under the grant card. An initiator or founder also sees
- * two secondary links, one to the daily payment text and one to the amounts.
+ * to `/grants/goals` under the grant card. A viewer at least initiator
+ * (initiator and founder) also sees three secondary links, to the daily
+ * payment text, the amounts, and the moderator payments.
  * Those links do not fetch the daily roster. A missing account shows neither
  * the goals link nor those payment links. Accounts at least moderator,
- * including an initiator and a founder, see how many open grant applications
+ * including a fond, an initiator, and a founder, see how many open grant applications
  * exist. When the count is greater than zero, a secondary link to
  * `/grants/applications` shows that count. When the count is zero, that
  * control is the empty sentence as plain text. Members below moderator never

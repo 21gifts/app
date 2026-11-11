@@ -8,6 +8,7 @@ import { openCryptoPayQrValue } from '../src/lib/gifts-address';
 import { fulfillSpot, SPOT_RATES, spotRatesFromStats } from './fx-spot';
 import { motionSettled } from './motion';
 import { fulfillStablecoinUnavailable, stubShopPayment } from './shop-payment';
+import { definedFiatAmounts, definedFiatSum } from '../src/lib/loan-repay';
 import {
   buildShopStickerPdf,
   buildShopStickerSvg,
@@ -45,6 +46,7 @@ import {
   loanB,
   loanWith,
   myLoans,
+  productionPhpLoans,
 } from './loan-fixtures';
 
 /** The Playwright build's id, which the stub api requires on every passkey step. */
@@ -764,6 +766,29 @@ test('Function: GET — healthz is ok', async ({ request }) => {
   const res = await request.get('/healthz');
   expect(res.status()).toBe(200);
   expect(await res.json()).toEqual({ status: 'ok' });
+});
+
+test('Function: FondPayoutSync — the loop requests nothing while signed out', async ({ page }) => {
+  await page.addInitScript(() => {
+    localStorage.removeItem('21gifts.session');
+  });
+  let requests = 0;
+  page.on('request', (request) => {
+    if (new URL(request.url()).pathname === '/fond/payouts') {
+      requests += 1;
+    }
+  });
+  await page.route(/\/forum\/messages(?:\?|$)/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ messages: [] }),
+    });
+  });
+  await page.goto('/welcome');
+  await expect(page.getByRole('heading', { name: 'Welcome' })).toBeVisible();
+  await page.waitForTimeout(250);
+  expect(requests).toBe(0);
 });
 
 test('Function: getApiUrl — proxy reaches the stub', async ({ request }) => {
@@ -14199,7 +14224,7 @@ test('Function: forumTaggedRole — untagged notes show no role pill', async ({ 
   await page.goto('/welcome');
   await expect(page.getByText('Hello from the heart list.')).toBeVisible();
   await expect(
-    page.getByRole('button', { name: /^(?:Founder|Moderator|Initiator|Verified)$/ }),
+    page.getByRole('button', { name: /^(?:Founder|Moderator|Fond|Initiator|Verified)$/ }),
   ).toHaveCount(0);
 });
 
@@ -16206,14 +16231,45 @@ async function openLoanUi(
   await page.goto(pathname);
 }
 
-test('Function: summarizeLoans — the welcome card shows the combined behind state', async ({
-  page,
-}) => {
+test('Function: summarizeLoans — the welcome card shows the behind state', async ({ page }) => {
   const behind = loanWith(loanA, {
     due: { payableSats: 3_000, payablePeople: 3, behindDays: 2 },
   });
   await openLoanUi(page, '/welcome', myLoans([behind]), false);
   await expect(page.getByText("You're 2 days behind")).toBeVisible();
+});
+
+test('Function: summarizeLoans — the production PHP pair keeps its next amount', async ({
+  page,
+}) => {
+  await openLoanUi(page, '/welcome', myLoans(productionPhpLoans), false);
+  const card = page.getByRole('region', { name: 'Your loans (2)' });
+  await expect(card).toContainText("Next: Monday, November 16, ₱199.99 · ₿3'857");
+});
+
+test('Function: definedFiatSum — stored PHP amounts add in their currency', async ({ page }) => {
+  expect(definedFiatSum('PHP', ['199.99', '200.48'], 'ch')).toBe('₱400.47');
+  expect(definedFiatSum('PHP', ['199.99', null], 'ch')).toBeNull();
+  expect(definedFiatSum('PHP', [], 'ch')).toBeNull();
+  expect(definedFiatSum('PHP', ['not-an-amount'], 'ch')).toBeNull();
+  await openLoanUi(page, '/loans/repay?visual=repay-ready', myLoans([loanB]), false);
+  await expect(page.getByText('₱30.00', { exact: true })).toBeVisible();
+});
+
+test('Function: definedFiatAmounts — stored amounts add per currency', async ({ page }) => {
+  expect(
+    definedFiatAmounts(
+      [
+        { code: 'PHP', amount: '1.00' },
+        { code: 'USD', amount: '2.00' },
+        { code: 'PHP', amount: '1.50' },
+      ],
+      'ch',
+    ),
+  ).toBe('₱2.50 + $2.00');
+  expect(definedFiatAmounts([{ code: 'BTC', amount: null }], 'ch')).toBeNull();
+  await openLoanUi(page, '/loans/repay?visual=repay-ready', myLoans([loanB]), false);
+  await expect(page.getByText('₱30.00', { exact: true })).toBeVisible();
 });
 
 test('Function: dueShares — Who gets paid lists every due lender', async ({ page }) => {
@@ -16271,6 +16327,34 @@ test('Function: useLoanRepay — wallet availability and sending pins reach the 
 test('Function: LoansCard — the welcome screen renders the loan card', async ({ page }) => {
   await openLoanUi(page, '/welcome', myLoans([loanA]), false);
   await expect(page.getByRole('region', { name: 'Your loan' })).toContainText("₿1'000");
+});
+
+test('Function: LoansCard — a PHP and a bitcoin loan keep their own goal bars', async ({
+  page,
+}) => {
+  await openLoanUi(page, '/welcome', myLoans([loanA, loanB]), false);
+  const card = page.getByRole('region', { name: 'Your loans (2)' });
+  await expect(card).toContainText('₱300.00');
+  await expect(card).toContainText("₿30'000");
+  await expect(card.getByText(loanA.text)).toBeVisible();
+  await expect(card.getByText(loanB.text)).toBeVisible();
+  await card.getByRole('button', { name: 'Show loans' }).click();
+  await expect(card.getByRole('link', { name: loanA.text })).toBeVisible();
+  await expect(card.getByRole('link', { name: loanB.text })).toBeVisible();
+});
+
+test('Function: MenuAccountHeader — a PHP payable amount shows its stored figure with bitcoin', async ({
+  page,
+}) => {
+  const phpDue = loanWith(loanB, {
+    due: { payableSats: 1_200, payablePeople: 2, payableAmount: '30.00' },
+  });
+  await openLoanUi(page, '/welcome', myLoans([phpDue]), false);
+  await page.getByRole('button', { name: 'Menu' }).click();
+  const menu = page.locator('#signed-in-menu');
+  const dueRow = menu.getByText('Loan repayment due today').locator('..');
+  await expect(dueRow.getByText("₱30.00 · ₿1'200", { exact: true })).toBeVisible();
+  await expect(dueRow).not.toContainText(/\$[\d,.'’]+/);
 });
 
 test('Function: LenderWaitingCard — the welcome screen asks a lender to open the wallet', async ({

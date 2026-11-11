@@ -9,10 +9,6 @@ export interface LoansSummary {
   count: number;
   /** Loans with `fundedAt !== null`. */
   fundedCount: number;
-  /** Sum of goalSats. */
-  goalSats: number;
-  /** Sum over loans of min(sats, goalSats). */
-  sats: number;
   /** Mirrors `sundayRest`. */
   sundayRest: boolean;
   /** Sum of due.payableSats over all loans. */
@@ -29,9 +25,11 @@ export interface LoansSummary {
   lastPayment: boolean;
   /**
    * Earliest next.dueOn among loans whose next is non-null with sats !== null, and the sum of
-   * next.sats of every loan whose next.dueOn equals it; null when there is none.
+   * next.sats of every loan whose next.dueOn equals it. The amount is the sum per fiat currency of
+   * every stored next.amount string on that day, in first-seen currency order, joined with " + ";
+   * null when a BTC loan, a missing string, or an invalid string keeps the total undefined.
    */
-  next: { dueOn: string; sats: number } | null;
+  next: { dueOn: string; sats: number; amount: string | null } | null;
   /**
    * Card outline: 'danger' when fundedCount \> 0 and behindDays \> 0; 'success' when fundedCount \> 0,
    * !sundayRest, payableSats === 0 and waitingSats === 0; otherwise 'neutral'.
@@ -45,26 +43,24 @@ export interface LoansSummary {
  * Combines totals and display state across the member's loans.
  *
  * @param data - Body returned by `GET /me/loans`.
+ * @param style - Visitor number format for a defined next amount.
  * @returns Totals, next due day, tone, and payable state.
  */
-export function summarizeLoans(data: MyLoans): LoansSummary {
+export function summarizeLoans(data: MyLoans, style: NumberFormatStyle): LoansSummary {
   let fundedCount = 0;
-  let goalSats = 0;
-  let sats = 0;
   let payableSats = 0;
   let waitingSats = 0;
   let waitingPeople = 0;
   let behindDays = 0;
   let payableLoans = 0;
   let lastPayment = false;
-  let next: LoansSummary['next'] = null;
+  let nextDueOn: string | null = null;
+  let nextSats = 0;
 
   for (const loan of data.loans) {
     if (loan.fundedAt !== null) {
       fundedCount += 1;
     }
-    goalSats += loan.goalSats;
-    sats += Math.min(loan.sats, loan.goalSats);
     payableSats += loan.due.payableSats;
     waitingSats += loan.due.waitingSats;
     waitingPeople += loan.due.waitingPeople;
@@ -74,13 +70,26 @@ export function summarizeLoans(data: MyLoans): LoansSummary {
       lastPayment ||= loan.due.lastPayment;
     }
     if (loan.next !== null && loan.next.sats !== null) {
-      if (next === null || loan.next.dueOn < next.dueOn) {
-        next = { dueOn: loan.next.dueOn, sats: loan.next.sats };
-      } else if (loan.next.dueOn === next.dueOn) {
-        next.sats += loan.next.sats;
+      if (nextDueOn === null || loan.next.dueOn < nextDueOn) {
+        nextDueOn = loan.next.dueOn;
+        nextSats = loan.next.sats;
+      } else if (loan.next.dueOn === nextDueOn) {
+        nextSats += loan.next.sats;
       }
     }
   }
+
+  let nextAmount: string | null = null;
+  if (nextDueOn !== null) {
+    const amounts: { code: MyLoan['goalCurrency']; amount: string | null }[] = [];
+    for (const loan of data.loans) {
+      if (loan.next !== null && loan.next.sats !== null && loan.next.dueOn === nextDueOn) {
+        amounts.push({ code: loan.goalCurrency, amount: loan.next.amount });
+      }
+    }
+    nextAmount = definedFiatAmounts(amounts, style);
+  }
+  const next = nextDueOn === null ? null : { dueOn: nextDueOn, sats: nextSats, amount: nextAmount };
 
   const tone =
     fundedCount > 0 && behindDays > 0
@@ -91,8 +100,6 @@ export function summarizeLoans(data: MyLoans): LoansSummary {
   return {
     count: data.loans.length,
     fundedCount,
-    goalSats,
-    sats,
     sundayRest: data.sundayRest,
     payableSats,
     waitingSats,
@@ -106,6 +113,76 @@ export function summarizeLoans(data: MyLoans): LoansSummary {
   };
 }
 
+/**
+ * Sums stored fiat amount strings in one currency. Bitcoin, a missing currency,
+ * and a missing amount yield null.
+ *
+ * @param code - Loan currency of every amount.
+ * @param amounts - Stored amount strings to sum.
+ * @param style - Visitor number format.
+ * @returns The summed amount in that currency, or null.
+ */
+export function definedFiatSum(
+  code: MyLoan['goalCurrency'] | undefined,
+  amounts: readonly (string | null)[],
+  style: NumberFormatStyle,
+): string | null {
+  if (code === undefined || code === 'BTC' || amounts.length === 0) {
+    return null;
+  }
+  let cents = 0n;
+  for (const amount of amounts) {
+    if (amount === null) {
+      return null;
+    }
+    const units = creditSmallestUnits(amount, false);
+    if (units === null) {
+      return null;
+    }
+    cents += units;
+  }
+  return formatDefinedGoalAmount(centsString(cents), code, style);
+}
+
+/**
+ * Sums stored fiat amounts per currency and joins the formatted totals with
+ * ` + ` in first-seen currency order. A bitcoin amount, a missing amount, or an
+ * invalid amount makes the whole result null.
+ *
+ * @param amounts - Stored amount and currency pairs, in display order.
+ * @param style - Visitor number format.
+ * @returns For example `PHP 2.00 + $3.00`, or null when any part is undefined.
+ */
+export function definedFiatAmounts(
+  amounts: readonly { code: MyLoan['goalCurrency']; amount: string | null }[],
+  style: NumberFormatStyle,
+): string | null {
+  if (amounts.length === 0) {
+    return null;
+  }
+  const byCode = new Map<Exclude<MyLoan['goalCurrency'], 'BTC'>, (string | null)[]>();
+  for (const item of amounts) {
+    if (item.code === 'BTC' || item.amount === null) {
+      return null;
+    }
+    const group = byCode.get(item.code);
+    if (group === undefined) {
+      byCode.set(item.code, [item.amount]);
+    } else {
+      group.push(item.amount);
+    }
+  }
+  const parts: string[] = [];
+  for (const [code, group] of byCode) {
+    const sum = definedFiatSum(code, group, style);
+    if (sum === null) {
+      return null;
+    }
+    parts.push(sum);
+  }
+  return parts.join(' + ');
+}
+
 /** One due share of one loan, oldest first across loans. */
 export interface DueShare {
   messageId: string;
@@ -117,7 +194,7 @@ export interface DueShare {
   name: string;
   /** row.sats when not null, else row.dueSats; null when neither is known. */
   sats: number | null;
-  /** row.amount (loan currency) or null. */
+  /** row.amount when the ledger is in the loan's goal currency; otherwise null. */
   amount: string | null;
   /**
    * row.waiting: the giver cannot receive yet, so the share is not sent now. Without it
@@ -158,7 +235,7 @@ export function dueShares(
         accountId: row.accountId,
         name: row.name,
         sats: row.sats ?? row.dueSats,
-        amount: row.amount,
+        amount: ledger.currency === loan.goalCurrency ? row.amount : null,
         waiting: row.waiting ?? canReceive.get(row.accountId) === false,
         rowIndex,
       });
@@ -213,14 +290,14 @@ export function centsString(cents: bigint): string {
 }
 
 /**
- * The stored fiat figure of what is payable or waiting across loans, when every
- * loan with that part above zero was asked in one fiat currency and the api
- * sent its amount; otherwise the caller shows bitcoin with the current spot.
+ * The stored fiat figure of what is payable or waiting across loans. The stored
+ * amounts are summed per currency and joined in first-seen order, like the
+ * sending line; otherwise the caller shows bitcoin with the current spot.
  *
  * @param loans - Loans of `GET /me/loans`.
  * @param part - `payable` (`due.payableAmount`) or `waiting` (`due.waitingAmount`).
  * @param style - Visitor number format.
- * @returns The summed amount in that currency, or null.
+ * @returns The per-currency sums (for example `₱30.00 + $3.00`), or null.
  */
 export function definedDueLabel(
   loans: readonly MyLoan[],
@@ -228,17 +305,8 @@ export function definedDueLabel(
   style: NumberFormatStyle,
 ): string | null {
   const active = loans.filter((loan) => loan.due[`${part}Sats`] > 0);
-  const code = active[0]?.goalCurrency;
-  if (
-    code === undefined ||
-    code === 'BTC' ||
-    !active.every((loan) => loan.goalCurrency === code && loan.due[`${part}Amount`] !== null)
-  ) {
-    return null;
-  }
-  const cents = active.reduce(
-    (sum, loan) => sum + (creditSmallestUnits(loan.due[`${part}Amount`] as string, false) ?? 0n),
-    0n,
+  return definedFiatAmounts(
+    active.map((loan) => ({ code: loan.goalCurrency, amount: loan.due[`${part}Amount`] })),
+    style,
   );
-  return formatDefinedGoalAmount(centsString(cents), code, style);
 }

@@ -4,14 +4,31 @@ import { LoansCard } from '@/components/LoansCard';
 import { useMyLoans } from '@/hooks/useMyLoans';
 import { useSpotRate } from '@/hooks/useSpotRate';
 import type { MyLoan, MyLoans } from '@/lib/api';
+import { formatDefinedGoalAmount } from '@/lib/forum-goal';
+import { formatFiatDisplay, satsToFiatAmount } from '@/lib/stats-money';
 import type { FiatRateDay } from '@/lib/stats-money';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
 
 const goalBar = vi.hoisted(() => vi.fn());
+interface ForumGoalBarTestProps {
+  sats: number;
+  goalSats: number;
+  goalCurrency?: string;
+  goalAmount?: string;
+}
+
 vi.mock('@/components/ForumGoalBar', () => ({
-  ForumGoalBar: (props: { sats: number; goalSats: number; [key: string]: unknown }) => {
+  ForumGoalBar: (props: ForumGoalBarTestProps) => {
     goalBar(props);
-    return <div data-testid="goal-bar">{`${props.sats}/${props.goalSats}`}</div>;
+    const goal =
+      typeof props.goalAmount === 'string' &&
+      (props.goalCurrency === 'PHP' ||
+        props.goalCurrency === 'USD' ||
+        props.goalCurrency === 'CHF' ||
+        props.goalCurrency === 'EUR')
+        ? formatDefinedGoalAmount(props.goalAmount, props.goalCurrency, 'ch')
+        : '';
+    return <div data-testid="goal-bar">{`${goal} ${props.sats}/${props.goalSats}`.trim()}</div>;
   },
 }));
 vi.mock('@/hooks/useMyLoans', () => ({ useMyLoans: vi.fn() }));
@@ -68,6 +85,57 @@ function show(loans: MyLoans | null, place: 'welcome' | 'wallet' = 'welcome'): v
   renderWithLocale(<LoansCard place={place} />);
 }
 
+const PRODUCTION_SPOT = formatFiatDisplay(
+  satsToFiatAmount(192_814 + 290_243, RATE_DAY, 'PHP'),
+  'PHP',
+  'ch',
+);
+
+function phpLoan(overrides: Partial<MyLoan> = {}): MyLoan {
+  return loan({
+    goalCurrency: 'PHP',
+    goalAmount: '10000',
+    goalAmountUsd: null,
+    goalAmountChf: null,
+    goalAmountEur: null,
+    goalAmountPhp: '10000.00',
+    amountUsd: null,
+    amountChf: null,
+    amountEur: null,
+    amountPhp: '10000.98',
+    goalSats: 192_814,
+    sats: 192_833,
+    fundedAt: '2026-10-10T00:00:00.000Z',
+    due: { ...loan().due, payableSats: 0, payablePeople: 0 },
+    next: { dueOn: '2026-11-16', sats: 19_999, amount: '199.99' },
+    ...overrides,
+  });
+}
+
+function collectingPhpLoan(): MyLoan {
+  return phpLoan({
+    messageId: 'loan-b',
+    text: 'Small loan for school books for my daughter.',
+    goalAmount: '15000',
+    goalAmountPhp: '15000.00',
+    amountPhp: '480.28',
+    goalSats: 290_243,
+    sats: 9_283,
+    fundedAt: null,
+    next: null,
+    due: {
+      payableSats: 0,
+      payablePeople: 0,
+      waitingSats: 0,
+      waitingPeople: 0,
+      behindDays: 0,
+      payableAmount: null,
+      waitingAmount: null,
+      lastPayment: false,
+    },
+  });
+}
+
 beforeEach(() => {
   vi.useFakeTimers();
   vi.setSystemTime(new Date('2026-10-10T10:00:00'));
@@ -93,7 +161,7 @@ describe('LoansCard', () => {
     expect(screen.queryByRole('region')).toBeNull();
   });
 
-  it('shows a collecting loan, its exact goal fields, and the collapsed post link', () => {
+  it('shows a collecting loan, its exact goal fields, and the collapsed disclosure', () => {
     const item = loan({ sats: 12_000, fundedAt: null });
     show({ sundayRest: false, loans: [item] });
     const card = screen.getByRole('region', { name: 'Your loan' });
@@ -130,7 +198,7 @@ describe('LoansCard', () => {
     expect(screen.getByText('40%')).toBeTruthy();
   });
 
-  it('combines several goals and shows the behind amount and Send', () => {
+  it('shows one defined goal bar per loan and the behind amount and Send', () => {
     show({
       sundayRest: false,
       loans: [
@@ -151,18 +219,89 @@ describe('LoansCard', () => {
     expect(screen.getByText("You're 2 days behind")).toBeTruthy();
     expect(screen.getByText("₿1'000").textContent).toBe("₿1'000 · $1.00");
     expect(screen.getByRole('link', { name: 'Send' }).getAttribute('href')).toBe('/loans/repay');
-    expect(goalBar).toHaveBeenCalledWith(
-      expect.objectContaining({ sats: 36_000, goalSats: 42_000 }),
+    expect(goalBar).toHaveBeenCalledTimes(2);
+    expect(goalBar).toHaveBeenNthCalledWith(
+      1,
+      expect.objectContaining({ sats: 30_000, goalSats: 30_000, goalCurrency: 'BTC' }),
     );
-    expect(goalBar.mock.calls[0]?.[0]).not.toHaveProperty('goalCurrency');
+    expect(goalBar).toHaveBeenNthCalledWith(
+      2,
+      expect.objectContaining({ sats: 6_000, goalSats: 12_000, goalCurrency: 'BTC' }),
+    );
+    expect(screen.getByText('A sewing machine for my work').tagName).toBe('P');
+    expect(screen.getByText('School books').tagName).toBe('P');
+    expect(screen.queryByRole('link', { name: 'A sewing machine for my work' })).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Show loans' }));
     expect(screen.getByRole('button', { name: 'Hide loans' })).toBeTruthy();
+    expect(screen.getByRole('link', { name: 'A sewing machine for my work' })).toBeTruthy();
+    expect(screen.getByRole('link', { name: 'School books' })).toBeTruthy();
   });
 
-  it('shows Sunday rest without a repayment link', () => {
+  it('keeps both PHP loans at their frozen figures instead of the summed goal spot', () => {
+    expect(PRODUCTION_SPOT).toBe("₱27'051.19");
+    show({ sundayRest: false, loans: [phpLoan(), collectingPhpLoan()] });
+    const card = screen.getByRole('region', { name: 'Your loans (2)' });
+    expect(card.textContent).not.toContain(PRODUCTION_SPOT);
+    expect(screen.getAllByTestId('goal-bar')).toHaveLength(2);
+    expect(screen.getByText(/₱10'000\.00/)).toBeTruthy();
+    expect(screen.getByText(/₱15'000\.00/)).toBeTruthy();
+    expect(goalBar).toHaveBeenCalledTimes(2);
+    expect(goalBar).toHaveBeenNthCalledWith(
+      1,
+      expect.objectContaining({
+        sats: 192_833,
+        goalSats: 192_814,
+        goalCurrency: 'PHP',
+        goalAmount: '10000',
+        goalAmountPhp: '10000.00',
+        amountPhp: '10000.98',
+      }),
+    );
+    expect(goalBar).toHaveBeenNthCalledWith(
+      2,
+      expect.objectContaining({
+        sats: 9_283,
+        goalSats: 290_243,
+        goalCurrency: 'PHP',
+        goalAmount: '15000',
+        goalAmountPhp: '15000.00',
+        amountPhp: '480.28',
+      }),
+    );
+    expect(screen.getByText('A sewing machine for my work').tagName).toBe('P');
+    expect(screen.getByText('Small loan for school books for my daughter.').tagName).toBe('P');
+    fireEvent.click(screen.getByRole('button', { name: 'Show loans' }));
+    expect(
+      screen.getByRole('link', { name: 'Small loan for school books for my daughter.' }),
+    ).toBeTruthy();
+  });
+
+  it('keeps a bitcoin and a PHP loan as separate bars', () => {
+    show({
+      sundayRest: false,
+      loans: [loan(), collectingPhpLoan()],
+    });
+    expect(goalBar).toHaveBeenCalledTimes(2);
+    expect(goalBar.mock.calls[0]?.[0]).toEqual(
+      expect.objectContaining({ goalCurrency: 'BTC', goalAmount: '30000' }),
+    );
+    expect(goalBar.mock.calls[1]?.[0]).toEqual(
+      expect.objectContaining({ goalCurrency: 'PHP', goalAmount: '15000' }),
+    );
+    expect(screen.queryByText(PRODUCTION_SPOT)).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Show loans' }));
+    expect(screen.getByRole('link', { name: 'A sewing machine for my work' })).toBeTruthy();
+    expect(
+      screen.getByRole('link', { name: 'Small loan for school books for my daughter.' }),
+    ).toBeTruthy();
+  });
+
+  it('shows Sunday rest and keeps the post link behind the disclosure', () => {
     show({ sundayRest: true, loans: [loan()] });
     expect(screen.getByText('No repayments on Sundays')).toBeTruthy();
     expect(screen.queryByRole('link')).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Show loan' }));
+    expect(screen.getByRole('link', { name: 'A sewing machine for my work' })).toBeTruthy();
   });
 
   it('shows an ordinary due-today row with the funded status', () => {
@@ -170,6 +309,105 @@ describe('LoansCard', () => {
     expect(screen.getByText('Fully funded.')).toBeTruthy();
     expect(screen.getByText('Due today')).toBeTruthy();
     expect(screen.getByText("₿1'000").textContent).toBe("₿1'000 · $1.00");
+  });
+
+  it('shows a stored payable amount with its bitcoin on the compact row', () => {
+    show({
+      sundayRest: false,
+      loans: [
+        phpLoan({
+          due: {
+            ...loan().due,
+            payableSats: 192_833,
+            payableAmount: '9999.99',
+          },
+        }),
+      ],
+    });
+    expect(screen.getByText("₱9'999.99 · ₿192'833")).toBeTruthy();
+    expect(screen.queryByText(PRODUCTION_SPOT)).toBeNull();
+  });
+
+  it('shows every payable fiat currency with its own sum', () => {
+    show({
+      sundayRest: false,
+      loans: [
+        loan({
+          messageId: 'php',
+          goalCurrency: 'PHP',
+          goalAmount: '900.00',
+          due: { ...loan().due, payableSats: 536, payableAmount: '30.00' },
+        }),
+        loan({
+          messageId: 'usd',
+          goalCurrency: 'USD',
+          goalAmount: '900.00',
+          due: { ...loan().due, payableSats: 464, payableAmount: '3.00' },
+        }),
+      ],
+    });
+    expect(screen.getByText("₱30.00 + $3.00 · ₿1'000")).toBeTruthy();
+  });
+
+  it('shows the stored next amount beside its bitcoin', () => {
+    show({
+      sundayRest: false,
+      loans: [
+        phpLoan({
+          due: { ...loan().due, payableSats: 0, payablePeople: 0 },
+          next: { dueOn: '2026-10-11', sats: 19_999, amount: '199.99' },
+        }),
+      ],
+    });
+    expect(screen.getByText("Next: tomorrow, ₱199.99 · ₿19'999")).toBeTruthy();
+  });
+
+  it('shows the next line in mixed currencies with each stored amount', () => {
+    show({
+      sundayRest: false,
+      loans: [
+        phpLoan({
+          due: { ...loan().due, payableSats: 0, payablePeople: 0 },
+          next: { dueOn: '2026-10-11', sats: 1_000, amount: '199.99' },
+        }),
+        loan({
+          messageId: 'usd',
+          text: 'A USD loan',
+          goalCurrency: 'USD',
+          due: { ...loan().due, payableSats: 0, payablePeople: 0 },
+          next: { dueOn: '2026-10-11', sats: 1_000, amount: '2.00' },
+        }),
+      ],
+    });
+    expect(screen.getByText("Next: tomorrow, ₱199.99 + $2.00 · ₿2'000")).toBeTruthy();
+  });
+
+  it('falls back to bitcoin and spot for missing stored strings', () => {
+    show({
+      sundayRest: false,
+      loans: [
+        phpLoan({
+          due: {
+            ...loan().due,
+            payableSats: 1_000,
+            payableAmount: null,
+          },
+          next: null,
+        }),
+      ],
+    });
+    expect(screen.getByText("₿1'000").textContent).toBe("₿1'000 · $1.00");
+    cleanup();
+    show({
+      sundayRest: false,
+      loans: [
+        phpLoan({
+          due: { ...loan().due, payableSats: 0, payablePeople: 0 },
+          next: { dueOn: '2026-10-11', sats: 1_000, amount: null },
+        }),
+      ],
+    });
+    expect(screen.getByText("Next: tomorrow, ₿1'000 · $1.00")).toBeTruthy();
   });
 
   it('shows a one-day warning and omits fiat when no spot rate exists', () => {

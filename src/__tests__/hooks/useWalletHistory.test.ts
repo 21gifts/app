@@ -5,6 +5,8 @@ import type { WalletPayment } from '@/lib/wallet/wallet-sdk';
 import { listWalletPayments } from '@/lib/wallet/wallet-service';
 import {
   HEART_VISUAL_PAYMENT,
+  REPAYMENT_BORROWER_VISUAL_PAYMENT,
+  REPAYMENT_GIVER_VISUAL_PAYMENT,
   toFixturePayment,
   WALLET_PAYMENT_FIXTURES,
 } from '@/lib/wallet/payment-fixtures';
@@ -288,6 +290,7 @@ describe('useWalletHistory', () => {
     ['history-rows', 'ready', 10],
     ['history-heart', 'ready', 1],
     ['history-heart-pending', 'ready', 1],
+    ['history-repayment', 'ready', 2],
     ['history-error', 'error', 0],
   ] as const)('pins %s in a Playwright build', (visual, status, count) => {
     process.env.NEXT_PUBLIC_E2E_NOW = '2026-01-07T12:00:00.000Z';
@@ -304,6 +307,11 @@ describe('useWalletHistory', () => {
     expect(listWalletPayments).not.toHaveBeenCalled();
     if (visual === 'history-heart' || visual === 'history-heart-pending') {
       expect(result.current.payments[0]?.id).toBe(HEART_VISUAL_PAYMENT.id);
+    }
+    if (visual === 'history-repayment') {
+      expect(result.current.payments).toEqual(
+        [REPAYMENT_GIVER_VISUAL_PAYMENT, REPAYMENT_BORROWER_VISUAL_PAYMENT].map(toFixturePayment),
+      );
     }
   });
 
@@ -323,6 +331,10 @@ describe('useWalletHistory', () => {
     window.history.replaceState({}, '', '/wallet?visual=history-heart');
     const heart = renderHook(() => useWalletHistory());
     expect(heart.result.current.status).toBe('loading');
+    cleanup();
+    window.history.replaceState({}, '', '/wallet?visual=history-repayment');
+    const repayment = renderHook(() => useWalletHistory());
+    expect(repayment.result.current.status).toBe('loading');
     cleanup();
     process.env.NEXT_PUBLIC_E2E_NOW = '2026-01-07T12:00:00.000Z';
     window.history.replaceState({}, '', '/wallet?visual=other');

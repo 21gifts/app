@@ -1011,6 +1011,9 @@ const en = {
   'wallet.payment.giftOnPost': 'Gift on your post',
   'wallet.payment.gift': 'Gift',
   'wallet.payment.shop': 'Shop payment',
+  'wallet.payment.repayment': 'Loan repayment',
+  'wallet.payment.repaymentDay': 'Repayment day',
+  'wallet.payment.repaymentDayOf': '{day} of {days}',
   'wallet.payment.message': 'Message',
   'wallet.payment.description': 'Description',
   'wallet.payment.technical': 'Details',
@@ -1172,10 +1175,12 @@ const en = {
   'forum.lawsDismiss': 'Dismiss',
   'forum.role.founder': 'Founder',
   'forum.role.moderator': 'Moderator',
+  'forum.role.fond': 'Fond',
   'forum.role.initiator': 'Initiator',
   'forum.role.verified': 'Verified',
   'forum.role.founderHint': 'This person founded 21.gifts.',
   'forum.role.moderatorHint': 'This person helps keep the living room in order.',
+  'forum.role.fondHint': 'This account pays the daily gifts from the 21.gifts fund.',
   'forum.role.initiatorHint': 'This person was named an initiator.',
   'forum.role.verifiedHint':
     'A moderator has met this person in real life and confirmed they are real.',
@@ -1650,6 +1655,7 @@ const en = {
     'Verified means a moderator met the person in real life and confirmed they are real. It is not a wallet proof.',
   'trustChain.explainModerator':
     'To become a moderator, an existing moderator proposes the person and a different moderator confirms — or a founder appoints them directly.',
+  'trustChain.explainFond': 'Fond: pays the daily gifts from the 21.gifts fund.',
   'trustChain.explainInitiator': 'An initiator is named directly. There is no proposal step.',
   'trustChain.explainFounder': 'A founder started 21.gifts and is the first link of the chain.',
   'staff.functions': 'Moderator functions',
@@ -2816,6 +2822,9 @@ const de = {
   'wallet.payment.giftOnPost': 'Geschenk auf Ihren Beitrag',
   'wallet.payment.gift': 'Geschenk',
   'wallet.payment.shop': 'Shop-Zahlung',
+  'wallet.payment.repayment': 'Kreditrückzahlung',
+  'wallet.payment.repaymentDay': 'Rückzahlungstag',
+  'wallet.payment.repaymentDayOf': '{day} von {days}',
   'wallet.payment.message': 'Nachricht',
   'wallet.payment.description': 'Beschreibung',
   'wallet.payment.technical': 'Details',
@@ -2981,10 +2990,12 @@ const de = {
   'forum.lawsDismiss': 'Schließen',
   'forum.role.founder': 'Gründer',
   'forum.role.moderator': 'Moderator',
+  'forum.role.fond': 'Fond',
   'forum.role.initiator': 'Initiator',
   'forum.role.verified': 'Verifiziert',
   'forum.role.founderHint': 'Diese Person hat 21.gifts gegründet.',
   'forum.role.moderatorHint': 'Diese Person hilft, das Wohnzimmer in Ordnung zu halten.',
+  'forum.role.fondHint': 'Dieses Konto zahlt die täglichen Geschenke aus dem 21.gifts-Fonds.',
   'forum.role.initiatorHint': 'Diese Person wurde als Initiator benannt.',
   'forum.role.verifiedHint':
     'Ein Moderator hat diese Person persönlich getroffen und bestätigt, dass sie echt ist.',
@@ -3485,6 +3496,7 @@ const de = {
     'Verifiziert bedeutet, dass eine Moderatorin oder ein Moderator die Person im echten Leben getroffen und bestätigt hat, dass sie echt ist. Das ist kein Wallet-Nachweis.',
   'trustChain.explainModerator':
     'Um Moderatorin oder Moderator zu werden, schlägt eine bestehende Moderatorin oder ein bestehender Moderator die Person vor, und eine andere Moderatorin oder ein anderer Moderator bestätigt — oder eine Gründerperson ernennt sie direkt.',
+  'trustChain.explainFond': 'Fond: Zahlt die täglichen Geschenke aus dem 21.gifts-Fonds.',
   'trustChain.explainInitiator':
     'Ein Initiator wird direkt benannt. Es gibt keinen Vorschlagsschritt.',
   'trustChain.explainFounder':
@@ -4631,6 +4643,9 @@ const es = {
   'wallet.payment.giftOnPost': 'Regalo en tu publicación',
   'wallet.payment.gift': 'Regalo',
   'wallet.payment.shop': 'Pago en tienda',
+  'wallet.payment.repayment': 'Devolución del préstamo',
+  'wallet.payment.repaymentDay': 'Día de devolución',
+  'wallet.payment.repaymentDayOf': '{day} de {days}',
   'wallet.payment.message': 'Mensaje',
   'wallet.payment.description': 'Descripción',
   'wallet.payment.technical': 'Detalles',
@@ -4795,10 +4810,12 @@ const es = {
   'forum.lawsDismiss': 'Cerrar',
   'forum.role.founder': 'Fundador',
   'forum.role.moderator': 'Moderador',
+  'forum.role.fond': 'Fondo',
   'forum.role.initiator': 'Iniciador',
   'forum.role.verified': 'Verificado',
   'forum.role.founderHint': 'Esta persona fundó 21.gifts.',
   'forum.role.moderatorHint': 'Esta persona ayuda a mantener el salón en orden.',
+  'forum.role.fondHint': 'Esta cuenta paga los regalos diarios del fondo de 21.gifts.',
   'forum.role.initiatorHint': 'Esta persona fue nombrada iniciadora.',
   'forum.role.verifiedHint':
     'Un moderador ha conocido a esta persona en la vida real y ha confirmado que es real.',
@@ -5281,6 +5298,7 @@ const es = {
     'Verificado significa que una persona moderadora conoció a esta persona en la vida real y confirmó que es real. No es una prueba de monedero.',
   'trustChain.explainModerator':
     'Para ser moderadora o moderador, una persona moderadora existente propone a la persona y otra distinta confirma — o una persona fundadora la nombra directamente.',
+  'trustChain.explainFond': 'Fondo: Paga los regalos diarios del fondo de 21.gifts.',
   'trustChain.explainInitiator':
     'Un iniciador se nombra directamente. No hay un paso de propuesta.',
   'trustChain.explainFounder':
@@ -6430,6 +6448,9 @@ const fil = {
   'wallet.payment.giftOnPost': 'Regalo sa post mo',
   'wallet.payment.gift': 'Regalo',
   'wallet.payment.shop': 'Bayad sa shop',
+  'wallet.payment.repayment': 'Pagbabayad ng utang',
+  'wallet.payment.repaymentDay': 'Araw ng pagbabayad',
+  'wallet.payment.repaymentDayOf': '{day} sa {days}',
   'wallet.payment.message': 'Mensahe',
   'wallet.payment.description': 'Paglalarawan',
   'wallet.payment.technical': 'Mga detalye',
@@ -6594,10 +6615,13 @@ const fil = {
   'forum.lawsDismiss': 'Isara',
   'forum.role.founder': 'Tagapagtatag',
   'forum.role.moderator': 'Moderator',
+  'forum.role.fond': 'Fond',
   'forum.role.initiator': 'Initiator',
   'forum.role.verified': 'Verified',
   'forum.role.founderHint': 'Ang taong ito ang nagtatag ng 21.gifts.',
   'forum.role.moderatorHint': 'Tumutulong ang taong ito na panatilihing maayos ang living room.',
+  'forum.role.fondHint':
+    'Binabayaran ng account na ito ang mga araw-araw na regalo mula sa pondo ng 21.gifts.',
   'forum.role.initiatorHint': 'Ang taong ito ay pinangalanang Initiator.',
   'forum.role.verifiedHint':
     'Personal na nakilala ng isang moderator ang taong ito at kinumpirmang totoo siya.',
@@ -7084,6 +7108,8 @@ const fil = {
     'Ang Verified ay nangangahulugang isang moderator ang nakilala ang tao sa totoo at kinumpirmang totoo siya. Hindi ito patunay ng wallet.',
   'trustChain.explainModerator':
     'Para maging moderator, nagmumungkahi ang isang kasalukuyang moderator at ibang moderator ang kumukumpirma — o diretsong itinatalaga sila ng founder.',
+  'trustChain.explainFond':
+    'Fond: Nagbabayad ng mga araw-araw na regalo mula sa pondo ng 21.gifts.',
   'trustChain.explainInitiator':
     'Ang Initiator ay direktang pinangalanan. Walang hakbang ng panukala.',
   'trustChain.explainFounder':

@@ -858,6 +858,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/wallet',
+    id: 'history-repayment',
+    image: 'wallet-history-repayment.png',
+    visual: 'state-wallet-history-repayment',
+    needle: "shotScreen(page, 'state-wallet-history-repayment')",
+  },
+  {
+    route: '/wallet',
     id: 'history-error',
     image: 'wallet-history-error.png',
     visual: 'state-wallet-history-error',
@@ -1209,6 +1216,20 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/wallet',
+    id: 'loans-multi',
+    image: 'wallet-loans-multi.png',
+    visual: 'state-wallet-loans-multi',
+    needle: 'state /wallet loans-multi',
+  },
+  {
+    route: '/wallet',
+    id: 'loans-multi-open',
+    image: 'wallet-loans-multi-open.png',
+    visual: 'state-wallet-loans-multi-open',
+    needle: 'state /wallet loans-multi-open',
+  },
+  {
+    route: '/wallet',
     id: 'loans-waiting-all',
     image: 'wallet-loans-waiting-all.png',
     visual: 'state-wallet-loans-waiting-all',
@@ -1388,6 +1409,20 @@ export const SCREEN_VARIANTS = [
     image: 'wallet-payment-heart-pending-open.png',
     visual: 'state-wallet-payment-heart-pending-open',
     needle: "shotScreen(page, 'state-wallet-payment-heart-pending-open')",
+  },
+  {
+    route: '/wallet/payment',
+    id: 'repayment-payment',
+    image: 'wallet-payment-repayment.png',
+    visual: 'state-wallet-payment-repayment',
+    needle: "shotScreen(page, 'state-wallet-payment-repayment')",
+  },
+  {
+    route: '/wallet/payment',
+    id: 'repayment-payment-open',
+    image: 'wallet-payment-repayment-open.png',
+    visual: 'state-wallet-payment-repayment-open',
+    needle: "shotScreen(page, 'state-wallet-payment-repayment-open')",
   },
   {
     route: '/wallet/payment',

@@ -23,6 +23,7 @@ import {
   ledgerWith,
   loanA,
   loanB,
+  productionPhpLoans,
   loanWith,
   myLoans,
 } from './loan-fixtures';
@@ -3877,6 +3878,29 @@ test.describe('screen baselines', () => {
     await shotScreen(page, 'state-wallet-loans-open');
   });
 
+  test('state /wallet loans-multi', async ({ page }) => {
+    await seedLoanMember(page);
+    await seedLoanData(page, productionPhpLoans, {});
+    await page.goto('/wallet?visual=balance-ready');
+    const card = page.getByRole('region', { name: 'Your loans (2)' });
+    await expect(card).toContainText('1 of 2 fully funded.');
+    await expect(card).toContainText("₱10'000.00");
+    await expect(card).toContainText("₱15'000.00");
+    await expect(card).not.toContainText("₱27'051.19");
+    await shotScreen(page, 'state-wallet-loans-multi');
+  });
+
+  test('state /wallet loans-multi-open', async ({ page }) => {
+    await seedLoanMember(page);
+    await seedLoanData(page, productionPhpLoans, {});
+    await page.goto('/wallet?visual=balance-ready');
+    const card = page.getByRole('region', { name: 'Your loans (2)' });
+    await page.getByRole('button', { name: 'Show loans' }).click();
+    await expect(card.getByRole('link', { name: productionPhpLoans[0]!.text })).toBeVisible();
+    await expect(card.getByRole('link', { name: productionPhpLoans[1]!.text })).toBeVisible();
+    await shotScreen(page, 'state-wallet-loans-multi-open');
+  });
+
   test('state /wallet loans-waiting-all', async ({ page }) => {
     const waitingAllLoan = loanWith(loanA, {
       due: {
@@ -4722,6 +4746,20 @@ test.describe('screen baselines', () => {
     await shotScreen(page, 'state-wallet-history-heart-pending');
   });
 
+  test('wallet history-repayment', async ({ page }) => {
+    await stubWalletSetupAccount(page, { sparkWalletVerified: true });
+    await fulfillRateDay(page);
+    await page.goto('/wallet?visual=history-repayment');
+    const rows = page.getByRole('region', { name: 'Payments' }).getByRole('listitem');
+    await expect(rows).toHaveCount(2);
+    await expect(page.getByText('Loan repayment')).toHaveCount(2);
+    await expect(page.getByText('New bike tyres')).toBeVisible();
+    await expect(page.getByText('Rent until payday')).toBeVisible();
+    await expect(page.getByText(/repay:/)).toHaveCount(0);
+    await expect(page.getByText('Gift on your post')).toHaveCount(0);
+    await shotScreen(page, 'state-wallet-history-repayment');
+  });
+
   test('screen-wallet-payment', async ({ page }) => {
     await stubWalletSetupAccount(page, { sparkWalletVerified: true });
     await fulfillRateDay(page);
@@ -4927,6 +4965,43 @@ test.describe('screen baselines', () => {
       '/members/acc_ada',
     );
     await shotScreen(page, 'state-wallet-payment-heart-pending-open');
+  });
+
+  test('state-wallet-payment-repayment', async ({ page }) => {
+    await stubWalletSetupAccount(page, { sparkWalletVerified: true });
+    await fulfillRateDay(page);
+    await page.goto(
+      '/wallet/payment?id=c2a8f5e1-3b7d-4c9a-8e21-5f6d7a8b9c03&visual=repayment-payment',
+    );
+    await expect(page.getByText('Loan repayment')).toBeVisible();
+    await expect(page.getByText('New bike tyres')).toBeVisible();
+    await expect(page.getByText('3 of 7')).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Repayment list' })).toHaveAttribute(
+      'href',
+      '/messages/22222222-2222-4222-8222-222222222222/repayment-list',
+    );
+    await expect(
+      page.locator('a[href="/messages/22222222-2222-4222-8222-222222222222"]'),
+    ).toBeVisible();
+    await expect(page.getByText(/repay:/)).toHaveCount(0);
+    await expect(page.getByText('Gift on your post')).toHaveCount(0);
+    await shotScreen(page, 'state-wallet-payment-repayment');
+  });
+
+  test('state-wallet-payment-repayment-open', async ({ page }) => {
+    await stubWalletSetupAccount(page, { sparkWalletVerified: true });
+    await fulfillRateDay(page);
+    await page.goto(
+      '/wallet/payment?id=c2a8f5e1-3b7d-4c9a-8e21-5f6d7a8b9c03&visual=repayment-payment',
+    );
+    await expect(page.getByText('Loan repayment')).toBeVisible();
+    await page.getByRole('button', { name: 'Details' }).click();
+    await expect(page.getByText('Payment request')).toBeVisible();
+    await expect(page.getByText('Payment hash')).toBeVisible();
+    await expect(page.getByText('Proof of payment')).toBeVisible();
+    await expect(page.getByText(/repay:/)).toHaveCount(0);
+    await expect(page.getByText('3 of 7')).toBeVisible();
+    await shotScreen(page, 'state-wallet-payment-repayment-open');
   });
 
   test('state-wallet-payment-deposit', async ({ page }) => {
@@ -29598,48 +29673,21 @@ test.describe('welcome forum variants', () => {
   });
 
   test('state /welcome loans-multi', async ({ page }) => {
-    const collecting = loanWith(loanA, {
-      sats: 18_000,
-      fundedAt: null,
-      daysDue: 0,
-      daysPaid: 0,
-      repaidSats: 0,
-      due: {
-        payableSats: 0,
-        payablePeople: 0,
-        waitingSats: 0,
-        waitingPeople: 0,
-        behindDays: 0,
-        lastPayment: false,
-      },
-      next: null,
-    });
-    await openWelcomeLoans(page, myLoans([collecting, loanB]));
+    await openWelcomeLoans(page, myLoans(productionPhpLoans));
     const card = page.getByRole('region', { name: 'Your loans (2)' });
     await expect(card).toContainText('1 of 2 fully funded.');
+    await expect(card).toContainText("₱10'000.00");
+    await expect(card).toContainText("₱15'000.00");
+    await expect(card).not.toContainText("₱27'051.19");
     await shotScreen(page, 'state-welcome-loans-multi');
   });
 
   test('state /welcome loans-multi-open', async ({ page }) => {
-    const collecting = loanWith(loanA, {
-      sats: 18_000,
-      fundedAt: null,
-      daysDue: 0,
-      daysPaid: 0,
-      repaidSats: 0,
-      due: {
-        payableSats: 0,
-        payablePeople: 0,
-        waitingSats: 0,
-        waitingPeople: 0,
-        behindDays: 0,
-        lastPayment: false,
-      },
-      next: null,
-    });
-    await openWelcomeLoans(page, myLoans([collecting, loanB]));
+    await openWelcomeLoans(page, myLoans(productionPhpLoans));
+    const card = page.getByRole('region', { name: 'Your loans (2)' });
     await page.getByRole('button', { name: 'Show loans' }).click();
-    await expect(page.getByText(loanB.text)).toBeVisible();
+    await expect(card.getByRole('link', { name: productionPhpLoans[0]!.text })).toBeVisible();
+    await expect(card.getByRole('link', { name: productionPhpLoans[1]!.text })).toBeVisible();
     await shotScreen(page, 'state-welcome-loans-multi-open');
   });
 

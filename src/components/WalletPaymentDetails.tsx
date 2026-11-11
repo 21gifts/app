@@ -7,6 +7,7 @@ import {
   ChevronRight,
   Copy,
   ExternalLink,
+  HandCoins,
   Heart,
 } from 'lucide-react';
 import Link from 'next/link';
@@ -34,7 +35,7 @@ import {
   formatFiatDisplay,
   satsToFiatAmount,
 } from '@/lib/stats-money';
-import { paymentMessage, paymentTitle } from '@/lib/wallet/payment-display';
+import { paymentLookupHash, paymentMessage, paymentTitle } from '@/lib/wallet/payment-display';
 import type { WalletPayment } from '@/lib/wallet/wallet-sdk';
 
 /**
@@ -134,14 +135,17 @@ function PaymentView(props: { payment: WalletPayment }): ReactElement {
   const received = payment.direction === 'received';
   const Icon = received ? ArrowDownLeft : ArrowUpRight;
   const title = paymentTitle(payment);
-  const message = paymentMessage(payment);
   const { info } = payment;
-  const heartHash =
-    payment.status !== 'pending' && info.purpose === 'gift' && typeof info.paymentHash === 'string'
-      ? info.paymentHash.toLowerCase()
-      : null;
-  const heartContext = useHeartContext(heartHash === null ? [] : [heartHash]);
-  const heart = heartHash === null ? undefined : heartContext.byHash.get(heartHash);
+  const lookupHash = paymentLookupHash(payment);
+  const heartContext = useHeartContext(lookupHash === null ? [] : [lookupHash]);
+  const heart = lookupHash === null ? undefined : heartContext.byHash.get(lookupHash);
+  const repayment =
+    lookupHash === null || heart !== undefined
+      ? undefined
+      : heartContext.repaymentsByHash.get(lookupHash);
+  const message = repayment === undefined ? paymentMessage(payment) : null;
+  /** The post a heart was sent on, or the credit note a repayment belongs to. */
+  const post = heart ?? repayment;
   const shopFigure = payment.info.purpose === 'shop' && !shop.pending ? shop.figure : null;
   const storedFiatText = (amount: string, code: FiatCode): string => {
     const exact = formatDefinedGoalAmount(amount, code, numberFormat);
@@ -230,15 +234,21 @@ function PaymentView(props: { payment: WalletPayment }): ReactElement {
     <div className="flex w-full flex-col gap-5">
       <div className="flex flex-col items-center gap-2 text-center">
         <span className="flex h-12 w-12 items-center justify-center rounded-full bg-app-card-muted">
-          {heart === undefined ? (
-            <Icon aria-hidden="true" className="h-5 w-5 text-app-fg" />
-          ) : (
+          {heart !== undefined ? (
             <Heart aria-hidden="true" fill="currentColor" className="h-5 w-5 text-app-accent" />
+          ) : repayment !== undefined ? (
+            <HandCoins aria-hidden="true" className="h-5 w-5 text-app-accent" />
+          ) : (
+            <Icon aria-hidden="true" className="h-5 w-5 text-app-fg" />
           )}
         </span>
         {heart !== undefined ? null : (
           <p className="max-w-full truncate text-sm text-app-muted">
-            {'text' in title ? title.text : t(title.key)}
+            {repayment !== undefined
+              ? t('wallet.payment.repayment')
+              : 'text' in title
+                ? title.text
+                : t(title.key)}
           </p>
         )}
         <p
@@ -267,19 +277,19 @@ function PaymentView(props: { payment: WalletPayment }): ReactElement {
         ) : null}
       </div>
 
-      {heart === undefined ? null : (
+      {post === undefined ? null : (
         <Link
-          href={`/messages/${heart.messageId}`}
-          aria-label={`${heart.authorName} ${heart.text}`.trim() || t('shops.viewPost')}
+          href={`/messages/${post.messageId}`}
+          aria-label={`${post.authorName} ${post.text}`.trim() || t('shops.viewPost')}
           className="flex w-full items-center gap-3 rounded-2xl border border-app-border px-4 py-3 text-left text-app-fg no-underline transition hover:bg-app-hover"
         >
           <span className="min-w-0 flex-1">
-            {heart.authorName === '' ? null : (
-              <span className="block text-sm font-medium text-app-fg">{heart.authorName}</span>
+            {post.authorName === '' ? null : (
+              <span className="block text-sm font-medium text-app-fg">{post.authorName}</span>
             )}
-            {heart.text === '' ? null : (
+            {post.text === '' ? null : (
               <span className="mt-1 block whitespace-pre-wrap text-sm font-medium text-app-fg line-clamp-3">
-                {heart.text}
+                {post.text}
               </span>
             )}
           </span>
@@ -311,7 +321,18 @@ function PaymentView(props: { payment: WalletPayment }): ReactElement {
             )}
           </Row>
         )}
+        {repayment === undefined ? null : (
+          <Row label={t('wallet.payment.repaymentDay')}>
+            {repayment.termDays === null
+              ? String(repayment.dayIndex + 1)
+              : t('wallet.payment.repaymentDayOf', {
+                  day: String(repayment.dayIndex + 1),
+                  days: String(repayment.termDays),
+                })}
+          </Row>
+        )}
         {info.description === undefined ||
+        repayment !== undefined ||
         ('text' in title && title.text === info.description) ? null : (
           <Row label={t('wallet.payment.description')}>{info.description}</Row>
         )}
@@ -336,6 +357,15 @@ function PaymentView(props: { payment: WalletPayment }): ReactElement {
           </Row>
         ) : null}
       </dl>
+
+      {repayment === undefined ? null : (
+        <Link
+          href={`/messages/${encodeURIComponent(repayment.messageId)}/repayment-list`}
+          className="self-center text-sm font-medium text-app-fg underline decoration-app-border underline-offset-2"
+        >
+          {t('forum.creditList')}
+        </Link>
+      )}
 
       <button
         type="button"
@@ -404,6 +434,8 @@ function PaymentView(props: { payment: WalletPayment }): ReactElement {
  * direction, title, signed amount with the default fiat, status (with a hint
  * for a pending or failed send), the message, a summary list (date, type,
  * counterparty, description, amount, fee, total, what arrived on-chain), and
+ * for a loan repayment the credit note card, its repayment day, and a link to
+ * the note's repayment list in place of the message and description, and
  * a Details button with aria-expanded, closed until pressed, whose open list is those technical values with
  * Copy (transaction and output, payment request, payment hash, proof of
  * payment, payment id). The payment shows as soon as it is loaded. A shop

@@ -76,6 +76,81 @@ export const loanB: MyLoan = {
   next: { dueOn: '2026-10-08', sats: 1_200, amount: '30.00' },
 };
 
+/** The funded PHP loan of the reported two-loan production case. */
+export const loanPhpFunded: MyLoan = {
+  messageId: 'loan-php-funded',
+  text: 'Loan for a delivery bike to reach more customers.',
+  createdAt: '2026-09-01T10:00:00.000Z',
+  goalSats: 192_814,
+  sats: 192_833,
+  goalCurrency: 'PHP',
+  goalAmount: '10000',
+  goalAmountUsd: null,
+  goalAmountChf: null,
+  goalAmountEur: null,
+  goalAmountPhp: '10000.00',
+  amountUsd: null,
+  amountChf: null,
+  amountEur: null,
+  amountPhp: '10000.98',
+  termDays: 50,
+  fundedAt: '2026-10-10T10:00:00.000Z',
+  daysDue: 0,
+  daysPaid: 0,
+  repaidSats: 0,
+  totalSats: 192_814,
+  due: {
+    payableSats: 0,
+    payablePeople: 0,
+    waitingSats: 0,
+    waitingPeople: 0,
+    behindDays: 0,
+    payableAmount: null,
+    waitingAmount: null,
+    lastPayment: false,
+  },
+  next: { dueOn: '2026-11-16', sats: 3_857, amount: '199.99' },
+};
+
+/** The collecting PHP loan of the reported two-loan production case. */
+export const loanPhpCollecting: MyLoan = {
+  messageId: 'loan-php-collecting',
+  text: 'Small loan for school books and a uniform for my daughter.',
+  createdAt: '2026-09-05T10:00:00.000Z',
+  goalSats: 290_243,
+  sats: 9_283,
+  goalCurrency: 'PHP',
+  goalAmount: '15000',
+  goalAmountUsd: null,
+  goalAmountChf: null,
+  goalAmountEur: null,
+  goalAmountPhp: '15000.00',
+  amountUsd: null,
+  amountChf: null,
+  amountEur: null,
+  amountPhp: '480.28',
+  termDays: 100,
+  fundedAt: null,
+  daysDue: 0,
+  daysPaid: 0,
+  repaidSats: 0,
+  totalSats: 290_243,
+  due: {
+    payableSats: 0,
+    payablePeople: 0,
+    waitingSats: 0,
+    waitingPeople: 0,
+    behindDays: 0,
+    payableAmount: null,
+    waitingAmount: null,
+    lastPayment: false,
+  },
+  next: null,
+};
+
+/** Both loans of the reported production case, in their `/me/loans` order. */
+export const productionPhpLoans: readonly MyLoan[] = [loanPhpFunded, loanPhpCollecting];
+
 type LedgerRow = RepaymentLedger['repayments'][number];
 
 function btcRow(

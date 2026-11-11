@@ -1,4 +1,5 @@
 import type { Payment } from '@breeztech/breez-sdk-spark';
+import type { RepaymentContext } from '@/lib/wallet/heart-context';
 import { toWalletPayment, type WalletPayment } from '@/lib/wallet/wallet-sdk';
 
 /**
@@ -89,6 +90,100 @@ export const HEART_VISUAL_PAYMENT: Payment = {
     },
   },
 };
+
+/** Credit note id of the Playwright-only repayment the member receives as giver. */
+export const REPAYMENT_GIVER_VISUAL_MESSAGE_ID = '22222222-2222-4222-8222-222222222222';
+/**
+ * Payment hash of that repayment. It reuses the invoice, hash, and preimage of
+ * the history-rows zap, so amount, payment hash, and proof of payment agree;
+ * that invoice's description hash still commits to the history-rows zap request.
+ */
+export const REPAYMENT_GIVER_VISUAL_HASH =
+  '412527ec5d814b75f8641ebd875bffbf26a11b7c180380e31e833d777cfa9d89';
+/** Payment hash of the Playwright-only repayment the member paid as borrower. */
+export const REPAYMENT_BORROWER_VISUAL_HASH =
+  'f00dbabef00dbabef00dbabef00dbabef00dbabef00dbabef00dbabef00dbabe';
+/** Credit note id of that borrower repayment. */
+export const REPAYMENT_BORROWER_VISUAL_MESSAGE_ID = '33333333-3333-4333-8333-333333333333';
+/**
+ * A received loan repayment of ₿2'100 over the Lightning fallback: day 3 of
+ * Ben's credit note, whose zap request carries only the `repay:` marker.
+ * Not one of {@link WALLET_PAYMENT_FIXTURES}.
+ */
+export const REPAYMENT_GIVER_VISUAL_PAYMENT: Payment = {
+  id: 'c2a8f5e1-3b7d-4c9a-8e21-5f6d7a8b9c03',
+  paymentType: 'receive',
+  status: 'completed',
+  amount: BigInt(2100),
+  fees: BigInt(0),
+  timestamp: 1767790800,
+  method: 'lightning',
+  details: {
+    type: 'lightning',
+    invoice:
+      'lnbc21000n1p54u09dpp5gyjj0mzas99ht7ryr67cwkllhun2zxmurqpcpcc7sv7hwl86nkyshp5ewnunlsxs9mz7ctw5x5a8re84asfyuhxr7herhyx54qlz20whr5qsp5jfj99cwq9xupzqzpsgnuphgyhe6mxd5jl62lyz49tyw69w6n4psqxqyz5vqcqzys9qrsgqmqfjzd27gnahsy8am5wzu7msxj7gexnmdxat8ktd2udmgnvdc5kn2ht6me8lauqfmpqenapt7f48qjydeszuf8wjvv9r7vstwxnc4ssp3nm62j',
+    destinationPubkey: '03619e188effcd645a7937fffe69e442f96071b60b3feaf44c3380cb63d5171383',
+    htlcDetails: {
+      paymentHash: REPAYMENT_GIVER_VISUAL_HASH,
+      expiryTime: 1767877197,
+      status: 'preimageShared',
+      preimage: '7bd997e82672dfed725f445e554a551ddeece28c2222a2d16a072db1894427dd',
+    },
+    lnurlReceiveMetadata: {
+      nostrZapRequest: `{"pubkey":"ef4eb07d6fadb63f70b8e0d94438c332a9932f0b8daae11f21597f1b4afa614d","created_at":1767790796,"kind":9734,"tags":[["amount","2100000"],["p","ee03dfa711e49e5b0b11a2d2c337f1c6d09062294eda99ccc0f20a61ebd13d2f"]],"content":"repay:2:${REPAYMENT_GIVER_VISUAL_MESSAGE_ID}"}`,
+    },
+  },
+};
+/**
+ * A sent loan repayment of ₿3'000 as a wallet transfer: day 5 of the member's
+ * own credit note, with the `zap:` memo every Spark repayment carries.
+ * Not one of {@link WALLET_PAYMENT_FIXTURES}.
+ */
+export const REPAYMENT_BORROWER_VISUAL_PAYMENT: Payment = {
+  id: 'd4b9e6f2-7c1a-4e3b-9f52-6a7b8c9d0e14',
+  paymentType: 'send',
+  status: 'completed',
+  amount: BigInt(3000),
+  fees: BigInt(0),
+  timestamp: 1767787200,
+  method: 'spark',
+  details: {
+    type: 'spark',
+    invoiceDetails: {
+      description: `zap:${REPAYMENT_BORROWER_VISUAL_HASH}`,
+      invoice:
+        'spark1gf5h90jgvam58xnlph0vmlrmtfcplprsneuw55vw47fucev5xw0yy6tjheyxwa6rnflsmhkdl3a45uqls3cfu7822x82ly7vvk2r88jzd9etujr8wape5lcdmmxlc766wq0cguy70r49rr40j0xxt9pnnch2rxx6',
+    },
+  },
+};
+
+/**
+ * What the repayment pins resolve the two repayment fixtures to: Ben's credit
+ * note, day 3 of 7, for the member as giver, and the member's own note
+ * (author Mia), day 5 of 10, as borrower.
+ */
+export const REPAYMENT_VISUAL_CONTEXTS: readonly RepaymentContext[] = [
+  {
+    paymentHash: REPAYMENT_GIVER_VISUAL_HASH,
+    messageId: REPAYMENT_GIVER_VISUAL_MESSAGE_ID,
+    dayIndex: 2,
+    termDays: 7,
+    role: 'giver',
+    authorName: 'Ben',
+    text: 'New bike tyres',
+    deleted: false,
+  },
+  {
+    paymentHash: REPAYMENT_BORROWER_VISUAL_HASH,
+    messageId: REPAYMENT_BORROWER_VISUAL_MESSAGE_ID,
+    dayIndex: 4,
+    termDays: 10,
+    role: 'borrower',
+    authorName: 'Mia',
+    text: 'Rent until payday',
+    deleted: false,
+  },
+];
 
 /**
  * Synthetic wallet payments in the SDK's own `Payment` shape, newest first,

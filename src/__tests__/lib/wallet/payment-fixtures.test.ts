@@ -3,6 +3,13 @@ import { describe, expect, it } from 'vitest';
 import { WALLET_VISUAL_FIXTURE_SATS } from '@/hooks/useWallet';
 import {
   HEART_VISUAL_PAYMENT,
+  REPAYMENT_BORROWER_VISUAL_HASH,
+  REPAYMENT_BORROWER_VISUAL_MESSAGE_ID,
+  REPAYMENT_BORROWER_VISUAL_PAYMENT,
+  REPAYMENT_GIVER_VISUAL_HASH,
+  REPAYMENT_GIVER_VISUAL_MESSAGE_ID,
+  REPAYMENT_GIVER_VISUAL_PAYMENT,
+  REPAYMENT_VISUAL_CONTEXTS,
   toFixturePayment,
   WALLET_PAYMENT_FIXTURES,
 } from '@/lib/wallet/payment-fixtures';
@@ -170,6 +177,51 @@ describe('WALLET_PAYMENT_FIXTURES', () => {
       expect(payment.amountSats).toBe(1);
       expect(payment.info.description).toBeUndefined();
       expect(payment.info.paymentHash).toBeUndefined();
+    }
+  });
+
+  it('keeps the repayment fixtures consistent with their lookup rows', () => {
+    const giver = toWalletPayment(REPAYMENT_GIVER_VISUAL_PAYMENT);
+    expect(giver.direction).toBe('received');
+    expect(giver.method).toBe('lightning');
+    expect(giver.info.purpose).toBeUndefined();
+    expect(giver.info.paymentHash).toBe(REPAYMENT_GIVER_VISUAL_HASH);
+    expect(giver.info.zap?.content).toBe(`repay:2:${REPAYMENT_GIVER_VISUAL_MESSAGE_ID}`);
+    const details = REPAYMENT_GIVER_VISUAL_PAYMENT.details as Extract<
+      NonNullable<(typeof payments)[number]['details']>,
+      { type: 'lightning' }
+    >;
+    const invoice = decodeBolt11(details.invoice);
+    expect(invoice.sats).toBe(Number(REPAYMENT_GIVER_VISUAL_PAYMENT.amount));
+    expect(invoice.tags.get('p')?.toString('hex')).toBe(REPAYMENT_GIVER_VISUAL_HASH);
+    expect(sha256Hex(Buffer.from(details.htlcDetails.preimage as string, 'hex'))).toBe(
+      REPAYMENT_GIVER_VISUAL_HASH,
+    );
+
+    const borrower = toWalletPayment(REPAYMENT_BORROWER_VISUAL_PAYMENT);
+    expect(borrower.direction).toBe('sent');
+    expect(borrower.info.purpose).toBe('gift');
+    expect(borrower.info.paymentHash).toBe(REPAYMENT_BORROWER_VISUAL_HASH);
+    expect(REPAYMENT_BORROWER_VISUAL_HASH).toMatch(/^[0-9a-f]{64}$/);
+
+    expect(REPAYMENT_VISUAL_CONTEXTS).toHaveLength(2);
+    expect(REPAYMENT_VISUAL_CONTEXTS[0]).toMatchObject({
+      paymentHash: REPAYMENT_GIVER_VISUAL_HASH,
+      messageId: REPAYMENT_GIVER_VISUAL_MESSAGE_ID,
+      dayIndex: 2,
+      role: 'giver',
+    });
+    expect(REPAYMENT_VISUAL_CONTEXTS[1]).toMatchObject({
+      paymentHash: REPAYMENT_BORROWER_VISUAL_HASH,
+      messageId: REPAYMENT_BORROWER_VISUAL_MESSAGE_ID,
+      dayIndex: 4,
+      termDays: 10,
+      role: 'borrower',
+    });
+    const ids = [REPAYMENT_GIVER_VISUAL_PAYMENT.id, REPAYMENT_BORROWER_VISUAL_PAYMENT.id];
+    for (const id of ids) {
+      expect(id).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/);
+      expect(payments.some((payment) => payment.id === id)).toBe(false);
     }
   });
 });

@@ -2,7 +2,9 @@ import { describe, expect, it } from 'vitest';
 import type { MyLoan, RepaymentLedger } from '@/lib/api';
 import {
   centsString,
+  definedFiatAmounts,
   definedDueLabel,
+  definedFiatSum,
   dueShares,
   fittingPrefix,
   summarizeLoans,
@@ -85,40 +87,41 @@ function ledger(overrides: Partial<RepaymentLedger> = {}): RepaymentLedger {
 
 describe('summarizeLoans', () => {
   it('combines totals, caps progress, and groups the earliest next day', () => {
-    const summary = summarizeLoans({
-      sundayRest: false,
-      loans: [
-        loan(),
-        loan({
-          messageId: 'm2',
-          goalSats: 500,
-          sats: 900,
-          fundedAt: null,
-          due: {
-            payableSats: 0,
-            payablePeople: 0,
-            waitingSats: 30,
-            waitingPeople: 2,
-            behindDays: 1,
-            payableAmount: null,
-            waitingAmount: null,
-            lastPayment: true,
-          },
-          next: { dueOn: '2026-10-11', sats: 40, amount: null },
-        }),
-        loan({
-          messageId: 'm3',
-          next: { dueOn: '2026-10-11', sats: 60, amount: null },
-        }),
-        loan({ messageId: 'm4', next: { dueOn: '2026-10-10', sats: null, amount: '2.00' } }),
-        loan({ messageId: 'm5', next: null }),
-      ],
-    });
+    const summary = summarizeLoans(
+      {
+        sundayRest: false,
+        loans: [
+          loan(),
+          loan({
+            messageId: 'm2',
+            goalSats: 500,
+            sats: 900,
+            fundedAt: null,
+            due: {
+              payableSats: 0,
+              payablePeople: 0,
+              waitingSats: 30,
+              waitingPeople: 2,
+              behindDays: 1,
+              payableAmount: null,
+              waitingAmount: null,
+              lastPayment: true,
+            },
+            next: { dueOn: '2026-10-11', sats: 40, amount: null },
+          }),
+          loan({
+            messageId: 'm3',
+            next: { dueOn: '2026-10-11', sats: 60, amount: null },
+          }),
+          loan({ messageId: 'm4', next: { dueOn: '2026-10-10', sats: null, amount: '2.00' } }),
+          loan({ messageId: 'm5', next: null }),
+        ],
+      },
+      'ch',
+    );
     expect(summary).toEqual({
       count: 5,
       fundedCount: 4,
-      goalSats: 4_500,
-      sats: 3_300,
       sundayRest: false,
       payableSats: 1_200,
       waitingSats: 110,
@@ -126,7 +129,7 @@ describe('summarizeLoans', () => {
       behindDays: 2,
       payableLoans: 4,
       lastPayment: true,
-      next: { dueOn: '2026-10-11', sats: 100 },
+      next: { dueOn: '2026-10-11', sats: 100, amount: null },
       tone: 'danger',
       payable: true,
     });
@@ -146,16 +149,16 @@ describe('summarizeLoans', () => {
       },
       next: null,
     });
-    expect(summarizeLoans({ sundayRest: false, loans: [clear] }).tone).toBe('success');
-    expect(summarizeLoans({ sundayRest: true, loans: [clear] })).toMatchObject({
+    expect(summarizeLoans({ sundayRest: false, loans: [clear] }, 'ch').tone).toBe('success');
+    expect(summarizeLoans({ sundayRest: true, loans: [clear] }, 'ch')).toMatchObject({
       tone: 'neutral',
       payable: false,
       next: null,
     });
     expect(
-      summarizeLoans({ sundayRest: false, loans: [loan({ ...clear, fundedAt: null })] }).tone,
+      summarizeLoans({ sundayRest: false, loans: [loan({ ...clear, fundedAt: null })] }, 'ch').tone,
     ).toBe('neutral');
-    expect(summarizeLoans({ sundayRest: false, loans: [] })).toMatchObject({
+    expect(summarizeLoans({ sundayRest: false, loans: [] }, 'ch')).toMatchObject({
       tone: 'neutral',
       fundedCount: 0,
       behindDays: 0,
@@ -164,14 +167,129 @@ describe('summarizeLoans', () => {
 
   it('keeps an earlier next day when a later valid day follows it', () => {
     expect(
-      summarizeLoans({
+      summarizeLoans(
+        {
+          sundayRest: false,
+          loans: [
+            loan({ next: { dueOn: '2026-10-11', sats: 40, amount: null } }),
+            loan({ next: { dueOn: '2026-10-12', sats: 60, amount: null } }),
+          ],
+        },
+        'ch',
+      ).next,
+    ).toEqual({ dueOn: '2026-10-11', sats: 40, amount: null });
+  });
+
+  it('sums the stored next amounts of one fiat currency on the same day', () => {
+    const php = (amount: string | null, sats: number, dueOn = '2026-10-11'): MyLoan =>
+      loan({
+        goalCurrency: 'PHP',
+        next: { dueOn, sats, amount },
+      });
+    expect(
+      summarizeLoans({ sundayRest: false, loans: [php('199.99', 40), php('200.48', 60)] }, 'ch')
+        .next,
+    ).toEqual({ dueOn: '2026-10-11', sats: 100, amount: '₱400.47' });
+  });
+
+  it('uses only loans with sats for the same-day next amount', () => {
+    const dueOn = '2026-10-11';
+    expect(
+      summarizeLoans(
+        {
+          sundayRest: false,
+          loans: [
+            loan({ goalCurrency: 'PHP', next: { dueOn, sats: 40, amount: '2.00' } }),
+            loan({
+              messageId: 'm2',
+              goalCurrency: 'PHP',
+              next: { dueOn, sats: null, amount: '3.00' },
+            }),
+          ],
+        },
+        'ch',
+      ).next,
+    ).toEqual({ dueOn, sats: 40, amount: '₱2.00' });
+  });
+
+  it('sums mixed same-day currencies in first-seen order and leaves undefined parts null', () => {
+    const dueOn = '2026-10-11';
+    const mixed = summarizeLoans(
+      {
         sundayRest: false,
         loans: [
-          loan({ next: { dueOn: '2026-10-11', sats: 40, amount: null } }),
-          loan({ next: { dueOn: '2026-10-12', sats: 60, amount: null } }),
+          loan({ goalCurrency: 'PHP', next: { dueOn, sats: 40, amount: '2.00' } }),
+          loan({ goalCurrency: 'USD', next: { dueOn, sats: 60, amount: '3.00' } }),
+          loan({ goalCurrency: 'PHP', next: { dueOn, sats: 20, amount: '1.00' } }),
         ],
-      }).next,
-    ).toEqual({ dueOn: '2026-10-11', sats: 40 });
+      },
+      'ch',
+    );
+    expect(mixed.next).toEqual({ dueOn, sats: 120, amount: '₱3.00 + $3.00' });
+    const missing = summarizeLoans(
+      {
+        sundayRest: false,
+        loans: [
+          loan({ goalCurrency: 'PHP', next: { dueOn, sats: 40, amount: '2.00' } }),
+          loan({ goalCurrency: 'PHP', next: { dueOn, sats: 60, amount: null } }),
+        ],
+      },
+      'ch',
+    );
+    expect(missing.next).toEqual({ dueOn, sats: 100, amount: null });
+    const bitcoin = summarizeLoans(
+      { sundayRest: false, loans: [loan({ next: { dueOn, sats: 100, amount: '3.00' } })] },
+      'ch',
+    );
+    expect(bitcoin.next).toEqual({ dueOn, sats: 100, amount: null });
+    const mixedBitcoin = summarizeLoans(
+      {
+        sundayRest: false,
+        loans: [
+          loan({ goalCurrency: 'PHP', next: { dueOn, sats: 40, amount: '2.00' } }),
+          loan({ goalCurrency: 'BTC', next: { dueOn, sats: 60, amount: null } }),
+        ],
+      },
+      'ch',
+    );
+    expect(mixedBitcoin.next).toEqual({ dueOn, sats: 100, amount: null });
+  });
+});
+
+describe('definedFiatSum', () => {
+  it('sums one fiat currency in cents and keeps the stored decimals', () => {
+    expect(definedFiatSum('PHP', ['30.00', '1.50'], 'ch')).toBe('₱31.50');
+    expect(definedFiatSum('USD', ['10.125'], 'us')).toBe('$10.13');
+  });
+
+  it('is null for bitcoin, a missing code or amount, an empty list, or an invalid amount', () => {
+    expect(definedFiatSum('BTC', ['1.00'], 'ch')).toBeNull();
+    expect(definedFiatSum(undefined, ['1.00'], 'ch')).toBeNull();
+    expect(definedFiatSum('PHP', ['1.00', null], 'ch')).toBeNull();
+    expect(definedFiatSum('PHP', ['not-an-amount'], 'ch')).toBeNull();
+    expect(definedFiatSum('PHP', [], 'ch')).toBeNull();
+  });
+});
+
+describe('definedFiatAmounts', () => {
+  it('sums each currency and keeps first-seen currency order', () => {
+    expect(
+      definedFiatAmounts(
+        [
+          { code: 'PHP', amount: '1.00' },
+          { code: 'USD', amount: '2.00' },
+          { code: 'PHP', amount: '1.50' },
+        ],
+        'ch',
+      ),
+    ).toBe('₱2.50 + $2.00');
+  });
+
+  it('is null when any part is bitcoin, missing, invalid, or the list is empty', () => {
+    expect(definedFiatAmounts([], 'ch')).toBeNull();
+    expect(definedFiatAmounts([{ code: 'BTC', amount: '1.00' }], 'ch')).toBeNull();
+    expect(definedFiatAmounts([{ code: 'PHP', amount: null }], 'ch')).toBeNull();
+    expect(definedFiatAmounts([{ code: 'PHP', amount: 'not-an-amount' }], 'ch')).toBeNull();
   });
 });
 
@@ -266,6 +384,17 @@ describe('dueShares', () => {
   it('treats a missing matching ledger as empty', () => {
     expect(dueShares([loan()], [])).toEqual([]);
   });
+
+  it('keeps no amount when the ledger currency differs from the loan currency', () => {
+    const phpLoan = loan({ goalCurrency: 'PHP', goalAmount: '900.00' });
+    const usdLedger = ledger({
+      currency: 'USD',
+      repayments: [{ ...ledger().repayments[0]!, amount: '1.00', sats: 90 }],
+    });
+    expect(dueShares([phpLoan], [usdLedger])).toEqual([
+      expect.objectContaining({ amount: null, sats: 90 }),
+    ]);
+  });
 });
 
 describe('fittingPrefix', () => {
@@ -311,7 +440,16 @@ describe('definedDueLabel', () => {
     expect(definedDueLabel([none, php('30.00', '1.50')], 'waiting', 'ch')).toBe('₱1.50');
   });
 
-  it('is null for bitcoin, mixed currencies, a missing amount, or nothing due', () => {
+  it('sums each fiat currency and joins the payable or waiting totals', () => {
+    const usd = loan({
+      goalCurrency: 'USD',
+      due: { ...loan().due, payableAmount: '3.00', waitingAmount: '0.50' },
+    });
+    expect(definedDueLabel([php('30.00', '1.50'), usd], 'payable', 'ch')).toBe('₱30.00 + $3.00');
+    expect(definedDueLabel([php('30.00', '1.50'), usd], 'waiting', 'ch')).toBe('₱1.50 + $0.50');
+  });
+
+  it('is null for bitcoin, a missing amount, or nothing due', () => {
     expect(definedDueLabel([loan()], 'waiting', 'ch')).toBeNull();
     expect(
       definedDueLabel([php('30.00', '1.50'), loan({ goalCurrency: 'USD' })], 'waiting', 'ch'),
