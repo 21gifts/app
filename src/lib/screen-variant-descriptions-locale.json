@@ -5705,9 +5705,9 @@
     "fil": "Ang tanging estado: pamagat, petsa ng huling update, ang pamagat na Wallet at data, at ang limang may-bilang na sugnay, palamuti ng promosyon."
   },
   "/trust-chain:default": {
-    "de": "Nur Gründer-Saat Cyrill. Der Vorspann sagt dem Besucher, eine Person anzuklicken, um alle mit ihr Verknüpften zu laden. Unter dem Diagramm stehen fünf kurze Erklärungen: Verifiziert, Moderator, Fond, Initiator und Gründer.",
-    "es": "Solo la semilla fundadora Cyrill. El texto principal dice al visitante que pulse a una persona para cargar a todos los vinculados a ella. Bajo el diagrama hay cinco explicaciones breves: Verificado, Moderador, Fondo, Iniciador y Fundador.",
-    "fil": "Binhi ng tagapagtatag na si Cyrill lamang. Sinasabi ng pambungad sa bisita na pindutin ang isang tao upang ikarga ang lahat ng nakaugnay sa kaniya. Sa ilalim ng dayagram ay may limang maikling paliwanag: Verified, Moderator, Fond, Initiator, at Tagapagtatag."
+    "de": "Nur Gründer-Saat Cyrill. Der Vorspann sagt dem Besucher, eine Person anzuklicken, um alle mit ihr Verknüpften zu laden. Unter dem Diagramm stehen sechs kurze Erklärungen: Verifiziert, Moderator, Fond, Software-Entwickler, Initiator und Gründer.",
+    "es": "Solo la semilla fundadora Cyrill. El texto principal dice al visitante que pulse a una persona para cargar a todos los vinculados a ella. Bajo el diagrama hay seis explicaciones breves: Verificado, Moderador, Fondo, Desarrollador de software, Iniciador y Fundador.",
+    "fil": "Binhi ng tagapagtatag na si Cyrill lamang. Sinasabi ng pambungad sa bisita na pindutin ang isang tao upang ikarga ang lahat ng nakaugnay sa kaniya. Sa ilalim ng dayagram ay may anim na maikling paliwanag: Verified, Moderator, Fond, Developer ng software, Initiator, at Tagapagtatag."
   },
   "/trust-chain:empty": {
     "de": "Null Knoten. Noch niemand ist auf der Trust-Kette.",
@@ -8070,9 +8070,9 @@
     "fil": "Walang sesyon. Pamuhatan Welcome, tatak-salita, Mag-log in, walang menyu ng miyembro. Bawat tala ay ipinapakita pa rin ang halaga ng Bitcoin. Ang aktibong listahan ay ang pampublikong pahina. Ang pangalan ng may-akda na may accountId ay ang pindutan ng profil. Walang kahon ng pagsulat."
   },
   "/welcome:software-developer": {
-    "de": "Eine Autorenzeile im Willkommensforum. Neben dem Namen eine anklickbare Rollenpille Software-Entwickler mit ihrem Hinweis, genau wie die Moderator-Pille. Es gibt kein separates statisches Label und keine Verifiziert-Pille; alte und neue API-Antwort zeigen diese eine Pille. Der Rest entspricht dem kleinsten Willkommensbildschirm mit einer Notiz.",
-    "es": "Una fila de autor en el foro de bienvenida. Junto al nombre, una píldora de rol Desarrollador de software pulsable con su explicación, igual que la píldora Moderador. No hay una etiqueta estática separada ni una píldora Verificado; las respuestas antigua y nueva de la API muestran esta única píldora. El resto coincide con la pantalla de bienvenida más pequeña de una sola nota.",
-    "fil": "Isang hilera ng may-akda sa welcome forum. Sa tabi ng pangalan, isang nakakapindot na role pill na Developer ng software kasama ang hint nito, tulad ng Moderator pill. Walang hiwalay na static na label at walang Verified pill; ang luma at bagong API response ay nagpapakita ng iisang pill na ito. Ang iba ay kapareho ng pinakamaliit na welcome screen na may isang note."
+    "de": "Eine Autorenzeile im Willkommensforum. Neben dem Namen eine anklickbare Rollenpille Software-Entwickler, deren Druck ihren Hinweis zeigt (in dieser Aufnahme nicht gezeigt), genau wie die Moderator-Pille. Es gibt kein separates statisches Label und keine Verifiziert-Pille; alte und neue API-Antwort zeigen diese eine Pille. Der Rest entspricht dem kleinsten Willkommensbildschirm mit einer Notiz.",
+    "es": "Una fila de autor en el foro de bienvenida. Junto al nombre, una píldora de rol Desarrollador de software pulsable cuya pulsación revela su explicación (no se muestra en esta captura), igual que la píldora Moderador. No hay una etiqueta estática separada ni una píldora Verificado; las respuestas antigua y nueva de la API muestran esta única píldora. El resto coincide con la pantalla de bienvenida más pequeña de una sola nota.",
+    "fil": "Isang hilera ng may-akda sa welcome forum. Sa tabi ng pangalan, isang nakakapindot na role pill na Developer ng software na ang pagpindot ay nagpapakita ng hint nito (hindi ipinapakita sa kuhang ito), tulad ng Moderator pill. Walang hiwalay na static na label at walang Verified pill; ang luma at bagong API response ay nagpapakita ng iisang pill na ito. Ang iba ay kapareho ng pinakamaliit na welcome screen na may isang note."
   },
   "/welcome:sunday": {
     "de": "Gerätelokaler Sonntag, mit dem über das + geöffneten Schreibbereich. Der Verfasser ist aus dem Schreibbereich verschwunden. Der Satz Am Sonntag ist das Schreiben pausiert. steht an seiner Stelle. Notizen bleiben lesbar.",

@@ -2945,7 +2945,7 @@ Open **Menu** with Loan A two days behind. The account header's repayment row sa
 
 ### Variant: software-developer
 
-One author row on the welcome forum. Beside the name, a clickable **Software Developer** role pill (like Moderator and Fond), with its hint. It is the one role pill; no second Verified pill appears. An older api body with a lower role (basis, verified, moderator, or fond) plus `staffTag` `software_developer`, and a newer body with role `software_developer`, both show this one pill.
+One author row on the welcome forum. Beside the name, a clickable **Software Developer** role pill (like Moderator and Fond) whose press reveals its hint (not shown in this shot). It is the one role pill; no second Verified pill appears. An older api body with a lower role (basis, verified, moderator, or fond) plus `staffTag` `software_developer`, and a newer body with role `software_developer`, both show this one pill.
 
 ![21.gifts welcome software developer](images/welcome-software-developer.png)
 
