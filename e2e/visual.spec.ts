@@ -47165,6 +47165,26 @@ test.describe('fonds screen', () => {
     await shotScreen(page, 'state-fonds-payments-load-more-expanded');
   });
 
+  test('state /fonds/[username] payments-load-more-loading', async ({ page }) => {
+    await fulfillSpot(page);
+    await page.route('**/fonds/tondo-fond/payments**', async (route) => {
+      const before = new URL(route.request().url()).searchParams.get('before');
+      if (before === null) {
+        await route.continue();
+        return;
+      }
+      // never fulfill: the cursor request stays in flight for the picture
+    });
+    await page.goto('/fonds/tondo-fond');
+    const payments = page.getByRole('region', { name: 'Payments' });
+    await expect(payments.getByRole('button', { name: 'Load more' })).toBeVisible();
+    await payments.getByRole('button', { name: 'Load more' }).click();
+    await expect(payments.getByRole('button', { name: 'Load more' })).toBeDisabled();
+    await expect(payments.getByRole('listitem')).toHaveCount(3);
+    await expect(payments.getByText('Alice')).toBeVisible();
+    await shotScreen(page, 'state-fonds-payments-load-more-loading');
+  });
+
   test('state /fonds/[username] payments-load-more-error', async ({ page }) => {
     await fulfillSpot(page);
     await page.route('**/fonds/tondo-fond/payments**', async (route) => {

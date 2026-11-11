@@ -11146,6 +11146,12 @@ The first payment page answers 503 `{ "error": "Fond payments are unavailable" }
 
 ![21.gifts public Fond page after loading more payments](images/fonds-payments-load-more-expanded.png)
 
+### Variant: payments-load-more-loading
+
+**Load more** was pressed on `/fonds/tondo-fond`; the request carrying `before` never answers. The three loaded rows stay visible; below them the **Load more** button stays in place and is disabled, and no separate in-flight text appears.
+
+![21.gifts public Fond page while loading more payments](images/fonds-payments-load-more-loading.png)
+
 ### Variant: payments-load-more-error
 
 **Load more** was pressed and the request carrying `before` answers 503. The three loaded rows stay visible; below them the **Payments** section shows **Could not load the Fond payments. Please try again.** and **Try again**, and **Load more** remains available.

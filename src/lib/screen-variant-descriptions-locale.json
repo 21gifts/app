@@ -8804,6 +8804,11 @@
     "es": "La misma página del Fondo tras pulsar Cargar más. Se añade la segunda página de pagos; la nueva fila aparece bajo los pagos ya cargados y el botón Cargar más desaparece porque ya no hay otro cursor.",
     "fil": "Parehong pahina ng Fond pagkatapos i-tap ang Mag-load pa. Idinadagdag ang ikalawang pahina ng mga bayad; lumalabas ang bagong row sa ilalim ng mga na-load nang bayad at nawawala ang button na Mag-load pa dahil wala nang susunod na cursor."
   },
+  "/fonds/[username]:payments-load-more-loading": {
+    "de": "Dieselbe Fond-Seite nach einem Tippen auf Mehr laden, während die Anfrage mit Cursor noch läuft. Die drei geladenen Zahlungszeilen bleiben sichtbar; die Schaltfläche Mehr laden bleibt an ihrem Platz und ist deaktiviert, und es erscheint kein weiterer Ladehinweis.",
+    "es": "La misma página del Fondo tras pulsar Cargar más mientras la petición con cursor sigue en curso. Las tres filas ya cargadas siguen visibles; el botón Cargar más permanece en su sitio y está desactivado, y no aparece ningún otro aviso de carga.",
+    "fil": "Parehong pahina ng Fond pagkatapos i-tap ang Mag-load pa habang tumatakbo pa ang kahilingang may cursor. Nananatiling nakikita ang tatlong na-load nang row; nananatili sa puwesto ang button na Mag-load pa at hindi ito pinapagana, at walang karagdagang paalala ng pag-load."
+  },
   "/fonds/[username]:payments-load-more-error": {
     "de": "Dieselbe Fond-Seite nach einem Tippen auf Mehr laden, wenn die Anfrage mit Cursor mit 503 antwortet. Die drei geladenen Zahlungszeilen bleiben sichtbar; darunter stehen Fond-Zahlungen konnten nicht geladen werden. Bitte versuchen Sie es erneut. und Erneut versuchen, und Mehr laden bleibt verfügbar.",
     "es": "La misma página del Fondo tras pulsar Cargar más cuando la petición con cursor responde con 503. Las tres filas ya cargadas siguen visibles; debajo aparecen No se pudieron cargar los pagos del Fondo. Inténtalo de nuevo. e Intentar de nuevo, y Cargar más sigue disponible.",

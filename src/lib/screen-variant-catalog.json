@@ -10620,6 +10620,12 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/fonds/[username]:payments-load-more-loading",
+    "label": "/fonds/[username] payments-load-more-loading",
+    "visual": "state-fonds-payments-load-more-loading",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/fonds/[username]:payments-load-more-error",
     "label": "/fonds/[username] payments-load-more-error",
     "visual": "state-fonds-payments-load-more-error",

@@ -12468,6 +12468,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/fonds/[username]',
+    id: 'payments-load-more-loading',
+    image: 'fonds-payments-load-more-loading.png',
+    visual: 'state-fonds-payments-load-more-loading',
+    needle: "payments.getByRole('button', { name: 'Load more' })).toBeDisabled()",
+  },
+  {
+    route: '/fonds/[username]',
     id: 'payments-load-more-error',
     image: 'fonds-payments-load-more-error.png',
     visual: 'state-fonds-payments-load-more-error',
