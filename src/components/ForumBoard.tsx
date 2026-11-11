@@ -545,9 +545,10 @@ function fallbackCopy(text: string): boolean {
  * heart handler. When the author cannot receive yet (`cannotReceive`), the
  * heart and its count show disabled instead, so nobody taps a heart that can
  * only fail; a tap still in its +1 window keeps its fill, +1, and count there.
- * An author-wallet line from an earlier refused heart (`view.cannotReceive`)
- * stays until the next tap: under a heart a refresh disables, and alone when a
- * refresh makes the note not payable. Click stops the card from expanding. The
+ * An author-wallet or loan-no-longer-collecting line from an earlier refused
+ * heart (`view.cannotReceive` / `view.creditClosed`) stays until the next tap:
+ * under a heart a refresh disables, and alone when a refresh makes the note not
+ * payable. Click stops the card from expanding. The
  * count sits immediately to the right of the icon; the fill remains after a
  * tap. Who does not see the heart does not see the count.
  *
@@ -591,8 +592,12 @@ function ForumHeartControl({
     heartViewerSats === null
       ? t('forum.heart')
       : t('forum.heartAmount', { amount: formatBitcoin(heartViewerSats, numberFormat) });
-  const authorWalletLine =
-    view?.cannotReceive === true ? (
+  const heartErrorLine =
+    view?.creditClosed === true ? (
+      <p role="alert" className="text-xs text-app-danger">
+        {t('forum.payErrorCreditClosed')}
+      </p>
+    ) : view?.cannotReceive === true ? (
       <p role="alert" className="text-xs text-app-danger">
         {t('forum.payErrorAuthorWallet')}
       </p>
@@ -600,7 +605,7 @@ function ForumHeartControl({
   if (!cannotReceive && !payable) {
     // No heart on a note that is not payable; a line from an earlier refused heart stays
     // (an older api sends `payable: false` without `authorCanReceive`).
-    return authorWalletLine;
+    return heartErrorLine;
   }
   const extra = view?.extra ?? 0;
   const plusOne = view !== undefined && view.plusOne;
@@ -657,7 +662,7 @@ function ForumHeartControl({
           {t('forum.heartNeedsBalance')}
         </p>
       ) : null}
-      {authorWalletLine}
+      {heartErrorLine}
     </>
   );
 }

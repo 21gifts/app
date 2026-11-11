@@ -419,12 +419,18 @@ export function LoanPayMore({
             <p className="text-sm text-app-muted">
               {t(confirming === 'pay' ? 'loans.payMoreConfirmBody' : 'loans.endCollectingBody')}
             </p>
-            {confirming === 'pay' && check.ok ? (
-              <Button type="button" size="lg" onClick={() => submitPay(check.text)}>
-                {t('loans.payMoreConfirmAction', {
-                  amount: displayLoanAmount(check.text, loan, numberFormat),
-                })}
-              </Button>
+            {confirming === 'pay' ? (
+              check.ok ? (
+                <Button type="button" size="lg" onClick={() => submitPay(check.text)}>
+                  {t('loans.payMoreConfirmAction', {
+                    amount: displayLoanAmount(check.text, loan, numberFormat),
+                  })}
+                </Button>
+              ) : (
+                <Button type="button" size="lg" disabled>
+                  {t('loans.payMorePay')}
+                </Button>
+              )
             ) : (
               <Button
                 type="button"

@@ -175,7 +175,7 @@ describe('LoanPayMore', () => {
     expect(onPay).toHaveBeenCalledWith(expect.anything(), '480.28');
     cleanup();
 
-    show({ ...php, maxSats: null, maxAmount: null });
+    show({ ...php, maxSats: null });
     expect(screen.getByText(/No PHP exchange rate is available now/)).toBeTruthy();
     expect((screen.getByRole('button', { name: 'Max' }) as HTMLButtonElement).disabled).toBe(true);
     expect(
@@ -192,6 +192,25 @@ describe('LoanPayMore', () => {
     expect(dialog.textContent).toContain('This first payment ends collecting permanently.');
     fireEvent.click(screen.getByRole('button', { name: "Pay ₿1'000 and end collecting" }));
     expect(onPay).toHaveBeenCalledWith(expect.anything(), '1000');
+  });
+
+  it('keeps an invalidated pay dialog on a disabled pay action, never the close action', () => {
+    const collecting = loan({ fundedAt: null, closedAt: null, sats: 4_000, maxSats: 4_000 });
+    const { onPay, onCloseCollecting } = show(collecting);
+    fireEvent.change(screen.getByLabelText('Amount (₿)'), { target: { value: '1000' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Pay this amount' }));
+    fireEvent.change(screen.getByLabelText('Amount (₿)'), { target: { value: 'bad' } });
+
+    const dialog = screen.getByRole('dialog', { name: 'Pay and end collecting?' });
+    expect(
+      (within(dialog).getByRole('button', { name: 'Pay this amount' }) as HTMLButtonElement)
+        .disabled,
+    ).toBe(true);
+    expect(within(dialog).queryByRole('button', { name: 'End collecting permanently' })).toBeNull();
+    expect(within(dialog).getByRole('button', { name: 'Cancel' })).toBeTruthy();
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Pay this amount' }));
+    expect(onPay).not.toHaveBeenCalled();
+    expect(onCloseCollecting).not.toHaveBeenCalled();
   });
 
   it('confirms the final end-collecting action and does not show it after close', () => {

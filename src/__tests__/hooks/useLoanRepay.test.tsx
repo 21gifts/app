@@ -2202,6 +2202,7 @@ describe('useLoanRepay free repayment and collecting actions', () => {
     expect(result.current.prepayWaiting).toEqual([
       expect.objectContaining({ name: 'Carla', amountSats: 200 }),
     ]);
+    expect(result.current.prepayMessageId).toBe('prepay-waiting');
   });
 
   it('exposes the api maximum when prepay is above max', async () => {

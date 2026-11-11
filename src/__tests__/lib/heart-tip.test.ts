@@ -1,7 +1,12 @@
 import { captureMessage } from '@sentry/nextjs';
 import { act, cleanup, renderHook } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { CannotReceiveError, postMessageInvoice, WalletRequiredError } from '@/lib/api';
+import {
+  CannotReceiveError,
+  CreditClosedError,
+  postMessageInvoice,
+  WalletRequiredError,
+} from '@/lib/api';
 import type { Account } from '@/lib/api-types';
 import { getE2eNow } from '@/lib/config';
 import {
@@ -468,6 +473,15 @@ describe('sendHeartTip', () => {
       kind: 'failed',
       reason: 'wallet_setup_due',
     });
+  });
+
+  it('maps a closed-credit invoice refusal to credit_closed', async () => {
+    vi.mocked(postMessageInvoice).mockRejectedValueOnce(new CreditClosedError());
+    await expect(sendHeartTip(BASE)).resolves.toEqual({
+      kind: 'failed',
+      reason: 'credit_closed',
+    });
+    expect(payFromWallet).not.toHaveBeenCalled();
   });
 
   it('maps any other invoice rejection to request_failed', async () => {
@@ -1164,6 +1178,31 @@ describe('heartFailureView', () => {
     ).toEqual({ pressed: true, plusOne: true, needsBalance: false, extra: 0, cannotReceive: true });
   });
 
+  it('sets creditClosed on a refusal because the loan stopped collecting', () => {
+    const shown = heartFailureView(
+      { pressed: true, plusOne: true, needsBalance: false, extra: 1 },
+      0,
+      {
+        kind: 'failed',
+        reason: 'credit_closed',
+      },
+    );
+    expect(shown).toEqual({
+      pressed: true,
+      plusOne: true,
+      needsBalance: false,
+      extra: 0,
+      creditClosed: true,
+    });
+    expect(
+      heartFailureView({ pressed: true, plusOne: true, needsBalance: false, extra: 1 }, 0, {
+        kind: 'failed',
+        reason: 'request_failed',
+      }),
+    ).not.toHaveProperty('creditClosed');
+    expect(heartFailureView(shown, 0, { kind: 'noop' }).creditClosed).toBe(true);
+  });
+
   it('keeps cannotReceive when a concurrent heart fails for another reason', () => {
     const shown = heartFailureView(undefined, 0, {
       kind: 'failed',
@@ -1359,6 +1398,24 @@ describe('useHeartTip', () => {
       extra: 0,
       cannotReceive: true,
     });
+  });
+
+  it('keeps the closed-credit line when the heart invoice says the loan stopped collecting', async () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+    vi.mocked(postMessageInvoice).mockRejectedValue(new CreditClosedError());
+    const { result } = renderHook(() => useHeartTip({ readOnly: false }));
+    await clickHeart(result, 'h-closed');
+    expect(result.current.heartTipViews['h-closed']).toEqual({
+      pressed: true,
+      plusOne: true,
+      needsBalance: false,
+      extra: 0,
+      creditClosed: true,
+    });
+    expect(captureMessage).toHaveBeenCalledWith(
+      'Heart not sent',
+      expect.objectContaining({ tags: { heart_reason: 'credit_closed' } }),
+    );
   });
 
   it('keeps the author-wallet line when heartCounts catch up with an earlier heart', async () => {

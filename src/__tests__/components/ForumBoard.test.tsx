@@ -11239,6 +11239,22 @@ describe('ForumBoard author who cannot receive', () => {
     );
   });
 
+  it('shows the localized closed-loan line after a refused heart', () => {
+    renderWithLocale(
+      board({
+        messages: [{ ...SAMPLE, accountId: 'acc-bob' }],
+        onHeartTip: () => undefined,
+        heartTipViews: {
+          m1: { pressed: false, plusOne: false, needsBalance: false, creditClosed: true },
+        },
+      }),
+      'de',
+    );
+    expect(screen.getByRole('alert').textContent).toBe(
+      'Dieser Kredit sammelt nicht mehr und kann kein weiteres Geld erhalten.',
+    );
+  });
+
   it('cancels an open gift sheet when a refresh says the reply author cannot receive', () => {
     const onPayCancel = vi.fn();
     const reply: ForumMessage = {

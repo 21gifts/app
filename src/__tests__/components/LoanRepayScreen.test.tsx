@@ -128,6 +128,7 @@ function repay(overrides: Partial<LoanRepayResult> = {}): LoanRepayResult {
     sentAmounts: [],
     sentNames: [],
     prepayWaiting: [],
+    prepayMessageId: null,
     feeSats: 0,
     missingSats: null,
     errorKey: null,
@@ -1824,6 +1825,42 @@ describe('LoanRepayScreen', () => {
     expect(
       within(list).getAllByRole('link', { name: 'Repayment list' })[0]?.getAttribute('href'),
     ).toBe('/messages/loan-1/repayment-list');
+  });
+
+  it('shows prepay waiting recipients only under the loan that made the request', () => {
+    const phpLoan = loan({
+      messageId: 'php-waiting',
+      goalCurrency: 'PHP',
+      goalAmount: '900.00',
+      maxAmount: '570.00',
+    });
+    const usdLoan = loan({
+      messageId: 'usd-other',
+      goalCurrency: 'USD',
+      goalAmount: '30.00',
+      maxAmount: '19.00',
+    });
+    show(
+      { sundayRest: false, loans: [phpLoan, usdLoan] },
+      repay({
+        phase: 'waiting',
+        prepayMessageId: 'php-waiting',
+        prepayWaiting: [
+          {
+            dayIndex: 12,
+            recipientAccountId: 'giver-waiting',
+            name: 'Carla',
+            username: 'carla',
+            amountSats: 200,
+            amount: '2.50',
+          },
+        ],
+      }),
+    );
+
+    expect(screen.getAllByText('Waiting for Carla to set up their wallet')).toHaveLength(1);
+    expect(screen.getByText('₱2.50')).toBeTruthy();
+    expect(screen.queryByText('$2.50')).toBeNull();
   });
 
   it('handles zero totals and unusable backend plan values without inventing progress', () => {

@@ -128,6 +128,12 @@ describe('free loan amount helpers', () => {
     expect(loanMaxInput(btc)).toBe('1234');
     expect(loanMaxUnits(fiat)).toBe(1_230n);
     expect(loanMaxInput(fiat)).toBe('12.30');
+    expect(loanMaxUnits({ ...fiat, maxSats: null })).toBeNull();
+    expect(loanMaxInput({ ...fiat, maxSats: null })).toBeNull();
+    const fiatWithoutRate = { ...fiat };
+    delete fiatWithoutRate.maxSats;
+    expect(loanMaxUnits(fiatWithoutRate)).toBeNull();
+    expect(loanMaxInput(fiatWithoutRate)).toBeNull();
     expect(loanMaxUnits({ ...fiat, maxAmount: 'bad' })).toBeNull();
     expect(loanMaxInput({ ...fiat, maxAmount: null })).toBeNull();
     expect(loanMaxUnits({ ...btc, maxSats: null })).toBeNull();
@@ -148,7 +154,7 @@ describe('free loan amount helpers', () => {
     expect(checkLoanAmount('1.5', btc)).toEqual({ ok: false, reason: 'invalid', max: '500' });
     expect(checkLoanAmount('501', btc)).toEqual({ ok: false, reason: 'above_max', max: '500' });
     expect(checkLoanAmount(' 500 ', btc)).toEqual({ ok: true, text: '500' });
-    const fiat = loan({ goalCurrency: 'USD', maxSats: null, maxAmount: '10.50' });
+    const fiat = loan({ goalCurrency: 'USD', maxSats: 8_000, maxAmount: '10.50' });
     expect(checkLoanAmount('10,51', fiat)).toEqual({
       ok: false,
       reason: 'above_max',
@@ -422,6 +428,38 @@ describe('dueShares', () => {
     });
 
     expect(dueShares([fiatLoan], [base]).map((row) => row.amount)).toEqual([null, null, null]);
+  });
+
+  it('does not treat a missing paidAmount as zero cents after positive paidSats', () => {
+    const fiatLoan = loan({ goalCurrency: 'PHP', goalAmount: '200.00', maxAmount: '197.50' });
+    const withoutPaidAmount = {
+      ...ledger().repayments[0]!,
+      amount: '10.00',
+      paidSats: 50,
+    };
+    delete withoutPaidAmount.paidAmount;
+    const withoutPaidFields = { ...withoutPaidAmount };
+    Reflect.deleteProperty(withoutPaidFields, 'paidSats');
+    const base = ledger({
+      currency: 'PHP',
+      repayments: [
+        { ...ledger().repayments[0]!, amount: '10.00', paidSats: 50, paidAmount: null },
+        { ...withoutPaidAmount, accountId: 'acc_2' },
+        {
+          ...withoutPaidAmount,
+          accountId: 'acc_3',
+          paidSats: 0,
+        },
+        { ...withoutPaidFields, accountId: 'acc_4' },
+      ],
+    });
+
+    expect(dueShares([fiatLoan], [base]).map((row) => row.amount)).toEqual([
+      null,
+      null,
+      '10.00',
+      '10.00',
+    ]);
   });
 
   it('orders due rows by day, loan, and row while mapping availability and fallback sats', () => {

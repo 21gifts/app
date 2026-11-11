@@ -70,6 +70,8 @@ export interface LoanRepayResult {
   sentNames: string[];
   /** Waiting recipients returned by the latest free-amount prepay request. */
   prepayWaiting: RepaymentWaiting[];
+  /** Message id whose latest free-amount request returned `prepayWaiting`. */
+  prepayMessageId: string | null;
   /** Sum of prepared fees of the bills that went out (0 when none). */
   feeSats: number;
   /**
@@ -226,6 +228,7 @@ type PinnedLoanRepay = Pick<
   | 'sentAmounts'
   | 'sentNames'
   | 'prepayWaiting'
+  | 'prepayMessageId'
   | 'feeSats'
   | 'missingSats'
   | 'errorKey'
@@ -238,6 +241,7 @@ const PIN_BASE = {
   sentAmounts: [] as { code: MyLoan['goalCurrency']; amount: string | null }[],
   sentNames: [] as string[],
   prepayWaiting: [] as RepaymentWaiting[],
+  prepayMessageId: null,
   feeSats: 0,
   missingSats: null,
   errorKey: null,
@@ -322,6 +326,7 @@ const PINNED_RESULTS: Record<string, PinnedLoanRepay> = {
         amount: null,
       },
     ],
+    prepayMessageId: 'loan-a',
   },
   'repay-pay-more-shortfall': {
     ...PIN_BASE,
@@ -383,6 +388,7 @@ export function useLoanRepay(options: {
   >([]);
   const [sentNames, setSentNames] = useState<string[]>([]);
   const [prepayWaiting, setPrepayWaiting] = useState<RepaymentWaiting[]>([]);
+  const [prepayMessageId, setPrepayMessageId] = useState<string | null>(null);
   const [feeSats, setFeeSats] = useState(0);
   const [missingSats, setMissingSats] = useState<number | null>(null);
   const missingBalance = useRef<number | null | undefined>(undefined);
@@ -424,6 +430,7 @@ export function useLoanRepay(options: {
     setSentAmounts([]);
     setSentNames([]);
     setPrepayWaiting([]);
+    setPrepayMessageId(null);
     setFeeSats(0);
     missingBalance.current = undefined;
     setMissingSats(null);
@@ -502,6 +509,7 @@ export function useLoanRepay(options: {
       setSentAmounts([]);
       setSentNames([]);
       setPrepayWaiting([]);
+      setPrepayMessageId(null);
       setFeeSats(0);
       missingBalance.current = undefined;
       setMissingSats(null);
@@ -541,6 +549,7 @@ export function useLoanRepay(options: {
               return;
             }
             setPrepayWaiting(prepay.waiting);
+            setPrepayMessageId(prepayRequest.messageId);
             perLoan.push({ messageId: prepayRequest.messageId, bills: prepay.bills });
           } else {
             for (const loan of loans) {
@@ -969,6 +978,7 @@ export function useLoanRepay(options: {
     sentAmounts,
     sentNames,
     prepayWaiting,
+    prepayMessageId,
     feeSats,
     missingSats,
     errorKey: phase === 'failed' ? errorKey : null,

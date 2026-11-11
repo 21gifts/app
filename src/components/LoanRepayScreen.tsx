@@ -848,7 +848,9 @@ export function LoanRepayScreen(): ReactElement {
                   phase={repay.phase}
                   actionError={repay.actionError}
                   errorKey={repay.errorKey}
-                  prepayWaiting={repay.prepayWaiting}
+                  prepayWaiting={
+                    repay.prepayMessageId === loan.messageId ? repay.prepayWaiting : []
+                  }
                   balanceSats={repay.balanceSats}
                   missingSats={repay.missingSats}
                   showShortfall={payable === 0}
