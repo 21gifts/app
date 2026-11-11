@@ -46266,7 +46266,7 @@ test.describe('fonds screen', () => {
       });
     });
     await page.goto('/fonds/tondo-fond');
-  await expect(page.getByText('Could not load the Fond. Please try again.')).toBeVisible();
+    await expect(page.getByText('Could not load the Fond. Please try again.')).toBeVisible();
     await shotScreen(page, 'state-fonds-error');
   });
 });
