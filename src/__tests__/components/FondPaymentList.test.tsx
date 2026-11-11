@@ -55,6 +55,7 @@ afterEach(() => {
   cleanup();
   vi.mocked(fetchFondPayments).mockReset();
   spot.value = null;
+  vi.unstubAllGlobals();
 });
 
 describe('FondPaymentList', () => {
@@ -83,11 +84,11 @@ describe('FondPaymentList', () => {
     );
     expect(screen.getByText(/\+₿21'000/).textContent).toContain('$21.00');
     const fee = screen.getByText('Fee ₿21', { exact: false });
-    expect(fee.textContent).toContain('$0.02');
+    expect(fee.textContent).toContain('$0.01');
     expect(screen.getAllByText(/2026/)).toHaveLength(3);
   });
 
-  it('shows stored fiat beside bitcoin and keeps the fee on spot', async () => {
+  it('shows stored fiat beside bitcoin and derives the fee in the stored currency', async () => {
     spot.value = { sats: 100_000_000, usd: '100000', chf: '80000', eur: null, php: null };
     vi.mocked(fetchFondPayments).mockResolvedValue({
       payments: [PAYMENTS.payments[1]!],
@@ -97,26 +98,82 @@ describe('FondPaymentList', () => {
     const row = await screen.findByRole('listitem');
     expect(row.textContent).toContain("−₿5'000 · $3.00");
     expect(row.textContent).not.toContain('CHF 4.00');
-    expect(row.textContent).toContain('CHF 0.02');
+    expect(row.textContent).toContain('$0.01');
+    expect(row.textContent).not.toContain('CHF 0.02');
   });
 
-  it('uses spot for null and a two-decimal zero for an unusable stored string', async () => {
+  it('derives a stored fee exactly in cents', async () => {
     spot.value = { sats: 100_000_000, usd: '100000', chf: null, eur: null, php: null };
     vi.mocked(fetchFondPayments).mockResolvedValue({
       payments: [
-        PAYMENTS.payments[0]!,
         {
-          ...PAYMENTS.payments[0]!,
-          id: 'stored-empty',
-          storedFiat: { currency: 'USD', amount: '' },
+          ...PAYMENTS.payments[1]!,
+          id: 'stored-exact',
+          amountSats: 3_000,
+          feeSats: 21,
+        },
+      ],
+      next: null,
+    });
+    renderWithLocale(<FondPaymentList username="tondo-fond" />);
+    const row = await screen.findByRole('listitem');
+    expect(row.textContent).toContain("−₿3'000 · $3.00");
+    expect(screen.getByText('Fee ₿21', { exact: false }).textContent).toContain('$0.02');
+  });
+
+  it('uses the spot for a row without stored fiat', async () => {
+    spot.value = { sats: 100_000_000, usd: '100000', chf: null, eur: null, php: null };
+    vi.mocked(fetchFondPayments).mockResolvedValue({
+      payments: [{ ...PAYMENTS.payments[0]!, feeSats: 21 }],
+      next: null,
+    });
+    renderWithLocale(<FondPaymentList username="tondo-fond" />);
+    const row = await screen.findByRole('listitem');
+    expect(row.textContent).toContain("+₿21'000 · $21.00");
+    expect(within(row).getByText('Fee ₿21', { exact: false }).textContent).toContain('$0.02');
+  });
+
+  it('rounds a stored fee half up in exact cents', async () => {
+    spot.value = { sats: 100_000_000, usd: '100000', chf: null, eur: null, php: null };
+    vi.mocked(fetchFondPayments).mockResolvedValue({
+      payments: [
+        {
+          ...PAYMENTS.payments[1]!,
+          id: 'fee-half-up',
+          amountSats: 1_000,
+          feeSats: 5,
+          storedFiat: { currency: 'USD', amount: '1.00' },
+        },
+        {
+          ...PAYMENTS.payments[1]!,
+          id: 'fee-half-down',
+          amountSats: 1_000,
+          feeSats: 4,
+          storedFiat: { currency: 'USD', amount: '1.00' },
         },
       ],
       next: null,
     });
     renderWithLocale(<FondPaymentList username="tondo-fond" />);
     const rows = await screen.findAllByRole('listitem');
-    expect(rows[0]?.textContent).toContain("+₿21'000 · $21.00");
-    expect(rows[1]?.textContent).toContain("+₿21'000 · $0.00");
+    expect(within(rows[0]!).getByText('Fee ₿5', { exact: false }).textContent).toContain('$0.01');
+    expect(within(rows[1]!).getByText('Fee ₿4', { exact: false }).textContent).toContain('$0.00');
+  });
+
+  it('keeps a stored zero fee Free and shows the spot when the amount is zero', async () => {
+    spot.value = { sats: 100_000_000, usd: '100000', chf: null, eur: null, php: null };
+    vi.mocked(fetchFondPayments).mockResolvedValue({
+      payments: [
+        { ...PAYMENTS.payments[1]!, id: 'stored-free', amountSats: 3_000, feeSats: 0 },
+        { ...PAYMENTS.payments[1]!, id: 'stored-zero', amountSats: 0, feeSats: 21 },
+      ],
+      next: null,
+    });
+    renderWithLocale(<FondPaymentList username="tondo-fond" />);
+    const rows = await screen.findAllByRole('listitem');
+    expect(within(rows[0]!).getByText('Fee Free').textContent).toBe('Fee Free');
+    expect(rows[0]?.textContent).toContain("−₿3'000 · $3.00");
+    expect(within(rows[1]!).getByText('Fee ₿21', { exact: false }).textContent).toContain('$0.02');
   });
 
   it('hides an incoming zero fee but shows an outgoing zero fee as Free', async () => {
@@ -272,6 +329,32 @@ describe('FondPaymentList', () => {
     expect(
       await screen.findByText('Could not load the Fond payments. Please try again.'),
     ).toBeTruthy();
+  });
+
+  it.each([
+    ['amount', { storedFiat: { currency: 'USD', amount: '3' } }],
+    ['currency', { storedFiat: { currency: 'CHF', amount: '3.00' } }],
+    ['paidAt', { paidAt: '2026-11-11 13:31' }],
+  ] as const)('shows the payments error for a malformed %s body', async (_field, override) => {
+    const actual = await vi.importActual<typeof import('@/lib/api')>('@/lib/api');
+    vi.mocked(fetchFondPayments).mockImplementation(actual.fetchFondPayments);
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: true,
+        status: 200,
+        json: () =>
+          Promise.resolve({
+            payments: [{ ...PAYMENTS.payments[0]!, ...override }],
+            next: null,
+          }),
+      }),
+    );
+    renderWithLocale(<FondPaymentList username="tondo-fond" />);
+    expect(
+      await screen.findByText('Could not load the Fond payments. Please try again.'),
+    ).toBeTruthy();
+    expect(screen.queryAllByRole('listitem')).toHaveLength(0);
   });
 
   it('keeps the list and retries a failed next page', async () => {

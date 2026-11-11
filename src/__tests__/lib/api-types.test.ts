@@ -2724,6 +2724,12 @@ describe('fondPaymentSchema', () => {
       ...payment,
       storedFiat,
     });
+    expect(
+      fondPaymentSchema.parse({
+        ...payment,
+        storedFiat: { currency: 'USD', amount: '0.00' },
+      }).storedFiat,
+    ).toEqual({ currency: 'USD', amount: '0.00' });
     expect(() => fondPaymentSchema.parse({ ...payment, storedFiat: undefined })).toThrow();
     expect(() =>
       fondPaymentSchema.parse({ ...payment, storedFiat: { currency: 'USD' } }),
@@ -2731,6 +2737,14 @@ describe('fondPaymentSchema', () => {
     expect(() =>
       fondPaymentSchema.parse({ ...payment, storedFiat: { currency: 3, amount: '3.00' } }),
     ).toThrow();
+    expect(() =>
+      fondPaymentSchema.parse({ ...payment, storedFiat: { currency: 'usd', amount: '3.00' } }),
+    ).toThrow();
+    for (const amount of ['3', '3.0', '03.00', '-1.00', '3.000']) {
+      expect(() =>
+        fondPaymentSchema.parse({ ...payment, storedFiat: { currency: 'USD', amount } }),
+      ).toThrow();
+    }
   });
 
   it('accepts a null counterparty name and username and rejects malformed rows', () => {
@@ -2750,6 +2764,11 @@ describe('fondPaymentSchema', () => {
     expect(() => fondPaymentSchema.parse({ ...payment, amountSats: -1 })).toThrow();
     expect(() => fondPaymentSchema.parse({ ...payment, id: '' })).toThrow();
     expect(() => fondPaymentSchema.parse({ ...payment, paidAt: '' })).toThrow();
+    expect(() => fondPaymentSchema.parse({ ...payment, paidAt: '2026-11-11T13:31:01' })).toThrow();
+    expect(() => fondPaymentSchema.parse({ ...payment, paidAt: '2026-11-11 13:31' })).toThrow();
+    expect(
+      fondPaymentSchema.parse({ ...payment, paidAt: '2026-11-11T13:31:01+01:00' }).paidAt,
+    ).toBe('2026-11-11T13:31:01+01:00');
   });
 });
 
