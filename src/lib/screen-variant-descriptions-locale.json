@@ -1605,9 +1605,9 @@
     "fil": "Mali ang anyo o hindi kilalang id → Hindi mahanap ang profile na ito."
   },
   "/members/[accountId]:name-editing": {
-    "de": "Angemeldeter Inhaber auf /members/:id, die Konto-Id stimmt überein. Link kopieren schreibt weiterhin den kurzen /l/-Link. Der Stift am Namen öffnet das Namensfeld. Rolle, Staff-Marke und Funding-Symbol rücken unter das Feld.",
-    "es": "Titular con sesión en /members/:id, el id de la cuenta coincide. Copiar enlace sigue escribiendo el enlace corto /l/. El lápiz del nombre abre el campo del nombre. El rol, la marca de equipo y el icono de financiación pasan debajo del campo.",
-    "fil": "Naka-sign in na may-ari sa /members/:id, tumutugma ang account id. Ang kopyahin ang link ay sumusulat pa rin ng maikling /l/ na link. Binubuksan ng lapis sa pangalan ang field ng pangalan. Lumilipat sa ilalim ng field ang role, ang marka ng staff, at ang icon ng funding."
+    "de": "Angemeldeter Inhaber auf /members/:id, die Konto-Id stimmt überein. Link kopieren schreibt weiterhin den kurzen /l/-Link. Der Stift am Namen öffnet das Namensfeld. Die Rollen- und Funding-Marken rücken unter dieses Feld.",
+    "es": "Titular con sesión en /members/:id, el id de la cuenta coincide. Copiar enlace sigue escribiendo el enlace corto /l/. El lápiz del nombre abre el campo del nombre. Las marcas de rol y de financiación pasan debajo de ese campo.",
+    "fil": "Naka-sign in na may-ari sa /members/:id, tumutugma ang account id. Ang kopyahin ang link ay sumusulat pa rin ng maikling /l/ na link. Binubuksan ng lapis sa pangalan ang field ng pangalan. Lumilipat sa ilalim ng field na iyon ang mga marka ng role at ng funding."
   },
   "/members/[accountId]:note-null": {
     "de": "Nur die Identitätskarte des Mitglieds (profileMessage: null, aboutMe null); copy-profile-link weiterhin auf der Karte; keine Überschrift Über mich; keine Forumskarte. Ein Mitglied, das ein leeres Über mich gespeichert hat, sieht gleich aus: Eine Profilnotiz ohne Text, ohne Medien und mit 0 sats gilt als keine Notiz, sodass das Laden des Profils nicht fehlschlägt.",
@@ -2005,9 +2005,9 @@
     "fil": "Tarheta ng pagkakakilanlan; 3 tindahan nakapindot; isang nakalistang tala ng tindahan; pinahina Ipinapakita ang pinakabago 1 sa 3.; walang nakaangkla na tarheta ng tala sa profile."
   },
   "/members/[accountId]:software-developer": {
-    "de": "Identitätskarte eines Basis-Mitglieds. Neben dem Namen eine anklickbare Rollenpille Software-Entwickler aus der StaffTag-Kompatibilitätsbrücke. Es gibt kein separates statisches Label und keine Verifiziert-Pille. Über mich und Nachricht bleiben wie auf der Standard-Mitgliedskarte.",
-    "es": "Tarjeta de identidad de un miembro basis. Junto al nombre, una píldora de rol Desarrollador de software pulsable desde el puente de compatibilidad de staffTag. No hay una etiqueta estática separada ni una píldora Verificado. Sobre mí y Mensaje siguen como en la tarjeta de miembro predeterminada.",
-    "fil": "Kard ng pagkakakilanlan ng isang basis na miyembro. Sa tabi ng pangalan, isang nakakapindot na role pill na Developer ng software mula sa staffTag compatibility bridge. Walang hiwalay na static na label at walang Verified pill. Ang Tungkol sa akin at Mensahe ay pareho sa default na member card."
+    "de": "Identitätskarte eines Basis-Mitglieds. Neben dem Namen eine anklickbare Rollenpille Software-Entwickler aus der StaffTag-Kompatibilitätsbrücke. Sie ist die eine Rollenpille; keine zweite Verifiziert-Pille erscheint. Über mich und Nachricht bleiben wie auf der Standard-Mitgliedskarte.",
+    "es": "Tarjeta de identidad de un miembro basis. Junto al nombre, una píldora de rol Desarrollador de software pulsable desde el puente de compatibilidad de staffTag. Es la única píldora de rol; no aparece una segunda píldora Verificado. Sobre mí y Mensaje siguen como en la tarjeta de miembro predeterminada.",
+    "fil": "Kard ng pagkakakilanlan ng isang basis na miyembro. Sa tabi ng pangalan, isang nakakapindot na role pill na Developer ng software mula sa staffTag compatibility bridge. Ito ang iisang role pill; walang pangalawang Verified pill na lumalabas. Ang Tungkol sa akin at Mensahe ay pareho sa default na member card."
   },
   "/members/[accountId]:staff-verify": {
     "de": "Angemeldeter Moderator betrachtet ein anderes Mitglied, das basis ist. Mitarbeiterkarte mit dem geschlossenen Aufklapper Moderatorenfunktionen, eine details / summary-Zeile (data-testid=\"state-members-staff-verify\"); Verifizieren ist erst sichtbar, wenn er geöffnet ist. Das gedrückte Ergebnis ist staff-verify-open.",
@@ -2340,9 +2340,9 @@
     "fil": "Parehong naka-sign-in na pampublikong thread pagkatapos buksan ang ?visual=heart-paid at pindutin ang Magpadala ng puso. Nananatili para sa kuha ang punong puso at ang +1 na ipinapakita ng bawat pindot."
   },
   "/messages/[id]:hidden": {
-    "de": "Hydrierte Gründer- oder Moderatorsitzung bei einer weich ausgeblendeten Notiz. Der Verlauf zeigt den Originaltext plus Diese Notiz wurde von {name} am {time} ausgeblendet. Reagieren, Schenken, Löschen und das Antwortfeld fehlen.",
-    "es": "Sesión hidratada de fundador o moderador en una nota ocultada suavemente. El hilo muestra el cuerpo original más Esta nota fue ocultada por {name} el {time}. Reaccionar, Regalar, eliminar y el recuadro de respuesta se omiten.",
-    "fil": "Naka-hydrate na sesyon ng tagapagtatag o moderator sa isang malambot na itinagong tala. Ipinapakita ng talakayan ang orihinal na nilalaman pati ang Itinago ni {name} ang notang ito noong {time}. Hindi kasama ang Tumugon, Regalo, tanggalin, at ang kahon ng sagot."
+    "de": "Hydrierte Sitzung mit einer Rolle von mindestens Moderator bei einer weich ausgeblendeten Notiz. Der Verlauf zeigt den Originaltext plus Diese Notiz wurde von {name} am {time} ausgeblendet. Reagieren, Schenken, Löschen und das Antwortfeld fehlen.",
+    "es": "Sesión hidratada con un rol de al menos Moderador en una nota ocultada suavemente. El hilo muestra el cuerpo original más Esta nota fue ocultada por {name} el {time}. Reaccionar, Regalar, eliminar y el recuadro de respuesta se omiten.",
+    "fil": "Naka-hydrate na sesyon na may role na kahit Moderator sa isang malambot na itinagong tala. Ipinapakita ng talakayan ang orihinal na nilalaman pati ang Itinago ni {name} ang notang ito noong {time}. Hindi kasama ang Tumugon, Regalo, tanggalin, at ang kahon ng sagot."
   },
   "/messages/[id]:loading": {
     "de": "Wartet auf das Abrufen der öffentlichen Nachricht. Wird geladen…",
@@ -3650,9 +3650,9 @@
     "fil": "Bukas ang editor ng pangalan na may control character sa pangalan ay nagpapakita ng Hindi puwedeng may control character ang pangalan. (name.errorControls). Naka-disable ang I-save hanggang magbago ang draft. Nasa window ang alerto."
   },
   "/profile:name-editing": {
-    "de": "Angemeldeter Inhaber auf /profile. Link kopieren schreibt /view/:viewKey. Der Stift am Namen öffnet das Namensfeld. Rolle, Staff-Marke und Funding-Symbol rücken unter das Feld.",
-    "es": "Titular con sesión en /profile. Copiar enlace escribe /view/:viewKey. El lápiz del nombre abre el campo del nombre. El rol, la marca de equipo y el icono de financiación pasan debajo del campo.",
-    "fil": "Naka-sign in na may-ari sa /profile. Isinusulat ng kopyahin ang link ang /view/:viewKey. Binubuksan ng lapis sa pangalan ang field ng pangalan. Lumilipat sa ilalim ng field ang role, ang marka ng staff, at ang icon ng funding."
+    "de": "Angemeldeter Inhaber auf /profile. Link kopieren schreibt /view/:viewKey. Der Stift am Namen öffnet das Namensfeld. Die Rollen- und Funding-Marken rücken unter dieses Feld.",
+    "es": "Titular con sesión en /profile. Copiar enlace escribe /view/:viewKey. El lápiz del nombre abre el campo del nombre. Las marcas de rol y de financiación pasan debajo de ese campo.",
+    "fil": "Naka-sign in na may-ari sa /profile. Isinusulat ng kopyahin ang link ang /view/:viewKey. Binubuksan ng lapis sa pangalan ang field ng pangalan. Lumilipat sa ilalim ng field na iyon ang mga marka ng role at ng funding."
   },
   "/profile:name-empty": {
     "de": "Der Namenseditor ist offen und das Feld ist geleert zeigt Gib deinen Namen ein (name.errorEmpty). Speichern bleibt deaktiviert, bis der Entwurf sich ändert. Der Hinweis liegt im Fenster.",
@@ -3735,9 +3735,9 @@
     "fil": "Isang araw ng pagtanggap (₿21 noong 2026-06-01). Ang grapiko ay gumuguhit ng pahalang na linya mula sa iisang punto. Sa ilalim nito, bumababa ang Utang mula ₿100'000 sa ₿60'000 hanggang ₿-20'000, at tumataas ang Kredito mula ₿20'000 sa ₿120'000 tapos bumababa sa ₿-30'000, sa 2026-06-01, 2026-06-02, at 2026-06-03."
   },
   "/profile:software-developer": {
-    "de": "Basis-Konto. Neben dem zentrierten Namen eine anklickbare Rollenpille Software-Entwickler, dann der Stift. Keine separate statische Beschriftung und keine Verifiziert-Pille. Der Rest der öffentlichen Karte entspricht dem Standardprofil, einschliesslich der Bearbeitung.",
-    "es": "Cuenta basis. Junto al nombre centrado, una píldora de rol Desarrollador de software pulsable y luego el lápiz. Sin etiqueta estática separada y sin píldora Verificado. El resto de la tarjeta pública coincide con el perfil predeterminado, incluidos los controles de edición.",
-    "fil": "Basis na account. Sa tabi ng nakagitnang pangalan, isang nakakapindot na role pill na Developer ng software, pagkatapos ang lapis. Walang hiwalay na static na label at walang Verified pill. Ang iba pang pampublikong kard ay katulad ng default na profile, kasama ang mga kontrol sa pag-edit."
+    "de": "Basis-Konto. Neben dem zentrierten Namen eine anklickbare Rollenpille Software-Entwickler, dann der Stift. Sie ist die eine Rollenpille; keine zweite Verifiziert-Pille erscheint. Der Rest der öffentlichen Karte entspricht dem Standardprofil, einschliesslich der Bearbeitung.",
+    "es": "Cuenta basis. Junto al nombre centrado, una píldora de rol Desarrollador de software pulsable y luego el lápiz. Es la única píldora de rol; no aparece una segunda píldora Verificado. El resto de la tarjeta pública coincide con el perfil predeterminado, incluidos los controles de edición.",
+    "fil": "Basis na account. Sa tabi ng nakagitnang pangalan, isang nakakapindot na role pill na Developer ng software, pagkatapos ang lapis. Ito ang iisang role pill; walang pangalawang Verified pill na lumalabas. Ang iba pang pampublikong kard ay katulad ng default na profile, kasama ang mga kontrol sa pag-edit."
   },
   "/profile:sticker-kikamba": {
     "de": "/profile?lang=Kikamba öffnet ShopStickerOverlay sofort. Die Vorschau ist der Englisch/Kikamba-Sticker (Kikamba statt TINATANGGAP DITO / philippinischer Scan-Text). Gleiche Leiste: Second language zeigt Kikamba über der Vorschau, PDF ausgewählt, Download darunter. Mobile Kombinationen entsprechen dem Desktop. Nadel state-profile-sticker-kikamba.",
@@ -5880,9 +5880,9 @@
     "fil": "Hindi kilala o mali ang anyo ng susi. Teksto Hindi mahanap ang profile na ito."
   },
   "/view/[viewKey]:name-editing": {
-    "de": "Angemeldeter Inhaber auf /view/:viewKey, die Konto-Id stimmt überein. Link kopieren schreibt diese Ansichts-URL. Das Aktivieren-Banner kann unter der Karte stehen. Der Stift am Namen öffnet das Namensfeld. Rolle, Staff-Marke und Funding-Symbol rücken unter das Feld.",
-    "es": "Titular con sesión en /view/:viewKey, el id de la cuenta coincide. Copiar enlace escribe esta URL de vista. El banner de activación puede quedar bajo la tarjeta. El lápiz del nombre abre el campo del nombre. El rol, la marca de equipo y el icono de financiación pasan debajo del campo.",
-    "fil": "Naka-sign in na may-ari sa /view/:viewKey, tumutugma ang account id. Isinusulat ng kopyahin ang link ang URL ng view na ito. Maaaring nasa ilalim ng kard ang banner ng pag-activate. Binubuksan ng lapis sa pangalan ang field ng pangalan. Lumilipat sa ilalim ng field ang role, ang marka ng staff, at ang icon ng funding."
+    "de": "Angemeldeter Inhaber auf /view/:viewKey, die Konto-Id stimmt überein. Link kopieren schreibt diese Ansichts-URL. Das Aktivieren-Banner kann unter der Karte stehen. Der Stift am Namen öffnet das Namensfeld. Die Rollen- und Funding-Marken rücken unter dieses Feld.",
+    "es": "Titular con sesión en /view/:viewKey, el id de la cuenta coincide. Copiar enlace escribe esta URL de vista. El banner de activación puede quedar bajo la tarjeta. El lápiz del nombre abre el campo del nombre. Las marcas de rol y de financiación pasan debajo de ese campo.",
+    "fil": "Naka-sign in na may-ari sa /view/:viewKey, tumutugma ang account id. Isinusulat ng kopyahin ang link ang URL ng view na ito. Maaaring nasa ilalim ng kard ang banner ng pag-activate. Binubuksan ng lapis sa pangalan ang field ng pangalan. Lumilipat sa ilalim ng field na iyon ang mga marka ng role at ng funding."
   },
   "/view/[viewKey]:photo-only": {
     "de": "Derselbe Share-Link nur mit dem runden Profilfoto über der Überschrift, zentriert. Kein breites Bild und keine Hinzufügen-Schaltfläche. Ein Besucher sieht keine Bearbeitung.",
@@ -5915,9 +5915,9 @@
     "fil": "Pampublikong kard sa /view/:viewKey. Napindot ang pill na Verified at nakikita ang pangungusap nito. Maaaring nasa ilalim ng kard ang banner ng pag-activate."
   },
   "/view/[viewKey]:software-developer": {
-    "de": "Öffentliche Karte auf /view/:viewKey. Neben dem Namen eine anklickbare Rollenpille Software-Entwickler, ohne separates statisches Label und ohne Verifiziert-Pille. Das Aktivieren-Banner kann unter der Karte stehen.",
-    "es": "Tarjeta pública en /view/:viewKey. Junto al nombre, una píldora de rol Desarrollador de software pulsable, sin etiqueta estática separada ni píldora Verificado. El banner de activación puede quedar bajo la tarjeta.",
-    "fil": "Pampublikong kard sa /view/:viewKey. Katabi ng pangalan ang nakakapindot na role pill na Developer ng software, walang hiwalay na static na label at walang Verified pill. Maaaring nasa ilalim ng kard ang banner ng pag-activate."
+    "de": "Öffentliche Karte auf /view/:viewKey. Neben dem Namen eine anklickbare Rollenpille Software-Entwickler. Sie ist die eine Rollenpille; keine zweite Verifiziert-Pille erscheint. Das Aktivieren-Banner kann unter der Karte stehen.",
+    "es": "Tarjeta pública en /view/:viewKey. Junto al nombre, una píldora de rol Desarrollador de software pulsable. Es la única píldora de rol; no aparece una segunda píldora Verificado. El banner de activación puede quedar bajo la tarjeta.",
+    "fil": "Pampublikong kard sa /view/:viewKey. Katabi ng pangalan ang nakakapindot na role pill na Developer ng software. Ito ang iisang role pill; walang pangalawang Verified pill na lumalabas. Maaaring nasa ilalim ng kard ang banner ng pag-activate."
   },
   "/view/[viewKey]:translate": {
     "de": "Öffentliche /view/:viewKey mit einem deutschen Über mich und einer nicht leeren aboutMessageId. Übersetzen ist unter dem Über-mich-Text sichtbar.",
@@ -8070,9 +8070,9 @@
     "fil": "Walang sesyon. Pamuhatan Welcome, tatak-salita, Mag-log in, walang menyu ng miyembro. Bawat tala ay ipinapakita pa rin ang halaga ng Bitcoin. Ang aktibong listahan ay ang pampublikong pahina. Ang pangalan ng may-akda na may accountId ay ang pindutan ng profil. Walang kahon ng pagsulat."
   },
   "/welcome:software-developer": {
-    "de": "Eine Autorenzeile im Willkommensforum. Neben dem Namen eine anklickbare Rollenpille Software-Entwickler, deren Druck ihren Hinweis zeigt (in dieser Aufnahme nicht gezeigt), genau wie die Moderator-Pille. Es gibt kein separates statisches Label und keine Verifiziert-Pille; alte und neue API-Antwort zeigen diese eine Pille. Der Rest entspricht dem kleinsten Willkommensbildschirm mit einer Notiz.",
-    "es": "Una fila de autor en el foro de bienvenida. Junto al nombre, una píldora de rol Desarrollador de software pulsable cuya pulsación revela su explicación (no se muestra en esta captura), igual que la píldora Moderador. No hay una etiqueta estática separada ni una píldora Verificado; las respuestas antigua y nueva de la API muestran esta única píldora. El resto coincide con la pantalla de bienvenida más pequeña de una sola nota.",
-    "fil": "Isang hilera ng may-akda sa welcome forum. Sa tabi ng pangalan, isang nakakapindot na role pill na Developer ng software na ang pagpindot ay nagpapakita ng hint nito (hindi ipinapakita sa kuhang ito), tulad ng Moderator pill. Walang hiwalay na static na label at walang Verified pill; ang luma at bagong API response ay nagpapakita ng iisang pill na ito. Ang iba ay kapareho ng pinakamaliit na welcome screen na may isang note."
+    "de": "Eine Autorenzeile im Willkommensforum. Neben dem Namen eine anklickbare Rollenpille Software-Entwickler (wie Moderator und Fond), deren Druck ihren Hinweis zeigt (in dieser Aufnahme nicht gezeigt). Sie ist die eine Rollenpille; keine zweite Verifiziert-Pille erscheint. Ein älterer API-Body mit einer niedrigeren Rolle (basis, verified, moderator oder fond) plus staffTag software_developer und ein neuerer Body mit der Rolle software_developer zeigen beide diese eine Pille.",
+    "es": "Una fila de autor en el foro de bienvenida. Junto al nombre, una píldora de rol Desarrollador de software pulsable (como Moderador y Fondo), cuya pulsación revela su explicación (no se muestra en esta captura). Es la única píldora de rol; no aparece una segunda píldora Verificado. Un cuerpo de API más antiguo con un rol inferior (basis, verified, moderator o fond) más staffTag software_developer y un cuerpo más nuevo con el rol software_developer muestran ambos esta única píldora.",
+    "fil": "Isang hilera ng may-akda sa welcome forum. Sa tabi ng pangalan, isang nakakapindot na role pill na Developer ng software (tulad ng Moderator at Fond) na ang pagpindot ay nagpapakita ng hint nito (hindi ipinapakita sa kuhang ito). Ito ang iisang role pill; walang pangalawang Verified pill na lumalabas. Ang mas lumang API body na may mas mababang role (basis, verified, moderator, o fond) plus staffTag software_developer at ang mas bagong body na may role na software_developer ay kapwa nagpapakita ng iisang pill na ito."
   },
   "/welcome:sunday": {
     "de": "Gerätelokaler Sonntag, mit dem über das + geöffneten Schreibbereich. Der Verfasser ist aus dem Schreibbereich verschwunden. Der Satz Am Sonntag ist das Schreiben pausiert. steht an seiner Stelle. Notizen bleiben lesbar.",
