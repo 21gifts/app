@@ -1913,3 +1913,24 @@ export const fondPayoutInvoiceSchema = z.object({
  * recipient's wallet has one, and the payment hash that identifies the send.
  */
 export type FondPayoutInvoice = z.infer<typeof fondPayoutInvoiceSchema>;
+
+/**
+ * Runtime schema for the public `GET /fond/summary` body.
+ *
+ * `balanceSats` and `balanceSyncedAt` may be `null` until the api has synced
+ * the Fond's wallet. `payoutsPaidUsd` is the stored two-decimal USD figure at
+ * the moment each grant payout was created and is never recomputed.
+ */
+export const fondSummarySchema = z.object({
+  username: z.string().min(1),
+  receivedSats: z.number().int().nonnegative(),
+  paidOutSats: z.number().int().nonnegative(),
+  feesSats: z.number().int().nonnegative(),
+  balanceSats: z.number().int().nullable(),
+  balanceSyncedAt: z.string().min(1).nullable(),
+  payoutsPaid: z.number().int().nonnegative(),
+  payoutsPaidUsd: z.string(),
+});
+
+/** Public Fond totals: received, paid out with fees, balance, and paid grant payouts. */
+export type FondSummary = z.infer<typeof fondSummarySchema>;

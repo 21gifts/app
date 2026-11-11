@@ -849,6 +849,7 @@ const CSP_PAGE_SECTIONS: ReadonlySet<string> = new Set([
   'diagnostics',
   'donate',
   'fond',
+  'fonds',
   'forum',
   'funding',
   'fx',

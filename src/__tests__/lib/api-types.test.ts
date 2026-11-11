@@ -41,6 +41,7 @@ import {
   fundingDecisionResultSchema,
   fondPayoutInvoiceSchema,
   fondPayoutListSchema,
+  fondSummarySchema,
   trustActionResultSchema,
   trustChainSchema,
   passkeyBeginSchema,
@@ -2620,6 +2621,39 @@ describe('lnurlInvoiceSchema', () => {
   it('parses { pr } and rejects an empty pr', () => {
     expect(lnurlInvoiceSchema.parse({ pr: 'lnbc1' })).toEqual({ pr: 'lnbc1' });
     expect(() => lnurlInvoiceSchema.parse({ pr: '' })).toThrow();
+  });
+});
+
+describe('fondSummarySchema', () => {
+  const summary = {
+    username: 'tondo-fond',
+    receivedSats: 210_000,
+    paidOutSats: 21_000,
+    feesSats: 210,
+    balanceSats: 189_000,
+    balanceSyncedAt: '2026-11-11T10:00:00.000Z',
+    payoutsPaid: 3,
+    payoutsPaidUsd: '3.00',
+  };
+
+  it('parses a full summary', () => {
+    expect(fondSummarySchema.parse(summary)).toEqual(summary);
+  });
+
+  it('accepts a null balance and null synced time', () => {
+    const bare = { ...summary, balanceSats: null, balanceSyncedAt: null };
+    expect(fondSummarySchema.parse(bare)).toEqual(bare);
+  });
+
+  it('rejects an empty username, negative sats, and a non-integer count', () => {
+    expect(() => fondSummarySchema.parse({ ...summary, username: '' })).toThrow();
+    expect(() => fondSummarySchema.parse({ ...summary, receivedSats: -1 })).toThrow();
+    expect(() => fondSummarySchema.parse({ ...summary, payoutsPaid: 1.5 })).toThrow();
+  });
+
+  it('rejects a non-string USD figure and an empty synced time', () => {
+    expect(() => fondSummarySchema.parse({ ...summary, payoutsPaidUsd: 3 })).toThrow();
+    expect(() => fondSummarySchema.parse({ ...summary, balanceSyncedAt: '' })).toThrow();
   });
 });
 
