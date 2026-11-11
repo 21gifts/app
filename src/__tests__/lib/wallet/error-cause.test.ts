@@ -303,7 +303,8 @@ describe('errorCause', () => {
     [22, '22'],
     [999_999, '999999'],
     ['999999', '999999'],
-    ['000022', '000022'],
+    ['000022', '22'],
+    ['007', '7'],
     [1_000_000, null],
     ['1000000', null],
     [-1, null],
@@ -332,6 +333,17 @@ describe('errorCause', () => {
     }
     return named(rule.name ?? 'Error', message);
   }
+
+  it('has no row that sets a code together with a message field', () => {
+    // A code row's code comes from the start of the message, so `matching`
+    // builds its message from the code; no row may need both.
+    for (const rule of CAUSE_KINDS) {
+      const messageFields = [rule.message, rule.messageStart, rule.messageEnd];
+      expect(rule.code === undefined || messageFields.every((field) => field === undefined)).toBe(
+        true,
+      );
+    }
+  });
 
   it.each(CAUSE_KINDS.map((rule, row) => [row, rule] as const))(
     'matches row %i and misses it when any field it sets is changed',
@@ -371,8 +383,10 @@ describe('errorCause', () => {
       startsWith: String.prototype.startsWith,
       endsWith: String.prototype.endsWith,
     };
+    let reads = 0;
     const error = {
       get name(): string {
+        reads += 1;
         Set.prototype.has = (): boolean => true;
         RegExp.prototype.test = (): boolean => true;
         Array.prototype.find = (): unknown => ({ kind: 'caller_kind' });
@@ -390,6 +404,8 @@ describe('errorCause', () => {
         errorCode: null,
         causeKind: 'unknown',
       });
+      // The getter ran, once, so the built-ins were replaced before matching.
+      expect(reads).toBe(1);
       expect(Object.isFrozen(CAUSE_KINDS)).toBe(true);
       expect(CAUSE_KINDS.every((rule) => Object.isFrozen(rule))).toBe(true);
       expect(Object.isFrozen(ERROR_NAMES)).toBe(true);

@@ -233,6 +233,26 @@ const fromCharCode = String.fromCharCode;
 /** Character code of the digit `0`. */
 const DIGIT_ZERO = 48;
 
+/** The ten digits as characters, built once when the module loads. */
+const DIGITS: readonly string[] = Object.freeze(
+  Array.from({ length: 10 }, (_, digit) => fromCharCode(DIGIT_ZERO + digit)),
+);
+
+/**
+ * The value of one digit character, found by an indexed loop and `===`.
+ *
+ * @param char - One character, or `undefined`.
+ * @returns The digit's value, or `null` when it is not a digit.
+ */
+function digitOf(char: string | undefined): number | null {
+  for (let digit = 0; digit < DIGITS.length; digit += 1) {
+    if (DIGITS[digit] === char) {
+      return digit;
+    }
+  }
+  return null;
+}
+
 /**
  * The start of a message that names each of {@link SDK_KINDS}, as the SDK
  * writes it (`network` → `Network error:`), built once when the module loads.
@@ -248,19 +268,21 @@ const SDK_KIND_STARTS: readonly (readonly [string, string])[] = Object.freeze(
 );
 
 /**
- * Whether a list holds a value, by an indexed loop and `===`.
+ * The list's own entry equal to a value, found by an indexed loop and `===`,
+ * so what is returned is the module's string, never the caller's.
  *
  * @param list - A frozen list of this module.
  * @param value - The value.
- * @returns Whether the list holds it.
+ * @returns The list's entry, or `null` when the list does not hold it.
  */
-function listed(list: readonly string[], value: string): boolean {
+function listed(list: readonly string[], value: string): string | null {
   for (let at = 0; at < list.length; at += 1) {
-    if (list[at] === value) {
-      return true;
+    const entry = list[at];
+    if (entry === value) {
+      return entry;
     }
   }
-  return false;
+  return null;
 }
 
 /**
@@ -348,28 +370,31 @@ function numericCode(code: number): string | null {
 }
 
 /**
- * Whether a string is one to six digits, checked character by character.
+ * The number written by one to six digits, read character by character.
  *
  * @param text - The string.
- * @returns Whether it is.
+ * @returns The number, or `null` when the string is not one to six digits.
  */
-function isDigits(text: string): boolean {
+function digitsValue(text: string): number | null {
   if (text.length < 1 || text.length > 6) {
-    return false;
+    return null;
   }
+  let value = 0;
   for (let at = 0; at < text.length; at += 1) {
-    const char = text[at];
-    if (char === undefined || char < '0' || char > '9') {
-      return false;
+    const digit = digitOf(text[at]);
+    if (digit === null) {
+      return null;
     }
+    value = value * 10 + digit;
   }
-  return true;
+  return value;
 }
 
 /**
  * The error's own `code` when it may be reported: a whole number from 0 to
- * {@link MAX_NUMERIC_CODE} (also written as one to six digits), or one of
- * {@link KNOWN_CODES}.
+ * {@link MAX_NUMERIC_CODE} (also written as one to six digits, which is
+ * written out again from its value), or one of {@link KNOWN_CODES}; always a
+ * string this module built or holds, never the caller's.
  *
  * @param code - The error's `code`.
  * @returns The code as a string, or `null`.
@@ -381,7 +406,8 @@ function ownCode(code: unknown): string | null {
   if (typeof code !== 'string') {
     return null;
   }
-  return isDigits(code) || listed(KNOWN_CODES, code) ? code : null;
+  const value = digitsValue(code);
+  return value === null ? listed(KNOWN_CODES, code) : numericCode(value);
 }
 
 /**
@@ -391,7 +417,7 @@ function ownCode(code: unknown): string | null {
  * @returns The name, or `null` when it may not be reported.
  */
 function errorNameOf(value: unknown): string | null {
-  return typeof value === 'string' && listed(ERROR_NAMES, value) ? value : null;
+  return typeof value === 'string' ? listed(ERROR_NAMES, value) : null;
 }
 
 /** What a report may say about a thrown value. */
