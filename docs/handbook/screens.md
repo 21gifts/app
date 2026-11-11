@@ -11154,7 +11154,7 @@ The first payment page answers 503 `{ "error": "Fond payments are unavailable" }
 
 ### Variant: payments-load-more-error
 
-**Load more** was pressed and the request carrying `before` answers 503. The three loaded rows stay visible; below them the **Payments** section shows **Could not load the Fond payments. Please try again.** and **Try again**, and **Load more** remains available.
+**Load more** was pressed and the request carrying `before` answers 503. The three loaded rows stay visible; below them the **Payments** section shows **Could not load the Fond payments. Please try again.** and only **Try again** is shown.
 
 ![21.gifts public Fond page after a failed load more](images/fonds-payments-load-more-error.png)
 

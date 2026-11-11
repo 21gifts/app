@@ -146,7 +146,7 @@ export function FondPaymentList({ username }: { username: string }): ReactElemen
   } else {
     body = (
       <>
-        {payments.length === 0 ? (
+        {payments.length === 0 && next === null ? (
           <p className="text-center text-sm text-app-muted">{t('wallet.historyEmpty')}</p>
         ) : (
           <ul className="flex w-full flex-col gap-2">

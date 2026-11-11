@@ -140,7 +140,8 @@ describe('FondPaymentList', () => {
       .mockResolvedValueOnce({ payments: [], next: 'cursor-2' })
       .mockResolvedValueOnce({ payments: [PAYMENTS.payments[0]!], next: null });
     renderWithLocale(<FondPaymentList username="tondo-fond" />);
-    expect(await screen.findByText('No payments yet.')).toBeTruthy();
+    expect(await screen.findByRole('button', { name: 'Load more' })).toBeTruthy();
+    expect(screen.queryByText('No payments yet.')).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Load more' }));
     expect(await screen.findByText('Private')).toBeTruthy();
     expect(screen.queryByText('No payments yet.')).toBeNull();

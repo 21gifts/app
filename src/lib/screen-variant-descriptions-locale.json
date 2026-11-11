@@ -8810,9 +8810,9 @@
     "fil": "Parehong pahina ng Fond pagkatapos i-tap ang Mag-load pa habang tumatakbo pa ang kahilingang may cursor. Nananatiling nakikita ang tatlong na-load nang row; nananatili sa puwesto ang button na Mag-load pa at hindi ito pinapagana, at walang karagdagang paalala ng pag-load."
   },
   "/fonds/[username]:payments-load-more-error": {
-    "de": "Dieselbe Fond-Seite nach einem Tippen auf Mehr laden, wenn die Anfrage mit Cursor mit 503 antwortet. Die drei geladenen Zahlungszeilen bleiben sichtbar; darunter stehen Fond-Zahlungen konnten nicht geladen werden. Bitte versuchen Sie es erneut. und Erneut versuchen, und Mehr laden bleibt verfügbar.",
-    "es": "La misma página del Fondo tras pulsar Cargar más cuando la petición con cursor responde con 503. Las tres filas ya cargadas siguen visibles; debajo aparecen No se pudieron cargar los pagos del Fondo. Inténtalo de nuevo. e Intentar de nuevo, y Cargar más sigue disponible.",
-    "fil": "Parehong pahina ng Fond pagkatapos i-tap ang Mag-load pa kapag nagbalik ng 503 ang kahilingang may cursor. Nananatiling nakikita ang tatlong na-load nang row; sa ibaba ay may Hindi ma-load ang mga bayad ng Fond. Subukan ulit. at Subukan ulit, at available pa rin ang Mag-load pa."
+    "de": "Dieselbe Fond-Seite nach einem Tippen auf Mehr laden, wenn die Anfrage mit Cursor mit 503 antwortet. Die drei geladenen Zahlungszeilen bleiben sichtbar; darunter stehen Fond-Zahlungen konnten nicht geladen werden. Bitte versuchen Sie es erneut. und nur Erneut versuchen wird angezeigt.",
+    "es": "La misma página del Fondo tras pulsar Cargar más cuando la petición con cursor responde con 503. Las tres filas ya cargadas siguen visibles; debajo aparecen No se pudieron cargar los pagos del Fondo. Inténtalo de nuevo. y solo se muestra Intentar de nuevo.",
+    "fil": "Parehong pahina ng Fond pagkatapos i-tap ang Mag-load pa kapag nagbalik ng 503 ang kahilingang may cursor. Nananatiling nakikita ang tatlong na-load nang row; sa ibaba ay may Hindi ma-load ang mga bayad ng Fond. Subukan ulit. at ang Subukan ulit lang ang ipinapakita."
   },
   "/fonds/[username]:error": {
     "de": "Die Api antwortet mit 503. Die Karte zeigt den Hinweis Fond konnte nicht geladen werden. Bitte versuchen Sie es erneut. und die Schaltfläche Erneut versuchen.",
