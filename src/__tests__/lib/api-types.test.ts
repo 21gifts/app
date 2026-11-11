@@ -42,6 +42,8 @@ import {
   fundingDecisionResultSchema,
   fondPayoutInvoiceSchema,
   fondPayoutListSchema,
+  fondPaymentListSchema,
+  fondPaymentSchema,
   fondSummarySchema,
   trustActionResultSchema,
   trustChainSchema,
@@ -2693,6 +2695,68 @@ describe('fondSummarySchema', () => {
   it('rejects a non-string USD figure and an empty synced time', () => {
     expect(() => fondSummarySchema.parse({ ...summary, payoutsPaidUsd: 3 })).toThrow();
     expect(() => fondSummarySchema.parse({ ...summary, balanceSyncedAt: '' })).toThrow();
+  });
+});
+
+describe('fondPaymentSchema', () => {
+  const payment = {
+    id: 'payment-1',
+    direction: 'in' as const,
+    amountSats: 1_000,
+    feeSats: 0,
+    paidAt: '2026-11-11T13:31:01.000Z',
+    counterparty: { accountId: 'acc-1', username: 'alice', name: 'Alice' },
+  };
+
+  it('parses a known counterparty and a private payment', () => {
+    expect(fondPaymentSchema.parse(payment)).toEqual(payment);
+    expect(fondPaymentSchema.parse({ ...payment, direction: 'out', counterparty: null })).toEqual({
+      ...payment,
+      direction: 'out',
+      counterparty: null,
+    });
+  });
+
+  it('accepts a null counterparty name and rejects malformed rows', () => {
+    expect(
+      fondPaymentSchema.parse({
+        ...payment,
+        counterparty: { accountId: 'acc-1', username: 'alice', name: null },
+      }).counterparty,
+    ).toEqual({ accountId: 'acc-1', username: 'alice', name: null });
+    expect(() => fondPaymentSchema.parse({ ...payment, direction: 'sideways' })).toThrow();
+    expect(() => fondPaymentSchema.parse({ ...payment, amountSats: -1 })).toThrow();
+    expect(() => fondPaymentSchema.parse({ ...payment, id: '' })).toThrow();
+    expect(() => fondPaymentSchema.parse({ ...payment, paidAt: '' })).toThrow();
+  });
+});
+
+describe('fondPaymentListSchema', () => {
+  const payment = {
+    id: 'payment-1',
+    direction: 'in' as const,
+    amountSats: 1_000,
+    feeSats: 0,
+    paidAt: '2026-11-11T13:31:01.000Z',
+    counterparty: null,
+  };
+
+  it('parses a page with a next cursor and the end of the list', () => {
+    expect(fondPaymentListSchema.parse({ payments: [payment], next: 'cursor-2' })).toEqual({
+      payments: [payment],
+      next: 'cursor-2',
+    });
+    expect(fondPaymentListSchema.parse({ payments: [], next: null })).toEqual({
+      payments: [],
+      next: null,
+    });
+  });
+
+  it('rejects an empty cursor and a malformed payment', () => {
+    expect(() => fondPaymentListSchema.parse({ payments: [], next: '' })).toThrow();
+    expect(() =>
+      fondPaymentListSchema.parse({ payments: [{ ...payment, feeSats: -1 }], next: null }),
+    ).toThrow();
   });
 });
 

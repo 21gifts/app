@@ -2,6 +2,7 @@
 
 import { useEffect, useState, type ReactElement } from 'react';
 import { useFiatPreference } from '@/components/FiatPreferenceProvider';
+import { FondPaymentList } from '@/components/FondPaymentList';
 import { ForumRoleHint, ForumRoleTag } from '@/components/ForumRoleTag';
 import { useTranslations } from '@/components/LocaleProvider';
 import { useNumberFormat } from '@/components/NumberFormatProvider';
@@ -211,6 +212,7 @@ export function FondSummaryLoader({ username }: { username: string }): ReactElem
       <p className="text-center text-sm text-app-muted">
         {t('fond.payoutsPaid', { count: ready.payoutsPaid, usd: `${ready.payoutsPaidUsd} USD` })}
       </p>
+      <FondPaymentList username={ready.username} />
     </Card>
   );
 }

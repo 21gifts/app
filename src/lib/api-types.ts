@@ -1969,3 +1969,41 @@ export const fondSummarySchema = z.object({
 
 /** Public Fond totals: received, paid out with fees, balance, and paid grant payouts. */
 export type FondSummary = z.infer<typeof fondSummarySchema>;
+
+/**
+ * Runtime schema for one entry of the public `GET /fond/payments` list.
+ *
+ * `counterparty` names the member behind an internal transfer when the api
+ * knows them; `null` means the payer or recipient stays private. `feeSats` is
+ * the completed payment's fee and `paidAt` is its ISO timestamp.
+ */
+export const fondPaymentSchema = z.object({
+  id: z.string().min(1),
+  direction: z.enum(['in', 'out']),
+  amountSats: z.number().int().nonnegative(),
+  feeSats: z.number().int().nonnegative(),
+  paidAt: z.string().min(1),
+  counterparty: z
+    .object({
+      accountId: z.string().min(1),
+      username: z.string().min(1),
+      name: z.string().nullable(),
+    })
+    .nullable(),
+});
+
+/** One completed public Fond payment, newest first. */
+export type FondPayment = z.infer<typeof fondPaymentSchema>;
+
+/**
+ * Runtime schema for the public `GET /fond/payments` body.
+ *
+ * `next` is the cursor for the following page, or `null` at the end.
+ */
+export const fondPaymentListSchema = z.object({
+  payments: z.array(fondPaymentSchema),
+  next: z.string().min(1).nullable(),
+});
+
+/** One cursor-paginated page of public Fond payments. */
+export type FondPaymentList = z.infer<typeof fondPaymentListSchema>;

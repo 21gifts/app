@@ -15202,6 +15202,62 @@ test.describe('onboarding screens', () => {
     await shotScreen(page, 'screen-members-accountId');
   });
 
+  test('state /members/[accountId] fond', async ({ page }) => {
+    const memberId = '23232323-2323-4232-8232-232323232323';
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          name: 'Ada',
+          location: null,
+          username: 'alice',
+          lightningAddress: null,
+          rulesAgreedAt: 1_700_000_001,
+          setup: null,
+          missing: [],
+        }),
+      });
+    });
+    await page.route(`**/forum/members/${memberId}`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          id: memberId,
+          name: 'Tondo Fond',
+          location: 'Tondo',
+          role: 'fond',
+          username: 'tondo-fond',
+          lightningAddress: 'tondo-fond@21.gifts',
+          createdAt: '2026-01-15T12:00:00.000Z',
+          aboutMe: null,
+          profileMessage: null,
+          postCount: 0,
+          replyCount: 0,
+        }),
+      });
+    });
+    await page.route(`**/forum/members/${memberId}/activity`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(EMPTY_ACTIVITY),
+      });
+    });
+    await page.goto(`/members/${memberId}`);
+    await expect(page.getByRole('button', { name: 'Fond' })).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Fond overview' })).toHaveAttribute(
+      'href',
+      '/fonds/tondo-fond',
+    );
+    await shotScreen(page, 'state-members-accountId-fond');
+  });
+
   test('state /members/[accountId] cannot-receive', async ({ page }) => {
     const memberId = '12121212-1212-4212-8212-121212121212';
     await page.addInitScript(() => {
@@ -25726,6 +25782,40 @@ test.describe('onboarding screens', () => {
     await expect(page.getByRole('button', { name: 'Activate' })).toBeVisible();
     await expectDebtAndCreditLines(page);
     await shotScreen(page, 'screen-view-viewKey');
+  });
+
+  test('state /view/[viewKey] fond', async ({ page }) => {
+    await page.route(new RegExp(`/view-key/${E2E_ACCOUNT.viewKey}$`), async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          name: 'Tondo Fond',
+          location: 'Tondo',
+          username: 'tondo-fond',
+          role: 'fond',
+          lightningAddress: 'tondo-fond@21.gifts',
+          lightningAddressVerified: true,
+          createdAt: 1,
+          hasPasskey: true,
+          aboutMe: null,
+        }),
+      });
+    });
+    await page.route('**/view-key/**/activity**', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(VIEW_RECEIVED_ACTIVITY),
+      });
+    });
+    await page.goto(`/view/${E2E_ACCOUNT.viewKey}`);
+    await expect(page.getByRole('button', { name: 'Fond' })).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Fond overview' })).toHaveAttribute(
+      'href',
+      '/fonds/tondo-fond',
+    );
+    await shotScreen(page, 'state-view-fond');
   });
 
   async function openViewHearts(page: Page): Promise<void> {
@@ -47016,7 +47106,34 @@ test.describe('fonds screen', () => {
     await expect(page.getByText('$210.00')).toBeVisible();
     await expect(page.getByText('$0.21')).toBeVisible();
     await expect(page.getByText('3 grant payouts paid (3.00 USD)')).toBeVisible();
+    await expect(page.getByText('Private').first()).toBeVisible();
+    await expect(page.getByText('Alice')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Load more' })).toBeVisible();
     await shotScreen(page, 'screen-fonds-username');
+  });
+
+  test('state /fonds/[username] payments-empty', async ({ page }) => {
+    await fulfillSpot(page);
+    await page.route('**/fonds/tondo-fond/payments', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ payments: [], next: null }),
+      });
+    });
+    await page.goto('/fonds/tondo-fond');
+    await expect(page.getByText('No payments yet.')).toBeVisible();
+    await shotScreen(page, 'state-fonds-payments-empty');
+  });
+
+  test('state /fonds/[username] payments-load-more-expanded', async ({ page }) => {
+    await fulfillSpot(page);
+    await page.goto('/fonds/tondo-fond');
+    await page.getByRole('button', { name: 'Load more' }).click();
+    await expect(page.getByRole('button', { name: 'Load more' })).toHaveCount(0);
+    await expect(page.getByText("₿1'000")).toBeVisible();
+    await page.evaluate(() => window.scrollTo(0, 0));
+    await shotScreen(page, 'state-fonds-payments-load-more-expanded');
   });
 
   test('state /fonds/[username] role-hint', async ({ page }) => {

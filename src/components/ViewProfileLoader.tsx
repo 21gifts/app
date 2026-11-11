@@ -225,6 +225,7 @@ export function ViewProfileLoader({ viewKey }: { viewKey: string }): ReactElemen
         {...(usePublicLists ? { loadPublicList: (kind) => fetchViewForumList(viewKey, kind) } : {})}
         loadAboutPhoto={() => fetchViewAboutMePhoto(viewKey)}
         shareViewKey={viewKey}
+        showFondOverview
       />
       <ViewProfileClaim viewKey={viewKey} hasPasskey={hasPasskey} />
     </div>

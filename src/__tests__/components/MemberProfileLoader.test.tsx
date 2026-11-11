@@ -115,6 +115,24 @@ describe('MemberProfileLoader', () => {
     expect(fetchMemberActivity).toHaveBeenCalledWith('sess', memberId);
   });
 
+  it('links a fond member profile to its Fond overview', async () => {
+    vi.mocked(fetchMember).mockResolvedValue({
+      ...profile,
+      role: 'fond',
+      username: 'tondo-fond',
+    });
+    renderWithLocale(<MemberProfileLoader accountId={memberId} />);
+    const link = await screen.findByRole('link', { name: 'Fond overview' });
+    expect(link.getAttribute('href')).toBe('/fonds/tondo-fond');
+  });
+
+  it('shows no Fond overview link on a non-fond member profile', async () => {
+    vi.mocked(fetchMember).mockResolvedValue({ ...profile, username: 'tondo-fond' });
+    renderWithLocale(<MemberProfileLoader accountId={memberId} />);
+    expect(await screen.findByText('Carol')).toBeTruthy();
+    expect(screen.queryByRole('link', { name: 'Fond overview' })).toBeNull();
+  });
+
   it('shows missing when the api returns null', async () => {
     vi.mocked(fetchMember).mockResolvedValue(null);
     renderWithLocale(<MemberProfileLoader accountId={memberId} />);

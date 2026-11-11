@@ -1908,3 +1908,17 @@ export async function proxyMessagesEditsGet(
 export async function proxyFondSummaryGet(request: Request): Promise<Response> {
   return proxyApiRequest(request, '/fond/summary');
 }
+
+/**
+ * Proxies GET /fond/payments to the 21.gifts api (public; no auth).
+ *
+ * The incoming query (the `before` cursor) is forwarded unchanged by
+ * {@link proxyApiRequest}. The route guard checks the Fond handle before it
+ * calls this function.
+ *
+ * @param request - Incoming App Router request.
+ * @returns The upstream response.
+ */
+export async function proxyFondPaymentsGet(request: Request): Promise<Response> {
+  return proxyApiRequest(request, '/fond/payments');
+}

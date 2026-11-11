@@ -5040,6 +5040,12 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/members/[accountId]:fond",
+    "label": "/members/[accountId] fond",
+    "visual": "state-members-accountId-fond",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/members/[accountId]:software-developer",
     "label": "/members/[accountId] software-developer",
     "visual": "state-members-accountId-software-developer",
@@ -6711,6 +6717,12 @@
     "id": "/view/[viewKey]:default",
     "label": "/view/[viewKey] default",
     "visual": "screen-view-viewKey",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/view/[viewKey]:fond",
+    "label": "/view/[viewKey] fond",
+    "visual": "state-view-fond",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
@@ -10581,6 +10593,18 @@
     "id": "/fonds/[username]:balance-null",
     "label": "/fonds/[username] balance-null",
     "visual": "state-fonds-balance-null",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/fonds/[username]:payments-empty",
+    "label": "/fonds/[username] payments-empty",
+    "visual": "state-fonds-payments-empty",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/fonds/[username]:payments-load-more-expanded",
+    "label": "/fonds/[username] payments-load-more-expanded",
+    "visual": "state-fonds-payments-load-more-expanded",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {

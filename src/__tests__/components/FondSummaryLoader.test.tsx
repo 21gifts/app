@@ -11,6 +11,12 @@ vi.mock('@/hooks/useSpotRate', () => ({
   useSpotRate: (): FiatRateDay | null => spot.value,
 }));
 
+vi.mock('@/components/FondPaymentList', () => ({
+  FondPaymentList: ({ username }: { username: string }) => (
+    <div data-testid="fond-payment-list">{username}</div>
+  ),
+}));
+
 vi.mock('@/lib/api', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@/lib/api')>();
   return { ...actual, fetchFondSummary: vi.fn() };
@@ -42,7 +48,7 @@ describe('FondSummaryLoader', () => {
     expect(screen.getByText('Loading…')).toBeTruthy();
   });
 
-  it('shows the handle, KPI tiles, and the paid grant-payout line', async () => {
+  it('shows the handle, KPI tiles, the paid grant-payout line, and the payment list', async () => {
     vi.mocked(fetchFondSummary).mockResolvedValue(SUMMARY);
     renderWithLocale(<FondSummaryLoader username="tondo-fond" />);
     expect(await screen.findByRole('heading', { name: 'tondo-fond' })).toBeTruthy();
@@ -55,6 +61,7 @@ describe('FondSummaryLoader', () => {
     expect(screen.getByText("₿189'000")).toBeTruthy();
     expect(screen.getByText(/as of/)).toBeTruthy();
     expect(screen.getByText('3 grant payouts paid (3.00 USD)', { exact: false })).toBeTruthy();
+    expect(screen.getByTestId('fond-payment-list').textContent).toBe('tondo-fond');
     expect(fetchFondSummary).toHaveBeenCalledWith('tondo-fond');
   });
 

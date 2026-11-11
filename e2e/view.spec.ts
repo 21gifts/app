@@ -64,6 +64,35 @@ test('public view profile default shows name and address', async ({ page }) => {
   await expect(page.getByText('Copy link to this profile')).toHaveCount(0);
 
   await expect(page.getByRole('button', { name: 'Edit name' })).toHaveCount(0);
+  await expect(page.getByRole('link', { name: 'Fond overview' })).toHaveCount(0);
+});
+
+test('public view profile fond shows the Fond overview link', async ({ page }) => {
+  await page.route(new RegExp(`/view-key/${KEY}$`), async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        ...VIEW_PROFILE,
+        name: 'Tondo Fond',
+        username: 'tondo-fond',
+        role: 'fond',
+      }),
+    });
+  });
+  await page.route('**/view-key/**/activity**', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(EMPTY_ACTIVITY),
+    });
+  });
+  await page.goto(`/view/${KEY}`);
+  await expect(page.getByRole('button', { name: 'Fond' })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Fond overview' })).toHaveAttribute(
+    'href',
+    '/fonds/tondo-fond',
+  );
 });
 
 test('Activate on a browser whose passkey has no PRF says it cannot hold a wallet', async ({

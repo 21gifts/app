@@ -5957,6 +5957,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/members/[accountId]',
+    id: 'fond',
+    image: 'members-fond.png',
+    visual: 'state-members-accountId-fond',
+    needle: "shotScreen(page, 'state-members-accountId-fond')",
+  },
+  {
+    route: '/members/[accountId]',
     id: 'software-developer',
     image: 'members-software-developer.png',
     visual: 'state-members-accountId-software-developer',
@@ -7907,6 +7914,13 @@ export const SCREEN_VARIANTS = [
     image: 'view-viewKey.png',
     visual: 'screen-view-viewKey',
     needle: "getByRole('heading', { name: 'Profile' })",
+  },
+  {
+    route: '/view/[viewKey]',
+    id: 'fond',
+    image: 'view-fond.png',
+    visual: 'state-view-fond',
+    needle: "shotScreen(page, 'state-view-fond')",
   },
   {
     route: '/view/[viewKey]',
@@ -12423,6 +12437,20 @@ export const SCREEN_VARIANTS = [
     image: 'fonds-balance-null.png',
     visual: 'state-fonds-balance-null',
     needle: 'not reported yet',
+  },
+  {
+    route: '/fonds/[username]',
+    id: 'payments-empty',
+    image: 'fonds-payments-empty.png',
+    visual: 'state-fonds-payments-empty',
+    needle: 'No payments yet.',
+  },
+  {
+    route: '/fonds/[username]',
+    id: 'payments-load-more-expanded',
+    image: 'fonds-payments-load-more-expanded.png',
+    visual: 'state-fonds-payments-load-more-expanded',
+    needle: "getByRole('button', { name: 'Load more' })).toHaveCount(0",
   },
   {
     route: '/fonds/[username]',
