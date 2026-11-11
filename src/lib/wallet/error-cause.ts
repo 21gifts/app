@@ -1,8 +1,60 @@
-/** Longest error name a report keeps. */
-const IDENTIFIER_MAX_LENGTH = 64;
-
-/** An error name: a class name ending in `Error` or `Exception` (`TypeError`, `DOMException`). */
-const ERROR_NAME = /^(?:[A-Z][A-Za-z0-9]*)?(?:Error|Exception)$/;
+/**
+ * The error names a report may carry: the built-in JavaScript and
+ * WebAssembly error classes, `DOMException` and its names, the bundler's
+ * `ChunkLoadError`, and the app's own error classes. A list, not a shape, so
+ * a name set by code to anything else (a key, a user name) is never sent.
+ */
+const ERROR_NAMES: ReadonlySet<string> = new Set([
+  'Error',
+  'TypeError',
+  'RangeError',
+  'SyntaxError',
+  'ReferenceError',
+  'EvalError',
+  'URIError',
+  'AggregateError',
+  'InternalError',
+  'CompileError',
+  'LinkError',
+  'RuntimeError',
+  'DOMException',
+  'AbortError',
+  'TimeoutError',
+  'NetworkError',
+  'QuotaExceededError',
+  'InvalidStateError',
+  'NotFoundError',
+  'NotSupportedError',
+  'NotAllowedError',
+  'NotReadableError',
+  'SecurityError',
+  'UnknownError',
+  'DataError',
+  'DataCloneError',
+  'ConstraintError',
+  'EncodingError',
+  'InvalidAccessError',
+  'OperationError',
+  'ReadOnlyError',
+  'TransactionInactiveError',
+  'VersionError',
+  'ChunkLoadError',
+  'AppOutdatedError',
+  'CannotReceiveError',
+  'EventsRefusedError',
+  'LnurlRelayError',
+  'LoginsClosedError',
+  'LookupSignError',
+  'MissingRequirementsError',
+  'NoteDeletedError',
+  'PostFeeRequiredError',
+  'PublicForumUnauthorizedError',
+  'RecoveryError',
+  'RecoveryPendingError',
+  'UnknownCredentialError',
+  'WalletRequiredError',
+  'WrongAccountError',
+]);
 
 /** An error's own numeric code: a whole number of up to six digits (a `DOMException`'s). */
 const NUMERIC_CODE = /^\d{1,6}$/;
@@ -242,26 +294,20 @@ function ownCode(code: unknown): string | null {
 }
 
 /**
- * An error name that may be reported: a class name ending in `Error` or
- * `Exception` ({@link ERROR_NAME}) of at most {@link IDENTIFIER_MAX_LENGTH}
- * characters.
+ * An error name that may be reported: one of {@link ERROR_NAMES}.
  *
  * @param value - Candidate name.
  * @returns The name, or `null` when it may not be reported.
  */
 function errorNameOf(value: unknown): string | null {
-  return typeof value === 'string' &&
-    value.length <= IDENTIFIER_MAX_LENGTH &&
-    ERROR_NAME.test(value)
-    ? value
-    : null;
+  return typeof value === 'string' && ERROR_NAMES.has(value) ? value : null;
 }
 
 /** What a report may say about a thrown value. */
 export interface ErrorCause {
   /**
-   * Error name (`TypeError`, `RuntimeError`, …), the type of a thrown value
-   * that is not an object (`string`), or `unknown`.
+   * Error name from {@link ERROR_NAMES} (`TypeError`, `RuntimeError`, …),
+   * `string` or `number` for a thrown string or number, or `unknown`.
    */
   errorName: string;
   /**
@@ -276,13 +322,13 @@ export interface ErrorCause {
 /**
  * Name, code, and cause kind of a thrown value, never the value itself and
  * never any part of its message. The name is the error's `name` (or its
- * constructor's name) when it is a class name ending in `Error` or
- * `Exception`, otherwise `unknown`; a thrown string or number reports its
- * type. The code is the error's own `code` (a whole number of up to six
- * digits, or one of {@link KNOWN_CODES}) or the SDK's error kind at the start
- * of its message when it is one of {@link SDK_KINDS} (`Network error: …` →
- * `network`). The cause kind comes from
- * {@link CAUSE_KINDS}, matched on the device against the error's own name,
+ * constructor's name) when it is one of {@link ERROR_NAMES}, otherwise
+ * `unknown`; a thrown string or number reports its type (`string`,
+ * `number`), and any other thrown value that is not an object `unknown`. The
+ * code is the error's own `code` (a whole number of up to six digits, or one
+ * of {@link KNOWN_CODES}) or the SDK's error kind at the start of its message
+ * when it is one of {@link SDK_KINDS} (`Network error: …` → `network`). The
+ * cause kind comes from {@link CAUSE_KINDS}, matched on the device against the error's own name,
  * code, and message (or a thrown string); only the identifier is returned. A
  * value that cannot be read (a throwing getter) reports `unknown` and nothing
  * else.
@@ -295,8 +341,9 @@ export function errorCause(error: unknown): ErrorCause {
     return { errorName: 'string', errorCode: null, causeKind: causeKindOf(null, null, error) };
   }
   if (typeof error !== 'object' || error === null) {
+    // Only a thrown number reports its type; anything else here is `unknown`.
     return {
-      errorName: error === null || error === undefined ? 'unknown' : typeof error,
+      errorName: typeof error === 'number' ? 'number' : 'unknown',
       errorCode: null,
       causeKind: 'unknown',
     };

@@ -644,7 +644,11 @@ describe('connectWallet', () => {
     const { extra } = vi.mocked(captureMessage).mock.calls[0]?.[1] as unknown as {
       extra: WalletOpenCause;
     };
+    // At least the pause before the refresh started; at most that pause plus
+    // the few polling steps after it, far below any other clock (the 30 s
+    // deadline) and above any count from the refresh's own start.
     expect(extra.elapsedMs).toBeGreaterThanOrEqual(1_500);
+    expect(extra.elapsedMs).toBeLessThan(2_500);
     // The open itself waits for its deadline, which reports nothing more.
     await vi.advanceTimersByTimeAsync(WALLET_CONNECT_TIMEOUT_MS);
     await expect(pending).resolves.toBeUndefined();
@@ -1433,6 +1437,38 @@ describe('wallet open failure cause', () => {
           causeKind: 'unknown',
         });
       }
+      // Exactly these fields go out, in both reports, and nothing else.
+      const fields = [
+        'causeKind',
+        'elapsedMs',
+        'errorCode',
+        'errorName',
+        'online',
+        'stage',
+        'visibility',
+      ];
+      const [message_, report] = vi.mocked(captureMessage).mock.calls[0] as unknown as [
+        string,
+        { tags: Record<string, unknown>; extra: Record<string, unknown> },
+      ];
+      expect(message_).toBe('Wallet did not open');
+      expect(Object.keys(report).sort()).toEqual(['extra', 'fingerprint', 'level', 'tags']);
+      expect(Object.keys(report.extra).sort()).toEqual(fields);
+      expect(Object.keys(report.tags).sort()).toEqual([
+        'wallet_open_cause',
+        'wallet_open_error',
+        'wallet_open_error_code',
+        'wallet_open_online',
+        'wallet_open_reason',
+        'wallet_open_stage',
+        'wallet_open_visibility',
+      ]);
+      const events = vi
+        .mocked(logInteraction)
+        .mock.calls.filter(([name]) => name === 'wallet_open_failed');
+      expect(events).toHaveLength(1);
+      expect(events[0]).toHaveLength(2);
+      expect(Object.keys(events[0]?.[1] ?? {}).sort()).toEqual(['reason', ...fields].sort());
       const text = sent();
       expectNoKeyMaterial(text);
       expect(text).not.toContain(MNEMONIC.split(' ').slice(0, 3).join(' '));

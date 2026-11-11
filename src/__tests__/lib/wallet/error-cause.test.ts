@@ -52,6 +52,18 @@ describe('errorCause', () => {
     ['a near miss of a known message', new TypeError('Failed to fetch!')],
     ['a known message with more after it', new TypeError('Failed to fetch https://x/?k=1')],
     ['a message that only ends like out of memory', new Error('lnbc1: out of memory')],
+    ['the first unreachable message under Error', named('Error', 'unreachable')],
+    ['the second unreachable message under Error', named('Error', 'unreachable executed')],
+    [
+      'the third unreachable message under Error',
+      named('Error', 'Unreachable code should not be executed'),
+    ],
+    ['the first unreachable message under TypeError', new TypeError('unreachable')],
+    ['the second unreachable message under TypeError', new TypeError('unreachable executed')],
+    [
+      'the third unreachable message under TypeError',
+      new TypeError('Unreachable code should not be executed'),
+    ],
     [
       'a WebAssembly message that does not end like out of memory',
       named('RangeError', 'WebAssembly.instantiate(): compilation failed'),
@@ -60,6 +72,16 @@ describe('errorCause', () => {
     ['an Error without a message', new Error()],
   ])('reads unknown from %s', (_label, error) => {
     expect(errorCause(error).causeKind).toBe('unknown');
+  });
+
+  it.each([
+    ['a boolean', true],
+    ['a bigint', 10n],
+    ['a symbol', Symbol('secret')],
+    ['a function', (): void => undefined],
+    ['an object without a name', { message: 'Network error: x' }],
+  ])('reports only unknown as the name of %s', (_label, value) => {
+    expect(errorCause(value).errorName).toBe('unknown');
   });
 
   it('reads unknown from a thrown value that is neither an object nor a string', () => {
@@ -186,13 +208,30 @@ describe('errorCause', () => {
     expect(errorCause(error)).toMatchObject({ errorCode: 'ETIMEDOUT', causeKind: 'unknown' });
   });
 
-  it('falls back to the constructor name when the name is not a string', () => {
-    class SdkError extends Error {}
-    const error = new SdkError('boom');
+  it('falls back to a listed constructor name when the name is not a string', () => {
+    class LnurlRelayError extends Error {}
+    const error = new LnurlRelayError('boom');
     Object.defineProperty(error, 'name', { value: 42, configurable: true });
-    expect(errorCause(error).errorName).toBe('SdkError');
+    expect(errorCause(error).errorName).toBe('LnurlRelayError');
     Object.defineProperty(error, 'name', { value: { nested: true } });
-    expect(errorCause(error).errorName).toBe('SdkError');
+    expect(errorCause(error).errorName).toBe('LnurlRelayError');
+    class SdkError extends Error {}
+    const other = new SdkError('boom');
+    Object.defineProperty(other, 'name', { value: 42 });
+    expect(errorCause(other).errorName).toBe('unknown');
+  });
+
+  it.each([
+    ['a class-shaped name that is not on the list', 'AliceError'],
+    [
+      'a key that ends like an error name',
+      'A5HpHagT65TZzG1PH3CSu63k8DbpvD8s5ip4nEB3kEsreAnchuDfError',
+    ],
+    ['an exception name that is not on the list', 'WalletPhraseException'],
+  ])('never reports %s, only the constructor name Error', (_label, name) => {
+    const cause = errorCause(named(name, 'x'));
+    expect(cause.errorName).toBe('Error');
+    expect(JSON.stringify(cause)).not.toContain(name);
   });
 
   it.each([
