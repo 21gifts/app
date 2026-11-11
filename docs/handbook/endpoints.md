@@ -189,7 +189,7 @@
 
 - **Purpose:** Same-origin proxy of api `GET /wallets/stats` (self-reported member-wallet totals and the gap-free UTC-day balance series).
 - **Inputs:** None.
-- **Outputs:** `{ walletCount, fundedWalletCount, totalSats, totalBtc, asOf, balanceOverTime }` from the api. `walletCount` counts wallets that ever reported a balance; `fundedWalletCount` counts those with a current balance above zero. Empty data is `[]`, `asOf: null`, and zeros.
+- **Outputs:** `{ walletCount, fundedWalletCount, totalSats, totalBtc, asOf, balanceOverTime }` from the api. `walletCount` counts wallets that ever reported a balance; `fundedWalletCount` counts those with a current balance above zero. Empty data is zeros, `asOf: null`, and `balanceOverTime: []`.
 - **Errors:** The proxy forwards the upstream status, including 503 `{ error: "Wallet stats are unavailable" }`, or answers 502 if the api is unreachable.
 - **Used by:** `fetchWalletStats` on `/stats`. A failed fetch omits the Wallets section without breaking the gift stats.
 - **Auth:** Public.
