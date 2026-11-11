@@ -52,6 +52,10 @@ describe('errorCause', () => {
     ['a near miss of a known message', new TypeError('Failed to fetch!')],
     ['a known message with more after it', new TypeError('Failed to fetch https://x/?k=1')],
     ['a message that only ends like out of memory', new Error('lnbc1: out of memory')],
+    [
+      'a WebAssembly message that does not end like out of memory',
+      named('RangeError', 'WebAssembly.instantiate(): compilation failed'),
+    ],
     ['a thrown string', 'something else'],
     ['an Error without a message', new Error()],
   ])('reads unknown from %s', (_label, error) => {

@@ -161,11 +161,25 @@ function expectWalletOpenReport(
   reason: 'timeout' | 'error',
   cause: Partial<WalletOpenCause> = {},
 ): void {
+  // The tags repeat the cause fields that are given, `none` for a missing value.
+  const tag = (value: string | null | undefined): string | undefined =>
+    value === undefined ? undefined : (value ?? 'none');
+  const tags = Object.fromEntries(
+    Object.entries({
+      wallet_open_reason: reason,
+      wallet_open_stage: cause.stage,
+      wallet_open_error: tag(cause.errorName),
+      wallet_open_error_code: tag(cause.errorCode),
+      wallet_open_cause: tag(cause.causeKind),
+      wallet_open_online: cause.online,
+      wallet_open_visibility: cause.visibility,
+    }).filter(([, value]) => value !== undefined),
+  );
   expect(captureMessage).toHaveBeenCalledTimes(1);
   expect(captureMessage).toHaveBeenCalledWith('Wallet did not open', {
     level: 'error',
     fingerprint: ['wallet-open-failed', reason],
-    tags: expect.objectContaining({ wallet_open_reason: reason }) as Record<string, unknown>,
+    tags: expect.objectContaining(tags) as Record<string, unknown>,
     extra: expect.objectContaining(cause) as Record<string, unknown>,
   });
   expect(logInteraction).toHaveBeenCalledWith(
@@ -603,6 +617,9 @@ describe('connectWallet', () => {
     await vi.waitFor(() => {
       expect(connection.getInfo).toHaveBeenCalledWith({ ensureSynced: true });
     });
+    // The time is counted from the start of the open, not of the refresh,
+    // which starts only after this pause.
+    await vi.advanceTimersByTimeAsync(1_500);
     listeners[0]?.({ type: 'synced' });
     await vi.waitFor(() => {
       expect(connection.getInfo).toHaveBeenCalledTimes(2);
@@ -624,6 +641,10 @@ describe('connectWallet', () => {
       errorCode: 'network',
       causeKind: 'sdk_network',
     });
+    const { extra } = vi.mocked(captureMessage).mock.calls[0]?.[1] as unknown as {
+      extra: WalletOpenCause;
+    };
+    expect(extra.elapsedMs).toBeGreaterThanOrEqual(1_500);
     // The open itself waits for its deadline, which reports nothing more.
     await vi.advanceTimersByTimeAsync(WALLET_CONNECT_TIMEOUT_MS);
     await expect(pending).resolves.toBeUndefined();
