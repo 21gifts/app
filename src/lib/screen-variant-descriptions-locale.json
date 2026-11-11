@@ -5704,6 +5704,11 @@
     "es": "Estadísticas de donaciones y publicaciones cargadas más la serie de wallets autoinformada. Wallets muestra In wallets ₿89'096 sobre $89.10, el spot actual en la moneda del visitante en lugar del precio de un día, Wallets with balance 32, la leyenda del día UTC y el gráfico de línea/área en ₿ sin enlaces a días de regalos. El tooltip de cada punto es el día, ₿ y el mismo fiat del spot.",
     "fil": "Nai-load na estadistika ng donasyon at post kasama ang self-reported na serye ng wallet. Ipinapakita ng Wallets ang In wallets ₿89'096 sa ibabaw ng $89.10, ang kasalukuyang spot sa pera ng bisita sa halip na ang presyo ng isang araw, Wallets with balance 32, ang caption ng araw sa UTC, at ang ₿ line/area chart na walang link sa mga araw ng regalo. Ang tooltip ng bawat punto ay ang araw, ₿, at ang parehong spot fiat."
   },
+  "/stats:wallets-no-rate": {
+    "de": "Geladene Spenden- und Post-Statistiken plus die selbst gemeldete Wallet-Reihe. Wallets zeigt In wallets ₿89'096 ohne Fiat-Zeile, weil kein Spot-Kurs verfügbar ist, Wallets with balance 32, die UTC-Tagesbeschriftung und das ₿-Linien-/Flächendiagramm ohne Links zu Geschenktagen. Der Tooltip jedes Punkts ist nur der Tag und ₿.",
+    "es": "Estadísticas de donaciones y publicaciones cargadas más la serie de wallets autoinformada. Wallets muestra In wallets ₿89'096 sin línea de fiat porque no hay un tipo de cambio al contado disponible, Wallets with balance 32, la leyenda del día UTC y el gráfico de línea/área en ₿ sin enlaces a días de regalos. El tooltip de cada punto es solo el día y ₿.",
+    "fil": "Nai-load na estadistika ng donasyon at post kasama ang self-reported na serye ng wallet. Ipinapakita ng Wallets ang In wallets ₿89'096 na walang linya ng fiat dahil walang available na spot rate, Wallets with balance 32, ang caption ng araw sa UTC, at ang ₿ line/area chart na walang link sa mga araw ng regalo. Ang tooltip ng bawat punto ay ang araw at ₿ lamang."
+  },
   "/terms:default": {
     "de": "Der einzige Zustand: Titel, Datum der letzten Aktualisierung, die Überschrift Wallet und Daten und die fünf nummerierten Klauseln, Marketing-Rahmen.",
     "es": "El único estado: título, fecha de la última actualización, el encabezado Wallet y datos y las cinco cláusulas numeradas, adorno de mercadotecnia.",

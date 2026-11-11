@@ -297,6 +297,8 @@ describe('StatsDashboard', () => {
       />,
     );
     expect(screen.queryByRole('region', { name: 'Wallets' })).toBeNull();
+    expect(useSpotRate).toHaveBeenCalledWith(false);
+    expect(useSpotRate).not.toHaveBeenCalledWith(true);
   });
 
   it('keeps zero wallet days hoverable without drawing their dot', () => {

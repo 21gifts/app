@@ -377,6 +377,12 @@ Loaded gift and post stats plus the self-reported wallet series. **Wallets** sho
 
 ![21.gifts wallet stats](images/stats-wallets.png)
 
+### Variant: wallets-no-rate
+
+Loaded gift and post stats plus the self-reported wallet series. **Wallets** shows **In wallets** ₿89'096 with no fiat line because no spot rate is available, **Wallets with balance** 32, the UTC-day caption, and the ₿ line/area chart with no gift-day links. Each point tooltip is the day and ₿ only.
+
+![21.gifts wallet stats without spot](images/stats-wallets-no-rate.png)
+
 ### Variant: empty
 
 Zero donations and zero posts. **Posts** shows 0 with no bars. KPI zeros and **No donations recorded yet.**

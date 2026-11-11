@@ -42388,6 +42388,29 @@ test.describe('stats variant baselines', () => {
     await shotScreen(page, 'state-stats-wallets');
   });
 
+  test('stats wallets-no-rate', async ({ page }) => {
+    await stubPostStats(page);
+    await stubWalletStats(page);
+    await fulfillSpot(page, {});
+    await page.route('**/gifts/stats', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(STATS_DEFAULT),
+      });
+    });
+    const spot = page.waitForResponse('**/fx/spot');
+    await page.goto('/stats');
+    await spot;
+    const wallets = page.getByRole('region', { name: 'Wallets' });
+    await expect(wallets).toBeVisible();
+    await expect(page.getByLabel('Wallet balance over time in ₿')).toBeVisible();
+    // Bitcoin stands alone only after GET /fx/spot settles with no rate.
+    await expect(wallets.getByText("₿89'096", { exact: true })).toBeVisible();
+    await expect(wallets.getByText('$89.10', { exact: true })).toHaveCount(0);
+    await shotScreen(page, 'state-stats-wallets-no-rate');
+  });
+
   test('stats usd-scale', async ({ page }) => {
     await stubPostStats(page);
     await page.route('**/gifts/stats', async (route) => {

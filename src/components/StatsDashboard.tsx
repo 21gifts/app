@@ -792,7 +792,8 @@ export function StatsDashboard({
 }: StatsDashboardProps): ReactElement {
   const { numberFormat } = useNumberFormat();
   const { fiat, setFiat } = useFiatPreference();
-  const rateDay = useSpotRate(wallets !== null);
+  const showWallets = wallets !== null && wallets.balanceOverTime.length > 0;
+  const rateDay = useSpotRate(showWallets);
   const { ready } = useHydrateSession();
   const session = useAuthStore((state) => state.session);
   const showFiatSwitcher = ready && session === null;
@@ -825,7 +826,7 @@ export function StatsDashboard({
         <FiatPicker value={fiat} onChange={setFiat} ariaLabel="Fiat currency" />
       ) : null}
       {posts !== null ? <PostsSummary posts={posts} numberFormat={numberFormat} /> : null}
-      {wallets !== null && wallets.balanceOverTime.length > 0 ? (
+      {showWallets && wallets !== null ? (
         <WalletsSummary
           wallets={wallets}
           fiat={fiat}

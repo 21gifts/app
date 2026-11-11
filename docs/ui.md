@@ -1211,7 +1211,7 @@ The activity help button sits with the view control while shops are loading or a
 
 Header → `main max-w-[1100px] px-5 pt-16 pb-24` → display/h1 “Donations” (`text-4xl sm:text-6xl font-semibold leading-tight tracking-tight`) → body-lg subtitle → `StatsDashboard` (**Posts**, optional **Wallets**, KPI grid, then charts or empty). **Wallets** sits directly after **Posts** and before the gift tiles: two tiles in the same chrome (**In wallets** ₿ via `formatBitcoin(totalSats)` over the preferred-fiat spot from `satsToFiatAmount`/`formatFiatDisplay`, **Wallets with balance** via `formatCount(fundedWalletCount)`), the caption “Total of all 21.gifts wallets at the end of each UTC day, as reported by the wallets themselves. Fiat figures use today's spot, not the day's price.”, and the shared over-time chart of `balanceOverTime[].totalSats` with ₿ ticks and no `/stats/{day}` links. Each point tooltip carries the day, ₿, and the same spot fiat. Stats body copy stays English. `SegmentedControl tone="gift" shell="dark"`. Numeric figures.
 
-Handbook states: loading, empty, error + **Try again**, populated charts, wallets.
+Handbook states: loading, empty, error + **Try again**, populated charts, wallets, wallets-no-rate.
 
 ### `/trust-chain`
 
