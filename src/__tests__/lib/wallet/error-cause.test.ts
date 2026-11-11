@@ -253,12 +253,18 @@ describe('sanitizeErrorMessage', () => {
     // Each timing is a batch of runs calibrated to take at least BATCH_MS,
     // far above the timer's resolution, so no floor is needed.
     const BATCH_MS = 5;
+    // CPU time of this process, in milliseconds: other processes on a busy
+    // machine do not add to it, as they add to wall-clock time.
+    const cpuMs = (): number => {
+      const { user, system } = process.cpuUsage();
+      return (user + system) / 1_000;
+    };
     const batch = (run: (text: string) => unknown, text: string, runs: number): number => {
-      const started = performance.now();
+      const started = cpuMs();
       for (let left = runs; left > 0; left -= 1) {
         run(text);
       }
-      return performance.now() - started;
+      return cpuMs() - started;
     };
     const growth = (run: (text: string) => unknown, small: string, large: string): number => {
       run(large);
@@ -449,7 +455,7 @@ describe('sanitizeErrorMessage', () => {
   it.each([
     ['api_key=gggggggggggggggggggggggggggggggggggggggg', 'api_key=[token]'],
     ['failed with token: abc', 'failed with token: [token]'],
-    ['{"secret": "two words", "n": 1}', '{"secret": [token], "n": 1}'],
+    ['{"secret": "two words", "n": 1}', '{"secret": [token]'],
     ['username=alice next', 'username=[token]'],
     ['username=alice next\nsecond line', 'username=[token]\nsecond line'],
     ['PRF output: 7,7,7,7', 'PRF output: [token]'],
@@ -459,17 +465,17 @@ describe('sanitizeErrorMessage', () => {
     ['PRF output: Uint8Array(4)  \t [17, 34, 51, 68]', 'PRF output: [token]'],
     ['prf: Uint8Array(4) [\n  17, 34,\n  51, 68\n]\nnext', 'prf: [token]\nnext'],
     ['prf: Uint8Array\n[\n  17, 34\n]\nnext', 'prf: [token]\nnext'],
-    ['{"prf": [\n  17,\n  34\n], "n": 1}', '{"prf": [token], "n": 1}'],
-    ['seed=[17, 34] x', 'seed=[token] x'],
-    ['token: ["ab]cdefghijkl", 1] x', 'token: [token] x'],
+    ['{"prf": [\n  17,\n  34\n], "n": 1}\nnext', '{"prf": [token]\nnext'],
+    ['seed=[17, 34] x\nnext', 'seed=[token]\nnext'],
+    ['token: ["ab]cdefghijkl", 1] x', 'token: [token]'],
     ['token: ["ab]cdefghijkl\nnext', 'token: [token]\nnext'],
     ['token: ["ab]cd\n  17]\nnext', 'token: [token]\nnext'],
     ['secret: "ab\\\ncd" tail', 'secret: [token]\ncd" tail'],
     ['token: [unclosed 17, 34\nnext line', 'token: [token]\nnext line'],
     [`token: [${'17, 34, '.repeat(200)}99`, 'token: [token]'],
-    [`secret: "${'ab cd ef '.repeat(40)}" tail`, 'secret: [token] tail'],
+    [`secret: "${'ab cd ef '.repeat(40)}" tail`, 'secret: [token]'],
     [`secret: '${'ab cd ef '.repeat(40)}\nnext`, 'secret: [token]\nnext'],
-    ['secret: "a\\"b c" tail', 'secret: [token] tail'],
+    ['secret: "a\\"b c" tail', 'secret: [token]'],
     ['PRF    = 17, 34, 51, 68', 'PRF    = [token]'],
     ['PRF\toutput: 17, 34', 'PRF\toutput: [token]'],
     ['PRF  output: 17, 34', 'PRF  output: [token]'],
@@ -493,7 +499,13 @@ describe('sanitizeErrorMessage', () => {
     ['user: [addr]', 'user: [addr]'],
     ['user: [addr], bob', 'user: [token]'],
     ['token: [hex], bob', 'token: [token]'],
-    ['token: [token] (retry)', 'token: [token] (retry)'],
+    ['token: [token] (retry)', 'token: [token]'],
+    ['PRF output: [token] 17, 34, 51, 68', 'PRF output: [token]'],
+    ['token: ["ab\\\n  17]\nnext', 'token: [token]\nnext'],
+    ['PR\u2063F output: 17, 34', 'PR\u2063F output: [token]'],
+    ['PR\u200EF output: 17, 34', 'PR\u200EF output: [token]'],
+    ['PRF output: Uint8Array (32) [\n  17, 34,\n  51, 68\n]\nnext', 'PRF output: [token]\nnext'],
+    ['PRF output: Uint8Array( 32 ) [\n  17, 34\n]\nnext', 'PRF output: [token]\nnext'],
     ['bad pr: abc def', 'bad pr: [token]'],
     ['prf: Uint8Array(4) [17, 34\nnext', 'prf: [token]\nnext'],
     ['words = alpha beta', 'words = [token]'],
@@ -545,6 +557,8 @@ describe('sanitizeErrorMessage', () => {
       "'s ",
       '\u2011',
       '\u2014',
+      '\u2063',
+      '\u200E',
     ];
     const cases = [
       (word: string): string => word,
@@ -574,6 +588,8 @@ describe('sanitizeErrorMessage', () => {
       (secret) => [`{"a": [1, 2], "b": "${inQuotes(secret)}"}`, ' tail'],
       (secret) => [`Uint8Array(32) [${bytes(32, ', ')}, ${secret}]`, ''],
       (secret) => [`Uint8Array [${bytes(32, ', ')}, ${secret}]`, ''],
+      (secret) => [`Uint8Array (32) [\n  ${bytes(16, ', ')},\n  ${secret}\n]`, '\nnext line'],
+      (secret) => [`[token] ${secret}`, '\nnext line'],
       (secret) => [`Uint8Array(32)  \t[\n  ${bytes(16, ', ')},\n  ${secret}\n]`, '\nnext line'],
       (secret) => [`[\n  ${bytes(16, ',\n  ')},\n  "${inQuotes(secret)}"\n]`, '\nnext line'],
       (secret) => [`[${bytes(32, ', ')} ${secret}`, '\nnext line'],

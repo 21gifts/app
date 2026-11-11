@@ -579,6 +579,48 @@ describe('connectWallet', () => {
     ).toHaveLength(1);
   });
 
+  it('reports a synced refresh that fails after the overtaken first read already settled', async () => {
+    rememberSessionPhrase(MNEMONIC);
+    let resolveFirst!: (info: { balanceSats: number; identityPubkey: string }) => void;
+    let rejectRefresh!: (error: Error) => void;
+    const { loadSdk, connection, listeners } = createFakeSdk();
+    connection.getInfo
+      .mockImplementationOnce(
+        () =>
+          new Promise((resolve) => {
+            resolveFirst = resolve;
+          }),
+      )
+      .mockImplementationOnce(
+        () =>
+          new Promise((_resolve, reject) => {
+            rejectRefresh = reject;
+          }),
+      );
+    const pending = connectWallet(loadSdk);
+    await vi.waitFor(() => {
+      expect(connection.getInfo).toHaveBeenCalledWith({ ensureSynced: true });
+    });
+    listeners[0]?.({ type: 'synced' });
+    await vi.waitFor(() => {
+      expect(connection.getInfo).toHaveBeenCalledTimes(2);
+    });
+    resolveFirst({ balanceSats: 21_000, identityPubkey: IDENTITY });
+    await vi.waitFor(() => {
+      expect(useWalletStore.getState().status).toBe('connecting');
+    });
+    rejectRefresh(new Error('Network error: connection reset'));
+    await vi.waitFor(() => {
+      expect(useWalletStore.getState().status).toBe('error');
+    });
+    await expect(pending).resolves.toBeUndefined();
+    expectWalletOpenReport('error', {
+      stage: 'first_sync',
+      errorCode: 'network',
+      errorMessage: 'Network error: connection reset',
+    });
+  });
+
   it('does not report a synced refresh that fails after the wallet opened', async () => {
     rememberSessionPhrase(MNEMONIC);
     const { loadSdk, connection, listeners } = createFakeSdk();

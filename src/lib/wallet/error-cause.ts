@@ -40,7 +40,7 @@ const MAX_WORD_LENGTH = Math.max(...wordlist.map((word) => word.length));
  * characters ({@link INVISIBLE}); everything else separates two words.
  */
 const LETTERS =
-  /\[(?:addr|hex|q|token|words)\]|%[0-9A-Fa-f]{2}|\\[nrt]|&[a-z]+;|[A-Za-zＡ-Ｚａ-ｚ\u00AD\u200B-\u200D\u2060\uFEFF]+/g;
+  /\[(?:addr|hex|q|token|words)\]|%[0-9A-Fa-f]{2}|\\[nrt]|&[a-z]+;|[A-Za-zＡ-Ｚａ-ｚ\u00AD\u034F\u061C\u115F\u1160\u17B4\u17B5\u180B-\u180F\u200B-\u200F\u202A-\u202E\u2060-\u206F\u3164\uFE00-\uFE0F\uFEFF\uFFA0\uFFF0-\uFFF8]+/g;
 
 /**
  * First characters of an escaped separator of {@link LETTERS} (a URL-encoded
@@ -49,11 +49,17 @@ const LETTERS =
  */
 const ESCAPE_START = '%\\&';
 
-/** Invisible format characters (soft hyphen, zero-width space and joiners). */
-const INVISIBLE = /[\u00AD\u200B-\u200D\u2060\uFEFF]/g;
+/**
+ * Invisible characters: the default-ignorable code points of the Basic
+ * Multilingual Plane (soft hyphen, zero-width spaces and joiners, direction
+ * marks and controls, invisible operators, variation selectors, fillers).
+ */
+const INVISIBLE =
+  /[\u00AD\u034F\u061C\u115F\u1160\u17B4\u17B5\u180B-\u180F\u200B-\u200F\u202A-\u202E\u2060-\u206F\u3164\uFE00-\uFE0F\uFEFF\uFFA0\uFFF0-\uFFF8]/g;
 
-/** Whether a word holds an invisible format character. */
-const INVISIBLE_IN = /[\u00AD\u200B-\u200D\u2060\uFEFF]/;
+/** Whether a word holds an invisible character ({@link INVISIBLE}). */
+const INVISIBLE_IN =
+  /[\u00AD\u034F\u061C\u115F\u1160\u17B4\u17B5\u180B-\u180F\u200B-\u200F\u202A-\u202E\u2060-\u206F\u3164\uFE00-\uFE0F\uFEFF\uFFA0\uFFF0-\uFFF8]/;
 
 /**
  * Whether a word is a recovery word once its invisible characters are removed
@@ -190,13 +196,11 @@ const LABEL_MAX_WORDS = 3;
  * written in camel case (`prfOutput`) or joined (`prf_output`, `PRF/output`,
  * `PRF's`).
  */
-const LABEL_WORD_CHAR = /[\p{L}\p{N}\p{Pd}_./'\u2019\u00AD\u200B-\u200D\u2060\uFEFF]/u;
+const LABEL_WORD_CHAR =
+  /[\p{L}\p{N}\p{Pd}_./'\u2019\u00AD\u034F\u061C\u115F\u1160\u17B4\u17B5\u180B-\u180F\u200B-\u200F\u202A-\u202E\u2060-\u206F\u3164\uFE00-\uFE0F\uFEFF\uFFA0\uFFF0-\uFFF8]/u;
 
 /** Everything of a label but its letters and digits, removed before it is compared. */
 const LABEL_NOISE = /[^\p{L}\p{N}]/gu;
-
-/** A placeholder this module wrote (`[token]`), at the start of a value. */
-const PLACEHOLDER_START = /\[(?:addr|hex|q|token|words)\]/y;
 
 /** A value that is only a placeholder this module wrote. */
 const PLACEHOLDER = /^\[(?:addr|hex|q|token|words)\]$/;
@@ -207,7 +211,7 @@ const LINE_BREAK = /[\n\r\u2028\u2029]/g;
 /** A line break. */
 const LINE_BREAK_CHAR = /[\n\r\u2028\u2029]/;
 
-/** Characters that open a quoted value. */
+/** Quotes; inside brackets a quoted string is skipped. */
 const QUOTES = '"\'`';
 
 /** Brackets that open a value, and the ones that close them, in the same order. */
@@ -216,10 +220,11 @@ const CLOSERS = ')]}>';
 
 /**
  * A typed-array or object name before its opening bracket, with or without a
- * length and with any whitespace before the bracket (`Uint8Array(32) [`,
- * `Uint8Array [`, `Map(1) {`); the bracket follows right after the match.
+ * length and with any whitespace around the length and before the bracket
+ * (`Uint8Array(32) [`, `Uint8Array (32) [`, `Uint8Array [`, `Map(1) {`); the
+ * bracket (`[`, `{`, or `<`) follows right after the match.
  */
-const TYPED_NAME = /[A-Za-z_$][\w$]*(?:\(\d*\))?\s*(?=[[{(<])/y;
+const TYPED_NAME = /[A-Za-z_$][\w$]*\s*(?:\(\s{0,9}\d{0,9}\s{0,9}\)\s*)?(?=[[{<])/y;
 
 /**
  * The words of the label that ends at `end`, read back over at most
@@ -370,12 +375,12 @@ function lineEnd(text: string, at: number): number {
 }
 
 /**
- * Where the value of a secret label that starts at `at` ends. A value that
- * opens with a quote ends at its closing quote; one that opens with a bracket
- * at its closing bracket, over any number of lines. Any other value ends at
- * the end of its line, or later at the closing bracket of a typed array or
- * object that opens on it ({@link TYPED_NAME}). A quote or bracket that does
- * not close ends the value at the end of its line.
+ * Where the value of a secret label that starts at `at` ends: at the end of
+ * its line, or, when it opens a bracket (also after a typed-array or object
+ * name, {@link TYPED_NAME}) that closes on a later line, at the end of the
+ * line where that bracket closes. A value thus always runs to the end of a
+ * line, so a quote or bracket that closes early cannot leave part of it, and
+ * a second pass reads the placeholder as the whole value.
  *
  * @param text - Error message.
  * @param at - Where the value starts.
@@ -383,21 +388,17 @@ function lineEnd(text: string, at: number): number {
  * @returns The index after the value.
  */
 function labelValueEnd(text: string, at: number, closeAt: () => Map<number, number>): number {
-  const first = text.charAt(at);
-  if (QUOTES.includes(first)) {
-    const end = quoteEnd(text, at);
-    return end === -1 ? lineEnd(text, at) : end;
+  let opener = -1;
+  if (OPENERS.includes(text.charAt(at))) {
+    opener = at;
+  } else {
+    TYPED_NAME.lastIndex = at;
+    if (TYPED_NAME.exec(text) !== null) {
+      opener = TYPED_NAME.lastIndex;
+    }
   }
-  if (OPENERS.includes(first)) {
-    const close = closeAt().get(at);
-    return close === undefined ? lineEnd(text, at) : close + 1;
-  }
-  TYPED_NAME.lastIndex = at;
-  if (TYPED_NAME.exec(text) !== null) {
-    const close = closeAt().get(TYPED_NAME.lastIndex) ?? -1;
-    return Math.max(lineEnd(text, at), close + 1);
-  }
-  return lineEnd(text, at);
+  const close = opener === -1 ? undefined : closeAt().get(opener);
+  return lineEnd(text, close ?? at);
 }
 
 /**
@@ -405,9 +406,9 @@ function labelValueEnd(text: string, at: number, closeAt: () => Map<number, numb
  * ({@link isSecretLabel}: `api_key=`, `token:`, `"secret": "…"`,
  * `password=`, `username=`, `PRF output:` and the like) by `[token]`, whatever
  * its characters are and however long it is ({@link labelValueEnd}). The
- * label stays readable. A value that is only a placeholder (`[addr]`) stays,
- * and so does a `[token]` that starts one, which an earlier pass wrote. Each
- * character is read a bounded number of times.
+ * label stays readable. A value that is only a placeholder (`[addr]`, or the
+ * `[token]` an earlier pass wrote) stays. Each character is read a bounded
+ * number of times.
  *
  * @param text - Error message.
  * @returns The message with labelled secrets replaced.
@@ -430,13 +431,7 @@ function replaceLabeledValues(text: string): string {
     if (valueAt >= text.length || !isSecretLabel(labelWords(text, separator.index, from))) {
       continue;
     }
-    PLACEHOLDER_START.lastIndex = valueAt;
-    const placeholder = PLACEHOLDER_START.exec(text)?.[0];
-    if (placeholder === '[token]') {
-      continue;
-    }
-    const valueEnd =
-      placeholder === undefined ? labelValueEnd(text, valueAt, closeAt) : lineEnd(text, valueAt);
+    const valueEnd = labelValueEnd(text, valueAt, closeAt);
     if (PLACEHOLDER.test(text.slice(valueAt, valueEnd).trimEnd())) {
       continue;
     }

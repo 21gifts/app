@@ -108,10 +108,11 @@ let retryLoadSdk: WalletSdkLoader | null = null;
 let openFailureReported = false;
 
 /**
- * The open that has not yet reached ready, failed, or been superseded: its
- * run, its start time, and the stage it is at. A synced refresh that fails
- * while it waits for its first read reports the failure for it. `null` when
- * no open is in progress.
+ * The latest open that has not reached ready: its run, its start time, and the
+ * stage it is at. A synced refresh of the same run that fails while the wallet
+ * has not been ready reports the failure for it, also when the open's own
+ * first read was already overtaken. A failure, a newer open, or a disconnect
+ * moves the run on, so a stale entry never matches; ready clears it.
  */
 let openInProgress: { run: number; startedAt: number; stage: WalletOpenStage } | null = null;
 
@@ -796,10 +797,6 @@ async function openWallet(loadSdk: WalletSdkLoader, quiet: boolean): Promise<voi
         reportWalletOpenFailure('error', opening.stage, startedAt, errorCause(error));
       }
       await failRun(run);
-    } finally {
-      if (openInProgress === opening) {
-        openInProgress = null;
-      }
     }
   })();
   const result: void | typeof timeoutSentinel = await Promise.race([attempt, deadline]);
