@@ -47108,6 +47108,7 @@ test.describe('fonds screen', () => {
     await expect(page.getByText('3 grant payouts paid (3.00 USD)')).toBeVisible();
     await expect(page.getByText('Private').first()).toBeVisible();
     await expect(page.getByText('Alice')).toBeVisible();
+    await expect(page.getByText("−₿5'000 · $3.00")).toBeVisible();
     await expect(page.getByRole('button', { name: 'Load more' })).toBeVisible();
     await shotScreen(page, 'screen-fonds-username');
   });
@@ -47205,6 +47206,7 @@ test.describe('fonds screen', () => {
               amountSats: 1_000,
               feeSats: 0,
               paidAt: '2026-11-08T08:00:00.000Z',
+              storedFiat: null,
               counterparty: null,
             },
           ],

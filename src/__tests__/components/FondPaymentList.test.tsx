@@ -26,6 +26,7 @@ const PAYMENTS: FondPaymentPage = {
       amountSats: 21_000,
       feeSats: 0,
       paidAt: '2026-11-11T13:31:01.000Z',
+      storedFiat: null,
       counterparty: null,
     },
     {
@@ -34,6 +35,7 @@ const PAYMENTS: FondPaymentPage = {
       amountSats: 5_000,
       feeSats: 21,
       paidAt: '2026-11-10T09:00:00.000Z',
+      storedFiat: { currency: 'USD', amount: '3.00' },
       counterparty: { accountId: 'acc-alice', username: 'alice', name: 'Alice' },
     },
     {
@@ -42,6 +44,7 @@ const PAYMENTS: FondPaymentPage = {
       amountSats: 1_000,
       feeSats: 0,
       paidAt: '2026-11-09T09:00:00.000Z',
+      storedFiat: null,
       counterparty: { accountId: 'acc-bob', username: 'bob', name: '' },
     },
   ],
@@ -82,6 +85,38 @@ describe('FondPaymentList', () => {
     const fee = screen.getByText('Fee ₿21', { exact: false });
     expect(fee.textContent).toContain('$0.02');
     expect(screen.getAllByText(/2026/)).toHaveLength(3);
+  });
+
+  it('shows stored fiat beside bitcoin and keeps the fee on spot', async () => {
+    spot.value = { sats: 100_000_000, usd: '100000', chf: '80000', eur: null, php: null };
+    vi.mocked(fetchFondPayments).mockResolvedValue({
+      payments: [PAYMENTS.payments[1]!],
+      next: null,
+    });
+    renderWithLocale(<FondPaymentList username="tondo-fond" />, 'de', 'ch', 'CHF');
+    const row = await screen.findByRole('listitem');
+    expect(row.textContent).toContain("−₿5'000 · $3.00");
+    expect(row.textContent).not.toContain('CHF 4.00');
+    expect(row.textContent).toContain('CHF 0.02');
+  });
+
+  it('uses spot for null and a two-decimal zero for an unusable stored string', async () => {
+    spot.value = { sats: 100_000_000, usd: '100000', chf: null, eur: null, php: null };
+    vi.mocked(fetchFondPayments).mockResolvedValue({
+      payments: [
+        PAYMENTS.payments[0]!,
+        {
+          ...PAYMENTS.payments[0]!,
+          id: 'stored-empty',
+          storedFiat: { currency: 'USD', amount: '' },
+        },
+      ],
+      next: null,
+    });
+    renderWithLocale(<FondPaymentList username="tondo-fond" />);
+    const rows = await screen.findAllByRole('listitem');
+    expect(rows[0]?.textContent).toContain("+₿21'000 · $21.00");
+    expect(rows[1]?.textContent).toContain("+₿21'000 · $0.00");
   });
 
   it('hides an incoming zero fee but shows an outgoing zero fee as Free', async () => {

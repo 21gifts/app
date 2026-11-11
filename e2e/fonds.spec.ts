@@ -22,6 +22,7 @@ const PAYMENTS = {
       amountSats: 21_000,
       feeSats: 0,
       paidAt: '2026-11-11T13:31:01.000Z',
+      storedFiat: null,
       counterparty: null,
     },
     {
@@ -30,6 +31,7 @@ const PAYMENTS = {
       amountSats: 10_000,
       feeSats: 0,
       paidAt: '2026-11-10T09:15:00.000Z',
+      storedFiat: null,
       counterparty: {
         accountId: '44444444-4444-4444-8444-444444444444',
         username: 'alice',
@@ -42,6 +44,7 @@ const PAYMENTS = {
       amountSats: 5_000,
       feeSats: 21,
       paidAt: '2026-11-09T18:00:00.000Z',
+      storedFiat: { currency: 'USD', amount: '3.00' },
       counterparty: null,
     },
   ],
@@ -56,6 +59,7 @@ const PAYMENTS_MORE = {
       amountSats: 1_000,
       feeSats: 0,
       paidAt: '2026-11-08T08:00:00.000Z',
+      storedFiat: null,
       counterparty: null,
     },
   ],
@@ -95,6 +99,7 @@ test('Function: FondPage — public page shows the Fond totals', async ({ page }
   );
   await expect(page.getByText('Alice')).toBeVisible();
   await expect(page.getByText('Outgoing')).toBeVisible();
+  await expect(page.getByText("−₿5'000 · $3.00")).toBeVisible();
   await expect(page.getByText('Fee ₿21', { exact: false })).toBeVisible();
   await expect(page.getByRole('link', { name: 'Back to the forum' })).toBeVisible();
 });

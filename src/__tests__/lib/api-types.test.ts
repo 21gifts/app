@@ -2705,6 +2705,7 @@ describe('fondPaymentSchema', () => {
     amountSats: 1_000,
     feeSats: 0,
     paidAt: '2026-11-11T13:31:01.000Z',
+    storedFiat: null,
     counterparty: { accountId: 'acc-1', username: 'alice', name: 'Alice' },
   };
 
@@ -2715,6 +2716,21 @@ describe('fondPaymentSchema', () => {
       direction: 'out',
       counterparty: null,
     });
+  });
+
+  it('parses a stored USD figure and rejects a missing or malformed one', () => {
+    const storedFiat = { currency: 'USD', amount: '3.00' };
+    expect(fondPaymentSchema.parse({ ...payment, storedFiat })).toEqual({
+      ...payment,
+      storedFiat,
+    });
+    expect(() => fondPaymentSchema.parse({ ...payment, storedFiat: undefined })).toThrow();
+    expect(() =>
+      fondPaymentSchema.parse({ ...payment, storedFiat: { currency: 'USD' } }),
+    ).toThrow();
+    expect(() =>
+      fondPaymentSchema.parse({ ...payment, storedFiat: { currency: 3, amount: '3.00' } }),
+    ).toThrow();
   });
 
   it('accepts a null counterparty name and username and rejects malformed rows', () => {
@@ -2744,6 +2760,7 @@ describe('fondPaymentListSchema', () => {
     amountSats: 1_000,
     feeSats: 0,
     paidAt: '2026-11-11T13:31:01.000Z',
+    storedFiat: null,
     counterparty: null,
   };
 

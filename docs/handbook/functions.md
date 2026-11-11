@@ -7817,16 +7817,16 @@ The class exists so the composer can tell a refused free first post from any oth
 
 ## Function: FondPaymentList
 
-- **Purpose:** Read-only completed-payment list below the public Fond totals. A new component rather than `WalletHistory`, whose job is the connected member's wallet with payment detail links and gift/loan/shop labels; this list is public, has no detail route, and names the counterparty. It reuses the wallet row shell, direction icons, `formatBitcoin` + `preferredFiatSuffix`, fee labels, and `formatForumTime`.
+- **Purpose:** Read-only completed-payment list below the public Fond totals. A new component rather than `WalletHistory`, whose job is the connected member's wallet with payment detail links and gift/loan/shop labels; this list is public, has no detail route, and names the counterparty. It reuses the wallet row shell, direction icons, `formatBitcoin` + `preferredFiatSuffix`, fee labels, and `formatForumTime`; a row with `storedFiat` shows that exact string instead.
 - **Inputs:** `username`. Fetches `fetchFondPayments(username)` on mount and after **Try again**; **Load more** fetches the same function with the current `next` cursor.
-- **Returns / side effects:** The **Payments** (`wallet.historyHeading`) section. Each row shows `fond.incoming` / `fond.outgoing`, the signed amount with fiat, its date/time, and the fee (`wallet.payment.fee` / `wallet.payment.feeFree`; an incoming ₿0 fee is hidden). A known counterparty links `/members/<accountId>` with the `name`, else `@username`; an unknown one shows `fond.private`. `fond.loadMore` appends the next page, `wallet.historyEmpty` covers an empty list, and `fond.paymentsError` with `view.retry` covers a failed first or next page.
+- **Returns / side effects:** The **Payments** (`wallet.historyHeading`) section. Each row shows `fond.incoming` / `fond.outgoing`, the signed amount with fiat, its date/time, and the fee (`wallet.payment.fee` / `wallet.payment.feeFree`; an incoming ₿0 fee is hidden). A set `storedFiat` is rendered by `formatDefinedGoalAmount` as that exact string; a null one and every fee use `preferredFiatSuffix` with the current spot. A known counterparty links `/members/<accountId>` with the `name`, else `@username`; an unknown one shows `fond.private`. `fond.loadMore` appends the next page, `wallet.historyEmpty` covers an empty list, and `fond.paymentsError` with `view.retry` covers a failed first or next page.
 - **Used by:** `FondSummaryLoader` on `/fonds/[username]`.
 
 ## Function: fondPaymentSchema
 
-- **Purpose:** Runtime schema for one completed public Fond payment in `GET /fond/payments`: `{ id, direction, amountSats, feeSats, paidAt, counterparty }`, where `direction` is `in` | `out`, `amountSats` and `feeSats` are non-negative whole sats, `paidAt` is the ISO completion time, and `counterparty` is `{ accountId, username, name }` or `null` for a private payer or recipient.
+- **Purpose:** Runtime schema for one completed public Fond payment in `GET /fond/payments`: `{ id, direction, amountSats, feeSats, paidAt, storedFiat, counterparty }`, where `direction` is `in` | `out`, `amountSats` and `feeSats` are non-negative whole sats, `paidAt` is the ISO completion time, `storedFiat` is `{ currency, amount }` or `null` for the stored USD figure of a paid grant payout, and `counterparty` is `{ accountId, username, name }` or `null` for a private payer or recipient.
 - **Inputs:** One payment object from the api page.
-- **Returns / side effects:** The validated payment; rejects an unknown direction, negative or fractional sats, an empty id or time, or a malformed counterparty.
+- **Returns / side effects:** The validated payment; rejects an unknown direction, negative or fractional sats, an empty id or time, a missing or malformed `storedFiat`, or a malformed counterparty.
 - **Used by:** `fondPaymentListSchema` and `fetchFondPayments`.
 
 ## Function: fondPaymentListSchema

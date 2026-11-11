@@ -11,8 +11,16 @@ import { Button } from '@/components/ui';
 import { useSpotRate } from '@/hooks/useSpotRate';
 import { fetchFondPayments } from '@/lib/api';
 import type { FondPayment } from '@/lib/api-types';
+import { formatDefinedGoalAmount } from '@/lib/forum-goal';
 import { formatForumTime } from '@/lib/forum-time';
-import { formatBitcoin } from '@/lib/stats-money';
+import type { NumberFormatStyle } from '@/lib/number-format';
+import { formatBitcoin, formatFiatDisplay, type FiatCode } from '@/lib/stats-money';
+
+/** A stored fiat figure. An unusable string uses the two-decimal display of that same string. */
+function exactStoredFiat(amount: string, code: FiatCode, style: NumberFormatStyle): string {
+  const exact = formatDefinedGoalAmount(amount, code, style);
+  return exact === '' ? formatFiatDisplay(amount, code, style) : exact;
+}
 
 /**
  * Appends a page to the list, skipping payments whose ids are already shown.
@@ -163,6 +171,14 @@ export function FondPaymentList({ username }: { username: string }): ReactElemen
                   : username !== ''
                     ? `@${username}`
                     : t('view.unnamed');
+              const storedFiatText =
+                payment.storedFiat === null
+                  ? null
+                  : exactStoredFiat(
+                      payment.storedFiat.amount,
+                      payment.storedFiat.currency as FiatCode,
+                      numberFormat,
+                    );
               const counterparty =
                 payment.counterparty === null ? (
                   <span className="truncate text-sm text-app-muted">{t('fond.private')}</span>
@@ -189,7 +205,14 @@ export function FondPaymentList({ username }: { username: string }): ReactElemen
                         <span className="shrink-0 text-sm tabular-nums lining-nums">
                           {incoming ? '+' : '−'}
                           {formatBitcoin(payment.amountSats, numberFormat)}
-                          {preferredFiatSuffix(payment.amountSats, rateDay, fiat, numberFormat)}
+                          {storedFiatText === null ? (
+                            preferredFiatSuffix(payment.amountSats, rateDay, fiat, numberFormat)
+                          ) : (
+                            <>
+                              <span aria-hidden="true"> · </span>
+                              <span>{storedFiatText}</span>
+                            </>
+                          )}
                         </span>
                       </div>
                       <div className="flex flex-wrap items-baseline justify-between gap-x-3 text-xs text-app-subtle">
