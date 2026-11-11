@@ -108,6 +108,14 @@ let retryLoadSdk: WalletSdkLoader | null = null;
 let openFailureReported = false;
 
 /**
+ * The open that has not yet reached ready, failed, or been superseded: its
+ * run, its start time, and the stage it is at. A synced refresh that fails
+ * while it waits for its first read reports the failure for it. `null` when
+ * no open is in progress.
+ */
+let openInProgress: { run: number; startedAt: number; stage: WalletOpenStage } | null = null;
+
+/**
  * Balance reads (`getInfo`) of the current connection still running, so an
  * announcement can wait for the newest balance. Cleared when the connection drops.
  */
@@ -365,6 +373,7 @@ function onRetryTrigger(): void {
  */
 function markReady(balanceSats: number, identityPubkey: string): void {
   openFailureReported = false;
+  openInProgress = null;
   useWalletStore.getState().setReady(balanceSats, identityPubkey);
   endRetryCycle();
 }
@@ -718,6 +727,12 @@ async function openWallet(loadSdk: WalletSdkLoader, quiet: boolean): Promise<voi
   }
   const run = bumpRun();
   const startedAt = Date.now();
+  const opening: { run: number; startedAt: number; stage: WalletOpenStage } = {
+    run,
+    startedAt,
+    stage: 'sdk_load',
+  };
+  openInProgress = opening;
   const waiting = quiet ? 'error' : 'connecting';
   if (!quiet) {
     useWalletStore.getState().setConnecting();
@@ -751,7 +766,7 @@ async function openWallet(loadSdk: WalletSdkLoader, quiet: boolean): Promise<voi
     }, WALLET_CONNECT_TIMEOUT_MS);
   });
   const attempt = (async (): Promise<void> => {
-    let stage: WalletOpenStage = 'connect';
+    opening.stage = 'connect';
     try {
       const next = await traceWallet('wallet.connect', () =>
         sdk.connect(mnemonic, apiKey, appHost()),
@@ -773,14 +788,18 @@ async function openWallet(loadSdk: WalletSdkLoader, quiet: boolean): Promise<voi
       if (run !== runCounter) {
         return;
       }
-      stage = 'first_sync';
+      opening.stage = 'first_sync';
       await traceWallet('wallet.sync.first', () => readBalance(run, next, { ensureSynced: true }));
       void rememberKnownPayments(run, next, mnemonic);
     } catch (error) {
       if (run === runCounter) {
-        reportWalletOpenFailure('error', stage, startedAt, errorCause(error));
+        reportWalletOpenFailure('error', opening.stage, startedAt, errorCause(error));
       }
       await failRun(run);
+    } finally {
+      if (openInProgress === opening) {
+        openInProgress = null;
+      }
     }
   })();
   const result: void | typeof timeoutSentinel = await Promise.race([attempt, deadline]);
@@ -850,7 +869,9 @@ export async function connectWallet(loadSdk: WalletSdkLoader = loadWalletSdk): P
  * overlap only the latest one writes. Never rejects; a failure while current
  * ends in the store and starts the automatic retries of {@link connectWallet},
  * unless `ignoreFailure` is set: then a failed read changes nothing and the
- * wallet stays as it is.
+ * wallet stays as it is. A failure while an open still waits for its first
+ * read ends that open and is reported as its failure, at the stage it was at,
+ * like the open's own failures.
  *
  * @param options - Set `ensureSynced` to read after the wallet has synced, so
  *   a payment that arrived without a wallet event is counted. Set
@@ -868,8 +889,14 @@ export async function refreshWallet(options?: {
   }
   try {
     await traceWallet('wallet.balance', () => readBalance(run, conn, options));
-  } catch {
+  } catch (error) {
     if (options?.ignoreFailure !== true) {
+      // A refresh that fails while an open still waits for its first read
+      // ends that open, so the open's failure is reported here.
+      const opening = openInProgress;
+      if (opening !== null && opening.run === run && run === runCounter) {
+        reportWalletOpenFailure('error', opening.stage, opening.startedAt, errorCause(error));
+      }
       await failRun(run);
     }
   }

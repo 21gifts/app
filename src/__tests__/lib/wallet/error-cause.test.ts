@@ -239,33 +239,60 @@ describe('sanitizeErrorMessage', () => {
       ['spaces', ' ', 'x'],
       ['labels with open brackets', 'token: [', ''],
       ['labels with spaces', 'seed   ', ''],
+      ['labels with closed quotes', 'token: "a" ', ''],
+      ['labels with closed brackets', 'seed=[1] ', ''],
+      ['labels with placeholders', 'token: [token] ', ''],
+      ['labels on lines', 'token: a\n', ''],
+      ['typed names on lines', 'prf: A \n', ''],
+      ['escaped quotes in brackets', 'token: ["a\\', ''],
+      ['label words', 'PRF\u00A0', ':'],
     ];
     const message = (unit: string, end: string, length: number): string =>
       unit.repeat(Math.ceil(length / unit.length)) + end;
-    // Small and large runs alternate, so both see the same load, and each
-    // size keeps its fastest of five runs after one warm-up run.
-    const fastest = (small: string, large: string): readonly [number, number] => {
-      sanitizeErrorMessage(small);
+    // Each timing is a batch of runs that takes at least BATCH_MS, far above
+    // the timer's resolution, so no floor is needed. Small and large batches
+    // alternate, so both see the same load, and each keeps its fastest of five.
+    const BATCH_MS = 5;
+    const batch = (run: (text: string) => unknown, text: string, runs: number): number => {
+      const started = performance.now();
+      for (let left = runs; left > 0; left -= 1) {
+        run(text);
+      }
+      return performance.now() - started;
+    };
+    const growth = (run: (text: string) => unknown, small: string, large: string): number => {
+      run(large);
+      let runs = 1;
+      while (batch(run, small, runs) < BATCH_MS) {
+        runs *= 2;
+      }
       let bestSmall = Number.POSITIVE_INFINITY;
       let bestLarge = Number.POSITIVE_INFINITY;
-      for (let run = 0; run < 5; run += 1) {
-        let started = performance.now();
-        sanitizeErrorMessage(small);
-        bestSmall = Math.min(bestSmall, performance.now() - started);
-        started = performance.now();
-        sanitizeErrorMessage(large);
-        bestLarge = Math.min(bestLarge, performance.now() - started);
+      for (let round = 0; round < 5; round += 1) {
+        bestSmall = Math.min(bestSmall, batch(run, small, runs));
+        bestLarge = Math.min(bestLarge, batch(run, large, runs));
       }
-      return [bestSmall, bestLarge];
+      return bestLarge / bestSmall;
     };
     for (const [name, unit, end] of hostile) {
-      const [small, large] = fastest(message(unit, end, 50_000), message(unit, end, 200_000));
-      // A 1 ms floor keeps timer noise on very fast runs from looking like
-      // growth; a quadratic step still fails once its large run takes 8 ms.
-      expect(large / Math.max(small, 1), name).toBeLessThan(8);
+      const ratio = growth(
+        sanitizeErrorMessage,
+        message(unit, end, 25_000),
+        message(unit, end, 100_000),
+      );
+      expect(ratio, name).toBeLessThan(8);
     }
+    // Control: the same measurement of a quadratic step stays above the bound.
+    const quadratic = (text: string): number => {
+      let found = 0;
+      for (let at = 0; at < text.length; at += 1) {
+        found += text.lastIndexOf('b', at);
+      }
+      return found;
+    };
+    expect(growth(quadratic, 'a'.repeat(1_000), 'a'.repeat(4_000))).toBeGreaterThan(8);
     // Backstop: about 1 MB of all patterns together stays far below 10 s.
-    const all = hostile.map(([, unit, end]) => message(unit, end, 50_000)).join(' ');
+    const all = hostile.map(([, unit, end]) => message(unit, end, 40_000)).join(' ');
     const started = performance.now();
     sanitizeErrorMessage(all);
     expect(performance.now() - started).toBeLessThan(10_000);
@@ -420,24 +447,124 @@ describe('sanitizeErrorMessage', () => {
     ['api_key=gggggggggggggggggggggggggggggggggggggggg', 'api_key=[token]'],
     ['failed with token: abc', 'failed with token: [token]'],
     ['{"secret": "two words", "n": 1}', '{"secret": [token], "n": 1}'],
-    ['username=alice next', 'username=[token] next'],
+    ['username=alice next', 'username=[token]'],
+    ['username=alice next\nsecond line', 'username=[token]\nsecond line'],
     ['PRF output: 7,7,7,7', 'PRF output: [token]'],
-    ['seed: 1, 2, 3; ok', 'seed: [token]; ok'],
-    ['PRF output: Uint8Array(4) [17, 34, 51, 68] done', 'PRF output: [token] done'],
+    ['seed: 1, 2, 3; ok', 'seed: [token]'],
+    ['PRF output: Uint8Array(4) [17, 34, 51, 68] done', 'PRF output: [token]'],
+    ['PRF output: Uint8Array [17, 34, 51, 68]', 'PRF output: [token]'],
+    ['PRF output: Uint8Array(4)  \t [17, 34, 51, 68]', 'PRF output: [token]'],
+    ['prf: Uint8Array(4) [\n  17, 34,\n  51, 68\n]\nnext', 'prf: [token]\nnext'],
+    ['prf: Uint8Array\n[\n  17, 34\n]\nnext', 'prf: [token]\nnext'],
+    ['{"prf": [\n  17,\n  34\n], "n": 1}', '{"prf": [token], "n": 1}'],
     ['seed=[17, 34] x', 'seed=[token] x'],
+    ['token: ["ab]cdefghijkl", 1] x', 'token: [token] x'],
     ['token: [unclosed 17, 34\nnext line', 'token: [token]\nnext line'],
     [`token: [${'17, 34, '.repeat(200)}99`, 'token: [token]'],
+    [`secret: "${'ab cd ef '.repeat(40)}" tail`, 'secret: [token] tail'],
+    [`secret: '${'ab cd ef '.repeat(40)}\nnext`, 'secret: [token]\nnext'],
+    ['secret: "a\\"b c" tail', 'secret: [token] tail'],
     ['PRF    = 17, 34, 51, 68', 'PRF    = [token]'],
-    ['token\t:\n  abc def', 'token\t:\n  [token] def'],
-    ['bad password = hunter2;', 'bad password = [token];'],
-    ['Authorization:Bearer xyz', 'Authorization:[token] xyz'],
-    ['x-api-key= qwerty end', 'x-api-key= [token] end'],
+    ['PRF\toutput: 17, 34', 'PRF\toutput: [token]'],
+    ['PRF  output: 17, 34', 'PRF  output: [token]'],
+    ['PRF\u00A0output: 17, 34', 'PRF\u00A0output: [token]'],
+    ['PRF\u3000output: 17, 34', 'PRF\u3000output: [token]'],
+    ['prf_output=17, 34', 'prf_output=[token]'],
+    ['prfOutput=17, 34', 'prfOutput=[token]'],
+    ['P\u200BRF output: 17, 34', 'P\u200BRF output: [token]'],
+    ['ＰＲＦ output: 17, 34', 'ＰＲＦ output: [token]'],
+    ['the derived PRF output: 17, 34', 'the derived PRF output: [token]'],
+    ['token\t:\n  abc def', 'token\t:\n  [token]'],
+    ['bad password = hunter2;', 'bad password = [token]'],
+    ['Authorization:Bearer xyz', 'Authorization:[token]'],
+    ['x-api-key= qwerty end', 'x-api-key= [token]'],
     ['user: [addr]', 'user: [addr]'],
     ['user: [addr], bob', 'user: [token]'],
     ['token: [hex], bob', 'token: [token]'],
-  ])('replaces the value after a secret-naming label in %j', (message, sent) => {
+    ['token: [token] (retry)', 'token: [token] (retry)'],
+    ['bad pr: abc def', 'bad pr: [token]'],
+    ['prf: Uint8Array(4) [17, 34\nnext', 'prf: [token]\nnext'],
+    ['words = alpha beta', 'words = [token]'],
+    ['print: abc', 'print: abc'],
+  ])('replaces the whole value after a secret-naming label in %j', (message, sent) => {
     expect(sanitizeErrorMessage(message)).toBe(sent);
     expect(sanitizeErrorMessage(sent)).toBe(sent);
+  });
+
+  it('keeps a base64 key padding and a comparison from reading as a label', () => {
+    expect(sanitizeErrorMessage('key abc== x')).toBe('key abc== x');
+    expect(sanitizeErrorMessage('if key == 1')).toBe('if key == 1');
+  });
+
+  it('replaces every value after random secret labels, spellings, and value shapes', () => {
+    let seed = 11;
+    const next = (below: number): number => {
+      seed = (seed * 1_103_515_245 + 12_345) % 2_147_483_648;
+      return Math.floor(seed / 65_536) % below;
+    };
+    const pick = <T>(items: readonly T[]): T => items[next(items.length)] as T;
+    const labels: ReadonlyArray<readonly string[]> = [
+      ['PRF', 'output'],
+      ['prf'],
+      ['api', 'key'],
+      ['x', 'api', 'key'],
+      ['session', 'token'],
+      ['Auth'],
+      ['password'],
+      ['seed', 'phrase'],
+      ['recovery', 'mnemonic'],
+      ['user', 'name'],
+      ['client', 'secret'],
+      ['the', 'PRF', 'output'],
+    ];
+    const joins = [' ', '  ', '\t', ' \t ', '\u00A0', '\u2003', '\u3000', '_', '-', '', '\u200B'];
+    const cases = [
+      (word: string): string => word,
+      (word: string): string => word.toUpperCase(),
+      (word: string): string => word.toLowerCase(),
+      (word: string): string => word.charAt(0).toUpperCase() + word.slice(1),
+    ];
+    const separators = [':', ' : ', '=', ' =\t', ':\n  ', '": ', "'=", '\u00A0:\u00A0'];
+    const before = ['', 'connect failed: ', '{"', 'x ', 'Error (wallet) '];
+    const digits = '0123456789';
+    const letters = 'QWXZqwxz';
+    const piece = (length: number): string =>
+      Array.from({ length }, () => pick([...digits, ...letters])).join('');
+    const bytes = (count: number, join: string): string =>
+      Array.from({ length: count }, () => String(next(256))).join(join);
+    const shapes: ReadonlyArray<(secret: string) => readonly [string, string]> = [
+      (secret) => [secret, '\nnext line'],
+      (secret) => [`${secret} ${piece(12)} ${piece(12)}`, '\nnext line'],
+      (secret) => [`"${secret} ${piece(250)}"`, ' tail'],
+      (secret) => [`'${secret} \\' ${piece(30)}'`, ' tail'],
+      (secret) => [`\`${secret}\``, ' tail'],
+      (secret) => [`"${secret} unclosed`, '\nnext line'],
+      (secret) => [`[${bytes(32, ', ')}, "${secret}"]`, ' tail'],
+      (secret) => [`{"a": [1, 2], "b": "${secret}"}`, ' tail'],
+      (secret) => [`Uint8Array(32) [${bytes(32, ', ')}, ${secret}]`, ''],
+      (secret) => [`Uint8Array [${bytes(32, ', ')}, ${secret}]`, ''],
+      (secret) => [`Uint8Array(32)  \t[\n  ${bytes(16, ', ')},\n  ${secret}\n]`, '\nnext line'],
+      (secret) => [`[\n  ${bytes(16, ',\n  ')},\n  "${secret}"\n]`, '\nnext line'],
+      (secret) => [`[${bytes(32, ', ')} ${secret}`, '\nnext line'],
+      (secret) => [`${bytes(32, ',')},${secret}`, '\nnext line'],
+    ];
+    for (let round = 0; round < 2_000; round += 1) {
+      const words = pick(labels);
+      const join = pick(joins);
+      const label = words.map(pick(cases)).join(join);
+      const secret = piece(24);
+      const [value, after] = pick(shapes)(secret);
+      const message = `${pick(before)}${label}${pick(separators)}${value}${after}`;
+      const once = sanitizeErrorMessage(message);
+      const shown = JSON.stringify(message);
+      for (let at = 0; at + 10 <= value.length; at += 1) {
+        const window = value.slice(at, at + 10);
+        if (!message.replace(value, '').includes(window)) {
+          expect(once.includes(window), `${shown} kept ${JSON.stringify(window)}`).toBe(false);
+        }
+      }
+      expect(sanitizeErrorMessage(once), shown).toBe(once);
+    }
   });
 
   it('cuts the result to 200 characters after the replacements', () => {

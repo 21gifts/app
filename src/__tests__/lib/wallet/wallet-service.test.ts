@@ -546,6 +546,53 @@ describe('connectWallet', () => {
     expect(connection.getInfo.mock.calls).toEqual([[{ ensureSynced: true }], []]);
   });
 
+  it('reports a synced refresh that fails while the first synchronized read is pending, once', async () => {
+    rememberSessionPhrase(MNEMONIC);
+    let rejectFirst!: (error: Error) => void;
+    const { loadSdk, connection, listeners } = createFakeSdk();
+    connection.getInfo
+      .mockImplementationOnce(
+        () =>
+          new Promise((_resolve, reject) => {
+            rejectFirst = reject;
+          }),
+      )
+      .mockRejectedValueOnce(new Error('Network error: connection reset'));
+    const pending = connectWallet(loadSdk);
+    await vi.waitFor(() => {
+      expect(connection.getInfo).toHaveBeenCalledWith({ ensureSynced: true });
+    });
+    listeners[0]?.({ type: 'synced' });
+    await vi.waitFor(() => {
+      expect(useWalletStore.getState().status).toBe('error');
+    });
+    rejectFirst(new Error('Storage error: database closed'));
+    await expect(pending).resolves.toBeUndefined();
+    expectWalletOpenReport('error', {
+      stage: 'first_sync',
+      errorName: 'Error',
+      errorCode: 'network',
+      errorMessage: 'Network error: connection reset',
+    });
+    expect(
+      vi.mocked(logInteraction).mock.calls.filter(([event]) => event === 'wallet_open_failed'),
+    ).toHaveLength(1);
+  });
+
+  it('does not report a synced refresh that fails after the wallet opened', async () => {
+    rememberSessionPhrase(MNEMONIC);
+    const { loadSdk, connection, listeners } = createFakeSdk();
+    await connectWallet(loadSdk);
+    expect(useWalletStore.getState().status).toBe('ready');
+    connection.getInfo.mockRejectedValueOnce(new Error('Network error: connection reset'));
+    listeners[0]?.({ type: 'synced' });
+    await vi.waitFor(() => {
+      expect(useWalletStore.getState().status).toBe('error');
+    });
+    expect(captureMessage).not.toHaveBeenCalled();
+    expect(logInteraction).not.toHaveBeenCalledWith('wallet_open_failed', expect.anything());
+  });
+
   it('refreshes balance on synced and ignores other events', async () => {
     rememberSessionPhrase(MNEMONIC);
     const { loadSdk, connection, listeners } = createFakeSdk();

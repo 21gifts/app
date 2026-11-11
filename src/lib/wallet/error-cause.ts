@@ -167,58 +167,219 @@ const LABEL_PARTS: readonly string[] = ['key', 'auth', 'session', 'user', 'crede
 /**
  * Separator after a label: an optional closing quote, then `=` or `:` with
  * any whitespace around it. It starts right after the label, never inside a
- * run of whitespace, so each run is read once.
+ * run of whitespace, so each run is read once. An `=` next to another `=` is
+ * not one (`==`, the padding of a base64 key).
  */
-const LABEL_SEPARATOR = /(?<!\s)["']?\s*[:=]\s*/g;
+const LABEL_SEPARATOR = /(?<![\s=])["']?\s*(?::|=(?!=))\s*/g;
+
+/** Most whitespace-separated words a label is read by, back from its separator. */
+const LABEL_MAX_WORDS = 3;
 
 /**
- * A label of one or two words at the start of a word (`token`, `PRF output`),
- * right at the end of the text it is matched against. A label of three or more
- * words is read by its last two.
+ * A character of a label word: a letter or digit in any script, `_`, `.`,
+ * `-`, or an invisible format character ({@link INVISIBLE}). A word may be
+ * written in camel case (`prfOutput`) or joined (`prf_output`).
  */
-const LABEL_BEFORE =
-  /(?<![A-Za-z0-9_.-])[A-Za-z][A-Za-z0-9_.-]{0,40}(?: [A-Za-z][A-Za-z0-9_.-]{0,20})?$/;
+const LABEL_WORD_CHAR = /[\p{L}\p{N}_.\u00AD\u200B-\u200D\u2060\uFEFF-]/u;
 
-/** Most characters of a {@link LABEL_BEFORE} label. */
-const LABEL_MAX_LENGTH = 63;
+/** Everything of a label but its letters and digits, removed before it is compared. */
+const LABEL_NOISE = /[^\p{L}\p{N}]/gu;
 
-/**
- * The value after a label: a bracketed list of up to 1000 characters that is
- * not a placeholder (without its closing `]` when the line ends first), also
- * after a typed-array name (`[17, 34]`, `Uint8Array(4) [17, 34, 51, 68]`), a
- * quoted string of up to 200 characters, or everything up to a space, `;`, or
- * `&`, also a list joined by `,` whose further items hold only key characters
- * (`7,7,7` or `7, 7, 7`, not `, "n":`).
- */
-const LABEL_VALUE =
-  /(?:[A-Za-z][A-Za-z0-9]{0,30}\(\d{1,9}\)\s?)?(?!\[(?:addr|hex|q|token|words)\])\[[^\]\n]{0,1000}(?:\]|(?=\n|$))|"[^"\n]{0,200}"|'[^'\n]{0,200}'|[^\s,;&]+(?:,\s?[A-Za-z0-9_.+/=-]+)*/y;
+/** A placeholder this module wrote (`[token]`), at the start of a value. */
+const PLACEHOLDER_START = /\[(?:addr|hex|q|token|words)\]/y;
 
-/** A value that is only a placeholder this module wrote, which a label may already hold. */
+/** A value that is only a placeholder this module wrote. */
 const PLACEHOLDER = /^\[(?:addr|hex|q|token|words)\]$/;
 
+/** The next line break. */
+const LINE_BREAK = /[\n\r\u2028\u2029]/g;
+
+/** Characters that open a quoted value. */
+const QUOTES = '"\'`';
+
+/** Brackets that open a value, and the ones that close them, in the same order. */
+const OPENERS = '([{<';
+const CLOSERS = ')]}>';
+
 /**
- * Whether a label names a secret: one of {@link SENSITIVE_KEYS}, or it holds
- * one of {@link SENSITIVE_KEY_PARTS} or {@link LABEL_PARTS}, in any case.
+ * A typed-array or object name before its opening bracket, with or without a
+ * length and with any whitespace before the bracket (`Uint8Array(32) [`,
+ * `Uint8Array [`, `Map(1) {`); the bracket follows right after the match.
+ */
+const TYPED_NAME = /[A-Za-z_$][\w$]*(?:\(\d*\))?\s*(?=[[{(<])/y;
+
+/**
+ * The words of the label that ends at `end`, read back over at most
+ * {@link LABEL_MAX_WORDS} words of {@link LABEL_WORD_CHAR} with any
+ * whitespace between them, and never before `floor`. The walk stops at any
+ * other character, so it never crosses a separator (`:` `=`), a quote, or a
+ * placeholder, and each character is walked by one label at most.
  *
- * @param label - Label before `=` or `:`.
+ * @param text - Error message.
+ * @param end - Where the label's separator starts.
+ * @param floor - Where the text not yet written out starts.
+ * @returns The words, last word last; empty when none ends at `end`.
+ */
+function labelWords(text: string, end: number, floor: number): string[] {
+  const words: string[] = [];
+  let at = end;
+  while (at > floor && words.length < LABEL_MAX_WORDS) {
+    const wordEnd = at;
+    while (at > floor && LABEL_WORD_CHAR.test(text.charAt(at - 1))) {
+      at -= 1;
+    }
+    if (at === wordEnd) {
+      break;
+    }
+    words.unshift(text.slice(at, wordEnd));
+    while (at > floor && /\s/.test(text.charAt(at - 1))) {
+      at -= 1;
+    }
+  }
+  return words;
+}
+
+/**
+ * Whether a label names a secret: a word that is one of
+ * {@link SENSITIVE_KEYS}, or its words joined without their separators,
+ * invisible characters, and case (`PRF output`, `prf_output`, `prfOutput`,
+ * and `PRF\toutput` all read `prfoutput`), hold one of
+ * {@link SENSITIVE_KEY_PARTS} or {@link LABEL_PARTS}. Fullwidth letters are
+ * read as ASCII.
+ *
+ * @param words - Words of the label before `=` or `:`.
  * @returns Whether its value is a secret.
  */
-function isSecretLabel(label: string): boolean {
-  const lower = label.toLowerCase();
+function isSecretLabel(words: readonly string[]): boolean {
+  const read = words.map((word) => word.normalize('NFKC').toLowerCase());
+  if (read.some((word) => SENSITIVE_KEYS.has(word.replace(INVISIBLE, '')))) {
+    return true;
+  }
+  const joined = read.join('').replace(LABEL_NOISE, '');
   return (
-    SENSITIVE_KEYS.has(lower) ||
-    SENSITIVE_KEY_PARTS.some((part) => lower.includes(part)) ||
-    LABEL_PARTS.some((part) => lower.includes(part))
+    SENSITIVE_KEY_PARTS.some((part) => joined.includes(part)) ||
+    LABEL_PARTS.some((part) => joined.includes(part))
   );
 }
 
 /**
- * Replaces the value after every label that names a secret
+ * Where each opening bracket of `text` closes: the matching closing bracket
+ * of the same kind, over any number of lines; one that does not close is
+ * left out. Inside brackets a quoted string on one line is skipped, so a bracket
+ * in it neither opens nor closes; a character after `\\` is skipped too.
+ * Each character is read a bounded number of times.
+ *
+ * @param text - Error message.
+ * @returns For each bracket that closes, where it opened and where it closes.
+ */
+function closingBrackets(text: string): Map<number, number> {
+  const closeAt = new Map<number, number>();
+  const open: number[][] = OPENERS.split('').map(() => []);
+  let depth = 0;
+  for (let at = 0; at < text.length; at += 1) {
+    const char = text.charAt(at);
+    if (depth > 0 && char === '\\') {
+      at += 1;
+      continue;
+    }
+    if (depth > 0 && QUOTES.includes(char)) {
+      const end = quoteEnd(text, at);
+      if (end !== -1) {
+        at = end - 1;
+      }
+      continue;
+    }
+    const opens = OPENERS.indexOf(char);
+    if (opens !== -1) {
+      open[opens]?.push(at);
+      depth += 1;
+      continue;
+    }
+    const opened = open[CLOSERS.indexOf(char)]?.pop();
+    if (opened !== undefined) {
+      closeAt.set(opened, at);
+      depth -= 1;
+    }
+  }
+  return closeAt;
+}
+
+/**
+ * Where the quoted string that opens at `at` ends: right after its closing
+ * quote on the same line (a quote after `\\` does not close it), or `-1`
+ * when the line ends first.
+ *
+ * @param text - Error message.
+ * @param at - Where the opening quote stands.
+ * @returns The index after the closing quote, or `-1`.
+ */
+function quoteEnd(text: string, at: number): number {
+  const quote = text.charAt(at);
+  for (let next = at + 1; next < text.length; next += 1) {
+    const char = text.charAt(next);
+    if (char === quote) {
+      return next + 1;
+    }
+    if (char === '\\') {
+      next += 1;
+    } else if (char === '\n' || char === '\r' || char === '\u2028' || char === '\u2029') {
+      return -1;
+    }
+  }
+  return -1;
+}
+
+/**
+ * Where the line that holds `at` ends.
+ *
+ * @param text - Error message.
+ * @param at - A position on the line.
+ * @returns The index of the next line break, or the length of `text`.
+ */
+function lineEnd(text: string, at: number): number {
+  LINE_BREAK.lastIndex = at;
+  return LINE_BREAK.exec(text)?.index ?? text.length;
+}
+
+/**
+ * Where the value of a secret label that starts at `at` ends. A value that
+ * opens with a quote ends at its closing quote; one that opens with a bracket
+ * at its closing bracket, over any number of lines. Any other value ends at
+ * the end of its line, or later at the closing bracket of a typed array or
+ * object that opens on it ({@link TYPED_NAME}). A quote or bracket that does
+ * not close ends the value at the end of its line.
+ *
+ * @param text - Error message.
+ * @param at - Where the value starts.
+ * @param closeAt - Returns {@link closingBrackets} of `text`, read once.
+ * @returns The index after the value.
+ */
+function labelValueEnd(text: string, at: number, closeAt: () => Map<number, number>): number {
+  const first = text.charAt(at);
+  if (QUOTES.includes(first)) {
+    const end = quoteEnd(text, at);
+    return end === -1 ? lineEnd(text, at) : end;
+  }
+  if (OPENERS.includes(first)) {
+    const close = closeAt().get(at);
+    return close === undefined ? lineEnd(text, at) : close + 1;
+  }
+  TYPED_NAME.lastIndex = at;
+  if (TYPED_NAME.exec(text) !== null) {
+    const close = closeAt().get(TYPED_NAME.lastIndex) ?? -1;
+    return Math.max(lineEnd(text, at), close + 1);
+  }
+  return lineEnd(text, at);
+}
+
+/**
+ * Replaces the whole value after every label that names a secret
  * ({@link isSecretLabel}: `api_key=`, `token:`, `"secret": "…"`,
  * `password=`, `username=`, `PRF output:` and the like) by `[token]`, whatever
- * its characters are, unless it already is a placeholder. The label stays
- * readable. Each character is read a
- * bounded number of times.
+ * its characters are and however long it is ({@link labelValueEnd}). The
+ * label stays readable. A value that is only a placeholder (`[addr]`) stays,
+ * and so does a `[token]` that starts one, which an earlier pass wrote. Each
+ * character is read a bounded number of times.
  *
  * @param text - Error message.
  * @returns The message with labelled secrets replaced.
@@ -226,30 +387,33 @@ function isSecretLabel(label: string): boolean {
 function replaceLabeledValues(text: string): string {
   let out = '';
   let from = 0;
+  let brackets: Map<number, number> | null = null;
+  const closeAt = (): Map<number, number> => {
+    brackets ??= closingBrackets(text);
+    return brackets;
+  };
   LABEL_SEPARATOR.lastIndex = 0;
   for (
     let separator = LABEL_SEPARATOR.exec(text);
     separator !== null;
     separator = LABEL_SEPARATOR.exec(text)
   ) {
-    // The label ends where its separator starts; one character more than the
-    // longest label lets the label's start see the character before it.
-    const window = text.slice(
-      Math.max(from, separator.index - LABEL_MAX_LENGTH - 1),
-      separator.index,
-    );
-    const label = LABEL_BEFORE.exec(window);
-    if (label === null || !isSecretLabel(label[0])) {
+    const valueAt = separator.index + separator[0].length;
+    if (valueAt >= text.length || !isSecretLabel(labelWords(text, separator.index, from))) {
       continue;
     }
-    const valueAt = separator.index + separator[0].length;
-    LABEL_VALUE.lastIndex = valueAt;
-    const value = LABEL_VALUE.exec(text);
-    if (value === null || PLACEHOLDER.test(value[0])) {
+    PLACEHOLDER_START.lastIndex = valueAt;
+    const placeholder = PLACEHOLDER_START.exec(text)?.[0];
+    if (placeholder === '[token]') {
+      continue;
+    }
+    const valueEnd =
+      placeholder === undefined ? labelValueEnd(text, valueAt, closeAt) : lineEnd(text, valueAt);
+    if (PLACEHOLDER.test(text.slice(valueAt, valueEnd).trimEnd())) {
       continue;
     }
     out += `${text.slice(from, valueAt)}[token]`;
-    from = valueAt + value[0].length;
+    from = valueEnd;
     LABEL_SEPARATOR.lastIndex = from;
   }
   return out + text.slice(from);
@@ -541,7 +705,9 @@ function replaceWordRuns(text: string): string {
  * a user name) with `[addr]`; the query string and fragment of a URL or path (a
  * word cut at its first `?` or `#`, fullwidth `？` or `＃`, or URL-encoded `%3F`
  * or `%23`, when a `/` comes before it, an `=` after it, or at least four
- * characters follow) with `?[q]`; then every run of key characters (letters,
+ * characters follow) with `?[q]`; then the whole value after a label that
+ * names a secret (`api_key=`, `token:`, `PRF output:`, in any spelling) with
+ * `[token]` ({@link replaceLabeledValues}); then every run of key characters (letters,
  * digits, `+ / = _ . : -`) as a whole, or each segment of a URL or path: one
  * that holds 16 hex digits in a row once its separators are removed with
  * `[hex]`, and one that starts with an invoice, address, or extended-key prefix
