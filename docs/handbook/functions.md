@@ -6231,9 +6231,9 @@ The class exists so the composer can tell a refused free first post from any oth
 
 ## Function: effectiveRole
 
-- **Purpose:** Compatibility bridge for an older api that sends a lower role (usually `verified`) plus `staffTag: 'software_developer'`. Returns `software_developer` when `staffTag` is `software_developer` and the role ranks below it; otherwise returns the role unchanged. This lets role tags show one Software Developer pill against both api versions.
+- **Purpose:** Display-only compatibility bridge for an older api that sends a lower role plus `staffTag: 'software_developer'`; permission checks keep the api role.
 - **Inputs:** `role` — live account role; `staffTag` — older api compatibility label, only `software_developer` when present, otherwise null or omitted.
-- **Returns / side effects:** The effective `Role`. Unchanged for `software_developer`, `initiator`, `founder`, a missing tag, or an unknown tag. Pure, no side effects.
+- **Returns / side effects:** `software_developer` when `staffTag === 'software_developer'` and the role ranks below it (`basis`, `verified`, `moderator`, `fond`). The role is unchanged for `software_developer`, `initiator`, `founder`, a missing tag, or any other tag; pure, no side effects.
 - **Used by:** `ForumBoard`, `ForumRoleTag`, `ForumRoleHint`, `MemberIdentityPills`, `ForumQuotedBody`, `visibleForumMessages`.
 
 ## Function: isOwnNote
