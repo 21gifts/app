@@ -2754,7 +2754,6 @@ const server = http.createServer(async (req, res) => {
       firstPaidAt: null,
       lastPaidAt: null,
       spendOverTime: [],
-      byRecipient: [],
       byMonth: [],
       fx: {
         quote: 'BTC-USD',

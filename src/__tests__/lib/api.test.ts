@@ -1364,18 +1364,6 @@ describe('fetchGiftStats', () => {
         cumulativePhp: '0.50',
       },
     ],
-    byRecipient: [
-      {
-        recipient: 'alice',
-        giftCount: 1,
-        sats: 10,
-        btc: '0.00000010',
-        usd: '0.01',
-        chf: '0.01',
-        eur: '0.01',
-        php: '0.50',
-      },
-    ],
     byMonth: [
       {
         month: '2026-06',
@@ -1405,6 +1393,29 @@ describe('fetchGiftStats', () => {
     const fetchMock = stubFetch({ ok: true, status: 200, body: stats });
     await expect(fetchGiftStats()).resolves.toEqual(stats);
     expect(fetchMock).toHaveBeenCalledWith('/gifts/stats');
+  });
+
+  it('accepts a payload that still includes byRecipient', async () => {
+    stubFetch({
+      ok: true,
+      status: 200,
+      body: {
+        ...stats,
+        byRecipient: [
+          {
+            recipient: 'alice',
+            giftCount: 1,
+            sats: 10,
+            btc: '0.00000010',
+            usd: '0.01',
+            chf: null,
+            eur: null,
+            php: null,
+          },
+        ],
+      },
+    });
+    await expect(fetchGiftStats()).resolves.toEqual(stats);
   });
 
   it('appends recipient when the handle is non-empty after trim', async () => {

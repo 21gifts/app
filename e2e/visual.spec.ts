@@ -427,7 +427,6 @@ const RATE_DAY_STATS = {
       cumulativePhp: '5600000.00',
     },
   ],
-  byRecipient: [],
   byMonth: [],
   fx: FX_USD,
 };
@@ -765,28 +764,6 @@ const STATS_DEFAULT = {
       cumulativePhp: '80.00',
     },
   ],
-  byRecipient: [
-    {
-      recipient: 'alice',
-      giftCount: 2,
-      sats: 1000,
-      btc: '0.00001000',
-      usd: '0.95',
-      chf: '0.80',
-      eur: '0.86',
-      php: '53.00',
-    },
-    {
-      recipient: 'bob',
-      giftCount: 1,
-      sats: 500,
-      btc: '0.00000500',
-      usd: '0.48',
-      chf: '0.40',
-      eur: '0.44',
-      php: '27.00',
-    },
-  ],
   byMonth: [
     {
       month: '2026-06',
@@ -855,28 +832,6 @@ const STATS_USD_SCALE = {
       cumulativePhp: '53200.00',
     },
   ],
-  byRecipient: [
-    {
-      recipient: 'alice',
-      giftCount: 1,
-      sats: 1_000_000,
-      btc: '0.01000000',
-      usd: '50.00',
-      chf: '42.00',
-      eur: '45.00',
-      php: '2800.00',
-    },
-    {
-      recipient: 'bob',
-      giftCount: 1,
-      sats: 100_000,
-      btc: '0.00100000',
-      usd: '900.00',
-      chf: '756.00',
-      eur: '820.00',
-      php: '50400.00',
-    },
-  ],
   byMonth: [
     {
       month: '2026-06',
@@ -914,7 +869,6 @@ const STATS_EMPTY = {
   firstPaidAt: null,
   lastPaidAt: null,
   spendOverTime: [],
-  byRecipient: [],
   byMonth: [],
   fx: FX_USD,
 };
@@ -32698,7 +32652,6 @@ test.describe('welcome forum variants', () => {
               cumulativePhp: '5600000.00',
             },
           ],
-          byRecipient: [],
           byMonth: [],
           fx: {
             quote: 'BTC-USD',
@@ -40318,7 +40271,6 @@ test.describe('statistics screens', () => {
       firstPaidAt: '2026-08-22T00:00:00.000Z',
       lastPaidAt: '2026-09-20T00:00:00.000Z',
       spendOverTime,
-      byRecipient: [],
       byMonth: [],
       fx: FX_USD,
     };
@@ -41911,7 +41863,6 @@ test.describe('moderate group screens', () => {
               cumulativePhp: '280.00',
             },
           ],
-          byRecipient: [],
           byMonth: [],
           fx: {
             quote: 'BTC-USD',
@@ -42436,16 +42387,14 @@ test.describe('stats variant baselines', () => {
       .getByRole('button', { name: 'USD' })
       .click();
     await page
-      .getByRole('group', { name: 'By person bar scale' })
-      .getByRole('button', { name: 'USD' })
-      .click();
-    await page
       .getByRole('group', { name: 'By month bar scale' })
       .getByRole('button', { name: 'USD' })
       .click();
     await expect(page.getByLabel('Spend over time in USD')).toBeVisible();
-    await expect(page.getByLabel('Spend by person in USD')).toBeVisible();
-    await expect(page.getByLabel('Spend by month in USD')).toBeVisible();
+    const month = page.getByLabel('Spend by month in USD');
+    await expect(month).toBeVisible();
+    await expect(month).toContainText('$900.00');
+    await expect(month).not.toContainText('₿');
     await shotScreen(page, 'state-stats-usd-scale');
   });
 

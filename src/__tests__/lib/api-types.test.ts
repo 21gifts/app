@@ -2146,18 +2146,6 @@ describe('giftStatsSchema', () => {
         cumulativePhp: '0.50',
       },
     ],
-    byRecipient: [
-      {
-        recipient: 'alice',
-        giftCount: 1,
-        sats: 10,
-        btc: '0.00000010',
-        usd: '0.01',
-        chf: '0.01',
-        eur: '0.01',
-        php: '0.50',
-      },
-    ],
     byMonth: [
       {
         month: '2026-06',
@@ -2175,6 +2163,26 @@ describe('giftStatsSchema', () => {
 
   it('accepts a full stats payload', () => {
     expect(giftStatsSchema.parse(stats)).toEqual(stats);
+  });
+
+  it('drops byRecipient when an older api still sends it', () => {
+    const parsed = giftStatsSchema.parse({
+      ...stats,
+      byRecipient: [
+        {
+          recipient: 'alice',
+          giftCount: 1,
+          sats: 10,
+          btc: '0.00000010',
+          usd: '0.01',
+          chf: '0.01',
+          eur: '0.01',
+          php: '0.50',
+        },
+      ],
+    });
+    expect(parsed).toEqual(stats);
+    expect(Object.hasOwn(parsed, 'byRecipient')).toBe(false);
   });
 
   it('accepts a spendOverTime day without giftCount', () => {
@@ -2203,7 +2211,6 @@ describe('giftStatsSchema', () => {
       firstPaidAt: null,
       lastPaidAt: null,
       spendOverTime: [],
-      byRecipient: [],
       byMonth: [],
     };
     expect(giftStatsSchema.parse(empty)).toEqual(empty);

@@ -203,28 +203,6 @@ const POPULATED_STATS = {
       cumulativePhp: '80.00',
     },
   ],
-  byRecipient: [
-    {
-      recipient: 'alice',
-      giftCount: 2,
-      sats: 1000,
-      btc: '0.00001000',
-      usd: '0.95',
-      chf: '0.80',
-      eur: '0.86',
-      php: '53.00',
-    },
-    {
-      recipient: 'bob',
-      giftCount: 1,
-      sats: 500,
-      btc: '0.00000500',
-      usd: '0.48',
-      chf: '0.40',
-      eur: '0.44',
-      php: '27.00',
-    },
-  ],
   byMonth: [
     {
       month: '2026-06',
@@ -262,7 +240,6 @@ const EMPTY_STATS = {
   firstPaidAt: null,
   lastPaidAt: null,
   spendOverTime: [],
-  byRecipient: [],
   byMonth: [],
   fx: FX_USD,
 };
@@ -6789,7 +6766,7 @@ test('Function: StatsLoader — a failed wallet fetch keeps the gift stats', asy
     await route.fulfill({ status: 503, contentType: 'application/json', body: '{}' });
   });
   await page.goto('/stats');
-  await expect(page.getByText('alice')).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Total spend over time' })).toBeVisible();
   await expect(page.getByRole('region', { name: 'Wallets' })).toHaveCount(0);
 });
 
@@ -6862,11 +6839,16 @@ test('Function: StatsDashboard — month USD scale makes the higher-USD month ta
     ],
   });
   await page.goto('/stats');
+  const btc = page.getByLabel('Spend by month in ₿');
+  await expect(btc).toContainText("₿1'000'000");
+  await expect(btc).not.toContainText('$50.00');
   await page
     .getByRole('group', { name: 'By month bar scale' })
     .getByRole('button', { name: 'USD' })
     .click();
   const svg = page.getByLabel('Spend by month in USD');
+  await expect(svg).toContainText('$900.00');
+  await expect(svg).not.toContainText('₿');
   const juneH = Number(await svg.locator('rect').nth(0).getAttribute('height'));
   const julyH = Number(await svg.locator('rect').nth(1).getAttribute('height'));
   expect(julyH).toBeGreaterThan(juneH);

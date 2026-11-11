@@ -345,18 +345,18 @@ App page padding is `px-3 py-2` on `<main>` (12px), `px-2` below 360px, with the
 
 **Radius.**
 
-| Token      | px   | Tailwind                    | Use                                                                      |
-| ---------- | ---- | --------------------------- | ------------------------------------------------------------------------ |
-| `pill`     | 9999 | `rounded-full`              | Buttons, switcher triggers, segmented thumbs, header Log in, badges      |
-| `card`     | 24   | `rounded-3xl`               | AppShell page frame; default `Card` overlays and note panels             |
-| `note`     | 16   | `rounded-2xl`               | Forum notes, laws banner, fields, onboarding inputs, KPI tiles, QR plate |
-| `panel`    | 12   | `rounded-xl`                | Menu, listbox, pay-sheet inner, photo preview, role hint                 |
-| `control`  | 8    | `rounded-lg`                | Menu rows                                                                |
-| `chart`    | 6    | `rounded-md` / SVG `rx={6}` | ₿\|USD track, person bars `rx={6}`                                       |
-| `none`     | 0    | —                           | Marketing month bars (square)                                            |
-| `portrait` | 28   | `rounded-home-portrait`     | Happyland place portrait (`1.75rem`)                                     |
-| `wallet`   | 17.6 | `rounded-home-wallet`       | Hero preview wallet strip (`1.1rem`)                                     |
-| `frame`    | 32   | `rounded-4xl`               | Hero preview frame from `sm` (`--radius-4xl` is `2rem`)                  |
+| Token      | px   | Tailwind                | Use                                                                      |
+| ---------- | ---- | ----------------------- | ------------------------------------------------------------------------ |
+| `pill`     | 9999 | `rounded-full`          | Buttons, switcher triggers, segmented thumbs, header Log in, badges      |
+| `card`     | 24   | `rounded-3xl`           | AppShell page frame; default `Card` overlays and note panels             |
+| `note`     | 16   | `rounded-2xl`           | Forum notes, laws banner, fields, onboarding inputs, KPI tiles, QR plate |
+| `panel`    | 12   | `rounded-xl`            | Menu, listbox, pay-sheet inner, photo preview, role hint                 |
+| `control`  | 8    | `rounded-lg`            | Menu rows                                                                |
+| `chart`    | 6    | `rounded-md`            | ₿\|fiat track on the stats and profile charts                            |
+| `none`     | 0    | —                       | Marketing month bars (square)                                            |
+| `portrait` | 28   | `rounded-home-portrait` | Happyland place portrait (`1.75rem`)                                     |
+| `wallet`   | 17.6 | `rounded-home-wallet`   | Hero preview wallet strip (`1.1rem`)                                     |
+| `frame`    | 32   | `rounded-4xl`           | Hero preview frame from `sm` (`--radius-4xl` is `2rem`)                  |
 
 **Elevation.**
 
@@ -640,7 +640,7 @@ The owner editor on `/profile` has a separate control for each of the three pict
 
 ## Money
 
-**Two currencies on every amount.** Every visitor has one default fiat in settings (CHF, EUR, USD, or PHP). [docs/fiat-amounts.md](fiat-amounts.md) is binding. Every amount shows bitcoin and one fiat figure. A committed amount shows the fiat figure fixed when it was created, as that exact string. A till charge shows that typed figure to the shop and to the payer. Typing 12.00 shows 12.00 on both sides, never 12.01 or 11.99. When no fiat string was stored, the fiat beside the bitcoin is the current spot in the visitor's currency, and that spot is not written onto the amount. Bitcoin stands alone only when that spot is not available yet. What a holding is worth right now uses the same spot.
+**Two currencies on every amount.** Every visitor has one default fiat in settings (CHF, EUR, USD, or PHP). [docs/fiat-amounts.md](fiat-amounts.md) is binding. Every amount shows bitcoin and one fiat figure. The **By month** bars on `/stats` show only the unit selected on their ₿ | fiat control (user decision 2026-11-11). A committed amount shows the fiat figure fixed when it was created, as that exact string. A till charge shows that typed figure to the shop and to the payer. Typing 12.00 shows 12.00 on both sides, never 12.01 or 11.99. When no fiat string was stored, the fiat beside the bitcoin is the current spot in the visitor's currency, and that spot is not written onto the amount. Bitcoin stands alone only when that spot is not available yet. What a holding is worth right now uses the same spot.
 
 - Defined in that default fiat: show that typed amount and the bitcoin counterpart. Do not repeat the fiat, and do not replace the typed amount with sats converted back.
 - Not defined in that default fiat (bitcoin, or another fiat): also show the default fiat when that currency was frozen at creation. An ask defined in another fiat shows three: the defined amount, bitcoin, and the frozen default fiat. When that frozen string is missing, a bitcoin amount shows the current spot. An ask already defined in a fiat keeps that fiat and bitcoin, and does not add the spot as a third figure.
@@ -664,7 +664,7 @@ Pay sheet amount step shows a live fiat line in the preferred fiat (no picker). 
 
 **Fiat.** Cookie `fiat` (otherwise locale default). Switchers: the `/settings` Display row (`FiatPreferenceSwitcher`) is the only signed-in control that sets the preferred fiat. Profile charts (`AccountActivityChart` on the signed-in profile, a member profile, and public `/view`) do not mount `FiatPicker`. `FiatPicker` remains on unsigned `/stats` and unsigned `/stats/[day]` (`useHydrateSession().ready && session === null`). ₿|{code} scale stays on every profile chart and reads that preferred code. Forum notes, nested replies, and the pay sheet **display** that code only (no picker). Stats KPI shows ₿ on the first line and the selected fiat on the second via `formatFiatDisplay` (USD uses `formatUsdDisplay`). Populated profile chart is ₿ | selected FiatCode.
 
-**₿ \| selected-fiat segmented control** — shipped as `SegmentedControl` (see catalog). Stats charts: ₿ and the preferred FiatCode. Profile: ₿ and the preferred FiatCode (same as stats charts, app shell).
+**₿ \| selected-fiat segmented control** — shipped as `SegmentedControl` (see catalog). Stats charts: ₿ and the preferred FiatCode. **By month** labels show only the selected unit; an em dash stands in when that fiat amount is missing. Profile: ₿ and the preferred FiatCode (same as stats charts, app shell).
 
 | Part       | Spec                                                                                                                                                                                                                  |
 | ---------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -1110,7 +1110,7 @@ The same anatomy is reused for an **External** badge (`forum.via.nostr`), shown 
 
 ### Chart
 
-**Stats (marketing, ink).** KPI tiles: `rounded-2xl border border-paper/10 p-5`. dt `text-sm text-paper/60`, dd `text-2xl font-semibold tabular-nums`. Charts: stroke/fill `accent`, grid `paper/8`, ticks `paper/50` 12px Outfit. Person bars `rx={6}` height 12. Month bars square fill accent. Empty: copy “No donations recorded yet.” — **no empty SVG axis**. Loading: `text-paper/60` “Loading…”. Error: copy + `ButtonLink`/`Button` accent **Try again**. The shared over-time drawing also renders the **Wallets** line/area: two tiles in the same chrome (**In wallets** ₿ over the preferred-fiat spot, same two-line layout as **Total spent**, **Wallets with balance** count), the self-reported UTC-day-end caption, and ₿ ticks. The fiat on **In wallets** is today's spot (`useSpotRate` / `GET /fx/spot`) in the visitor's currency, not the day's price; bitcoin stands alone only when no spot is available. Each chart point's `<title>` is the day, ₿, and that same spot fiat. Wallet days are not gift-day links. A single wallet day is a horizontal line; an empty series omits the Wallets section, like a failed fetch.
+**Stats (marketing, ink).** KPI tiles: `rounded-2xl border border-paper/10 p-5`. dt `text-sm text-paper/60`, dd `text-2xl font-semibold tabular-nums`. Charts: stroke/fill `accent`, grid `paper/8`, ticks `paper/50` 12px Outfit. Month bars are square and fill accent. Each **By month** label shows only the unit selected on that chart's ₿ | fiat control. A missing fiat amount shows an em dash when fiat is selected. Empty: copy “No donations recorded yet.” — **no empty SVG axis**. Loading: `text-paper/60` “Loading…”. Error: copy + `ButtonLink`/`Button` accent **Try again**. The shared over-time drawing also renders the **Wallets** line/area: two tiles in the same chrome (**In wallets** ₿ over the preferred-fiat spot, same two-line layout as **Total spent**, **Wallets with balance** count), the self-reported UTC-day-end caption, and ₿ ticks. The fiat on **In wallets** is today's spot (`useSpotRate` / `GET /fx/spot`) in the visitor's currency, not the day's price; bitcoin stands alone only when no spot is available. Each chart point's `<title>` is the day, ₿, and that same spot fiat. Wallet days are not gift-day links. A single wallet day is a horizontal line; an empty series omits the Wallets section, like a failed fetch.
 
 **Profile activity.** No FiatPicker. The preferred code comes from Settings when signed in, otherwise the cookie or the locale default. Legend Given (`app-chart-given`) + Received (`app-chart-received`) with 10px swatches + text (color is **not** the only encoding — labels exist). Populated: ₿|{FiatCode} `SegmentedControl tone="gift"`. SVG height 110 viewBox 400×110, ticks 9px `app-muted`. Empty, signed-in and unsigned: `profile.chartEmpty` `role="status"`, no SVG, no FiatPicker. Empty series and failed is `profile.chartError` `role="alert"`, not `profile.chartEmpty`. Successful empty and in-flight stay `profile.chartEmpty` `role="status"`, no SVG. Null `usd`/`cumulativeUsd` still draws the satoshi chart; USD scale uses an em dash when any raw `cumulativeUsd` is `null`.
 
@@ -1209,7 +1209,7 @@ The activity help button sits with the view control while shops are loading or a
 
 ### `/stats`
 
-Header → `main max-w-[1100px] px-5 pt-16 pb-24` → display/h1 “Donations” (`text-4xl sm:text-6xl font-semibold leading-tight tracking-tight`) → body-lg subtitle → `StatsDashboard` (**Posts**, optional **Wallets**, KPI grid, then charts or empty). **Wallets** sits directly after **Posts** and before the gift tiles: two tiles in the same chrome (**In wallets** ₿ via `formatBitcoin(totalSats)` over the preferred-fiat spot from `satsToFiatAmount`/`formatFiatDisplay`, **Wallets with balance** via `formatCount(fundedWalletCount)`), the caption “Total of all 21.gifts wallets at the end of each UTC day, as reported by the wallets themselves. Fiat figures use today's spot, not the day's price.”, and the shared over-time chart of `balanceOverTime[].totalSats` with ₿ ticks and no `/stats/{day}` links. Each point tooltip carries the day, ₿, and the same spot fiat. Stats body copy stays English. `SegmentedControl tone="gift" shell="dark"`. Numeric figures.
+Header → `main max-w-[1100px] px-5 pt-16 pb-24` → display/h1 “Donations” (`text-4xl sm:text-6xl font-semibold leading-tight tracking-tight`) → body-lg subtitle → `StatsDashboard` (**Posts**, optional **Wallets**, KPI grid, then charts or empty). **Wallets** sits directly after **Posts** and before the gift tiles: two tiles in the same chrome (**In wallets** ₿ via `formatBitcoin(totalSats)` over the preferred-fiat spot from `satsToFiatAmount`/`formatFiatDisplay`, **Wallets with balance** via `formatCount(fundedWalletCount)`), the caption “Total of all 21.gifts wallets at the end of each UTC day, as reported by the wallets themselves. Fiat figures use today's spot, not the day's price.”, and the shared over-time chart of `balanceOverTime[].totalSats` with ₿ ticks and no `/stats/{day}` links. Each point tooltip carries the day, ₿, and the same spot fiat. **By month** labels show only the unit selected on that chart's ₿ | fiat control; a missing fiat amount is an em dash when fiat is selected. Stats body copy stays English. `SegmentedControl tone="gift" shell="dark"`. Numeric figures.
 
 Handbook states: loading, empty, error + **Try again**, populated charts, wallets, wallets-no-rate.
 
