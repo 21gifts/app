@@ -10602,9 +10602,27 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/fonds/[username]:payments-loading",
+    "label": "/fonds/[username] payments-loading",
+    "visual": "state-fonds-payments-loading",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/fonds/[username]:payments-error",
+    "label": "/fonds/[username] payments-error",
+    "visual": "state-fonds-payments-error",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/fonds/[username]:payments-load-more-expanded",
     "label": "/fonds/[username] payments-load-more-expanded",
     "visual": "state-fonds-payments-load-more-expanded",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/fonds/[username]:payments-load-more-error",
+    "label": "/fonds/[username] payments-load-more-error",
+    "visual": "state-fonds-payments-load-more-error",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {

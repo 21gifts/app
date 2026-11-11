@@ -1974,8 +1974,9 @@ export type FondSummary = z.infer<typeof fondSummarySchema>;
  * Runtime schema for one entry of the public `GET /fond/payments` list.
  *
  * `counterparty` names the member behind an internal transfer when the api
- * knows them; `null` means the payer or recipient stays private. `feeSats` is
- * the completed payment's fee and `paidAt` is its ISO timestamp.
+ * knows them; `null` means the payer or recipient stays private. A known
+ * member may have `username: null` when no handle is set. `feeSats` is the
+ * completed payment's fee and `paidAt` is its ISO timestamp.
  */
 export const fondPaymentSchema = z.object({
   id: z.string().min(1),
@@ -1986,7 +1987,7 @@ export const fondPaymentSchema = z.object({
   counterparty: z
     .object({
       accountId: z.string().min(1),
-      username: z.string().min(1),
+      username: z.string().min(1).nullable(),
       name: z.string().nullable(),
     })
     .nullable(),

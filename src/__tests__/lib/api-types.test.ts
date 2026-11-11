@@ -2717,7 +2717,13 @@ describe('fondPaymentSchema', () => {
     });
   });
 
-  it('accepts a null counterparty name and rejects malformed rows', () => {
+  it('accepts a null counterparty name and username and rejects malformed rows', () => {
+    expect(
+      fondPaymentSchema.parse({
+        ...payment,
+        counterparty: { accountId: 'acc-1', username: null, name: null },
+      }).counterparty,
+    ).toEqual({ accountId: 'acc-1', username: null, name: null });
     expect(
       fondPaymentSchema.parse({
         ...payment,

@@ -114,6 +114,21 @@ describe('FondPaymentList', () => {
     expect(await screen.findByText('@carol')).toBeTruthy();
   });
 
+  it('labels a member without name or username as Unnamed', async () => {
+    vi.mocked(fetchFondPayments).mockResolvedValue({
+      payments: [
+        {
+          ...PAYMENTS.payments[0]!,
+          counterparty: { accountId: 'acc-dana', username: null, name: null },
+        },
+      ],
+      next: null,
+    });
+    renderWithLocale(<FondPaymentList username="tondo-fond" />);
+    const link = await screen.findByRole('link', { name: 'Unnamed' });
+    expect(link.getAttribute('href')).toBe('/members/acc-dana');
+  });
+
   it('shows the empty payments line', async () => {
     vi.mocked(fetchFondPayments).mockResolvedValue({ payments: [], next: null });
     renderWithLocale(<FondPaymentList username="tondo-fond" />);

@@ -12447,10 +12447,31 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/fonds/[username]',
+    id: 'payments-loading',
+    image: 'fonds-payments-loading.png',
+    visual: 'state-fonds-payments-loading',
+    needle: "payments.getByText('Loading…')",
+  },
+  {
+    route: '/fonds/[username]',
+    id: 'payments-error',
+    image: 'fonds-payments-error.png',
+    visual: 'state-fonds-payments-error',
+    needle: 'Could not load the Fond payments. Please try again.',
+  },
+  {
+    route: '/fonds/[username]',
     id: 'payments-load-more-expanded',
     image: 'fonds-payments-load-more-expanded.png',
     visual: 'state-fonds-payments-load-more-expanded',
     needle: "getByRole('button', { name: 'Load more' })).toHaveCount(0",
+  },
+  {
+    route: '/fonds/[username]',
+    id: 'payments-load-more-error',
+    image: 'fonds-payments-load-more-error.png',
+    visual: 'state-fonds-payments-load-more-error',
+    needle: "payments.getByRole('listitem')).toHaveCount(3",
   },
   {
     route: '/fonds/[username]',

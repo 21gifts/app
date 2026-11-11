@@ -11128,11 +11128,29 @@ The api returns an empty first payment page with `next: null`. The **Payments** 
 
 ![21.gifts public Fond page with no payments](images/fonds-payments-empty.png)
 
+### Variant: payments-loading
+
+The first payment page is still in flight while the summary and totals are already showing. The **Payments** section shows **Loading…** with no rows and no **Load more** button.
+
+![21.gifts public Fond page while payments load](images/fonds-payments-loading.png)
+
+### Variant: payments-error
+
+The first payment page answers 503 `{ "error": "Fond payments are unavailable" }`. The **Payments** section shows **Could not load the Fond payments. Please try again.** and **Try again**; the totals above stay visible.
+
+![21.gifts public Fond page with a payments error](images/fonds-payments-error.png)
+
 ### Variant: payments-load-more-expanded
 
 **Load more** was pressed on `/fonds/tondo-fond`; the second fixture page is appended and its newest **Incoming** row appears under the first three. The cursor is now null, so the button is gone.
 
 ![21.gifts public Fond page after loading more payments](images/fonds-payments-load-more-expanded.png)
+
+### Variant: payments-load-more-error
+
+**Load more** was pressed and the request carrying `before` answers 503. The three loaded rows stay visible; below them the **Payments** section shows **Could not load the Fond payments. Please try again.** and **Try again**, and **Load more** remains available.
+
+![21.gifts public Fond page after a failed load more](images/fonds-payments-load-more-error.png)
 
 ### Variant: error
 

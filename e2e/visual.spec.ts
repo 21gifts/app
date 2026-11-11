@@ -47126,6 +47126,35 @@ test.describe('fonds screen', () => {
     await shotScreen(page, 'state-fonds-payments-empty');
   });
 
+  test('state /fonds/[username] payments-loading', async ({ page }) => {
+    await fulfillSpot(page);
+    await page.route('**/fonds/tondo-fond/payments', async () => {
+      // never fulfill
+    });
+    await page.goto('/fonds/tondo-fond');
+    const payments = page.getByRole('region', { name: 'Payments' });
+    await expect(payments.getByText('Loading…')).toBeVisible();
+    await shotScreen(page, 'state-fonds-payments-loading');
+  });
+
+  test('state /fonds/[username] payments-error', async ({ page }) => {
+    await fulfillSpot(page);
+    await page.route('**/fonds/tondo-fond/payments', async (route) => {
+      await route.fulfill({
+        status: 503,
+        contentType: 'application/json',
+        body: JSON.stringify({ error: 'Fond payments are unavailable' }),
+      });
+    });
+    await page.goto('/fonds/tondo-fond');
+    const payments = page.getByRole('region', { name: 'Payments' });
+    await expect(
+      payments.getByText('Could not load the Fond payments. Please try again.'),
+    ).toBeVisible();
+    await expect(payments.getByRole('button', { name: 'Try again' })).toBeVisible();
+    await shotScreen(page, 'state-fonds-payments-error');
+  });
+
   test('state /fonds/[username] payments-load-more-expanded', async ({ page }) => {
     await fulfillSpot(page);
     await page.goto('/fonds/tondo-fond');
@@ -47134,6 +47163,33 @@ test.describe('fonds screen', () => {
     await expect(page.getByText("₿1'000")).toBeVisible();
     await page.evaluate(() => window.scrollTo(0, 0));
     await shotScreen(page, 'state-fonds-payments-load-more-expanded');
+  });
+
+  test('state /fonds/[username] payments-load-more-error', async ({ page }) => {
+    await fulfillSpot(page);
+    await page.route('**/fonds/tondo-fond/payments**', async (route) => {
+      const before = new URL(route.request().url()).searchParams.get('before');
+      if (before === null) {
+        await route.continue();
+        return;
+      }
+      await route.fulfill({
+        status: 503,
+        contentType: 'application/json',
+        body: JSON.stringify({ error: 'Fond payments are unavailable' }),
+      });
+    });
+    await page.goto('/fonds/tondo-fond');
+    const payments = page.getByRole('region', { name: 'Payments' });
+    await expect(payments.getByRole('button', { name: 'Load more' })).toBeVisible();
+    await payments.getByRole('button', { name: 'Load more' }).click();
+    await expect(payments.getByRole('listitem')).toHaveCount(3);
+    await expect(payments.getByText('Alice')).toBeVisible();
+    await expect(
+      payments.getByText('Could not load the Fond payments. Please try again.'),
+    ).toBeVisible();
+    await expect(payments.getByRole('button', { name: 'Try again' })).toBeVisible();
+    await shotScreen(page, 'state-fonds-payments-load-more-error');
   });
 
   test('state /fonds/[username] role-hint', async ({ page }) => {

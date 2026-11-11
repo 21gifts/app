@@ -136,6 +136,13 @@ export function FondPaymentList({ username }: { username: string }): ReactElemen
               const Icon = incoming ? ArrowDownLeft : ArrowUpRight;
               const showFee = !incoming || payment.feeSats > 0;
               const name = payment.counterparty?.name?.trim();
+              const username = payment.counterparty?.username ?? '';
+              const label =
+                name !== undefined && name !== ''
+                  ? name
+                  : username !== ''
+                    ? `@${username}`
+                    : t('view.unnamed');
               const counterparty =
                 payment.counterparty === null ? (
                   <span className="truncate text-sm text-app-muted">{t('fond.private')}</span>
@@ -144,7 +151,7 @@ export function FondPaymentList({ username }: { username: string }): ReactElemen
                     href={`/members/${payment.counterparty.accountId}`}
                     className="truncate text-sm text-app-muted underline underline-offset-2"
                   >
-                    {name === undefined || name === '' ? `@${payment.counterparty.username}` : name}
+                    {label}
                   </Link>
                 );
               return (
