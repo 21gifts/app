@@ -245,13 +245,13 @@ describe('sanitizeErrorMessage', () => {
       ['labels on lines', 'token: a\n', ''],
       ['typed names on lines', 'prf: A \n', ''],
       ['escaped quotes in brackets', 'token: ["a\\', ''],
+      ['open quotes in brackets', 'token: ["a\'b`', ''],
       ['label words', 'PRF\u00A0', ':'],
     ];
     const message = (unit: string, end: string, length: number): string =>
       unit.repeat(Math.ceil(length / unit.length)) + end;
-    // Each timing is a batch of runs that takes at least BATCH_MS, far above
-    // the timer's resolution, so no floor is needed. Small and large batches
-    // alternate, so both see the same load, and each keeps its fastest of five.
+    // Each timing is a batch of runs calibrated to take at least BATCH_MS,
+    // far above the timer's resolution, so no floor is needed.
     const BATCH_MS = 5;
     const batch = (run: (text: string) => unknown, text: string, runs: number): number => {
       const started = performance.now();
@@ -266,13 +266,14 @@ describe('sanitizeErrorMessage', () => {
       while (batch(run, small, runs) < BATCH_MS) {
         runs *= 2;
       }
-      let bestSmall = Number.POSITIVE_INFINITY;
-      let bestLarge = Number.POSITIVE_INFINITY;
+      // Each round times a small and a large batch back to back, so both see
+      // the same load; the median of the five round ratios is the growth.
+      const ratios: number[] = [];
       for (let round = 0; round < 5; round += 1) {
-        bestSmall = Math.min(bestSmall, batch(run, small, runs));
-        bestLarge = Math.min(bestLarge, batch(run, large, runs));
+        const smallMs = batch(run, small, runs);
+        ratios.push(batch(run, large, runs) / smallMs);
       }
-      return bestLarge / bestSmall;
+      return [...ratios].sort((left, right) => left - right)[2] ?? Number.POSITIVE_INFINITY;
     };
     for (const [name, unit, end] of hostile) {
       const ratio = growth(
@@ -284,11 +285,13 @@ describe('sanitizeErrorMessage', () => {
     }
     // Control: the same measurement of a quadratic step stays above the bound.
     const quadratic = (text: string): number => {
-      let found = 0;
-      for (let at = 0; at < text.length; at += 1) {
-        found += text.lastIndexOf('b', at);
+      let same = 0;
+      for (let left = 0; left < text.length; left += 1) {
+        for (let right = 0; right < left; right += 1) {
+          same += text.charCodeAt(left) === text.charCodeAt(right) ? 1 : 0;
+        }
       }
-      return found;
+      return same;
     };
     expect(growth(quadratic, 'a'.repeat(1_000), 'a'.repeat(4_000))).toBeGreaterThan(8);
     // Backstop: about 1 MB of all patterns together stays far below 10 s.
@@ -459,6 +462,9 @@ describe('sanitizeErrorMessage', () => {
     ['{"prf": [\n  17,\n  34\n], "n": 1}', '{"prf": [token], "n": 1}'],
     ['seed=[17, 34] x', 'seed=[token] x'],
     ['token: ["ab]cdefghijkl", 1] x', 'token: [token] x'],
+    ['token: ["ab]cdefghijkl\nnext', 'token: [token]\nnext'],
+    ['token: ["ab]cd\n  17]\nnext', 'token: [token]\nnext'],
+    ['secret: "ab\\\ncd" tail', 'secret: [token]\ncd" tail'],
     ['token: [unclosed 17, 34\nnext line', 'token: [token]\nnext line'],
     [`token: [${'17, 34, '.repeat(200)}99`, 'token: [token]'],
     [`secret: "${'ab cd ef '.repeat(40)}" tail`, 'secret: [token] tail'],
@@ -471,6 +477,12 @@ describe('sanitizeErrorMessage', () => {
     ['PRF\u3000output: 17, 34', 'PRF\u3000output: [token]'],
     ['prf_output=17, 34', 'prf_output=[token]'],
     ['prfOutput=17, 34', 'prfOutput=[token]'],
+    ["PRF's output: 17, 34", "PRF's output: [token]"],
+    ['PRF\u2019s output: 17, 34', 'PRF\u2019s output: [token]'],
+    ['PRF/output: 17, 34', 'PRF/output: [token]'],
+    ['PRF\u2011output: 17, 34', 'PRF\u2011output: [token]'],
+    ['PRF\u2014output: 17, 34', 'PRF\u2014output: [token]'],
+    ['db pwd=hunter2', 'db pwd=[token]'],
     ['P\u200BRF output: 17, 34', 'P\u200BRF output: [token]'],
     ['ＰＲＦ output: 17, 34', 'ＰＲＦ output: [token]'],
     ['the derived PRF output: 17, 34', 'the derived PRF output: [token]'],
@@ -517,7 +529,23 @@ describe('sanitizeErrorMessage', () => {
       ['client', 'secret'],
       ['the', 'PRF', 'output'],
     ];
-    const joins = [' ', '  ', '\t', ' \t ', '\u00A0', '\u2003', '\u3000', '_', '-', '', '\u200B'];
+    const joins = [
+      ' ',
+      '  ',
+      '\t',
+      ' \t ',
+      '\u00A0',
+      '\u2003',
+      '\u3000',
+      '_',
+      '-',
+      '',
+      '\u200B',
+      '/',
+      "'s ",
+      '\u2011',
+      '\u2014',
+    ];
     const cases = [
       (word: string): string => word,
       (word: string): string => word.toUpperCase(),
@@ -532,19 +560,22 @@ describe('sanitizeErrorMessage', () => {
       Array.from({ length }, () => pick([...digits, ...letters])).join('');
     const bytes = (count: number, join: string): string =>
       Array.from({ length: count }, () => String(next(256))).join(join);
+    // A quoted secret may hold brackets, which must not end the value.
+    const inQuotes = (secret: string): string =>
+      `${secret.slice(0, 8)}${pick([']', '}', ')', '>', '[', '{'])}${secret.slice(8)}`;
     const shapes: ReadonlyArray<(secret: string) => readonly [string, string]> = [
       (secret) => [secret, '\nnext line'],
       (secret) => [`${secret} ${piece(12)} ${piece(12)}`, '\nnext line'],
-      (secret) => [`"${secret} ${piece(250)}"`, ' tail'],
-      (secret) => [`'${secret} \\' ${piece(30)}'`, ' tail'],
-      (secret) => [`\`${secret}\``, ' tail'],
-      (secret) => [`"${secret} unclosed`, '\nnext line'],
-      (secret) => [`[${bytes(32, ', ')}, "${secret}"]`, ' tail'],
-      (secret) => [`{"a": [1, 2], "b": "${secret}"}`, ' tail'],
+      (secret) => [`"${inQuotes(secret)} ${piece(250)}"`, ' tail'],
+      (secret) => [`'${inQuotes(secret)} \\' ${piece(30)}'`, ' tail'],
+      (secret) => [`\`${inQuotes(secret)}\``, ' tail'],
+      (secret) => [`"${inQuotes(secret)} unclosed`, '\nnext line'],
+      (secret) => [`[${bytes(32, ', ')}, "${inQuotes(secret)}"]`, ' tail'],
+      (secret) => [`{"a": [1, 2], "b": "${inQuotes(secret)}"}`, ' tail'],
       (secret) => [`Uint8Array(32) [${bytes(32, ', ')}, ${secret}]`, ''],
       (secret) => [`Uint8Array [${bytes(32, ', ')}, ${secret}]`, ''],
       (secret) => [`Uint8Array(32)  \t[\n  ${bytes(16, ', ')},\n  ${secret}\n]`, '\nnext line'],
-      (secret) => [`[\n  ${bytes(16, ',\n  ')},\n  "${secret}"\n]`, '\nnext line'],
+      (secret) => [`[\n  ${bytes(16, ',\n  ')},\n  "${inQuotes(secret)}"\n]`, '\nnext line'],
       (secret) => [`[${bytes(32, ', ')} ${secret}`, '\nnext line'],
       (secret) => [`${bytes(32, ',')},${secret}`, '\nnext line'],
     ];
@@ -557,11 +588,16 @@ describe('sanitizeErrorMessage', () => {
       const message = `${pick(before)}${label}${pick(separators)}${value}${after}`;
       const once = sanitizeErrorMessage(message);
       const shown = JSON.stringify(message);
+      expect(once.includes(secret.slice(0, 8)), `${shown} kept the secret`).toBe(false);
+      // A 10-character piece of the value may appear in the output only as
+      // often as it appears in the rest of the message.
+      const rest = message.replace(value, '');
       for (let at = 0; at + 10 <= value.length; at += 1) {
         const window = value.slice(at, at + 10);
-        if (!message.replace(value, '').includes(window)) {
-          expect(once.includes(window), `${shown} kept ${JSON.stringify(window)}`).toBe(false);
-        }
+        expect(
+          once.split(window).length,
+          `${shown} kept ${JSON.stringify(window)}`,
+        ).toBeLessThanOrEqual(rest.split(window).length);
       }
       expect(sanitizeErrorMessage(once), shown).toBe(once);
     }

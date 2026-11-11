@@ -160,9 +160,17 @@ const QUERY_GOES_ON = /[=&]$/;
  * Label fragments that name a secret in an error message, besides the ones
  * the error reporter removes from every event ({@link SENSITIVE_KEY_PARTS}):
  * API and private keys, auth, sessions, user names, credentials, and
- * passwords or passkeys.
+ * passwords (also `pwd`) or passkeys.
  */
-const LABEL_PARTS: readonly string[] = ['key', 'auth', 'session', 'user', 'credential', 'pass'];
+const LABEL_PARTS: readonly string[] = [
+  'key',
+  'auth',
+  'session',
+  'user',
+  'credential',
+  'pass',
+  'pwd',
+];
 
 /**
  * Separator after a label: an optional closing quote, then `=` or `:` with
@@ -176,11 +184,13 @@ const LABEL_SEPARATOR = /(?<![\s=])["']?\s*(?::|=(?!=))\s*/g;
 const LABEL_MAX_WORDS = 3;
 
 /**
- * A character of a label word: a letter or digit in any script, `_`, `.`,
- * `-`, or an invisible format character ({@link INVISIBLE}). A word may be
- * written in camel case (`prfOutput`) or joined (`prf_output`).
+ * A character of a label word: a letter or digit in any script, an invisible
+ * format character ({@link INVISIBLE}), or a joiner: `_`, `.`, `/`, `-` and
+ * the Unicode hyphens and dashes, or an apostrophe (`'`, `’`). A word may be
+ * written in camel case (`prfOutput`) or joined (`prf_output`, `PRF/output`,
+ * `PRF's`).
  */
-const LABEL_WORD_CHAR = /[\p{L}\p{N}_.\u00AD\u200B-\u200D\u2060\uFEFF-]/u;
+const LABEL_WORD_CHAR = /[\p{L}\p{N}\p{Pd}_./'\u2019\u00AD\u200B-\u200D\u2060\uFEFF]/u;
 
 /** Everything of a label but its letters and digits, removed before it is compared. */
 const LABEL_NOISE = /[^\p{L}\p{N}]/gu;
@@ -193,6 +203,9 @@ const PLACEHOLDER = /^\[(?:addr|hex|q|token|words)\]$/;
 
 /** The next line break. */
 const LINE_BREAK = /[\n\r\u2028\u2029]/g;
+
+/** A line break. */
+const LINE_BREAK_CHAR = /[\n\r\u2028\u2029]/;
 
 /** Characters that open a quoted value. */
 const QUOTES = '"\'`';
@@ -266,7 +279,9 @@ function isSecretLabel(words: readonly string[]): boolean {
  * Where each opening bracket of `text` closes: the matching closing bracket
  * of the same kind, over any number of lines; one that does not close is
  * left out. Inside brackets a quoted string on one line is skipped, so a bracket
- * in it neither opens nor closes; a character after `\\` is skipped too.
+ * in it neither opens nor closes, and after a quote that does not close on
+ * its line no bracket closes on that line; a character after `\\` is skipped
+ * too.
  * Each character is read a bounded number of times.
  *
  * @param text - Error message.
@@ -276,15 +291,20 @@ function closingBrackets(text: string): Map<number, number> {
   const closeAt = new Map<number, number>();
   const open: number[][] = OPENERS.split('').map(() => []);
   let depth = 0;
+  // Until here the line holds a quote that does not close: no bracket closes on it.
+  let openQuoteUntil = -1;
   for (let at = 0; at < text.length; at += 1) {
     const char = text.charAt(at);
-    if (depth > 0 && char === '\\') {
+    const quoted = at < openQuoteUntil;
+    if (depth > 0 && !quoted && char === '\\') {
       at += 1;
       continue;
     }
-    if (depth > 0 && QUOTES.includes(char)) {
+    if (depth > 0 && !quoted && QUOTES.includes(char)) {
       const end = quoteEnd(text, at);
-      if (end !== -1) {
+      if (end === -1) {
+        openQuoteUntil = lineEnd(text, at);
+      } else {
         at = end - 1;
       }
       continue;
@@ -293,6 +313,9 @@ function closingBrackets(text: string): Map<number, number> {
     if (opens !== -1) {
       open[opens]?.push(at);
       depth += 1;
+      continue;
+    }
+    if (quoted) {
       continue;
     }
     const opened = open[CLOSERS.indexOf(char)]?.pop();
@@ -320,10 +343,15 @@ function quoteEnd(text: string, at: number): number {
     if (char === quote) {
       return next + 1;
     }
-    if (char === '\\') {
-      next += 1;
-    } else if (char === '\n' || char === '\r' || char === '\u2028' || char === '\u2029') {
+    if (LINE_BREAK_CHAR.test(char)) {
       return -1;
+    }
+    if (char === '\\') {
+      // An escaped line break still ends the line.
+      if (LINE_BREAK_CHAR.test(text.charAt(next + 1))) {
+        return -1;
+      }
+      next += 1;
     }
   }
   return -1;
