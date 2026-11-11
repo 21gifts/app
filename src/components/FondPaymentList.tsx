@@ -96,6 +96,7 @@ export function FondPaymentList({ username }: { username: string }): ReactElemen
       return;
     }
     busy.current = true;
+    setLoadMoreFailed(false);
     setLoadingMore(true);
     void fetchFondPayments(username, next).then(
       (page) => {

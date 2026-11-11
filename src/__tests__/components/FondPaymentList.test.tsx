@@ -280,7 +280,7 @@ describe('FondPaymentList', () => {
     });
     expect(fetchFondPayments).toHaveBeenCalledTimes(3);
     await waitFor(() => {
-      expect(screen.getByRole('button', { name: 'Try again' }).hasAttribute('disabled')).toBe(true);
+      expect(screen.getByRole('button', { name: 'Load more' }).hasAttribute('disabled')).toBe(true);
     });
     resolvePage?.({ payments: [PAYMENTS.payments[1]!], next: null });
     expect(await screen.findByText('Alice')).toBeTruthy();
