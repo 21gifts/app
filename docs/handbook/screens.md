@@ -11128,6 +11128,12 @@ The api returns an empty first payment page with `next: null`. The **Payments** 
 
 ![21.gifts public Fond page with no payments](images/fonds-payments-empty.png)
 
+### Variant: payments-empty-cursor
+
+The api returns an empty first payment page with `next: '<cursor>'`. The **Payments** section shows no empty sentence and the **Load more** button; the totals above stay visible.
+
+![21.gifts public Fond page with an empty first page and a cursor](images/fonds-payments-empty-cursor.png)
+
 ### Variant: payments-loading
 
 The first payment page is still in flight while the summary and totals are already showing. The **Payments** section shows **Loading…** with no rows and no **Load more** button.
@@ -11145,6 +11151,12 @@ The first payment page answers 503 `{ "error": "Fond payments are unavailable" }
 **Load more** was pressed on `/fonds/tondo-fond`; the second fixture page is appended and its newest **Incoming** row appears under the first three. The cursor is now null, so the button is gone.
 
 ![21.gifts public Fond page after loading more payments](images/fonds-payments-load-more-expanded.png)
+
+### Variant: payments-load-more-continues
+
+**Load more** was pressed on `/fonds/tondo-fond`; the request carrying `before` appends one more **Incoming** row and returns another cursor. The appended row appears under the first three, and **Load more** stays enabled because another page follows.
+
+![21.gifts public Fond page after loading more payments with another page](images/fonds-payments-load-more-continues.png)
 
 ### Variant: payments-load-more-loading
 

@@ -12447,6 +12447,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/fonds/[username]',
+    id: 'payments-empty-cursor',
+    image: 'fonds-payments-empty-cursor.png',
+    visual: 'state-fonds-payments-empty-cursor',
+    needle: "payments.getByText('No payments yet.')).toHaveCount(0",
+  },
+  {
+    route: '/fonds/[username]',
     id: 'payments-loading',
     image: 'fonds-payments-loading.png',
     visual: 'state-fonds-payments-loading',
@@ -12465,6 +12472,13 @@ export const SCREEN_VARIANTS = [
     image: 'fonds-payments-load-more-expanded.png',
     visual: 'state-fonds-payments-load-more-expanded',
     needle: "getByRole('button', { name: 'Load more' })).toHaveCount(0",
+  },
+  {
+    route: '/fonds/[username]',
+    id: 'payments-load-more-continues',
+    image: 'fonds-payments-load-more-continues.png',
+    visual: 'state-fonds-payments-load-more-continues',
+    needle: "payments.getByRole('button', { name: 'Load more' })).toBeEnabled()",
   },
   {
     route: '/fonds/[username]',

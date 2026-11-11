@@ -47126,6 +47126,27 @@ test.describe('fonds screen', () => {
     await shotScreen(page, 'state-fonds-payments-empty');
   });
 
+  test('state /fonds/[username] payments-empty-cursor', async ({ page }) => {
+    await fulfillSpot(page);
+    await page.route('**/fonds/tondo-fond/payments**', async (route) => {
+      const before = new URL(route.request().url()).searchParams.get('before');
+      if (before !== null) {
+        await route.continue();
+        return;
+      }
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ payments: [], next: 'fond-payments-next' }),
+      });
+    });
+    await page.goto('/fonds/tondo-fond');
+    const payments = page.getByRole('region', { name: 'Payments' });
+    await expect(payments.getByText('No payments yet.')).toHaveCount(0);
+    await expect(payments.getByRole('button', { name: 'Load more' })).toBeVisible();
+    await shotScreen(page, 'state-fonds-payments-empty-cursor');
+  });
+
   test('state /fonds/[username] payments-loading', async ({ page }) => {
     await fulfillSpot(page);
     await page.route('**/fonds/tondo-fond/payments', async () => {
@@ -47163,6 +47184,43 @@ test.describe('fonds screen', () => {
     await expect(page.getByText("₿1'000")).toBeVisible();
     await page.evaluate(() => window.scrollTo(0, 0));
     await shotScreen(page, 'state-fonds-payments-load-more-expanded');
+  });
+
+  test('state /fonds/[username] payments-load-more-continues', async ({ page }) => {
+    await fulfillSpot(page);
+    await page.route('**/fonds/tondo-fond/payments**', async (route) => {
+      const before = new URL(route.request().url()).searchParams.get('before');
+      if (before === null) {
+        await route.continue();
+        return;
+      }
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          payments: [
+            {
+              id: '66666666-6666-4666-8666-666666666666',
+              direction: 'in',
+              amountSats: 1_000,
+              feeSats: 0,
+              paidAt: '2026-11-08T08:00:00.000Z',
+              counterparty: null,
+            },
+          ],
+          next: 'fond-payments-next-2',
+        }),
+      });
+    });
+    await page.goto('/fonds/tondo-fond');
+    const payments = page.getByRole('region', { name: 'Payments' });
+    await expect(payments.getByRole('button', { name: 'Load more' })).toBeVisible();
+    await payments.getByRole('button', { name: 'Load more' }).click();
+    await expect(payments.getByRole('listitem')).toHaveCount(4);
+    await expect(payments.getByText("₿1'000")).toBeVisible();
+    await expect(payments.getByRole('button', { name: 'Load more' })).toBeEnabled();
+    await page.evaluate(() => window.scrollTo(0, 0));
+    await shotScreen(page, 'state-fonds-payments-load-more-continues');
   });
 
   test('state /fonds/[username] payments-load-more-loading', async ({ page }) => {
