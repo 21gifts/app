@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react';
+import { act, cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { FondPaymentList } from '@/components/FondPaymentList';
 import type { FondPaymentList as FondPaymentPage } from '@/lib/api-types';
@@ -181,6 +181,42 @@ describe('FondPaymentList', () => {
     });
   });
 
+  it('fires one next-page request when Load more is clicked twice', async () => {
+    let resolvePage: ((page: FondPaymentPage | null) => void) | undefined;
+    vi.mocked(fetchFondPayments)
+      .mockResolvedValueOnce({ payments: [PAYMENTS.payments[0]!], next: 'cursor-2' })
+      .mockImplementationOnce(
+        () =>
+          new Promise((resolve) => {
+            resolvePage = resolve;
+          }),
+      );
+    renderWithLocale(<FondPaymentList username="tondo-fond" />);
+    const button = await screen.findByRole('button', { name: 'Load more' });
+    act(() => {
+      button.click();
+      button.click();
+    });
+    expect(fetchFondPayments).toHaveBeenCalledTimes(2);
+    expect(fetchFondPayments).toHaveBeenLastCalledWith('tondo-fond', 'cursor-2');
+    resolvePage?.({ payments: [PAYMENTS.payments[1]!], next: null });
+    expect(await screen.findByText('Alice')).toBeTruthy();
+  });
+
+  it('does not append a next-page payment whose id is already listed', async () => {
+    vi.mocked(fetchFondPayments)
+      .mockResolvedValueOnce({ payments: [PAYMENTS.payments[0]!], next: 'cursor-2' })
+      .mockResolvedValueOnce({
+        payments: [PAYMENTS.payments[0]!, PAYMENTS.payments[1]!],
+        next: null,
+      });
+    renderWithLocale(<FondPaymentList username="tondo-fond" />);
+    fireEvent.click(await screen.findByRole('button', { name: 'Load more' }));
+    expect(await screen.findByText('Alice')).toBeTruthy();
+    expect(screen.getAllByRole('listitem')).toHaveLength(2);
+    expect(screen.getAllByText('Private')).toHaveLength(1);
+  });
+
   it('shows the payments error with retry after the first load fails', async () => {
     vi.mocked(fetchFondPayments)
       .mockRejectedValueOnce(new Error('503'))
@@ -213,9 +249,42 @@ describe('FondPaymentList', () => {
       await screen.findByText('Could not load the Fond payments. Please try again.'),
     ).toBeTruthy();
     expect(screen.getByText('Private')).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Load more' })).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
     expect(await screen.findByText('Alice')).toBeTruthy();
+    expect(screen.getAllByRole('listitem')).toHaveLength(2);
     expect(fetchFondPayments).toHaveBeenLastCalledWith('tondo-fond', 'cursor-2');
+  });
+
+  it('appends a successful Try again page once', async () => {
+    let resolvePage: ((page: FondPaymentPage | null) => void) | undefined;
+    vi.mocked(fetchFondPayments)
+      .mockResolvedValueOnce({ payments: [PAYMENTS.payments[0]!], next: 'cursor-2' })
+      .mockRejectedValueOnce(new Error('503'))
+      .mockImplementationOnce(
+        () =>
+          new Promise((resolve) => {
+            resolvePage = resolve;
+          }),
+      );
+    renderWithLocale(<FondPaymentList username="tondo-fond" />);
+    fireEvent.click(await screen.findByRole('button', { name: 'Load more' }));
+    expect(
+      await screen.findByText('Could not load the Fond payments. Please try again.'),
+    ).toBeTruthy();
+    const retry = screen.getByRole('button', { name: 'Try again' });
+    act(() => {
+      retry.click();
+      retry.click();
+    });
+    expect(fetchFondPayments).toHaveBeenCalledTimes(3);
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Try again' }).hasAttribute('disabled')).toBe(true);
+    });
+    resolvePage?.({ payments: [PAYMENTS.payments[1]!], next: null });
+    expect(await screen.findByText('Alice')).toBeTruthy();
+    expect(screen.getAllByRole('listitem')).toHaveLength(2);
+    expect(screen.queryByRole('button', { name: 'Try again' })).toBeNull();
   });
 
   it('treats a null next-page answer as a retryable failure', async () => {

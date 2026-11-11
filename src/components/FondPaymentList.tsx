@@ -15,6 +15,18 @@ import { formatForumTime } from '@/lib/forum-time';
 import { formatBitcoin } from '@/lib/stats-money';
 
 /**
+ * Appends a page to the list, skipping payments whose ids are already shown.
+ *
+ * @param current - Payments already loaded.
+ * @param page - The next page returned by the API.
+ * @returns The merged list without duplicate ids.
+ */
+function appendPayments(current: FondPayment[], page: FondPayment[]): FondPayment[] {
+  const seen = new Set(current.map((payment) => payment.id));
+  return [...current, ...page.filter((payment) => !seen.has(payment.id))];
+}
+
+/**
  * Read-only payment list of the public Fond.
  *
  * A new component rather than `WalletHistory`: that list reads the connected
@@ -40,6 +52,7 @@ export function FondPaymentList({ username }: { username: string }): ReactElemen
   const [loadingMore, setLoadingMore] = useState(false);
   const [loadMoreFailed, setLoadMoreFailed] = useState(false);
   const mounted = useRef(true);
+  const busy = useRef(false);
 
   useEffect(() => {
     mounted.current = true;
@@ -79,25 +92,31 @@ export function FondPaymentList({ username }: { username: string }): ReactElemen
   }, [attempt, username]);
 
   const loadMore = (): void => {
+    if (busy.current) {
+      return;
+    }
+    busy.current = true;
     setLoadingMore(true);
-    setLoadMoreFailed(false);
     void fetchFondPayments(username, next).then(
       (page) => {
         if (!mounted.current) {
           return;
         }
+        busy.current = false;
         setLoadingMore(false);
         if (page === null) {
           setLoadMoreFailed(true);
           return;
         }
-        setPayments((current) => [...current, ...page.payments]);
+        setLoadMoreFailed(false);
+        setPayments((current) => appendPayments(current, page.payments));
         setNext(page.next);
       },
       () => {
         if (!mounted.current) {
           return;
         }
+        busy.current = false;
         setLoadingMore(false);
         setLoadMoreFailed(true);
       },
@@ -201,12 +220,12 @@ export function FondPaymentList({ username }: { username: string }): ReactElemen
             <p role="alert" className="text-center text-sm text-app-danger">
               {t('fond.paymentsError')}
             </p>
-            <Button type="button" variant="secondary" onClick={loadMore}>
+            <Button type="button" variant="secondary" disabled={loadingMore} onClick={loadMore}>
               {t('view.retry')}
             </Button>
           </div>
         ) : null}
-        {next === null ? null : (
+        {loadMoreFailed || next === null ? null : (
           <Button type="button" variant="secondary" disabled={loadingMore} onClick={loadMore}>
             {t('fond.loadMore')}
           </Button>
