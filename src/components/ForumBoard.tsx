@@ -103,7 +103,7 @@ import { shortResourceUrl } from '@/lib/short-link';
 import { formatForumTime } from '@/lib/forum-time';
 import type { HeartTipView } from '@/lib/heart-tip';
 import { ForumRoleHint, ForumRoleTag, forumTaggedRole } from '@/components/ForumRoleTag';
-import { authorCannotReceive, isOwnNote, verifiedChipHiddenByStaffTag } from '@/lib/roles';
+import { authorCannotReceive, isOwnNote } from '@/lib/roles';
 import { useFiatPreference } from '@/components/FiatPreferenceProvider';
 import { defaultFiatForLocale, formatBitcoin, type FiatRateDay } from '@/lib/stats-money';
 
@@ -1540,8 +1540,7 @@ export function ForumBoard({
             message.hasVideo && !deadVideoIds.has(message.id)
               ? (videoUrls[message.id] ?? forumVideoSrc(message.id, message.videoContentType))
               : undefined;
-          const hideVerified = verifiedChipHiddenByStaffTag(message.role, message.staffTag);
-          const hasRoleTag = forumTaggedRole(message.role) !== null && !hideVerified;
+          const hasRoleTag = forumTaggedRole(message.role) !== null;
           const roleHintOpen = openRoleMessageId === message.id;
           const expanded = expandedId === message.id;
           const cannotReceive = authorCannotReceive(message, viewerAccountId);
@@ -1660,14 +1659,13 @@ export function ForumBoard({
                       {hasRoleTag ? (
                         <ForumRoleTag
                           role={message.role}
-                          staffTag={message.staffTag}
                           expanded={roleHintOpen}
                           onToggle={(event) => {
                             stopCardToggle(event);
                             setOpenRoleMessageId(roleHintOpen ? null : message.id);
                           }}
                         />
-                      ) : message.via === 'nostr' && !hideVerified ? (
+                      ) : message.via === 'nostr' ? (
                         <button
                           type="button"
                           aria-expanded={roleHintOpen}
@@ -1680,19 +1678,14 @@ export function ForumBoard({
                           {t('forum.via.nostr')}
                         </button>
                       ) : null}
-                      {message.staffTag === 'software_developer' ? (
-                        <span className="rounded-full border border-app-border-strong px-2 py-0.5 text-xs font-medium text-app-muted">
-                          {t('forum.staff.softwareDeveloper')}
-                        </span>
-                      ) : null}
                     </MessageKindTags>
                     <time dateTime={message.createdAt} className="text-xs text-app-subtle">
                       {formatForumTime(message.createdAt, locale)}
                     </time>
                   </div>
-                  {roleHintOpen && hasRoleTag && !hideVerified ? (
+                  {roleHintOpen && hasRoleTag ? (
                     <p role="status" className="mt-1 text-xs text-app-muted">
-                      <ForumRoleHint role={message.role} staffTag={message.staffTag} />
+                      <ForumRoleHint role={message.role} />
                     </p>
                   ) : roleHintOpen && message.via === 'nostr' ? (
                     <p role="status" className="mt-1 text-xs text-app-muted">
@@ -2062,12 +2055,7 @@ export function ForumBoard({
                       <ul className="flex flex-col gap-3">
                         {(Array.isArray(replies) ? replies : []).map((reply) => {
                           const replyCannotReceive = authorCannotReceive(reply, viewerAccountId);
-                          const hideReplyVerified = verifiedChipHiddenByStaffTag(
-                            reply.role,
-                            reply.staffTag,
-                          );
-                          const hasReplyRoleTag =
-                            forumTaggedRole(reply.role) !== null && !hideReplyVerified;
+                          const hasReplyRoleTag = forumTaggedRole(reply.role) !== null;
                           const replyHintOpen = openRoleMessageId === reply.id;
                           return (
                             <li
@@ -2118,14 +2106,13 @@ export function ForumBoard({
                                   {hasReplyRoleTag ? (
                                     <ForumRoleTag
                                       role={reply.role}
-                                      staffTag={reply.staffTag}
                                       expanded={replyHintOpen}
                                       onToggle={(event) => {
                                         stopCardToggle(event);
                                         setOpenRoleMessageId(replyHintOpen ? null : reply.id);
                                       }}
                                     />
-                                  ) : reply.via === 'nostr' && !hideReplyVerified ? (
+                                  ) : reply.via === 'nostr' ? (
                                     <button
                                       type="button"
                                       aria-expanded={replyHintOpen}
@@ -2138,11 +2125,6 @@ export function ForumBoard({
                                       {t('forum.via.nostr')}
                                     </button>
                                   ) : null}
-                                  {reply.staffTag === 'software_developer' ? (
-                                    <span className="rounded-full border border-app-border-strong px-2 py-0.5 text-xs font-medium text-app-muted">
-                                      {t('forum.staff.softwareDeveloper')}
-                                    </span>
-                                  ) : null}
                                 </div>
                                 <time
                                   dateTime={reply.createdAt}
@@ -2151,9 +2133,9 @@ export function ForumBoard({
                                   {formatForumTime(reply.createdAt, locale)}
                                 </time>
                               </div>
-                              {replyHintOpen && hasReplyRoleTag && !hideReplyVerified ? (
+                              {replyHintOpen && hasReplyRoleTag ? (
                                 <p role="status" className="mt-1 text-xs text-app-muted">
-                                  <ForumRoleHint role={reply.role} staffTag={reply.staffTag} />
+                                  <ForumRoleHint role={reply.role} />
                                 </p>
                               ) : replyHintOpen && reply.via === 'nostr' ? (
                                 <p role="status" className="mt-1 text-xs text-app-muted">

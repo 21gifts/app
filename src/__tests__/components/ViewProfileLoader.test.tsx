@@ -838,20 +838,22 @@ describe('ViewProfileLoader', () => {
     expect(fetchSignedInMember).not.toHaveBeenCalled();
   });
 
-  it('maps an unverified public card with counts and a staff tag', async () => {
+  it('maps an unverified card with one Software Developer pill', async () => {
     const { username, ...withoutUsername } = profile;
     void username;
     fetchProfile.mockResolvedValue({
       ...withoutUsername,
+      role: 'software_developer',
       lightningAddressVerified: false,
       shopCount: 1,
       creditCount: 1,
-      staffTag: 'software_developer',
     });
     fetchActivity.mockResolvedValue(EMPTY_ACTIVITY);
     renderWithLocale(<ViewProfileLoader viewKey={VIEW_KEY} />);
     expect(await screen.findByText("Can't receive yet")).toBeTruthy();
-    expect(screen.getByText('Software Developer')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Software Developer' })).toBeTruthy();
+    expect(screen.getAllByText('Software Developer')).toHaveLength(1);
+    expect(screen.queryByRole('button', { name: 'Verified' })).toBeNull();
     expect(screen.getByRole('button', { name: '1 shop' })).toBeTruthy();
     expect(screen.getByRole('button', { name: '1 credit' })).toBeTruthy();
     expect(screen.queryByText('alice@21.gifts')).toBeNull();

@@ -1,19 +1,20 @@
 /**
- * Account roles in rank order: basis, verified, moderator, fond, initiator,
- * founder.
+ * Account roles in rank order: basis, verified, moderator, fond,
+ * software_developer, initiator, founder.
  *
- * Numeric ranks: basis 0, verified 1, moderator 2, fond 3, initiator 4,
- * founder 5. Every viewer permission check, including the daily payout roster
- * in {@link canEditDailyPayoutRoster}, is a {@link roleAtLeast} minimum; an
- * equality test on the viewer's role is a defect. Do not write "moderator or
- * initiator" or „Moderator oder Initiator“; permission checks name the minimum
- * rank only.
+ * Numeric ranks: basis 0, verified 1, moderator 2, fond 3, software_developer 4,
+ * initiator 5, founder 6. Every viewer permission check, including the daily
+ * payout roster in {@link canEditDailyPayoutRoster}, is a {@link roleAtLeast}
+ * minimum; an equality test on the viewer's role is a defect. Do not write
+ * "moderator or initiator" or „Moderator oder Initiator“; permission checks
+ * name the minimum rank only.
  */
 export const ROLE_ORDER = [
   'basis',
   'verified',
   'moderator',
   'fond',
+  'software_developer',
   'initiator',
   'founder',
 ] as const;
@@ -26,8 +27,9 @@ const ROLE_RANK: Record<Role, number> = {
   verified: 1,
   moderator: 2,
   fond: 3,
-  initiator: 4,
-  founder: 5,
+  software_developer: 4,
+  initiator: 5,
+  founder: 6,
 };
 
 /**
@@ -35,7 +37,7 @@ const ROLE_RANK: Record<Role, number> = {
  * index).
  *
  * @param role - A live account role.
- * @returns Rank from 0 through 5.
+ * @returns Rank from 0 through 6.
  */
 export function roleRank(role: Role): number {
   return ROLE_RANK[role];
@@ -133,26 +135,12 @@ export function isReplyPaymentExempt(
  * True when the signed-in account may edit the daily payout roster.
  *
  * The roster's minimum rank is `initiator`: true for `initiator` and
- * `founder`, false for every lower role and for `null` / `undefined`.
+ * `founder`, false for every lower role (including `fond` and
+ * `software_developer`) and for `null` / `undefined`.
  *
  * @param role - Viewer role, or missing when the account snapshot is absent.
  * @returns Whether the viewer may edit the daily payout roster.
  */
 export function canEditDailyPayoutRoster(role: Role | null | undefined): boolean {
   return roleAtLeast(role, 'initiator');
-}
-
-/**
- * Whether the verified role chip is redundant beside a staff feature tag.
- *
- * A feature tag is shown only for someone already treated as verified, so
- * the verified chip is not shown next to it. Higher role chips stay. An
- * absent tag does not hide verified.
- *
- * @param role - Live account role.
- * @param staffTag - Staff feature tag when present, otherwise null or omitted.
- * @returns True only for role `verified` with staff tag `software_developer`.
- */
-export function verifiedChipHiddenByStaffTag(role: string, staffTag?: string | null): boolean {
-  return role === 'verified' && staffTag === 'software_developer';
 }

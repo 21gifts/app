@@ -267,6 +267,40 @@ const EMPTY_STATS = {
   fx: FX_USD,
 };
 
+const WALLET_STATS = {
+  walletCount: 61,
+  fundedWalletCount: 32,
+  totalSats: 89096,
+  totalBtc: '0.00089096',
+  asOf: '2026-11-10T06:21:04.985Z',
+  balanceOverTime: [
+    {
+      day: '2026-11-09',
+      totalSats: 80000,
+      totalBtc: '0.00080000',
+      walletCount: 55,
+      fundedWalletCount: 30,
+    },
+    {
+      day: '2026-11-10',
+      totalSats: 89096,
+      totalBtc: '0.00089096',
+      walletCount: 61,
+      fundedWalletCount: 32,
+    },
+  ],
+};
+
+async function stubWalletStats(page: Page, body: object = WALLET_STATS): Promise<void> {
+  await page.route('**/wallets/stats', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(body),
+    });
+  });
+}
+
 async function stubPayableNote(page: Page): Promise<void> {
   await page.route(/\/messages(?:\?|$)/, async (route) => {
     const url = route.request().url();
@@ -6696,6 +6730,14 @@ test('Function: proxyGiftsStatsGet — GET /gifts/stats is empty', async ({ requ
   expect(((await res.json()) as { giftCount: number }).giftCount).toBe(0);
 });
 
+test('Function: proxyWalletStatsGet — GET /wallets/stats forwards the api 503', async ({
+  request,
+}) => {
+  const res = await request.get('/wallets/stats');
+  expect(res.status()).toBe(503);
+  expect(((await res.json()) as { error: string }).error).toBe('Wallet stats are unavailable');
+});
+
 test('Function: proxyFxSpotGet — GET /fx/spot has no rate on the stub', async ({ request }) => {
   const res = await request.get('/fx/spot');
   expect(res.status()).toBe(200);
@@ -6717,6 +6759,38 @@ test('Function: fetchPostStats — stats page shows notes and replies as posts',
   await page.goto('/stats');
   await expect(page.getByRole('region', { name: 'Posts' })).toBeVisible();
   await expect(page.getByRole('region', { name: 'Posts' })).toContainText('4');
+});
+
+test('Function: fetchWalletStats — stats page shows the wallet section', async ({ page }) => {
+  await stubGiftStats(page, EMPTY_STATS);
+  await stubWalletStats(page);
+  await fulfillSpot(page);
+  await page.goto('/stats');
+  const wallets = page.getByRole('region', { name: 'Wallets' });
+  await expect(wallets).toBeVisible();
+  await expect(wallets).toContainText("₿89'096");
+  await expect(wallets).toContainText('$89.10');
+  await expect(wallets).toContainText('32');
+  await expect(page.getByLabel('Wallet balance over time in ₿')).toBeVisible();
+});
+
+test('Function: StatsDashboard — wallet chart days are not gift-day links', async ({ page }) => {
+  await stubGiftStats(page, EMPTY_STATS);
+  await stubWalletStats(page);
+  await page.goto('/stats');
+  const chart = page.getByLabel('Wallet balance over time in ₿');
+  await expect(chart).toBeVisible();
+  await expect(chart.getByRole('link')).toHaveCount(0);
+});
+
+test('Function: StatsLoader — a failed wallet fetch keeps the gift stats', async ({ page }) => {
+  await stubGiftStats(page, POPULATED_STATS);
+  await page.route('**/wallets/stats', async (route) => {
+    await route.fulfill({ status: 503, contentType: 'application/json', body: '{}' });
+  });
+  await page.goto('/stats');
+  await expect(page.getByText('alice')).toBeVisible();
+  await expect(page.getByRole('region', { name: 'Wallets' })).toHaveCount(0);
 });
 
 test('Function: fetchGiftStats — stats page shows the empty copy', async ({ page }) => {
@@ -17172,50 +17246,6 @@ test('Function: postLnurlInvoice — amount and comment refusals', async ({ requ
   });
   expect(comment.status()).toBe(400);
   expect(await comment.json()).toEqual({ error: 'Comment too long' });
-});
-
-test('Function: verifiedChipHiddenByStaffTag — a verified author with the staff label has no Verified pill', async ({
-  page,
-}) => {
-  await seedAdaSession(page);
-  await page.route(/\/messages(?:\?|$)/, async (route) => {
-    await route.fulfill({
-      status: 200,
-      contentType: 'application/json',
-      body: JSON.stringify({
-        messages: [
-          {
-            id: 'm-staff-verified',
-            name: 'Ada',
-            text: 'Hello from the developer',
-            createdAt: '2026-08-28T12:00:00.000Z',
-            sats: 0,
-            payable: false,
-            hasPhoto: false,
-            role: 'verified',
-            staffTag: 'software_developer',
-          },
-          {
-            id: 'm-staff-moderator',
-            name: 'Bea',
-            text: 'Hello from the moderator',
-            createdAt: '2026-08-28T12:01:00.000Z',
-            sats: 0,
-            payable: false,
-            hasPhoto: false,
-            role: 'moderator',
-            staffTag: 'software_developer',
-          },
-        ],
-      }),
-    });
-  });
-  await page.goto('/welcome');
-  await chooseForumView(page, 'All');
-  await expect(page.getByText('Hello from the developer')).toBeVisible();
-  await expect(page.getByText('Software Developer')).toHaveCount(2);
-  await expect(page.getByRole('button', { name: 'Verified' })).toHaveCount(0);
-  await expect(page.getByRole('button', { name: 'Moderator' })).toBeVisible();
 });
 
 async function seedSignedInAda(page: Page): Promise<void> {

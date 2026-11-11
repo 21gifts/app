@@ -53,7 +53,6 @@ function memberProfileFromView(view: ViewProfile): MemberProfile {
     ...(view.fundingReviewedByName !== undefined
       ? { fundingReviewedByName: view.fundingReviewedByName }
       : {}),
-    ...(view.staffTag !== undefined ? { staffTag: view.staffTag } : {}),
   });
 }
 

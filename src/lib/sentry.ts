@@ -897,6 +897,7 @@ const CSP_PAGE_SECTIONS: ReadonlySet<string> = new Set([
   'view',
   'view-key',
   'wallet',
+  'wallets',
   'welcome',
 ]);
 

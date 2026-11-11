@@ -30,6 +30,7 @@ import {
   grantContinuationSchema,
   grantPlacesSchema,
   postStatsSchema,
+  walletStatsSchema,
   accountActivitySchema,
   memberProfileSchema,
   messageInvoiceSchema,
@@ -79,6 +80,7 @@ import {
   type GrantContinuation,
   type GrantPlaces,
   type PostStats,
+  type WalletStats,
   type AccountActivity,
   type LnurlInvoice,
   type LnurlPayRequest,
@@ -1515,6 +1517,25 @@ export async function fetchPostStats(): Promise<PostStats> {
   }
 }
 
+/**
+ * Fetches self-reported 21.gifts wallet totals and the daily balance series.
+ *
+ * @returns The {@link WalletStats} payload.
+ * @throws Error with visitor-facing copy when the api is unavailable or the
+ * body fails {@link walletStatsSchema}.
+ */
+export async function fetchWalletStats(): Promise<WalletStats> {
+  try {
+    const response = await fetch('/wallets/stats');
+    if (!response.ok) {
+      throw new Error('Could not load wallet stats. Please try again.');
+    }
+    return walletStatsSchema.parse(await response.json());
+  } catch {
+    throw new Error('Could not load wallet stats. Please try again.');
+  }
+}
+
 const TRUST_CHAIN_LOAD_ERROR = 'Could not load the Trust Chain. Please try again.';
 const TRUST_ACTION_ERROR = 'Could not update this member. Please try again.';
 
@@ -1941,7 +1962,7 @@ async function postFundingAction(
 /**
  * Admits a member to daily grant payouts (staff). Target pending or trial.
  *
- * @param sessionToken - Bearer session of a founder or moderator.
+ * @param sessionToken - Bearer session of at least moderator.
  * @param accountId - Subject account id.
  * @returns The updated account snapshot.
  * @throws Error({@link FUNDING_PLACES_FULL_ERROR}) when the round has no free
@@ -1958,7 +1979,7 @@ export async function postFundingAdmit(
 /**
  * Rejects a grant application (staff). The subject may re-apply.
  *
- * @param sessionToken - Bearer session of a founder or moderator.
+ * @param sessionToken - Bearer session of at least moderator.
  * @param accountId - Subject account id.
  * @returns The updated account snapshot.
  * @throws Error with visitor-facing copy on 401/403/404/409/503 or any other failure.

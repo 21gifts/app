@@ -13,7 +13,7 @@ import { useAuthStore } from '@/stores/auth-store';
 
 /**
  * Member card drawn from the signed-in account until `fetchMember` returns.
- * Counts stay at zero on that first paint. The staff label and the funding
+ * Counts stay at zero on that first paint. The api role pill and the funding
  * admission stay on this card when the fetch has not arrived or has failed.
  * The fetched card replaces it.
  *
@@ -43,7 +43,6 @@ function ownerPreview(account: Account): MemberProfile {
     aboutMe: account.aboutMe,
     aboutMeHasPhoto: account.aboutMeHasPhoto === true,
     ...(typeof username === 'string' ? { username } : {}),
-    ...(account.staffTag === 'software_developer' ? { staffTag: account.staffTag } : {}),
     ...fundingMarks,
     trust: {
       verifiedBy: null,

@@ -3956,13 +3956,14 @@ describe('ForumBoard', () => {
     expect(screen.queryByRole('status')).toBeNull();
   });
 
-  it('shows Founder, Moderator, Fond, Initiator, and Verified tags for those roles', () => {
+  it('shows Founder, Moderator, Fond, Software Developer, Initiator, and Verified tags', () => {
     renderWithLocale(
       <ForumBoard
         messages={[
           { ...SAMPLE, id: 'm-founder', role: 'founder' },
           { ...SAMPLE, id: 'm-mod', name: 'Bob', role: 'moderator' },
           { ...SAMPLE, id: 'm-fond', name: 'Fiona', role: 'fond' },
+          { ...SAMPLE, id: 'm-dev', name: 'Dev', role: 'software_developer' },
           { ...SAMPLE, id: 'm-init', name: 'Ivy', role: 'initiator' },
           { ...SAMPLE, id: 'm-ver', name: 'Carol', role: 'verified' },
         ]}
@@ -3981,6 +3982,7 @@ describe('ForumBoard', () => {
     expect(screen.getByRole('button', { name: 'Founder' })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Moderator' })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Fond' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Software Developer' })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Initiator' })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Verified' })).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Fond' }));
@@ -3992,10 +3994,10 @@ describe('ForumBoard', () => {
     expect(screen.getByRole('status').textContent).toBe('This person was named an initiator.');
   });
 
-  it('shows a Software Developer label on a basis top-level note as text, not a button', () => {
+  it('shows one Software Developer tag with hint on a note', () => {
     renderWithLocale(
       <ForumBoard
-        messages={[{ ...SAMPLE, staffTag: 'software_developer' }]}
+        messages={[{ ...SAMPLE, role: 'software_developer' }]}
         error={false}
         loading={false}
         posting={false}
@@ -4008,11 +4010,17 @@ describe('ForumBoard', () => {
         {...modeProps('all')}
       />,
     );
-    expect(screen.getByText('Software Developer')).toBeTruthy();
-    expect(screen.queryByRole('button', { name: 'Software Developer' })).toBeNull();
+    const tag = screen.getByRole('button', { name: 'Software Developer' });
+    expect(screen.getAllByText('Software Developer')).toHaveLength(1);
+    expect(screen.queryByRole('button', { name: 'Verified' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Moderator' })).toBeNull();
+    fireEvent.click(tag);
+    expect(
+      screen.getByText('This person builds 21.gifts and moderates the living room.'),
+    ).toBeTruthy();
   });
 
-  it('omits the Software Developer label when staffTag is absent', () => {
+  it('omits the Software Developer tag for a basis note', () => {
     renderWithLocale(
       <ForumBoard
         messages={[SAMPLE]}
@@ -4031,7 +4039,7 @@ describe('ForumBoard', () => {
     expect(screen.queryByText('Software Developer')).toBeNull();
   });
 
-  it('shows a Software Developer label on a reply', () => {
+  it('shows one Software Developer tag with hint on a reply', () => {
     renderWithLocale(
       <ForumBoard
         messages={[{ ...SAMPLE, replyCount: 1 }]}
@@ -4048,100 +4056,33 @@ describe('ForumBoard', () => {
         replies={[
           {
             ...SAMPLE,
-            id: 'r-staff',
+            id: 'r-dev',
             name: 'Bob',
-            role: 'basis',
             replyCount: 0,
-            staffTag: 'software_developer',
+            role: 'software_developer',
           },
         ]}
         {...modeProps('all')}
       />,
     );
-    expect(screen.getByText('Software Developer')).toBeTruthy();
-  });
-
-  it('hides the Verified button when Software Developer is shown on a top-level note', () => {
-    renderWithLocale(
-      <ForumBoard
-        messages={[{ ...SAMPLE, role: 'verified', staffTag: 'software_developer' }]}
-        error={false}
-        loading={false}
-        posting={false}
-        draft=""
-        onDraftChange={() => undefined}
-        onPost={() => undefined}
-        onRetry={() => undefined}
-        formError={null}
-        {...idleProps}
-        {...modeProps('all')}
-      />,
-    );
-    expect(screen.getByText('Software Developer')).toBeTruthy();
+    const tag = screen.getByRole('button', { name: 'Software Developer' });
+    expect(screen.getAllByText('Software Developer')).toHaveLength(1);
     expect(screen.queryByRole('button', { name: 'Verified' })).toBeNull();
+    fireEvent.click(tag);
+    expect(
+      screen.getByText('This person builds 21.gifts and moderates the living room.'),
+    ).toBeTruthy();
   });
 
-  it('hides the Verified button when Software Developer is shown on a reply', () => {
-    renderWithLocale(
-      <ForumBoard
-        messages={[{ ...SAMPLE, replyCount: 1 }]}
-        error={false}
-        loading={false}
-        posting={false}
-        draft=""
-        onDraftChange={() => undefined}
-        onPost={() => undefined}
-        onRetry={() => undefined}
-        formError={null}
-        {...idleProps}
-        expandedId="m1"
-        replies={[
-          {
-            ...SAMPLE,
-            id: 'r-staff-verified',
-            name: 'Bob',
-            role: 'verified',
-            replyCount: 0,
-            staffTag: 'software_developer',
-          },
-        ]}
-        {...modeProps('all')}
-      />,
-    );
-    expect(screen.getByText('Software Developer')).toBeTruthy();
-    expect(screen.queryByRole('button', { name: 'Verified' })).toBeNull();
-  });
-
-  it('keeps the Moderator button and Software Developer label together', () => {
-    renderWithLocale(
-      <ForumBoard
-        messages={[{ ...SAMPLE, role: 'moderator', staffTag: 'software_developer' }]}
-        error={false}
-        loading={false}
-        posting={false}
-        draft=""
-        onDraftChange={() => undefined}
-        onPost={() => undefined}
-        onRetry={() => undefined}
-        formError={null}
-        {...idleProps}
-        {...modeProps('all')}
-      />,
-    );
-    expect(screen.getByRole('button', { name: 'Moderator' })).toBeTruthy();
-    expect(screen.getByText('Software Developer')).toBeTruthy();
-  });
-
-  it('hides Verified and External when Software Developer is shown on a verified nostr note', () => {
+  it('shows one Software Developer tag and no Verified or External badge on a nostr note', () => {
     renderWithLocale(
       <ForumBoard
         messages={[
           {
             ...SAMPLE,
             via: 'nostr',
-            role: 'verified',
+            role: 'software_developer',
             payable: false,
-            staffTag: 'software_developer',
           },
         ]}
         error={false}
@@ -4156,29 +4097,9 @@ describe('ForumBoard', () => {
         {...modeProps('all')}
       />,
     );
-    expect(screen.getByText('Software Developer')).toBeTruthy();
+    expect(screen.getAllByText('Software Developer')).toHaveLength(1);
     expect(screen.queryByRole('button', { name: 'Verified' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'External' })).toBeNull();
-  });
-
-  it('keeps the External button and Software Developer label together', () => {
-    renderWithLocale(
-      <ForumBoard
-        messages={[{ ...SAMPLE, via: 'nostr', payable: false, staffTag: 'software_developer' }]}
-        error={false}
-        loading={false}
-        posting={false}
-        draft=""
-        onDraftChange={() => undefined}
-        onPost={() => undefined}
-        onRetry={() => undefined}
-        formError={null}
-        {...idleProps}
-        {...modeProps('all')}
-      />,
-    );
-    expect(screen.getByRole('button', { name: 'External' })).toBeTruthy();
-    expect(screen.getByText('Software Developer')).toBeTruthy();
   });
 
   it('shows Founder, Moderator, and Verified tags on replies', () => {

@@ -21,13 +21,17 @@ export const TRUST_CHAIN_ARC_LIFT = 56;
 /** Outer padding around the graph in CSS pixels. */
 const PAD = 16;
 
-/** Stacked-sibling order: founder, initiator, fond, moderator, then verified. */
+/**
+ * Stacked-sibling order follows descending role rank: founder, initiator,
+ * software developer, fond, moderator, then verified.
+ */
 const TRUST_STACK_ROLE_RANK: Record<TrustChainNode['role'], number> = {
   founder: 0,
   initiator: 1,
-  fond: 2,
-  moderator: 3,
-  verified: 4,
+  software_developer: 2,
+  fond: 3,
+  moderator: 4,
+  verified: 5,
 };
 
 /**
@@ -80,9 +84,10 @@ function edgeKey(edge: TrustChainEdge): string {
  * Positions Trust Chain nodes (no DOM).
  *
  * Roots sit in one row. A person with a single next person sits to their
- * right. Several people hanging off one person stack top to bottom by role
- * (founder, initiator, fond, moderator, then verified); same-rank siblings
- * keep edge order, not side by side.
+ * right. Several people hanging off one person stack top to bottom by
+ * descending role rank (founder, initiator, software developer, fond,
+ * moderator, then verified); same-rank siblings keep edge order, not side by
+ * side.
  *
  * @param chain - Nodes and directed edges from `GET /trust-chain`.
  * @returns Laid-out nodes, the input edges unchanged, and bounding width/height.

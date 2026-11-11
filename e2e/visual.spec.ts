@@ -919,6 +919,49 @@ const STATS_EMPTY = {
   fx: FX_USD,
 };
 
+const WALLET_STATS_DEFAULT = {
+  walletCount: 61,
+  fundedWalletCount: 32,
+  totalSats: 89096,
+  totalBtc: '0.00089096',
+  asOf: '2026-11-10T06:21:04.985Z',
+  balanceOverTime: [
+    {
+      day: '2026-11-09',
+      totalSats: 80000,
+      totalBtc: '0.00080000',
+      walletCount: 55,
+      fundedWalletCount: 30,
+    },
+    {
+      day: '2026-11-10',
+      totalSats: 89096,
+      totalBtc: '0.00089096',
+      walletCount: 61,
+      fundedWalletCount: 32,
+    },
+  ],
+};
+
+/**
+ * Serves the self-reported wallet series so `/stats` wallet baselines include it.
+ *
+ * @param page - Playwright page.
+ * @param body - Wallet stats payload. Defaults to {@link WALLET_STATS_DEFAULT}.
+ */
+async function stubWalletStats(
+  page: Page,
+  body: { walletCount: number } = WALLET_STATS_DEFAULT,
+): Promise<void> {
+  await page.route('**/wallets/stats', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(body),
+    });
+  });
+}
+
 /**
  * True when this visual run is a mobile combo project.
  *
@@ -11527,8 +11570,7 @@ test.describe('onboarding screens', () => {
               sats: 5,
               payable: true,
               hasPhoto: false,
-              role: 'moderator',
-              staffTag: 'software_developer',
+              role: 'software_developer',
             },
           ],
         }),
@@ -11537,6 +11579,11 @@ test.describe('onboarding screens', () => {
     await page.goto('/welcome');
     await expect(page.getByRole('button', { name: 'Translate' })).toBeVisible();
     await expect(page.getByText('Software Developer')).toBeVisible();
+    const softwareDeveloperNote = page.locator('[data-message-id="m-de"]');
+    await expect(
+      softwareDeveloperNote.getByRole('button', { name: 'Software Developer' }),
+    ).toHaveCount(1);
+    await expect(softwareDeveloperNote.getByRole('button', { name: 'Moderator' })).toHaveCount(0);
     await shotScreen(page, 'state-welcome-software-developer');
   });
 
@@ -12484,11 +12531,15 @@ test.describe('onboarding screens', () => {
         });
       },
     );
-    await stubOwnMember(page, { staffTag: 'software_developer' });
+    await stubOwnMember(page, { role: 'software_developer' });
     await openProfile(page);
     await expect(page.getByRole('heading', { name: 'Profile' })).toBeVisible();
     await expect(page.getByText('Software Developer')).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Verified' })).toHaveCount(0);
+    const profileCard = page.getByRole('heading', { name: 'Profile' }).locator('..');
+    const profileNameRow = profileCard.getByText('Ada', { exact: true }).locator('..');
+    await expect(profileNameRow.getByRole('button', { name: 'Software Developer' })).toHaveCount(1);
+    await expect(profileNameRow.getByRole('button', { name: 'Moderator' })).toHaveCount(0);
+    await expect(profileNameRow.getByRole('button', { name: 'Verified' })).toHaveCount(0);
     await shotScreen(page, 'state-profile-software-developer');
   });
 
@@ -14845,8 +14896,7 @@ test.describe('onboarding screens', () => {
           id: memberId,
           name: 'Carol',
           location: null,
-          role: 'basis',
-          staffTag: 'software_developer',
+          role: 'software_developer',
           username: 'carol',
           lightningAddress: 'carol@walletofsatoshi.com',
           createdAt: '2026-01-15T12:00:00.000Z',
@@ -14860,8 +14910,7 @@ test.describe('onboarding screens', () => {
             sats: 21,
             payable: true,
             hasPhoto: false,
-            role: 'basis',
-            staffTag: 'software_developer',
+            role: 'software_developer',
             replyCount: 0,
           },
           postCount: 1,
@@ -14883,6 +14932,11 @@ test.describe('onboarding screens', () => {
     await expect(page.getByRole('button', { name: 'Copy link to this profile' })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Message' })).toBeVisible();
     await expect(page.getByText('Software Developer')).toBeVisible();
+    const memberCard = page.getByRole('heading', { name: 'Profile' }).locator('..');
+    const memberNameRow = memberCard.getByText('Carol', { exact: true }).locator('..');
+    await expect(memberNameRow.getByRole('button', { name: 'Software Developer' })).toHaveCount(1);
+    await expect(memberNameRow.getByRole('button', { name: 'Moderator' })).toHaveCount(0);
+    await expect(memberNameRow.getByRole('button', { name: 'Verified' })).toHaveCount(0);
     await shotScreen(page, 'state-members-accountId-software-developer');
   });
 
@@ -27402,8 +27456,7 @@ test.describe('profile activity chart variants', () => {
           name: 'Ada',
           location: null,
           username: 'alice',
-          role: 'basis',
-          staffTag: 'software_developer',
+          role: 'software_developer',
           lightningAddress: 'member@21.gifts',
           lightningAddressVerified: true,
           createdAt: 1,
@@ -42325,6 +42378,49 @@ test.describe('trust-chain screens', () => {
 });
 
 test.describe('stats variant baselines', () => {
+  test('stats wallets', async ({ page }) => {
+    await stubPostStats(page);
+    await stubWalletStats(page);
+    await fulfillSpot(page);
+    await page.route('**/gifts/stats', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(STATS_DEFAULT),
+      });
+    });
+    await page.goto('/stats');
+    const wallets = page.getByRole('region', { name: 'Wallets' });
+    await expect(wallets).toBeVisible();
+    await expect(page.getByLabel('Wallet balance over time in ₿')).toBeVisible();
+    // The In wallets fiat line appears only after GET /fx/spot resolves.
+    await expect(wallets.getByText('$89.10', { exact: true })).toBeVisible();
+    await shotScreen(page, 'state-stats-wallets');
+  });
+
+  test('stats wallets-no-rate', async ({ page }) => {
+    await stubPostStats(page);
+    await stubWalletStats(page);
+    await fulfillSpot(page, {});
+    await page.route('**/gifts/stats', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(STATS_DEFAULT),
+      });
+    });
+    const spot = page.waitForResponse('**/fx/spot');
+    await page.goto('/stats');
+    await spot;
+    const wallets = page.getByRole('region', { name: 'Wallets' });
+    await expect(wallets).toBeVisible();
+    await expect(page.getByLabel('Wallet balance over time in ₿')).toBeVisible();
+    // Bitcoin stands alone only after GET /fx/spot settles with no rate.
+    await expect(wallets.locator('dl').getByText("₿89'096", { exact: true })).toBeVisible();
+    await expect(wallets.getByText('$89.10', { exact: true })).toHaveCount(0);
+    await shotScreen(page, 'state-stats-wallets-no-rate');
+  });
+
   test('stats usd-scale', async ({ page }) => {
     await stubPostStats(page);
     await page.route('**/gifts/stats', async (route) => {

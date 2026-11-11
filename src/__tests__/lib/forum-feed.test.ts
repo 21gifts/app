@@ -215,6 +215,14 @@ describe('forum-feed', () => {
     ]);
   });
 
+  it('active keeps an unpaid software developer note', () => {
+    const developer = {
+      ...UNPAID_VERIFIED,
+      role: 'software_developer' as const,
+    };
+    expect(visibleForumMessages([ADA, developer, BOB], 'active')).toEqual([ADA, developer]);
+  });
+
   it('active drops an unpaid verified note', () => {
     expect(visibleForumMessages([ADA, UNPAID_VERIFIED, BOB], 'active')).toEqual([ADA]);
   });

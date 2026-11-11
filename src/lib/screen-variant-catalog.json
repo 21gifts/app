@@ -6708,6 +6708,18 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/stats:wallets",
+    "label": "/stats wallets",
+    "visual": "state-stats-wallets",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/stats:wallets-no-rate",
+    "label": "/stats wallets-no-rate",
+    "visual": "state-stats-wallets-no-rate",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/stats:empty",
     "label": "/stats empty",
     "visual": "state-stats-empty",

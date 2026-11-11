@@ -309,7 +309,7 @@ const IDLE_BOARD = {
  *   `omitPills` (default false) hides those pills. The routed pages do not
  *   use either flag. When the signed-in account id equals this profile, the
  *   full card shows the owner photo, About me, name, and location editors.
- *   The role, staff, and funding marks stay beside the name. Visitor images
+ *   The api role pill and funding marks stay beside the name. Visitor images
  *   load only when `factsOnly` is false and the viewer is not the owner. A
  *   missing public photo or wide image draws nothing. `activityFailed`
  *   (default false) is passed to both charts as `failed`. `loadPublicList`
