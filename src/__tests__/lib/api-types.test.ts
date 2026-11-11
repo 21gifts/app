@@ -409,6 +409,14 @@ describe('trustChainSchema', () => {
     };
     expect(trustChainSchema.parse(body)).toEqual(body);
   });
+
+  it('accepts a fond node', () => {
+    const body = {
+      nodes: [{ id: 'fond', name: 'Fiona', role: 'fond' as const }],
+      edges: [],
+    };
+    expect(trustChainSchema.parse(body)).toEqual(body);
+  });
 });
 
 describe('trustActionResultSchema', () => {
@@ -1726,8 +1734,9 @@ describe('accountSchema', () => {
     expect(() => accountSchema.parse({ ...account, name: '' })).toThrow();
   });
 
-  it('accepts founder, software developer, and verified roles', () => {
+  it('accepts founder, fond, software developer, and verified roles', () => {
     expect(accountSchema.parse({ ...account, role: 'founder' }).role).toBe('founder');
+    expect(accountSchema.parse({ ...account, role: 'fond' }).role).toBe('fond');
     expect(accountSchema.parse({ ...account, role: 'software_developer' }).role).toBe(
       'software_developer',
     );
@@ -2063,8 +2072,9 @@ describe('forumMessageSchema', () => {
     });
   });
 
-  it('accepts founder, software developer, verified, and moderator roles', () => {
+  it('accepts founder, fond, software developer, verified, and moderator roles', () => {
     expect(forumMessageSchema.parse({ ...message, role: 'founder' }).role).toBe('founder');
+    expect(forumMessageSchema.parse({ ...message, role: 'fond' }).role).toBe('fond');
     expect(forumMessageSchema.parse({ ...message, role: 'software_developer' }).role).toBe(
       'software_developer',
     );

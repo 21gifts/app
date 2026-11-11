@@ -20,6 +20,7 @@ const EXPLAIN_FOUNDER = 'A founder started 21.gifts and is the first link of the
 const EXPLAIN_INITIATOR = 'An initiator is named directly. There is no proposal step.';
 const EXPLAIN_SOFTWARE_DEVELOPER =
   'A software developer builds 21.gifts and is in the moderators’ group, with every moderator permission. They cannot edit the daily payout roster.';
+const EXPLAIN_FOND = 'Fond: pays the daily gifts from the 21.gifts fund.';
 
 describe('TrustChainScreen', () => {
   it('shows loading copy and the role explanation', () => {

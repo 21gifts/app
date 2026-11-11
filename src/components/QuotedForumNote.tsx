@@ -24,11 +24,12 @@ type ShortHit = { code: string; messageId: string };
 const NO_SHORT_HITS: ShortHit[] = [];
 
 const ROLE_LABEL_KEYS: Record<
-  'founder' | 'moderator' | 'software_developer' | 'initiator' | 'verified',
+  'founder' | 'moderator' | 'fond' | 'software_developer' | 'initiator' | 'verified',
   MessageKey
 > = {
   founder: 'forum.role.founder',
   moderator: 'forum.role.moderator',
+  fond: 'forum.role.fond',
   software_developer: 'forum.role.softwareDeveloper',
   initiator: 'forum.role.initiator',
   verified: 'forum.role.verified',

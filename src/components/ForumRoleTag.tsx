@@ -7,13 +7,14 @@ import { effectiveRole, type Role } from '@/lib/roles';
 
 /** Roles that show a clickable tag beside a forum member's name. */
 export type ForumTaggedRole =
-  'founder' | 'moderator' | 'software_developer' | 'initiator' | 'verified';
+  'founder' | 'moderator' | 'fond' | 'software_developer' | 'initiator' | 'verified';
 
 /** Catalog keys for a tagged forum role's label and explanation. */
 export const FORUM_ROLE_TAG_KEYS: Record<ForumTaggedRole, { label: MessageKey; hint: MessageKey }> =
   {
     founder: { label: 'forum.role.founder', hint: 'forum.role.founderHint' },
     moderator: { label: 'forum.role.moderator', hint: 'forum.role.moderatorHint' },
+    fond: { label: 'forum.role.fond', hint: 'forum.role.fondHint' },
     software_developer: {
       label: 'forum.role.softwareDeveloper',
       hint: 'forum.role.softwareDeveloperHint',

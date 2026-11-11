@@ -3956,12 +3956,13 @@ describe('ForumBoard', () => {
     expect(screen.queryByRole('status')).toBeNull();
   });
 
-  it('shows all five role tags', () => {
+  it('shows Founder, Moderator, Fond, Software Developer, Initiator, and Verified tags', () => {
     renderWithLocale(
       <ForumBoard
         messages={[
           { ...SAMPLE, id: 'm-founder', role: 'founder' },
           { ...SAMPLE, id: 'm-mod', name: 'Bob', role: 'moderator' },
+          { ...SAMPLE, id: 'm-fond', name: 'Fiona', role: 'fond' },
           { ...SAMPLE, id: 'm-dev', name: 'Dev', role: 'software_developer' },
           { ...SAMPLE, id: 'm-init', name: 'Ivy', role: 'initiator' },
           { ...SAMPLE, id: 'm-ver', name: 'Carol', role: 'verified' },
@@ -3980,6 +3981,7 @@ describe('ForumBoard', () => {
     );
     expect(screen.getByRole('button', { name: 'Founder' })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Moderator' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Fond' })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Software Developer' })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Initiator' })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Verified' })).toBeTruthy();

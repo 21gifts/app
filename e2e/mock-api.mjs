@@ -57,7 +57,85 @@ function heldShareBoxIdFromPath(pathName) {
 }
 
 /** Same order as `ROLE_ORDER` in `src/lib/roles.ts`: a named role means that role or higher. */
-const ROLE_ORDER = ['basis', 'verified', 'moderator', 'software_developer', 'initiator', 'founder'];
+const ROLE_ORDER = [
+  'basis',
+  'verified',
+  'moderator',
+  'fond',
+  'software_developer',
+  'initiator',
+  'founder',
+];
+
+/** The one open payout each Fond fixture account sees today. */
+const FOND_PAYOUT_ROW = {
+  id: '11111111-1111-4111-8111-111111111111',
+  kind: 'daily',
+  status: 'owed',
+  utcDay: '2026-01-07',
+  paymentHash: null,
+};
+
+/** BOLT11 and fee-free Spark invoice the fixture returns. */
+const FOND_INVOICE = {
+  bolt11: 'lnbc1e2efondpayout',
+  sparkInvoice: 'spark1e2efondpayout',
+};
+
+/** The fixture invoice's payment hash, as the api identifies the send. */
+const FOND_PAYMENT_HASH = 'ab'.repeat(32);
+
+/**
+ * Per-session Fond fixture state. Keeping it per bearer lets parallel tests
+ * each invoice and settle their own fixture row.
+ *
+ * @type {Map<string, { lists: number, invoices: number, invoiceRequests: number, invoice: { id: string, bolt11: string, paymentHash: string, sparkInvoice: string | null } | null, sparkInvoice: string | null, settled: boolean }>}
+ */
+const fondPayoutStates = new Map();
+
+/**
+ * The Fond fixture state of one session, created empty on first use.
+ *
+ * @param {string} token - Bearer session.
+ * @returns The session's list, invoice, and settlement state.
+ */
+function fondPayoutState(token) {
+  let state = fondPayoutStates.get(token);
+  if (state === undefined) {
+    state = {
+      lists: 0,
+      invoices: 0,
+      invoiceRequests: 0,
+      invoice: null,
+      sparkInvoice: FOND_INVOICE.sparkInvoice,
+      settled: false,
+    };
+    fondPayoutStates.set(token, state);
+  }
+  return state;
+}
+
+/**
+ * The fixture row as the api would list it now: still owed before an invoice,
+ * `invoiced` with that invoice's payment hash after one, and gone once the
+ * worker records the send.
+ *
+ * @param {{ invoice: { paymentHash: string } | null, settled: boolean }} state - Session state.
+ * @returns The row, or `null` when the api worker has settled it.
+ */
+function fondPayoutRow(state) {
+  if (state.settled) {
+    return null;
+  }
+  if (state.invoice === null) {
+    return FOND_PAYOUT_ROW;
+  }
+  return {
+    ...FOND_PAYOUT_ROW,
+    status: 'invoiced',
+    paymentHash: state.invoice.paymentHash,
+  };
+}
 
 function roleAtLeast(role, min) {
   return ROLE_ORDER.indexOf(role) >= ROLE_ORDER.indexOf(min);

@@ -82,6 +82,20 @@ describe('MemberIdentityPills', () => {
     expect(screen.queryByRole('button', { name: 'Verified' })).toBeNull();
   });
 
+  it('shows the Fond pill and its sentence', () => {
+    renderPills({ ...profile, role: 'fond' });
+    fireEvent.click(screen.getByRole('button', { name: 'Fond' }));
+    expect(screen.getByRole('status').textContent).toBe(
+      'This account pays the daily gifts from the 21.gifts fund.',
+    );
+  });
+
+  it('hides the verified pill when the software developer label is shown', () => {
+    renderPills({ ...profile, staffTag: 'software_developer' });
+    expect(screen.getByText('Software Developer')).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Verified' })).toBeNull();
+  });
+
   it('reveals who admitted the member', () => {
     renderPills({
       ...profile,

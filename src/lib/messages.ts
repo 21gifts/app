@@ -1175,11 +1175,13 @@ const en = {
   'forum.lawsDismiss': 'Dismiss',
   'forum.role.founder': 'Founder',
   'forum.role.moderator': 'Moderator',
+  'forum.role.fond': 'Fond',
   'forum.role.softwareDeveloper': 'Software Developer',
   'forum.role.initiator': 'Initiator',
   'forum.role.verified': 'Verified',
   'forum.role.founderHint': 'This person founded 21.gifts.',
   'forum.role.moderatorHint': 'This person helps keep the living room in order.',
+  'forum.role.fondHint': 'This account pays the daily gifts from the 21.gifts fund.',
   'forum.role.softwareDeveloperHint': 'This person builds 21.gifts and moderates the living room.',
   'forum.role.initiatorHint': 'This person was named an initiator.',
   'forum.role.verifiedHint':
@@ -1654,6 +1656,7 @@ const en = {
     'Verified means a moderator met the person in real life and confirmed they are real. It is not a wallet proof.',
   'trustChain.explainModerator':
     'To become a moderator, an existing moderator proposes the person and a different moderator confirms — or a founder appoints them directly.',
+  'trustChain.explainFond': 'Fond: pays the daily gifts from the 21.gifts fund.',
   'trustChain.explainSoftwareDeveloper':
     'A software developer builds 21.gifts and is in the moderators’ group, with every moderator permission. They cannot edit the daily payout roster.',
   'trustChain.explainInitiator': 'An initiator is named directly. There is no proposal step.',
@@ -2990,11 +2993,13 @@ const de = {
   'forum.lawsDismiss': 'Schließen',
   'forum.role.founder': 'Gründer',
   'forum.role.moderator': 'Moderator',
+  'forum.role.fond': 'Fond',
   'forum.role.softwareDeveloper': 'Software-Entwickler',
   'forum.role.initiator': 'Initiator',
   'forum.role.verified': 'Verifiziert',
   'forum.role.founderHint': 'Diese Person hat 21.gifts gegründet.',
   'forum.role.moderatorHint': 'Diese Person hilft, das Wohnzimmer in Ordnung zu halten.',
+  'forum.role.fondHint': 'Dieses Konto zahlt die täglichen Geschenke aus dem 21.gifts-Fonds.',
   'forum.role.softwareDeveloperHint':
     'Diese Person entwickelt 21.gifts und moderiert das Wohnzimmer.',
   'forum.role.initiatorHint': 'Diese Person wurde als Initiator benannt.',
@@ -3496,6 +3501,7 @@ const de = {
     'Verifiziert bedeutet, dass eine Moderatorin oder ein Moderator die Person im echten Leben getroffen und bestätigt hat, dass sie echt ist. Das ist kein Wallet-Nachweis.',
   'trustChain.explainModerator':
     'Um Moderatorin oder Moderator zu werden, schlägt eine bestehende Moderatorin oder ein bestehender Moderator die Person vor, und eine andere Moderatorin oder ein anderer Moderator bestätigt — oder eine Gründerperson ernennt sie direkt.',
+  'trustChain.explainFond': 'Fond: Zahlt die täglichen Geschenke aus dem 21.gifts-Fonds.',
   'trustChain.explainSoftwareDeveloper':
     'Eine Software-Entwicklerin oder ein Software-Entwickler baut 21.gifts und gehört zur Moderatorengruppe mit allen Moderationsrechten. Die tägliche Auszahlungsliste darf sie oder er nicht bearbeiten.',
   'trustChain.explainInitiator':
@@ -4811,11 +4817,13 @@ const es = {
   'forum.lawsDismiss': 'Cerrar',
   'forum.role.founder': 'Fundador',
   'forum.role.moderator': 'Moderador',
+  'forum.role.fond': 'Fondo',
   'forum.role.softwareDeveloper': 'Desarrollador de software',
   'forum.role.initiator': 'Iniciador',
   'forum.role.verified': 'Verificado',
   'forum.role.founderHint': 'Esta persona fundó 21.gifts.',
   'forum.role.moderatorHint': 'Esta persona ayuda a mantener el salón en orden.',
+  'forum.role.fondHint': 'Esta cuenta paga los regalos diarios del fondo de 21.gifts.',
   'forum.role.softwareDeveloperHint': 'Esta persona desarrolla 21.gifts y modera el salón.',
   'forum.role.initiatorHint': 'Esta persona fue nombrada iniciadora.',
   'forum.role.verifiedHint':
@@ -5298,6 +5306,7 @@ const es = {
     'Verificado significa que una persona moderadora conoció a esta persona en la vida real y confirmó que es real. No es una prueba de monedero.',
   'trustChain.explainModerator':
     'Para ser moderadora o moderador, una persona moderadora existente propone a la persona y otra distinta confirma — o una persona fundadora la nombra directamente.',
+  'trustChain.explainFond': 'Fondo: Paga los regalos diarios del fondo de 21.gifts.',
   'trustChain.explainSoftwareDeveloper':
     'Una persona desarrolladora de software construye 21.gifts y está en el grupo de moderación, con todos los permisos de moderación. No puede editar la lista diaria de pagos.',
   'trustChain.explainInitiator':
@@ -6616,11 +6625,14 @@ const fil = {
   'forum.lawsDismiss': 'Isara',
   'forum.role.founder': 'Tagapagtatag',
   'forum.role.moderator': 'Moderator',
+  'forum.role.fond': 'Fond',
   'forum.role.softwareDeveloper': 'Developer ng software',
   'forum.role.initiator': 'Initiator',
   'forum.role.verified': 'Verified',
   'forum.role.founderHint': 'Ang taong ito ang nagtatag ng 21.gifts.',
   'forum.role.moderatorHint': 'Tumutulong ang taong ito na panatilihing maayos ang living room.',
+  'forum.role.fondHint':
+    'Binabayaran ng account na ito ang mga araw-araw na regalo mula sa pondo ng 21.gifts.',
   'forum.role.softwareDeveloperHint':
     'Ang taong ito ang gumagawa ng 21.gifts at nagmo-moderate ng living room.',
   'forum.role.initiatorHint': 'Ang taong ito ay pinangalanang Initiator.',
@@ -7108,6 +7120,8 @@ const fil = {
     'Ang Verified ay nangangahulugang isang moderator ang nakilala ang tao sa totoo at kinumpirmang totoo siya. Hindi ito patunay ng wallet.',
   'trustChain.explainModerator':
     'Para maging moderator, nagmumungkahi ang isang kasalukuyang moderator at ibang moderator ang kumukumpirma — o diretsong itinatalaga sila ng founder.',
+  'trustChain.explainFond':
+    'Fond: Nagbabayad ng mga araw-araw na regalo mula sa pondo ng 21.gifts.',
   'trustChain.explainSoftwareDeveloper':
     'Ang developer ng software ay gumagawa ng 21.gifts at kabilang sa grupo ng mga moderator, kasama ang lahat ng pahintulot ng moderator. Hindi niya maaaring i-edit ang pang-araw-araw na listahan ng bayad.',
   'trustChain.explainInitiator':

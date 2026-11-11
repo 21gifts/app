@@ -179,8 +179,8 @@ export const accountSchema = z.object({
  * An authenticated 21.gifts account.
  *
  * `role` is the live membership tier (`basis`, `verified`, `moderator`,
- * `software_developer`, `initiator`, or `founder`); `linkingKey` is a leftover
- * wallet public key from the retired LNURL-auth login, or `null` for
+ * `fond`, `software_developer`, `initiator`, or `founder`); `linkingKey` is a
+ * leftover wallet public key from the retired LNURL-auth login, or `null` for
  * passkey-created accounts.
  * `name` is the non-empty display name, or `null` until the giver sets one.
  * `location` is an optional free-text place (never `""`; empty clears to `null`).
@@ -1641,7 +1641,7 @@ export type MemberProfile = z.infer<typeof memberProfileSchema>;
 export const trustChainNodeSchema = z.object({
   id: z.string(),
   name: z.string().nullable(),
-  role: z.enum(['verified', 'moderator', 'software_developer', 'initiator', 'founder']),
+  role: z.enum(['verified', 'moderator', 'fond', 'software_developer', 'initiator', 'founder']),
 });
 
 /**

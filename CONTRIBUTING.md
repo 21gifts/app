@@ -574,7 +574,7 @@ update stuff
   values; explicitly optional ones (`getE2eNow`, `getBreezApiKey`,
   `getPlatformUsername`, `getSentryDsn`, `getSentryEnvironment`,
   `getSentryTracesSampleRate`) return `null`. No silent fallbacks.
-- **Viewer permission checks use `roleAtLeast`** (`src/lib/roles.ts`), never an equality test on the viewer's role — a higher role can always do and see everything a lower role can. There is no exception: the daily payout roster is `roleAtLeast(role, 'initiator')`. The rank order is basis < verified < moderator < software_developer < initiator < founder. The software developer is in the moderators' group and has every moderator permission, but cannot edit the daily payout roster because it ranks below initiator.
+- **Viewer permission checks use `roleAtLeast`** (`src/lib/roles.ts`), never an equality test on the viewer's role — a higher role must always do and see everything a lower role can. Every viewer permission check, including the daily payout roster (`canEditDailyPayoutRoster` in `src/lib/roles.ts`), is a `roleAtLeast` minimum; the roster's minimum is `initiator`. No equality checks. The rank order is basis 0, verified 1, moderator 2, fond 3, software_developer 4, initiator 5, founder 6. The software developer is in the moderators' group and has every moderator permission, but cannot edit the daily payout roster because it ranks below initiator. `fond` also ranks below initiator and cannot edit that roster.
 
 ### Styling
 
