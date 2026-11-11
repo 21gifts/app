@@ -532,15 +532,15 @@ app/
 
 ### Branches
 
-| Branch    | Purpose                            | Deploy target |
-| --------- | ---------------------------------- | ------------- |
-| `develop` | Default branch, active development | DEV           |
-| `staging` | Experimental testing               | staging       |
-| `main`    | Production releases                | PRD           |
+| Branch    | Purpose                                                          | Deploy target |
+| --------- | ---------------------------------------------------------------- | ------------- |
+| `develop` | Default branch, active development                               | DEV           |
+| `staging` | Experimental testing (branch currently absent, no pull requests) | staging       |
+| `main`    | Production releases                                              | PRD           |
 
 - Open feature work through a **feature branch and a pull request**. Feature pull requests target `develop`; they must not target `main` or `staging`.
 - `main` is protected. The only pull request that may target `main` is the automatic release (`Release: develop -> main`). Production still deploys when `main` itself is pushed.
-- **Hard requirement:** `staging` is the environment for experimental testing. It publishes `21gifts/app:staging`. No pull request targets `staging` at present. When the `staging` branch exists, its changes reach `develop` only through a release pull request (`Release: staging -> develop`); that release is the explicit request to target `develop`. `main` receives changes only through `Release: develop -> main`. `staging` is never released directly to `main`. An open release pull request is left unchanged. The staging release is not opened when the three-dot diff against `develop` has no file changes.
+- **Hard requirement:** `staging` is the environment for experimental testing. It publishes `21gifts/app:staging`. No pull request targets `staging` at present. Opening pull requests against `staging` again, and how experimental changes reach it, is a product-owner decision that updates this section first. When the `staging` branch exists, its changes reach `develop` only through a release pull request (`Release: staging -> develop`); that release is the explicit request to target `develop`. `main` receives changes only through `Release: develop -> main`. `staging` is never released directly to `main`. An open release pull request is left unchanged. The staging release is not opened when the three-dot diff against `develop` has no file changes.
 - Never force-push, never amend published commits, except publishing a rebase of `staging` onto `develop` with `git push --force-with-lease` to `staging` only.
 
 ### Commit messages
