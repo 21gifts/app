@@ -11,7 +11,6 @@ import {
   traceWallet,
   type SentryInitOptions,
 } from '@/lib/sentry';
-import { KEY_MATERIAL, expectNoKeyMaterial } from '@/__tests__/lib/wallet/key-material';
 
 vi.mock('@sentry/nextjs', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@sentry/nextjs')>();
@@ -851,38 +850,6 @@ describe('beforeSend scrubber', () => {
   it('leaves an event without request, breadcrumbs, or exception intact', () => {
     const event: ErrorEvent = { type: undefined, message: 'plain', level: 'error' };
     expect(on().beforeSend(event)).toEqual(event);
-  });
-
-  it('sanitizes every string tag and extra of a Wallet did not open report', () => {
-    const leak = KEY_MATERIAL.map(([, secret]) => secret).join(' ');
-    const event = on().beforeSend({
-      type: undefined,
-      message: 'Wallet did not open',
-      tags: { wallet_open_stage: 'connect', wallet_open_error: 'abandon ability able', n: 1 },
-      extra: { errorMessage: `Unexpected: ${leak}`, elapsedMs: 12, online: true },
-    });
-    expectNoKeyMaterial(JSON.stringify(event));
-    expect(event.tags).toEqual({
-      wallet_open_stage: 'connect',
-      wallet_open_error: '[words]',
-      n: 1,
-    });
-    expect(event.extra).toMatchObject({ elapsedMs: 12, online: true });
-    expect(String(event.extra?.['errorMessage'])).toMatch(/^Unexpected: \[words\] \[hex\]/);
-  });
-
-  it('sanitizes a Wallet did not open report without tags or extras', () => {
-    const event: ErrorEvent = { type: undefined, message: 'Wallet did not open', level: 'error' };
-    expect(on().beforeSend(event)).toEqual(event);
-  });
-
-  it('applies the wallet-open sanitizer to no other report', () => {
-    const event = on().beforeSend({
-      type: undefined,
-      message: 'Payment failed',
-      extra: { note: 'abandon ability able' },
-    });
-    expect(event.extra).toEqual({ note: 'abandon ability able' });
   });
 });
 

@@ -389,7 +389,6 @@ app/
 │   │   ├── config.ts            # Typed NEXT_PUBLIC_* accessors (required ones throw on missing; optional ones return null)
 │   │   ├── csp.ts               # Content-Security-Policy: sources, nonce, mode, header name
 │   │   ├── sentry.ts            # Error reporting + browser tracing: init options, privacy scrubber, traceWallet, tunnel forwarder, CSP report forwarder
-│   │   ├── sensitive-keys.ts    # Key names and key fragments whose values the scrubber and the wallet-open sanitizer remove
 │   │   ├── countries.ts         # ISO country codes + localized country option labels
 │   │   ├── locale.ts            # Supported locales + Accept-Language negotiation
 │   │   ├── number-format.ts         # ch/us/de grouping + formatGroupedNumber
@@ -425,7 +424,7 @@ app/
 │   │   │   ├── wallet-report.ts # reportWallet: balance + unacknowledged payments → POST /me/wallet/report
 │   │   │   ├── fond-payouts.ts  # runFondPayoutTick: list → invoice → pay sparkInvoice ?? bolt11 once
 │   │   │   ├── payment-failure.ts # reportPaymentFailure: payment_failed event + `Payment failed` error report
-│   │   │   ├── error-cause.ts   # sanitizeErrorMessage, errorCause: safe name, code, and message of a wallet that did not open
+│   │   │   ├── error-cause.ts   # errorCause, CAUSE_KINDS: name, code, and cause kind of a wallet that did not open
 │   │   │   └── lnurl-relay.ts   # lnurlRelayTarget: outside address or LNURL goes through the api
 │   │   ├── gifts-address.ts     # Public username@21.gifts display handle
 │   │   ├── shop-sticker.ts      # Shop-sticker SVG/PDF/PNG/JPG from the member pay QR; ?lang=Kikamba (no PDF library)
@@ -1264,7 +1263,7 @@ only for a signed-in member and both through same-origin proxies:
   `payment_failed` (every wallet payment that did not go out: `stage`,
   `reason`, `method`, `flow`, `amountSats`) and `wallet_open_failed`
   (`reason` `timeout` or `error`, `stage`, `errorName`, `errorCode`,
-  `errorMessage`, `elapsedMs`, `online`, `visibility`) go out in batches of their own, and so do
+  `causeKind`, `elapsedMs`, `online`, `visibility`) go out in batches of their own, and so do
   the wallet tour and move-funds events (`wallet_tour_*`, `wallet_move_*`) as
   a group of their own, and `recovery_done` (the sign-in that ends a social
   recovery) as another, so an api that does not accept those names yet cannot
@@ -1280,25 +1279,16 @@ failure sends `wallet_open_failed` and `Wallet did not open`, and nothing more
 goes out until the wallet has been ready again or was disconnected.
 Member state (too little balance, an amount below the minimum, no wallet
 connection) and hearts (`Heart not sent`) are not sent as `Payment failed`.
-Reason, stage, method, flow, and the error name and code are short codes; for
-a payment that did not go out, the text of an SDK or api error is never sent,
-because it can carry invoices, addresses, or keys. A wallet that did not open
-also sends where it stopped (`stage`: `sdk_load`, `connect`, `first_sync`, or
-`deadline`), the time since the attempt started, whether the browser was
-online and the page visible, and the error's message only after
-`sanitizeErrorMessage` (`src/lib/wallet/error-cause.ts`): a word that holds
-an address (e-mail, `name@host`, a URL with a user name) becomes `[addr]`,
-URL and path query strings `?[q]`, the value after a label that names a
-secret (`api_key=`, `token:`, `secret=`, `password=`, `username=`, and the
-scrubber's own key fragments) `[token]`, every run of key characters as a whole
-(each segment of a URL, a path, or a host with a path) `[hex]` when it holds
-16 hex digits and `[token]` when it is an invoice, address, extended key,
-JSON web token, 20 or more characters with a digit, or 40 or more in mixed
-case, and last runs of three or more BIP-39 words
-`[words]`, cut to at most 200 characters at a word, so a second pass changes
-nothing. The error report passes it
-through that sanitizer once more before the scrubber. The thrown error
-itself, its other fields, and the SDK config are never sent.
+Reason, stage, method, flow, and the error name and code are short codes; the
+text of an SDK or api error is never sent, because it can carry invoices,
+addresses, or keys. A wallet that did not open also sends where it stopped
+(`stage`: `sdk_load`, `connect`, `first_sync`, or `deadline`), its cause kind
+(`causeKind`: one identifier from the fixed table `CAUSE_KINDS` in
+`src/lib/wallet/error-cause.ts`, such as `fetch_failed` or
+`wasm_out_of_memory`, chosen on the device by matching the error's name, code,
+and message against it, `unknown` when no row matches; the matched text itself
+is never sent), the time since the attempt started, and whether the browser
+was online and the page visible.
 
 **Hard requirement:** neither report, nor any other request, log, or error
 report, ever carries the recovery phrase, the seed, PRF output, a preimage, or

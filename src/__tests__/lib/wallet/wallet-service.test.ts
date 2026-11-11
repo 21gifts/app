@@ -143,7 +143,7 @@ interface WalletOpenCause {
   stage: 'sdk_load' | 'connect' | 'first_sync' | 'deadline';
   errorName: string | null;
   errorCode: string | null;
-  errorMessage: string | null;
+  causeKind: string | null;
   elapsedMs: number;
   online: boolean;
   visibility: DocumentVisibilityState;
@@ -175,6 +175,7 @@ function expectWalletOpenReport(
 }
 
 afterEach(async () => {
+  vi.useRealTimers();
   await disconnectWallet();
   clearSessionPhrase();
   if (ORIGINAL_BREEZ === undefined) {
@@ -572,7 +573,7 @@ describe('connectWallet', () => {
       stage: 'first_sync',
       errorName: 'Error',
       errorCode: 'network',
-      errorMessage: 'Network error: connection reset',
+      causeKind: 'sdk_network',
     });
     expect(
       vi.mocked(logInteraction).mock.calls.filter(([event]) => event === 'wallet_open_failed'),
@@ -580,6 +581,7 @@ describe('connectWallet', () => {
   });
 
   it('reports a synced refresh that fails after the overtaken first read already settled', async () => {
+    vi.useFakeTimers();
     rememberSessionPhrase(MNEMONIC);
     let resolveFirst!: (info: { balanceSats: number; identityPubkey: string }) => void;
     let rejectRefresh!: (error: Error) => void;
@@ -606,18 +608,55 @@ describe('connectWallet', () => {
       expect(connection.getInfo).toHaveBeenCalledTimes(2);
     });
     resolveFirst({ balanceSats: 21_000, identityPubkey: IDENTITY });
+    // The open lists the known payments right after its own first read has
+    // settled, so the refresh below fails strictly after that read.
     await vi.waitFor(() => {
-      expect(useWalletStore.getState().status).toBe('connecting');
+      expect(connection.listPayments).toHaveBeenCalled();
     });
+    expect(useWalletStore.getState().status).toBe('connecting');
+    expect(captureMessage).not.toHaveBeenCalled();
     rejectRefresh(new Error('Network error: connection reset'));
     await vi.waitFor(() => {
       expect(useWalletStore.getState().status).toBe('error');
     });
+    expectWalletOpenReport('error', {
+      stage: 'first_sync',
+      errorCode: 'network',
+      causeKind: 'sdk_network',
+    });
+    // The open itself waits for its deadline, which reports nothing more.
+    await vi.advanceTimersByTimeAsync(WALLET_CONNECT_TIMEOUT_MS);
+    await expect(pending).resolves.toBeUndefined();
+    expect(captureMessage).toHaveBeenCalledTimes(1);
+  });
+
+  it('reports a synced refresh that fails while the event listener is still being added as first_sync', async () => {
+    rememberSessionPhrase(MNEMONIC);
+    let finishListener!: () => void;
+    const sdk = createFakeSdk({
+      addEventListener: async (onEvent: (event: { type: string }) => void) => {
+        sdk.listeners.push(onEvent);
+        await new Promise<void>((resolve) => {
+          finishListener = resolve;
+        });
+        return 'listener-1';
+      },
+    });
+    sdk.connection.getInfo.mockRejectedValueOnce(new Error('Network error: connection reset'));
+    const pending = connectWallet(sdk.loadSdk);
+    await vi.waitFor(() => {
+      expect(sdk.listeners).toHaveLength(1);
+    });
+    sdk.listeners[0]?.({ type: 'synced' });
+    await vi.waitFor(() => {
+      expect(useWalletStore.getState().status).toBe('error');
+    });
+    finishListener();
     await expect(pending).resolves.toBeUndefined();
     expectWalletOpenReport('error', {
       stage: 'first_sync',
       errorCode: 'network',
-      errorMessage: 'Network error: connection reset',
+      causeKind: 'sdk_network',
     });
   });
 
@@ -1155,7 +1194,7 @@ describe('wallet open failure cause', () => {
     ]);
   }
 
-  it('reports sdk_load with the name, code, and message of a failed download', async () => {
+  it('reports sdk_load with the name, code, and cause kind of a failed download', async () => {
     const loadSdk: WalletSdkLoader = vi.fn(async () => {
       await new Promise((resolve) => setTimeout(resolve, 750));
       throw new TypeError('Failed to fetch');
@@ -1167,7 +1206,7 @@ describe('wallet open failure cause', () => {
       stage: 'sdk_load',
       errorName: 'TypeError',
       errorCode: null,
-      errorMessage: 'Failed to fetch',
+      causeKind: 'fetch_failed',
       elapsedMs: 750,
       online: true,
       visibility: 'visible',
@@ -1180,6 +1219,7 @@ describe('wallet open failure cause', () => {
         wallet_open_stage: 'sdk_load',
         wallet_open_error: 'TypeError',
         wallet_open_error_code: 'none',
+        wallet_open_cause: 'fetch_failed',
         wallet_open_online: true,
         wallet_open_visibility: 'visible',
       },
@@ -1203,7 +1243,7 @@ describe('wallet open failure cause', () => {
       stage: 'sdk_load',
       errorName: 'RuntimeError',
       errorCode: null,
-      errorMessage: 'WebAssembly.instantiate(): out of memory',
+      causeKind: 'wasm_out_of_memory',
     });
   });
 
@@ -1215,7 +1255,7 @@ describe('wallet open failure cause', () => {
       stage: 'connect',
       errorName: 'Error',
       errorCode: 'network',
-      errorMessage: 'Network error: request timed out',
+      causeKind: 'sdk_network',
       elapsedMs: 0,
     });
   });
@@ -1231,7 +1271,7 @@ describe('wallet open failure cause', () => {
       stage: 'connect',
       errorName: 'QuotaExceededError',
       errorCode: '22',
-      errorMessage: 'The quota has been exceeded.',
+      causeKind: 'storage_quota',
     });
   });
 
@@ -1249,7 +1289,7 @@ describe('wallet open failure cause', () => {
       stage: 'first_sync',
       errorName: 'Error',
       errorCode: 'storage',
-      errorMessage: 'Storage error: database closed',
+      causeKind: 'sdk_storage',
       elapsedMs: 1_234,
     });
   });
@@ -1271,6 +1311,7 @@ describe('wallet open failure cause', () => {
         wallet_open_stage: 'deadline',
         wallet_open_error: 'none',
         wallet_open_error_code: 'none',
+        wallet_open_cause: 'none',
         wallet_open_online: false,
         wallet_open_visibility: 'hidden',
       },
@@ -1278,7 +1319,7 @@ describe('wallet open failure cause', () => {
         stage: 'deadline',
         errorName: null,
         errorCode: null,
-        errorMessage: null,
+        causeKind: null,
         elapsedMs: WALLET_CONNECT_TIMEOUT_MS,
         online: false,
         visibility: 'hidden',
@@ -1287,8 +1328,8 @@ describe('wallet open failure cause', () => {
     expectWalletOpenReport('timeout', { stage: 'deadline', elapsedMs: WALLET_CONNECT_TIMEOUT_MS });
   });
 
-  it.each(['sdk_load', 'connect', 'first_sync'] as const)(
-    'sends no key material from a %s error that carries it',
+  it.each(['sdk_load', 'connect', 'first_sync', 'synced refresh', 'deadline'] as const)(
+    'sends no key material and no error text from a %s error that carries it',
     async (stage) => {
       // The test API key has no key shape; it rides on the error's config only.
       const message = `Generic error: ${KEY_MATERIAL.map(([, secret]) => secret).join(' ')} ${MNEMONIC}`;
@@ -1296,7 +1337,10 @@ describe('wallet open failure cause', () => {
         mnemonic: MNEMONIC,
         config: { apiKey: API_KEY },
         prf: new Uint8Array(32),
+        cause: new Error(message),
       });
+      let rejectFirst!: (reason: unknown) => void;
+      let rejectConnect!: (reason: unknown) => void;
       const sdk = createFakeSdk(
         stage === 'first_sync'
           ? {
@@ -1304,10 +1348,27 @@ describe('wallet open failure cause', () => {
                 throw error;
               },
             }
-          : {},
+          : stage === 'deadline'
+            ? {
+                connect: () =>
+                  new Promise<WalletConnection>((_resolve, reject) => {
+                    rejectConnect = reject;
+                  }),
+              }
+            : {},
       );
       if (stage === 'connect') {
         sdk.connect.mockRejectedValueOnce(error);
+      }
+      if (stage === 'synced refresh') {
+        sdk.connection.getInfo
+          .mockImplementationOnce(
+            () =>
+              new Promise((_resolve, reject) => {
+                rejectFirst = reject;
+              }),
+          )
+          .mockRejectedValueOnce(error);
       }
       const loadSdk: WalletSdkLoader =
         stage === 'sdk_load'
@@ -1315,20 +1376,44 @@ describe('wallet open failure cause', () => {
               throw error;
             })
           : sdk.loadSdk;
-      await connectWallet(loadSdk);
-      expectWalletOpenReport('error', { stage, errorName: 'Error', errorCode: 'generic' });
+      const pending = connectWallet(loadSdk);
+      if (stage === 'synced refresh') {
+        await vi.waitFor(() => {
+          expect(sdk.connection.getInfo).toHaveBeenCalledTimes(1);
+        });
+        sdk.listeners[0]?.({ type: 'synced' });
+        await vi.waitFor(() => {
+          expect(useWalletStore.getState().status).toBe('error');
+        });
+        rejectFirst(error);
+      }
+      if (stage === 'deadline') {
+        await vi.advanceTimersByTimeAsync(WALLET_CONNECT_TIMEOUT_MS);
+        rejectConnect(error);
+      }
+      await pending;
+      if (stage === 'deadline') {
+        expectWalletOpenReport('timeout', { stage, errorName: null, causeKind: null });
+      } else {
+        expectWalletOpenReport('error', {
+          stage: stage === 'synced refresh' ? 'first_sync' : stage,
+          errorName: 'Error',
+          errorCode: 'generic',
+          causeKind: 'unknown',
+        });
+      }
       const text = sent();
       expectNoKeyMaterial(text);
       expect(text).not.toContain(MNEMONIC.split(' ').slice(0, 3).join(' '));
+      expect(text).not.toContain('Generic error');
       expect(text).not.toContain(API_KEY);
       expect(text).not.toContain('breez-api-key');
       expect(text).not.toContain('apiKey');
       expect(text).not.toContain('"config"');
       expect(text).not.toContain('"prf"');
-      const extra = vi.mocked(captureMessage).mock.calls[0]?.[1] as unknown as {
-        extra: WalletOpenCause;
-      };
-      expect(extra.extra.errorMessage?.length).toBeLessThanOrEqual(200);
+      expect(text).not.toContain('"cause"');
+      expect(text).not.toContain('stack');
+      expect(text).not.toContain('errorMessage');
     },
   );
 
@@ -1340,7 +1425,7 @@ describe('wallet open failure cause', () => {
       stage: 'connect',
       errorName: 'unknown',
       errorCode: null,
-      errorMessage: null,
+      causeKind: 'unknown',
     });
   });
 

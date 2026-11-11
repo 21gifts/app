@@ -895,18 +895,6 @@ test('Function: errorCause — unset key opens no wallet, so no wallet_open_fail
   expect(bodies.filter((body) => body.startsWith('/monitoring'))).toEqual([]);
 });
 
-test('Function: sanitizeErrorMessage — unset key opens no wallet, so no wallet error text goes out', async ({
-  page,
-}) => {
-  await signInWalletEligible(page);
-  const bodies = recordReports(page);
-  await page.goto('/wallet');
-  await expect(page.getByRole('region', { name: 'Balance' })).toHaveCount(0);
-  await page.waitForLoadState('networkidle');
-  expect(bodies.filter((body) => body.includes('errorMessage'))).toEqual([]);
-  expect(bodies.filter((body) => body.startsWith('/monitoring'))).toEqual([]);
-});
-
 test('Function: refreshWallet — unset key leaves no balance region or wasm', async ({ page }) => {
   await signInWalletEligible(page);
   const urls: string[] = [];
