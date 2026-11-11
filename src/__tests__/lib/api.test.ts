@@ -69,6 +69,7 @@ import {
   fetchViewActivity,
   fetchViewForumList,
   fetchViewProfile,
+  fetchFondSummary,
   fetchPreviousWallets,
   deletePreviousWallet,
   fetchHeldShareBoxes,
@@ -289,6 +290,42 @@ describe('fetchViewProfile', () => {
   it('throws when the body fails validation', async () => {
     stubFetch({ ok: true, status: 200, body: { name: '' } });
     await expect(fetchViewProfile(viewKey)).rejects.toThrow();
+  });
+});
+
+describe('fetchFondSummary', () => {
+  const summary = {
+    username: 'tondo-fond',
+    receivedSats: 210_000,
+    paidOutSats: 21_000,
+    feesSats: 210,
+    balanceSats: 189_000,
+    balanceSyncedAt: '2026-11-11T10:00:00.000Z',
+    payoutsPaid: 3,
+    payoutsPaidUsd: '3.00',
+  };
+
+  it('returns the validated summary from the same-origin proxy path', async () => {
+    const fetchMock = stubFetch({ ok: true, status: 200, body: summary });
+    await expect(fetchFondSummary('tondo-fond')).resolves.toEqual(summary);
+    expect(fetchMock).toHaveBeenCalledWith('/fonds/tondo-fond/summary');
+  });
+
+  it('returns null on 404', async () => {
+    stubFetch({ ok: false, status: 404, body: { error: 'Not found' } });
+    await expect(fetchFondSummary('other-fond')).resolves.toBeNull();
+  });
+
+  it('throws on a non-404 non-ok response', async () => {
+    stubFetch({ ok: false, status: 503, body: { error: 'unavailable' } });
+    await expect(fetchFondSummary('tondo-fond')).rejects.toThrow(
+      'Failed to fetch Fond summary: 503',
+    );
+  });
+
+  it('throws when the body fails validation', async () => {
+    stubFetch({ ok: true, status: 200, body: { username: 'tondo-fond' } });
+    await expect(fetchFondSummary('tondo-fond')).rejects.toThrow();
   });
 });
 

@@ -77,6 +77,18 @@ const FOND_INVOICE = {
 /** The fixture invoice's payment hash, as the api identifies the send. */
 const FOND_PAYMENT_HASH = 'ab'.repeat(32);
 
+/** Public `GET /fond/summary` fixture, as the api answers for `/fonds/tondo-fond`. */
+const FOND_SUMMARY = {
+  username: 'tondo-fond',
+  receivedSats: 210000,
+  paidOutSats: 21000,
+  feesSats: 210,
+  balanceSats: 189000,
+  balanceSyncedAt: '2026-11-11T10:00:00.000Z',
+  payoutsPaid: 3,
+  payoutsPaidUsd: '3.00',
+};
+
 /**
  * Per-session Fond fixture state. Keeping it per bearer lets parallel tests
  * each invoice and settle their own fixture row.
@@ -3982,6 +3994,11 @@ const server = http.createServer(async (req, res) => {
       return;
     }
     json(res, 404, { error: 'Not found' });
+    return;
+  }
+
+  if (method === 'GET' && pathName === '/fond/summary') {
+    json(res, 200, FOND_SUMMARY, { 'cache-control': 'no-store' });
     return;
   }
 

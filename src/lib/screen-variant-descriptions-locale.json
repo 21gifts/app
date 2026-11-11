@@ -8558,5 +8558,35 @@
     "de": "Der Schreibbereich nach einem Tippen auf Senden bei leerem Textfeld: unter dem Eingabebereich erscheint die Meldung, eine Nachricht einzugeben oder ein Foto oder Video hinzuzufügen, und der Schreibbereich bleibt offen.",
     "es": "El área de redacción tras tocar Publicar con el campo de texto vacío: bajo el área aparece el aviso de escribir un mensaje o añadir una foto o un vídeo, y el área de redacción sigue abierta.",
     "fil": "Ang lugar ng pagsulat pagkatapos i-tap ang I-post na walang laman ang text field: lumalabas sa ilalim ng kahon ang paalala na sumulat ng mensahe o magdagdag ng larawan o video, at nananatiling bukas ang lugar ng pagsulat."
+  },
+  "/fonds/[username]:default": {
+    "de": "Öffentliche Fond-Seite /fonds/tondo-fond. Die Überschrift zeigt tondo-fond mit dem Fond-Pill; die drei Kacheln zeigen Eingenommen ₿210'000 mit $210.00, Ausgezahlt ₿21'000 mit $21.00 und Gebühren ₿210 sowie Kontostand ₿189'000 mit $189.00 und dem Sync-Zeitpunkt. Darunter steht 3 Grant-Auszahlungen ausgezahlt (3.00 USD).",
+    "es": "Página pública del Fondo /fonds/tondo-fond. El título muestra tondo-fond con la etiqueta Fondo; las tres tarjetas muestran Recibido ₿210'000 con $210.00, Pagado ₿21'000 con $21.00 y Comisiones ₿210, y Saldo ₿189'000 con $189.00 y la hora de sincronización. Debajo aparece 3 pagos de beca realizados (3.00 USD).",
+    "fil": "Pampublikong pahina ng Fond /fonds/tondo-fond. Ipinapakita ng pamagat ang tondo-fond kasama ang Fond pill; ang tatlong tile ay Natanggap ₿210'000 kasama ang $210.00, Naibayad ₿21'000 kasama ang $21.00 at Mga bayad ₿210, at Balanse ₿189'000 kasama ang $189.00 at ang oras ng sync. Sa ilalim ay 3 grant payouts na bayad (3.00 USD)."
+  },
+  "/fonds/[username]:balance-null": {
+    "de": "Dieselbe Fond-Seite, solange die Api noch keinen Wallet-Kontostand gemeldet hat (balanceSats und balanceSyncedAt sind null). Die Kachel Kontostand zeigt einen Gedankenstrich und noch nicht gemeldet; die anderen Kacheln behalten ihre Beträge.",
+    "es": "La misma página del Fondo mientras la api aún no informa un saldo de wallet (balanceSats y balanceSyncedAt son null). La tarjeta Saldo muestra un guion y aún sin datos; las otras tarjetas mantienen sus cifras.",
+    "fil": "Parehong pahina ng Fond habang wala pang iniuulat na balanse ng wallet ang api (null ang balanceSats at balanceSyncedAt). Ang tile na Balanse ay may gitling at wala pang ulat; nananatili ang mga numero sa ibang tile."
+  },
+  "/fonds/[username]:error": {
+    "de": "Die Api antwortet mit 503. Die Karte zeigt den Hinweis Fond konnte nicht geladen werden. Bitte versuchen Sie es erneut. und die Schaltfläche Erneut versuchen.",
+    "es": "La api responde con 503. La tarjeta muestra el aviso No se pudo cargar el Fondo. Inténtalo de nuevo. y el botón Intentar de nuevo.",
+    "fil": "Nagbibigay ang api ng 503. Ipinapakita ng card ang alerto na Hindi ma-load ang Fond. Subukan ulit. at ang button na Subukan ulit."
+  },
+  "/fonds/[username]:role-hint": {
+    "de": "Die öffentliche Fond-Seite /fonds/tondo-fond mit angeklicktem Fond-Pill; unter der Überschrift tondo-fond ist der Hinweis Dieses Konto zahlt die täglichen Geschenke aus dem 21.gifts-Fonds. sichtbar.",
+    "es": "La página pública del Fondo /fonds/tondo-fond con la etiqueta Fondo pulsada; bajo el título tondo-fond se ve el aviso Esta cuenta paga los regalos diarios del fondo de 21.gifts.",
+    "fil": "Ang pampublikong pahina ng Fond /fonds/tondo-fond na naka-click ang Fond pill; sa ilalim ng pamagat na tondo-fond makikita ang paalalang Binabayaran ng account na ito ang mga araw-araw na regalo mula sa pondo ng 21.gifts."
+  },
+  "/fonds/[username]:missing": {
+    "de": "Die Api antwortet mit 404. Die Seite zeigt den Hinweis Dieser Fond konnte nicht gefunden werden.",
+    "es": "La api responde con 404. La página muestra el aviso No se pudo encontrar este Fondo.",
+    "fil": "Nagbibigay ang api ng 404. Ipinapakita ng pahina ang paalalang Hindi mahanap ang Fond na ito."
+  },
+  "/fonds/[username]:loading": {
+    "de": "Wartet auf das Abrufen der Fond-Übersicht. Wird geladen…",
+    "es": "Esperando la obtención del resumen del Fondo. Cargando…",
+    "fil": "Naghihintay sa pagkuha ng buod ng Fond. Naglo-load…"
   }
 }

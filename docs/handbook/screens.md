@@ -10773,6 +10773,50 @@ After a failed translation of that reaction. The feed shows `Could not translate
 
 ![21.gifts external author replies translate error](images/messages-id-author-replies-translate-error.png)
 
+## Screen: /fonds/[username]
+
+- **URL:** `/fonds/<username>` — public Fond page (no auth gate), e.g. `/fonds/tondo-fond`.
+- **What the user sees:** Unsigned public chrome like `/view/[viewKey]`: one top-left back arrow (previous in-app view, or `/welcome` when this tab has none) beside the home wordmark, and the light language switcher top-right. The card shows the Fond handle as its heading with the existing **Fond** role pill (`ForumRoleTag`; pressing it reveals the Fond hint). Under it, three KPI tiles in the `StatsDashboard` card style: **Received** (`receivedSats`), **Paid out** (`paidOutSats`) with **Fees** (`feesSats`) as a secondary line, and **Balance** (`balanceSats`) with **as of <time>** from `balanceSyncedAt` (`formatForumTime`); a null balance shows an em dash and **not reported yet**. Under the tiles: **3 grant payouts paid (3.00 USD)** from `payoutsPaid` and the stored `payoutsPaidUsd`. Every bitcoin figure uses `formatBitcoin` with the visitor's preferred fiat under it from the current spot (`useFiatPreference` + `useSpotRate`, `formatFiatDisplay`), including the **Fees** line; the spot is read only, never stored.
+- **Inputs:** Dynamic route `username`. The same-origin proxy `GET /fonds/:username/summary` reads public api `GET /fond/summary`; the proxy answers 404 when the api has no Fond or when the body's `username` is not this handle, and passes a 503 `{ error }` through. Client fetch: `fetchFondSummary`.
+- **Actions:** The top-left arrow returns to the previous in-app view, or `/welcome` when this tab has none. Change language. Press the **Fond** pill for its hint. On a 503, **Try again** refetches. A 404 shows **This Fond could not be found.** There is no second back control and no write action.
+- **Used by:** Route `/fonds/[username]` (`FondPage` → `FondSummaryLoader`).
+
+### Variant: default
+
+`/fonds/tondo-fond` with the api's totals and a spot of $100'000 per bitcoin. The heading reads **tondo-fond** with the **Fond** pill; **Received** ₿210'000 ($210.00), **Paid out** ₿21'000 ($21.00) with **Fees** ₿210 ($0.21), **Balance** ₿189'000 ($189.00) with the synced time, and **3 grant payouts paid (3.00 USD)** below the tiles.
+
+![21.gifts public Fond page](images/fonds-username.png)
+
+### Variant: balance-null
+
+The same page while the api has not synced a wallet balance (`balanceSats` and `balanceSyncedAt` null). The **Balance** tile shows an em dash and **not reported yet**; the other tiles keep their figures.
+
+![21.gifts public Fond page with no reported balance](images/fonds-balance-null.png)
+
+### Variant: error
+
+The api answers 503. The card shows the alert **Could not load the Fond. Please try again.** and **Try again**.
+
+![21.gifts public Fond page error](images/fonds-error.png)
+
+### Variant: role-hint
+
+The **Fond** pill is clicked on `/fonds/tondo-fond`; the hint **This account pays the daily gifts from the 21.gifts fund.** is visible under the handle.
+
+![21.gifts fonds role hint](images/fonds-role-hint.png)
+
+### Variant: missing
+
+The api answers 404 and the page shows **This Fond could not be found.**
+
+![21.gifts fonds missing](images/fonds-missing.png)
+
+### Variant: loading
+
+Waiting on the Fond summary fetch shows **Loading…**
+
+![21.gifts fonds loading](images/fonds-loading.png)
+
 ## Screen: /view/[viewKey]
 
 - **Purpose:** Public copy of the signed-in profile card (heading Profile, AccountActivityChart Given/Received with no FiatPicker (the preferred code is the Settings Display row when signed in, otherwise the cookie or the locale default); empty = `profile.chartEmpty` with no SVG / no ₿|fiat scale; a failed activity load is `profile.chartError`; populated ₿ | selected fiat; then `LoanBalanceChart` directly under the gift chart (Debt and Credit; the loan chart does not mount FiatPicker; empty or in-flight renders nothing for both signed-in and unsigned; a failed load is `profile.loanChartError`; the axis includes 0 and may fall below zero); About me inside the identity card — not a forum post; Languages **Translate** when `aboutMessageId` is set; with the photo when `aboutMeHasPhoto` — name + location + public `username@21.gifts` (`view.noGiftsAddress` when unset)). Copy-profile-link on the card writes the current view URL. Capability URL `/view/<64-hex>`; key/URL not shown as visible text. No `OnboardingGate` on this route. When a username is set, a centered `QrCode` (label `profile.giftsQr`) under the address encodes `openCryptoPayQrValue` (`https://<domain>/pl/?lightning=` plus the uppercase LNURL of `https://<domain>/.well-known/lnurlp/<local>`), including on a smartphone. A missing username shows no QR. When `lightningAddressVerified` is false, **Can't receive yet** replaces the address and the QR. A visitor sees no edit and no Message. Edits appear only when the signed-in account id matches. The card has no back, menu, or logout.

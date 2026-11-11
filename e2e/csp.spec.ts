@@ -43,6 +43,7 @@ const PUBLIC_PAGES = [
   '/404',
   '/about',
   '/donate',
+  '/fonds/tondo-fond',
   '/habit-tracker',
   '/handbook',
   '/handbook/endpoints',
