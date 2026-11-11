@@ -43,7 +43,6 @@ export function usePaymentCounterparty(payment: WalletPayment): PaymentCounterpa
 
   useEffect(() => {
     const synced = previousSyncCount.current !== syncCount;
-    previousSyncCount.current = syncCount;
     if (pinned) return;
     if (cache.current.session !== session) cache.current = { session, values: new Map() };
     if (session === null || !eligible) return;
@@ -58,6 +57,7 @@ export function usePaymentCounterparty(payment: WalletPayment): PaymentCounterpa
         await reportWallet();
         if (!active) return;
       }
+      previousSyncCount.current = syncCount;
       const rows = await fetchPaymentCounterparties(session, [{ id: payment.id, direction }]);
       if (!active) return;
       const sender = rows.find((row) => row.id === payment.id) ?? null;

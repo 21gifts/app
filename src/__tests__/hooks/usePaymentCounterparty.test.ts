@@ -115,6 +115,31 @@ describe('usePaymentCounterparty', () => {
     expect(fetchPaymentCounterparties).toHaveBeenCalledTimes(2);
     expect(reportWallet).toHaveBeenCalledTimes(1);
   });
+  it('waits for a sync during a pending payment before the first lookup', async () => {
+    let finishReport!: () => void;
+    vi.mocked(reportWallet).mockReturnValue(
+      new Promise<void>((resolve) => {
+        finishReport = resolve;
+      }),
+    );
+    const { rerender } = renderHook(
+      ({ completed }: { completed: boolean }) =>
+        usePaymentCounterparty({ ...payment, status: completed ? 'completed' : 'pending' }),
+      { initialProps: { completed: false } },
+    );
+    act(() => useWalletStore.setState({ syncCount: 1 }));
+    expect(reportWallet).not.toHaveBeenCalled();
+    expect(fetchPaymentCounterparties).not.toHaveBeenCalled();
+    rerender({ completed: true });
+    expect(reportWallet).toHaveBeenCalledTimes(1);
+    expect(fetchPaymentCounterparties).not.toHaveBeenCalled();
+    await act(async () => {
+      finishReport();
+    });
+    expect(fetchPaymentCounterparties).toHaveBeenCalledWith('session', [
+      { id: payment.id, direction: 'in' },
+    ]);
+  });
   it('does not fetch after a pending report is invalidated', async () => {
     let finishReport!: () => void;
     vi.mocked(reportWallet).mockReturnValue(

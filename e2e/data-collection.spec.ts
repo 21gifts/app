@@ -375,14 +375,14 @@ test.describe('POST /me/wallet/counterparties', () => {
   test('Function: fetchPaymentCounterparties — resolves the incoming payment', async ({ page }) => {
     await stubHeartLookupWallet(page);
     await page.route('**/me/wallet/counterparties', async (route) => {
-      const body = route.request().postDataJSON() as { payments: { id: string }[] };
+      const body = route.request().postDataJSON() as {
+        payments: { id: string; direction: string }[];
+      };
       await route.fulfill({
         json: {
-          counterparties: body.payments.map(({ id }) => ({
-            id,
-            accountId: 'acc_e2e',
-            username: 'alice',
-          })),
+          counterparties: body.payments
+            .filter(({ direction }) => direction === 'in')
+            .map(({ id }) => ({ id, accountId: 'acc_e2e', username: 'alice' })),
         },
       });
     });
