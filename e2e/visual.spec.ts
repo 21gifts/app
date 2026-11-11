@@ -42406,7 +42406,7 @@ test.describe('stats variant baselines', () => {
     await expect(wallets).toBeVisible();
     await expect(page.getByLabel('Wallet balance over time in ₿')).toBeVisible();
     // Bitcoin stands alone only after GET /fx/spot settles with no rate.
-    await expect(wallets.getByText("₿89'096", { exact: true })).toBeVisible();
+    await expect(wallets.locator('dl').getByText("₿89'096", { exact: true })).toBeVisible();
     await expect(wallets.getByText('$89.10', { exact: true })).toHaveCount(0);
     await shotScreen(page, 'state-stats-wallets-no-rate');
   });
