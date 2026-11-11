@@ -12060,4 +12060,11 @@ export const SCREEN_VARIANTS = [
     visual: 'state-fonds-error',
     needle: 'Could not load the Fond. Please try again.',
   },
+  {
+    route: '/fonds/[username]',
+    id: 'role-hint',
+    image: 'fonds-role-hint.png',
+    visual: 'state-fonds-role-hint',
+    needle: 'This account pays the daily gifts from the 21.gifts fund.',
+  },
 ];

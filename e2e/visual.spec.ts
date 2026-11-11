@@ -46234,6 +46234,17 @@ test.describe('fonds screen', () => {
     await shotScreen(page, 'screen-fonds-username');
   });
 
+  test('state /fonds/[username] role-hint', async ({ page }) => {
+    await fulfillSpot(page);
+    await page.goto('/fonds/tondo-fond');
+    await expect(page.getByRole('heading', { name: 'tondo-fond' })).toBeVisible();
+    await page.getByRole('button', { name: 'Fond' }).click();
+    await expect(
+      page.getByText('This account pays the daily gifts from the 21.gifts fund.'),
+    ).toBeVisible();
+    await shotScreen(page, 'state-fonds-role-hint');
+  });
+
   test('state /fonds/[username] balance-null', async ({ page }) => {
     await fulfillSpot(page);
     await page.route('**/fonds/tondo-fond/summary', async (route) => {

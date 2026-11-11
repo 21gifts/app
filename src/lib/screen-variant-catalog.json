@@ -10270,5 +10270,11 @@
     "label": "/fonds/[username] error",
     "visual": "state-fonds-error",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/fonds/[username]:role-hint",
+    "label": "/fonds/[username] role-hint",
+    "visual": "state-fonds-role-hint",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   }
 ]

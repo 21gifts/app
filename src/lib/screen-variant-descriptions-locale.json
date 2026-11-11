@@ -8573,5 +8573,10 @@
     "de": "Die Api antwortet mit 503. Die Karte zeigt den Hinweis Fond konnte nicht geladen werden. Bitte versuchen Sie es erneut. und die Schaltfläche Erneut versuchen.",
     "es": "La api responde con 503. La tarjeta muestra el aviso No se pudo cargar el Fondo. Inténtalo de nuevo. y el botón Intentar de nuevo.",
     "fil": "Nagbibigay ang api ng 503. Ipinapakita ng card ang alerto na Hindi ma-load ang Fond. Subukan ulit. at ang button na Subukan ulit."
+  },
+  "/fonds/[username]:role-hint": {
+    "de": "Die öffentliche Fond-Seite /fonds/tondo-fond mit angeklicktem Fond-Pill; unter der Überschrift tondo-fond ist der Hinweis Dieses Konto zahlt die täglichen Geschenke aus dem 21.gifts-Fonds. sichtbar.",
+    "es": "La página pública del Fondo /fonds/tondo-fond con la etiqueta Fondo pulsada; bajo el título tondo-fond se ve el aviso Esta cuenta paga los regalos diarios del fondo de 21.gifts.",
+    "fil": "Ang pampublikong pahina ng Fond /fonds/tondo-fond na naka-click ang Fond pill; sa ilalim ng pamagat na tondo-fond makikita ang paalalang Binabayaran ng account na ito ang mga araw-araw na regalo mula sa pondo ng 21.gifts."
   }
 }

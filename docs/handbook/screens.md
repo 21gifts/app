@@ -10799,6 +10799,12 @@ The api answers 503. The card shows the alert **Could not load the Fond. Please 
 
 ![21.gifts public Fond page error](images/fonds-error.png)
 
+### Variant: role-hint
+
+The **Fond** pill is clicked on `/fonds/tondo-fond`; the hint **This account pays the daily gifts from the 21.gifts fund.** is visible under the handle.
+
+![21.gifts fonds role hint](images/fonds-role-hint.png)
+
 ## Screen: /view/[viewKey]
 
 - **Purpose:** Public copy of the signed-in profile card (heading Profile, AccountActivityChart Given/Received with no FiatPicker (the preferred code is the Settings Display row when signed in, otherwise the cookie or the locale default); empty = `profile.chartEmpty` with no SVG / no ₿|fiat scale; a failed activity load is `profile.chartError`; populated ₿ | selected fiat; then `LoanBalanceChart` directly under the gift chart (Debt and Credit; the loan chart does not mount FiatPicker; empty or in-flight renders nothing for both signed-in and unsigned; a failed load is `profile.loanChartError`; the axis includes 0 and may fall below zero); About me inside the identity card — not a forum post; Languages **Translate** when `aboutMessageId` is set; with the photo when `aboutMeHasPhoto` — name + location + public `username@21.gifts` (`view.noGiftsAddress` when unset)). Copy-profile-link on the card writes the current view URL. Capability URL `/view/<64-hex>`; key/URL not shown as visible text. No `OnboardingGate` on this route. When a username is set, a centered `QrCode` (label `profile.giftsQr`) under the address encodes `openCryptoPayQrValue` (`https://<domain>/pl/?lightning=` plus the uppercase LNURL of `https://<domain>/.well-known/lnurlp/<local>`), including on a smartphone. A missing username shows no QR. When `lightningAddressVerified` is false, **Can't receive yet** replaces the address and the QR. A visitor sees no edit and no Message. Edits appear only when the signed-in account id matches. The card has no back, menu, or logout.
