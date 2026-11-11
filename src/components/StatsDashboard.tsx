@@ -477,29 +477,27 @@ function WalletsSummary({
         Total of all 21.gifts wallets at the end of each UTC day, as reported by the wallets
         themselves. Fiat figures use today&apos;s spot, not the day&apos;s price.
       </p>
-      {points.length > 0
-        ? OverTimeChart(
-            points,
-            (value) => formatBitcoin(value, numberFormat),
-            'Wallet balance over time in ₿',
-            ({ point, x, y, hitX, hitWidth, top, height }) => {
-              const pointFiat = fiatText(point.value);
-              const title = `${point.day}: ${formatBitcoin(point.value, numberFormat)}${
-                pointFiat === null ? '' : ` · ${pointFiat}`
-              }`;
-              return (
-                <g key={point.day}>
-                  <rect x={hitX} y={top} width={hitWidth} height={height} fill="transparent">
-                    <title>{title}</title>
-                  </rect>
-                  {point.value > 0 ? (
-                    <circle cx={x} cy={y} r={3.5} className="fill-accent" pointerEvents="none" />
-                  ) : null}
-                </g>
-              );
-            },
-          )
-        : null}
+      {OverTimeChart(
+        points,
+        (value) => formatBitcoin(value, numberFormat),
+        'Wallet balance over time in ₿',
+        ({ point, x, y, hitX, hitWidth, top, height }) => {
+          const pointFiat = fiatText(point.value);
+          const title = `${point.day}: ${formatBitcoin(point.value, numberFormat)}${
+            pointFiat === null ? '' : ` · ${pointFiat}`
+          }`;
+          return (
+            <g key={point.day}>
+              <rect x={hitX} y={top} width={hitWidth} height={height} fill="transparent">
+                <title>{title}</title>
+              </rect>
+              {point.value > 0 ? (
+                <circle cx={x} cy={y} r={3.5} className="fill-accent" pointerEvents="none" />
+              ) : null}
+            </g>
+          );
+        },
+      )}
     </section>
   );
 }
@@ -827,7 +825,7 @@ export function StatsDashboard({
         <FiatPicker value={fiat} onChange={setFiat} ariaLabel="Fiat currency" />
       ) : null}
       {posts !== null ? <PostsSummary posts={posts} numberFormat={numberFormat} /> : null}
-      {wallets !== null ? (
+      {wallets !== null && wallets.balanceOverTime.length > 0 ? (
         <WalletsSummary
           wallets={wallets}
           fiat={fiat}

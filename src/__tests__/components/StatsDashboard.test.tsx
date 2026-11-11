@@ -286,7 +286,7 @@ describe('StatsDashboard', () => {
     expect(chart.querySelectorAll('rect title')[1]?.textContent).toBe("2026-11-10: ₿89'096");
   });
 
-  it('shows wallet tiles only for an empty balance series', () => {
+  it('omits the Wallets section for an empty balance series', () => {
     renderWithLocale(
       <StatsDashboard
         stats={EMPTY}
@@ -296,8 +296,7 @@ describe('StatsDashboard', () => {
         onRetry={() => undefined}
       />,
     );
-    expect(screen.getByRole('region', { name: 'Wallets' }).textContent).toContain("₿89'096");
-    expect(screen.queryByLabelText('Wallet balance over time in ₿')).toBeNull();
+    expect(screen.queryByRole('region', { name: 'Wallets' })).toBeNull();
   });
 
   it('keeps zero wallet days hoverable without drawing their dot', () => {
