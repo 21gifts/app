@@ -7642,3 +7642,31 @@ The class exists so the composer can tell a refused free first post from any oth
 - **Inputs:** Incoming `Request` with Bearer session and the path `id`, URL-encoded upstream.
 - **Returns / side effects:** Upstream `Response`, or 502 when the api is unreachable. No body is read or logged.
 - **Used by:** Route POST `/fond/payouts/[id]/invoice`.
+
+## Function: proxyFondSummaryGet
+
+- **Purpose:** Proxies public `GET /fond/summary` to the api for the Fond page. It adds no auth header and copies the api's status, `cache-control`, and body.
+- **Inputs:** Incoming `Request` (no auth required).
+- **Returns / side effects:** Upstream `Response`, or 502 when this proxy cannot reach the api. The route `GET /fonds/[username]/summary` then compares the body's `username` with the path handle.
+- **Used by:** Route GET `/fonds/[username]/summary`.
+
+## Function: fetchFondSummary
+
+- **Purpose:** Reads the same-origin `GET /fonds/:username/summary` proxy and validates the body with `fondSummarySchema`.
+- **Inputs:** `username` — Fond handle from the route.
+- **Returns / side effects:** The `FondSummary`, or `null` on 404 (no Fond, or another handle). Throws on any other non-2xx status or a body that fails validation.
+- **Used by:** `FondSummaryLoader` on `/fonds/[username]`.
+
+## Function: FondPage
+
+- **Purpose:** `/fonds/[username]` page. Wraps `FondSummaryLoader` in the unsigned public `AppShell` (one top-left back arrow with the home wordmark, light language switcher).
+- **Inputs:** Dynamic route params (`username`).
+- **Returns / side effects:** The public Fond screen. No server fetch; the loader calls the same-origin proxy after hydration.
+- **Used by:** App Router route `/fonds/[username]`.
+
+## Function: FondSummaryLoader
+
+- **Purpose:** Client loader for the public Fond card. A new component because `StatsDashboard` is the ink marketing stats page with charts and a fiat picker, and `ViewProfileScreen` renders a member profile with gift charts; neither shows Fond totals.
+- **Inputs:** `username`. Fetches `fetchFondSummary(username)` on mount and after **Try again**.
+- **Returns / side effects:** Loading (`forum.loading`), not-found (`fond.missing`), error (`fond.error` with **Try again**), or the card: the handle with the **Fond** `ForumRoleTag` and hint, three KPI tiles (`fond.received`, `fond.paidOut` + `fond.fees`, `fond.balance` + `fond.balanceAsOf` / `fond.balanceNotReported`), and `fond.payoutsPaid`. Every amount uses `formatBitcoin` with the preferred fiat from the current spot (`useFiatPreference` + `useSpotRate` + `formatFiatDisplay`) under it; the spot is not stored.
+- **Used by:** `FondPage`.

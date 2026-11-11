@@ -1874,3 +1874,13 @@ export async function proxyMessagesEditsGet(
 ): Promise<Response> {
   return proxyApiRequest(request, `/messages/${encodeURIComponent(messageId)}/edits`);
 }
+
+/**
+ * Proxies GET /fond/summary to the 21.gifts api (public; no auth).
+ *
+ * @param request - Incoming App Router request.
+ * @returns The upstream response.
+ */
+export async function proxyFondSummaryGet(request: Request): Promise<Response> {
+  return proxyApiRequest(request, '/fond/summary');
+}

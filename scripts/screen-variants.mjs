@@ -12039,4 +12039,25 @@ export const SCREEN_VARIANTS = [
     visual: 'state-messages-id-author-replies-translate-error',
     needle: 'state /messages/[id]/author replies-translate-error',
   },
+  {
+    route: '/fonds/[username]',
+    id: 'default',
+    image: 'fonds-username.png',
+    visual: 'screen-fonds-username',
+    needle: "getByRole('heading', { name: 'tondo-fond' })",
+  },
+  {
+    route: '/fonds/[username]',
+    id: 'balance-null',
+    image: 'fonds-balance-null.png',
+    visual: 'state-fonds-balance-null',
+    needle: 'not reported yet',
+  },
+  {
+    route: '/fonds/[username]',
+    id: 'error',
+    image: 'fonds-error.png',
+    visual: 'state-fonds-error',
+    needle: 'Could not load the Fond. Please try again.',
+  },
 ];

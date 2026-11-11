@@ -41,6 +41,7 @@ import {
   fundingDecisionResultSchema,
   dailyRosterSchema,
   fondPayoutListSchema,
+  fondSummarySchema,
   fondPayoutInvoiceSchema,
   trustActionResultSchema,
   trustChainSchema,
@@ -90,6 +91,7 @@ import {
   type FundingDecisionResult,
   type DailyRoster,
   type FondPayout,
+  type FondSummary,
   type FondPayoutInvoice,
   type OwnerFunding,
   type PasskeyBegin,
@@ -2278,6 +2280,28 @@ export async function fetchViewActivity(viewKey: string): Promise<AccountActivit
   } catch {
     throw new Error('Could not load gift stats. Please try again.');
   }
+}
+
+/**
+ * Fetches the public Fond totals for one handle.
+ *
+ * Reads the same-origin `GET /fonds/:username/summary` proxy. The proxy
+ * answers 404 when the api has no Fond or when the handle is not the Fond's
+ * own handle.
+ *
+ * @param username - Fond handle from the route (e.g. `tondo-fond`).
+ * @returns The {@link FondSummary}, or `null` when the Fond is unknown (404).
+ * @throws Error on any other non-2xx status or a body that fails validation.
+ */
+export async function fetchFondSummary(username: string): Promise<FondSummary | null> {
+  const response = await fetch(`/fonds/${encodeURIComponent(username)}/summary`);
+  if (response.status === 404) {
+    return null;
+  }
+  if (!response.ok) {
+    throw new Error(`Failed to fetch Fond summary: ${response.status}`);
+  }
+  return fondSummarySchema.parse(await response.json());
 }
 
 /** One cursor-paginated page of the forum feed. */

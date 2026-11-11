@@ -46222,3 +46222,51 @@ test.describe('previous wallet states', () => {
     await shotScreen(page, 'state-previous-wallet-done-remove-error');
   });
 });
+
+test.describe('fonds screen', () => {
+  test('screen /fonds/[username] default', async ({ page }) => {
+    await fulfillSpot(page);
+    await page.goto('/fonds/tondo-fond');
+    await expect(page.getByRole('heading', { name: 'tondo-fond' })).toBeVisible();
+    await expect(page.getByText("₿210'000")).toBeVisible();
+    await expect(page.getByText('$210.00')).toBeVisible();
+    await expect(page.getByText('3 grant payouts paid (3.00 USD)')).toBeVisible();
+    await shotScreen(page, 'screen-fonds-username');
+  });
+
+  test('state /fonds/[username] balance-null', async ({ page }) => {
+    await fulfillSpot(page);
+    await page.route('**/fonds/tondo-fond/summary', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          username: 'tondo-fond',
+          receivedSats: 210_000,
+          paidOutSats: 21_000,
+          feesSats: 210,
+          balanceSats: null,
+          balanceSyncedAt: null,
+          payoutsPaid: 3,
+          payoutsPaidUsd: '3.00',
+        }),
+      });
+    });
+    await page.goto('/fonds/tondo-fond');
+    await expect(page.getByText('not reported yet')).toBeVisible();
+    await shotScreen(page, 'state-fonds-balance-null');
+  });
+
+  test('state /fonds/[username] error', async ({ page }) => {
+    await page.route('**/fonds/tondo-fond/summary', async (route) => {
+      await route.fulfill({
+        status: 503,
+        contentType: 'application/json',
+        body: JSON.stringify({ error: 'Fond unavailable' }),
+      });
+    });
+    await page.goto('/fonds/tondo-fond');
+  await expect(page.getByText('Could not load the Fond. Please try again.')).toBeVisible();
+    await shotScreen(page, 'state-fonds-error');
+  });
+});
