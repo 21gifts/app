@@ -8,7 +8,6 @@ import { IconButton } from '@/components/ui';
 import type { MemberProfile } from '@/lib/api-types';
 import { formatForumTimeFromMs } from '@/lib/forum-time';
 import type { MessageKey } from '@/lib/messages';
-import { verifiedChipHiddenByStaffTag } from '@/lib/roles';
 
 function fundingParticipationLabel(
   t: (key: MessageKey, vars?: Record<string, string | number>) => string,
@@ -51,8 +50,8 @@ function FundingProgramMark({
 }
 
 /**
- * Role pill, Software Developer label, and funding-program icon that sit
- * beside a member's name, plus the sentences those controls reveal.
+ * Role pill and funding-program icon that sit beside a member's name, plus
+ * the sentences those controls reveal.
  *
  * The same marks are what a visitor sees and what the account owner sees
  * on `/profile`. `children` places the marks and the hint paragraphs.
@@ -73,13 +72,10 @@ export function MemberIdentityPills({
   if (profile === null) {
     return children(null, null);
   }
-  const hasRoleTag =
-    forumTaggedRole(profile.role) !== null &&
-    !verifiedChipHiddenByStaffTag(profile.role, profile.staffTag);
+  const hasRoleTag = forumTaggedRole(profile.role) !== null;
   const roleTag = (
     <ForumRoleTag
       role={profile.role}
-      staffTag={profile.staffTag}
       expanded={roleHintOpen}
       onToggle={() => {
         setRoleHintOpen((open) => !open);
@@ -87,18 +83,10 @@ export function MemberIdentityPills({
     />
   );
   const fundingReviewedAt = profile.fundingReviewedAt;
-  const showMarks =
-    hasRoleTag ||
-    typeof fundingReviewedAt === 'number' ||
-    profile.staffTag === 'software_developer';
+  const showMarks = hasRoleTag || typeof fundingReviewedAt === 'number';
   const marks = showMarks ? (
     <>
       {roleTag}
-      {profile.staffTag === 'software_developer' ? (
-        <span className="rounded-full border border-app-border-strong px-2 py-0.5 text-xs font-medium text-app-muted">
-          {t('forum.staff.softwareDeveloper')}
-        </span>
-      ) : null}
       {typeof fundingReviewedAt === 'number' ? (
         <FundingProgramMark
           admittedAt={fundingReviewedAt}
@@ -113,7 +101,7 @@ export function MemberIdentityPills({
     <>
       {roleHintOpen && hasRoleTag ? (
         <p role="status" className="text-center text-xs text-app-muted">
-          <ForumRoleHint role={profile.role} staffTag={profile.staffTag} />
+          <ForumRoleHint role={profile.role} />
         </p>
       ) : null}
       {fundingHintOpen && typeof fundingReviewedAt === 'number' ? (

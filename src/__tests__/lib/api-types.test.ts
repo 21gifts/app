@@ -297,30 +297,12 @@ describe('memberProfileSchema', () => {
     ).toThrow();
   });
 
-  it('accepts staffTag software_developer and keeps the value', () => {
+  it('accepts role software_developer', () => {
     const profile = {
       id: '22222222-2222-4222-8222-222222222222',
       name: 'Carol',
       location: null,
-      role: 'basis' as const,
-      lightningAddress: null,
-      createdAt: '2026-01-15T12:00:00.000Z',
-      aboutMe: null,
-      aboutMeHasPhoto: false,
-      profileMessage: null,
-      postCount: 0,
-      replyCount: 0,
-      staffTag: 'software_developer' as const,
-    };
-    expect(memberProfileSchema.parse(profile).staffTag).toBe('software_developer');
-  });
-
-  it('leaves omitted staffTag undefined on a member profile', () => {
-    const profile = {
-      id: '22222222-2222-4222-8222-222222222222',
-      name: 'Carol',
-      location: null,
-      role: 'basis' as const,
+      role: 'software_developer' as const,
       lightningAddress: null,
       createdAt: '2026-01-15T12:00:00.000Z',
       aboutMe: null,
@@ -329,45 +311,7 @@ describe('memberProfileSchema', () => {
       postCount: 0,
       replyCount: 0,
     };
-    expect(memberProfileSchema.parse(profile).staffTag).toBeUndefined();
-  });
-
-  it('rejects an unknown staffTag on a member profile', () => {
-    expect(() =>
-      memberProfileSchema.parse({
-        id: '22222222-2222-4222-8222-222222222222',
-        name: 'Carol',
-        location: null,
-        role: 'basis',
-        lightningAddress: null,
-        createdAt: '2026-01-15T12:00:00.000Z',
-        aboutMe: null,
-        aboutMeHasPhoto: false,
-        profileMessage: null,
-        postCount: 0,
-        replyCount: 0,
-        staffTag: 'nope',
-      }),
-    ).toThrow();
-  });
-
-  it('rejects null staffTag on a member profile', () => {
-    expect(() =>
-      memberProfileSchema.parse({
-        id: '22222222-2222-4222-8222-222222222222',
-        name: 'Carol',
-        location: null,
-        role: 'basis',
-        lightningAddress: null,
-        createdAt: '2026-01-15T12:00:00.000Z',
-        aboutMe: null,
-        aboutMeHasPhoto: false,
-        profileMessage: null,
-        postCount: 0,
-        replyCount: 0,
-        staffTag: null,
-      }),
-    ).toThrow();
+    expect(memberProfileSchema.parse(profile).role).toBe('software_developer');
   });
 });
 
@@ -399,6 +343,14 @@ describe('trustChainSchema', () => {
   it('accepts an initiator node', () => {
     const body = {
       nodes: [{ id: 'i', name: 'Ivy', role: 'initiator' as const }],
+      edges: [],
+    };
+    expect(trustChainSchema.parse(body)).toEqual(body);
+  });
+
+  it('accepts a software developer node', () => {
+    const body = {
+      nodes: [{ id: 's', name: 'Sam', role: 'software_developer' as const }],
       edges: [],
     };
     expect(trustChainSchema.parse(body)).toEqual(body);
@@ -1668,24 +1620,6 @@ describe('forumMessageSchema place', () => {
       }),
     ).toThrow();
   });
-
-  it('accepts staffTag software_developer and keeps the value', () => {
-    expect(forumMessageSchema.parse({ ...base, staffTag: 'software_developer' }).staffTag).toBe(
-      'software_developer',
-    );
-  });
-
-  it('leaves omitted staffTag undefined on a forum message', () => {
-    expect(forumMessageSchema.parse(base).staffTag).toBeUndefined();
-  });
-
-  it('rejects an unknown staffTag on a forum message', () => {
-    expect(() => forumMessageSchema.parse({ ...base, staffTag: 'nope' })).toThrow();
-  });
-
-  it('rejects null staffTag on a forum message', () => {
-    expect(() => forumMessageSchema.parse({ ...base, staffTag: null })).toThrow();
-  });
 });
 
 describe('accountSchema', () => {
@@ -1728,9 +1662,12 @@ describe('accountSchema', () => {
     expect(() => accountSchema.parse({ ...account, name: '' })).toThrow();
   });
 
-  it('accepts founder, fond, and verified roles', () => {
+  it('accepts founder, fond, software developer, and verified roles', () => {
     expect(accountSchema.parse({ ...account, role: 'founder' }).role).toBe('founder');
     expect(accountSchema.parse({ ...account, role: 'fond' }).role).toBe('fond');
+    expect(accountSchema.parse({ ...account, role: 'software_developer' }).role).toBe(
+      'software_developer',
+    );
     expect(accountSchema.parse({ ...account, role: 'verified' }).role).toBe('verified');
   });
 
@@ -1891,24 +1828,6 @@ describe('accountSchema', () => {
       }),
     ).toThrow();
   });
-
-  it('accepts staffTag software_developer and keeps the value', () => {
-    expect(accountSchema.parse({ ...account, staffTag: 'software_developer' }).staffTag).toBe(
-      'software_developer',
-    );
-  });
-
-  it('leaves omitted staffTag undefined on an account', () => {
-    expect(accountSchema.parse(account).staffTag).toBeUndefined();
-  });
-
-  it('rejects an unknown staffTag on an account', () => {
-    expect(() => accountSchema.parse({ ...account, staffTag: 'nope' })).toThrow();
-  });
-
-  it('rejects null staffTag on an account', () => {
-    expect(() => accountSchema.parse({ ...account, staffTag: null })).toThrow();
-  });
 });
 
 describe('accountNotificationLevel', () => {
@@ -2063,9 +1982,12 @@ describe('forumMessageSchema', () => {
     });
   });
 
-  it('accepts founder, fond, verified, and moderator roles', () => {
+  it('accepts founder, fond, software developer, verified, and moderator roles', () => {
     expect(forumMessageSchema.parse({ ...message, role: 'founder' }).role).toBe('founder');
     expect(forumMessageSchema.parse({ ...message, role: 'fond' }).role).toBe('fond');
+    expect(forumMessageSchema.parse({ ...message, role: 'software_developer' }).role).toBe(
+      'software_developer',
+    );
     expect(forumMessageSchema.parse({ ...message, role: 'verified' }).role).toBe('verified');
     expect(forumMessageSchema.parse({ ...message, role: 'moderator' }).role).toBe('moderator');
   });

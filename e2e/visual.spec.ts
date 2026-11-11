@@ -11570,8 +11570,7 @@ test.describe('onboarding screens', () => {
               sats: 5,
               payable: true,
               hasPhoto: false,
-              role: 'moderator',
-              staffTag: 'software_developer',
+              role: 'software_developer',
             },
           ],
         }),
@@ -11580,6 +11579,11 @@ test.describe('onboarding screens', () => {
     await page.goto('/welcome');
     await expect(page.getByRole('button', { name: 'Translate' })).toBeVisible();
     await expect(page.getByText('Software Developer')).toBeVisible();
+    const softwareDeveloperNote = page.locator('[data-message-id="m-de"]');
+    await expect(
+      softwareDeveloperNote.getByRole('button', { name: 'Software Developer' }),
+    ).toHaveCount(1);
+    await expect(softwareDeveloperNote.getByRole('button', { name: 'Moderator' })).toHaveCount(0);
     await shotScreen(page, 'state-welcome-software-developer');
   });
 
@@ -12527,11 +12531,15 @@ test.describe('onboarding screens', () => {
         });
       },
     );
-    await stubOwnMember(page, { staffTag: 'software_developer' });
+    await stubOwnMember(page, { role: 'software_developer' });
     await openProfile(page);
     await expect(page.getByRole('heading', { name: 'Profile' })).toBeVisible();
     await expect(page.getByText('Software Developer')).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Verified' })).toHaveCount(0);
+    const profileCard = page.getByRole('heading', { name: 'Profile' }).locator('..');
+    const profileNameRow = profileCard.getByText('Ada', { exact: true }).locator('..');
+    await expect(profileNameRow.getByRole('button', { name: 'Software Developer' })).toHaveCount(1);
+    await expect(profileNameRow.getByRole('button', { name: 'Moderator' })).toHaveCount(0);
+    await expect(profileNameRow.getByRole('button', { name: 'Verified' })).toHaveCount(0);
     await shotScreen(page, 'state-profile-software-developer');
   });
 
@@ -14888,8 +14896,7 @@ test.describe('onboarding screens', () => {
           id: memberId,
           name: 'Carol',
           location: null,
-          role: 'basis',
-          staffTag: 'software_developer',
+          role: 'software_developer',
           username: 'carol',
           lightningAddress: 'carol@walletofsatoshi.com',
           createdAt: '2026-01-15T12:00:00.000Z',
@@ -14903,8 +14910,7 @@ test.describe('onboarding screens', () => {
             sats: 21,
             payable: true,
             hasPhoto: false,
-            role: 'basis',
-            staffTag: 'software_developer',
+            role: 'software_developer',
             replyCount: 0,
           },
           postCount: 1,
@@ -14926,6 +14932,11 @@ test.describe('onboarding screens', () => {
     await expect(page.getByRole('button', { name: 'Copy link to this profile' })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Message' })).toBeVisible();
     await expect(page.getByText('Software Developer')).toBeVisible();
+    const memberCard = page.getByRole('heading', { name: 'Profile' }).locator('..');
+    const memberNameRow = memberCard.getByText('Carol', { exact: true }).locator('..');
+    await expect(memberNameRow.getByRole('button', { name: 'Software Developer' })).toHaveCount(1);
+    await expect(memberNameRow.getByRole('button', { name: 'Moderator' })).toHaveCount(0);
+    await expect(memberNameRow.getByRole('button', { name: 'Verified' })).toHaveCount(0);
     await shotScreen(page, 'state-members-accountId-software-developer');
   });
 
@@ -27445,8 +27456,7 @@ test.describe('profile activity chart variants', () => {
           name: 'Ada',
           location: null,
           username: 'alice',
-          role: 'basis',
-          staffTag: 'software_developer',
+          role: 'software_developer',
           lightningAddress: 'member@21.gifts',
           lightningAddressVerified: true,
           createdAt: 1,

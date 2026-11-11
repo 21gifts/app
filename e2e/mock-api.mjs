@@ -57,7 +57,15 @@ function heldShareBoxIdFromPath(pathName) {
 }
 
 /** Same order as `ROLE_ORDER` in `src/lib/roles.ts`: a named role means that role or higher. */
-const ROLE_ORDER = ['basis', 'verified', 'moderator', 'fond', 'initiator', 'founder'];
+const ROLE_ORDER = [
+  'basis',
+  'verified',
+  'moderator',
+  'fond',
+  'software_developer',
+  'initiator',
+  'founder',
+];
 
 /** The one open payout each Fond fixture account sees today. */
 const FOND_PAYOUT_ROW = {
@@ -1051,7 +1059,7 @@ const server = http.createServer(async (req, res) => {
       filtered = living.filter((message) => message.sats === 0);
     } else if (mode === 'active') {
       filtered = living.filter(
-        (message) => message.sats > 0 || message.role === 'founder' || message.role === 'moderator',
+        (message) => message.sats > 0 || roleAtLeast(message.role, 'moderator'),
       );
     } else if (mode === 'popular') {
       filtered = living.filter((message) => message.sats > 0);

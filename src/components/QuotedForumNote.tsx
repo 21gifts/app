@@ -15,7 +15,6 @@ import { forumPhotoSrc } from '@/lib/forum-photo';
 import { splitForumMessageQuotes, splitShortLinks } from '@/lib/forum-quote';
 import { formatForumTime } from '@/lib/forum-time';
 import type { MessageKey } from '@/lib/messages';
-import { verifiedChipHiddenByStaffTag } from '@/lib/roles';
 import { formatBitcoin, type FiatCode, type FiatRateDay } from '@/lib/stats-money';
 
 type ShortHit = { code: string; messageId: string };
@@ -24,12 +23,13 @@ type ShortHit = { code: string; messageId: string };
 const NO_SHORT_HITS: ShortHit[] = [];
 
 const ROLE_LABEL_KEYS: Record<
-  'founder' | 'moderator' | 'fond' | 'initiator' | 'verified',
+  'founder' | 'moderator' | 'fond' | 'software_developer' | 'initiator' | 'verified',
   MessageKey
 > = {
   founder: 'forum.role.founder',
   moderator: 'forum.role.moderator',
   fond: 'forum.role.fond',
+  software_developer: 'forum.role.softwareDeveloper',
   initiator: 'forum.role.initiator',
   verified: 'forum.role.verified',
 };
@@ -63,10 +63,9 @@ function QuotedForumNote({
   const [deadPhotoId, setDeadPhotoId] = useState<string | null>(null);
 
   const fiatSuffix = preferredFiatSuffix(note.sats, rateDay, fiat, numberFormat, note);
-  const hideVerified = verifiedChipHiddenByStaffTag(note.role, note.staffTag);
-  const roleLabel =
-    !hideVerified && isQuotedTaggedRole(note.role) ? t(ROLE_LABEL_KEYS[note.role]) : null;
-  const viaLabel = !hideVerified && note.via === 'nostr' ? t('forum.via.nostr') : null;
+  const role = note.role;
+  const roleLabel = isQuotedTaggedRole(role) ? t(ROLE_LABEL_KEYS[role]) : null;
+  const viaLabel = note.via === 'nostr' ? t('forum.via.nostr') : null;
   const badgeLabel = roleLabel ?? viaLabel;
   const handleActivate = (event: { stopPropagation: () => void }): void => {
     onActivate?.(event);
@@ -120,11 +119,6 @@ function QuotedForumNote({
             {badgeLabel !== null ? (
               <span className="rounded-full border border-app-border-strong px-2 py-0.5 text-xs font-medium text-app-muted">
                 {badgeLabel}
-              </span>
-            ) : null}
-            {note.staffTag === 'software_developer' ? (
-              <span className="rounded-full border border-app-border-strong px-2 py-0.5 text-xs font-medium text-app-muted">
-                {t('forum.staff.softwareDeveloper')}
               </span>
             ) : null}
           </span>

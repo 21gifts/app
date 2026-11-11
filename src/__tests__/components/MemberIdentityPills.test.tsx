@@ -62,18 +62,23 @@ describe('MemberIdentityPills', () => {
     expect(screen.getByRole('status').textContent).toMatch(/confirmed they are real/i);
   });
 
+  it('shows one clickable Software Developer pill', () => {
+    renderPills({ ...profile, role: 'software_developer' });
+    const tag = screen.getByRole('button', { name: 'Software Developer' });
+    expect(screen.getAllByText('Software Developer')).toHaveLength(1);
+    expect(screen.queryByRole('button', { name: 'Verified' })).toBeNull();
+    fireEvent.click(tag);
+    expect(
+      screen.getByText('This person builds 21.gifts and moderates the living room.'),
+    ).toBeTruthy();
+  });
+
   it('shows the Fond pill and its sentence', () => {
     renderPills({ ...profile, role: 'fond' });
     fireEvent.click(screen.getByRole('button', { name: 'Fond' }));
     expect(screen.getByRole('status').textContent).toBe(
       'This account pays the daily gifts from the 21.gifts fund.',
     );
-  });
-
-  it('hides the verified pill when the software developer label is shown', () => {
-    renderPills({ ...profile, staffTag: 'software_developer' });
-    expect(screen.getByText('Software Developer')).toBeTruthy();
-    expect(screen.queryByRole('button', { name: 'Verified' })).toBeNull();
   });
 
   it('reveals who admitted the member', () => {

@@ -87,6 +87,25 @@ afterEach(() => {
 });
 
 describe('HabitComments', () => {
+  it.each(['moderator', 'software_developer'] as const)(
+    'offers comment deletion to a %s',
+    (role) => {
+      renderComments({
+        account: { ...owner, role },
+        habit: habit([otherComment]),
+      });
+      expect(screen.getByRole('button', { name: 'Delete comment' })).toBeTruthy();
+    },
+  );
+
+  it('hides comment deletion from a verified member', () => {
+    renderComments({
+      account: { ...owner, role: 'verified' },
+      habit: habit([otherComment]),
+    });
+    expect(screen.queryByRole('button', { name: 'Delete comment' })).toBeNull();
+  });
+
   it('hides the composer and offers no second sign-in link when signed out', () => {
     renderComments({ account: null, session: null });
     expect(screen.getByText('No comments yet.')).toBeTruthy();
