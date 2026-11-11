@@ -1,14 +1,91 @@
-/** Longest error name or code a report keeps. */
+/** Longest error name a report keeps. */
 const IDENTIFIER_MAX_LENGTH = 64;
 
 /** An error name: a class name ending in `Error` or `Exception` (`TypeError`, `DOMException`). */
 const ERROR_NAME = /^(?:[A-Z][A-Za-z0-9]*)?(?:Error|Exception)$/;
 
-/** An error's own code: a whole number or an upper-case constant (`ERR_CHUNK_LOAD`). */
-const OWN_CODE = /^(?:\d{1,6}|[A-Z][A-Z0-9]*(?:_[A-Z0-9]+)*)$/;
+/** An error's own numeric code: a whole number of up to six digits (a `DOMException`'s). */
+const NUMERIC_CODE = /^\d{1,6}$/;
 
-/** The SDK's error kind: one to four lower-case words joined by `_` (`service_connectivity`). */
-const SDK_KIND = /^[a-z]+(?:_[a-z]+){0,3}$/;
+/**
+ * The upper-case constants an error's own `code` may be reported as: network
+ * error codes and the legacy `DOMException` constant names. A list, not a
+ * shape, so a key or a name written in capitals is never sent.
+ */
+const KNOWN_CODES: ReadonlySet<string> = new Set([
+  'ECONNRESET',
+  'ECONNREFUSED',
+  'ECONNABORTED',
+  'ETIMEDOUT',
+  'ENOTFOUND',
+  'EAI_AGAIN',
+  'ENETUNREACH',
+  'ERR_NETWORK',
+  'ABORT_ERR',
+  'TIMEOUT_ERR',
+  'NETWORK_ERR',
+  'QUOTA_EXCEEDED_ERR',
+  'INVALID_STATE_ERR',
+  'NOT_SUPPORTED_ERR',
+  'SECURITY_ERR',
+]);
+
+/**
+ * The error kinds the wallet SDK writes at the start of a message
+ * (`Network error: …` → `network`), lower case joined by `_`. A list, not a
+ * shape, so other text before ` error:` (a name, a word of a phrase) is never
+ * sent.
+ */
+const SDK_KINDS: ReadonlySet<string> = new Set([
+  'address',
+  'authentication',
+  'body',
+  'builder',
+  'chain_service',
+  'configuration',
+  'connect',
+  'connection',
+  'decode',
+  'decryption',
+  'encryption',
+  'execution',
+  'generic',
+  'generic_signer',
+  'instant_claim_transient',
+  'json',
+  'key_derivation',
+  'lnurl',
+  'mnemonic',
+  'network',
+  'operator_pool',
+  'other',
+  'parse',
+  'passkey',
+  'received',
+  'redirect',
+  'request',
+  'script',
+  'service',
+  'service_connectivity',
+  'signer',
+  'signing',
+  'spark_primitives',
+  'status',
+  'storage',
+  'sweep_signer',
+  'system_time',
+  'taproot_sighash',
+  'timeout',
+  'token_output_service',
+  'transfer_got_leaf_spending',
+  'transport',
+  'tree_service',
+  'underlying_implementation',
+  'unexpected',
+  'validation',
+  'wallet',
+  'withdrawal_got_leaf_spending',
+]);
 
 /** What ends the SDK's error kind at the start of its message (`Network error: …`). */
 const SDK_KIND_END = ' error:';
@@ -130,7 +207,8 @@ function causeKindOf(name: string | null, code: string | null, message: string |
  * The SDK's error kind at the start of its message: the letters and spaces
  * before the first ` error:` within its first {@link SDK_KIND_MAX_LENGTH}
  * characters, in lower case joined by `_` (`Network error: …` → `network`,
- * `Service connectivity error: …` → `service_connectivity`).
+ * `Service connectivity error: …` → `service_connectivity`), when it is one
+ * of {@link SDK_KINDS}.
  *
  * @param message - The error's message.
  * @returns The kind, or `null`.
@@ -140,24 +218,43 @@ function sdkKind(message: string): string | null {
   if (end <= 0) {
     return null;
   }
-  const kind = message.slice(0, end);
-  return SDK_KIND_TEXT.test(kind) ? kind.toLowerCase().replace(/ /g, '_') : null;
+  const text = message.slice(0, end);
+  if (!SDK_KIND_TEXT.test(text)) {
+    return null;
+  }
+  const kind = text.toLowerCase().replace(/ /g, '_');
+  return SDK_KINDS.has(kind) ? kind : null;
 }
 
 /**
- * An error name or code that may be reported: a string, or a number written
- * out, of the given shape and at most {@link IDENTIFIER_MAX_LENGTH} characters.
+ * The error's own `code` when it may be reported: a whole number of up to six
+ * digits, or one of {@link KNOWN_CODES}.
  *
- * @param value - Candidate name or code.
- * @param shape - The shape it must have.
- * @returns The value as a string, or `null` when it may not be reported.
+ * @param code - The error's `code`.
+ * @returns The code as a string, or `null`.
  */
-function identifier(value: unknown, shape: RegExp): string | null {
-  const text = typeof value === 'number' ? String(value) : value;
-  if (typeof text !== 'string' || text.length > IDENTIFIER_MAX_LENGTH || !shape.test(text)) {
+function ownCode(code: unknown): string | null {
+  const text = typeof code === 'number' ? String(code) : code;
+  if (typeof text !== 'string') {
     return null;
   }
-  return text;
+  return NUMERIC_CODE.test(text) || KNOWN_CODES.has(text) ? text : null;
+}
+
+/**
+ * An error name that may be reported: a class name ending in `Error` or
+ * `Exception` ({@link ERROR_NAME}) of at most {@link IDENTIFIER_MAX_LENGTH}
+ * characters.
+ *
+ * @param value - Candidate name.
+ * @returns The name, or `null` when it may not be reported.
+ */
+function errorNameOf(value: unknown): string | null {
+  return typeof value === 'string' &&
+    value.length <= IDENTIFIER_MAX_LENGTH &&
+    ERROR_NAME.test(value)
+    ? value
+    : null;
 }
 
 /** What a report may say about a thrown value. */
@@ -167,7 +264,10 @@ export interface ErrorCause {
    * that is not an object (`string`), or `unknown`.
    */
   errorName: string;
-  /** The error's own `code`, or the SDK's error kind at the start of its message; `null` when neither. */
+  /**
+   * The error's own `code` (a number, or a known constant), or the SDK's
+   * error kind at the start of its message; `null` when neither.
+   */
   errorCode: string | null;
   /** The known harmless cause the error matches ({@link CAUSE_KINDS}), or `unknown`. */
   causeKind: CauseKind;
@@ -179,8 +279,9 @@ export interface ErrorCause {
  * constructor's name) when it is a class name ending in `Error` or
  * `Exception`, otherwise `unknown`; a thrown string or number reports its
  * type. The code is the error's own `code` (a whole number of up to six
- * digits, or an upper-case constant) or the SDK's error kind at the start of
- * its message (`Network error: …` → `network`). The cause kind comes from
+ * digits, or one of {@link KNOWN_CODES}) or the SDK's error kind at the start
+ * of its message when it is one of {@link SDK_KINDS} (`Network error: …` →
+ * `network`). The cause kind comes from
  * {@link CAUSE_KINDS}, matched on the device against the error's own name,
  * code, and message (or a thrown string); only the identifier is returned. A
  * value that cannot be read (a throwing getter) reports `unknown` and nothing
@@ -203,12 +304,11 @@ export function errorCause(error: unknown): ErrorCause {
   try {
     const { name, message, code } = error as { name?: unknown; message?: unknown; code?: unknown };
     const errorName =
-      identifier(name, ERROR_NAME) ??
-      identifier((error as { constructor?: { name?: unknown } }).constructor?.name, ERROR_NAME) ??
+      errorNameOf(name) ??
+      errorNameOf((error as { constructor?: { name?: unknown } }).constructor?.name) ??
       'unknown';
     const text = typeof message === 'string' ? message : null;
-    const kind = text === null ? null : sdkKind(text);
-    const errorCode = identifier(code, OWN_CODE) ?? identifier(kind, SDK_KIND);
+    const errorCode = ownCode(code) ?? (text === null ? null : sdkKind(text));
     const ownName = typeof name === 'string' ? name : null;
     return { errorName, errorCode, causeKind: causeKindOf(ownName, errorCode, text) };
   } catch {

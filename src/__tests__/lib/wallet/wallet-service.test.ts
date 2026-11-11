@@ -648,9 +648,12 @@ describe('connectWallet', () => {
       expect(sdk.listeners).toHaveLength(1);
     });
     sdk.listeners[0]?.({ type: 'synced' });
+    // The open's own first read starts only after the listener is added, so
+    // this one read is the refresh the synced event started.
     await vi.waitFor(() => {
       expect(useWalletStore.getState().status).toBe('error');
     });
+    expect(sdk.connection.getInfo).toHaveBeenCalledTimes(1);
     finishListener();
     await expect(pending).resolves.toBeUndefined();
     expectWalletOpenReport('error', {
@@ -1329,7 +1332,7 @@ describe('wallet open failure cause', () => {
   });
 
   it.each(['sdk_load', 'connect', 'first_sync', 'synced refresh', 'deadline'] as const)(
-    'sends no key material and no error text from a %s error that carries it',
+    'sends no key material and no error text from a %s error that carries it (deadline: one that arrives after it)',
     async (stage) => {
       // The test API key has no key shape; it rides on the error's config only.
       const message = `Generic error: ${KEY_MATERIAL.map(([, secret]) => secret).join(' ')} ${MNEMONIC}`;
@@ -1385,9 +1388,14 @@ describe('wallet open failure cause', () => {
         await vi.waitFor(() => {
           expect(useWalletStore.getState().status).toBe('error');
         });
-        rejectFirst(error);
+        // The report came from the refresh: it is out before the open's own
+        // read settles, and that read then fails with a harmless error.
+        expect(captureMessage).toHaveBeenCalledTimes(1);
+        rejectFirst(new Error('Storage error: database closed'));
       }
       if (stage === 'deadline') {
+        // Nothing is thrown by the deadline itself; the error arrives after it
+        // and must add nothing to the timeout report.
         await vi.advanceTimersByTimeAsync(WALLET_CONNECT_TIMEOUT_MS);
         rejectConnect(error);
       }

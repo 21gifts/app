@@ -106,10 +106,10 @@ describe('errorCause', () => {
       errorCode: null,
       causeKind: 'unknown',
     });
-    const chunk = Object.assign(new Error('x'), { name: 'ChunkLoadError', code: 'ERR_CHUNK_LOAD' });
+    const chunk = Object.assign(new Error('x'), { name: 'ChunkLoadError', code: 'ECONNRESET' });
     expect(errorCause(chunk)).toEqual({
       errorName: 'ChunkLoadError',
-      errorCode: 'ERR_CHUNK_LOAD',
+      errorCode: 'ECONNRESET',
       causeKind: 'chunk_load_failed',
     });
     const dom = { name: 'QuotaExceededError', code: 22, message: 'x' };
@@ -131,10 +131,31 @@ describe('errorCause', () => {
     ['longer than 41 characters', `${'a'.repeat(42)} error: fail`],
     ['with a character other than a letter or space', 'Net2work error: fail'],
     ['at the very start', ' error: fail'],
+    ['that is a name', 'Alice Smith error: fail'],
+    ['that is recovery words', 'Legal winner thank error: fail'],
   ])('reports no code for an SDK kind %s', (_label, message) => {
     const cause = errorCause(new Error(message));
     expect(cause.errorCode).toBeNull();
     expect(cause.causeKind).toBe('unknown');
+  });
+
+  it.each([
+    ['an upper-case hex key', 'E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855'],
+    ['an upper-case constant not on the list', 'ACCOUNT_ALICE'],
+    ['recovery words in capitals', 'LEGAL_WINNER_THANK'],
+    ['a number of more than six digits', 1_234_567],
+  ])('reports no code for an own code that is %s', (_label, code) => {
+    expect(errorCause(Object.assign(new Error('x'), { code })).errorCode).toBeNull();
+  });
+
+  it('reports the known own codes and every SDK kind of the list', () => {
+    expect(
+      errorCause(Object.assign(new Error('x'), { code: 'QUOTA_EXCEEDED_ERR' })).errorCode,
+    ).toBe('QUOTA_EXCEEDED_ERR');
+    expect(errorCause(new Error('Chain service error: x')).errorCode).toBe('chain_service');
+    expect(errorCause(new Error('Withdrawal got leaf spending error: x')).errorCode).toBe(
+      'withdrawal_got_leaf_spending',
+    );
   });
 
   it('reports a subclass name such as RuntimeError and TypeError', () => {
@@ -149,8 +170,8 @@ describe('errorCause', () => {
   });
 
   it('prefers an own string code to the SDK kind', () => {
-    const error = Object.assign(new Error('Network error: x'), { code: 'ERR_CHUNK_LOAD' });
-    expect(errorCause(error)).toMatchObject({ errorCode: 'ERR_CHUNK_LOAD', causeKind: 'unknown' });
+    const error = Object.assign(new Error('Network error: x'), { code: 'ETIMEDOUT' });
+    expect(errorCause(error)).toMatchObject({ errorCode: 'ETIMEDOUT', causeKind: 'unknown' });
   });
 
   it('falls back to the constructor name when the name is not a string', () => {
