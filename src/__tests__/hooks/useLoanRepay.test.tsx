@@ -2226,7 +2226,7 @@ describe('useLoanRepay free repayment and collecting actions', () => {
   it('closes a collecting loan and reloads without touching the wallet', async () => {
     const collecting = loan('collecting', 0, 0);
     collecting.fundedAt = null;
-    collecting.closedAt = null;
+    delete collecting.closedAt;
     vi.mocked(closeLoan).mockResolvedValue({
       fundedAt: null,
       closedAt: '2026-11-11T10:00:00.000Z',

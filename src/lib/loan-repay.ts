@@ -118,7 +118,7 @@ export function loanMaxInput(loan: MyLoan): string | null {
  * @returns True only before both funding and an explicit close.
  */
 export function isCollecting(loan: MyLoan): boolean {
-  return loan.fundedAt === null && loan.closedAt === null;
+  return loan.fundedAt === null && (loan.closedAt === null || loan.closedAt === undefined);
 }
 
 /** Combined state of all of the member's loans, for the loans card, the Menu row and the screen. */

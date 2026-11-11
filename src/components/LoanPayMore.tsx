@@ -10,7 +10,7 @@ import { Button, Card, IconButton } from '@/components/ui';
 import type { LoanRepayActionError, LoanRepayPhase, LoanRepayResult } from '@/hooks/useLoanRepay';
 import type { MyLoan, RepaymentWaiting } from '@/lib/api';
 import { formatDefinedGoalAmount } from '@/lib/forum-goal';
-import { checkLoanAmount, isCollecting, loanMaxInput } from '@/lib/loan-repay';
+import { checkLoanAmount, isCollecting, loanMaxInput, loanMaxUnits } from '@/lib/loan-repay';
 import type { NumberFormatStyle } from '@/lib/number-format';
 import { formatBitcoin } from '@/lib/stats-money';
 import { visualPin } from '@/lib/visual-pin';
@@ -52,6 +52,11 @@ export interface LoanPayMoreProps {
 }
 
 type PendingAction = 'pay' | 'close' | null;
+
+interface ServerMaximum {
+  maxSats: number | null;
+  maxAmount: string | null;
+}
 
 const PAY_MORE_ACTION_PINS = new Set([
   'repay-pay-more-server-max',
@@ -126,19 +131,14 @@ export function LoanPayMore({
   );
   const [confirming, setConfirming] = useState<'pay' | 'close' | null>(null);
   const [serverError, setServerError] = useState<string | null>(null);
-  const [serverMax, setServerMax] = useState<string | null>(null);
+  const [serverMaximum, setServerMaximum] = useState<ServerMaximum | null>(null);
   const collecting = isCollecting(loan);
   const busy = phase === 'preparing' || phase === 'sending' || phase === 'waiting';
   const canPay = phase === 'idle' || phase === 'failed' || phase === 'repaid';
   const walletReady = canPay || phase === 'unconfirmed';
-  const effectiveLoan =
-    serverMax === null
-      ? loan
-      : loan.goalCurrency === 'BTC'
-        ? { ...loan, maxSats: Number(serverMax) }
-        : { ...loan, maxAmount: serverMax };
+  const effectiveLoan = serverMaximum === null ? loan : { ...loan, ...serverMaximum };
   const check = checkLoanAmount(amount, effectiveLoan);
-  const maxInput = loanMaxInput(effectiveLoan);
+  const maxInput = loanMaxUnits(effectiveLoan) === null ? null : loanMaxInput(effectiveLoan);
 
   let inputError: string | null = null;
   if (amount.trim() !== '' && !check.ok) {
@@ -157,7 +157,7 @@ export function LoanPayMore({
   }
 
   useEffect(() => {
-    setServerMax(null);
+    setServerMaximum(null);
   }, [loan.maxAmount, loan.maxSats, loan.messageId]);
 
   useEffect(() => {
@@ -168,14 +168,17 @@ export function LoanPayMore({
       pendingAction === 'pay' &&
       (actionError.code === 'amount_too_high' || actionError.code === 'too_many_shares')
     ) {
-      const currentMax =
-        loan.goalCurrency === 'BTC'
-          ? actionError.maxSats === null
-            ? null
-            : String(actionError.maxSats)
-          : actionError.maxAmount;
+      const currentLoan = {
+        ...loan,
+        maxSats: actionError.maxSats,
+        maxAmount: actionError.maxAmount,
+      };
+      const currentMax = loanMaxUnits(currentLoan) === null ? null : loanMaxInput(currentLoan);
+      setServerMaximum({
+        maxSats: actionError.maxSats,
+        maxAmount: actionError.maxAmount,
+      });
       if (currentMax !== null) {
-        setServerMax(currentMax);
         setAmount(currentMax);
         setServerError(
           t('loans.payMoreMaxChanged', {

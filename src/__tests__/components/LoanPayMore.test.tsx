@@ -183,8 +183,9 @@ describe('LoanPayMore', () => {
     ).toBe(true);
   });
 
-  it('confirms that a first payment ends collecting', () => {
-    const collecting = loan({ fundedAt: null, closedAt: null, sats: 4_000, maxSats: 4_000 });
+  it('confirms that a first payment ends collecting when closedAt is omitted', () => {
+    const collecting = loan({ fundedAt: null, sats: 4_000, maxSats: 4_000 });
+    delete collecting.closedAt;
     const { onPay } = show(collecting);
     fireEvent.change(screen.getByLabelText('Amount (₿)'), { target: { value: '1000' } });
     fireEvent.click(screen.getByRole('button', { name: 'Pay this amount' }));
@@ -318,6 +319,66 @@ describe('LoanPayMore', () => {
     expect(screen.getByRole('alert').textContent).toBe(
       'Could not start this repayment. Please try again.',
     );
+  });
+
+  it('disables fiat repayment when a server maximum loses its rate', () => {
+    const php = loan({
+      goalCurrency: 'PHP',
+      goalAmount: '480.28',
+      maxSats: 9_283,
+      maxAmount: '480.28',
+    });
+    const view = show(php);
+    fireEvent.change(screen.getByLabelText('Amount (PHP)'), { target: { value: '100.00' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Pay this amount' }));
+    view.rerender(
+      payMoreState(php, view.onPay, view.onCloseCollecting, {
+        phase: 'failed',
+        actionError: { code: 'amount_too_high', maxSats: null, maxAmount: '90.50' },
+      }),
+    );
+
+    expect((screen.getByLabelText('Amount (PHP)') as HTMLInputElement).value).toBe('100.00');
+    expect(screen.getByText(/No PHP exchange rate is available now/)).toBeTruthy();
+    expect((screen.getByRole('button', { name: 'Max' }) as HTMLButtonElement).disabled).toBe(true);
+    expect(
+      (screen.getByRole('button', { name: 'Pay this amount' }) as HTMLButtonElement).disabled,
+    ).toBe(true);
+    fireEvent.click(screen.getByRole('button', { name: 'Pay this amount' }));
+    expect(view.onPay).toHaveBeenCalledTimes(1);
+  });
+
+  it('replaces an earlier fiat server maximum with a consecutive response without a rate', () => {
+    const php = loan({
+      goalCurrency: 'PHP',
+      goalAmount: '480.28',
+      maxSats: 9_283,
+      maxAmount: '480.28',
+    });
+    const view = show(php);
+    fireEvent.change(screen.getByLabelText('Amount (PHP)'), { target: { value: '100.00' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Pay this amount' }));
+    view.rerender(
+      payMoreState(php, view.onPay, view.onCloseCollecting, {
+        phase: 'failed',
+        actionError: { code: 'too_many_shares', maxSats: 2_000, maxAmount: '90.50' },
+      }),
+    );
+    expect((screen.getByLabelText('Amount (PHP)') as HTMLInputElement).value).toBe('90.50');
+    fireEvent.click(screen.getByRole('button', { name: 'Pay this amount' }));
+    expect(view.onPay).toHaveBeenCalledTimes(2);
+
+    view.rerender(
+      payMoreState(php, view.onPay, view.onCloseCollecting, {
+        phase: 'failed',
+        actionError: { code: 'amount_too_high', maxSats: null, maxAmount: null },
+      }),
+    );
+    expect(screen.getByText(/No PHP exchange rate is available now/)).toBeTruthy();
+    expect((screen.getByRole('button', { name: 'Max' }) as HTMLButtonElement).disabled).toBe(true);
+    expect(
+      (screen.getByRole('button', { name: 'Pay this amount' }) as HTMLButtonElement).disabled,
+    ).toBe(true);
   });
 
   it('clears a completed free payment and shows an untyped wallet failure', () => {

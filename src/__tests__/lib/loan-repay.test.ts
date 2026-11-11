@@ -170,6 +170,9 @@ describe('free loan amount helpers', () => {
 
   it('collects only before funding and before an explicit close', () => {
     expect(isCollecting(loan({ fundedAt: null, closedAt: null }))).toBe(true);
+    const withoutClosedAt = loan({ fundedAt: null });
+    delete withoutClosedAt.closedAt;
+    expect(isCollecting(withoutClosedAt)).toBe(true);
     expect(isCollecting(loan({ fundedAt: 'funded', closedAt: null }))).toBe(false);
     expect(isCollecting(loan({ fundedAt: null, closedAt: 'closed' }))).toBe(false);
   });

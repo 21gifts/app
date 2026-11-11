@@ -923,7 +923,7 @@ export function useLoanRepay(options: {
         pinned ||
         session === null ||
         loan.fundedAt !== null ||
-        loan.closedAt !== null ||
+        (loan.closedAt !== null && loan.closedAt !== undefined) ||
         actionPending.current ||
         activeWalletRun.has(phaseRef.current)
       ) {
