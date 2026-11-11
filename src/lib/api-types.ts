@@ -171,8 +171,6 @@ export const accountSchema = z.object({
    * Missing or `undefined` is the same as `null` (no funding object).
    */
   funding: ownerFundingSchema.nullable().optional(),
-  /** Older api compatibility label; only `software_developer` is accepted. */
-  staffTag: z.literal('software_developer').optional(),
 });
 
 /**
@@ -244,7 +242,6 @@ export const accountSchema = z.object({
  * not be synchronized, while `null` means the account preference is unset.
  * `funding` is the owner grant object, `null` for `basis`, and omitted on
  * older api builds (treat missing like `null`).
- * `staffTag` is an older api compatibility label; only `software_developer` is accepted.
  */
 export type Account = z.infer<typeof accountSchema>;
 
@@ -306,8 +303,6 @@ export const viewProfileSchema = z.object({
   profileMessage: z.record(z.unknown()).nullable().optional(),
   fundingReviewedAt: z.number().nullable().optional(),
   fundingReviewedByName: z.string().nullable().optional(),
-  /** Older api compatibility label; only `software_developer` is accepted. */
-  staffTag: z.literal('software_developer').optional(),
 });
 
 /**
@@ -924,7 +919,6 @@ export type ForumPlaceRow = z.infer<typeof forumPlaceRowSchema>;
  * `shopAccount` is optional on a shop note (`id`, `username`, `name`); omitted when cleared.
  * `shopNpub` is the listed shop identity, null for every other note, and
  * optional only so a rolling api deployment still parses.
- * `staffTag` is an older api compatibility label; only `software_developer` is accepted.
  */
 export const forumMessageSchema = z
   .object({
@@ -1002,8 +996,6 @@ export const forumMessageSchema = z
         }),
       )
       .optional(),
-    /** Older api compatibility label; only `software_developer` is accepted. */
-    staffTag: z.literal('software_developer').optional(),
   })
   .refine(
     (message) => message.text !== '' || message.hasPhoto || message.hasVideo || message.sats > 0,
@@ -1586,7 +1578,6 @@ export type AccountTrust = z.infer<typeof accountTrustSchema>;
  * is the shop-note total and optional `creditCount` is the credit-note total.
  * Activity feeds are capped at 200.
  * `trust` defaults to all-null when an older api omits the field.
- * `staffTag` is an older api compatibility label; only `software_developer` is accepted.
  */
 export const memberProfileSchema = z.object({
   id: z.string(),
@@ -1626,8 +1617,6 @@ export const memberProfileSchema = z.object({
    * payload still parses; `null` when unnamed.
    */
   fundingReviewedByName: z.string().nullable().optional(),
-  /** Older api compatibility label; only `software_developer` is accepted. */
-  staffTag: z.literal('software_developer').optional(),
 });
 
 /**

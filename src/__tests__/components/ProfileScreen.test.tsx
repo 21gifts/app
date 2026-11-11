@@ -773,8 +773,7 @@ describe('ProfileScreen', () => {
       session: 'tok',
       account: {
         ...current,
-        role: 'verified',
-        staffTag: 'software_developer',
+        role: 'software_developer',
         funding: {
           status: 'admitted',
           trialUtcDate: null,
@@ -824,13 +823,10 @@ describe('ProfileScreen', () => {
     expect(screen.getAllByRole('button', { name: 'Verified' })).toHaveLength(1);
   });
 
-  it.each([
-    ['old api body', { role: 'verified' as const, staffTag: 'software_developer' as const }],
-    ['new api body', { role: 'software_developer' as const }],
-  ])('shows one Software Developer pill when fetchMember returns %s', async (_label, fields) => {
+  it('shows one Software Developer pill when fetchMember returns the live role', async () => {
     vi.mocked(fetchMember).mockResolvedValue({
       ...OWN_MEMBER,
-      ...fields,
+      role: 'software_developer',
     });
     renderWithLocale(<ProfileScreen />);
     expect(await screen.findByText('alice@21.gifts')).toBeTruthy();

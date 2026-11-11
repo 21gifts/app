@@ -8,7 +8,6 @@ import { IconButton } from '@/components/ui';
 import type { MemberProfile } from '@/lib/api-types';
 import { formatForumTimeFromMs } from '@/lib/forum-time';
 import type { MessageKey } from '@/lib/messages';
-import { effectiveRole } from '@/lib/roles';
 
 function fundingParticipationLabel(
   t: (key: MessageKey, vars?: Record<string, string | number>) => string,
@@ -73,11 +72,10 @@ export function MemberIdentityPills({
   if (profile === null) {
     return children(null, null);
   }
-  const hasRoleTag = forumTaggedRole(effectiveRole(profile.role, profile.staffTag)) !== null;
+  const hasRoleTag = forumTaggedRole(profile.role) !== null;
   const roleTag = (
     <ForumRoleTag
       role={profile.role}
-      staffTag={profile.staffTag}
       expanded={roleHintOpen}
       onToggle={() => {
         setRoleHintOpen((open) => !open);
@@ -103,7 +101,7 @@ export function MemberIdentityPills({
     <>
       {roleHintOpen && hasRoleTag ? (
         <p role="status" className="text-center text-xs text-app-muted">
-          <ForumRoleHint role={profile.role} staffTag={profile.staffTag} />
+          <ForumRoleHint role={profile.role} />
         </p>
       ) : null}
       {fundingHintOpen && typeof fundingReviewedAt === 'number' ? (

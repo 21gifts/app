@@ -3,7 +3,7 @@
 import type { MouseEvent, ReactElement } from 'react';
 import { useTranslations } from '@/components/LocaleProvider';
 import type { MessageKey } from '@/lib/messages';
-import { effectiveRole, type Role } from '@/lib/roles';
+import type { Role } from '@/lib/roles';
 
 /** Roles that show a clickable tag beside a forum member's name. */
 export type ForumTaggedRole =
@@ -37,27 +37,24 @@ export function forumTaggedRole(role: string): ForumTaggedRole | null {
  * Clickable role pill shared by a member's identity card, forum notes and
  * replies, and the paid-heart sender list.
  *
- * The shown role comes from {@link effectiveRole}, so an older api body with a
- * lower role plus the `software_developer` staff tag still shows the Software
- * Developer pill. The pill is absent for an untagged role. The caller owns the
- * open state so each list can show one hint at a time.
+ * The pill shows exactly the api role through {@link forumTaggedRole}. It is
+ * absent for basis. The caller owns the open state so each list can show one
+ * hint at a time.
  *
- * @param props - Live role, optional staff tag, open state, and toggle.
+ * @param props - Live role, open state, and toggle.
  * @returns The pill, or `null` when this role has no tag.
  */
 export function ForumRoleTag({
   role,
-  staffTag,
   expanded,
   onToggle,
 }: {
   role: Role;
-  staffTag?: string | undefined;
   expanded: boolean;
   onToggle: (event: MouseEvent<HTMLButtonElement>) => void;
 }): ReactElement | null {
   const { t } = useTranslations();
-  const tagged = forumTaggedRole(effectiveRole(role, staffTag));
+  const tagged = forumTaggedRole(role);
   if (tagged === null) {
     return null;
   }
@@ -76,20 +73,14 @@ export function ForumRoleTag({
 /**
  * Sentence revealed under a {@link ForumRoleTag}.
  *
- * Resolves the shown role through {@link effectiveRole}, like the pill itself.
+ * Uses the api role, like the pill itself.
  *
- * @param props - Live role and optional staff tag.
+ * @param props - Live role.
  * @returns The status sentence, or `null` when this role has no tag.
  */
-export function ForumRoleHint({
-  role,
-  staffTag,
-}: {
-  role: Role;
-  staffTag?: string | undefined;
-}): ReactElement | null {
+export function ForumRoleHint({ role }: { role: Role }): ReactElement | null {
   const { t } = useTranslations();
-  const tagged = forumTaggedRole(effectiveRole(role, staffTag));
+  const tagged = forumTaggedRole(role);
   if (tagged === null) {
     return null;
   }

@@ -215,16 +215,7 @@ describe('forum-feed', () => {
     ]);
   });
 
-  it('active keeps an unpaid software developer note from the older api body', () => {
-    const developer = {
-      ...UNPAID_VERIFIED,
-      staffTag: 'software_developer' as const,
-    };
-    expect(visibleForumMessages([ADA, developer, BOB], 'active')).toEqual([ADA, developer]);
-    expect(visibleForumMessages([ADA, UNPAID_VERIFIED, BOB], 'active')).toEqual([ADA]);
-  });
-
-  it('active keeps an unpaid software developer note from the newer api body', () => {
+  it('active keeps an unpaid software developer note', () => {
     const developer = {
       ...UNPAID_VERIFIED,
       role: 'software_developer' as const,

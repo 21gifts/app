@@ -3,7 +3,6 @@ import {
   ROLE_ORDER,
   authorCannotReceive,
   canEditDailyPayoutRoster,
-  effectiveRole,
   isOwnNote,
   isReplyPaymentExempt,
   roleAtLeast,
@@ -106,30 +105,6 @@ describe('canEditDailyPayoutRoster', () => {
     expect(canEditDailyPayoutRoster('basis')).toBe(false);
     expect(canEditDailyPayoutRoster(null)).toBe(false);
     expect(canEditDailyPayoutRoster(undefined)).toBe(false);
-  });
-});
-
-describe('effectiveRole', () => {
-  it('promotes a staff-tagged role below software developer', () => {
-    expect(effectiveRole('verified', 'software_developer')).toBe('software_developer');
-    expect(effectiveRole('basis', 'software_developer')).toBe('software_developer');
-    expect(effectiveRole('moderator', 'software_developer')).toBe('software_developer');
-    expect(effectiveRole('fond', 'software_developer')).toBe('software_developer');
-  });
-
-  it('leaves software developer unchanged without a tag', () => {
-    expect(effectiveRole('software_developer')).toBe('software_developer');
-    expect(effectiveRole('software_developer', null)).toBe('software_developer');
-  });
-
-  it('leaves roles above software developer unchanged', () => {
-    expect(effectiveRole('initiator', 'software_developer')).toBe('initiator');
-    expect(effectiveRole('founder', 'software_developer')).toBe('founder');
-  });
-
-  it('leaves a role unchanged without a tag or with an unknown tag', () => {
-    expect(effectiveRole('verified')).toBe('verified');
-    expect(effectiveRole('verified', 'nope')).toBe('verified');
   });
 });
 

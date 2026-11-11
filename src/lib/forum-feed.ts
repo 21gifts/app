@@ -1,5 +1,5 @@
 import type { ForumMessage } from '@/lib/api-types';
-import { effectiveRole, roleAtLeast } from '@/lib/roles';
+import { roleAtLeast } from '@/lib/roles';
 
 /** Client-side forum list filter / sort mode. */
 export type ForumFeedMode = 'active' | 'unpaid' | 'all' | 'popular';
@@ -84,9 +84,7 @@ export function hasUnseenForumPosts(
 }
 
 function isActiveForumMessage(message: ForumMessage): boolean {
-  return (
-    message.sats > 0 || roleAtLeast(effectiveRole(message.role, message.staffTag), 'moderator')
-  );
+  return message.sats > 0 || roleAtLeast(message.role, 'moderator');
 }
 
 /**

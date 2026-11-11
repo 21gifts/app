@@ -15,7 +15,6 @@ import { forumPhotoSrc } from '@/lib/forum-photo';
 import { splitForumMessageQuotes, splitShortLinks } from '@/lib/forum-quote';
 import { formatForumTime } from '@/lib/forum-time';
 import type { MessageKey } from '@/lib/messages';
-import { effectiveRole } from '@/lib/roles';
 import { formatBitcoin, type FiatCode, type FiatRateDay } from '@/lib/stats-money';
 
 type ShortHit = { code: string; messageId: string };
@@ -64,7 +63,7 @@ function QuotedForumNote({
   const [deadPhotoId, setDeadPhotoId] = useState<string | null>(null);
 
   const fiatSuffix = preferredFiatSuffix(note.sats, rateDay, fiat, numberFormat, note);
-  const role = effectiveRole(note.role, note.staffTag);
+  const role = note.role;
   const roleLabel = isQuotedTaggedRole(role) ? t(ROLE_LABEL_KEYS[role]) : null;
   const viaLabel = note.via === 'nostr' ? t('forum.via.nostr') : null;
   const badgeLabel = roleLabel ?? viaLabel;

@@ -42,24 +42,12 @@ describe('ForumRoleTag', () => {
     expect(screen.getByRole('button', { name: 'Fond' })).toBeTruthy();
   });
 
-  it('shows Software Developer and hides Verified for a verified member with the staff tag', () => {
-    renderWithLocale(
-      <ForumRoleTag
-        role="verified"
-        staffTag="software_developer"
-        expanded={false}
-        onToggle={vi.fn()}
-      />,
-    );
-    expect(screen.getByRole('button', { name: 'Software Developer' })).toBeTruthy();
-    expect(screen.queryByRole('button', { name: 'Verified' })).toBeNull();
-  });
-
-  it('shows Software Developer for the live role', () => {
+  it('shows one Software Developer pill and no Verified pill', () => {
     renderWithLocale(
       <ForumRoleTag role="software_developer" expanded={false} onToggle={vi.fn()} />,
     );
     expect(screen.getByRole('button', { name: 'Software Developer' })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Verified' })).toBeNull();
   });
 });
 
@@ -81,14 +69,7 @@ describe('ForumRoleHint', () => {
     ).toBeTruthy();
   });
 
-  it('returns the Software Developer sentence for a verified member with the staff tag', () => {
-    renderWithLocale(<ForumRoleHint role="verified" staffTag="software_developer" />);
-    expect(
-      screen.getByText('This person builds 21.gifts and moderates the living room.'),
-    ).toBeTruthy();
-  });
-
-  it('returns the Software Developer sentence for the live role', () => {
+  it('returns the Software Developer sentence', () => {
     renderWithLocale(<ForumRoleHint role="software_developer" />);
     expect(
       screen.getByText('This person builds 21.gifts and moderates the living room.'),

@@ -44,30 +44,6 @@ export function roleRank(role: Role): number {
 }
 
 /**
- * Role including the older api's `staffTag` compatibility bridge.
- *
- * Before the api sends `role: 'software_developer'`, it sends a lower role
- * (`basis`, `verified`, `moderator`, or `fond`, usually `verified`) plus
- * `staffTag: 'software_developer'`. This promotes that member to
- * `software_developer` for display only: role tags and the Active feed filter.
- * Viewer permission checks deliberately use `account.role` from the api. A
- * role already at or above `software_developer` (`software_developer`,
- * `initiator`, and `founder`) is unchanged, as is a member without the
- * compatibility label or with an unknown value.
- *
- * @param role - Live account role from the api.
- * @param staffTag - Older api compatibility label when present, otherwise null
- *   or omitted.
- * @returns The effective role, including the compatibility bridge.
- */
-export function effectiveRole(role: Role, staffTag?: string | null): Role {
-  if (staffTag === 'software_developer' && roleRank(role) < roleRank('software_developer')) {
-    return 'software_developer';
-  }
-  return role;
-}
-
-/**
  * True when `role` meets or exceeds `min` by numeric rank. An equal rank
  * meets the minimum.
  *

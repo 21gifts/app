@@ -17174,50 +17174,6 @@ test('Function: postLnurlInvoice — amount and comment refusals', async ({ requ
   expect(await comment.json()).toEqual({ error: 'Comment too long' });
 });
 
-test('Function: effectiveRole — a staff-tagged author shows one Software Developer pill', async ({
-  page,
-}) => {
-  await seedAdaSession(page);
-  await page.route(/\/messages(?:\?|$)/, async (route) => {
-    await route.fulfill({
-      status: 200,
-      contentType: 'application/json',
-      body: JSON.stringify({
-        messages: [
-          {
-            id: 'm-staff-verified',
-            name: 'Ada',
-            text: 'Hello from the developer',
-            createdAt: '2026-08-28T12:00:00.000Z',
-            sats: 0,
-            payable: false,
-            hasPhoto: false,
-            role: 'verified',
-            staffTag: 'software_developer',
-          },
-          {
-            id: 'm-staff-moderator',
-            name: 'Bea',
-            text: 'Hello from the moderator',
-            createdAt: '2026-08-28T12:01:00.000Z',
-            sats: 0,
-            payable: false,
-            hasPhoto: false,
-            role: 'moderator',
-            staffTag: 'software_developer',
-          },
-        ],
-      }),
-    });
-  });
-  await page.goto('/welcome');
-  await chooseForumView(page, 'All');
-  await expect(page.getByText('Hello from the developer')).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Software Developer' })).toHaveCount(2);
-  await expect(page.getByRole('button', { name: 'Verified' })).toHaveCount(0);
-  await expect(page.getByRole('button', { name: 'Moderator' })).toHaveCount(0);
-});
-
 async function seedSignedInAda(page: Page): Promise<void> {
   await page.addInitScript(() => {
     localStorage.setItem('21gifts.session', 'sess-e2e');

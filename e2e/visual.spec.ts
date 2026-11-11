@@ -11527,8 +11527,7 @@ test.describe('onboarding screens', () => {
               sats: 5,
               payable: true,
               hasPhoto: false,
-              role: 'moderator',
-              staffTag: 'software_developer',
+              role: 'software_developer',
             },
           ],
         }),
@@ -12489,7 +12488,7 @@ test.describe('onboarding screens', () => {
         });
       },
     );
-    await stubOwnMember(page, { staffTag: 'software_developer' });
+    await stubOwnMember(page, { role: 'software_developer' });
     await openProfile(page);
     await expect(page.getByRole('heading', { name: 'Profile' })).toBeVisible();
     await expect(page.getByText('Software Developer')).toBeVisible();
@@ -14854,8 +14853,7 @@ test.describe('onboarding screens', () => {
           id: memberId,
           name: 'Carol',
           location: null,
-          role: 'basis',
-          staffTag: 'software_developer',
+          role: 'software_developer',
           username: 'carol',
           lightningAddress: 'carol@walletofsatoshi.com',
           createdAt: '2026-01-15T12:00:00.000Z',
@@ -14869,8 +14867,7 @@ test.describe('onboarding screens', () => {
             sats: 21,
             payable: true,
             hasPhoto: false,
-            role: 'basis',
-            staffTag: 'software_developer',
+            role: 'software_developer',
             replyCount: 0,
           },
           postCount: 1,
@@ -27416,8 +27413,7 @@ test.describe('profile activity chart variants', () => {
           name: 'Ada',
           location: null,
           username: 'alice',
-          role: 'basis',
-          staffTag: 'software_developer',
+          role: 'software_developer',
           lightningAddress: 'member@21.gifts',
           lightningAddressVerified: true,
           createdAt: 1,

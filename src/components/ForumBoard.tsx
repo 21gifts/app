@@ -103,7 +103,7 @@ import { shortResourceUrl } from '@/lib/short-link';
 import { formatForumTime } from '@/lib/forum-time';
 import type { HeartTipView } from '@/lib/heart-tip';
 import { ForumRoleHint, ForumRoleTag, forumTaggedRole } from '@/components/ForumRoleTag';
-import { authorCannotReceive, effectiveRole, isOwnNote } from '@/lib/roles';
+import { authorCannotReceive, isOwnNote } from '@/lib/roles';
 import { useFiatPreference } from '@/components/FiatPreferenceProvider';
 import { defaultFiatForLocale, formatBitcoin, type FiatRateDay } from '@/lib/stats-money';
 
@@ -1540,8 +1540,7 @@ export function ForumBoard({
             message.hasVideo && !deadVideoIds.has(message.id)
               ? (videoUrls[message.id] ?? forumVideoSrc(message.id, message.videoContentType))
               : undefined;
-          const hasRoleTag =
-            forumTaggedRole(effectiveRole(message.role, message.staffTag)) !== null;
+          const hasRoleTag = forumTaggedRole(message.role) !== null;
           const roleHintOpen = openRoleMessageId === message.id;
           const expanded = expandedId === message.id;
           const cannotReceive = authorCannotReceive(message, viewerAccountId);
@@ -1660,7 +1659,6 @@ export function ForumBoard({
                       {hasRoleTag ? (
                         <ForumRoleTag
                           role={message.role}
-                          staffTag={message.staffTag}
                           expanded={roleHintOpen}
                           onToggle={(event) => {
                             stopCardToggle(event);
@@ -1687,7 +1685,7 @@ export function ForumBoard({
                   </div>
                   {roleHintOpen && hasRoleTag ? (
                     <p role="status" className="mt-1 text-xs text-app-muted">
-                      <ForumRoleHint role={message.role} staffTag={message.staffTag} />
+                      <ForumRoleHint role={message.role} />
                     </p>
                   ) : roleHintOpen && message.via === 'nostr' ? (
                     <p role="status" className="mt-1 text-xs text-app-muted">
@@ -2057,8 +2055,7 @@ export function ForumBoard({
                       <ul className="flex flex-col gap-3">
                         {(Array.isArray(replies) ? replies : []).map((reply) => {
                           const replyCannotReceive = authorCannotReceive(reply, viewerAccountId);
-                          const hasReplyRoleTag =
-                            forumTaggedRole(effectiveRole(reply.role, reply.staffTag)) !== null;
+                          const hasReplyRoleTag = forumTaggedRole(reply.role) !== null;
                           const replyHintOpen = openRoleMessageId === reply.id;
                           return (
                             <li
@@ -2109,7 +2106,6 @@ export function ForumBoard({
                                   {hasReplyRoleTag ? (
                                     <ForumRoleTag
                                       role={reply.role}
-                                      staffTag={reply.staffTag}
                                       expanded={replyHintOpen}
                                       onToggle={(event) => {
                                         stopCardToggle(event);
@@ -2139,7 +2135,7 @@ export function ForumBoard({
                               </div>
                               {replyHintOpen && hasReplyRoleTag ? (
                                 <p role="status" className="mt-1 text-xs text-app-muted">
-                                  <ForumRoleHint role={reply.role} staffTag={reply.staffTag} />
+                                  <ForumRoleHint role={reply.role} />
                                 </p>
                               ) : replyHintOpen && reply.via === 'nostr' ? (
                                 <p role="status" className="mt-1 text-xs text-app-muted">

@@ -838,15 +838,12 @@ describe('ViewProfileLoader', () => {
     expect(fetchSignedInMember).not.toHaveBeenCalled();
   });
 
-  it.each([
-    ['old api body', { role: 'verified' as const, staffTag: 'software_developer' as const }],
-    ['new api body', { role: 'software_developer' as const }],
-  ])('maps an unverified card with one Software Developer pill (%s)', async (_label, fields) => {
+  it('maps an unverified card with one Software Developer pill', async () => {
     const { username, ...withoutUsername } = profile;
     void username;
     fetchProfile.mockResolvedValue({
       ...withoutUsername,
-      ...fields,
+      role: 'software_developer',
       lightningAddressVerified: false,
       shopCount: 1,
       creditCount: 1,
