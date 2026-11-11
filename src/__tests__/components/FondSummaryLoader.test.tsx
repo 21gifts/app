@@ -74,7 +74,16 @@ describe('FondSummaryLoader', () => {
     renderWithLocale(<FondSummaryLoader username="tondo-fond" />);
     expect(await screen.findByText('$210.00')).toBeTruthy();
     expect(screen.getByText('$21.00')).toBeTruthy();
+    expect(screen.getByText('$0.21')).toBeTruthy();
     expect(screen.getByText('$189.00')).toBeTruthy();
+  });
+
+  it('shows a ₿0 fee with its fiat figure', async () => {
+    spot.value = { sats: 100_000_000, usd: '100000', chf: null, eur: null, php: null };
+    vi.mocked(fetchFondSummary).mockResolvedValue({ ...SUMMARY, feesSats: 0 });
+    renderWithLocale(<FondSummaryLoader username="tondo-fond" />);
+    expect(await screen.findByText('Fees ₿0')).toBeTruthy();
+    expect(screen.getByText('$0.00')).toBeTruthy();
   });
 
   it('shows the Fond role hint when the pill is pressed', async () => {

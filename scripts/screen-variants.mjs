@@ -12067,4 +12067,18 @@ export const SCREEN_VARIANTS = [
     visual: 'state-fonds-role-hint',
     needle: 'This account pays the daily gifts from the 21.gifts fund.',
   },
+  {
+    route: '/fonds/[username]',
+    id: 'missing',
+    image: 'fonds-missing.png',
+    visual: 'state-fonds-missing',
+    needle: 'This Fond could not be found.',
+  },
+  {
+    route: '/fonds/[username]',
+    id: 'loading',
+    image: 'fonds-loading.png',
+    visual: 'state-fonds-loading',
+    needle: 'Loading…',
+  },
 ];

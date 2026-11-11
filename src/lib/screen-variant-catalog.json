@@ -10276,5 +10276,17 @@
     "label": "/fonds/[username] role-hint",
     "visual": "state-fonds-role-hint",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/fonds/[username]:missing",
+    "label": "/fonds/[username] missing",
+    "visual": "state-fonds-missing",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/fonds/[username]:loading",
+    "label": "/fonds/[username] loading",
+    "visual": "state-fonds-loading",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   }
 ]

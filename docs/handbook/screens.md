@@ -10776,14 +10776,14 @@ After a failed translation of that reaction. The feed shows `Could not translate
 ## Screen: /fonds/[username]
 
 - **URL:** `/fonds/<username>` — public Fond page (no auth gate), e.g. `/fonds/tondo-fond`.
-- **What the user sees:** Unsigned public chrome like `/view/[viewKey]`: one top-left back arrow (previous in-app view, or `/welcome` when this tab has none) beside the home wordmark, and the light language switcher top-right. The card shows the Fond handle as its heading with the existing **Fond** role pill (`ForumRoleTag`; pressing it reveals the Fond hint). Under it, three KPI tiles in the `StatsDashboard` card style: **Received** (`receivedSats`), **Paid out** (`paidOutSats`) with **Fees** (`feesSats`) as a secondary line, and **Balance** (`balanceSats`) with **as of <time>** from `balanceSyncedAt` (`formatForumTime`); a null balance shows an em dash and **not reported yet**. Under the tiles: **3 grant payouts paid (3.00 USD)** from `payoutsPaid` and the stored `payoutsPaidUsd`. Every bitcoin figure uses `formatBitcoin` with the visitor's preferred fiat under it from the current spot (`useFiatPreference` + `useSpotRate`, `formatFiatDisplay`); the spot is read only, never stored.
+- **What the user sees:** Unsigned public chrome like `/view/[viewKey]`: one top-left back arrow (previous in-app view, or `/welcome` when this tab has none) beside the home wordmark, and the light language switcher top-right. The card shows the Fond handle as its heading with the existing **Fond** role pill (`ForumRoleTag`; pressing it reveals the Fond hint). Under it, three KPI tiles in the `StatsDashboard` card style: **Received** (`receivedSats`), **Paid out** (`paidOutSats`) with **Fees** (`feesSats`) as a secondary line, and **Balance** (`balanceSats`) with **as of <time>** from `balanceSyncedAt` (`formatForumTime`); a null balance shows an em dash and **not reported yet**. Under the tiles: **3 grant payouts paid (3.00 USD)** from `payoutsPaid` and the stored `payoutsPaidUsd`. Every bitcoin figure uses `formatBitcoin` with the visitor's preferred fiat under it from the current spot (`useFiatPreference` + `useSpotRate`, `formatFiatDisplay`), including the **Fees** line; the spot is read only, never stored.
 - **Inputs:** Dynamic route `username`. The same-origin proxy `GET /fonds/:username/summary` reads public api `GET /fond/summary`; the proxy answers 404 when the api has no Fond or when the body's `username` is not this handle, and passes a 503 `{ error }` through. Client fetch: `fetchFondSummary`.
 - **Actions:** The top-left arrow returns to the previous in-app view, or `/welcome` when this tab has none. Change language. Press the **Fond** pill for its hint. On a 503, **Try again** refetches. A 404 shows **This Fond could not be found.** There is no second back control and no write action.
 - **Used by:** Route `/fonds/[username]` (`FondPage` → `FondSummaryLoader`).
 
 ### Variant: default
 
-`/fonds/tondo-fond` with the api's totals and a spot of $100'000 per bitcoin. The heading reads **tondo-fond** with the **Fond** pill; **Received** ₿210'000 ($210.00), **Paid out** ₿21'000 ($21.00) with **Fees** ₿210, **Balance** ₿189'000 ($189.00) with the synced time, and **3 grant payouts paid (3.00 USD)** below the tiles.
+`/fonds/tondo-fond` with the api's totals and a spot of $100'000 per bitcoin. The heading reads **tondo-fond** with the **Fond** pill; **Received** ₿210'000 ($210.00), **Paid out** ₿21'000 ($21.00) with **Fees** ₿210 ($0.21), **Balance** ₿189'000 ($189.00) with the synced time, and **3 grant payouts paid (3.00 USD)** below the tiles.
 
 ![21.gifts public Fond page](images/fonds-username.png)
 
@@ -10804,6 +10804,18 @@ The api answers 503. The card shows the alert **Could not load the Fond. Please 
 The **Fond** pill is clicked on `/fonds/tondo-fond`; the hint **This account pays the daily gifts from the 21.gifts fund.** is visible under the handle.
 
 ![21.gifts fonds role hint](images/fonds-role-hint.png)
+
+### Variant: missing
+
+The api answers 404 and the page shows **This Fond could not be found.**
+
+![21.gifts fonds missing](images/fonds-missing.png)
+
+### Variant: loading
+
+Waiting on the Fond summary fetch shows **Loading…**
+
+![21.gifts fonds loading](images/fonds-loading.png)
 
 ## Screen: /view/[viewKey]
 

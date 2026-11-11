@@ -32,6 +32,7 @@ test('Function: FondPage — public page shows the Fond totals', async ({ page }
   await expect(page.getByText('Paid out')).toBeVisible();
   await expect(page.getByText("₿21'000")).toBeVisible();
   await expect(page.getByText('Fees ₿210')).toBeVisible();
+  await expect(page.getByText('$0.21')).toBeVisible();
   await expect(page.getByText('Balance')).toBeVisible();
   await expect(page.getByText("₿189'000")).toBeVisible();
   await expect(page.getByText(/as of /)).toBeVisible();

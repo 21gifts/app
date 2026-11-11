@@ -46230,6 +46230,7 @@ test.describe('fonds screen', () => {
     await expect(page.getByRole('heading', { name: 'tondo-fond' })).toBeVisible();
     await expect(page.getByText("₿210'000")).toBeVisible();
     await expect(page.getByText('$210.00')).toBeVisible();
+    await expect(page.getByText('$0.21')).toBeVisible();
     await expect(page.getByText('3 grant payouts paid (3.00 USD)')).toBeVisible();
     await shotScreen(page, 'screen-fonds-username');
   });
@@ -46279,5 +46280,27 @@ test.describe('fonds screen', () => {
     await page.goto('/fonds/tondo-fond');
     await expect(page.getByText('Could not load the Fond. Please try again.')).toBeVisible();
     await shotScreen(page, 'state-fonds-error');
+  });
+
+  test('state /fonds/[username] missing', async ({ page }) => {
+    await page.route('**/fonds/tondo-fond/summary', async (route) => {
+      await route.fulfill({
+        status: 404,
+        contentType: 'application/json',
+        body: JSON.stringify({ error: 'Not found' }),
+      });
+    });
+    await page.goto('/fonds/tondo-fond');
+    await expect(page.getByText('This Fond could not be found.')).toBeVisible();
+    await shotScreen(page, 'state-fonds-missing');
+  });
+
+  test('state /fonds/[username] loading', async ({ page }) => {
+    await page.route('**/fonds/tondo-fond/summary', async () => {
+      // never fulfill
+    });
+    await page.goto('/fonds/tondo-fond');
+    await expect(page.getByText('Loading…')).toBeVisible();
+    await shotScreen(page, 'state-fonds-loading');
   });
 });

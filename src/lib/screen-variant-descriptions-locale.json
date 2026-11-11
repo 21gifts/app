@@ -8578,5 +8578,15 @@
     "de": "Die öffentliche Fond-Seite /fonds/tondo-fond mit angeklicktem Fond-Pill; unter der Überschrift tondo-fond ist der Hinweis Dieses Konto zahlt die täglichen Geschenke aus dem 21.gifts-Fonds. sichtbar.",
     "es": "La página pública del Fondo /fonds/tondo-fond con la etiqueta Fondo pulsada; bajo el título tondo-fond se ve el aviso Esta cuenta paga los regalos diarios del fondo de 21.gifts.",
     "fil": "Ang pampublikong pahina ng Fond /fonds/tondo-fond na naka-click ang Fond pill; sa ilalim ng pamagat na tondo-fond makikita ang paalalang Binabayaran ng account na ito ang mga araw-araw na regalo mula sa pondo ng 21.gifts."
+  },
+  "/fonds/[username]:missing": {
+    "de": "Die Api antwortet mit 404. Die Seite zeigt den Hinweis Dieser Fond konnte nicht gefunden werden.",
+    "es": "La api responde con 404. La página muestra el aviso No se pudo encontrar este Fondo.",
+    "fil": "Nagbibigay ang api ng 404. Ipinapakita ng pahina ang paalalang Hindi mahanap ang Fond na ito."
+  },
+  "/fonds/[username]:loading": {
+    "de": "Wartet auf das Abrufen der Fond-Übersicht. Wird geladen…",
+    "es": "Esperando la obtención del resumen del Fondo. Cargando…",
+    "fil": "Naghihintay sa pagkuha ng buod ng Fond. Naglo-load…"
   }
 }

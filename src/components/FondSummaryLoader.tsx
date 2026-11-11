@@ -184,6 +184,12 @@ export function FondSummaryLoader({ username }: { username: string }): ReactElem
             <span className="mt-1 block text-sm font-normal text-app-muted">
               {t('fond.fees')} {formatBitcoin(ready.feesSats, numberFormat)}
             </span>
+            <FiatLine
+              sats={ready.feesSats}
+              rateDay={rateDay}
+              fiat={fiat}
+              numberFormat={numberFormat}
+            />
           </dd>
         </div>
         <div className="rounded-2xl border border-app-border p-5">
