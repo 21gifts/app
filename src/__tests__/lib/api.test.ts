@@ -30,6 +30,7 @@ import {
   fetchGrantPlaces,
   FUNDING_PLACES_FULL_ERROR,
   fetchPostStats,
+  fetchWalletStats,
   fetchAboutMePhoto,
   fetchProfilePhoto,
   fetchWideBanner,
@@ -1718,6 +1719,46 @@ describe('fetchPostStats', () => {
     await expect(fetchPostStats()).rejects.toThrow('Could not load post stats. Please try again.');
     stubFetch({ ok: true, status: 200, body: { postCount: -1 } });
     await expect(fetchPostStats()).rejects.toThrow('Could not load post stats. Please try again.');
+  });
+});
+
+describe('fetchWalletStats', () => {
+  const stats = {
+    walletCount: 61,
+    fundedWalletCount: 32,
+    totalSats: 89096,
+    totalBtc: '0.00089096',
+    asOf: '2026-11-10T06:21:04.985Z',
+    balanceOverTime: [
+      {
+        day: '2026-11-09',
+        totalSats: 80000,
+        totalBtc: '0.00080000',
+        walletCount: 55,
+        fundedWalletCount: 30,
+      },
+    ],
+  };
+
+  it('returns the validated wallet series', async () => {
+    const fetchMock = stubFetch({ ok: true, status: 200, body: stats });
+    await expect(fetchWalletStats()).resolves.toEqual(stats);
+    expect(fetchMock).toHaveBeenCalledWith('/wallets/stats');
+  });
+
+  it('throws visitor copy on a non-ok response, a failed fetch, and a bad body', async () => {
+    stubFetch({ ok: false, status: 503, body: { error: 'Wallet stats are unavailable' } });
+    await expect(fetchWalletStats()).rejects.toThrow(
+      'Could not load wallet stats. Please try again.',
+    );
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new TypeError('Failed to fetch')));
+    await expect(fetchWalletStats()).rejects.toThrow(
+      'Could not load wallet stats. Please try again.',
+    );
+    stubFetch({ ok: true, status: 200, body: { ...stats, totalSats: -1 } });
+    await expect(fetchWalletStats()).rejects.toThrow(
+      'Could not load wallet stats. Please try again.',
+    );
   });
 });
 

@@ -1110,7 +1110,7 @@ The same anatomy is reused for an **External** badge (`forum.via.nostr`), shown 
 
 ### Chart
 
-**Stats (marketing, ink).** KPI tiles: `rounded-2xl border border-paper/10 p-5`. dt `text-sm text-paper/60`, dd `text-2xl font-semibold tabular-nums`. Charts: stroke/fill `accent`, grid `paper/8`, ticks `paper/50` 12px Outfit. Person bars `rx={6}` height 12. Month bars square fill accent. Empty: copy “No donations recorded yet.” — **no empty SVG axis**. Loading: `text-paper/60` “Loading…”. Error: copy + `ButtonLink`/`Button` accent **Try again**.
+**Stats (marketing, ink).** KPI tiles: `rounded-2xl border border-paper/10 p-5`. dt `text-sm text-paper/60`, dd `text-2xl font-semibold tabular-nums`. Charts: stroke/fill `accent`, grid `paper/8`, ticks `paper/50` 12px Outfit. Person bars `rx={6}` height 12. Month bars square fill accent. Empty: copy “No donations recorded yet.” — **no empty SVG axis**. Loading: `text-paper/60` “Loading…”. Error: copy + `ButtonLink`/`Button` accent **Try again**. The shared over-time drawing also renders the **Wallets** line/area: two tiles in the same chrome (**In wallets** ₿ over the preferred-fiat spot, same two-line layout as **Total spent**, **Wallets with balance** count), the self-reported UTC-day-end caption, and ₿ ticks. The fiat on **In wallets** is today's spot (`useSpotRate` / `GET /fx/spot`) in the visitor's currency, not the day's price; bitcoin stands alone only when no spot is available. Each chart point's `<title>` is the day, ₿, and that same spot fiat. Wallet days are not gift-day links. A single wallet day is a horizontal line; an empty series omits the Wallets section, like a failed fetch.
 
 **Profile activity.** No FiatPicker. The preferred code comes from Settings when signed in, otherwise the cookie or the locale default. Legend Given (`app-chart-given`) + Received (`app-chart-received`) with 10px swatches + text (color is **not** the only encoding — labels exist). Populated: ₿|{FiatCode} `SegmentedControl tone="gift"`. SVG height 110 viewBox 400×110, ticks 9px `app-muted`. Empty, signed-in and unsigned: `profile.chartEmpty` `role="status"`, no SVG, no FiatPicker. Empty series and failed is `profile.chartError` `role="alert"`, not `profile.chartEmpty`. Successful empty and in-flight stay `profile.chartEmpty` `role="status"`, no SVG. Null `usd`/`cumulativeUsd` still draws the satoshi chart; USD scale uses an em dash when any raw `cumulativeUsd` is `null`.
 
@@ -1209,9 +1209,9 @@ The activity help button sits with the view control while shops are loading or a
 
 ### `/stats`
 
-Header → `main max-w-[1100px] px-5 pt-16 pb-24` → display/h1 “Donations” (`text-4xl sm:text-6xl font-semibold leading-tight tracking-tight`) → body-lg subtitle → `StatsDashboard` (KPI grid, then charts or empty). `SegmentedControl tone="gift" shell="dark"`. Numeric figures.
+Header → `main max-w-[1100px] px-5 pt-16 pb-24` → display/h1 “Donations” (`text-4xl sm:text-6xl font-semibold leading-tight tracking-tight`) → body-lg subtitle → `StatsDashboard` (**Posts**, optional **Wallets**, KPI grid, then charts or empty). **Wallets** sits directly after **Posts** and before the gift tiles: two tiles in the same chrome (**In wallets** ₿ via `formatBitcoin(totalSats)` over the preferred-fiat spot from `satsToFiatAmount`/`formatFiatDisplay`, **Wallets with balance** via `formatCount(fundedWalletCount)`), the caption “Total of all 21.gifts wallets at the end of each UTC day, as reported by the wallets themselves. Fiat figures use today's spot, not the day's price.”, and the shared over-time chart of `balanceOverTime[].totalSats` with ₿ ticks and no `/stats/{day}` links. Each point tooltip carries the day, ₿, and the same spot fiat. Stats body copy stays English. `SegmentedControl tone="gift" shell="dark"`. Numeric figures.
 
-Handbook states: loading, empty, error + **Try again**, populated charts.
+Handbook states: loading, empty, error + **Try again**, populated charts, wallets, wallets-no-rate.
 
 ### `/trust-chain`
 

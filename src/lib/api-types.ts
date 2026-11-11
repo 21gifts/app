@@ -563,6 +563,35 @@ export const postStatsSchema = z.object({
 export type PostStats = z.infer<typeof postStatsSchema>;
 
 /**
+ * One UTC day in the wallet balance series from `GET /wallets/stats`.
+ * Each wallet's last reported balance is carried forward.
+ */
+export const walletStatsDaySchema = z.object({
+  day: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  totalSats: z.number().int().nonnegative(),
+  totalBtc: btcAmountStringSchema,
+  walletCount: z.number().int().nonnegative(),
+  fundedWalletCount: z.number().int().nonnegative(),
+});
+
+/**
+ * Runtime schema for the payload of `GET /wallets/stats`.
+ * `walletCount` counts wallets that ever reported a balance; `fundedWalletCount`
+ * is the subset with a current balance above zero.
+ */
+export const walletStatsSchema = z.object({
+  walletCount: z.number().int().nonnegative(),
+  fundedWalletCount: z.number().int().nonnegative(),
+  totalSats: z.number().int().nonnegative(),
+  totalBtc: btcAmountStringSchema,
+  asOf: z.string().nullable(),
+  balanceOverTime: z.array(walletStatsDaySchema),
+});
+
+/** Self-reported 21.gifts wallet totals, by UTC day. */
+export type WalletStats = z.infer<typeof walletStatsSchema>;
+
+/**
  * FX on account activity. `quotes` is optional so payloads from an api that
  * has not yet shipped gift-stats fiat currencies still parse.
  */

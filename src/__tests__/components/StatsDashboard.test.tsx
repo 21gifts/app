@@ -1,7 +1,9 @@
 import { cleanup, fireEvent, screen, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { StatsDashboard } from '@/components/StatsDashboard';
-import type { GiftStats } from '@/lib/api-types';
+import { useSpotRate } from '@/hooks/useSpotRate';
+import type { GiftStats, WalletStats } from '@/lib/api-types';
+import type { FiatRateDay } from '@/lib/stats-money';
 import { useAuthStore } from '@/stores/auth-store';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
 
@@ -11,8 +13,21 @@ vi.mock('@/hooks/useHydrateSession', () => ({
   useHydrateSession: (): { ready: boolean } => ({ ready: hydrateReady }),
 }));
 
+vi.mock('@/hooks/useSpotRate', () => ({
+  useSpotRate: vi.fn(),
+}));
+
+const RATE_DAY: FiatRateDay = {
+  sats: 100_000_000,
+  usd: '100000.00',
+  chf: '80000.00',
+  eur: '90000.00',
+  php: '5600000.00',
+};
+
 beforeEach(() => {
   hydrateReady = true;
+  vi.mocked(useSpotRate).mockReset().mockReturnValue(RATE_DAY);
 });
 
 afterEach(() => {
@@ -154,6 +169,30 @@ const EMPTY: GiftStats = {
   fx: FX_USD,
 };
 
+const WALLETS: WalletStats = {
+  walletCount: 61,
+  fundedWalletCount: 32,
+  totalSats: 89096,
+  totalBtc: '0.00089096',
+  asOf: '2026-11-10T06:21:04.985Z',
+  balanceOverTime: [
+    {
+      day: '2026-11-09',
+      totalSats: 80000,
+      totalBtc: '0.00080000',
+      walletCount: 55,
+      fundedWalletCount: 30,
+    },
+    {
+      day: '2026-11-10',
+      totalSats: 89096,
+      totalBtc: '0.00089096',
+      walletCount: 61,
+      fundedWalletCount: 32,
+    },
+  ],
+};
+
 describe('StatsDashboard', () => {
   it('shows living notes and replies as one post count', () => {
     renderWithLocale(
@@ -188,6 +227,145 @@ describe('StatsDashboard', () => {
       />,
     );
     expect(screen.getByRole('region', { name: 'Posts' }).textContent).toContain('0');
+  });
+
+  it('shows wallet tiles and a day chart without gift day links', () => {
+    renderWithLocale(
+      <StatsDashboard
+        stats={EMPTY}
+        wallets={WALLETS}
+        error={null}
+        loading={false}
+        onRetry={() => undefined}
+      />,
+    );
+    const wallets = screen.getByRole('region', { name: 'Wallets' });
+    expect(wallets.textContent).toContain("₿89'096");
+    expect(wallets.textContent).toContain('$89.10');
+    expect(wallets.textContent).toContain('32');
+    expect(wallets.textContent).toContain(
+      'Total of all 21.gifts wallets at the end of each UTC day, as reported by the wallets ' +
+        "themselves. Fiat figures use today's spot, not the day's price.",
+    );
+    const chart = screen.getByLabelText('Wallet balance over time in ₿');
+    expect(chart.getAttribute('role')).toBe('group');
+    expect(within(chart).getByText('2026-11-09')).toBeTruthy();
+    expect(within(chart).getByText('2026-11-10')).toBeTruthy();
+    expect(chart.querySelectorAll('rect title')[0]?.textContent).toBe(
+      "2026-11-09: ₿80'000 · $80.00",
+    );
+    expect(chart.querySelectorAll('rect title')[1]?.textContent).toBe(
+      "2026-11-10: ₿89'096 · $89.10",
+    );
+    expect(chart.querySelectorAll('rect')).toHaveLength(2);
+    expect(chart.querySelectorAll('circle')).toHaveLength(2);
+    expect(
+      [...chart.querySelectorAll('circle')].every(
+        (el) => el.getAttribute('pointer-events') === 'none',
+      ),
+    ).toBe(true);
+    expect(within(chart).queryByRole('link')).toBeNull();
+  });
+
+  it('shows wallet bitcoin without fiat when no spot is available', () => {
+    vi.mocked(useSpotRate).mockReturnValue(null);
+    renderWithLocale(
+      <StatsDashboard
+        stats={EMPTY}
+        wallets={WALLETS}
+        error={null}
+        loading={false}
+        onRetry={() => undefined}
+      />,
+    );
+    const wallets = screen.getByRole('region', { name: 'Wallets' });
+    expect(wallets.textContent).toContain("₿89'096");
+    expect(wallets.textContent).not.toContain('$89.10');
+    const chart = screen.getByLabelText('Wallet balance over time in ₿');
+    expect(chart.querySelectorAll('rect title')[0]?.textContent).toBe("2026-11-09: ₿80'000");
+    expect(chart.querySelectorAll('rect title')[1]?.textContent).toBe("2026-11-10: ₿89'096");
+  });
+
+  it('omits the Wallets section for an empty balance series', () => {
+    renderWithLocale(
+      <StatsDashboard
+        stats={EMPTY}
+        wallets={{ ...WALLETS, balanceOverTime: [] }}
+        error={null}
+        loading={false}
+        onRetry={() => undefined}
+      />,
+    );
+    expect(screen.queryByRole('region', { name: 'Wallets' })).toBeNull();
+    expect(useSpotRate).toHaveBeenCalledWith(false);
+    expect(useSpotRate).not.toHaveBeenCalledWith(true);
+  });
+
+  it('keeps zero wallet days hoverable without drawing their dot', () => {
+    renderWithLocale(
+      <StatsDashboard
+        stats={EMPTY}
+        wallets={{
+          ...WALLETS,
+          balanceOverTime: [
+            {
+              day: '2026-11-08',
+              totalSats: 0,
+              totalBtc: '0.00000000',
+              walletCount: 55,
+              fundedWalletCount: 0,
+            },
+            ...WALLETS.balanceOverTime,
+          ],
+        }}
+        error={null}
+        loading={false}
+        onRetry={() => undefined}
+      />,
+    );
+    const chart = screen.getByLabelText('Wallet balance over time in ₿');
+    expect(chart.querySelectorAll('rect')).toHaveLength(3);
+    expect(chart.querySelectorAll('rect title')).toHaveLength(3);
+    expect(chart.querySelector('rect title')?.textContent).toBe('2026-11-08: ₿0 · $0.00');
+    expect(chart.querySelectorAll('circle')).toHaveLength(2);
+    expect(within(chart).getByText('2026-11-08')).toBeTruthy();
+  });
+
+  it('draws one wallet day as a horizontal line', () => {
+    const firstDay = WALLETS.balanceOverTime[0] as WalletStats['balanceOverTime'][number];
+    renderWithLocale(
+      <StatsDashboard
+        stats={EMPTY}
+        wallets={{ ...WALLETS, balanceOverTime: [firstDay] }}
+        error={null}
+        loading={false}
+        onRetry={() => undefined}
+      />,
+    );
+    const chart = screen.getByLabelText('Wallet balance over time in ₿');
+    const line = chart.querySelector('polyline');
+    const coords = (line?.getAttribute('points') ?? '').split(/[ ,]+/).map(Number);
+    const [x1 = 0, y1 = 0, x2 = 0, y2 = 0] = coords;
+    expect(y1).toBe(y2);
+    expect(x2).toBeGreaterThan(x1);
+  });
+
+  it('omits wallets when absent or null', () => {
+    const view = renderWithLocale(
+      <StatsDashboard stats={EMPTY} error={null} loading={false} onRetry={() => undefined} />,
+    );
+    expect(screen.queryByRole('region', { name: 'Wallets' })).toBeNull();
+    view.unmount();
+    renderWithLocale(
+      <StatsDashboard
+        stats={EMPTY}
+        wallets={null}
+        error={null}
+        loading={false}
+        onRetry={() => undefined}
+      />,
+    );
+    expect(screen.queryByRole('region', { name: 'Wallets' })).toBeNull();
   });
 
   it('shows loading copy', () => {

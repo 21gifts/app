@@ -1835,6 +1835,11 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
+  if (method === 'GET' && pathName === '/wallets/stats') {
+    json(res, 503, { error: 'Wallet stats are unavailable' });
+    return;
+  }
+
   const publicMessageMatch = pathName.match(/^\/messages\/([^/]+)$/);
   if (method === 'GET' && publicMessageMatch) {
     const id = decodeURIComponent(publicMessageMatch[1]);

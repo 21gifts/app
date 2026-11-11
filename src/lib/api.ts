@@ -30,6 +30,7 @@ import {
   grantContinuationSchema,
   grantPlacesSchema,
   postStatsSchema,
+  walletStatsSchema,
   accountActivitySchema,
   memberProfileSchema,
   messageInvoiceSchema,
@@ -79,6 +80,7 @@ import {
   type GrantContinuation,
   type GrantPlaces,
   type PostStats,
+  type WalletStats,
   type AccountActivity,
   type LnurlInvoice,
   type LnurlPayRequest,
@@ -1512,6 +1514,25 @@ export async function fetchPostStats(): Promise<PostStats> {
     return postStatsSchema.parse(await response.json());
   } catch {
     throw new Error('Could not load post stats. Please try again.');
+  }
+}
+
+/**
+ * Fetches self-reported 21.gifts wallet totals and the daily balance series.
+ *
+ * @returns The {@link WalletStats} payload.
+ * @throws Error with visitor-facing copy when the api is unavailable or the
+ * body fails {@link walletStatsSchema}.
+ */
+export async function fetchWalletStats(): Promise<WalletStats> {
+  try {
+    const response = await fetch('/wallets/stats');
+    if (!response.ok) {
+      throw new Error('Could not load wallet stats. Please try again.');
+    }
+    return walletStatsSchema.parse(await response.json());
+  } catch {
+    throw new Error('Could not load wallet stats. Please try again.');
   }
 }
 

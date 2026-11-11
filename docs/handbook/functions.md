@@ -201,16 +201,16 @@
 
 ## Function: StatsLoader
 
-- **Purpose:** Client loader for `/stats`. Fetches gift totals on mount and retry, ignores stale responses after unmount, and renders `StatsDashboard`.
+- **Purpose:** Client loader for `/stats`. Fetches gift totals, posts, and self-reported wallet totals in one `Promise.all` on mount and retry, ignores stale responses after unmount, and renders `StatsDashboard`. The posts and wallet fetches are tolerant: a failure hides only that section and still shows the gift stats.
 - **Inputs:** None.
-- **Returns / side effects:** React element. Calls `fetchGiftStats`.
+- **Returns / side effects:** React element. Calls `fetchGiftStats`, `fetchPostStats`, and `fetchWalletStats`; a gift-stats failure keeps the existing error and retry state.
 - **Used by:** `StatsPage`.
 
 ## Function: StatsDashboard
 
-- **Purpose:** Renders gift KPIs (`formatBitcoin(totalSats)` plus `formatFiatDisplay` of the preferred fiat from `useFiatPreference`; a null fiat total is `—`, not `CHF 0`) and SVG diagrams (cumulative spend over time, by person, by month), plus loading/error/empty states. FiatPicker (CHF | EUR | USD | PHP) above the KPI cards **only when unsigned** (`useHydrateSession().ready && session === null`). Signed-in visitors still display and scale with the preferred code and cannot change it here. **Total spend over time** links each non-zero UTC day on the chart (not as a wrapping text list) to `/stats/{day}` with a client-side `next/link` (no prefetch). Each of **Total spend over time**, **By person**, and **By month** uses `SegmentedControl tone="gift" shell="dark"` for ₿ | {preferred FiatCode} via BarScale `'btc' | 'fiat'` (default ₿). Over time shows one cumulative series. Person and month rescale bar size while labels stay both units. Footnote is the USD daily-close sentence, or `{code} is USD at each donation's UTC-day close, converted with that day's ECB rate.` for CHF/EUR/PHP.
-- **Inputs:** `stats`, `error`, `loading`, `onRetry`, optional `posts` (null or omitted hides the Posts section).
-- **Returns / side effects:** React element. With `posts`, a **Posts** section shows the total and a daily bar of notes and replies by UTC day; hidden notes are not counted. Reads `useFiatPreference`. No network.
+- **Purpose:** Renders gift KPIs (`formatBitcoin(totalSats)` plus `formatFiatDisplay` of the preferred fiat from `useFiatPreference`; a null fiat total is `—`, not `CHF 0`) and SVG diagrams (cumulative spend over time, by person, by month), plus loading/error/empty states. FiatPicker (CHF | EUR | USD | PHP) above the KPI cards **only when unsigned** (`useHydrateSession().ready && session === null`). Signed-in visitors still display and scale with the preferred code and cannot change it here. **Total spend over time** links each non-zero UTC day on the chart (not as a wrapping text list) to `/stats/{day}` with a client-side `next/link` (no prefetch). Each of **Total spend over time**, **By person**, and **By month** uses `SegmentedControl tone="gift" shell="dark"` for ₿ | {preferred FiatCode} via BarScale `'btc' | 'fiat'` (default ₿). Over time shows one cumulative series. Person and month rescale bar size while labels stay both units. Footnote is the USD daily-close sentence, or `{code} is USD at each donation's UTC-day close, converted with that day's ECB rate.` for CHF/EUR/PHP. The optional **Wallets** section sits directly after **Posts** and before the gift tiles: two tiles (**In wallets** = `formatBitcoin(totalSats)` over `formatFiatDisplay(satsToFiatAmount(totalSats, rateDay, fiat))`, **Wallets with balance** = `formatCount(fundedWalletCount)`), the self-reported UTC-day-end caption, and a line/area chart of `balanceOverTime[].totalSats` with ₿ ticks. The wallet fiat is the current spot from `useSpotRate` (`GET /fx/spot`) in the visitor's currency, not a day's price, and is omitted only while no spot is available. Each chart point's `<title>` is the day, ₿, and that spot fiat. The wallet chart uses the same shared `OverTimeChart` drawing as the gift chart but has no `/stats/{day}` links; one day draws a horizontal line and an empty series omits the Wallets section, like a failed fetch.
+- **Inputs:** `stats`, `error`, `loading`, `onRetry`, optional `posts` (null or omitted hides the Posts section), optional `wallets` (null or omitted hides the Wallets section).
+- **Returns / side effects:** React element. With `posts`, a **Posts** section shows the total and a daily bar of notes and replies by UTC day; hidden notes are not counted. With `wallets`, a **Wallets** section shows the self-reported wallet totals and daily chart. Reads `useFiatPreference` and, only when wallets are present, `useSpotRate` (the spot read of `GET /fx/spot`).
 - **Used by:** `StatsLoader`.
 
 ## Function: StatsPage
@@ -2768,6 +2768,13 @@ Builds the country list of the Shops filter from the pins of `GET /forum/message
 - **Returns / side effects:** `PostStats`. Throws visitor copy when the api is down or the body is invalid.
 - **Used by:** `StatsLoader`.
 
+## Function: fetchWalletStats
+
+- **Purpose:** Fetches the public self-reported 21.gifts wallet totals and the UTC-day balance series from same-origin `GET /wallets/stats`.
+- **Inputs:** None.
+- **Returns / side effects:** Parsed `WalletStats`; throws the visitor-facing copy **Could not load wallet stats. Please try again.** when the response is not ok, the fetch fails, or the body fails `walletStatsSchema`.
+- **Used by:** `StatsLoader` on `/stats` (inside the same `Promise.all`, tolerant so a failure only hides the Wallets section).
+
 ## Function: fetchGiftStats
 
 - **Purpose:** GET `/gifts/stats` (optionally `?recipient=`) and parse the public gift totals payload.
@@ -3258,10 +3265,10 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 ## Function: useSpotRate
 
-- **Purpose:** The current price of 1 BTC for every amount that is entered or converted live: the amount field (₿ ↔ fiat), the point-of-sale keypad while digits are still being typed, gift and reaction amounts, the wallet and payment fiat suffixes, and the fiat stored with a new payment that is not a till charge. A committed till charge is not priced from this rate. Fetches `GET /fx/spot` via `fetchFxSpot` on mount and again every five minutes (`SPOT_REFRESH_MS`) while mounted, and resolves `spotRateDay` of its rates. An answer with a usable price replaces the rate. An answer without any price (the api has no quote) and a failed request keep the last rate, as the api keeps its last good quote. A refresh does not start while the previous request is still open. Never throws into the caller. Drops answers after unmount. There is no fallback to a gift day: the statistics pages keep each day's own rate from `GET /gifts/stats`, and nothing else uses it.
+- **Purpose:** The current price of 1 BTC for every amount that is entered or converted live: the amount field (₿ ↔ fiat), the point-of-sale keypad while digits are still being typed, gift and reaction amounts, the wallet and payment fiat suffixes, the self-reported wallet totals and point tooltips on `/stats`, and the fiat stored with a new payment that is not a till charge. A committed till charge is not priced from this rate. Fetches `GET /fx/spot` via `fetchFxSpot` on mount and again every five minutes (`SPOT_REFRESH_MS`) while mounted, and resolves `spotRateDay` of its rates. An answer with a usable price replaces the rate. An answer without any price (the api has no quote) and a failed request keep the last rate, as the api keeps its last good quote. A refresh does not start while the previous request is still open. Never throws into the caller. Drops answers after unmount. There is no fallback to a gift day: the statistics pages keep each day's own rate from `GET /gifts/stats`, and nothing else uses it.
 - **Inputs:** Optional `enabled` (default true). When false, the fetch is skipped and the hook returns `null`, also after a rate was loaded.
 - **Returns / side effects:** `FiatRateDay | null`. Calls `fetchFxSpot` on mount and on the refresh timer while enabled; clears the timer on unmount.
-- **Used by:** `ForumLoader`, `InboxLoader`, `ModeratorGroupScreen`, `PayLinkScreen`, `PosTill` (the shared till state still loads this rate for the amount page; the open and paid charge use `committedFiatFigure`, not this rate), `PosAmount`, `MenuAccountHeader`, `WalletBalance`, `WalletSend`, `ExternalAuthorProfile`, `MemberProfileScreen`, `PublicMessageLoader`, `PublicMessageThread`, `LoansCard`, `LoanRepayScreen`, and `RemainingBalanceScreen` (the synced balance of a previous wallet).
+- **Used by:** `ForumLoader`, `InboxLoader`, `ModeratorGroupScreen`, `PayLinkScreen`, `PosTill` (the shared till state still loads this rate for the amount page; the open and paid charge use `committedFiatFigure`, not this rate), `PosAmount`, `MenuAccountHeader`, `WalletBalance`, `WalletSend`, `ExternalAuthorProfile`, `MemberProfileScreen`, `PublicMessageLoader`, `PublicMessageThread`, `StatsDashboard` (only while wallet stats are present), `LoansCard`, `LoanRepayScreen`, and `RemainingBalanceScreen` (the synced balance of a previous wallet).
 
 ## Function: shownFiatForSats
 
@@ -4163,6 +4170,13 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Inputs:** Incoming `Request`.
 - **Returns / side effects:** Upstream `Response` via `proxyApiRequest`.
 - **Used by:** Route GET `/messages/stats`.
+
+## Function: proxyWalletStatsGet
+
+- **Purpose:** Same-origin proxy helper for api `GET /wallets/stats`.
+- **Inputs:** Incoming `Request` (no bearer).
+- **Returns / side effects:** Upstream `Response` via `proxyApiRequest`.
+- **Used by:** Route GET `/wallets/stats`; `fetchWalletStats` reads that route on `/stats`.
 
 ## Function: proxyGiftsStatsGet
 

@@ -352,14 +352,16 @@ Fetch failed. Button **Try again**.
 
 ## Screen: /stats
 
-- **URL:** `/stats` — public donation totals and a posts total (no auth gate).
-- **What the user sees:** Dark 21.gifts header with one top-left arrow (previous in-app view, or `/welcome` when this tab has none) beside the wordmark (wordmark the localized public home when unsigned, `/welcome` when a session is hydrated; the wordmark is not that arrow) and a language switcher, heading **Donations**. When post stats load, a **Posts** total sits above the donation cards: living notes and replies counted together, hidden notes excluded, with a bar on each UTC day that has posts and a gap where a day has none. A failed post fetch omits that block and still shows the donation diagrams. Four KPI cards (total spent as BIP-177 **₿** plus the selected fiat, donations, people, period), a FiatPicker (CHF | EUR | USD | PHP) above the cards **only when unsigned**, then diagrams: **Total spend over time** (one cumulative chart; days with spend are markers on the series, not a wrapping date list), **By person** and **By month**. Each diagram has a `SegmentedControl tone="gift" shell="dark"` ₿ | selected fiat control that defaults to ₿; over time switches the series, person and month rescale bar size while labels stay both units. Signed-in visitors still display and scale with the preferred code and cannot change it here. Empty database copy: **No donations recorded yet.** Stats body copy stays English.
-- **Actions:** Change language. Read the posts total and the donation charts. Open a spend day (`/stats/{YYYY-MM-DD}`) from **Total spend over time** by clicking a day with spend. When unsigned, pick CHF | EUR | USD | PHP on FiatPicker (writes cookie `fiat`). Switch **Total spend over time** / **By person** / **By month** between ₿ and the selected fiat. Header **Stats** stays on this page; **Log in** goes to `/login`.
-- **Calls:** `StatsPage`, `StatsLoader`, `StatsDashboard`, `FiatPicker`, `fetchGiftStats` (same-origin `GET /gifts/stats`), `fetchPostStats` (same-origin `GET /messages/stats`), `LanguageSwitcher`.
+- **URL:** `/stats` — public donation totals, a posts total, and self-reported wallet totals (no auth gate).
+- **What the user sees:** Dark 21.gifts header with one top-left arrow (previous in-app view, or `/welcome` when this tab has none) beside the wordmark (wordmark the localized public home when unsigned, `/welcome` when a session is hydrated; the wordmark is not that arrow) and a language switcher, heading **Donations**. When post stats load, a **Posts** total sits above the donation cards: living notes and replies counted together, hidden notes excluded, with a bar on each UTC day that has posts and a gap where a day has none. When wallet stats load, a **Wallets** section sits directly after **Posts** and before the gift tiles: tiles **In wallets** (BIP-177 **₿** of `totalSats` over the preferred-fiat spot in the same two-line layout as **Total spent**) and **Wallets with balance** (`fundedWalletCount`), the caption that this is the total of all 21.gifts wallets at the end of each UTC day as reported by the wallets themselves and that the fiat figures use today's spot rather than the day's price, and a line/area chart of `balanceOverTime[].totalSats` with ₿ ticks. Each chart point's `<title>` is the day, ₿, and the same spot fiat; bitcoin stands alone only while no spot is available. The wallet chart uses the gift chart's drawing, axes, and accent paint but has no `/stats/{day}` links (those are gift days). A single day is a horizontal line; an empty series omits the Wallets section, like a failed fetch. A failed post or wallet fetch omits only its own block and still shows the gift diagrams. Four KPI cards (total spent as BIP-177 **₿** plus the selected fiat, donations, people, period), a FiatPicker (CHF | EUR | USD | PHP) above the cards **only when unsigned**, then diagrams: **Total spend over time** (one cumulative chart; days with spend are markers on the series, not a wrapping date list), **By person** and **By month**. Each diagram has a `SegmentedControl tone="gift" shell="dark"` ₿ | selected fiat control that defaults to ₿; over time switches the series, person and month rescale bar size while labels stay both units. Signed-in visitors still display and scale with the preferred code and cannot change it here. Empty database copy: **No donations recorded yet.** Stats body copy stays English.
+- **Actions:** Change language. Read the posts total, the wallet totals and chart, and the donation charts. Open a spend day (`/stats/{YYYY-MM-DD}`) from **Total spend over time** by clicking a day with spend. The wallet chart has no day links. When unsigned, pick CHF | EUR | USD | PHP on FiatPicker (writes cookie `fiat`). Switch **Total spend over time** / **By person** / **By month** between ₿ and the selected fiat. Header **Stats** stays on this page; **Log in** goes to `/login`.
+- **Calls:** `StatsPage`, `StatsLoader`, `StatsDashboard`, `FiatPicker`, `useSpotRate` (same-origin `GET /fx/spot` for the wallet fiat), `fetchGiftStats` (same-origin `GET /gifts/stats`), `fetchPostStats` (same-origin `GET /messages/stats`), `fetchWalletStats` (same-origin `GET /wallets/stats`), `LanguageSwitcher`.
 
 ### Variant: default
 
 Loaded stats. **Posts** shows notes and replies as one total, with a bar on days that have posts and a gap on days that have none. One cumulative over-time chart is visible. Scale defaults to ₿.
+
+When `GET /wallets/stats` fails, the **Wallets** section is omitted and the page is this default `/stats` variant. The e2e mock answers `/wallets/stats` with 503 by default, so every `/stats` variant except `wallets` and `wallets-no-rate` shows this state.
 
 ![21.gifts stats](images/stats.png)
 
@@ -368,6 +370,18 @@ Loaded stats. **Posts** shows notes and replies as one total, with a bar on days
 Inverted ranking fixture (June tall in ₿ / short in USD, July the reverse). **Posts** stays the same notes-and-replies total. Scale switched to USD on **Total spend over time**, **By person**, and **By month**.
 
 ![21.gifts stats USD scale](images/stats-usd-scale.png)
+
+### Variant: wallets
+
+Loaded gift and post stats plus the self-reported wallet series. **Wallets** shows **In wallets** ₿89'096 over **$89.10**, the current spot in the visitor's currency rather than a day's price, **Wallets with balance** 32, the UTC-day caption, and the ₿ line/area chart with no gift-day links. Each point tooltip is the day, ₿, and the same spot fiat.
+
+![21.gifts wallet stats](images/stats-wallets.png)
+
+### Variant: wallets-no-rate
+
+Loaded gift and post stats plus the self-reported wallet series. **Wallets** shows **In wallets** ₿89'096 with no fiat line because no spot rate is available, **Wallets with balance** 32, the UTC-day caption, and the ₿ line/area chart with no gift-day links. Each point tooltip is the day and ₿ only.
+
+![21.gifts wallet stats without spot](images/stats-wallets-no-rate.png)
 
 ### Variant: empty
 
