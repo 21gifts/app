@@ -6,6 +6,7 @@ import { MOTION_SWAP_FADE_MS } from '@/lib/motion';
 import {
   agreeToRules,
   CannotReceiveError,
+  CreditClosedError,
   deleteMessage,
   fetchComposeTarget,
   NoteDeletedError,
@@ -77,6 +78,12 @@ vi.mock('@/lib/api', () => ({
     constructor() {
       super('cannot_receive');
       this.name = 'CannotReceiveError';
+    }
+  },
+  CreditClosedError: class CreditClosedError extends Error {
+    constructor() {
+      super('credit_closed');
+      this.name = 'CreditClosedError';
     }
   },
   WalletRequiredError: class WalletRequiredError extends Error {
@@ -494,6 +501,21 @@ describe('PublicMessageThread', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
     await waitFor(() => {
       expect(screen.getByRole('alert').textContent).toBe('This note was deleted.');
+    });
+  });
+
+  it('shows the closed-credit pay error when the invoice target stopped collecting', async () => {
+    vi.mocked(postMessageInvoice).mockRejectedValue(new CreditClosedError());
+    vi.mocked(fetchReplies).mockResolvedValue([payableNested]);
+    signIn();
+    renderThread();
+    await screen.findByPlaceholderText('Write a reaction');
+    await openNestedPaySheet();
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    await waitFor(() => {
+      expect(screen.getByRole('alert').textContent).toBe(
+        'This loan is no longer collecting and cannot receive more money.',
+      );
     });
   });
 

@@ -23,6 +23,7 @@ export type ForumPayError =
   | 'request'
   | 'rateLimit'
   | 'authorWallet'
+  | 'creditClosed'
   | 'deleted'
   | null;
 
@@ -171,6 +172,11 @@ export function ForumPaySheet({
         {payError === 'authorWallet' ? (
           <p role="alert" className="text-sm text-app-danger">
             {t('forum.payErrorAuthorWallet')}
+          </p>
+        ) : null}
+        {payError === 'creditClosed' ? (
+          <p role="alert" className="text-sm text-app-danger">
+            {t('forum.payErrorCreditClosed')}
           </p>
         ) : null}
         {payError === 'deleted' ? (

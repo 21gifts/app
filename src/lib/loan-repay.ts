@@ -3,6 +3,117 @@ import { creditSmallestUnits } from '@/lib/credit-plan';
 import { formatDefinedGoalAmount } from '@/lib/forum-goal';
 import type { NumberFormatStyle } from '@/lib/number-format';
 
+/** Parsed positive loan amount in the loan currency's smallest input unit. */
+export interface ParsedLoanAmount {
+  /** Whole sats for BTC or whole cents for fiat. */
+  units: bigint;
+  /** Trimmed user input, preserving a fiat comma or dot. */
+  text: string;
+}
+
+/** Result of validating a free repayment amount against the api-provided maximum. */
+export type LoanAmountCheck =
+  | { ok: true; text: string }
+  | {
+      ok: false;
+      reason: 'empty' | 'invalid' | 'above_max' | 'no_max';
+      max: string | null;
+    };
+
+function fiatUnits(input: string): bigint | null {
+  const match = /^(\d+)(?:[.,](\d{1,2}))?$/.exec(input);
+  if (match === null) {
+    return null;
+  }
+  const whole = match[1]!;
+  const fraction = (match[2] ?? '').padEnd(2, '0');
+  return BigInt(whole) * 100n + BigInt(fraction === '' ? '0' : fraction);
+}
+
+/**
+ * Parses a positive free repayment amount without floating-point arithmetic.
+ *
+ * @param input - User input; surrounding whitespace is ignored.
+ * @param currency - BTC accepts whole sats, fiat accepts comma or dot and at most two decimals.
+ * @returns Whole sats/cents plus the trimmed text, or null for empty, zero, negative, or malformed input.
+ */
+export function parseLoanAmount(
+  input: string,
+  currency: MyLoan['goalCurrency'],
+): ParsedLoanAmount | null {
+  const text = input.trim();
+  if (text === '') {
+    return null;
+  }
+  const units = currency === 'BTC' ? (/^\d+$/.test(text) ? BigInt(text) : null) : fiatUnits(text);
+  return units === null || units <= 0n ? null : { units, text };
+}
+
+/**
+ * Reads the api-provided maximum in the loan currency's smallest input unit.
+ *
+ * @param loan - Loan returned by `GET /me/loans`.
+ * @returns Whole sats for BTC, whole cents for fiat, or null when unavailable or malformed.
+ */
+export function loanMaxUnits(loan: MyLoan): bigint | null {
+  if (loan.goalCurrency === 'BTC') {
+    return loan.maxSats === null || loan.maxSats === undefined ? null : BigInt(loan.maxSats);
+  }
+  if (loan.maxAmount === null || loan.maxAmount === undefined) {
+    return null;
+  }
+  return fiatUnits(loan.maxAmount.trim());
+}
+
+/**
+ * Validates a free repayment input and compares it with the api maximum.
+ *
+ * @param input - User-entered loan-currency amount.
+ * @param loan - Loan that supplies the currency and current maximum.
+ * @returns Normalized success text or a reason with the available maximum input string.
+ */
+export function checkLoanAmount(input: string, loan: MyLoan): LoanAmountCheck {
+  const max = loanMaxInput(loan);
+  if (input.trim() === '') {
+    return { ok: false, reason: 'empty', max };
+  }
+  const parsed = parseLoanAmount(input, loan.goalCurrency);
+  if (parsed === null) {
+    return { ok: false, reason: 'invalid', max };
+  }
+  const maxUnits = loanMaxUnits(loan);
+  if (maxUnits === null) {
+    return { ok: false, reason: 'no_max', max: null };
+  }
+  if (parsed.units > maxUnits) {
+    return { ok: false, reason: 'above_max', max };
+  }
+  return { ok: true, text: parsed.text };
+}
+
+/**
+ * Supplies the exact value the free-repayment Max button puts in its input.
+ *
+ * @param loan - Loan returned by `GET /me/loans`.
+ * @returns Integer max sats for BTC, the api's fiat max string, or null when unavailable.
+ */
+export function loanMaxInput(loan: MyLoan): string | null {
+  if (loan.goalCurrency === 'BTC') {
+    return loan.maxSats === null || loan.maxSats === undefined ? null : String(loan.maxSats);
+  }
+  return loan.maxAmount ?? null;
+}
+
+/**
+ * Identifies a loan whose ask is still accepting contributions.
+ *
+ * @param loan - Loan returned by `GET /me/loans`.
+ * @returns True only before both funding and an explicit close.
+ */
+export function isCollecting(loan: MyLoan): boolean {
+  return loan.fundedAt === null && loan.closedAt === null;
+}
+
 /** Combined state of all of the member's loans, for the loans card, the Menu row and the screen. */
 export interface LoansSummary {
   /** Number of loans in the body. */
@@ -192,9 +303,9 @@ export interface DueShare {
   dueOn: string | null;
   accountId: string;
   name: string;
-  /** row.sats when not null, else row.dueSats; null when neither is known. */
+  /** Remaining row.dueSats when known, else row.sats; null when neither is known. */
   sats: number | null;
-  /** row.amount when the ledger is in the loan's goal currency; otherwise null. */
+  /** Remaining row.amount after paidAmount when the ledger uses the loan currency. */
   amount: string | null;
   /**
    * row.waiting: the giver cannot receive yet, so the share is not sent now. Without it
@@ -234,8 +345,22 @@ export function dueShares(
         dueOn: row.dueOn,
         accountId: row.accountId,
         name: row.name,
-        sats: row.sats ?? row.dueSats,
-        amount: ledger.currency === loan.goalCurrency ? row.amount : null,
+        sats: row.dueSats ?? row.sats,
+        amount:
+          ledger.currency !== loan.goalCurrency ||
+          loan.goalCurrency === 'BTC' ||
+          row.amount === null
+            ? null
+            : (() => {
+                const total = creditSmallestUnits(row.amount, false);
+                const paid =
+                  row.paidAmount === null || row.paidAmount === undefined
+                    ? 0n
+                    : creditSmallestUnits(row.paidAmount, false);
+                return total === null || paid === null || paid > total
+                  ? null
+                  : centsString(total - paid);
+              })(),
         waiting: row.waiting ?? canReceive.get(row.accountId) === false,
         rowIndex,
       });

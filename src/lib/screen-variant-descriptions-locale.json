@@ -1020,9 +1020,59 @@
     "fil": "Ang hulíng estado na bukas ang Sino ang babayaran. Ang danger na pamagat ay Huli ka nang 2 araw, may ₿3'000 at $3.00, sa 3 tao, at Ipadala ang ₿3'000 · $3.00. Ipinapakita ng listahan sina Bruno · Okt 5 ₿500 · $0.50, Carla · Okt 5 ₿300 · $0.30, Diego · Okt 5 ₿200 · $0.20, Bruno · Okt 6 ₿500 · $0.50, Carla · Okt 6 ₿300 · $0.30, Diego · Okt 6 ₿200 · $0.20, tapos ang ngayon nina Bruno ₿500 · $0.50, Carla ₿300 · $0.30, at Diego ₿200 · $0.20."
   },
   "/loans/repay:collecting": {
-    "de": "Während Kredit A noch sammelt, gibt es keine Fälligkeitskarte. Ihr Kredit zeigt den Nähmaschinen-Text, ₿30'000 · $30.00 · 30 Tage · ₿1'000 · $1.00 pro Tag, Noch nicht vollständig finanziert. und Rückzahlungsliste; dieser Bildschirm zeigt keinen Finanzierungsbalken.",
-    "es": "Mientras el préstamo A aún recauda, no hay tarjeta de vencimiento. Tu préstamo muestra el texto de la máquina de coser, ₿30'000 · $30.00 · 30 días · ₿1'000 · $1.00 al día, Aún no está totalmente financiado. y Lista de devolución; esta pantalla no muestra una barra de financiación.",
-    "fil": "Habang nangangalap pa ang utang A, walang due card. Ipinapakita ng Ang utang mo ang teksto ng makinang panahi, ₿30'000 · $30.00 · 30 araw · ₿1'000 · $1.00 bawat araw, Hindi pa buo ang pondo., at Listahan ng ibabalik; walang funding bar sa screen na ito."
+    "de": "Während Kredit A noch sammelt, gibt es keine Fälligkeitskarte. Ihr Kredit zeigt den Nähmaschinen-Text, Noch nicht vollständig finanziert. und Rückzahlungsliste. Darunter stehen Mehr zurückzahlen mit Betragsfeld und Maximum, der Hinweis, dass die erste Zahlung das Sammeln beendet, Betrag zahlen und Sammeln beenden.",
+    "es": "Mientras el préstamo A aún recauda, no hay tarjeta de vencimiento. Tu préstamo muestra el texto de la máquina de coser, Aún no está totalmente financiado. y Lista de devolución. Debajo están Pagar más con el campo de importe y Máximo, el aviso de que el primer pago termina la recaudación, Pagar este importe y Terminar la recaudación.",
+    "fil": "Habang nangangalap pa ang utang A, walang due card. Ipinapakita ng Ang utang mo ang teksto ng makinang panahi, Hindi pa buo ang pondo., at Listahan ng ibabalik. Nasa ibaba ang Magbayad pa na may amount field at Max, ang paalala na tatapusin ng unang bayad ang pangangalap, Bayaran ang halagang ito, at Tapusin ang pangangalap."
+  },
+  "/loans/repay:pay-more-max": {
+    "de": "Kredit A nach Maximum: Im Sats-Feld steht exakt das aktuelle Maximum 19000 und Betrag zahlen ist aktiv. Die normalen Kontrollen für die heutige Fälligkeit bleiben darüber unverändert.",
+    "es": "Préstamo A después de Máximo: el campo de sats contiene exactamente el máximo actual 19000 y Pagar este importe está activo. Los controles normales del pago vencido permanecen sin cambios arriba.",
+    "fil": "Utang A pagkatapos ng Max: eksaktong 19000 ang laman ng sats field at aktibo ang Bayaran ang halagang ito. Hindi nagbabago ang karaniwang due-payment controls sa itaas."
+  },
+  "/loans/repay:pay-more-above-max": {
+    "de": "Kredit A mit 19001 im Betragsfeld: Der direkte Fehler Geben Sie höchstens ₿19'000 ein. steht darunter und Betrag zahlen ist deaktiviert.",
+    "es": "Préstamo A con 19001 en el campo: debajo aparece el error inmediato Introduce como máximo ₿19'000. y Pagar este importe está desactivado.",
+    "fil": "Utang A na may 19001 sa field: nasa ibaba ang agarang error na Maglagay ng hindi hihigit sa ₿19'000. at hindi aktibo ang Bayaran ang halagang ito."
+  },
+  "/loans/repay:pay-more-no-rate": {
+    "de": "Ein PHP-Kredit ohne aktuellen Kurs. Mehr zurückzahlen zeigt Kein PHP-Wechselkurs verfügbar, daher sind Maximum und Betrag zahlen deaktiviert.",
+    "es": "Un préstamo en PHP sin tipo de cambio actual. Pagar más muestra que no hay tipo de cambio PHP, por lo que Máximo y Pagar este importe están desactivados.",
+    "fil": "PHP loan na walang kasalukuyang rate. Ipinapakita ng Magbayad pa na walang PHP exchange rate, kaya hindi aktibo ang Max at Bayaran ang halagang ito."
+  },
+  "/loans/repay:pay-more-server-max": {
+    "de": "Der Server hat das verfügbare Maximum auf ₿6'000 gesenkt. Das Feld wurde auf 6000 zurückgesetzt und der rote Hinweis fordert dazu auf, den angepassten Betrag zu prüfen und erneut zu zahlen.",
+    "es": "El servidor redujo el máximo disponible a ₿6'000. El campo se restableció a 6000 y el aviso rojo pide revisar el importe ajustado y volver a pagar.",
+    "fil": "Ibinaba ng server sa ₿6'000 ang available maximum. Na-reset sa 6000 ang field at hinihiling ng pulang paalala na suriin ang inayos na halaga at magbayad muli."
+  },
+  "/loans/repay:pay-more-error": {
+    "de": "Mehr zurückzahlen zeigt den roten API-Fehler Eine frühere Zahlung für diesen Anteil ist noch offen. Versuchen Sie es später erneut. Das Betragsfeld und die Kontrollen bleiben sichtbar.",
+    "es": "Pagar más muestra el error rojo Un pago anterior de esta parte sigue abierto. Inténtalo de nuevo más tarde. El campo y los controles permanecen visibles.",
+    "fil": "Ipinapakita ng Magbayad pa ang pulang API error na Bukas pa ang naunang bayad para sa bahaging ito. Subukan muli mamaya. Nakikita pa rin ang field at controls."
+  },
+  "/loans/repay:pay-more-sending": {
+    "de": "Eine freie Rückzahlung wird gerade über die Wallet gesendet. Statt Betrag zahlen stehen ein Spinner und Mehr wird zurückgezahlt…; Feld und Maximum sind währenddessen deaktiviert.",
+    "es": "Se está enviando un pago libre desde la wallet. En lugar de Pagar este importe aparecen un indicador y Pagando más…; el campo y Máximo están desactivados durante el envío.",
+    "fil": "Ipinapadala na mula sa wallet ang libreng repayment. Spinner at Nagbabayad pa… ang pumapalit sa Bayaran ang halagang ito; hindi aktibo ang field at Max habang nagpapadala."
+  },
+  "/loans/repay:pay-more-waiting": {
+    "de": "Die freie Rückzahlung wartet nach dem Senden. Der gedämpfte Eintrag Wartet, bis Carla die Wallet eingerichtet hat mit ₿200 bleibt sichtbar, zusammen mit dem laufenden Wallet-Status.",
+    "es": "El pago libre espera después del envío. La línea atenuada Esperando a que Carla configure su wallet con ₿200 permanece visible junto al estado activo de la wallet.",
+    "fil": "Naghihintay ang libreng repayment pagkatapos ipadala. Nananatiling nakikita ang muted na Hinihintay na i-set up ni Carla ang wallet niya na may ₿200, kasama ng kasalukuyang wallet status."
+  },
+  "/loans/repay:pay-more-shortfall": {
+    "de": "Die freie Rückzahlung ist um ₿500 zu hoch für die Wallet. Der geöffnete Aufladeblock zeigt das Wallet-Guthaben, den Fehlbetrag, Adas Adresse, genau einen Open-CryptoPay-QR und Ihre Aufladung wird erwartet….",
+    "es": "Al pago libre le faltan ₿500 en la wallet. El bloque de recarga abierto muestra el saldo, lo que falta, la dirección de Ada, exactamente un QR de Open CryptoPay y Esperando tu recarga….",
+    "fil": "Kulang ng ₿500 ang wallet para sa libreng repayment. Ipinapakita ng bukas na top-up block ang balance, kakulangan, address ni Ada, eksaktong isang Open CryptoPay QR, at Hinihintay ang pagdagdag mo…."
+  },
+  "/loans/repay:collecting-pay-confirm": {
+    "de": "Ein noch sammelnder Kredit nach Maximum und Betrag zahlen. Der Dialog Zahlen und Sammeln beenden? erklärt, dass die erste Zahlung das Sammeln endgültig beendet und später ein neuer Kredit nötig ist. Aktionen: ₿18'000 zahlen und Sammeln beenden, Abbrechen und Schließen.",
+    "es": "Un préstamo que aún recauda después de Máximo y Pagar este importe. El diálogo ¿Pagar y terminar la recaudación? explica que el primer pago la termina definitivamente y que después hará falta otro préstamo. Acciones: Pagar ₿18'000 y terminar la recaudación, Cancelar y Cerrar.",
+    "fil": "Loan na nangangalap pa pagkatapos ng Max at Bayaran ang halagang ito. Ipinapaliwanag ng dialog na Bayaran at tapusin ang pangangalap? na permanenteng tatapusin ng unang bayad ang pangangalap at kailangan ng bagong loan sa susunod. Mga action: Bayaran ang ₿18'000 at tapusin ang pangangalap, Kanselahin, at Isara."
+  },
+  "/loans/repay:collecting-close-confirm": {
+    "de": "Ein noch sammelnder Kredit nach Sammeln beenden. Der Dialog Sammeln beenden? sagt, dass dies endgültig ist und für mehr Geld ein neuer Kredit nötig wird, mit Endgültig beenden, Abbrechen und Schließen.",
+    "es": "Un préstamo que aún recauda después de Terminar la recaudación. El diálogo ¿Terminar la recaudación? dice que es definitivo y que hará falta otro préstamo para más dinero, con Terminar definitivamente, Cancelar y Cerrar.",
+    "fil": "Loan na nangangalap pa pagkatapos ng Tapusin ang pangangalap. Sinasabi ng dialog na Tapusin ang pangangalap? na permanente ito at kailangan ng bagong loan para sa dagdag na pera, na may Permanenteng tapusin, Kanselahin, at Isara."
   },
   "/loans/repay:connecting": {
     "de": "Kredit A zeigt weiter den fälligen Betrag, die empfangenden Personen und den Fortschritt. Die Wallet ist noch nicht bereit, daher stehen im Zahlungsbereich ein Spinner und Ihre Wallet wird geprüft… statt Guthaben und Senden.",

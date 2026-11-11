@@ -6894,6 +6894,8 @@ test.describe('loans repay screens', () => {
   const collectingLoan = loanWith(loanA, {
     sats: 18_000,
     fundedAt: null,
+    closedAt: null,
+    maxSats: 18_000,
     daysDue: 0,
     daysPaid: 0,
     repaidSats: 0,
@@ -7571,8 +7573,115 @@ test.describe('loans repay screens', () => {
   });
 
   test('state /loans/repay collecting', async ({ page }) => {
-    await loanShot(page, { loans: [collectingLoan], text: 'Not fully funded yet.' });
+    await loanShot(page, {
+      loans: [collectingLoan],
+      visual: 'repay-ready',
+      text: 'Not fully funded yet.',
+    });
     await shotScreen(page, 'state-loans-repay-collecting');
+  });
+
+  test('state /loans/repay pay-more-max', async ({ page }) => {
+    await loanShot(page, {
+      loans: [loanA],
+      ledgers: { 'loan-a': ledgerA },
+      visual: 'repay-ready',
+      text: 'Pay more',
+    });
+    await page.getByRole('button', { name: 'Max' }).click();
+    await expect(page.getByLabel('Amount (₿)')).toHaveValue('19000');
+    await shotScreen(page, 'state-loans-repay-pay-more-max');
+  });
+
+  test('state /loans/repay pay-more-above-max', async ({ page }) => {
+    await loanShot(page, {
+      loans: [loanA],
+      ledgers: { 'loan-a': ledgerA },
+      visual: 'repay-ready',
+      text: 'Pay more',
+    });
+    await page.getByLabel('Amount (₿)').fill('19001');
+    await expect(page.getByText("Enter at most ₿19'000.")).toBeVisible();
+    await shotScreen(page, 'state-loans-repay-pay-more-above-max');
+  });
+
+  test('state /loans/repay pay-more-no-rate', async ({ page }) => {
+    await loanShot(page, {
+      loans: [{ ...repaidLoanB, maxSats: null, maxAmount: null }],
+      visual: 'repay-ready',
+      text: 'No PHP exchange rate is available now',
+    });
+    await shotScreen(page, 'state-loans-repay-pay-more-no-rate');
+  });
+
+  test('state /loans/repay pay-more-server-max', async ({ page }) => {
+    await loanShot(page, {
+      loans: [paidLoan],
+      visual: 'repay-pay-more-server-max',
+      text: "The available maximum changed to ₿6'000",
+    });
+    await expect(page.getByLabel('Amount (₿)')).toHaveValue('6000');
+    await shotScreen(page, 'state-loans-repay-pay-more-server-max');
+  });
+
+  test('state /loans/repay pay-more-error', async ({ page }) => {
+    await loanShot(page, {
+      loans: [paidLoan],
+      visual: 'repay-pay-more-error',
+      text: 'An earlier payment for this share is still open. Try again later.',
+    });
+    await shotScreen(page, 'state-loans-repay-pay-more-error');
+  });
+
+  test('state /loans/repay pay-more-sending', async ({ page }) => {
+    await loanShot(page, {
+      loans: [paidLoan],
+      visual: 'repay-pay-more-sending',
+      text: 'Paying more…',
+    });
+    await shotScreen(page, 'state-loans-repay-pay-more-sending');
+  });
+
+  test('state /loans/repay pay-more-waiting', async ({ page }) => {
+    await loanShot(page, {
+      loans: [paidLoan],
+      visual: 'repay-pay-more-waiting',
+      text: 'Waiting for Carla to set up their wallet',
+    });
+    await shotScreen(page, 'state-loans-repay-pay-more-waiting');
+  });
+
+  test('state /loans/repay pay-more-shortfall', async ({ page }) => {
+    await loanShot(page, {
+      loans: [paidLoan],
+      visual: 'repay-pay-more-shortfall',
+      text: 'Your wallet has ₿500 · $0.50. Still missing ₿500 · $0.50.',
+      qr: true,
+    });
+    await shotScreen(page, 'state-loans-repay-pay-more-shortfall');
+  });
+
+  test('state /loans/repay collecting-pay-confirm', async ({ page }) => {
+    await loanShot(page, {
+      loans: [collectingLoan],
+      visual: 'repay-ready',
+      text: 'The first payment ends collecting',
+    });
+    await page.getByRole('button', { name: 'Max' }).click();
+    await page.getByRole('button', { name: 'Pay this amount' }).click();
+    await expect(page.getByRole('dialog', { name: 'Pay and end collecting?' })).toBeVisible();
+    await shotScreen(page, 'state-loans-repay-collecting-pay-confirm');
+  });
+
+  test('state /loans/repay collecting-close-confirm', async ({ page }) => {
+    await loanShot(page, {
+      loans: [collectingLoan],
+      visual: 'repay-ready',
+      text: 'End collecting',
+    });
+    await page.getByRole('button', { name: 'End collecting' }).click();
+    await expect(page.getByRole('dialog', { name: 'End collecting?' })).toBeVisible();
+    await shotScreen(page, 'state-loans-repay-collecting-close-confirm');
   });
 
   test('state /loans/repay none', async ({ page }) => {

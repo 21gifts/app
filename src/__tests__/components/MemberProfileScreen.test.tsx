@@ -8,6 +8,7 @@ import { PAY_SHEET_HOLD_MS } from '@/components/PaySheet';
 import {
   agreeToRules,
   CannotReceiveError,
+  CreditClosedError,
   fetchComposeTarget,
   NoteDeletedError,
   fetchFxSpot,
@@ -99,6 +100,12 @@ vi.mock('@/lib/api', () => ({
     constructor() {
       super('cannot_receive');
       this.name = 'CannotReceiveError';
+    }
+  },
+  CreditClosedError: class CreditClosedError extends Error {
+    constructor() {
+      super('credit_closed');
+      this.name = 'CreditClosedError';
     }
   },
   WalletRequiredError: class WalletRequiredError extends Error {
@@ -1889,6 +1896,23 @@ describe('MemberProfileScreen', () => {
     await waitFor(() => {
       expect(screen.getByRole('alert').textContent).toBe('This note was deleted.');
     });
+  });
+
+  it('shows the closed-credit pay error when the invoice target stopped collecting', async () => {
+    vi.mocked(postMessageInvoice).mockRejectedValue(new CreditClosedError());
+    renderWithLocale(
+      <MemberProfileScreen
+        profile={{ ...profile, profileMessage: note }}
+        received={[]}
+        donated={[]}
+      />,
+    );
+    const replyCard = await expandAndClickReplyGift();
+    fireEvent.change(within(replyCard).getByLabelText('Amount'), { target: { value: '21' } });
+    fireEvent.click(within(replyCard).getByRole('button', { name: 'Continue' }));
+    expect((await screen.findByRole('alert')).textContent).toBe(
+      'This loan is no longer collecting and cannot receive more money.',
+    );
   });
 
   it('retries replies after a failed expand', async () => {

@@ -3,12 +3,20 @@ import path from 'node:path';
 import jsQR from 'jsqr';
 import { PNG } from 'pngjs';
 import { expect, test, type APIRequestContext, type Locator, type Page } from '@playwright/test';
-import { fetchPublicMessagePhoto } from '../src/lib/api';
+import { CreditClosedError, fetchPublicMessagePhoto, LoanRepaymentError } from '../src/lib/api';
 import { openCryptoPayQrValue } from '../src/lib/gifts-address';
 import { fulfillSpot, SPOT_RATES, spotRatesFromStats } from './fx-spot';
 import { motionSettled } from './motion';
 import { fulfillStablecoinUnavailable, stubShopPayment } from './shop-payment';
-import { definedFiatAmounts, definedFiatSum } from '../src/lib/loan-repay';
+import {
+  checkLoanAmount,
+  definedFiatAmounts,
+  definedFiatSum,
+  isCollecting,
+  loanMaxInput,
+  loanMaxUnits,
+  parseLoanAmount,
+} from '../src/lib/loan-repay';
 import {
   buildShopStickerPdf,
   buildShopStickerSvg,
@@ -44,6 +52,7 @@ import {
   ledgerA,
   loanA,
   loanB,
+  loanCollecting,
   loanWith,
   myLoans,
   productionPhpLoans,
@@ -16278,15 +16287,131 @@ test('Function: proxyMessagesRepaymentDuePost — POST /messages/[id]/repayment/
   expect(response.status()).toBe(401);
 });
 
+test('POST /messages/[id]/repayment/close without bearer is 401', async ({ request }) => {
+  const response = await request.post('/messages/[id]/repayment/close');
+  expect(response.status()).toBe(401);
+});
+
+test('POST /messages/[id]/repayment/prepay without bearer is 401', async ({ request }) => {
+  const response = await request.post('/messages/[id]/repayment/prepay');
+  expect(response.status()).toBe(401);
+});
+
 test('Function: postRepaymentDue — POST /messages/[id]/repayment/due answers empty lists', async ({
   request,
 }) => {
   const token = await loginHttp(request);
-  const response = await request.post('/messages/[id]/repayment/due', {
+  const response = await request.post('/messages/loan-a/repayment/due', {
     headers: { authorization: `Bearer ${token}` },
   });
   expect(response.status()).toBe(200);
   expect(await response.json()).toEqual({ bills: [], waiting: [] });
+});
+
+test('Function: proxyMessagesRepaymentClosePost — POST /messages/[id]/repayment/close is forwarded', async ({
+  request,
+}) => {
+  const token = await loginHttp(request);
+  const response = await request.post('/messages/loan-a/repayment/close', {
+    headers: { authorization: `Bearer ${token}` },
+  });
+  expect(response.status()).toBe(200);
+});
+
+test('Function: closeLoan — closing returns the final collecting state', async ({ request }) => {
+  const token = await loginHttp(request);
+  const response = await request.post('/messages/loan-collecting/repayment/close', {
+    headers: { authorization: `Bearer ${token}` },
+  });
+  expect(await response.json()).toMatchObject({ fundedAt: null, collectedSats: 8_000 });
+});
+
+test('Function: LoanRepaymentError — max refusals retain both limits', async ({ request }) => {
+  const error = new LoanRepaymentError('amount_too_high', 400, 7_900, null);
+  expect(error).toMatchObject({
+    name: 'LoanRepaymentError',
+    code: 'amount_too_high',
+    status: 400,
+    maxSats: 7_900,
+    maxAmount: null,
+  });
+  const response = await request.get('/');
+  expect(response.ok()).toBe(true);
+});
+
+test('Function: CreditClosedError — closed gift invoices keep a typed code', async ({
+  request,
+}) => {
+  expect(new CreditClosedError()).toMatchObject({
+    name: 'CreditClosedError',
+    message: 'credit_closed',
+  });
+  expect((await request.get('/')).ok()).toBe(true);
+});
+
+test('Function: proxyMessagesRepaymentPrepayPost — POST /messages/[id]/repayment/prepay is forwarded', async ({
+  request,
+}) => {
+  const token = await loginHttp(request);
+  const response = await request.post('/messages/loan-a/repayment/prepay', {
+    headers: { authorization: `Bearer ${token}` },
+    data: { amount: '21' },
+  });
+  expect(response.status()).toBe(200);
+});
+
+test('Function: prepayLoan — fiat prepay converts cents with the fixed mock rate', async ({
+  request,
+}) => {
+  const token = await loginHttp(request);
+  const response = await request.post('/messages/loan-b/repayment/prepay', {
+    headers: { authorization: `Bearer ${token}` },
+    data: { amount: '1.23' },
+  });
+  expect(response.status()).toBe(200);
+  expect(await response.json()).toMatchObject({
+    amount: '1.23',
+    amountSats: 1_230,
+    bills: [{ amount: '1.23', amountSats: 1_230 }],
+  });
+});
+
+test('repayment close and prepay return 404 for unknown loan ids', async ({ request }) => {
+  const token = await loginHttp(request);
+  const headers = { authorization: `Bearer ${token}` };
+  expect((await request.post('/messages/unknown-loan/repayment/close', { headers })).status()).toBe(
+    404,
+  );
+  expect(
+    (
+      await request.post('/messages/unknown-loan/repayment/prepay', {
+        headers,
+        data: { amount: '1' },
+      })
+    ).status(),
+  ).toBe(404);
+});
+
+test('Function: prepayLoan — prepay returns due-shaped bills and enforces max', async ({
+  request,
+}) => {
+  const token = await loginHttp(request);
+  const headers = { authorization: `Bearer ${token}` };
+  const response = await request.post('/messages/loan-closed-partial/repayment/prepay', {
+    headers,
+    data: { amount: '500' },
+  });
+  expect(await response.json()).toMatchObject({
+    amountSats: 500,
+    bills: [{ amountSats: 500 }],
+    waiting: [],
+  });
+  const tooHigh = await request.post('/messages/loan-closed-partial/repayment/prepay', {
+    headers,
+    data: { amount: '7901' },
+  });
+  expect(tooHigh.status()).toBe(400);
+  expect(await tooHigh.json()).toMatchObject({ code: 'amount_too_high', maxSats: 7_900 });
 });
 
 async function openLoanUi(
@@ -16319,6 +16444,46 @@ test('Function: summarizeLoans — the production PHP pair keeps its next amount
   await openLoanUi(page, '/welcome', myLoans(productionPhpLoans), false);
   const card = page.getByRole('region', { name: 'Your loans (2)' });
   await expect(card).toContainText("Next: Monday, November 16, ₱199.99 · ₿3'857");
+});
+
+test('Function: parseLoanAmount — BTC sats and fiat cents stay integer based', async ({ page }) => {
+  expect(parseLoanAmount('1000', 'BTC')).toEqual({ units: 1_000n, text: '1000' });
+  expect(parseLoanAmount('10,50', 'CHF')).toEqual({ units: 1_050n, text: '10,50' });
+  await openLoanUi(page, '/loans/repay?visual=repay-ready', myLoans([loanA]), false);
+  await expect(page.getByText('Due today')).toBeVisible();
+});
+
+test('Function: loanMaxUnits — api maxima compare as sats or cents', async ({ page }) => {
+  expect(loanMaxUnits(loanA)).toBe(19_000n);
+  expect(loanMaxUnits(loanB)).toBe(18_000n);
+  await openLoanUi(page, '/loans/repay?visual=repay-ready', myLoans([loanB]), false);
+  await expect(page.getByText('₱30.00', { exact: true })).toBeVisible();
+});
+
+test('Function: checkLoanAmount — above-max input is rejected before a request', async ({
+  page,
+}) => {
+  expect(checkLoanAmount('19001', loanA)).toEqual({
+    ok: false,
+    reason: 'above_max',
+    max: '19000',
+  });
+  await openLoanUi(page, '/loans/repay?visual=repay-ready', myLoans([loanA]), false);
+  await expect(page.getByText('Due today')).toBeVisible();
+});
+
+test('Function: loanMaxInput — Max keeps the api input representation', async ({ page }) => {
+  expect(loanMaxInput(loanA)).toBe('19000');
+  expect(loanMaxInput(loanB)).toBe('180.00');
+  await openLoanUi(page, '/loans/repay?visual=repay-ready', myLoans([loanB]), false);
+  await expect(page.getByText('₱30.00', { exact: true })).toBeVisible();
+});
+
+test('Function: isCollecting — only an unfunded unclosed loan collects', async ({ page }) => {
+  expect(isCollecting(loanCollecting)).toBe(true);
+  expect(isCollecting(loanA)).toBe(false);
+  await openLoanUi(page, '/loans/repay?visual=repay-ready', myLoans([loanCollecting]), false);
+  await expect(page.getByText('Not fully funded yet.')).toBeVisible();
 });
 
 test('Function: definedFiatSum — stored PHP amounts add in their currency', async ({ page }) => {

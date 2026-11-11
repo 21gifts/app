@@ -199,6 +199,14 @@ export class CannotReceiveError extends Error {
   }
 }
 
+/** Api 409 `credit_closed`: gifts are final-disabled because this credit stopped collecting. */
+export class CreditClosedError extends Error {
+  constructor() {
+    super('credit_closed');
+    this.name = 'CreditClosedError';
+  }
+}
+
 /** Api error `code` (HTTP 503) when operators closed new logins for an update. */
 export const LOGINS_CLOSED_CODE = 'logins_closed';
 
@@ -3180,7 +3188,8 @@ export async function fetchComposeTarget(
  * @throws {@link NoteDeletedError} on 404 (missing or deleted invoice target).
  * @throws {@link WalletRequiredError} or {@link CannotReceiveError} on a 400 with that `code`.
  * @throws Error with collapsed visitor copy on 400/403/429/503 (and other
- * non-2xx), {@link MissingRequirementsError} on 409, or when the body fails
+ * non-2xx), {@link MissingRequirementsError} or {@link CreditClosedError} on 409,
+ * or when the body fails
  * {@link messageInvoiceSchema}. A 403 `SUNDAY_REST` keeps that code in the
  * thrown message so a heart click can show the Sunday copy. A 503
  * `HEART_UNAVAILABLE` (the api cannot issue a heart as a fee-free Spark
@@ -3229,6 +3238,10 @@ export async function postMessageInvoice(
     if (missing !== null) {
       throw missing;
     }
+    const conflict = body as { code?: unknown; error?: unknown };
+    if (conflict.code === 'credit_closed' || conflict.error === 'credit_closed') {
+      throw new CreditClosedError();
+    }
     throw new Error('Could not start the Bitcoin payment');
   }
   if (response.status === 404) {
@@ -3256,6 +3269,10 @@ const repaymentLineSchema = z.object({
   username: z.string().nullable(),
   amount: z.string().nullable(),
   sats: z.number().int().nonnegative().nullable(),
+  /** Optional while an older api omits how much of this line was already paid. */
+  paidSats: z.number().int().nonnegative().optional(),
+  /** Optional while an older api omits the paid loan-currency amount. */
+  paidAmount: z.string().nullable().optional(),
   /** Optional until every deployed api includes the live sats value for due fiat shares. */
   dueSats: z.number().int().nonnegative().nullable().optional().default(null),
   status: z.enum(['scheduled', 'due', 'paid']),
@@ -3267,6 +3284,8 @@ const repaymentLineSchema = z.object({
 const repaymentLedgerSchema = z.object({
   currency: z.enum(['BTC', 'USD', 'CHF', 'EUR', 'PHP']),
   fundedAt: z.string().nullable(),
+  /** Optional while an older api omits the final collecting timestamp. */
+  closedAt: z.string().nullable().optional(),
   startsOn: z.string().nullable().optional(),
   termDays: z.number().int(),
   daysDue: z.number().int().nonnegative(),
@@ -3298,13 +3317,14 @@ const repaymentLedgerSchema = z.object({
 /**
  * Public credit ledger from `GET /messages/:id/repayment`.
  * `givers[].canReceive` defaults to true while older api bodies omit it;
- * `repayments[].waiting` marks a due line whose giver cannot receive.
+ * `repayments[].waiting` marks a due line whose giver cannot receive. Newer
+ * bodies also carry collecting `closedAt` and each line's paid sats/amount.
  */
 export type RepaymentLedger = z.infer<typeof repaymentLedgerSchema>;
 
 /**
  * One row of {@link RepaymentLedger}; `dueSats` defaults to null while older
- * api bodies omit it.
+ * api bodies omit it; `paidSats` and `paidAmount` describe partial payment.
  */
 export type RepaymentLine = z.infer<typeof repaymentLineSchema>;
 
@@ -3344,6 +3364,12 @@ const myLoanSchema = z.object({
   amountPhp: fiatAmountSchema,
   termDays: z.number().int().positive(),
   fundedAt: z.string().nullable(),
+  /** Optional while an older api omits the final collecting timestamp. */
+  closedAt: z.string().nullable().optional(),
+  /** Most the author can repay now, in sats; null when a fiat rate is unavailable. */
+  maxSats: z.number().int().nonnegative().nullable().optional(),
+  /** Most the author can repay now in the fiat loan currency, otherwise null. */
+  maxAmount: z.string().nullable().optional(),
   daysDue: z.number().int().nonnegative(),
   daysPaid: z.number().int().nonnegative(),
   repaidSats: z.number().int().nonnegative(),
@@ -3431,6 +3457,116 @@ const repaymentDueSchema = z.object({
   waiting: z.array(repaymentWaitingSchema),
 });
 
+const repaymentCloseSchema = z.object({
+  fundedAt: z.string().nullable(),
+  closedAt: z.string(),
+  collectedSats: z.number().int().nonnegative(),
+  collectedAmount: z.string().nullable(),
+});
+
+const repaymentPrepaySchema = repaymentDueSchema.extend({
+  amountSats: z.number().int().positive(),
+  amount: z.string().nullable(),
+});
+
+/** Machine-readable refusal returned by a close or free-amount repayment request. */
+export type LoanRepaymentErrorCode =
+  | 'amount_too_high'
+  | 'too_many_shares'
+  | 'invalid_amount'
+  | 'nothing_due'
+  | 'sunday_rest'
+  | 'payment_open'
+  | 'rate_limited'
+  | 'service_unavailable'
+  | 'request_failed';
+
+/** Typed error thrown by a close or free-amount repayment request. */
+export class LoanRepaymentError extends Error {
+  readonly code: LoanRepaymentErrorCode;
+  readonly status: number;
+  readonly maxSats: number | null;
+  readonly maxAmount: string | null;
+
+  /**
+   * @param code - Stable client-facing refusal code.
+   * @param status - Upstream HTTP status.
+   * @param maxSats - Current maximum in sats for max-related errors.
+   * @param maxAmount - Current maximum in the fiat loan currency for max-related errors.
+   */
+  constructor(
+    code: LoanRepaymentErrorCode,
+    status: number,
+    maxSats: number | null = null,
+    maxAmount: string | null = null,
+  ) {
+    super(code);
+    this.name = 'LoanRepaymentError';
+    this.code = code;
+    this.status = status;
+    this.maxSats = maxSats;
+    this.maxAmount = maxAmount;
+  }
+}
+
+/** Successful `POST /messages/:id/repayment/close` body. */
+export type LoanClose = z.infer<typeof repaymentCloseSchema>;
+
+/** Successful `POST /messages/:id/repayment/prepay` body. */
+export type LoanPrepay = z.infer<typeof repaymentPrepaySchema>;
+
+async function throwLoanRepaymentError(response: Response): Promise<never> {
+  let body: unknown = null;
+  try {
+    body = await response.json();
+  } catch {
+    // The status still supplies a typed fallback below.
+  }
+  if (response.status === 409) {
+    const missing = parseMissingRequirements(body);
+    if (missing !== null) {
+      throw missing;
+    }
+  }
+  const record =
+    typeof body === 'object' && body !== null
+      ? (body as {
+          code?: unknown;
+          error?: unknown;
+          maxSats?: unknown;
+          maxAmount?: unknown;
+        })
+      : null;
+  const rawMaxSats = record?.maxSats;
+  const maxSats =
+    typeof rawMaxSats === 'number' && Number.isSafeInteger(rawMaxSats) && rawMaxSats >= 0
+      ? rawMaxSats
+      : null;
+  const maxAmount = typeof record?.maxAmount === 'string' ? record.maxAmount : null;
+  if (record?.code === 'amount_too_high' || record?.code === 'too_many_shares') {
+    throw new LoanRepaymentError(record.code, response.status, maxSats, maxAmount);
+  }
+  if (record?.code === 'invalid_amount') {
+    throw new LoanRepaymentError('invalid_amount', response.status);
+  }
+  if (record?.error === 'Nothing is due') {
+    throw new LoanRepaymentError('nothing_due', response.status);
+  }
+  if (record?.error === 'SUNDAY_REST' || record?.code === 'SUNDAY_REST') {
+    throw new LoanRepaymentError('sunday_rest', response.status);
+  }
+  if (record?.error === 'A payment for this share is still open') {
+    throw new LoanRepaymentError('payment_open', response.status);
+  }
+  if (response.status === 429) {
+    throw new LoanRepaymentError('rate_limited', response.status);
+  }
+  if (response.status === 503) {
+    throw new LoanRepaymentError('service_unavailable', response.status);
+  }
+  throw new LoanRepaymentError('request_failed', response.status);
+}
+
 /**
  * `POST /messages/:id/repayment/due` body; a missing bill `sparkInvoice` defaults to null.
  */
@@ -3438,6 +3574,60 @@ export type RepaymentDue = z.infer<typeof repaymentDueSchema>;
 
 /** One bill of {@link RepaymentDue}. */
 export type RepaymentBill = RepaymentDue['bills'][number];
+
+/** One recipient whose wallet cannot receive a due or prepaid share yet. */
+export type RepaymentWaiting = RepaymentDue['waiting'][number];
+
+/**
+ * Permanently stops a loan from collecting without changing its repayment plan.
+ *
+ * @param sessionToken - Bearer session of the credit's author.
+ * @param messageId - Credit note id.
+ * @returns The final collecting state and collected amounts.
+ * @throws {@link MissingRequirementsError} on a matching 409 response, otherwise
+ *   a typed {@link LoanRepaymentError} on a refusal.
+ */
+export async function closeLoan(sessionToken: string, messageId: string): Promise<LoanClose> {
+  const response = await fetch(`/messages/${encodeURIComponent(messageId)}/repayment/close`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${sessionToken}`, ...deviceTimeZoneHeader() },
+  });
+  if (!response.ok) {
+    return throwLoanRepaymentError(response);
+  }
+  return repaymentCloseSchema.parse(await response.json());
+}
+
+/**
+ * Requests recipient bills for a free repayment amount, including future shares.
+ *
+ * @param sessionToken - Bearer session of the credit's author.
+ * @param messageId - Credit note id.
+ * @param amount - Whole sats for BTC, or a decimal amount in the fiat loan currency.
+ * @returns The converted amount plus payable bills and waiting shares.
+ * @throws {@link MissingRequirementsError} on a matching 409 response, otherwise
+ *   a typed {@link LoanRepaymentError}; max errors carry `maxSats` and `maxAmount`.
+ */
+export async function prepayLoan(
+  sessionToken: string,
+  messageId: string,
+  amount: string,
+): Promise<LoanPrepay> {
+  const response = await fetch(`/messages/${encodeURIComponent(messageId)}/repayment/prepay`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${sessionToken}`,
+      'Content-Type': 'application/json',
+      ...deviceTimeZoneHeader(),
+    },
+    body: JSON.stringify({ amount }),
+  });
+  await throwIfWalletAnswer(response);
+  if (!response.ok) {
+    return throwLoanRepaymentError(response);
+  }
+  return repaymentPrepaySchema.parse(await response.json());
+}
 
 /**
  * Asks for every payable bill of the author's funded loan at once.

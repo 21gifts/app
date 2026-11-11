@@ -51,7 +51,8 @@ function paidBackPercent(ledger: RepaymentLedger): number {
  *   fiat, bitcoin, visitor fiat); `collected` and `goal` (amounts with their
  *   fiat for the status line); `percent` (collected percent for the label,
  *   uncapped); `funded` (collected sats reached the asked sats);
- *   `ledger` (public ledger, or `null` when it is not loaded here);
+ *   `ledger` (public ledger, or `null` when it is not loaded here; a non-null
+ *   `closedAt` hides giving even when the loan stopped below its goal);
  *   `ledgerLink` (show the **Repayment list** link on feed and profile cards);
  *   `onLend` (opens the money reaction; omitted when the viewer cannot lend);
  *   `lendBlocked` (the borrower cannot receive yet: **Lend** shows disabled).
@@ -89,8 +90,9 @@ export function LoanBlock({
   // percent of a fiat ask (its own currency) and the sats that decide funding drift apart.
   const shownPercent = state === 'collecting' ? Math.min(99, percent) : Math.max(100, percent);
   const barPercent = paidShown ? paid : Math.min(100, Math.max(0, shownPercent));
-  const canLend = state === 'collecting' && onLend !== undefined;
-  const showLend = canLend || (state === 'collecting' && lendBlocked);
+  const closed = ledger?.closedAt !== null && ledger?.closedAt !== undefined;
+  const canLend = state === 'collecting' && !closed && onLend !== undefined;
+  const showLend = canLend || (state === 'collecting' && !closed && lendBlocked);
   return (
     <section
       data-loan-block={state}

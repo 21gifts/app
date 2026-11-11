@@ -1,12 +1,22 @@
 import { describe, expect, it } from 'vitest';
+import {
+  ledgerClosedPartial,
+  ledgerClosedPartialFiat,
+  loanClosedPartial,
+} from '../../../e2e/loan-fixtures';
 import type { MyLoan, RepaymentLedger } from '@/lib/api';
 import {
   centsString,
+  checkLoanAmount,
   definedFiatAmounts,
   definedDueLabel,
   definedFiatSum,
   dueShares,
   fittingPrefix,
+  isCollecting,
+  loanMaxInput,
+  loanMaxUnits,
+  parseLoanAmount,
   summarizeLoans,
 } from '@/lib/loan-repay';
 
@@ -29,6 +39,9 @@ function loan(overrides: Partial<MyLoan> = {}): MyLoan {
     amountPhp: null,
     termDays: 30,
     fundedAt: '2026-10-02T12:00:00.000Z',
+    closedAt: null,
+    maxSats: 900,
+    maxAmount: null,
     daysDue: 2,
     daysPaid: 1,
     repaidSats: 100,
@@ -52,6 +65,7 @@ function ledger(overrides: Partial<RepaymentLedger> = {}): RepaymentLedger {
   return {
     currency: 'BTC',
     fundedAt: '2026-10-02T12:00:00.000Z',
+    closedAt: null,
     termDays: 30,
     daysDue: 2,
     daysPaid: 1,
@@ -75,6 +89,8 @@ function ledger(overrides: Partial<RepaymentLedger> = {}): RepaymentLedger {
         username: 'bruno',
         amount: null,
         sats: 100,
+        paidSats: 0,
+        paidAmount: null,
         dueSats: null,
         status: 'due',
         via: 'lightning',
@@ -84,6 +100,74 @@ function ledger(overrides: Partial<RepaymentLedger> = {}): RepaymentLedger {
     ...overrides,
   };
 }
+
+describe('free loan amount helpers', () => {
+  it('parses BTC as positive whole sats without floats', () => {
+    expect(parseLoanAmount(' 0010 ', 'BTC')).toEqual({ units: 10n, text: '0010' });
+    for (const value of ['', '0', '-1', '1.0', '1,0', '+1', '1e3', '1 000']) {
+      expect(parseLoanAmount(value, 'BTC')).toBeNull();
+    }
+  });
+
+  it('parses fiat comma or dot amounts as cents and keeps the typed separator', () => {
+    expect(parseLoanAmount('12.34', 'CHF')).toEqual({ units: 1_234n, text: '12.34' });
+    expect(parseLoanAmount(' 12,3 ', 'EUR')).toEqual({ units: 1_230n, text: '12,3' });
+    expect(parseLoanAmount('12', 'USD')).toEqual({ units: 1_200n, text: '12' });
+    expect(parseLoanAmount('999999999999999999999.99', 'PHP')?.units).toBe(
+      99_999_999_999_999_999_999_999n,
+    );
+    for (const value of ['', '0', '0.00', '-1', '.5', '1.', '1.234', '1,2.3', 'NaN']) {
+      expect(parseLoanAmount(value, 'USD')).toBeNull();
+    }
+  });
+
+  it('reads BTC and fiat maxima in integer units and preserves Max input text', () => {
+    const btc = loan({ maxSats: 1_234, maxAmount: null });
+    const fiat = loan({ goalCurrency: 'CHF', maxSats: 8_000, maxAmount: '12.30' });
+    expect(loanMaxUnits(btc)).toBe(1_234n);
+    expect(loanMaxInput(btc)).toBe('1234');
+    expect(loanMaxUnits(fiat)).toBe(1_230n);
+    expect(loanMaxInput(fiat)).toBe('12.30');
+    expect(loanMaxUnits({ ...fiat, maxAmount: 'bad' })).toBeNull();
+    expect(loanMaxInput({ ...fiat, maxAmount: null })).toBeNull();
+    expect(loanMaxUnits({ ...btc, maxSats: null })).toBeNull();
+    const legacyBtc = { ...btc };
+    const legacyFiat = { ...fiat };
+    delete legacyBtc.maxSats;
+    delete legacyBtc.maxAmount;
+    delete legacyFiat.maxAmount;
+    expect(loanMaxUnits(legacyBtc)).toBeNull();
+    expect(loanMaxInput(legacyBtc)).toBeNull();
+    expect(loanMaxUnits(legacyFiat)).toBeNull();
+    expect(loanMaxInput(legacyFiat)).toBeNull();
+  });
+
+  it('validates empty, malformed, unavailable, above-max, and accepted inputs', () => {
+    const btc = loan({ maxSats: 500 });
+    expect(checkLoanAmount('', btc)).toEqual({ ok: false, reason: 'empty', max: '500' });
+    expect(checkLoanAmount('1.5', btc)).toEqual({ ok: false, reason: 'invalid', max: '500' });
+    expect(checkLoanAmount('501', btc)).toEqual({ ok: false, reason: 'above_max', max: '500' });
+    expect(checkLoanAmount(' 500 ', btc)).toEqual({ ok: true, text: '500' });
+    const fiat = loan({ goalCurrency: 'USD', maxSats: null, maxAmount: '10.50' });
+    expect(checkLoanAmount('10,51', fiat)).toEqual({
+      ok: false,
+      reason: 'above_max',
+      max: '10.50',
+    });
+    expect(checkLoanAmount('10,5', fiat)).toEqual({ ok: true, text: '10,5' });
+    expect(checkLoanAmount('1.00', { ...fiat, maxAmount: null })).toEqual({
+      ok: false,
+      reason: 'no_max',
+      max: null,
+    });
+  });
+
+  it('collects only before funding and before an explicit close', () => {
+    expect(isCollecting(loan({ fundedAt: null, closedAt: null }))).toBe(true);
+    expect(isCollecting(loan({ fundedAt: 'funded', closedAt: null }))).toBe(false);
+    expect(isCollecting(loan({ fundedAt: null, closedAt: 'closed' }))).toBe(false);
+  });
+});
 
 describe('summarizeLoans', () => {
   it('combines totals, caps progress, and groups the earliest next day', () => {
@@ -294,6 +378,24 @@ describe('definedFiatAmounts', () => {
 });
 
 describe('dueShares', () => {
+  it('uses the remaining sats of a partially paid BTC due row', () => {
+    expect(dueShares([loanClosedPartial], [ledgerClosedPartial])).toEqual([
+      expect.objectContaining({ sats: 400, amount: null }),
+    ]);
+  });
+
+  it('uses remaining cents after paidAmount for a partially paid fiat due row', () => {
+    const fiatLoan = loan({
+      ...loanClosedPartial,
+      goalCurrency: 'PHP',
+      goalAmount: '200.00',
+      maxAmount: '197.50',
+    });
+    expect(dueShares([fiatLoan], [ledgerClosedPartialFiat])).toEqual([
+      expect.objectContaining({ sats: 400, amount: '10.00' }),
+    ]);
+  });
+
   it('orders due rows by day, loan, and row while mapping availability and fallback sats', () => {
     const first = ledger({
       repayments: [
@@ -357,7 +459,7 @@ describe('dueShares', () => {
         dayIndex: 2,
         name: 'Bruno',
         sats: 90,
-        amount: '1.00',
+        amount: null,
         waiting: true,
       }),
     ]);

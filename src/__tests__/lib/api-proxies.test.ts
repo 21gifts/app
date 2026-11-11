@@ -94,7 +94,9 @@ import {
   proxyMessagesPlacesGet,
   proxyWalletStatsGet,
   proxyMessagesInvoicePost,
+  proxyMessagesRepaymentClosePost,
   proxyMessagesRepaymentDuePost,
+  proxyMessagesRepaymentPrepayPost,
   proxyMessagesPhotoGet,
   proxyMessagesPhotoExtGet,
   proxyMessagesPost,
@@ -1271,6 +1273,28 @@ describe('api proxy wrappers', () => {
       'a/b',
     );
     expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/messages/a%2Fb/repayment/due');
+  });
+
+  it('proxyMessagesRepaymentClosePost hits POST /messages/:id/repayment/close', async () => {
+    const fetchMock = stubApi();
+    await proxyMessagesRepaymentClosePost(
+      new Request('http://localhost/messages/m1/repayment/close', { method: 'POST' }),
+      'a/b',
+    );
+    expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/messages/a%2Fb/repayment/close');
+  });
+
+  it('proxyMessagesRepaymentPrepayPost hits POST /messages/:id/repayment/prepay', async () => {
+    const fetchMock = stubApi();
+    await proxyMessagesRepaymentPrepayPost(
+      new Request('http://localhost/messages/m1/repayment/prepay', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: '{"amount":"21"}',
+      }),
+      'a/b',
+    );
+    expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/messages/a%2Fb/repayment/prepay');
   });
 
   it('proxyViewGet hits /view/:viewKey (encoded)', async () => {

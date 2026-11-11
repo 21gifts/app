@@ -49,6 +49,9 @@ function loan(overrides: Partial<MyLoan> = {}): MyLoan {
     amountPhp: '1680.00',
     termDays: 30,
     fundedAt: '2026-09-02T00:00:00.000Z',
+    closedAt: '2026-09-02T00:00:00.000Z',
+    maxSats: 19_000,
+    maxAmount: null,
     daysDue: 12,
     daysPaid: 11,
     repaidSats: 11_000,
@@ -124,12 +127,16 @@ function repay(overrides: Partial<LoanRepayResult> = {}): LoanRepayResult {
     sentSats: 0,
     sentAmounts: [],
     sentNames: [],
+    prepayWaiting: [],
     feeSats: 0,
     missingSats: null,
     errorKey: null,
+    actionError: null,
     topUpOpen: false,
     openTopUp: vi.fn(),
     pay: vi.fn(),
+    prepay: vi.fn(),
+    closeCollecting: vi.fn(),
     pinned: false,
     ...overrides,
   };
@@ -204,11 +211,16 @@ describe('LoanRepayScreen', () => {
   });
 
   it('shows only the list for a collecting loan', () => {
-    show({ sundayRest: false, loans: [loan({ fundedAt: null, sats: 12_000 })] });
+    show({
+      sundayRest: false,
+      loans: [loan({ fundedAt: null, closedAt: null, sats: 12_000, maxSats: 12_000 })],
+    });
     expect(screen.getByText('Not fully funded yet.')).toBeTruthy();
     expect(screen.queryByText('Due today')).toBeNull();
     expect(screen.getByText("₿30'000 · $30.00 · 30 days · ₿1'000 · $1.00 per day")).toBeTruthy();
     expect(screen.queryByRole('img', { name: /Repaid/ })).toBeNull();
+    expect(screen.getByRole('heading', { name: 'Pay more' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'End collecting' })).toBeTruthy();
   });
 
   it('shows due recipients, old day labels, wallet balance, and sends once', async () => {
@@ -945,6 +957,41 @@ describe('LoanRepayScreen', () => {
             status: 'paid',
             amount: '59.99',
             sats: 5_999,
+            dueSats: null,
+          },
+        ],
+      }),
+    );
+    show({
+      sundayRest: false,
+      loans: [loan({ goalCurrency: 'PHP', goalAmount: '900.00', repaidSats: 5_999 })],
+    });
+    expect(await screen.findByText("Repaid ₱59.99 · ₿5'999 of ₱900.00")).toBeTruthy();
+  });
+
+  it('includes stored partial payments from due and scheduled rows in Repaid', async () => {
+    vi.mocked(getRepayment).mockResolvedValue(
+      ledger({
+        currency: 'PHP',
+        repayments: [
+          {
+            ...ledger().repayments[0]!,
+            dayIndex: 0,
+            status: 'due',
+            amount: '30.00',
+            sats: 3_000,
+            paidSats: 1_000,
+            paidAmount: '10.00',
+            dueSats: 2_000,
+          },
+          {
+            ...ledger().repayments[0]!,
+            dayIndex: 1,
+            status: 'scheduled',
+            amount: '49.99',
+            sats: 4_999,
+            paidSats: 4_999,
+            paidAmount: '49.99',
             dueSats: null,
           },
         ],

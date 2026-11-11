@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useCallback, useEffect, useId, useState, type ReactElement } from 'react';
 import { Check, ChevronDown, Loader2 } from 'lucide-react';
 import { useFiatPreference } from '@/components/FiatPreferenceProvider';
+import { LoanPayMore } from '@/components/LoanPayMore';
 import { useTranslations } from '@/components/LocaleProvider';
 import { useNumberFormat } from '@/components/NumberFormatProvider';
 import { WalletOwnAddress } from '@/components/WalletOwnAddress';
@@ -71,7 +72,9 @@ const DUE_BILLS_PER_REQUEST = 60;
 
 /**
  * All-loans repayment screen: live due totals, recipients, one-tap wallet payment,
- * top-up controls, and per-loan progress. The send-now link names at most 60 shares
+ * top-up controls, per-loan progress, and each loan's free-amount / end-collecting
+ * controls. A closed loan keeps free repayment and loses only collecting actions.
+ * The send-now link names at most 60 shares
  * per loan (one due request's limit); if any named share is missing from the due
  * answer, nothing is sent and the screen reloads. For a funded loan with something
  * due (payable or waiting) whose repayment list is missing, the opened Who-gets-paid
@@ -754,7 +757,15 @@ export function LoanRepayScreen(): ReactElement {
               ledger !== null &&
               ledger.currency === loan.goalCurrency
             ) {
-              const paid = ledger.repayments.filter((row) => row.status === 'paid');
+              const paid = ledger.repayments
+                .filter((row) => row.status === 'paid' || (row.paidSats ?? 0) > 0)
+                .map((row) => {
+                  const partialSats = row.paidSats ?? 0;
+                  return {
+                    sats: partialSats > 0 ? partialSats : row.status === 'paid' ? row.sats : 0,
+                    amount: row.paidAmount ?? (row.status === 'paid' ? row.amount : null),
+                  };
+                });
               const paidSats = paid.every((row) => row.sats !== null)
                 ? paid.reduce((sum, row) => sum + (row.sats as number), 0)
                 : null;
@@ -832,6 +843,24 @@ export function LoanRepayScreen(): ReactElement {
                 >
                   {t('forum.creditList')}
                 </Link>
+                <LoanPayMore
+                  loan={loan}
+                  phase={repay.phase}
+                  actionError={repay.actionError}
+                  errorKey={repay.errorKey}
+                  prepayWaiting={repay.prepayWaiting}
+                  balanceSats={repay.balanceSats}
+                  missingSats={repay.missingSats}
+                  showShortfall={payable === 0}
+                  sundayRest={loans.sundayRest}
+                  showWalletStatus={payable === 0}
+                  topUpOpen={repay.topUpOpen}
+                  username={account?.username ?? null}
+                  formatSats={holding}
+                  onOpenTopUp={repay.openTopUp}
+                  onPay={repay.prepay}
+                  onCloseCollecting={repay.closeCollecting}
+                />
               </article>
             );
           })}

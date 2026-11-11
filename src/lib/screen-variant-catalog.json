@@ -1614,6 +1614,66 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/loans/repay:pay-more-max",
+    "label": "/loans/repay pay-more-max",
+    "visual": "state-loans-repay-pay-more-max",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/loans/repay:pay-more-above-max",
+    "label": "/loans/repay pay-more-above-max",
+    "visual": "state-loans-repay-pay-more-above-max",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/loans/repay:pay-more-no-rate",
+    "label": "/loans/repay pay-more-no-rate",
+    "visual": "state-loans-repay-pay-more-no-rate",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/loans/repay:pay-more-server-max",
+    "label": "/loans/repay pay-more-server-max",
+    "visual": "state-loans-repay-pay-more-server-max",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/loans/repay:pay-more-error",
+    "label": "/loans/repay pay-more-error",
+    "visual": "state-loans-repay-pay-more-error",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/loans/repay:pay-more-sending",
+    "label": "/loans/repay pay-more-sending",
+    "visual": "state-loans-repay-pay-more-sending",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/loans/repay:pay-more-waiting",
+    "label": "/loans/repay pay-more-waiting",
+    "visual": "state-loans-repay-pay-more-waiting",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/loans/repay:pay-more-shortfall",
+    "label": "/loans/repay pay-more-shortfall",
+    "visual": "state-loans-repay-pay-more-shortfall",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/loans/repay:collecting-pay-confirm",
+    "label": "/loans/repay collecting-pay-confirm",
+    "visual": "state-loans-repay-collecting-pay-confirm",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/loans/repay:collecting-close-confirm",
+    "label": "/loans/repay collecting-close-confirm",
+    "visual": "state-loans-repay-collecting-close-confirm",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/loans/repay:none",
     "label": "/loans/repay none",
     "visual": "state-loans-repay-none",

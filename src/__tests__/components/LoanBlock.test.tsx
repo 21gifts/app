@@ -48,6 +48,7 @@ function ledgerOf(
   return {
     currency,
     fundedAt: '2026-09-26T12:00:00.000Z',
+    closedAt: '2026-09-26T12:00:00.000Z',
     termDays: repayments.length,
     daysDue: 0,
     daysPaid: 0,
@@ -124,6 +125,17 @@ describe('LoanBlock', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Lend' }));
     expect(onLend).toHaveBeenCalledTimes(1);
     expect(onCard).not.toHaveBeenCalled();
+  });
+
+  it('hides Lend when a loaded below-goal loan is closed', () => {
+    block({
+      ledger: { ...ledgerOf([]), fundedAt: null, closedAt: '2026-10-01T12:00:00.000Z' },
+      ledgerLink: false,
+      onLend: vi.fn(),
+      lendBlocked: true,
+    });
+    expect(section().getAttribute('data-loan-block')).toBe('collecting');
+    expect(screen.queryByRole('button', { name: 'Lend' })).toBeNull();
   });
 
   it('stops a Repayment list click from toggling the card', () => {

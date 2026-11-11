@@ -4,13 +4,17 @@ import { useLoanRepay } from '@/hooks/useLoanRepay';
 import { WALLET_PAY_BALANCE_POLL_MS, WALLET_PAY_CONFIRM_WAIT_MS } from '@/hooks/useWalletPay';
 import {
   CannotReceiveError,
+  closeLoan,
+  LoanRepaymentError,
   postRepaymentDue,
+  prepayLoan,
   WalletRequiredError,
   type MyLoan,
   type MyLoans,
   type RepaymentBill,
 } from '@/lib/api';
 import { getE2eNow } from '@/lib/config';
+import { MissingRequirementsError } from '@/lib/missing-requirements';
 import { reportPaymentFailure, type PaymentFailure } from '@/lib/wallet/payment-failure';
 import {
   payFromWallet,
@@ -23,7 +27,9 @@ import { useWalletStore, type WalletStatus } from '@/stores/wallet-store';
 
 vi.mock('@/lib/api', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@/lib/api')>()),
+  closeLoan: vi.fn(),
   postRepaymentDue: vi.fn(),
+  prepayLoan: vi.fn(),
 }));
 vi.mock('@/lib/wallet/wallet-service', () => ({
   payFromWallet: vi.fn(),
@@ -78,6 +84,9 @@ function loan(messageId = 'm1', payableSats = 500, repaidSats = 100): MyLoan {
     amountPhp: null,
     termDays: 30,
     fundedAt: '2026-10-02T12:00:00.000Z',
+    closedAt: null,
+    maxSats: 900,
+    maxAmount: null,
     daysDue: 2,
     daysPaid: 1,
     repaidSats,
@@ -153,6 +162,8 @@ beforeEach(() => {
   useWalletStore.setState({ setupFailedSession: null });
   setWallet('ready');
   vi.mocked(postRepaymentDue).mockReset();
+  vi.mocked(prepayLoan).mockReset();
+  vi.mocked(closeLoan).mockReset();
   vi.mocked(payFromWallet).mockReset();
   vi.mocked(refreshWallet).mockReset().mockResolvedValue(undefined);
   vi.mocked(getE2eNow).mockReset().mockReturnValue(null);
@@ -255,7 +266,11 @@ describe('useLoanRepay wallet state', () => {
     );
     expect(result.current.phase).toBe('idle');
     act(() => result.current.pay([loan()]));
+    act(() => result.current.prepay(loan(), '100'));
+    act(() => result.current.closeCollecting({ ...loan(), fundedAt: null, closedAt: null }));
     expect(postRepaymentDue).not.toHaveBeenCalled();
+    expect(prepayLoan).not.toHaveBeenCalled();
+    expect(closeLoan).not.toHaveBeenCalled();
   });
 });
 
@@ -2074,6 +2089,234 @@ describe('useLoanRepay fresh settlement baseline', () => {
   });
 });
 
+describe('useLoanRepay free repayment and collecting actions', () => {
+  it('prepares and sends prepay bills through the existing wallet path', async () => {
+    vi.useFakeTimers();
+    const row = bill('Ahead', 500, 8);
+    vi.mocked(prepayLoan).mockResolvedValue({
+      amountSats: 500,
+      amount: null,
+      bills: [row],
+      waiting: [],
+    });
+    vi.mocked(payFromWallet).mockResolvedValue(confirmed(500));
+    const current = loan('prepay-m1', 0, 100);
+    const reload = vi
+      .fn<() => Promise<MyLoans>>()
+      .mockResolvedValueOnce(body([current]))
+      .mockResolvedValue(body([loan('prepay-m1', 0, 600)]));
+    const { result } = renderHook(() => useLoanRepay({ reload }));
+
+    act(() => {
+      result.current.prepay(current, '500');
+      result.current.closeCollecting({ ...current, fundedAt: null, closedAt: null });
+    });
+    await act(async () => undefined);
+
+    expect(prepayLoan).toHaveBeenCalledWith('token', 'prepay-m1', '500');
+    expect(closeLoan).not.toHaveBeenCalled();
+    expect(postRepaymentDue).not.toHaveBeenCalled();
+    expect(payFromWallet).toHaveBeenCalledWith({ type: 'input', input: invoiceOf(row) });
+    expect(result.current).toMatchObject({ phase: 'waiting', sentSats: 500, actionError: null });
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(WALLET_PAY_BALANCE_POLL_MS);
+    });
+    expect(result.current.phase).toBe('repaid');
+  });
+
+  it('keeps waiting recipients returned by prepay in the hook result', async () => {
+    const row = bill('Ahead', 500, 8);
+    vi.mocked(prepayLoan).mockResolvedValue({
+      amountSats: 700,
+      amount: null,
+      bills: [row],
+      waiting: [
+        {
+          dayIndex: 9,
+          recipientAccountId: 'acc_waiting',
+          name: 'Carla',
+          username: 'carla',
+          amountSats: 200,
+          amount: null,
+        },
+      ],
+    });
+    vi.mocked(payFromWallet).mockResolvedValue(confirmed(500));
+    const current = loan('prepay-waiting', 0, 100);
+    const reload = vi.fn<() => Promise<MyLoans>>().mockResolvedValue(body([current]));
+    const { result } = renderHook(() => useLoanRepay({ reload }));
+
+    act(() => result.current.prepay(current, '700'));
+    await waitFor(() => expect(result.current.sentSats).toBe(500));
+
+    expect(result.current.prepayWaiting).toEqual([
+      expect.objectContaining({ name: 'Carla', amountSats: 200 }),
+    ]);
+  });
+
+  it('exposes the api maximum when prepay is above max', async () => {
+    const error = new LoanRepaymentError('amount_too_high', 400, 750, null);
+    vi.mocked(prepayLoan).mockRejectedValue(error);
+    const { result } = renderHook(() =>
+      useLoanRepay({ reload: vi.fn(async () => body([loan()])) }),
+    );
+
+    act(() => result.current.prepay(loan(), '1000'));
+    await waitFor(() => expect(result.current.phase).toBe('failed'));
+
+    expect(result.current.actionError).toEqual({
+      code: 'amount_too_high',
+      maxSats: 750,
+      maxAmount: null,
+    });
+    expect(payFromWallet).not.toHaveBeenCalled();
+  });
+
+  it('closes a collecting loan and reloads without touching the wallet', async () => {
+    const collecting = loan('collecting', 0, 0);
+    collecting.fundedAt = null;
+    collecting.closedAt = null;
+    vi.mocked(closeLoan).mockResolvedValue({
+      fundedAt: null,
+      closedAt: '2026-11-11T10:00:00.000Z',
+      collectedSats: 1_000,
+      collectedAmount: null,
+    });
+    const reload = vi.fn(async () =>
+      body([{ ...collecting, closedAt: '2026-11-11T10:00:00.000Z' }]),
+    );
+    const { result } = renderHook(() => useLoanRepay({ reload }));
+
+    act(() => result.current.closeCollecting(collecting));
+    act(() => result.current.closeCollecting(collecting));
+    await waitFor(() => expect(closeLoan).toHaveBeenCalledWith('token', 'collecting'));
+    await waitFor(() => expect(result.current.phase).toBe('idle'));
+
+    expect(reload).toHaveBeenCalledTimes(1);
+    expect(prepayLoan).not.toHaveBeenCalled();
+    expect(payFromWallet).not.toHaveBeenCalled();
+  });
+
+  it('exposes a typed close refusal and ignores already closed loans', async () => {
+    const collecting = loan('collecting', 0, 0);
+    collecting.fundedAt = null;
+    collecting.closedAt = null;
+    vi.mocked(closeLoan).mockRejectedValue(new LoanRepaymentError('service_unavailable', 503));
+    const { result } = renderHook(() =>
+      useLoanRepay({ reload: vi.fn(async () => body([collecting])) }),
+    );
+
+    act(() => result.current.closeCollecting(collecting));
+    await waitFor(() => expect(result.current.phase).toBe('failed'));
+    expect(result.current.actionError?.code).toBe('service_unavailable');
+
+    act(() => result.current.closeCollecting({ ...collecting, closedAt: 'closed' }));
+    act(() => result.current.closeCollecting({ ...collecting, fundedAt: 'funded' }));
+    expect(closeLoan).toHaveBeenCalledTimes(1);
+  });
+
+  it('exposes missing requirements and a rate limit from close', async () => {
+    const collecting = { ...loan('collecting', 0, 0), fundedAt: null, closedAt: null };
+    vi.mocked(closeLoan).mockRejectedValueOnce(new MissingRequirementsError(['rules']));
+    const { result } = renderHook(() =>
+      useLoanRepay({ reload: vi.fn(async () => body([collecting])) }),
+    );
+    act(() => result.current.closeCollecting(collecting));
+    await waitFor(() => expect(result.current.actionError?.code).toBe('missing_requirements'));
+
+    vi.mocked(closeLoan).mockRejectedValueOnce(new LoanRepaymentError('rate_limited', 429));
+    act(() => result.current.closeCollecting(collecting));
+    await waitFor(() => expect(result.current.actionError?.code).toBe('rate_limited'));
+    expect(result.current.errorKey).toBe('forum.payErrorRateLimit');
+  });
+
+  it('fails close when reload has no fresh body', async () => {
+    const collecting = { ...loan('collecting', 0, 0), fundedAt: null, closedAt: null };
+    vi.mocked(closeLoan).mockResolvedValue({
+      fundedAt: null,
+      closedAt: 'closed',
+      collectedSats: 1_000,
+      collectedAmount: null,
+    });
+    const { result } = renderHook(() =>
+      useLoanRepay({ reload: vi.fn(async (): Promise<MyLoans | null> => null) }),
+    );
+    act(() => result.current.closeCollecting(collecting));
+    await waitFor(() => expect(result.current.phase).toBe('failed'));
+    expect(result.current.actionError).toBeNull();
+    expect(result.current.errorKey).toBe('forum.payErrorRequest');
+  });
+
+  it('ignores a close answer after the session changes', async () => {
+    const collecting = { ...loan('collecting', 0, 0), fundedAt: null, closedAt: null };
+    let finish!: (value: {
+      fundedAt: null;
+      closedAt: string;
+      collectedSats: number;
+      collectedAmount: null;
+    }) => void;
+    vi.mocked(closeLoan).mockReturnValue(
+      new Promise<{
+        fundedAt: null;
+        closedAt: string;
+        collectedSats: number;
+        collectedAmount: null;
+      }>((resolve) => {
+        finish = resolve;
+      }),
+    );
+    const reload = vi.fn(async () => body([collecting]));
+    const { result } = renderHook(() => useLoanRepay({ reload }));
+    act(() => result.current.closeCollecting(collecting));
+    await act(async () => useAuthStore.setState({ session: 'other' }));
+    await act(async () =>
+      finish({ fundedAt: null, closedAt: 'closed', collectedSats: 1_000, collectedAmount: null }),
+    );
+    expect(reload).not.toHaveBeenCalled();
+    expect(result.current.actionError).toBeNull();
+  });
+
+  it('ignores a close reload after the session changes', async () => {
+    const collecting = { ...loan('collecting', 0, 0), fundedAt: null, closedAt: null };
+    vi.mocked(closeLoan).mockResolvedValue({
+      fundedAt: null,
+      closedAt: 'closed',
+      collectedSats: 1_000,
+      collectedAmount: null,
+    });
+    let finishReload!: (value: MyLoans) => void;
+    const reload = vi.fn(
+      () =>
+        new Promise<MyLoans>((resolve) => {
+          finishReload = resolve;
+        }),
+    );
+    const { result } = renderHook(() => useLoanRepay({ reload }));
+    act(() => result.current.closeCollecting(collecting));
+    await waitFor(() => expect(reload).toHaveBeenCalledTimes(1));
+    await act(async () => useAuthStore.setState({ session: 'other' }));
+    await act(async () => finishReload(body([collecting])));
+    expect(result.current.actionError).toBeNull();
+  });
+
+  it('ignores a close failure after the session changes', async () => {
+    const collecting = { ...loan('collecting', 0, 0), fundedAt: null, closedAt: null };
+    let fail!: (reason: unknown) => void;
+    vi.mocked(closeLoan).mockReturnValue(
+      new Promise<never>((_resolve, reject) => {
+        fail = reject;
+      }),
+    );
+    const { result } = renderHook(() =>
+      useLoanRepay({ reload: vi.fn(async () => body([collecting])) }),
+    );
+    act(() => result.current.closeCollecting(collecting));
+    await act(async () => useAuthStore.setState({ session: 'other' }));
+    await act(async () => fail(new Error('late close failure')));
+    expect(result.current.actionError).toBeNull();
+  });
+});
+
 describe('useLoanRepay visual pins', () => {
   const pins = [
     ['repay-ready', 'idle', 21_000],
@@ -2104,9 +2347,13 @@ describe('useLoanRepay visual pins', () => {
     act(() => {
       result.current.openTopUp();
       result.current.pay([loan()]);
+      result.current.prepay(loan(), '100');
+      result.current.closeCollecting({ ...loan(), fundedAt: null, closedAt: null });
       vi.advanceTimersByTime(WALLET_PAY_BALANCE_POLL_MS);
     });
     expect(postRepaymentDue).not.toHaveBeenCalled();
+    expect(prepayLoan).not.toHaveBeenCalled();
+    expect(closeLoan).not.toHaveBeenCalled();
     expect(refreshWallet).not.toHaveBeenCalled();
     expect(reportPaymentFailure).not.toHaveBeenCalled();
     if (visual === 'repay-topup' || visual === 'repay-fee-gap-topup') {
