@@ -2363,6 +2363,48 @@ describe('payFromWallet', () => {
     vi.useRealTimers();
   });
 
+  it('uses the Playwright repayment sender only for numbered invoice input', async () => {
+    const beforeNow = process.env.NEXT_PUBLIC_E2E_NOW;
+    const beforePath = `${window.location.pathname}${window.location.search}${window.location.hash}`;
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response());
+    try {
+      process.env.NEXT_PUBLIC_E2E_NOW = '2026-11-11T12:00:00.000Z';
+      window.history.replaceState({}, '', '/loans/repay?visual=repay-e2e-payment');
+
+      const result = await payFromWallet({ type: 'input', input: 'e2e-invoice-2100' });
+      expect(result).toMatchObject({
+        kind: 'confirm',
+        amountSats: 2_100,
+        feeSats: 0,
+        method: 'spark',
+      });
+      if (result.kind !== 'confirm') {
+        throw new Error('expected confirm');
+      }
+      await expect(result.send()).resolves.toEqual({ kind: 'paid' });
+      expect(fetchMock).toHaveBeenCalledWith('/e2e/wallet-send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ input: 'e2e-invoice-2100', amountSats: 2_100 }),
+      });
+
+      await expect(
+        payFromWallet({ type: 'input', input: 'invoice-without-amount' }),
+      ).resolves.toMatchObject({ kind: 'unlock' });
+      await expect(
+        payFromWallet({ type: 'lnurl', request: { details: {} }, amountSats: 21 }),
+      ).resolves.toMatchObject({ kind: 'unlock' });
+    } finally {
+      fetchMock.mockRestore();
+      window.history.replaceState({}, '', beforePath);
+      if (beforeNow === undefined) {
+        delete process.env.NEXT_PUBLIC_E2E_NOW;
+      } else {
+        process.env.NEXT_PUBLIC_E2E_NOW = beforeNow;
+      }
+    }
+  });
+
   it('asks to unlock without a connection', async () => {
     await expect(payFromWallet({ type: 'input', input: 'spark1x' })).resolves.toEqual({
       kind: 'unlock',

@@ -1,6 +1,7 @@
-import { cleanup, fireEvent, screen } from '@testing-library/react';
+import { cleanup, fireEvent, screen, within } from '@testing-library/react';
+import type { ReactElement } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { LoanPayMore } from '@/components/LoanPayMore';
+import { LoanPayMore, type LoanPayMoreProps } from '@/components/LoanPayMore';
 import type { LoanRepayActionError } from '@/hooks/useLoanRepay';
 import type { MyLoan } from '@/lib/api';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
@@ -82,6 +83,34 @@ function show(
   return { onPay, onCloseCollecting, rerender: view.rerender };
 }
 
+function payMoreState(
+  item: MyLoan,
+  onPay: ReturnType<typeof vi.fn>,
+  onCloseCollecting: ReturnType<typeof vi.fn>,
+  overrides: Partial<LoanPayMoreProps> = {},
+): ReactElement {
+  return (
+    <LoanPayMore
+      loan={item}
+      phase="idle"
+      actionError={null}
+      errorKey={null}
+      balanceSats={21_000}
+      missingSats={null}
+      showShortfall
+      sundayRest={false}
+      showWalletStatus
+      topUpOpen={false}
+      username="ada"
+      formatSats={(sats) => `₿${sats}`}
+      onOpenTopUp={vi.fn()}
+      onPay={onPay}
+      onCloseCollecting={onCloseCollecting}
+      {...overrides}
+    />
+  );
+}
+
 afterEach(cleanup);
 
 describe('LoanPayMore', () => {
@@ -107,6 +136,26 @@ describe('LoanPayMore', () => {
       (screen.getByRole('button', { name: 'Pay this amount' }) as HTMLButtonElement).disabled,
     ).toBe(true);
     expect(onPay).not.toHaveBeenCalled();
+  });
+
+  it('uses currency-specific validation copy for malformed BTC and fiat amounts', () => {
+    show();
+    fireEvent.change(screen.getByLabelText('Amount (₿)'), { target: { value: '1.5' } });
+    expect(screen.getByText('Enter a whole ₿ amount greater than zero.')).toBeTruthy();
+    cleanup();
+
+    show(
+      loan({
+        goalCurrency: 'PHP',
+        goalAmount: '480.28',
+        maxSats: 9_283,
+        maxAmount: '480.28',
+      }),
+    );
+    fireEvent.change(screen.getByLabelText('Amount (PHP)'), { target: { value: 'bad' } });
+    expect(
+      screen.getByText('Enter an amount greater than zero with at most two decimals.'),
+    ).toBeTruthy();
   });
 
   it('keeps fiat cents exact and disables the form without a maximum rate', () => {
@@ -218,6 +267,63 @@ describe('LoanPayMore', () => {
     );
   });
 
+  it('applies a fiat server maximum and handles a response without a current maximum', () => {
+    const php = loan({
+      goalCurrency: 'PHP',
+      goalAmount: '480.28',
+      maxSats: 9_283,
+      maxAmount: '480.28',
+    });
+    const fiat = show(php);
+    fireEvent.change(screen.getByLabelText('Amount (PHP)'), { target: { value: '100.00' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Pay this amount' }));
+    fiat.rerender(
+      payMoreState(php, fiat.onPay, fiat.onCloseCollecting, {
+        phase: 'failed',
+        actionError: { code: 'too_many_shares', maxSats: 2_000, maxAmount: '90.50' },
+      }),
+    );
+    expect((screen.getByLabelText('Amount (PHP)') as HTMLInputElement).value).toBe('90.50');
+    expect(screen.getByRole('alert').textContent).toContain('maximum changed to ₱90.50');
+    cleanup();
+
+    const btc = show();
+    fireEvent.change(screen.getByLabelText('Amount (₿)'), { target: { value: '1000' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Pay this amount' }));
+    btc.rerender(
+      payMoreState(loan(), btc.onPay, btc.onCloseCollecting, {
+        phase: 'failed',
+        actionError: { code: 'amount_too_high', maxSats: null, maxAmount: null },
+      }),
+    );
+    expect(screen.getByRole('alert').textContent).toBe(
+      'Could not start this repayment. Please try again.',
+    );
+  });
+
+  it('clears a completed free payment and shows an untyped wallet failure', () => {
+    const item = loan();
+    const completed = show(item);
+    fireEvent.change(screen.getByLabelText('Amount (₿)'), { target: { value: '1000' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Pay this amount' }));
+    completed.rerender(
+      payMoreState(item, completed.onPay, completed.onCloseCollecting, { phase: 'repaid' }),
+    );
+    expect((screen.getByLabelText('Amount (₿)') as HTMLInputElement).value).toBe('');
+    cleanup();
+
+    const failed = show(item);
+    fireEvent.change(screen.getByLabelText('Amount (₿)'), { target: { value: '1000' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Pay this amount' }));
+    failed.rerender(
+      payMoreState(item, failed.onPay, failed.onCloseCollecting, {
+        phase: 'failed',
+        errorKey: 'forum.payErrorRequest',
+      }),
+    );
+    expect(screen.getByRole('alert').textContent).toBe('Could not start the Bitcoin payment');
+  });
+
   it('reuses the wallet top-up controls after a free payment is short', () => {
     const item = loan();
     const openTopUp = vi.fn();
@@ -288,10 +394,52 @@ describe('LoanPayMore', () => {
     expect(screen.getByRole('status').textContent).toBe('Waiting for your top-up…');
   });
 
+  it('shows pinned sending, unconfirmed, and address-backed shortfall states', async () => {
+    const beforeNow = process.env.NEXT_PUBLIC_E2E_NOW;
+    const beforePath = `${window.location.pathname}${window.location.search}${window.location.hash}`;
+    try {
+      process.env.NEXT_PUBLIC_E2E_NOW = '2026-11-11T12:00:00.000Z';
+      window.history.replaceState({}, '', '/loans/repay?visual=repay-pay-more-sending');
+      const item = loan();
+      const onPay = vi.fn();
+      const onCloseCollecting = vi.fn();
+      const view = renderWithLocale(
+        payMoreState(item, onPay, onCloseCollecting, { phase: 'sending' }),
+      );
+      expect(screen.getByRole('status').textContent).toBe('Paying more…');
+
+      view.rerender(payMoreState(item, onPay, onCloseCollecting, { phase: 'unconfirmed' }));
+      expect(screen.getByRole('status').textContent).toContain('not confirmed');
+
+      view.rerender(
+        payMoreState(item, onPay, onCloseCollecting, {
+          balanceSats: null,
+          missingSats: 500,
+          topUpOpen: true,
+        }),
+      );
+      expect(screen.getByText('Your wallet has –. Still missing ₿500.')).toBeTruthy();
+      expect(await screen.findByText(/ada@/)).toBeTruthy();
+    } finally {
+      cleanup();
+      window.history.replaceState({}, '', beforePath);
+      if (beforeNow === undefined) {
+        delete process.env.NEXT_PUBLIC_E2E_NOW;
+      } else {
+        process.env.NEXT_PUBLIC_E2E_NOW = beforeNow;
+      }
+    }
+  });
+
   it('shows prepay waiting recipients with the same muted waiting copy', () => {
     renderWithLocale(
       <LoanPayMore
-        loan={loan()}
+        loan={loan({
+          goalCurrency: 'PHP',
+          goalAmount: '480.28',
+          maxSats: 9_283,
+          maxAmount: '480.28',
+        })}
         phase="waiting"
         actionError={null}
         errorKey={null}
@@ -303,6 +451,14 @@ describe('LoanPayMore', () => {
             username: 'carla',
             amountSats: 200,
             amount: null,
+          },
+          {
+            dayIndex: 3,
+            recipientAccountId: 'acc_waiting_fiat',
+            name: 'Diego',
+            username: 'diego',
+            amountSats: 50,
+            amount: '2.50',
           },
         ]}
         balanceSats={21_000}
@@ -319,7 +475,60 @@ describe('LoanPayMore', () => {
       />,
     );
     expect(screen.getByText('Waiting for Carla to set up their wallet')).toBeTruthy();
+    expect(screen.getByText('Waiting for Diego to set up their wallet')).toBeTruthy();
     expect(screen.getByText('₿200')).toBeTruthy();
+    expect(screen.getByText('₱2.50')).toBeTruthy();
+  });
+
+  it('shows close progress and a close-specific action error', () => {
+    const collecting = loan({ fundedAt: null, closedAt: null, sats: 4_000, maxSats: 4_000 });
+    const view = show(collecting);
+    fireEvent.click(screen.getByRole('button', { name: 'End collecting' }));
+    fireEvent.click(screen.getByRole('button', { name: 'End collecting permanently' }));
+    view.rerender(
+      payMoreState(collecting, view.onPay, view.onCloseCollecting, { phase: 'sending' }),
+    );
+    expect(screen.getByRole('status').textContent).toBe('Ending collecting…');
+
+    view.rerender(
+      payMoreState(collecting, view.onPay, view.onCloseCollecting, {
+        phase: 'failed',
+        actionError: { code: 'request_failed', maxSats: null, maxAmount: null },
+      }),
+    );
+    expect(screen.getByRole('alert')).toBeTruthy();
+  });
+
+  it('keeps a collecting confirmation open when repayment becomes unavailable', () => {
+    const collecting = loan({ fundedAt: null, closedAt: null, sats: 4_000, maxSats: 4_000 });
+    const view = show(collecting);
+    fireEvent.change(screen.getByLabelText('Amount (₿)'), { target: { value: '1000' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Pay this amount' }));
+    view.rerender(
+      payMoreState(collecting, view.onPay, view.onCloseCollecting, { sundayRest: true }),
+    );
+    fireEvent.click(screen.getByRole('button', { name: "Pay ₿1'000 and end collecting" }));
+    expect(view.onPay).not.toHaveBeenCalled();
+    expect(screen.getByRole('dialog', { name: 'Pay and end collecting?' })).toBeTruthy();
+
+    view.rerender(
+      payMoreState(collecting, view.onPay, view.onCloseCollecting, { phase: 'unconfirmed' }),
+    );
+    fireEvent.click(screen.getByRole('button', { name: "Pay ₿1'000 and end collecting" }));
+    expect(view.onPay).not.toHaveBeenCalled();
+  });
+
+  it('dismisses collecting confirmations from both close controls', () => {
+    const collecting = loan({ fundedAt: null, closedAt: null, sats: 4_000, maxSats: 4_000 });
+    show(collecting);
+    fireEvent.click(screen.getByRole('button', { name: 'End collecting' }));
+    const dialog = screen.getByRole('dialog', { name: 'End collecting?' });
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Close' }));
+    expect(screen.queryByRole('dialog')).toBeNull();
+
+    fireEvent.click(screen.getByRole('button', { name: 'End collecting' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+    expect(screen.queryByRole('dialog')).toBeNull();
   });
 
   it('keeps free repayment disabled on Sunday and while the wallet is unavailable', () => {

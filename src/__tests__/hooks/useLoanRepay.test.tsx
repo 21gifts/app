@@ -225,6 +225,26 @@ describe('useLoanRepay wallet state', () => {
     });
   });
 
+  it('uses the Playwright behavior wallet balance while preparing a real repayment run', async () => {
+    window.history.replaceState({}, '', '/loans/repay?visual=repay-e2e-payment');
+    vi.mocked(getE2eNow).mockReturnValue('2026-11-11T12:00:00.000Z');
+    setWallet('disabled', null);
+    const current = loan('behavior-wallet');
+    const row = bill('Pinned', 500);
+    vi.mocked(postRepaymentDue).mockResolvedValue({ bills: [row], waiting: [] });
+    vi.mocked(payFromWallet).mockResolvedValue(confirmed(500));
+    const reload = vi.fn(async () => body([current]));
+    const { result, unmount } = renderHook(() => useLoanRepay({ reload }));
+
+    expect(result.current).toMatchObject({ phase: 'idle', balanceSats: 21_000, pinned: false });
+    act(() => result.current.pay([current]));
+    await waitFor(() => expect(result.current.phase).toBe('waiting'));
+
+    expect(payFromWallet).toHaveBeenCalledWith({ type: 'input', input: invoiceOf(row) });
+    expect(result.current.sentSats).toBe(500);
+    unmount();
+  });
+
   it('opens top-up and polls the ready wallet one read at a time', async () => {
     vi.useFakeTimers();
     let finish!: () => void;
@@ -2090,6 +2110,36 @@ describe('useLoanRepay fresh settlement baseline', () => {
 });
 
 describe('useLoanRepay free repayment and collecting actions', () => {
+  it('drops a prepay response after the session changes', async () => {
+    let resolvePrepay!: (value: Awaited<ReturnType<typeof prepayLoan>>) => void;
+    vi.mocked(prepayLoan).mockReturnValue(
+      new Promise<Awaited<ReturnType<typeof prepayLoan>>>((resolve) => {
+        resolvePrepay = resolve;
+      }),
+    );
+    const current = loan('late-prepay', 0, 100);
+    const { result } = renderHook(() =>
+      useLoanRepay({ reload: vi.fn(async () => body([current])) }),
+    );
+
+    act(() => result.current.prepay(current, '500'));
+    await waitFor(() => expect(prepayLoan).toHaveBeenCalledTimes(1));
+    await act(async () => {
+      useAuthStore.setState({ session: 'other' });
+    });
+    await act(async () => {
+      resolvePrepay({
+        amountSats: 500,
+        amount: null,
+        bills: [bill('Late', 500)],
+        waiting: [],
+      });
+    });
+
+    expect(result.current.phase).toBe('idle');
+    expect(payFromWallet).not.toHaveBeenCalled();
+  });
+
   it('prepares and sends prepay bills through the existing wallet path', async () => {
     vi.useFakeTimers();
     const row = bill('Ahead', 500, 8);

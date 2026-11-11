@@ -1004,6 +1004,34 @@ describe('LoanRepayScreen', () => {
     expect(await screen.findByText("Repaid ₱59.99 · ₿5'999 of ₱900.00")).toBeTruthy();
   });
 
+  it('falls back when a partial unpaid-status row has no stored paid amount', async () => {
+    vi.mocked(getRepayment).mockResolvedValue(
+      ledger({
+        currency: 'PHP',
+        repayments: [
+          {
+            ...ledger().repayments[0]!,
+            dayIndex: 0,
+            status: 'due',
+            amount: '60.00',
+            sats: 6_000,
+            paidSats: 5_999,
+            paidAmount: null,
+            dueSats: 1,
+          },
+        ],
+      }),
+    );
+    show({
+      sundayRest: false,
+      loans: [loan({ goalCurrency: 'PHP', goalAmount: '900.00', repaidSats: 5_999 })],
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Who gets paid' }));
+    expect(await screen.findByText('Bruno')).toBeTruthy();
+    expect(screen.queryByText(/Repaid ₱/)).toBeNull();
+    expect(screen.getByText("Repaid ₿5'999 · $6.00 of ₱900.00")).toBeTruthy();
+  });
+
   it('falls back to bitcoin and spot when a paid ledger row has no sats', async () => {
     vi.mocked(getRepayment).mockResolvedValue(
       ledger({

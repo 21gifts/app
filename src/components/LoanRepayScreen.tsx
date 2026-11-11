@@ -762,7 +762,7 @@ export function LoanRepayScreen(): ReactElement {
                 .map((row) => {
                   const partialSats = row.paidSats ?? 0;
                   return {
-                    sats: partialSats > 0 ? partialSats : row.status === 'paid' ? row.sats : 0,
+                    sats: partialSats > 0 ? partialSats : row.sats,
                     amount: row.paidAmount ?? (row.status === 'paid' ? row.amount : null),
                   };
                 });

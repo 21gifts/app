@@ -209,15 +209,14 @@ export function LoanPayMore({
     }
   }, [actionError, errorKey, pendingAction, phase, t]);
 
-  const submitPay = (): void => {
-    const current = checkLoanAmount(amount, effectiveLoan);
-    if (!current.ok || !canPay || busy || sundayRest) {
+  const submitPay = (amountText: string): void => {
+    if (!canPay || sundayRest) {
       return;
     }
     setConfirming(null);
     setPendingAction('pay');
     setServerError(null);
-    onPay(loan, current.text);
+    onPay(loan, amountText);
   };
 
   const describedBy = [
@@ -228,7 +227,10 @@ export function LoanPayMore({
     .filter(Boolean)
     .join(' ');
   const actionErrorText = serverError;
-  const short = showShortfall && pendingAction === 'pay' && missingSats !== null && missingSats > 0;
+  const shortfall =
+    showShortfall && pendingAction === 'pay' && missingSats !== null && missingSats > 0
+      ? missingSats
+      : null;
 
   return (
     <div className="mt-4 flex flex-col gap-3 border-t border-app-border pt-4">
@@ -318,13 +320,13 @@ export function LoanPayMore({
           {t('wallet.payUnconfirmed')}
         </p>
       ) : null}
-      {short ? (
+      {shortfall === null ? null : (
         <div className="rounded-xl border border-app-border bg-app-card p-3">
           <p className="font-semibold text-app-fg">{t('loans.short')}</p>
           <p className="mt-1 text-sm tabular-nums lining-nums text-app-muted">
             {t('loans.shortDetail', {
               balance: balanceSats === null ? '–' : formatSats(balanceSats),
-              missing: formatSats(missingSats ?? 0),
+              missing: formatSats(shortfall),
             })}
           </p>
           {!topUpOpen ? (
@@ -341,7 +343,7 @@ export function LoanPayMore({
             </div>
           )}
         </div>
-      ) : null}
+      )}
       {busy && pendingAction === 'pay' ? (
         <p role="status" className="flex items-center gap-2 text-sm text-app-muted">
           <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" />
@@ -352,16 +354,17 @@ export function LoanPayMore({
           type="button"
           size="lg"
           disabled={!check.ok || !canPay || busy || sundayRest}
-          onClick={() => {
-            if (!check.ok) {
-              return;
-            }
-            if (collecting) {
-              setConfirming('pay');
-            } else {
-              submitPay();
-            }
-          }}
+          onClick={
+            check.ok
+              ? () => {
+                  if (collecting) {
+                    setConfirming('pay');
+                  } else {
+                    submitPay(check.text);
+                  }
+                }
+              : undefined
+          }
         >
           {t('loans.payMorePay')}
         </Button>
@@ -417,7 +420,7 @@ export function LoanPayMore({
               {t(confirming === 'pay' ? 'loans.payMoreConfirmBody' : 'loans.endCollectingBody')}
             </p>
             {confirming === 'pay' && check.ok ? (
-              <Button type="button" size="lg" onClick={submitPay}>
+              <Button type="button" size="lg" onClick={() => submitPay(check.text)}>
                 {t('loans.payMoreConfirmAction', {
                   amount: displayLoanAmount(check.text, loan, numberFormat),
                 })}

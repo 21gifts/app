@@ -3104,6 +3104,23 @@ describe('MemberProfileScreen', () => {
     });
   });
 
+  it('moves a paid reply onto the card when the loan stopped collecting', async () => {
+    vi.mocked(postMessageInvoice).mockRejectedValue(new CreditClosedError());
+    renderWithLocale(
+      <MemberProfileScreen
+        profile={{ ...profile, profileMessage: note }}
+        received={[]}
+        donated={[]}
+      />,
+    );
+    await expandNote();
+    fillPaidReply('reply', '1');
+    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    expect((await screen.findByRole('alert')).textContent).toBe(
+      'This loan is no longer collecting and cannot receive more money.',
+    );
+  });
+
   it('opens the wallet overlay when a paid reply invoice requires a wallet', async () => {
     vi.mocked(postMessageInvoice).mockRejectedValue(new WalletRequiredError());
     renderWithLocale(

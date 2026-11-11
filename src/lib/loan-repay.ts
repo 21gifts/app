@@ -27,7 +27,7 @@ function fiatUnits(input: string): bigint | null {
   }
   const whole = match[1]!;
   const fraction = (match[2] ?? '').padEnd(2, '0');
-  return BigInt(whole) * 100n + BigInt(fraction === '' ? '0' : fraction);
+  return BigInt(whole) * 100n + BigInt(fraction);
 }
 
 /**

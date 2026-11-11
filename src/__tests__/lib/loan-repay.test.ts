@@ -396,6 +396,34 @@ describe('dueShares', () => {
     ]);
   });
 
+  it('omits a remaining fiat amount when the stored total or partial amount is unusable', () => {
+    const fiatLoan = loan({ goalCurrency: 'PHP', goalAmount: '200.00', maxAmount: '197.50' });
+    const base = ledger({
+      currency: 'PHP',
+      repayments: [
+        {
+          ...ledger().repayments[0]!,
+          amount: 'bad total',
+          paidAmount: '1.00',
+        },
+        {
+          ...ledger().repayments[0]!,
+          accountId: 'acc_2',
+          amount: '10.00',
+          paidAmount: 'bad partial',
+        },
+        {
+          ...ledger().repayments[0]!,
+          accountId: 'acc_3',
+          amount: '10.00',
+          paidAmount: '10.01',
+        },
+      ],
+    });
+
+    expect(dueShares([fiatLoan], [base]).map((row) => row.amount)).toEqual([null, null, null]);
+  });
+
   it('orders due rows by day, loan, and row while mapping availability and fallback sats', () => {
     const first = ledger({
       repayments: [

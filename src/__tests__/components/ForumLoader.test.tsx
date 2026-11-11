@@ -9124,6 +9124,14 @@ describe('ForumLoader', () => {
     });
   });
 
+  it('moves a paid reply onto the card when the loan stopped collecting', async () => {
+    invoiceMock.mockRejectedValue(new CreditClosedError());
+    await expandForeignAndPayReply('Hi Bob', '21');
+    expect((await screen.findByRole('alert')).textContent).toBe(
+      'This loan is no longer collecting and cannot receive more money.',
+    );
+  });
+
   it('opens the wallet overlay when a paid reply invoice requires a wallet', async () => {
     invoiceMock.mockRejectedValue(new WalletRequiredError());
     await expandForeignAndPayReply('Hi Bob', '21');
