@@ -1397,10 +1397,12 @@ describe('wallet open failure cause', () => {
         // Nothing is thrown by the deadline itself; the error arrives after it
         // and must add nothing to the timeout report.
         await vi.advanceTimersByTimeAsync(WALLET_CONNECT_TIMEOUT_MS);
+        expect(captureMessage).toHaveBeenCalledTimes(1);
         rejectConnect(error);
       }
       await pending;
       if (stage === 'deadline') {
+        // expectWalletOpenReport also checks it is still the only report.
         expectWalletOpenReport('timeout', { stage, errorName: null, causeKind: null });
       } else {
         expectWalletOpenReport('error', {

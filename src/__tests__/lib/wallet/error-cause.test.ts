@@ -148,11 +148,19 @@ describe('errorCause', () => {
     expect(errorCause(Object.assign(new Error('x'), { code })).errorCode).toBeNull();
   });
 
-  it('reports the known own codes and every SDK kind of the list', () => {
+  it('reports a listed own code and the listed SDK kinds the wallet tests rely on', () => {
     expect(
       errorCause(Object.assign(new Error('x'), { code: 'QUOTA_EXCEEDED_ERR' })).errorCode,
     ).toBe('QUOTA_EXCEEDED_ERR');
-    expect(errorCause(new Error('Chain service error: x')).errorCode).toBe('chain_service');
+    for (const [message, kind] of [
+      ['Chain service error: x', 'chain_service'],
+      ['Network error: x', 'network'],
+      ['Generic error: x', 'generic'],
+      ['Storage error: x', 'storage'],
+      ['Service connectivity error: x', 'service_connectivity'],
+    ]) {
+      expect(errorCause(new Error(message)).errorCode).toBe(kind);
+    }
     expect(errorCause(new Error('Withdrawal got leaf spending error: x')).errorCode).toBe(
       'withdrawal_got_leaf_spending',
     );
