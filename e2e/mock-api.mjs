@@ -181,7 +181,6 @@ const FOND_PAYMENTS = {
       feeSats: 0,
       paidAt: '2026-11-11T13:31:01.000Z',
       storedFiat: null,
-      storedFee: null,
       counterparty: null,
     },
     {
@@ -191,7 +190,6 @@ const FOND_PAYMENTS = {
       feeSats: 50,
       paidAt: '2026-11-10T09:15:00.000Z',
       storedFiat: null,
-      storedFee: null,
       counterparty: {
         accountId: '44444444-4444-4444-8444-444444444444',
         username: 'alice',
@@ -205,7 +203,6 @@ const FOND_PAYMENTS = {
       feeSats: 21,
       paidAt: '2026-11-09T18:00:00.000Z',
       storedFiat: { currency: 'USD', amount: '3.00' },
-      storedFee: { amount: '0.01', currency: 'USD' },
       counterparty: null,
     },
   ],
@@ -222,7 +219,6 @@ const FOND_PAYMENTS_MORE = {
       feeSats: 0,
       paidAt: '2026-11-08T08:00:00.000Z',
       storedFiat: null,
-      storedFee: null,
       counterparty: null,
     },
   ],

@@ -2706,7 +2706,6 @@ describe('fondPaymentSchema', () => {
     feeSats: 0,
     paidAt: '2026-11-11T13:31:01.000Z',
     storedFiat: null,
-    storedFee: null,
     counterparty: { accountId: 'acc-1', username: 'alice', name: 'Alice' },
   };
 
@@ -2744,32 +2743,6 @@ describe('fondPaymentSchema', () => {
     }
   });
 
-  it('keeps a stored USD fee as written and rejects a missing or malformed one', () => {
-    for (const amount of ['0', '1', '2.5', '3.00']) {
-      const storedFee = { amount, currency: 'USD' } as const;
-      expect(fondPaymentSchema.parse({ ...payment, storedFee })).toEqual({
-        ...payment,
-        storedFee,
-      });
-    }
-    expect(() => fondPaymentSchema.parse({ ...payment, storedFee: undefined })).toThrow();
-    expect(() => fondPaymentSchema.parse({ ...payment, storedFee: { currency: 'USD' } })).toThrow();
-    expect(() =>
-      fondPaymentSchema.parse({
-        ...payment,
-        storedFee: { amount: '3.00', currency: 'USD', unexpected: true },
-      }),
-    ).toThrow();
-    expect(() =>
-      fondPaymentSchema.parse({ ...payment, storedFee: { amount: '3.00', currency: 'CHF' } }),
-    ).toThrow();
-    for (const amount of ['03.00', '-1.00', '3.000', '3.', '.5']) {
-      expect(() =>
-        fondPaymentSchema.parse({ ...payment, storedFee: { amount, currency: 'USD' } }),
-      ).toThrow();
-    }
-  });
-
   it('accepts a null counterparty name and username and rejects malformed rows', () => {
     expect(
       fondPaymentSchema.parse({
@@ -2803,7 +2776,6 @@ describe('fondPaymentListSchema', () => {
     feeSats: 0,
     paidAt: '2026-11-11T13:31:01.000Z',
     storedFiat: null,
-    storedFee: null,
     counterparty: null,
   };
 

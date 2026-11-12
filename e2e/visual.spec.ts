@@ -47231,7 +47231,6 @@ test.describe('fonds screen', () => {
               feeSats: 0,
               paidAt: '2026-11-08T08:00:00.000Z',
               storedFiat: null,
-              storedFee: null,
               counterparty: null,
             },
           ],

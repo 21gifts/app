@@ -23,7 +23,6 @@ const PAYMENTS = {
       feeSats: 0,
       paidAt: '2026-11-11T13:31:01.000Z',
       storedFiat: null,
-      storedFee: null,
       counterparty: null,
     },
     {
@@ -33,7 +32,6 @@ const PAYMENTS = {
       feeSats: 50,
       paidAt: '2026-11-10T09:15:00.000Z',
       storedFiat: null,
-      storedFee: null,
       counterparty: {
         accountId: '44444444-4444-4444-8444-444444444444',
         username: 'alice',
@@ -47,7 +45,6 @@ const PAYMENTS = {
       feeSats: 21,
       paidAt: '2026-11-09T18:00:00.000Z',
       storedFiat: { currency: 'USD', amount: '3.00' },
-      storedFee: { amount: '0.01', currency: 'USD' },
       counterparty: null,
     },
   ],
@@ -63,7 +60,6 @@ const PAYMENTS_MORE = {
       feeSats: 0,
       paidAt: '2026-11-08T08:00:00.000Z',
       storedFiat: null,
-      storedFee: null,
       counterparty: null,
     },
   ],
@@ -105,7 +101,7 @@ test('Function: FondPage — public page shows the Fond totals', async ({ page }
   await expect(page.getByText('Sent')).toBeVisible();
   await expect(page.getByText("−₿5'000 · $3.00")).toBeVisible();
   await expect(page.getByText('Fee ₿21', { exact: false })).toBeVisible();
-  await expect(page.getByText('Fee ₿21', { exact: false })).toContainText('$0.01');
+  await expect(page.getByText('Fee ₿21', { exact: false })).toContainText('$0.02');
   await expect(page.getByText('Fee ₿50', { exact: false })).toContainText('$0.05');
   await expect(page.getByRole('link', { name: 'Back to the forum' })).toBeVisible();
 });

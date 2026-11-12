@@ -182,22 +182,10 @@ export function FondPaymentList({ username }: { username: string }): ReactElemen
                       payment.storedFiat.currency,
                       numberFormat,
                     );
-              const storedFeeText =
-                payment.storedFee === null
-                  ? null
-                  : formatDefinedGoalAmount(
-                      payment.storedFee.amount,
-                      payment.storedFee.currency,
-                      numberFormat,
-                    );
               const amountFiat =
                 storedFiatText === null
                   ? preferredFiatSuffix(payment.amountSats, rateDay, fiat, numberFormat)
                   : fiatSuffix(storedFiatText);
-              const feeFiat =
-                storedFeeText === null
-                  ? preferredFiatSuffix(payment.feeSats, rateDay, fiat, numberFormat)
-                  : fiatSuffix(storedFeeText);
               const counterparty =
                 payment.counterparty === null ? (
                   <span className="truncate text-sm text-app-muted">{t('fond.private')}</span>
@@ -237,7 +225,9 @@ export function FondPaymentList({ username }: { username: string }): ReactElemen
                             {payment.feeSats === 0
                               ? t('wallet.payment.feeFree')
                               : formatBitcoin(payment.feeSats, numberFormat)}
-                            {payment.feeSats === 0 ? null : feeFiat}
+                            {payment.feeSats === 0
+                              ? null
+                              : preferredFiatSuffix(payment.feeSats, rateDay, fiat, numberFormat)}
                           </span>
                         ) : null}
                       </div>
