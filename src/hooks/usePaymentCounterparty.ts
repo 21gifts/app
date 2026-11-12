@@ -18,6 +18,10 @@ import { useWalletStore } from '@/stores/wallet-store';
 /**
  * Resolve the counterparty of a completed payment in the active session.
  * Cache matches; after a wallet sync, wait for its report and retry a miss.
+ * In a Playwright build, `?visual=received-from-member` and
+ * `?visual=sent-to-member` return their fixtures without a request, and
+ * `?visual=received-member-unknown` and `?visual=sent-member-unknown` return
+ * null without a request.
  *
  * @param payment - Payment displayed by the wallet.
  * @returns The counterparty, or null while unknown or unavailable.
@@ -27,7 +31,11 @@ export function usePaymentCounterparty(payment: WalletPayment): PaymentCounterpa
   const syncCount = useWalletStore((state) => state.syncCount);
   const previousSyncCount = useRef(syncCount);
   const pin = visualPin();
-  const pinned = pin === 'received-from-member' || pin === 'sent-to-member';
+  const pinned =
+    pin === 'received-from-member' ||
+    pin === 'sent-to-member' ||
+    pin === 'received-member-unknown' ||
+    pin === 'sent-member-unknown';
   const direction = payment.direction === 'received' ? 'in' : 'out';
   const eligible = payment.status === 'completed';
   const key = JSON.stringify([payment.id, direction]);

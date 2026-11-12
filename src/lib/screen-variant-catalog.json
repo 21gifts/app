@@ -1122,6 +1122,30 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/wallet/payment:received-member-unknown",
+    "label": "/wallet/payment received-member-unknown",
+    "visual": "state-wallet-payment-received-member-unknown",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/wallet/payment:received-member-unknown-open",
+    "label": "/wallet/payment received-member-unknown-open",
+    "visual": "state-wallet-payment-received-member-unknown-open",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/wallet/payment:sent-member-unknown",
+    "label": "/wallet/payment sent-member-unknown",
+    "visual": "state-wallet-payment-sent-member-unknown",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/wallet/payment:sent-member-unknown-open",
+    "label": "/wallet/payment sent-member-unknown-open",
+    "visual": "state-wallet-payment-sent-member-unknown-open",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/wallet/payment:received-from-member",
     "label": "/wallet/payment received-from-member",
     "visual": "state-wallet-payment-received-from-member",

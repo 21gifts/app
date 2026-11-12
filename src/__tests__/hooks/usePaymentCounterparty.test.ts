@@ -265,4 +265,21 @@ describe('usePaymentCounterparty', () => {
     expect(renderHook(() => usePaymentCounterparty(entry)).result.current).toEqual(match);
     expect(fetchPaymentCounterparties).not.toHaveBeenCalled();
   });
+  it.each([
+    ['received-member-unknown', payment],
+    ['sent-member-unknown', sent],
+  ] as const)(
+    'returns null for %s without a lookup, and a production build ignores it',
+    async (pin, entry) => {
+      window.history.replaceState({}, '', `/wallet?visual=${pin}`);
+      const production = renderHook(() => usePaymentCounterparty(entry));
+      await waitFor(() => expect(fetchPaymentCounterparties).toHaveBeenCalled());
+      expect(production.result.current).toBeNull();
+      production.unmount();
+      vi.mocked(fetchPaymentCounterparties).mockClear();
+      process.env.NEXT_PUBLIC_E2E_NOW = '2026-01-07T12:00:00.000Z';
+      expect(renderHook(() => usePaymentCounterparty(entry)).result.current).toBeNull();
+      expect(fetchPaymentCounterparties).not.toHaveBeenCalled();
+    },
+  );
 });

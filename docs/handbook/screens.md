@@ -1044,6 +1044,30 @@ The same heart as heart-payment after pressing **Details**, so the payment reque
 
 ![21.gifts wallet payment heart open](images/wallet-payment-heart-open.png)
 
+### Variant: received-member-unknown
+
+Pinned with `?visual=received-member-unknown` and id `ab12ce00-1545-4000-8000-000000000014`. This is the same payment as received-from-member, but the api does not know the other side, so there is no **From** row. The title is **Received**, the amount is `+₿200` with its fiat figure, and the status is **Completed**. The summary has **Date**, **Type** Wallet transfer, and **Amount** with bitcoin and fiat. There is no **Fee**, **Total**, or **To** row. **Details** is closed, and the Spark payment request is under **Details**.
+
+![21.gifts received payment without a known member](images/wallet-payment-received-member-unknown.png)
+
+### Variant: received-member-unknown-open
+
+Pinned with `?visual=received-member-unknown` and id `ab12ce00-1545-4000-8000-000000000014`, after pressing **Details**. This is the same payment as received-from-member, but the api does not know the other side, so there is no **From** row. The Spark payment request and the payment ID are visible, and there is no payment hash. **Received**, `+₿200` with fiat, **Completed**, and the **Date**, **Type**, and **Amount** rows stay visible. There is no **Fee**, **Total**, or **To** row.
+
+![21.gifts received payment without a known member with details](images/wallet-payment-received-member-unknown-open.png)
+
+### Variant: sent-member-unknown
+
+Pinned with `?visual=sent-member-unknown` and id `ab12ce00-1545-4000-8000-000000000015`. This is the same payment as sent-to-member, but the api does not know the other side, so there is no **To** row. The title is **Sent**, the amount is `−₿200` with fiat, and the status is **Completed**. The summary shows **Date**, **Type** Wallet transfer, **Amount** with fiat, and **Fee** Free. There is no **From** or **Total** row. **Details** is closed, and the Spark payment request is under **Details**.
+
+![21.gifts sent payment without a known member](images/wallet-payment-sent-member-unknown.png)
+
+### Variant: sent-member-unknown-open
+
+Pinned with `?visual=sent-member-unknown` and id `ab12ce00-1545-4000-8000-000000000015`, after pressing **Details**. This is the same payment as sent-to-member, but the api does not know the other side, so there is no **To** row. The Spark payment request and the payment ID are visible, and there is no payment hash. **Sent**, `−₿200` with fiat, **Completed**, and the **Date**, **Type**, **Amount**, and **Fee** rows stay visible. There is no **From** or **Total** row.
+
+![21.gifts sent payment without a known member with details](images/wallet-payment-sent-member-unknown-open.png)
+
 ### Variant: received-from-member
 
 Pinned with `?visual=received-from-member` and id `ab12ce00-1545-4000-8000-000000000014`. The incoming payment shows the title **Received**, `+₿200` with its fiat figure, and the **Completed** status. The summary has **Date**, **Type** Wallet transfer, **From** alice@21.gifts linking to `/members/acc_e2e`, and **Amount** with bitcoin and fiat. There is no **Fee**, **Total**, or **To** row. **Details** is closed, so the payment request and payment ID are hidden; this payment has no payment hash.
