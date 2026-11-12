@@ -8309,6 +8309,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/notifications',
+    id: 'empty-living-room',
+    image: 'notifications-empty-living-room.png',
+    visual: 'state-notifications-empty-living-room',
+    needle: "shotScreen(page, 'state-notifications-empty-living-room')",
+  },
+  {
+    route: '/notifications',
     id: 'for-you-empty',
     image: 'notifications-for-you-empty.png',
     visual: 'state-notifications-for-you-empty',

@@ -3204,6 +3204,11 @@
     "es": "No hay notificaciones. Para ti está seleccionado con el texto Aún no hay nada para ti. Ninguna opción muestra un contador.",
     "fil": "Walang mga abiso. Napili ang Para sa iyo na may tekstong Wala pang para sa iyo. Walang opsyon na nagpapakita ng bilang."
   },
+  "/notifications:empty-living-room": {
+    "de": "Keine Benachrichtigungen, nach dem Tippen auf Wohnzimmer: Wohnzimmer ist ausgewählt mit dem Text Noch nichts aus dem Wohnzimmer. und ohne Liste. Keine Option zeigt einen Zähler.",
+    "es": "No hay notificaciones, tras pulsar Salón: Salón está seleccionado con el texto Aún no hay nada del salón. y sin lista. Ninguna opción muestra un contador.",
+    "fil": "Walang mga abiso, pagkatapos pindutin ang Living room: napili ang Living room na may tekstong Wala pang mula sa living room. at walang listahan. Walang opsyon na nagpapakita ng bilang."
+  },
   "/notifications:for-you-empty": {
     "de": "Geladene Liste nur mit nicht persönlichen Zeilen, etwa solange die API personal noch nicht sendet: Für dich ist ausgewählt mit dem Text Noch nichts für dich. und ohne Liste; Wohnzimmer zeigt den Zähler 2 (zugänglicher Name Wohnzimmer, 2 ungelesen).",
     "es": "Lista cargada solo con filas no personales, por ejemplo mientras la API aún no envía personal: Para ti está seleccionado con el texto Aún no hay nada para ti. y sin lista; Salón muestra el contador 2 (nombre accesible Salón, 2 sin leer).",

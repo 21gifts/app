@@ -9355,6 +9355,12 @@ No notifications. **For you** is selected with copy **Nothing for you yet.** Nei
 
 ![21.gifts notifications empty](images/notifications-empty.png)
 
+### Variant: empty-living-room
+
+No notifications, after pressing **Living room**: **Living room** is selected with copy **Nothing from the living room yet.** and no list. Neither option shows a count.
+
+![21.gifts notifications empty living room](images/notifications-empty-living-room.png)
+
 ### Variant: for-you-empty
 
 Loaded list with only rows that are not personal, for example while the api does not send `personal` yet: **For you** is selected with copy **Nothing for you yet.** and no list; **Living room** shows the chip **2** (accessible name **Living room, 2 unread**).
