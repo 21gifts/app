@@ -65,7 +65,7 @@ describe('FondPaymentList', () => {
     expect(screen.getByText('Loading…')).toBeTruthy();
   });
 
-  it('lists incoming, outgoing, private, member, and fee details', async () => {
+  it('lists incoming, outgoing, private, member, amount, and time details', async () => {
     spot.value = { sats: 100_000_000, usd: '100000', chf: null, eur: null, php: null };
     vi.mocked(fetchFondPayments).mockResolvedValue(PAYMENTS);
     renderWithLocale(<FondPaymentList username="tondo-fond" />);
@@ -83,22 +83,20 @@ describe('FondPaymentList', () => {
       '/members/acc-bob',
     );
     expect(screen.getByText(/\+₿21'000/).textContent).toContain('$21.00');
-    const fee = screen.getByText('Fee ₿21', { exact: false });
-    expect(fee.textContent).toContain('$0.02');
     expect(screen.getAllByText(/2026/)).toHaveLength(3);
   });
 
-  it('shows stored fiat for the amount and the current spot for a positive fee', async () => {
+  it('shows stored fiat for the amount but no fee text or sats for a positive fee', async () => {
     spot.value = { sats: 100_000_000, usd: '100000', chf: '80000', eur: null, php: null };
     vi.mocked(fetchFondPayments).mockResolvedValue({
       payments: [PAYMENTS.payments[1]!],
       next: null,
     });
-    renderWithLocale(<FondPaymentList username="tondo-fond" />, 'de', 'ch', 'CHF');
+    renderWithLocale(<FondPaymentList username="tondo-fond" />);
     const row = await screen.findByRole('listitem');
     expect(row.textContent).toContain("−₿5'000 · $3.00");
-    expect(row.textContent).not.toContain('CHF 4.00');
-    expect(row.textContent).toContain('Gebühr ₿21 · CHF 0.02');
+    expect(row.textContent).not.toMatch(/Fee|Gebühr/);
+    expect(row.textContent).not.toContain('₿21');
   });
 
   it.each([
@@ -135,42 +133,6 @@ describe('FondPaymentList', () => {
     renderWithLocale(<FondPaymentList username="tondo-fond" />);
     const row = await screen.findByRole('listitem');
     expect(row.textContent).toContain("+₿21'000 · $21.00");
-    expect(within(row).getByText('Fee ₿21', { exact: false }).textContent).toContain('$0.02');
-  });
-
-  it('keeps an outgoing zero fee Free while retaining the stored amount', async () => {
-    spot.value = { sats: 100_000_000, usd: '100000', chf: null, eur: null, php: null };
-    vi.mocked(fetchFondPayments).mockResolvedValue({
-      payments: [
-        {
-          ...PAYMENTS.payments[1]!,
-          id: 'free-with-stored-amount',
-          amountSats: 3_000,
-          feeSats: 0,
-        },
-      ],
-      next: null,
-    });
-    renderWithLocale(<FondPaymentList username="tondo-fond" />);
-    const row = await screen.findByRole('listitem');
-    expect(within(row).getByText('Fee Free').textContent).toBe('Fee Free');
-    expect(row.textContent).toContain("−₿3'000 · $3.00");
-  });
-
-  it('hides an incoming zero fee but shows an outgoing zero fee as Free', async () => {
-    vi.mocked(fetchFondPayments).mockResolvedValue({
-      payments: [
-        { ...PAYMENTS.payments[0]!, id: 'free-in', direction: 'in', feeSats: 0 },
-        { ...PAYMENTS.payments[0]!, id: 'free-out', direction: 'out', feeSats: 0 },
-      ],
-      next: null,
-    });
-    renderWithLocale(<FondPaymentList username="tondo-fond" />);
-    const rows = await screen.findAllByRole('listitem');
-    expect(rows).toHaveLength(2);
-    expect(within(rows[0]!).queryByText(/^Fee /)).toBeNull();
-    expect(within(rows[1]!).getByText('Sent')).toBeTruthy();
-    expect(within(rows[1]!).getByText('Fee Free').textContent).toBe('Fee Free');
   });
 
   it('falls back to @username when the member name is null', async () => {
@@ -289,6 +251,77 @@ describe('FondPaymentList', () => {
     expect(await screen.findByText('Alice')).toBeTruthy();
     expect(screen.getAllByRole('listitem')).toHaveLength(2);
     expect(screen.getAllByText('Private')).toHaveLength(1);
+  });
+
+  it('drops a pending next page after the Fond handle changes and pages the new list', async () => {
+    let resolveOldPage: ((page: FondPaymentPage | null) => void) | undefined;
+    vi.mocked(fetchFondPayments)
+      .mockResolvedValueOnce({ payments: [PAYMENTS.payments[0]!], next: 'old-cursor' })
+      .mockImplementationOnce(
+        () =>
+          new Promise((resolve) => {
+            resolveOldPage = resolve;
+          }),
+      )
+      .mockResolvedValueOnce({ payments: [PAYMENTS.payments[2]!], next: 'new-cursor' })
+      .mockResolvedValueOnce({ payments: [PAYMENTS.payments[1]!], next: null });
+    const view = renderWithLocale(<FondPaymentList username="old-fond" />);
+    fireEvent.click(await screen.findByRole('button', { name: 'Show more' }));
+    view.rerender(<FondPaymentList username="new-fond" />);
+    expect(await screen.findByText('@bob')).toBeTruthy();
+    await act(async () => {
+      resolveOldPage?.({ payments: [PAYMENTS.payments[0]!], next: null });
+      await Promise.resolve();
+    });
+    expect(screen.queryByText('Private')).toBeNull();
+    expect(screen.queryByRole('alert')).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Show more' }));
+    expect(await screen.findByText('Alice')).toBeTruthy();
+    expect(fetchFondPayments).toHaveBeenLastCalledWith('new-fond', 'new-cursor');
+  });
+
+  it('drops a pending next-page rejection after the Fond handle changes', async () => {
+    let rejectOldPage: ((reason: Error) => void) | undefined;
+    vi.mocked(fetchFondPayments)
+      .mockResolvedValueOnce({ payments: [PAYMENTS.payments[0]!], next: 'old-cursor' })
+      .mockImplementationOnce(
+        () =>
+          new Promise((_, reject) => {
+            rejectOldPage = reject;
+          }),
+      )
+      .mockResolvedValueOnce({ payments: [PAYMENTS.payments[2]!], next: null });
+    const view = renderWithLocale(<FondPaymentList username="old-fond" />);
+    fireEvent.click(await screen.findByRole('button', { name: 'Show more' }));
+    view.rerender(<FondPaymentList username="new-fond" />);
+    expect(await screen.findByText('@bob')).toBeTruthy();
+    await act(async () => {
+      rejectOldPage?.(new Error('503'));
+      await Promise.resolve();
+    });
+    expect(screen.queryByRole('alert')).toBeNull();
+    expect(screen.getAllByRole('listitem')).toHaveLength(1);
+  });
+
+  it('ignores a stale first page after the Fond handle changes', async () => {
+    let resolveOldPage: ((page: FondPaymentPage | null) => void) | undefined;
+    vi.mocked(fetchFondPayments)
+      .mockImplementationOnce(
+        () =>
+          new Promise((resolve) => {
+            resolveOldPage = resolve;
+          }),
+      )
+      .mockResolvedValueOnce({ payments: [PAYMENTS.payments[2]!], next: null });
+    const view = renderWithLocale(<FondPaymentList username="old-fond" />);
+    view.rerender(<FondPaymentList username="new-fond" />);
+    expect(await screen.findByText('@bob')).toBeTruthy();
+    await act(async () => {
+      resolveOldPage?.(PAYMENTS);
+      await Promise.resolve();
+    });
+    expect(screen.getAllByRole('listitem')).toHaveLength(1);
+    expect(screen.queryByText('Alice')).toBeNull();
   });
 
   it('shows the payments error with retry after the first load fails', async () => {

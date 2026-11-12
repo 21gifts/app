@@ -100,9 +100,7 @@ test('Function: FondPage — public page shows the Fond totals', async ({ page }
   await expect(page.getByText('Alice')).toBeVisible();
   await expect(page.getByText('Sent')).toBeVisible();
   await expect(page.getByText("−₿5'000 · $3.00")).toBeVisible();
-  await expect(page.getByText('Fee ₿21', { exact: false })).toBeVisible();
-  await expect(page.getByText('Fee ₿21', { exact: false })).toContainText('$0.02');
-  await expect(page.getByText('Fee ₿50', { exact: false })).toContainText('$0.05');
+  await expect(page.getByText(/^Fee /)).toHaveCount(0);
   await expect(page.getByRole('link', { name: 'Back to the forum' })).toBeVisible();
 });
 
@@ -124,7 +122,7 @@ test('Function: FondPaymentList — Show more appends the next page', async ({ p
   await page.goto(`/fonds/${FOND_USERNAME}`);
   await expect(page.getByRole('button', { name: 'Show more' })).toBeVisible();
   await page.getByRole('button', { name: 'Show more' }).click();
-  await expect(page.getByText('Fee ₿21', { exact: false })).toBeVisible();
+  await expect(page.getByRole('region', { name: 'Payments' }).getByRole('listitem')).toHaveCount(4);
   await expect(page.getByText('Show more')).toHaveCount(0);
 });
 

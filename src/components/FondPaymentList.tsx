@@ -44,8 +44,9 @@ function appendPayments(current: FondPayment[], page: FondPayment[]): FondPaymen
  * member's wallet, opens `wallet/payment` details, and labels gifts, loans and
  * shops. The Fond list is public, has no payment detail route, and names the
  * counterparty (or **Private**). It reuses the same row shell, direction
- * icons, `formatBitcoin` + `preferredFiatSuffix` amounts, fee labels, and
- * formatForumTime as the wallet history.
+ * icons, `formatBitcoin` + `preferredFiatSuffix` amounts, and formatForumTime
+ * as the wallet history. The fee is not shown because no fiat figure fixed
+ * for that fee exists.
  *
  * @param props - The Fond handle from the validated summary.
  * @param props.username - Fond handle whose payments are listed.
@@ -64,6 +65,7 @@ export function FondPaymentList({ username }: { username: string }): ReactElemen
   const [loadMoreFailed, setLoadMoreFailed] = useState(false);
   const mounted = useRef(true);
   const busy = useRef(false);
+  const generation = useRef(0);
 
   useEffect(() => {
     mounted.current = true;
@@ -74,9 +76,12 @@ export function FondPaymentList({ username }: { username: string }): ReactElemen
 
   useEffect(() => {
     let cancelled = false;
+    generation.current += 1;
+    busy.current = false;
     setStatus('loading');
     setPayments([]);
     setNext(null);
+    setLoadingMore(false);
     setLoadMoreFailed(false);
     void fetchFondPayments(username).then(
       (page) => {
@@ -92,9 +97,10 @@ export function FondPaymentList({ username }: { username: string }): ReactElemen
         setStatus('ready');
       },
       () => {
-        if (!cancelled) {
-          setStatus('error');
+        if (cancelled) {
+          return;
         }
+        setStatus('error');
       },
     );
     return () => {
@@ -107,11 +113,12 @@ export function FondPaymentList({ username }: { username: string }): ReactElemen
       return;
     }
     busy.current = true;
+    const requestGeneration = generation.current;
     setLoadMoreFailed(false);
     setLoadingMore(true);
     void fetchFondPayments(username, next).then(
       (page) => {
-        if (!mounted.current) {
+        if (!mounted.current || generation.current !== requestGeneration) {
           return;
         }
         busy.current = false;
@@ -125,7 +132,7 @@ export function FondPaymentList({ username }: { username: string }): ReactElemen
         setNext(page.next);
       },
       () => {
-        if (!mounted.current) {
+        if (!mounted.current || generation.current !== requestGeneration) {
           return;
         }
         busy.current = false;
@@ -165,7 +172,6 @@ export function FondPaymentList({ username }: { username: string }): ReactElemen
             {payments.map((payment) => {
               const incoming = payment.direction === 'in';
               const Icon = incoming ? ArrowDownLeft : ArrowUpRight;
-              const showFee = !incoming || payment.feeSats > 0;
               const name = payment.counterparty?.name?.trim();
               const username = payment.counterparty?.username ?? '';
               const label =
@@ -215,21 +221,10 @@ export function FondPaymentList({ username }: { username: string }): ReactElemen
                           {amountFiat}
                         </span>
                       </div>
-                      <div className="flex flex-wrap items-baseline justify-between gap-x-3 text-xs text-app-subtle">
+                      <div className="text-xs text-app-subtle">
                         <time dateTime={payment.paidAt}>
                           {formatForumTime(payment.paidAt, locale)}
                         </time>
-                        {showFee ? (
-                          <span>
-                            {t('wallet.payment.fee')}{' '}
-                            {payment.feeSats === 0
-                              ? t('wallet.payment.feeFree')
-                              : formatBitcoin(payment.feeSats, numberFormat)}
-                            {payment.feeSats === 0
-                              ? null
-                              : preferredFiatSuffix(payment.feeSats, rateDay, fiat, numberFormat)}
-                          </span>
-                        ) : null}
                       </div>
                       {counterparty}
                     </div>
