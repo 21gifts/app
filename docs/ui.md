@@ -1428,7 +1428,7 @@ Handbook states: default, unnamed, loading, error, missing, forbidden, sunday, f
 
 Fill `AppShell` `align="center"`; `topLeft={<ProfileChromeLeft />}` `topRight={<SignedInChrome />}`. `OnboardingGate screen="welcome"` → `NotificationsLoader` → `NotificationsScreen`: **h1** **Notifications** (`h1` ramp), then (once loaded) the neutral `SegmentedControl` **For you** | **Living room** with a per-view unread chip, then the shown view's unread rows under an `h2` **Unread** and already-seen rows under an `h2` **Already seen** (both **section** ramp, not centered; an empty group is omitted; each list keeps fetch order). Rows are posts, replies, payments, and hearts (`{name} posted` / `{name} replied` / `{name} sent bitcoin` / `{name} sent you a heart`, post text or `notifications.photoPost` (**Photo**), reply text or `notifications.photoOnly` (**Photo reaction**), zap amount as stored, time). Unread semibold / read muted. Empty view `notifications.emptyForYou` / `notifications.emptyLivingRoom`. Loading. Error + labeled **Try again**. Click a reply or mention row → `/messages/{replyId}`. Click a post, payment, or heart row → `/messages/{parentId}`. Ids are URI-encoded. No composer. Last, in every state, the muted **Notification settings** link to `/settings#notifications`.
 
-Handbook states: default list, empty, loading, error.
+Handbook states: default, empty, empty-living-room, for-you-empty, living-room, living-room-empty, loading, error, moderator-proposal.
 
 ### `/moderate`
 
