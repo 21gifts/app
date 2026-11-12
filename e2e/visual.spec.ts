@@ -44879,7 +44879,7 @@ test.describe('settings states', () => {
     await expect(page.getByRole('button', { name: 'Log in at DFX' })).toBeEnabled();
     const alert = page.getByRole('region', { name: 'Wallet' }).getByRole('alert');
     await expect(alert).toHaveText(
-      'DFX could not be opened. Allow new tabs for this site and try again.',
+      'DFX could not be opened. Try again. If no new tab opens, allow new tabs for this site.',
     );
     await expect(page.getByText('Opening DFX…')).toHaveCount(0);
     await alert.scrollIntoViewIfNeeded();

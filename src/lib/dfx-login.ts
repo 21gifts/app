@@ -24,6 +24,13 @@ export const DFX_SIGN_MESSAGE_PREFIX =
   'By_signing_this_message,_you_confirm_that_you_are_the_sole_owner_of_the_provided_Blockchain_address._Your_ID:_';
 
 /**
+ * Limit of one `POST /v1/auth` (ms). Reaching it aborts the request and the
+ * reading of its body, and the sign-in rejects with `dfx-login`. A failed
+ * request still rejects with that fetch error.
+ */
+export const DFX_LOGIN_TIMEOUT_MS = 15_000;
+
+/**
  * Builds the DFX Buy URL for the signed-in member's own in-app wallet.
  *
  * Reads the Spark address, signs the production sign-in text plus that address
@@ -34,9 +41,9 @@ export const DFX_SIGN_MESSAGE_PREFIX =
  * @param loadSdk - SDK loader forwarded to the wallet. Omit it to use the real SDK.
  * @returns Absolute Buy URL with `session`, `blockchain=Spark`, and `asset-out=BTC`.
  * @throws Error `wallet-connect` when the wallet cannot be opened. Error
- *   `dfx-login` when DFX answers non-2xx, returns a body that is not JSON, or
- *   omits a non-empty `accessToken`. A failed request rejects with that fetch
- *   error.
+ *   `dfx-login` when the time limit is reached, when DFX answers non-2xx,
+ *   returns a body that is not JSON, or omits a non-empty `accessToken`. A
+ *   failed request rejects with that fetch error.
  */
 export async function dfxLoginUrl(loadSdk?: WalletSdkLoader): Promise<string> {
   const address =
@@ -46,17 +53,43 @@ export async function dfxLoginUrl(loadSdk?: WalletSdkLoader): Promise<string> {
   const message = DFX_SIGN_MESSAGE_PREFIX + address;
   const signature =
     loadSdk === undefined ? await signWithWallet(message) : await signWithWallet(message, loadSdk);
-  const authResponse = await fetch(new URL('/v1/auth', DFX_API_ORIGIN).toString(), {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ address, signature, wallet: DFX_WALLET_NAME }),
-  });
-  const accessToken = requiredText(await readJson(authResponse), 'accessToken');
-  const buy = new URL('/buy', DFX_APP_ORIGIN);
-  buy.searchParams.set('session', accessToken);
-  buy.searchParams.set('blockchain', 'Spark');
-  buy.searchParams.set('asset-out', 'BTC');
-  return buy.toString();
+  // A timer, not `AbortSignal.timeout`, which older Safari versions do not have.
+  const controller = new AbortController();
+  const timer = setTimeout(() => {
+    controller.abort();
+  }, DFX_LOGIN_TIMEOUT_MS);
+  try {
+    const accessToken = await readDfxAccessToken(address, signature, controller.signal);
+    const buy = new URL('/buy', DFX_APP_ORIGIN);
+    buy.searchParams.set('session', accessToken);
+    buy.searchParams.set('blockchain', 'Spark');
+    buy.searchParams.set('asset-out', 'BTC');
+    return buy.toString();
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+// POST /v1/auth and its body. An abort is `dfx-login`. Any other fetch error is that error.
+async function readDfxAccessToken(
+  address: string,
+  signature: string,
+  signal: AbortSignal,
+): Promise<string> {
+  try {
+    const authResponse = await fetch(new URL('/v1/auth', DFX_API_ORIGIN).toString(), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ address, signature, wallet: DFX_WALLET_NAME }),
+      signal,
+    });
+    return requiredText(await readJson(authResponse), 'accessToken');
+  } catch (error) {
+    if (signal.aborted) {
+      throw new Error('dfx-login');
+    }
+    throw error;
+  }
 }
 
 // A non-2xx body is never read. A body that is not JSON is `dfx-login`.

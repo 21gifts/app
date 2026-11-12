@@ -366,13 +366,16 @@ function DfxLoginRow(): ReactElement | null {
       setFailed(true);
       return;
     }
+    tab.opener = null;
     running.current = true;
     setBusy(true);
     setFailed(false);
     void (async (): Promise<void> => {
       try {
         const url = await dfxLoginUrl();
-        tab.opener = null;
+        if (tab.closed) {
+          return;
+        }
         tab.location.href = url;
       } catch {
         tab.close();

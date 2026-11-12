@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { DFX_SIGN_MESSAGE_PREFIX, dfxLoginUrl } from '@/lib/dfx-login';
+import { DFX_LOGIN_TIMEOUT_MS, DFX_SIGN_MESSAGE_PREFIX, dfxLoginUrl } from '@/lib/dfx-login';
 import { logInteraction } from '@/lib/interaction-log';
 import { receiveWalletSparkAddress, signWithWallet } from '@/lib/wallet/wallet-service';
 
@@ -77,16 +77,46 @@ function expectSigned(loadSdk?: unknown): void {
 }
 
 /**
- * Exactly one request, and it is the session POST.
+ * A sign-in request that never answers, and rejects with `AbortError` once
+ * its signal aborts, as `fetch` does.
+ *
+ * @param _url - Ignored. The stand-in matches `fetch`.
+ * @param init - Request options. The signal is the time limit.
+ * @returns A promise that settles only when that signal aborts.
+ */
+function hangUntilAbort(_url: string, init?: RequestInit): Promise<Response> {
+  return new Promise((_resolve, reject) => {
+    const signal = init?.signal;
+    if (signal === undefined || signal === null) {
+      reject(new Error('missing-signal'));
+      return;
+    }
+    const abort = (): void => {
+      reject(new DOMException('The operation was aborted.', 'AbortError'));
+    };
+    if (signal.aborted) {
+      abort();
+      return;
+    }
+    signal.addEventListener('abort', abort);
+  });
+}
+
+/**
+ * Exactly one request, and it is the session POST. Its signal is still open.
  *
  * @param signature - Signature hex placed in the body.
  */
 function expectOnePost(signature: string): void {
   expect(fetchMock).toHaveBeenCalledTimes(1);
+  const init = fetchMock.mock.calls[0]?.[1] as RequestInit | undefined;
+  expect(init?.signal).toBeInstanceOf(AbortSignal);
+  expect(init?.signal?.aborted).toBe(false);
   expect(fetchMock).toHaveBeenCalledWith(AUTH_URL, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ address: ADDRESS, signature, wallet: '21gifts' }),
+    signal: init?.signal,
   });
 }
 
@@ -100,6 +130,7 @@ beforeEach(() => {
 
 afterEach(() => {
   vi.unstubAllGlobals();
+  vi.useRealTimers();
 });
 
 describe('dfxLoginUrl', () => {
@@ -196,9 +227,61 @@ describe('dfxLoginUrl', () => {
   });
 
   it('lets a sign-in request failure through after the text was signed', async () => {
-    fetchMock.mockRejectedValueOnce(new Error('offline'));
-    await expect(dfxLoginUrl()).rejects.toThrow('offline');
+    const failure = new Error('offline');
+    fetchMock.mockRejectedValueOnce(failure);
+    await expect(dfxLoginUrl()).rejects.toBe(failure);
     expectSigned();
     expectOnePost(SIGNATURE);
+  });
+
+  it('leaves no timer after a successful sign-in', async () => {
+    vi.useFakeTimers();
+    queueAuth({ accessToken: TOKEN });
+    const pending = dfxLoginUrl();
+    await vi.advanceTimersByTimeAsync(0);
+    await expect(pending).resolves.toBe(BUY_URL);
+    expectOnePost(SIGNATURE);
+    expect(vi.getTimerCount()).toBe(0);
+  });
+
+  it('leaves no timer after a non-2xx answer', async () => {
+    vi.useFakeTimers();
+    const failed = queueAuth({ accessToken: 'secret' }, false);
+    const pending = dfxLoginUrl();
+    const rejected = expect(pending).rejects.toThrow('dfx-login');
+    await vi.advanceTimersByTimeAsync(0);
+    await rejected;
+    expect(failed.wasRead()).toBe(false);
+    expectOnePost(SIGNATURE);
+    expect(vi.getTimerCount()).toBe(0);
+  });
+
+  it('rejects dfx-login when the sign-in has not answered at the time limit', async () => {
+    vi.useFakeTimers();
+    fetchMock.mockImplementation(hangUntilAbort);
+    let settled = false;
+    const pending = dfxLoginUrl().then(
+      (value) => {
+        settled = true;
+        return value;
+      },
+      (error: unknown) => {
+        settled = true;
+        throw error;
+      },
+    );
+    await vi.advanceTimersByTimeAsync(DFX_LOGIN_TIMEOUT_MS - 1);
+    expect(settled).toBe(false);
+    expect(DFX_LOGIN_TIMEOUT_MS).toBe(15_000);
+    expectSigned();
+    const signal = (fetchMock.mock.calls[0]?.[1] as RequestInit | undefined)?.signal;
+    expect(signal).toBeInstanceOf(AbortSignal);
+    expect(signal?.aborted).toBe(false);
+    const rejected = expect(pending).rejects.toThrow('dfx-login');
+    await vi.advanceTimersByTimeAsync(1);
+    await rejected;
+    expect(settled).toBe(true);
+    expect(signal?.aborted).toBe(true);
+    expect(vi.getTimerCount()).toBe(0);
   });
 });

@@ -362,7 +362,7 @@ test('settings shows the Log in at DFX alert from the pin without calling DFX', 
   await page.goto('/settings?visual=dfx-login-error');
   await expect(page.getByRole('button', { name: 'Log in at DFX' })).toBeEnabled();
   await expect(page.getByRole('region', { name: 'Wallet' }).getByRole('alert')).toHaveText(
-    'DFX could not be opened. Allow new tabs for this site and try again.',
+    'DFX could not be opened. Try again. If no new tab opens, allow new tabs for this site.',
   );
   await expect(page.getByText('Opening DFX…')).toHaveCount(0);
 });
@@ -389,7 +389,7 @@ async function pressDfxLoginWhileWalletOff(page: Page): Promise<void> {
   const popupPromise = page.waitForEvent('popup', { timeout: 5_000 });
   await button.click();
   await expect(page.getByRole('region', { name: 'Wallet' }).getByRole('alert')).toHaveText(
-    'DFX could not be opened. Allow new tabs for this site and try again.',
+    'DFX could not be opened. Try again. If no new tab opens, allow new tabs for this site.',
   );
   await expect(button).toBeEnabled();
   expect(urls.some((url) => url.includes('api.dfx.swiss'))).toBe(false);

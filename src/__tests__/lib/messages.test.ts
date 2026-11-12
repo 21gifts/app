@@ -163,16 +163,16 @@ describe('getCatalog', () => {
     expect(getCatalog('es')['settings.dfxLoginBusy']).toBe('Abriendo DFX…');
     expect(getCatalog('fil')['settings.dfxLoginBusy']).toBe('Binubuksan ang DFX…');
     expect(getCatalog('en')['settings.dfxLoginError']).toBe(
-      'DFX could not be opened. Allow new tabs for this site and try again.',
+      'DFX could not be opened. Try again. If no new tab opens, allow new tabs for this site.',
     );
     expect(getCatalog('de')['settings.dfxLoginError']).toBe(
-      'DFX konnte nicht geöffnet werden. Erlaube neue Tabs für diese Seite und versuche es erneut.',
+      'DFX konnte nicht geöffnet werden. Versuche es erneut. Wenn sich kein neuer Tab öffnet, erlaube neue Tabs für diese Seite.',
     );
     expect(getCatalog('es')['settings.dfxLoginError']).toBe(
-      'No se pudo abrir DFX. Permite las pestañas nuevas de este sitio e inténtalo de nuevo.',
+      'No se pudo abrir DFX. Inténtalo de nuevo. Si no se abre una pestaña nueva, permite las pestañas nuevas de este sitio.',
     );
     expect(getCatalog('fil')['settings.dfxLoginError']).toBe(
-      'Hindi mabuksan ang DFX. Payagan ang mga bagong tab para sa site na ito at subukan ulit.',
+      'Hindi mabuksan ang DFX. Subukan ulit. Kung walang bagong tab na bumukas, payagan ang mga bagong tab para sa site na ito.',
     );
     for (const locale of LOCALES) {
       const hint = getCatalog(locale)['settings.dfxLoginHint'].toLowerCase();

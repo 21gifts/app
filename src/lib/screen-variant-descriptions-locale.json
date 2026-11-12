@@ -4420,9 +4420,9 @@
     "fil": "?visual=dfx-login-busy ay nagpapakita ng row na naka-disable ang button at ang status na Binubuksan ang DFX…. Walang alert. Hindi tinatawag ang wallet at ang DFX."
   },
   "/settings:dfx-login-error": {
-    "de": "?visual=dfx-login-error zeigt die Zeile mit aktiver Schaltfläche und dem Alarm DFX konnte nicht geöffnet werden. Erlaube neue Tabs für diese Seite und versuche es erneut. Keine Statuszeile. Das Wallet und DFX werden nicht aufgerufen.",
-    "es": "?visual=dfx-login-error muestra la fila con el botón activo y el aviso No se pudo abrir DFX. Permite las pestañas nuevas de este sitio e inténtalo de nuevo. No hay línea de espera. Ni la wallet ni DFX se llaman.",
-    "fil": "?visual=dfx-login-error ay nagpapakita ng row na naka-enable ang button at ang alert na Hindi mabuksan ang DFX. Payagan ang mga bagong tab para sa site na ito at subukan ulit. Walang busy line. Hindi tinatawag ang wallet at ang DFX."
+    "de": "?visual=dfx-login-error zeigt die Zeile mit aktiver Schaltfläche und dem Alarm DFX konnte nicht geöffnet werden. Versuche es erneut. Wenn sich kein neuer Tab öffnet, erlaube neue Tabs für diese Seite. Keine Statuszeile. Das Wallet und DFX werden nicht aufgerufen.",
+    "es": "?visual=dfx-login-error muestra la fila con el botón activo y el aviso No se pudo abrir DFX. Inténtalo de nuevo. Si no se abre una pestaña nueva, permite las pestañas nuevas de este sitio. No hay línea de espera. Ni la wallet ni DFX se llaman.",
+    "fil": "?visual=dfx-login-error ay nagpapakita ng row na naka-enable ang button at ang alert na Hindi mabuksan ang DFX. Subukan ulit. Kung walang bagong tab na bumukas, payagan ang mga bagong tab para sa site na ito. Walang busy line. Hindi tinatawag ang wallet at ang DFX."
   },
   "/setup/name:controls": {
     "de": "Ein Name mit einem Steuerzeichen zeigt Der Name darf keine Steuerzeichen enthalten. (name.errorControls). Weiter bleibt deaktiviert, bis der Entwurf sich ändert. Überspringen bleibt verfügbar.",

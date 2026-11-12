@@ -113,7 +113,8 @@ const en = {
   'settings.dfxLoginHint':
     'Opens DFX in a new tab, signed in with your 21.gifts wallet, so you can buy Bitcoin with a bank transfer.',
   'settings.dfxLoginBusy': 'Opening DFX…',
-  'settings.dfxLoginError': 'DFX could not be opened. Allow new tabs for this site and try again.',
+  'settings.dfxLoginError':
+    'DFX could not be opened. Try again. If no new tab opens, allow new tabs for this site.',
   'settings.deviceOnly': 'Saved on this device',
   'settings.notificationSettings': 'Notification settings',
   'wallet.backupLink': 'Back up your wallet',
@@ -1903,7 +1904,7 @@ const de = {
     'Öffnet DFX in einem neuen Tab, angemeldet mit deinem 21.gifts Wallet, damit du Bitcoin per Banküberweisung kaufen kannst.',
   'settings.dfxLoginBusy': 'DFX wird geöffnet…',
   'settings.dfxLoginError':
-    'DFX konnte nicht geöffnet werden. Erlaube neue Tabs für diese Seite und versuche es erneut.',
+    'DFX konnte nicht geöffnet werden. Versuche es erneut. Wenn sich kein neuer Tab öffnet, erlaube neue Tabs für diese Seite.',
   'settings.deviceOnly': 'Auf diesem Gerät gespeichert',
   'settings.notificationSettings': 'Benachrichtigungseinstellungen',
   'wallet.backupLink': 'Wallet sichern',
@@ -3764,7 +3765,7 @@ const es = {
     'Abre DFX en una pestaña nueva, con la sesión de tu wallet de 21.gifts, para que puedas comprar Bitcoin con una transferencia bancaria.',
   'settings.dfxLoginBusy': 'Abriendo DFX…',
   'settings.dfxLoginError':
-    'No se pudo abrir DFX. Permite las pestañas nuevas de este sitio e inténtalo de nuevo.',
+    'No se pudo abrir DFX. Inténtalo de nuevo. Si no se abre una pestaña nueva, permite las pestañas nuevas de este sitio.',
   'settings.deviceOnly': 'Guardado en este dispositivo',
   'settings.notificationSettings': 'Ajustes de notificaciones',
   'wallet.backupLink': 'Haz una copia de seguridad de tu wallet',
@@ -5583,7 +5584,7 @@ const fil = {
     'Binubuksan ang DFX sa bagong tab, naka-sign in gamit ang 21.gifts wallet mo, para makabili ka ng Bitcoin sa bank transfer.',
   'settings.dfxLoginBusy': 'Binubuksan ang DFX…',
   'settings.dfxLoginError':
-    'Hindi mabuksan ang DFX. Payagan ang mga bagong tab para sa site na ito at subukan ulit.',
+    'Hindi mabuksan ang DFX. Subukan ulit. Kung walang bagong tab na bumukas, payagan ang mga bagong tab para sa site na ito.',
   'settings.deviceOnly': 'Naka-save sa device na ito',
   'settings.notificationSettings': 'Mga setting ng notification',
   'wallet.backupLink': 'I-back up ang iyong wallet',

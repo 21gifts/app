@@ -76,7 +76,8 @@ const ADD_HINT =
 
 const DFX_HINT =
   'Opens DFX in a new tab, signed in with your 21.gifts wallet, so you can buy Bitcoin with a bank transfer.';
-const DFX_ERROR = 'DFX could not be opened. Allow new tabs for this site and try again.';
+const DFX_ERROR =
+  'DFX could not be opened. Try again. If no new tab opens, allow new tabs for this site.';
 const DFX_BUY =
   'https://app.dfx.swiss/buy?session=header.payload.sig&blockchain=Spark&asset-out=BTC';
 
@@ -89,6 +90,7 @@ const DFX_BUY =
  */
 function fakeTab(failNavigation = false): {
   opener: Window | null;
+  closed: boolean;
   close: ReturnType<typeof vi.fn>;
   location: Location;
   href: string;
@@ -96,6 +98,7 @@ function fakeTab(failNavigation = false): {
 } {
   const tab = {
     opener: window as Window | null,
+    closed: false,
     close: vi.fn(),
     location: {} as Location,
     href: '',
@@ -977,5 +980,75 @@ describe('SettingsScreen', () => {
     expect(dfxLoginUrl).toHaveBeenCalledTimes(1);
     expect(tab.close).toHaveBeenCalledTimes(1);
     expect(screen.getByRole('alert').textContent).toBe(DFX_ERROR);
+  });
+
+  it('clears opener while the sign-in URL is still pending', async () => {
+    useWalletStore.getState().setReady(21, 'id');
+    const tab = fakeTab();
+    vi.stubGlobal(
+      'open',
+      vi.fn(() => tab as unknown as Window),
+    );
+    let finish: (url: string) => void = () => undefined;
+    vi.mocked(dfxLoginUrl).mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          finish = resolve;
+        }),
+    );
+    renderWithLocale(<SettingsScreen />);
+    fireEvent.click(screen.getByRole('button', { name: 'Log in at DFX' }));
+    expect(dfxLoginUrl).toHaveBeenCalledTimes(1);
+    expect(tab.opener).toBeNull();
+    expect(tab.href).toBe('');
+    expect(tab.openerAtNavigation).toBe('pending');
+    await act(async () => {
+      finish(DFX_BUY);
+    });
+    expect(tab.openerAtNavigation).toBeNull();
+    expect(tab.href).toBe(DFX_BUY);
+    expect(screen.queryByRole('alert')).toBeNull();
+  });
+
+  it('drops the URL when the member closes the tab during the wait, then allows another press', async () => {
+    useWalletStore.getState().setReady(21, 'id');
+    const first = fakeTab();
+    const second = fakeTab();
+    const open = vi
+      .fn()
+      .mockReturnValueOnce(first as unknown as Window)
+      .mockReturnValueOnce(second as unknown as Window);
+    vi.stubGlobal('open', open);
+    let finish: (url: string) => void = () => undefined;
+    vi.mocked(dfxLoginUrl).mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          finish = resolve;
+        }),
+    );
+    renderWithLocale(<SettingsScreen />);
+    const button = screen.getByRole('button', { name: 'Log in at DFX' });
+    fireEvent.click(button);
+    expect(first.opener).toBeNull();
+    first.closed = true;
+    await act(async () => {
+      finish(DFX_BUY);
+    });
+    expect(first.href).toBe('');
+    expect(first.openerAtNavigation).toBe('pending');
+    expect(first.close).not.toHaveBeenCalled();
+    expect(screen.queryByRole('alert')).toBeNull();
+    expect(screen.queryByText('Opening DFX…')).toBeNull();
+    expect(button.hasAttribute('disabled')).toBe(false);
+
+    vi.mocked(dfxLoginUrl).mockResolvedValueOnce(DFX_BUY);
+    await act(async () => {
+      fireEvent.click(button);
+    });
+    expect(open).toHaveBeenCalledTimes(2);
+    expect(second.href).toBe(DFX_BUY);
+    expect(second.openerAtNavigation).toBeNull();
+    expect(first.href).toBe('');
+    expect(screen.queryByRole('alert')).toBeNull();
   });
 });
