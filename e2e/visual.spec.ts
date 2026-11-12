@@ -323,7 +323,22 @@ async function insideFrameBody(locator: Locator): Promise<boolean> {
 async function stubWalletSetupAccount(
   page: Page,
   overrides: Record<string, unknown> = {},
-): Promise<void> {
+): Promise<Record<string, unknown>> {
+  const account = {
+    ...E2E_ACCOUNT,
+    name: 'Ada',
+    username: 'ada',
+    lightningAddress: null,
+    rulesAgreedAt: 1,
+    setup: null,
+    missing: [],
+    walletRequired: true,
+    walletBackupSeenAt: 1,
+    passkeyCredentialId: 'AQIDBAUGBwgJCgsMDQ4PEA',
+    sparkPubkey: null,
+    sparkWalletVerified: false,
+    ...overrides,
+  };
   await page.addInitScript(() => {
     localStorage.setItem('21gifts.session', 'sess-e2e');
   });
@@ -331,21 +346,7 @@ async function stubWalletSetupAccount(
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
-      body: JSON.stringify({
-        ...E2E_ACCOUNT,
-        name: 'Ada',
-        username: 'ada',
-        lightningAddress: null,
-        rulesAgreedAt: 1,
-        setup: null,
-        missing: [],
-        walletRequired: true,
-        walletBackupSeenAt: 1,
-        passkeyCredentialId: 'AQIDBAUGBwgJCgsMDQ4PEA',
-        sparkPubkey: null,
-        sparkWalletVerified: false,
-        ...overrides,
-      }),
+      body: JSON.stringify(account),
     });
   });
   await page.route(/\/pos\/charge$/, async (route) => {
@@ -355,13 +356,22 @@ async function stubWalletSetupAccount(
       body: JSON.stringify({ charge: null, history: [] }),
     });
   });
+  return account;
 }
 
 const LOAN_CLOCK = new Date('2026-10-07T10:00:00.000Z');
 
 /** Signed-in member and stable network state shared by loan screenshots. */
 async function seedLoanMember(page: Page): Promise<void> {
-  await stubWalletSetupAccount(page, { sparkWalletVerified: true });
+  const account = await stubWalletSetupAccount(page, { sparkWalletVerified: true });
+  await page.route(/\/me\/amount-unit$/, async (route) => {
+    const { unit } = route.request().postDataJSON() as { unit: 'btc' | 'fiat' };
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ ...account, amountUnit: unit }),
+    });
+  });
   await fulfillRateDay(page);
   await page.clock.install({ time: LOAN_CLOCK });
 }
@@ -7600,7 +7610,11 @@ test.describe('loans repay screens', () => {
       visual: 'repay-ready',
       text: 'Pay more',
     });
+    const unitSaved = page.waitForResponse(
+      (response) => response.url().includes('/me/amount-unit') && response.ok(),
+    );
     await page.getByRole('button', { name: 'USD' }).click();
+    await unitSaved;
     await page.getByLabel('Amount (USD)').fill('5.00');
     await expect(page.getByText("₿5'000")).toBeVisible();
     await shotScreen(page, 'state-loans-repay-pay-more-fiat');
