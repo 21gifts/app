@@ -1070,7 +1070,7 @@ Pinned with `?visual=sent-member-unknown` and id `ab12ce00-1545-4000-8000-000000
 
 ### Variant: received-from-member
 
-Pinned with `?visual=received-from-member` and id `ab12ce00-1545-4000-8000-000000000014`. The incoming payment shows the title **Received**, `+₿200` with its fiat figure, and the **Completed** status. The summary has **Date**, **Type** Wallet transfer, **From** alice@21.gifts linking to `/members/acc_e2e`, and **Amount** with bitcoin and fiat. There is no **Fee**, **Total**, or **To** row. **Details** is closed, so the payment request and payment ID are hidden; this payment has no payment hash.
+Pinned with `?visual=received-from-member` and id `ab12ce00-1545-4000-8000-000000000014`. The incoming payment shows the title **Received**, `+₿200` with its fiat figure, and the **Completed** status. The summary has **Date**, **Type** Wallet transfer, **From** alice@21.gifts linking to `/members/acc_e2e`, and **Amount** with bitcoin and fiat. There is no **Fee**, **Total**, or **To** row. **Details** is closed, so the payment ID is hidden. The Spark payment request is not shown because the other side is known. This payment has no payment hash.
 
 ![21.gifts received payment from a member](images/wallet-payment-received-from-member.png)
 
