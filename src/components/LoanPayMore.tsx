@@ -27,13 +27,11 @@ import {
 } from '@/lib/loan-repay';
 import type { NumberFormatStyle } from '@/lib/number-format';
 import {
-  fiatDraftForSats,
+  formatBitcoin,
   parseAmountDraft,
-  satsToFiatAmount,
   type FiatCode,
   type FiatRateDay,
 } from '@/lib/stats-money';
-import { useAuthStore } from '@/stores/auth-store';
 
 /** Props for one loan's free-amount repayment and collecting controls. */
 export interface LoanPayMoreProps {
@@ -57,7 +55,7 @@ export interface LoanPayMoreProps {
   showShortfall: boolean;
   /** The api's Sunday-rest flag; free repayment stays unavailable that day. */
   sundayRest: boolean;
-  /** Current spot used by AmountEntry and unit conversion. */
+  /** Current spot used by AmountEntry and to price a typed fiat repayment in sats. */
   rateDay?: FiatRateDay | null;
   /** Shows wallet availability here when no due-payment box already shows it. */
   showWalletStatus: boolean;
@@ -69,7 +67,7 @@ export interface LoanPayMoreProps {
   formatSats: (sats: number) => string;
   /** Opens the shared top-up state and balance polling. */
   onOpenTopUp: () => void;
-  /** Starts a free-amount repayment through the shared wallet path. */
+  /** Starts a repayment with the unchanged string typed in the loan unit. */
   onPay: (loan: MyLoan, amountText: string) => void;
   /** Permanently stops a still-collecting loan. */
   onCloseCollecting: (loan: MyLoan) => void;
@@ -84,31 +82,23 @@ interface ServerMaximum {
 
 function displayLoanAmount(
   text: string,
+  sats: number,
   loan: MyLoan,
   style: NumberFormatStyle,
   formatSats: (sats: number) => string,
 ): string {
-  return loan.goalCurrency === 'BTC'
-    ? formatSats(Number(text))
-    : formatDefinedGoalAmount(text, loan.goalCurrency, style);
+  if (loan.goalCurrency === 'BTC') {
+    return formatSats(Number(text));
+  }
+  const fiat = formatDefinedGoalAmount(text, loan.goalCurrency, style);
+  return `${fiat} · ${formatBitcoin(sats, style)}`;
 }
 
-function maxDraft(
-  loan: MyLoan,
-  unit: AmountUnit,
-  rateDay: FiatRateDay | null,
-  entryFiat: FiatCode,
-): string | null {
+function maxDraft(loan: MyLoan): string | null {
   if (loan.maxSats === null || loan.maxSats === undefined) {
     return null;
   }
-  if (unit === 'btc') {
-    return String(loan.maxSats);
-  }
-  if (loan.goalCurrency !== 'BTC') {
-    return loan.maxAmount ?? null;
-  }
-  return fiatDraftForSats(loan.maxSats, rateDay, entryFiat);
+  return loan.goalCurrency === 'BTC' ? String(loan.maxSats) : (loan.maxAmount ?? null);
 }
 
 const ACTION_ERROR_KEY: Record<
@@ -135,7 +125,7 @@ const ACTION_ERROR_KEY: Record<
 };
 
 /**
- * Free-amount repayment form, Max control, and final end-collecting confirmation for one loan.
+ * Fixed-loan-unit repayment form, Max control, and final end-collecting confirmation for one loan.
  *
  * @param props - See {@link LoanPayMoreProps}.
  * @returns The per-loan controls and, while confirming, a modal dialog.
@@ -164,11 +154,8 @@ export function LoanPayMore({
   const { fiat } = useFiatPreference();
   const { numberFormat } = useNumberFormat();
   const amountId = `${useId()}-loan-pay-more`;
-  const accountUnit = useAuthStore((state) => state.account?.amountUnit ?? 'btc');
   const [amount, setAmount] = useState('');
-  const [amountUnit, setAmountUnit] = useState<AmountUnit>(accountUnit);
   const [exactLoanAmount, setExactLoanAmount] = useState<string | null>(null);
-  const switchingExactMaximum = useRef(false);
   const [pendingAction, setPendingAction] = useState<PendingAction>(null);
   const [confirming, setConfirming] = useState<'pay' | 'close' | null>(null);
   const [serverError, setServerError] = useState<string | null>(null);
@@ -177,6 +164,7 @@ export function LoanPayMore({
   const processedActionError = useRef<string | null>(null);
   const collecting = isCollecting(loan);
   const entryFiat: FiatCode = loan.goalCurrency === 'BTC' ? fiat : loan.goalCurrency;
+  const amountUnit: AmountUnit = loan.goalCurrency === 'BTC' ? 'btc' : 'fiat';
   const matchingAction =
     activeAction !== null && activeAction.messageId === loan.messageId ? activeAction.kind : null;
   const activePendingAction: PendingAction =
@@ -190,12 +178,7 @@ export function LoanPayMore({
   const parsed = parseAmountDraft(amountUnit, amount, rateDay, entryFiat);
   let loanAmountText = exactLoanAmount;
   if (loanAmountText === null && parsed.kind === 'sats') {
-    loanAmountText =
-      loan.goalCurrency === 'BTC'
-        ? String(parsed.sats)
-        : amountUnit === 'fiat'
-          ? amount.trim()
-          : satsToFiatAmount(parsed.sats, rateDay, loan.goalCurrency);
+    loanAmountText = loan.goalCurrency === 'BTC' ? String(parsed.sats) : amount.trim();
   }
   let check: LoanAmountCheck =
     amount.trim() === ''
@@ -213,13 +196,19 @@ export function LoanPayMore({
     check = { ok: false, reason: 'above_max', max: loanMaxInput(effectiveLoan) };
   }
   const apiMaxInput = loanMaxUnits(effectiveLoan) === null ? null : loanMaxInput(effectiveLoan);
-  const maxInput = maxDraft(effectiveLoan, amountUnit, rateDay, entryFiat);
+  const maxInput = maxDraft(effectiveLoan);
 
   let inputError: string | null = null;
   if (amount.trim() !== '' && !check.ok) {
     if (check.reason === 'above_max' && check.max !== null) {
       inputError = t('loans.payMoreAboveMax', {
-        amount: displayLoanAmount(check.max, loan, numberFormat, formatSats),
+        amount: displayLoanAmount(
+          check.max,
+          Number(effectiveLoan.maxSats),
+          loan,
+          numberFormat,
+          formatSats,
+        ),
       });
     } else if (check.reason === 'invalid') {
       inputError = t(
@@ -227,18 +216,14 @@ export function LoanPayMore({
       );
     }
   }
-  const conversionMissing =
-    loan.goalCurrency !== 'BTC' &&
-    amountUnit === 'btc' &&
-    parsed.kind === 'sats' &&
-    loanAmountText === null;
-  if (parsed.kind === 'no-rate' || conversionMissing) {
+  if (parsed.kind === 'no-rate') {
     inputError = t('loans.payMoreNoRate', { code: entryFiat });
   } else if (apiMaxInput === null || (!check.ok && check.reason === 'no_max')) {
     inputError =
-      loan.goalCurrency === 'BTC'
-        ? t('loans.payMoreNoMaximum', { code: loan.goalCurrency })
-        : t('loans.payMoreNoRate', { code: loan.goalCurrency });
+      loan.goalCurrency !== 'BTC' &&
+      (effectiveLoan.maxSats === null || effectiveLoan.maxSats === undefined)
+        ? t('loans.payMoreNoRate', { code: loan.goalCurrency })
+        : t('loans.payMoreNoMaximum', { code: loan.goalCurrency });
   }
 
   useEffect(() => {
@@ -276,10 +261,7 @@ export function LoanPayMore({
         maxSats: actionError.maxSats,
         maxAmount: actionError.maxAmount,
       };
-      const currentMax =
-        loanMaxUnits(currentLoan) === null
-          ? null
-          : maxDraft(currentLoan, amountUnit, rateDay, entryFiat);
+      const currentMax = loanMaxUnits(currentLoan) === null ? null : maxDraft(currentLoan);
       // The non-null units guard above requires the same API maximum as loanMaxInput.
       const currentApiMax = loanMaxInput(currentLoan);
       setServerMaximum({
@@ -291,7 +273,13 @@ export function LoanPayMore({
         setExactLoanAmount(currentApiMax);
         setServerError(
           t('loans.payMoreMaxChanged', {
-            amount: displayLoanAmount(currentApiMax as string, loan, numberFormat, formatSats),
+            amount: displayLoanAmount(
+              currentApiMax as string,
+              Number(actionError.maxSats),
+              loan,
+              numberFormat,
+              formatSats,
+            ),
           }),
         );
       } else {
@@ -300,17 +288,7 @@ export function LoanPayMore({
       return;
     }
     setServerError(t(ACTION_ERROR_KEY[actionError.code]));
-  }, [
-    actionError,
-    amountUnit,
-    entryFiat,
-    formatSats,
-    loan,
-    numberFormat,
-    rateDay,
-    shownPendingAction,
-    t,
-  ]);
+  }, [actionError, entryFiat, formatSats, loan, numberFormat, rateDay, shownPendingAction, t]);
 
   useEffect(() => {
     if (shownPendingAction === 'pay' && matchingAction === 'prepay' && phase === 'repaid') {
@@ -370,29 +348,12 @@ export function LoanPayMore({
           })}
           value={amount}
           valueUnit={amountUnit}
+          fixedUnit={amountUnit}
           fiatCode={entryFiat}
           rateDay={rateDay}
           disabled={sharedBusy}
           {...(fieldError === null ? {} : { error: fieldError })}
-          onUnitChange={(unit) => {
-            if (unit === amountUnit) {
-              return;
-            }
-            setAmountUnit(unit);
-            if (exactLoanAmount === null) {
-              return;
-            }
-            const nextMaximum = maxDraft(effectiveLoan, unit, rateDay, entryFiat);
-            if (nextMaximum !== null) {
-              switchingExactMaximum.current = true;
-              setAmount(nextMaximum);
-            }
-          }}
           onValueChange={(value) => {
-            if (switchingExactMaximum.current) {
-              switchingExactMaximum.current = false;
-              return;
-            }
             setAmount(value);
             setExactLoanAmount(null);
             setServerError(null);
@@ -435,7 +396,7 @@ export function LoanPayMore({
               <span className="shrink-0 tabular-nums lining-nums">
                 {row.amount === null
                   ? formatSats(row.amountSats)
-                  : displayLoanAmount(row.amount, loan, numberFormat, formatSats)}
+                  : displayLoanAmount(row.amount, row.amountSats, loan, numberFormat, formatSats)}
               </span>
             </p>
           ))
@@ -564,7 +525,14 @@ export function LoanPayMore({
               check.ok ? (
                 <Button type="button" size="lg" onClick={() => submitPay(check.text)}>
                   {t('loans.payMoreConfirmAction', {
-                    amount: displayLoanAmount(check.text, loan, numberFormat, formatSats),
+                    amount: displayLoanAmount(
+                      check.text,
+                      // A successful check is created only from parsed sats above.
+                      (parsed as { kind: 'sats'; sats: number }).sats,
+                      loan,
+                      numberFormat,
+                      formatSats,
+                    ),
                   })}
                 </Button>
               ) : (

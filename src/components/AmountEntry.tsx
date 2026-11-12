@@ -35,6 +35,8 @@ export interface AmountEntryProps {
   onValueChange: (value: string) => void;
   /** Disables the input and refuses a unit change. */
   disabled?: boolean;
+  /** Keeps this field in one unit and omits the unit switch. */
+  fixedUnit?: AmountUnit;
   /** Native placeholder. */
   placeholder?: string;
   /** Extra classes on the outer wrapper. */
@@ -155,13 +157,14 @@ function convertAmountDraft(
 
 /**
  * Bitcoin / fiat amount field with the gift switch and the other unit under it.
+ * A fixed-unit caller keeps the live counterpart but omits the switch.
  *
  * A signed-in unit is `account.amountUnit`; missing means bitcoin. Toggling
  * posts `/me/amount-unit` and writes the account back. With no session the
  * unit stays here, starts at bitcoin, and is not stored.
  *
  * @param props - Label, draft, rate, and optional locked sat amount.
- * @returns The labeled field, switch, and counter.
+ * @returns The labeled field, optional switch, and counter.
  */
 export function AmountEntry({
   id,
@@ -169,6 +172,7 @@ export function AmountEntry({
   value,
   onValueChange,
   disabled = false,
+  fixedUnit,
   placeholder,
   className,
   fiatCode,
@@ -197,10 +201,12 @@ export function AmountEntry({
   const storedUnit: AmountUnit = account?.amountUnit ?? 'btc';
   const fiatReady = fiatToSats(1, rateDay, entryFiat) !== null;
   const chosenUnit: AmountUnit = session === null ? localUnit : storedUnit;
-  const unit: AmountUnit = chosenUnit === 'fiat' && !fiatReady ? 'btc' : chosenUnit;
+  const unit: AmountUnit = fixedUnit ?? (chosenUnit === 'fiat' && !fiatReady ? 'btc' : chosenUnit);
   const locked = typeof lockedSats === 'number' && Number.isFinite(lockedSats);
-  const [shownUnit, setShownUnit] = useState<AmountUnit>(() =>
-    valueUnit === 'fiat' && !fiatReady && value.trim() === '' ? 'btc' : (valueUnit ?? unit),
+  const [shownUnit, setShownUnit] = useState<AmountUnit>(
+    () =>
+      fixedUnit ??
+      (valueUnit === 'fiat' && !fiatReady && value.trim() === '' ? 'btc' : (valueUnit ?? unit)),
   );
   const applied = useRef(shownUnit);
   const posting = useRef(false);
@@ -387,21 +393,22 @@ export function AmountEntry({
   const extra = className === undefined || className === '' ? '' : ` ${className}`;
   const switchClass =
     `${layout === 'inline' ? 'shrink-0' : ''}${disabled || locked ? ' pointer-events-none opacity-50' : ''}`.trim();
-  const unitSwitch = (
-    <div className={switchClass === '' ? undefined : switchClass}>
-      <SegmentedControl
-        tone="gift"
-        shell="app"
-        value={entryUnit}
-        options={[
-          { value: 'btc', label: '\u20BF' },
-          { value: 'fiat', label: entryFiat, disabled: !fiatReady },
-        ]}
-        onChange={changeUnit}
-        ariaLabel={t('amount.unit')}
-      />
-    </div>
-  );
+  const unitSwitch =
+    fixedUnit === undefined ? (
+      <div className={switchClass === '' ? undefined : switchClass}>
+        <SegmentedControl
+          tone="gift"
+          shell="app"
+          value={entryUnit}
+          options={[
+            { value: 'btc', label: '\u20BF' },
+            { value: 'fiat', label: entryFiat, disabled: !fiatReady },
+          ]}
+          onChange={changeUnit}
+          ariaLabel={t('amount.unit')}
+        />
+      </div>
+    ) : null;
   const amountClass =
     layout === 'inline'
       ? 'h-12 min-w-0 flex-1 rounded-2xl border border-app-border-strong bg-app-card px-4 text-base tabular-nums lining-nums text-app-fg placeholder:text-app-subtle transition focus-visible:border-app-fg disabled:opacity-50'

@@ -1984,7 +1984,7 @@ describe('LoanRepayScreen', () => {
     );
 
     expect(screen.getAllByText('Waiting for Carla to set up their wallet')).toHaveLength(1);
-    expect(screen.getByText('₱2.50')).toBeTruthy();
+    expect(screen.getByText('₱2.50 · ₿200')).toBeTruthy();
     expect(screen.queryByText('$2.50')).toBeNull();
   });
 

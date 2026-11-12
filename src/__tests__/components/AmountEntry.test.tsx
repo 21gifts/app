@@ -113,6 +113,25 @@ describe('AmountEntry', () => {
     expect(screen.getByText('₱56.00')).toBeTruthy();
   });
 
+  it('keeps a fixed-unit loan field in that unit without a switch', () => {
+    renderWithLocale(
+      <AmountEntry
+        label="Amount (PHP)"
+        value="56.00"
+        fixedUnit="fiat"
+        fiatCode="PHP"
+        onValueChange={() => undefined}
+        rateDay={DAY}
+      />,
+      'en',
+      'ch',
+      'USD',
+    );
+    expect(screen.queryByRole('group', { name: 'Bitcoin or fiat' })).toBeNull();
+    expect(screen.getByLabelText('Amount (PHP)')).toHaveProperty('value', '56.00');
+    expect(screen.getByText("₿1'000")).toBeTruthy();
+  });
+
   it('puts the switch beside the input in a composer and hides the label', () => {
     renderWithLocale(
       <AmountEntry

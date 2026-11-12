@@ -133,18 +133,14 @@ afterEach(() => {
 });
 
 describe('LoanPayMore', () => {
-  const switchToFiat = (code: string): void => {
-    fireEvent.click(screen.getByRole('button', { name: code }));
-  };
-
-  it("starts in the signed-in member's account amount unit", () => {
+  it("uses the loan unit instead of the signed-in member's account amount unit", () => {
     useAuthStore.setState({
       session: 'session',
       account: { amountUnit: 'fiat' } as never,
     });
     show();
-    expect(screen.getByLabelText('Amount (USD)')).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'USD' }).getAttribute('aria-pressed')).toBe('true');
+    expect(screen.getByLabelText('Amount (₿)')).toBeTruthy();
+    expect(screen.queryByRole('group', { name: 'Bitcoin or fiat' })).toBeNull();
   });
 
   it('fills Max exactly and pays a valid BTC amount', () => {
@@ -160,17 +156,13 @@ describe('LoanPayMore', () => {
     expect(onPay).toHaveBeenCalledWith(expect.objectContaining({ messageId: 'loan-1' }), '7500');
   });
 
-  it('uses AmountEntry with a unit switch, live counter, and exact BTC api amount', () => {
+  it('uses AmountEntry with the fixed loan unit, live counter, and exact BTC api amount', () => {
     const { onPay } = show();
     fireEvent.change(screen.getByLabelText('Amount (₿)'), { target: { value: '1000' } });
     expect(screen.getByText('$1.00')).toBeTruthy();
-    fireEvent.click(screen.getByRole('button', { name: 'USD' }));
-    expect((screen.getByLabelText('Amount (USD)') as HTMLInputElement).value).toBe('1.00');
-    expect(screen.getByText("₿1'000")).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Max' }));
-    expect((screen.getByLabelText('Amount (USD)') as HTMLInputElement).value).toBe('7.50');
-    fireEvent.click(screen.getByRole('button', { name: '₿' }));
     expect((screen.getByLabelText('Amount (₿)') as HTMLInputElement).value).toBe('7500');
+    expect(screen.queryByRole('group', { name: 'Bitcoin or fiat' })).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Pay this amount' }));
     expect(onPay).toHaveBeenCalledWith(expect.anything(), '7500');
   });
@@ -257,7 +249,6 @@ describe('LoanPayMore', () => {
       maxAmount: '480.28',
     });
     const fiatView = show(php);
-    switchToFiat('PHP');
     fireEvent.change(screen.getByLabelText('Amount (PHP)'), { target: { value: '100.00' } });
     fireEvent.click(screen.getByRole('button', { name: 'Pay this amount' }));
     fiatView.rerender(
@@ -349,14 +340,13 @@ describe('LoanPayMore', () => {
         maxAmount: '480.28',
       }),
     );
-    switchToFiat('PHP');
     fireEvent.change(screen.getByLabelText('Amount (PHP)'), { target: { value: 'bad' } });
     expect(
       screen.getByText('Enter an amount greater than zero with at most two decimals.'),
     ).toBeTruthy();
   });
 
-  it('never reinterprets decimal or comma sats as the fiat loan currency', () => {
+  it('keeps a fiat-loan draft in the loan currency and submits the typed string', () => {
     const php = loan({
       goalCurrency: 'PHP',
       goalAmount: '480.28',
@@ -364,15 +354,11 @@ describe('LoanPayMore', () => {
       maxAmount: '480.28',
     });
     const { onPay } = show(php);
-    const input = screen.getByLabelText('Amount (₿)');
-    for (const value of ['1.5', '1,5']) {
-      fireEvent.change(input, { target: { value } });
-      expect(screen.getByText('Enter a whole ₿ amount greater than zero.')).toBeTruthy();
-      const pay = screen.getByRole('button', { name: 'Pay this amount' }) as HTMLButtonElement;
-      expect(pay.disabled).toBe(true);
-      fireEvent.click(pay);
-    }
-    expect(onPay).not.toHaveBeenCalled();
+    fireEvent.change(screen.getByLabelText('Amount (PHP)'), { target: { value: '56.00' } });
+    expect(screen.getByText("₿1'000")).toBeTruthy();
+    expect(screen.queryByRole('group', { name: 'Bitcoin or fiat' })).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Pay this amount' }));
+    expect(onPay).toHaveBeenCalledWith(expect.anything(), '56.00');
   });
 
   it('never submits sats for a fiat loan when conversion is unavailable', () => {
@@ -384,7 +370,7 @@ describe('LoanPayMore', () => {
     });
     const onPay = vi.fn();
     renderWithLocale(payMoreState(php, onPay, vi.fn(), { rateDay: null }));
-    fireEvent.change(screen.getByLabelText('Amount (₿)'), { target: { value: '1' } });
+    fireEvent.change(screen.getByLabelText('Amount (PHP)'), { target: { value: '1.00' } });
     expect(screen.getByText(/No PHP exchange rate is available now/)).toBeTruthy();
     const pay = screen.getByRole('button', { name: 'Pay this amount' }) as HTMLButtonElement;
     expect(pay.disabled).toBe(true);
@@ -400,10 +386,9 @@ describe('LoanPayMore', () => {
       maxAmount: '480.28',
     });
     const { onPay } = show(php);
-    switchToFiat('PHP');
     const input = screen.getByLabelText('Amount (PHP)') as HTMLInputElement;
     fireEvent.change(input, { target: { value: '480.29' } });
-    expect(screen.getByText('Enter at most ₱480.28.')).toBeTruthy();
+    expect(screen.getByText("Enter at most ₱480.28 · ₿9'283.")).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Max' }));
     expect(input.value).toBe('480.28');
     fireEvent.click(screen.getByRole('button', { name: 'Pay this amount' }));
@@ -419,37 +404,42 @@ describe('LoanPayMore', () => {
     window.history.replaceState({}, '', '/loans/repay');
   });
 
-  it('disables a fiat-unit maximum when the loan has no maximum amount', () => {
-    show(
-      loan({
-        goalCurrency: 'PHP',
-        goalAmount: '480.28',
-        maxSats: 9_283,
-        maxAmount: null,
-      }),
-    );
-    switchToFiat('PHP');
-    expect(screen.getByText(/No PHP exchange rate is available now/)).toBeTruthy();
-    expect((screen.getByRole('button', { name: 'Max' }) as HTMLButtonElement).disabled).toBe(true);
-  });
+  it.each([null, 'not-an-amount'])(
+    'reports a fiat maximum as unavailable when max sats exist but maxAmount is %s',
+    (maxAmount) => {
+      show(
+        loan({
+          goalCurrency: 'PHP',
+          goalAmount: '480.28',
+          maxSats: 9_283,
+          maxAmount,
+        }),
+      );
+      expect(screen.getByText(/No PHP repayment maximum is available now/)).toBeTruthy();
+      expect(screen.queryByText(/No PHP exchange rate is available now/)).toBeNull();
+      expect((screen.getByRole('button', { name: 'Max' }) as HTMLButtonElement).disabled).toBe(
+        true,
+      );
+    },
+  );
 
-  it('checks a BTC draft for a fiat loan against its sat maximum', () => {
+  it('checks a fiat-loan draft against the corresponding sat maximum', () => {
     show(
       loan({
         goalCurrency: 'PHP',
         goalAmount: '480.28',
-        maxSats: 500,
+        maxSats: 10,
         maxAmount: '480.28',
       }),
     );
-    fireEvent.change(screen.getByLabelText('Amount (₿)'), { target: { value: '1000' } });
-    expect(screen.getByText('Enter at most ₱480.28.')).toBeTruthy();
+    fireEvent.change(screen.getByLabelText('Amount (PHP)'), { target: { value: '1.00' } });
+    expect(screen.getByText('Enter at most ₱480.28 · ₿10.')).toBeTruthy();
     expect(
       (screen.getByRole('button', { name: 'Pay this amount' }) as HTMLButtonElement).disabled,
     ).toBe(true);
   });
 
-  it('explains missing conversion rates for fiat and BTC drafts', () => {
+  it('explains a missing conversion rate for a fiat-loan draft', () => {
     const php = loan({
       goalCurrency: 'PHP',
       goalAmount: '480.28',
@@ -457,18 +447,12 @@ describe('LoanPayMore', () => {
       maxAmount: '480.28',
     });
     const fiat = renderWithLocale(payMoreState(php, vi.fn(), vi.fn()));
-    switchToFiat('PHP');
     fireEvent.change(screen.getByLabelText('Amount (PHP)'), { target: { value: '1.00' } });
     fiat.rerender(payMoreState(php, vi.fn(), vi.fn(), { rateDay: null }));
     expect(screen.getByText(/No PHP exchange rate is available now/)).toBeTruthy();
-    cleanup();
-
-    renderWithLocale(payMoreState(php, vi.fn(), vi.fn(), { rateDay: null }));
-    fireEvent.change(screen.getByLabelText('Amount (₿)'), { target: { value: '1000' } });
-    expect(screen.getByText(/No PHP exchange rate is available now/)).toBeTruthy();
   });
 
-  it('submits a fiat loan Max in the loan currency while AmountEntry shows BTC', () => {
+  it('submits a fiat loan Max as the unchanged loan-currency string', () => {
     const php = loan({
       goalCurrency: 'PHP',
       goalAmount: '480.28',
@@ -477,7 +461,7 @@ describe('LoanPayMore', () => {
     });
     const { onPay } = show(php);
     fireEvent.click(screen.getByRole('button', { name: 'Max' }));
-    expect((screen.getByLabelText('Amount (₿)') as HTMLInputElement).value).toBe('9283');
+    expect((screen.getByLabelText('Amount (PHP)') as HTMLInputElement).value).toBe('480.28');
     fireEvent.click(screen.getByRole('button', { name: 'Pay this amount' }));
     expect(onPay).toHaveBeenCalledWith(expect.anything(), '480.28');
   });
@@ -486,6 +470,22 @@ describe('LoanPayMore', () => {
     show(loan({ maxSats: null }));
     expect(screen.getByText(/No BTC repayment maximum is available now/)).toBeTruthy();
     expect(screen.queryByText(/No BTC exchange rate/)).toBeNull();
+  });
+
+  it('shows the exact fiat figure and its bitcoin in the collecting confirmation', () => {
+    const collecting = loan({
+      goalCurrency: 'PHP',
+      goalAmount: '480.28',
+      fundedAt: null,
+      closedAt: null,
+      maxSats: 9_283,
+      maxAmount: '480.28',
+    });
+    const { onPay } = show(collecting);
+    fireEvent.change(screen.getByLabelText('Amount (PHP)'), { target: { value: '56.00' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Pay this amount' }));
+    fireEvent.click(screen.getByRole('button', { name: "Pay ₱56.00 · ₿1'000 and end collecting" }));
+    expect(onPay).toHaveBeenCalledWith(expect.anything(), '56.00');
   });
 
   it('confirms that a first payment ends collecting when closedAt is omitted', () => {
@@ -679,7 +679,6 @@ describe('LoanPayMore', () => {
       maxAmount: '480.28',
     });
     const fiat = show(php);
-    switchToFiat('PHP');
     fireEvent.change(screen.getByLabelText('Amount (PHP)'), { target: { value: '100.00' } });
     fireEvent.click(screen.getByRole('button', { name: 'Pay this amount' }));
     fiat.rerender(
@@ -694,7 +693,7 @@ describe('LoanPayMore', () => {
       }),
     );
     expect((screen.getByLabelText('Amount (PHP)') as HTMLInputElement).value).toBe('90.50');
-    expect(screen.getByRole('alert').textContent).toContain('maximum changed to ₱90.50');
+    expect(screen.getByRole('alert').textContent).toContain("maximum changed to ₱90.50 · ₿2'000");
     cleanup();
 
     const btc = show();
@@ -725,7 +724,6 @@ describe('LoanPayMore', () => {
       maxAmount: '480.28',
     });
     const view = show(php);
-    switchToFiat('PHP');
     fireEvent.change(screen.getByLabelText('Amount (PHP)'), { target: { value: '100.00' } });
     fireEvent.click(screen.getByRole('button', { name: 'Pay this amount' }));
     view.rerender(
@@ -758,7 +756,6 @@ describe('LoanPayMore', () => {
       maxAmount: '480.28',
     });
     const view = show(php);
-    switchToFiat('PHP');
     fireEvent.change(screen.getByLabelText('Amount (PHP)'), { target: { value: '100.00' } });
     fireEvent.click(screen.getByRole('button', { name: 'Pay this amount' }));
     view.rerender(
@@ -986,7 +983,7 @@ describe('LoanPayMore', () => {
     expect(screen.getByText('Waiting for Carla to set up their wallet')).toBeTruthy();
     expect(screen.getByText('Waiting for Diego to set up their wallet')).toBeTruthy();
     expect(screen.getByText('₿200 · $0.20')).toBeTruthy();
-    expect(screen.getByText('₱2.50')).toBeTruthy();
+    expect(screen.getByText('₱2.50 · ₿50')).toBeTruthy();
   });
 
   it('shows close progress and a close-specific action error', () => {

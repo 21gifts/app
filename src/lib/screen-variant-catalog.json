@@ -1650,6 +1650,12 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/loans/repay:pay-more-fiat-no-maximum",
+    "label": "/loans/repay pay-more-fiat-no-maximum",
+    "visual": "state-loans-repay-pay-more-fiat-no-maximum",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/loans/repay:pay-more-server-max",
     "label": "/loans/repay pay-more-server-max",
     "visual": "state-loans-repay-pay-more-server-max",

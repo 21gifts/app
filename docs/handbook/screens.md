@@ -1554,19 +1554,19 @@ The same state with **Who gets paid** open. The list shows Bruno **₿500 · $0.
 
 ### Variant: collecting
 
-With Loan A still collecting, there is no due box. **Your loan** shows the sewing-machine text, **₿30'000 · $30.00 · 30 days · ₿1'000 · $1.00 per day**, **Not fully funded yet.**, and **Repayment list**; this screen does not show a funding bar. It also shows **Pay more**, the standard ₿ / USD amount switch and live counter, **Max**, the notice that the first payment ends collecting, **Pay this amount**, and **End collecting**.
+With Loan A still collecting, there is no due box. **Your loan** shows the sewing-machine text, **₿30'000 · $30.00 · 30 days · ₿1'000 · $1.00 per day**, **Not fully funded yet.**, and **Repayment list**; this screen does not show a funding bar. It also shows **Pay more**, a fixed ₿ field with its live USD counter, **Max**, the notice that the first payment ends collecting, **Pay this amount**, and **End collecting**.
 
 ![21.gifts loans repay collecting](images/loans-repay-collecting.png)
 
 ### Variant: pay-more-max
 
-Loan A after **Max**: the standard AmountEntry shows the ₿ / USD switch, the ₿ field contains the exact current maximum **19000**, the live counter shows **$19.00**, and **Pay this amount** is enabled. The ordinary due-payment controls remain unchanged above it.
+Loan A after **Max**: AmountEntry stays in the loan's fixed ₿ unit, contains the exact current maximum **19000**, shows the live **$19.00** counter, and enables **Pay this amount**. The ordinary due-payment controls remain unchanged above it.
 
 ![21.gifts loans repay pay more maximum](images/loans-repay-pay-more-max.png)
 
 ### Variant: pay-more-fiat
 
-Loan A after USD is selected in AmountEntry and **5.00** is typed. The field label is **Amount (USD)**, the switch keeps USD selected, and the live counter directly under the field shows **₿5'000**. Max and **Pay this amount** remain beside and below the shared control.
+The PHP loan with **5.00** typed in its fixed loan-currency AmountEntry. The field label is **Amount (PHP)**, there is no unit switch, and the live counter directly under the field shows the bitcoin it buys. Max and **Pay this amount** remain beside and below the shared control.
 
 ![21.gifts loans repay pay more fiat](images/loans-repay-pay-more-fiat.png)
 
@@ -1584,19 +1584,25 @@ Loan A with malformed sats input **12.5**. The standard AmountEntry marks the fi
 
 ### Variant: pay-more-no-rate
 
-A PHP loan without a current conversion rate. The standard AmountEntry keeps ₿ selected, disables PHP in its switch, and shows **No exchange rate yet**. **Pay more** also explains **No PHP exchange rate is available now, so paying more is disabled.** Both **Max** and **Pay this amount** are disabled.
+A PHP loan without a current conversion rate. AmountEntry stays in the fixed PHP loan unit without a switch and shows **No exchange rate yet**. **Pay more** also explains **No PHP exchange rate is available now, so paying more is disabled.** Both **Max** and **Pay this amount** are disabled.
 
 ![21.gifts loans repay pay more without rate](images/loans-repay-pay-more-no-rate.png)
 
 ### Variant: pay-more-no-maximum
 
-A BTC loan without a currently available repayment maximum. The standard AmountEntry keeps its ₿ / USD switch and **Pay more** explains **No BTC repayment maximum is available now, so paying more is disabled.** It does not report a missing exchange rate. Both **Max** and **Pay this amount** are disabled.
+A BTC loan without a currently available repayment maximum. AmountEntry stays in the fixed ₿ loan unit and **Pay more** explains **No BTC repayment maximum is available now, so paying more is disabled.** It does not report a missing exchange rate. Both **Max** and **Pay this amount** are disabled.
 
 ![21.gifts loans repay pay more without maximum](images/loans-repay-pay-more-no-maximum.png)
 
+### Variant: pay-more-fiat-no-maximum
+
+A PHP loan whose response still has `maxSats` but has no usable `maxAmount`. AmountEntry stays in the fixed PHP loan unit and **Pay more** explains **No PHP repayment maximum is available now, so paying more is disabled.** It does not report a missing exchange rate. Both **Max** and **Pay this amount** are disabled.
+
+![21.gifts fiat loan repay pay more without maximum](images/loans-repay-pay-more-fiat-no-maximum.png)
+
 ### Variant: pay-more-server-max
 
-The api lowered the available maximum to **₿6'000 · $6.00**. The standard AmountEntry is reset to **6000**, keeps its unit switch and live **$6.00** counter, and the red line explains that the amount was adjusted and must be reviewed before paying again.
+The api lowered the available maximum to **₿6'000 · $6.00**. AmountEntry is reset to **6000** in its fixed ₿ unit, keeps the live **$6.00** counter, and the red line explains that the amount was adjusted and must be reviewed before paying again.
 
 ![21.gifts loans repay adjusted server maximum](images/loans-repay-pay-more-server-max.png)
 
@@ -1608,19 +1614,19 @@ The free-payment api answered `invalid_amount`. The empty AmountEntry is marked 
 
 ### Variant: pay-more-error
 
-The free-payment request was refused because an earlier payment is still open. The red api error is visible while AmountEntry's unit switch, live counter, field, and controls remain available for a later retry.
+The free-payment request was refused because an earlier payment is still open. The red api error is visible while AmountEntry's fixed-unit field, live counter, and controls remain available for a later retry.
 
 ![21.gifts loans repay pay more api error](images/loans-repay-pay-more-error.png)
 
 ### Variant: pay-more-nothing-due
 
-The typed `nothing_due` refusal shows the short red line **There is nothing left to repay.** below AmountEntry while its unit switch, live counterpart, field, and controls remain visible. This is the compact representative for refusal messages that keep this same control layout; the existing `pay-more-error` is the wrapped representative for `payment_open`, rate limiting, service unavailability, missing requirements, and generic request failure.
+The typed `nothing_due` refusal shows the short red line **There is nothing left to repay.** below AmountEntry while its fixed-unit field, live counterpart, and controls remain visible. This is the compact representative for refusal messages that keep this same control layout; the existing `pay-more-error` is the wrapped representative for `payment_open`, rate limiting, service unavailability, missing requirements, and generic request failure.
 
 ![21.gifts loans repay pay more nothing due](images/loans-repay-pay-more-nothing-due.png)
 
 ### Variant: pay-more-sending
 
-The free payment is being sent through the wallet. **Paying more…** and its spinner replace the pay button; AmountEntry's field and unit switch plus Max are disabled during the send, while its live counter remains visible.
+The free payment is being sent through the wallet. **Paying more…** and its spinner replace the pay button; AmountEntry's fixed-unit field and Max are disabled during the send, while its live counter remains visible.
 
 ![21.gifts loans repay pay more sending](images/loans-repay-pay-more-sending.png)
 
@@ -1632,13 +1638,13 @@ The free payment is waiting after its payable bills were sent. A muted **Waiting
 
 ### Variant: pay-more-unconfirmed
 
-The matching free payment was sent but is not confirmed. **This payment is not confirmed yet. Check your balance again later.** appears in Pay more while the amount field, unit switch, and Max remain visible.
+The matching free payment was sent but is not confirmed. **This payment is not confirmed yet. Check your balance again later.** appears in Pay more while the fixed-unit amount field and Max remain visible.
 
 ![21.gifts loans repay pay more unconfirmed](images/loans-repay-pay-more-unconfirmed.png)
 
 ### Variant: pay-more-success
 
-After a successful free payment, the loan progress is updated to **Repaid ₿12'000 · $12.00 of ₿30'000 · $30.00** and its green bar advances. The submitted AmountEntry field is cleared; its unit switch, Max, and **Pay this amount** are ready for another payment.
+After a successful free payment, the loan progress is updated to **Repaid ₿12'000 · $12.00 of ₿30'000 · $30.00** and its green bar advances. The submitted fixed-unit AmountEntry field is cleared; Max and **Pay this amount** are ready for another payment.
 
 ![21.gifts loans repay pay more success](images/loans-repay-pay-more-success.png)
 
@@ -1662,7 +1668,7 @@ The opened free-payment shortfall after Ada's address is copied. Its address con
 
 ### Variant: collecting-pay-confirm
 
-A still-collecting loan after Max and **Pay this amount**: behind the modal, AmountEntry keeps its unit switch and live counter. The modal **Pay and end collecting?** explains that this first payment ends collecting permanently and that more collecting needs a new loan. The actions are **Pay ₿18'000 · $18.00 and end collecting**, **Cancel**, and icon-only **Close**.
+A still-collecting loan after Max and **Pay this amount**: behind the modal, AmountEntry keeps its fixed ₿ unit and live counter. The modal **Pay and end collecting?** explains that this first payment ends collecting permanently and that more collecting needs a new loan. The actions are **Pay ₿18'000 · $18.00 and end collecting**, **Cancel**, and icon-only **Close**.
 
 ![21.gifts loans repay first payment confirmation](images/loans-repay-collecting-pay-confirm.png)
 
@@ -1674,7 +1680,7 @@ A still-collecting loan after **End collecting**: the modal **End collecting?** 
 
 ### Variant: close-sending
 
-A still-collecting loan while its permanent close request is being sent. The AmountEntry field, unit switch, **Max**, **Pay this amount**, and **End collecting** are disabled; a spinner and **Ending collecting…** sit below the close action, with no confirmation dialog.
+A still-collecting loan while its permanent close request is being sent. The fixed-unit AmountEntry field, **Max**, **Pay this amount**, and **End collecting** are disabled; a spinner and **Ending collecting…** sit below the close action, with no confirmation dialog.
 
 ![21.gifts loans repay ending collecting](images/loans-repay-close-sending.png)
 
@@ -1686,7 +1692,7 @@ A still-collecting loan after its permanent close request failed. The red close-
 
 ### Variant: closed-loan
 
-A manually closed loan after collecting ended without a payment. Its ordinary **Pay more** AmountEntry, unit switch, **Max**, and **Pay this amount** remain, while the collecting notice and **End collecting** action are absent.
+A manually closed loan after collecting ended without a payment. Its ordinary fixed-unit **Pay more** AmountEntry, **Max**, and **Pay this amount** remain, while the collecting notice and **End collecting** action are absent.
 
 ![21.gifts loans repay closed loan](images/loans-repay-closed-loan.png)
 

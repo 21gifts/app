@@ -7623,18 +7623,13 @@ test.describe('loans repay screens', () => {
 
   test('state /loans/repay pay-more-fiat', async ({ page }) => {
     await loanShot(page, {
-      loans: [loanA],
-      ledgers: { 'loan-a': ledgerA },
+      loans: [repaidLoanB],
       visual: 'repay-ready',
       text: 'Pay more',
     });
-    const unitSaved = page.waitForResponse(
-      (response) => response.url().includes('/me/amount-unit') && response.ok(),
-    );
-    await page.getByRole('button', { name: 'USD' }).click();
-    await unitSaved;
-    await page.getByLabel('Amount (USD)').fill('5.00');
-    await expect(page.getByText("₿5'000")).toBeVisible();
+    await page.getByLabel('Amount (PHP)').fill('5.00');
+    await expect(page.getByText('₿89')).toBeVisible();
+    await expect(page.getByRole('group', { name: 'Bitcoin or fiat' })).toHaveCount(0);
     await shotScreen(page, 'state-loans-repay-pay-more-fiat');
   });
 
@@ -7669,7 +7664,8 @@ test.describe('loans repay screens', () => {
       text: 'No PHP exchange rate is available now',
       spotRates: { USD: '100000.00' },
     });
-    await expect(page.getByRole('button', { name: 'PHP' })).toBeDisabled();
+    await expect(page.getByLabel('Amount (PHP)')).toBeVisible();
+    await expect(page.getByRole('group', { name: 'Bitcoin or fiat' })).toHaveCount(0);
     await expect(page.getByText('No exchange rate yet')).toBeVisible();
     await shotScreen(page, 'state-loans-repay-pay-more-no-rate');
   });
@@ -7683,6 +7679,17 @@ test.describe('loans repay screens', () => {
     });
     await expect(page.getByText(/No BTC exchange rate/)).toHaveCount(0);
     await shotScreen(page, 'state-loans-repay-pay-more-no-maximum');
+  });
+
+  test('state /loans/repay pay-more-fiat-no-maximum', async ({ page }) => {
+    await loanShot(page, {
+      loans: [{ ...repaidLoanB, maxAmount: null }],
+      visual: 'repay-ready',
+      text: 'No PHP repayment maximum is available now',
+    });
+    await expect(page.getByText(/No PHP exchange rate/)).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Max' })).toBeDisabled();
+    await shotScreen(page, 'state-loans-repay-pay-more-fiat-no-maximum');
   });
 
   test('state /loans/repay pay-more-server-max', async ({ page }) => {
