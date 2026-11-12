@@ -2778,8 +2778,8 @@ Builds the country list of the Shops filter from the pins of `GET /forum/message
 
 ## Function: fetchGiftStats
 
-- **Purpose:** GET `/gifts/stats` (optionally `?recipient=`) and parse the public gift totals payload.
-- **Inputs:** Optional `recipient` handle; appended as a query param when non-empty after trim (URL-encoded).
+- **Purpose:** GET `/gifts/stats` and parse the public gift totals payload.
+- **Inputs:** None.
 - **Returns / side effects:** `GiftStats`. Throws visitor copy when the api is down or the body is invalid.
 - **Used by:** `StatsLoader` and `StatisticsScreen`. Live amounts use `fetchFxSpot`, not this.
 

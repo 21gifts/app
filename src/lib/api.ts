@@ -1360,20 +1360,15 @@ export async function fetchGiftDay(day: string): Promise<GiftDay> {
 }
 
 /**
- * Fetches aggregated outbound gift statistics, optionally filtered by recipient.
+ * Fetches aggregated outbound gift statistics.
  *
- * @param recipient - Optional recipient handle; appended as `?recipient=` when
- * non-empty after trim (caller may pass a handle already stripped of `@domain`).
  * @returns The {@link GiftStats} payload.
  * @throws Error with visitor-facing copy when the api is unavailable or the
  * body fails {@link giftStatsSchema}.
  */
-export async function fetchGiftStats(recipient?: string): Promise<GiftStats> {
+export async function fetchGiftStats(): Promise<GiftStats> {
   try {
-    const trimmed = recipient?.trim() ?? '';
-    const path =
-      trimmed === '' ? '/gifts/stats' : `/gifts/stats?recipient=${encodeURIComponent(trimmed)}`;
-    const response = await fetch(path);
+    const response = await fetch('/gifts/stats');
     if (!response.ok) {
       throw new Error('Could not load donation stats. Please try again.');
     }
