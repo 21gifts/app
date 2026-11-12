@@ -2181,10 +2181,10 @@ describe('useLoanRepay free repayment and collecting actions', () => {
   });
 
   it('keeps waiting recipients returned by prepay in the hook result', async () => {
-    const row = bill('Ahead', 500, 8);
+    const row = bill('Ahead', 500, 8, undefined, '5.00');
     vi.mocked(prepayLoan).mockResolvedValue({
       amountSats: 700,
-      amount: null,
+      amount: '7.00',
       bills: [row],
       waiting: [
         {
@@ -2193,16 +2193,21 @@ describe('useLoanRepay free repayment and collecting actions', () => {
           name: 'Carla',
           username: 'carla',
           amountSats: 200,
-          amount: null,
+          amount: '2.00',
         },
       ],
     });
     vi.mocked(payFromWallet).mockResolvedValue(confirmed(500));
-    const current = loan('prepay-waiting', 0, 100);
+    const current: MyLoan = {
+      ...loan('prepay-waiting', 0, 100),
+      goalCurrency: 'PHP',
+      goalAmount: '7.00',
+      maxAmount: '7.00',
+    };
     const reload = vi.fn<() => Promise<MyLoans>>().mockResolvedValue(body([current]));
     const { result } = renderHook(() => useLoanRepay({ reload }));
 
-    act(() => result.current.prepay(current, '700'));
+    act(() => result.current.prepay(current, '7.00'));
     await waitFor(() => expect(result.current.sentSats).toBe(500));
 
     expect(result.current.prepayWaiting).toEqual([
@@ -2210,6 +2215,63 @@ describe('useLoanRepay free repayment and collecting actions', () => {
     ]);
     expect(result.current.prepayMessageId).toBe('prepay-waiting');
   });
+
+  it('rejects a successful prepay body whose bills and waiting sats exceed its total', async () => {
+    vi.mocked(prepayLoan).mockResolvedValue({
+      amountSats: 100,
+      amount: null,
+      bills: [bill('First', 100), bill('Second', 100)],
+      waiting: [],
+    });
+    const current = loan('prepay-sats-mismatch', 0, 100);
+    const { result } = renderHook(() =>
+      useLoanRepay({ reload: vi.fn(async () => body([current])) }),
+    );
+
+    act(() => result.current.prepay(current, '100'));
+    await waitFor(() => expect(result.current.phase).toBe('failed'));
+
+    expect(result.current.errorKey).toBe('forum.payErrorRequest');
+    expect(payFromWallet).not.toHaveBeenCalled();
+  });
+
+  it.each(['request', 'missing', 'malformed', 'mismatch'] as const)(
+    'rejects a successful fiat prepay body with invalid %s cents',
+    async (invalid) => {
+      const amountText = invalid === 'request' ? 'not an amount' : '7.00';
+      const billAmount = invalid === 'missing' ? null : invalid === 'malformed' ? 'bad' : '5.00';
+      vi.mocked(prepayLoan).mockResolvedValue({
+        amountSats: 700,
+        amount: '7.00',
+        bills: [bill('Ahead', 500, 8, undefined, billAmount)],
+        waiting: [
+          {
+            dayIndex: 9,
+            recipientAccountId: 'acc_waiting',
+            name: 'Carla',
+            username: 'carla',
+            amountSats: 200,
+            amount: invalid === 'mismatch' ? '1.00' : '2.00',
+          },
+        ],
+      });
+      const current: MyLoan = {
+        ...loan(`prepay-fiat-${invalid}`, 0, 100),
+        goalCurrency: 'PHP',
+        goalAmount: '7.00',
+        maxAmount: '7.00',
+      };
+      const { result } = renderHook(() =>
+        useLoanRepay({ reload: vi.fn(async () => body([current])) }),
+      );
+
+      act(() => result.current.prepay(current, amountText));
+      await waitFor(() => expect(result.current.phase).toBe('failed'));
+
+      expect(result.current.errorKey).toBe('forum.payErrorRequest');
+      expect(payFromWallet).not.toHaveBeenCalled();
+    },
+  );
 
   it('exposes the api maximum when prepay is above max', async () => {
     const error = new LoanRepaymentError('amount_too_high', 400, 750, null);

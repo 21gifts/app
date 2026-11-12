@@ -10,12 +10,14 @@ import {
   postRepaymentDue,
   prepayLoan,
   WalletRequiredError,
+  type LoanPrepay,
   type LoanRepaymentErrorCode,
   type MyLoan,
   type MyLoans,
   type RepaymentBill,
   type RepaymentWaiting,
 } from '@/lib/api';
+import { creditSmallestUnits } from '@/lib/credit-plan';
 import { MissingRequirementsError } from '@/lib/missing-requirements';
 import { visualPin } from '@/lib/visual-pin';
 import { reportPaymentFailure } from '@/lib/wallet/payment-failure';
@@ -130,7 +132,7 @@ export interface LoanRepayResult {
     onlyShares?: ReadonlySet<string>,
     shareAmounts?: ReadonlyMap<string, string | null>,
   ) => void;
-  /** Requests bills for one free amount and sends them through the same wallet path as `pay`. */
+  /** Requests a reconciled free-amount split and sends it through the same wallet path as `pay`. */
   prepay: (loan: MyLoan, amountText: string) => void;
   /** Permanently ends collecting for one still-collecting loan, then reloads the loan list. */
   closeCollecting: (loan: MyLoan) => void;
@@ -172,6 +174,34 @@ function actionErrorOf(error: unknown, messageId: string): LoanRepayActionError 
     return { messageId, code: 'missing_requirements', maxSats: null, maxAmount: null };
   }
   return null;
+}
+
+/** Rejects internally inconsistent successful prepay bodies before any wallet work begins. */
+function prepayResponseMatches(prepay: LoanPrepay, loan: MyLoan, amountText: string): boolean {
+  const rows = [...prepay.bills, ...prepay.waiting];
+  const distributedSats = rows.reduce((sum, row) => sum + row.amountSats, 0);
+  if (distributedSats !== prepay.amountSats) {
+    return false;
+  }
+  if (loan.goalCurrency === 'BTC') {
+    return true;
+  }
+  const requestedCents = creditSmallestUnits(amountText, false);
+  if (requestedCents === null) {
+    return false;
+  }
+  let distributedCents = 0n;
+  for (const row of rows) {
+    if (row.amount === null) {
+      return false;
+    }
+    const cents = creditSmallestUnits(row.amount, false);
+    if (cents === null) {
+      return false;
+    }
+    distributedCents += cents;
+  }
+  return distributedCents === requestedCents;
 }
 
 /** Orders bills by repayment day, loan order, then api order. */
@@ -677,6 +707,9 @@ export function useLoanRepay(options: {
             );
             if (!active()) {
               return;
+            }
+            if (!prepayResponseMatches(prepay, loans[0]!, prepayRequest.amountText)) {
+              throw new Error('Inconsistent prepay response');
             }
             setPrepayWaiting(prepay.waiting);
             setPrepayMessageId(prepayRequest.messageId);

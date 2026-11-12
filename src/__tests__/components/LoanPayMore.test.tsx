@@ -378,6 +378,25 @@ describe('LoanPayMore', () => {
     expect(onPay).not.toHaveBeenCalled();
   });
 
+  it('keeps the api-paired fiat Max available without a current spot rate', () => {
+    const php = loan({
+      goalCurrency: 'PHP',
+      goalAmount: '480.28',
+      maxSats: 9_283,
+      maxAmount: '480.28',
+    });
+    const onPay = vi.fn();
+    renderWithLocale(payMoreState(php, onPay, vi.fn(), { rateDay: null }));
+
+    fireEvent.click(screen.getByRole('button', { name: 'Max' }));
+
+    expect(screen.getByText("₿9'283")).toBeTruthy();
+    const pay = screen.getByRole('button', { name: 'Pay this amount' }) as HTMLButtonElement;
+    expect(pay.disabled).toBe(false);
+    fireEvent.click(pay);
+    expect(onPay).toHaveBeenCalledWith(expect.anything(), '480.28');
+  });
+
   it('keeps fiat cents exact and disables the form without a maximum rate', () => {
     const php = loan({
       goalCurrency: 'PHP',
@@ -423,19 +442,27 @@ describe('LoanPayMore', () => {
     },
   );
 
-  it('keeps the exact fiat Max payable when the current spot disagrees with max sats', () => {
+  it('keeps the exact fiat Max and its bitcoin paired when the current spot disagrees', () => {
     const php = loan({
       goalCurrency: 'PHP',
       goalAmount: '480.28',
+      fundedAt: null,
+      closedAt: null,
       maxSats: 10,
       maxAmount: '480.28',
     });
     const { onPay } = show(php);
     fireEvent.click(screen.getByRole('button', { name: 'Max' }));
     expect((screen.getByLabelText('Amount (PHP)') as HTMLInputElement).value).toBe('480.28');
+    expect(screen.getByText('₿10')).toBeTruthy();
+    fireEvent.change(screen.getByLabelText('Amount (PHP)'), { target: { value: '480.27' } });
+    expect(screen.queryByText('₿10')).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Max' }));
+    expect(screen.getByText('₿10')).toBeTruthy();
     const pay = screen.getByRole('button', { name: 'Pay this amount' }) as HTMLButtonElement;
     expect(pay.disabled).toBe(false);
     fireEvent.click(pay);
+    fireEvent.click(screen.getByRole('button', { name: 'Pay ₱480.28 · ₿10 and end collecting' }));
     expect(onPay).toHaveBeenCalledWith(expect.anything(), '480.28');
   });
 

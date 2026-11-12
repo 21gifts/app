@@ -155,6 +155,7 @@ export function LoanPayMore({
   const amountId = `${useId()}-loan-pay-more`;
   const [amount, setAmount] = useState('');
   const [exactLoanAmount, setExactLoanAmount] = useState<string | null>(null);
+  const [exactLoanSats, setExactLoanSats] = useState<number | null>(null);
   const [pendingAction, setPendingAction] = useState<PendingAction>(null);
   const [confirming, setConfirming] = useState<'pay' | 'close' | null>(null);
   const [serverError, setServerError] = useState<string | null>(null);
@@ -182,11 +183,17 @@ export function LoanPayMore({
   const check: LoanAmountCheck =
     amount.trim() === ''
       ? checkLoanAmount('', effectiveLoan)
-      : parsed.kind !== 'sats' || loanAmountText === null
+      : (parsed.kind !== 'sats' && exactLoanSats === null) || loanAmountText === null
         ? { ok: false, reason: 'invalid', max: loanMaxInput(effectiveLoan) }
         : checkLoanAmount(loanAmountText, effectiveLoan);
   const paymentEnabled = check.ok && !serverAmountInvalid && canPay && !sharedBusy && !sundayRest;
-  const apiMaxInput = loanMaxUnits(effectiveLoan) === null ? null : loanMaxInput(effectiveLoan);
+  const apiMaxText = loanMaxUnits(effectiveLoan) === null ? null : loanMaxInput(effectiveLoan);
+  const apiMax =
+    loanMaxUnits(effectiveLoan) === null ||
+    apiMaxText === null ||
+    typeof effectiveLoan.maxSats !== 'number'
+      ? null
+      : { input: apiMaxText, sats: effectiveLoan.maxSats };
   const maxInput = maxDraft(effectiveLoan);
 
   let inputError: string | null = null;
@@ -207,9 +214,9 @@ export function LoanPayMore({
       );
     }
   }
-  if (parsed.kind === 'no-rate') {
+  if (parsed.kind === 'no-rate' && exactLoanSats === null) {
     inputError = t('loans.payMoreNoRate', { code: entryFiat });
-  } else if (apiMaxInput === null || (!check.ok && check.reason === 'no_max')) {
+  } else if (apiMax === null || (!check.ok && check.reason === 'no_max')) {
     inputError =
       loan.goalCurrency !== 'BTC' &&
       (effectiveLoan.maxSats === null || effectiveLoan.maxSats === undefined)
@@ -262,6 +269,7 @@ export function LoanPayMore({
       if (currentMax !== null) {
         setAmount(currentMax);
         setExactLoanAmount(currentApiMax);
+        setExactLoanSats(actionError.maxSats);
         setServerError(
           t('loans.payMoreMaxChanged', {
             amount: displayLoanAmount(
@@ -285,6 +293,7 @@ export function LoanPayMore({
     if (shownPendingAction === 'pay' && matchingAction === 'prepay' && phase === 'repaid') {
       setAmount('');
       setExactLoanAmount(null);
+      setExactLoanSats(null);
       setPendingAction(null);
       setServerError(null);
       setServerAmountInvalid(false);
@@ -339,11 +348,13 @@ export function LoanPayMore({
           fixedUnit={amountUnit}
           fiatCode={entryFiat}
           rateDay={rateDay}
+          counterSats={amountUnit === 'fiat' ? exactLoanSats : null}
           disabled={sharedBusy}
           {...(fieldError === null ? {} : { error: fieldError })}
           onValueChange={(value) => {
             setAmount(value);
             setExactLoanAmount(null);
+            setExactLoanSats(null);
             setServerError(null);
             setServerAmountInvalid(false);
             setPendingAction(null);
@@ -352,11 +363,12 @@ export function LoanPayMore({
         <Button
           type="button"
           variant="secondary"
-          disabled={sharedBusy || maxInput === null || apiMaxInput === null}
+          disabled={sharedBusy || maxInput === null || apiMax === null}
           onClick={() => {
-            if (maxInput !== null && apiMaxInput !== null) {
+            if (maxInput !== null && apiMax !== null) {
               setAmount(maxInput);
-              setExactLoanAmount(apiMaxInput);
+              setExactLoanAmount(apiMax.input);
+              setExactLoanSats(apiMax.sats);
               setServerError(null);
               setServerAmountInvalid(false);
               setPendingAction(null);
@@ -521,7 +533,7 @@ export function LoanPayMore({
                     amount: displayLoanAmount(
                       check.text,
                       // A successful check is created only from parsed sats above.
-                      (parsed as { kind: 'sats'; sats: number }).sats,
+                      exactLoanSats ?? (parsed as { kind: 'sats'; sats: number }).sats,
                       loan,
                       numberFormat,
                       formatSats,

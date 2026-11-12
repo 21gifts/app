@@ -58,6 +58,8 @@ export interface AmountEntryProps {
    * stays in bitcoin.
    */
   rateDay: FiatRateDay | null;
+  /** Exact bitcoin counterpart for a fixed fiat draft supplied as a paired amount. */
+  counterSats?: number | null;
   /**
    * Unit the current `value` is written in, when that differs from the
    * account. The field keeps showing this unit until conversion succeeds.
@@ -178,6 +180,7 @@ export function AmountEntry({
   fiatCode,
   lockedSats = null,
   rateDay,
+  counterSats = null,
   valueUnit,
   onUnitChange,
   layout = 'field',
@@ -375,6 +378,8 @@ export function AmountEntry({
       fiatAmount === null
         ? t('amount.noRate')
         : formatFiatDisplay(fiatAmount, entryFiat, numberFormat);
+  } else if (counterSats !== null) {
+    counter = formatBitcoin(counterSats, numberFormat);
   } else if (!fiatReady) {
     counter = t('amount.noRate');
   } else if (value.trim() !== '') {

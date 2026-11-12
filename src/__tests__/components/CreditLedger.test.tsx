@@ -276,6 +276,27 @@ describe('CreditLedger', () => {
     expect(chart.getAttribute('aria-label')).toContain('₿700 · $0.70');
   });
 
+  it('falls back to remaining bitcoin when a partial fiat amount exceeds its total', async () => {
+    const partial = ledgerClosedPartialFiat.repayments[0]!;
+    ledger({
+      ...ledgerClosedPartialFiat,
+      repayments: [
+        {
+          ...partial,
+          amount: '1.00',
+          paidSats: 100,
+          paidAmount: '1.50',
+          dueSats: 400,
+        },
+      ],
+    });
+    renderWithLocale(<CreditLedger messageId="partial-fiat-overpaid" list="page" />);
+
+    expect((await screen.findAllByText('Bruno @bruno')).length).toBeGreaterThan(0);
+    expect(document.body.textContent).toContain('₿400');
+    expect(screen.queryByText('₱0.00')).toBeNull();
+  });
+
   it('marks a due line that waits for the giver wallet in muted type', async () => {
     ledger({
       ...btc,

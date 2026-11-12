@@ -33,11 +33,12 @@ import {
  * given plan with more than 7 dated days shows the month overview instead.
  * Still owed there counts only unpaid shares. Partial rows use `dueSats` (or
  * `sats - paidSats` when older api bodies omit it) and `amount - paidAmount`
- * in rows, charts, splits, and totals. When positive
- * `paidSats` have no usable `paidAmount`, the repayment plan falls back to
- * those remaining sats and the current spot instead of the original fiat.
- * A month names one status only when every share in that month has it. A fiat
- * plan, share, still-owed total, and chart total otherwise stay in the ask
+ * in rows, charts, splits, and totals. When positive `paidSats` have no usable
+ * `paidAmount`, including because it exceeds the original amount, the
+ * repayment plan falls back to those remaining sats and the current spot
+ * instead of the original fiat. A month names one status only when every share
+ * in that month has it. A fiat plan, share, still-owed total, and chart total
+ * otherwise stay in the ask
  * currency, with no bitcoin. Money already given keeps that currency and
  * bitcoin. A bitcoin amount shows the current spot beside it. The spot is not
  * written onto the row. A day matches
@@ -699,8 +700,8 @@ function remainingLine(row: RepaymentLine): RepaymentLine {
           ? null
           : creditSmallestUnits(row.paidAmount, false)
         : 0n;
-    if (total !== null && paid !== null) {
-      amount = centsString(total > paid ? total - paid : 0n);
+    if (total !== null && paid !== null && total >= paid) {
+      amount = centsString(total - paid);
     } else if ((row.paidSats ?? 0) > 0) {
       amount = null;
     }
