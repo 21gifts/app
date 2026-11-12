@@ -424,6 +424,7 @@ app/
 │   │   │   ├── wallet-report.ts # reportWallet: balance + unacknowledged payments → POST /me/wallet/report
 │   │   │   ├── fond-payouts.ts  # runFondPayoutTick: list → invoice → pay sparkInvoice ?? bolt11 once
 │   │   │   ├── payment-failure.ts # reportPaymentFailure: payment_failed event + `Payment failed` error report
+│   │   │   ├── error-cause.ts   # errorCause, CAUSE_KINDS: name, code, and cause kind of a wallet that did not open
 │   │   │   └── lnurl-relay.ts   # lnurlRelayTarget: outside address or LNURL goes through the api
 │   │   ├── gifts-address.ts     # Public username@21.gifts display handle
 │   │   ├── shop-sticker.ts      # Shop-sticker SVG/PDF/PNG/JPG from the member pay QR; ?lang=Kikamba (no PDF library)
@@ -1261,7 +1262,8 @@ only for a signed-in member and both through same-origin proxies:
   session is cleared). Visitors without a session are not recorded.
   `payment_failed` (every wallet payment that did not go out: `stage`,
   `reason`, `method`, `flow`, `amountSats`) and `wallet_open_failed`
-  (`reason` `timeout` or `error`) go out in batches of their own, and so do
+  (`reason` `timeout` or `error`, `stage`, `errorName`, `errorCode`,
+  `causeKind`, `elapsedMs`, `online`, `visibility`) go out in batches of their own, and so do
   the wallet tour and move-funds events (`wallet_tour_*`, `wallet_move_*`) as
   a group of their own, and `recovery_done` (the sign-in that ends a social
   recovery) as another, so an api that does not accept those names yet cannot
@@ -1279,7 +1281,14 @@ Member state (too little balance, an amount below the minimum, no wallet
 connection) and hearts (`Heart not sent`) are not sent as `Payment failed`.
 Reason, stage, method, flow, and the error name and code are short codes; the
 text of an SDK or api error is never sent, because it can carry invoices,
-addresses, or keys.
+addresses, or keys. A wallet that did not open also sends where it stopped
+(`stage`: `sdk_load`, `connect`, `first_sync`, or `deadline`), its cause kind
+(`causeKind`: one identifier from the fixed table `CAUSE_KINDS` in
+`src/lib/wallet/error-cause.ts`, such as `fetch_failed` or
+`wasm_out_of_memory`, chosen on the device by matching the error's name, code,
+and message against it, `unknown` when no row matches; the matched text itself
+is never sent), the time since the attempt started, and whether the browser
+was online and the page visible.
 
 **Hard requirement:** neither report, nor any other request, log, or error
 report, ever carries the recovery phrase, the seed, PRF output, a preimage, or

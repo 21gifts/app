@@ -3,6 +3,7 @@ import { getBreezApiKey, getE2eNow } from '@/lib/config';
 import { logInteraction } from '@/lib/interaction-log';
 import { traceWallet, type WalletSpanAttributes } from '@/lib/sentry';
 import { peekSessionPhrase, SESSION_PHRASE_EVENT } from '@/lib/tab-phrase';
+import { errorCause, type ErrorCause } from '@/lib/wallet/error-cause';
 import type { PaymentFailure, PayMethod, PayReason, PayStage } from '@/lib/wallet/payment-failure';
 import {
   loadWalletSdk,
@@ -105,6 +106,16 @@ let retryLoadSdk: WalletSdkLoader | null = null;
  * disconnected. While it is set, later failures are not reported.
  */
 let openFailureReported = false;
+
+/**
+ * The latest open that has not reached ready: its run and its start time. A
+ * synced refresh of the same run that fails while the wallet has not been
+ * ready reports the failure for it, at `first_sync`, also when the open's own
+ * first read was already overtaken or the listener is still being added. A
+ * failure, a newer open, or a disconnect moves the run on, so a stale entry
+ * never matches; ready clears it.
+ */
+let openInProgress: { run: number; startedAt: number } | null = null;
 
 /**
  * Balance reads (`getInfo`) of the current connection still running, so an
@@ -364,6 +375,7 @@ function onRetryTrigger(): void {
  */
 function markReady(balanceSats: number, identityPubkey: string): void {
   openFailureReported = false;
+  openInProgress = null;
   useWalletStore.getState().setReady(balanceSats, identityPubkey);
   endRetryCycle();
 }
@@ -449,26 +461,69 @@ async function failRun(run: number): Promise<void> {
 }
 
 /**
+ * Where an open stopped: downloading and starting the wallet code
+ * (`sdk_load`), connecting (`connect`), the first synchronized balance read
+ * (`first_sync`), or the connect deadline (`deadline`).
+ */
+type WalletOpenStage = 'sdk_load' | 'connect' | 'first_sync' | 'deadline';
+
+/**
  * Reports a wallet that did not open: `Wallet did not open` to error reporting
  * (a no-op while it is off; one issue per reason) and the member event
- * `wallet_open_failed` (dropped without a session). Only the first failure is
- * reported: nothing more goes out until the wallet has been ready again or
- * was disconnected, so the automatic retries and **Try again** stay silent.
+ * `wallet_open_failed` (dropped without a session). Both carry the reason,
+ * the stage, the error's name and code, its cause kind from `errorCause`, the
+ * time since the attempt started, and whether the browser was online and the
+ * page visible. Never the error itself, and no part of its message. Only the
+ * first failure is reported: nothing more goes out until the wallet has been
+ * ready again or was disconnected, so the automatic retries and **Try again**
+ * stay silent.
  *
  * @param reason - `timeout` after the connect deadline, `error` when loading,
  *   connecting, or the first read failed.
+ * @param stage - Where the open stopped.
+ * @param startedAt - `Date.now()` when the attempt started.
+ * @param failed - `errorCause` of what the failed step rejected with, or
+ *   `null` at the deadline, where nothing was thrown.
  */
-function reportWalletOpenFailure(reason: 'timeout' | 'error'): void {
+function reportWalletOpenFailure(
+  reason: 'timeout' | 'error',
+  stage: WalletOpenStage,
+  startedAt: number,
+  failed: ErrorCause | null,
+): void {
   if (openFailureReported) {
     return;
   }
   openFailureReported = true;
+  const { errorName, errorCode, causeKind } = failed ?? {
+    errorName: null,
+    errorCode: null,
+    causeKind: null,
+  };
+  const cause = {
+    stage,
+    errorName,
+    errorCode,
+    causeKind,
+    elapsedMs: Math.max(0, Date.now() - startedAt),
+    online: navigator.onLine,
+    visibility: document.visibilityState,
+  };
   captureMessage('Wallet did not open', {
     level: 'error',
     fingerprint: ['wallet-open-failed', reason],
-    tags: { wallet_open_reason: reason },
+    tags: {
+      wallet_open_reason: reason,
+      wallet_open_stage: stage,
+      wallet_open_error: errorName ?? 'none',
+      wallet_open_error_code: errorCode ?? 'none',
+      wallet_open_cause: causeKind ?? 'none',
+      wallet_open_online: cause.online,
+      wallet_open_visibility: cause.visibility,
+    },
+    extra: cause,
   });
-  logInteraction('wallet_open_failed', { reason });
+  logInteraction('wallet_open_failed', { reason, ...cause });
 }
 
 /**
@@ -674,6 +729,8 @@ async function openWallet(loadSdk: WalletSdkLoader, quiet: boolean): Promise<voi
     return;
   }
   const run = bumpRun();
+  const startedAt = Date.now();
+  openInProgress = { run, startedAt };
   const waiting = quiet ? 'error' : 'connecting';
   if (!quiet) {
     useWalletStore.getState().setConnecting();
@@ -687,9 +744,9 @@ async function openWallet(loadSdk: WalletSdkLoader, quiet: boolean): Promise<voi
   try {
     // No deadline here: a slow download keeps going and is shared with every retry.
     sdk = await traceWallet('wallet.sdk.load', loadSdk);
-  } catch {
+  } catch (error) {
     if (run === runCounter) {
-      reportWalletOpenFailure('error');
+      reportWalletOpenFailure('error', 'sdk_load', startedAt, errorCause(error));
     }
     await failRun(run);
     return;
@@ -707,6 +764,7 @@ async function openWallet(loadSdk: WalletSdkLoader, quiet: boolean): Promise<voi
     }, WALLET_CONNECT_TIMEOUT_MS);
   });
   const attempt = (async (): Promise<void> => {
+    let stage: WalletOpenStage = 'connect';
     try {
       const next = await traceWallet('wallet.connect', () =>
         sdk.connect(mnemonic, apiKey, appHost()),
@@ -728,11 +786,12 @@ async function openWallet(loadSdk: WalletSdkLoader, quiet: boolean): Promise<voi
       if (run !== runCounter) {
         return;
       }
+      stage = 'first_sync';
       await traceWallet('wallet.sync.first', () => readBalance(run, next, { ensureSynced: true }));
       void rememberKnownPayments(run, next, mnemonic);
-    } catch {
+    } catch (error) {
       if (run === runCounter) {
-        reportWalletOpenFailure('error');
+        reportWalletOpenFailure('error', stage, startedAt, errorCause(error));
       }
       await failRun(run);
     }
@@ -746,7 +805,7 @@ async function openWallet(loadSdk: WalletSdkLoader, quiet: boolean): Promise<voi
     await deadline;
   }
   if (run === runCounter && useWalletStore.getState().status === waiting) {
-    reportWalletOpenFailure('timeout');
+    reportWalletOpenFailure('timeout', 'deadline', startedAt, null);
     void failRun(run);
   }
 }
@@ -779,8 +838,12 @@ async function openWallet(loadSdk: WalletSdkLoader, quiet: boolean): Promise<voi
  * a ready wallet end them.
  *
  * The first failure is reported as `wallet_open_failed` (`error`, or
- * `timeout` at the deadline) and `Wallet did not open`; later failures are
- * not reported until the wallet has been ready again or was disconnected.
+ * `timeout` at the deadline) and `Wallet did not open`, with the stage it
+ * stopped at (`sdk_load`, `connect`, `first_sync`, or `deadline`), the
+ * error's name and code, its cause kind (never its message), the time since the attempt
+ * started, and whether the browser was online and the page visible; later
+ * failures are not reported until the wallet has been ready again or was
+ * disconnected.
  *
  * @param loadSdk - SDK loader; defaults to {@link loadWalletSdk}.
  * @returns Resolves when the attempt leaves `connecting`, is superseded, or reaches its deadline.
@@ -800,7 +863,9 @@ export async function connectWallet(loadSdk: WalletSdkLoader = loadWalletSdk): P
  * overlap only the latest one writes. Never rejects; a failure while current
  * ends in the store and starts the automatic retries of {@link connectWallet},
  * unless `ignoreFailure` is set: then a failed read changes nothing and the
- * wallet stays as it is.
+ * wallet stays as it is. A failure while an open has not been ready ends that
+ * open and is reported once as its failure at `first_sync`, like the open's
+ * own failures.
  *
  * @param options - Set `ensureSynced` to read after the wallet has synced, so
  *   a payment that arrived without a wallet event is counted. Set
@@ -818,8 +883,14 @@ export async function refreshWallet(options?: {
   }
   try {
     await traceWallet('wallet.balance', () => readBalance(run, conn, options));
-  } catch {
+  } catch (error) {
     if (options?.ignoreFailure !== true) {
+      // A refresh that fails before the open was ready ends that open, so the
+      // open's failure is reported here; the refresh is a read, so first_sync.
+      const opening = openInProgress;
+      if (opening !== null && opening.run === run && run === runCounter) {
+        reportWalletOpenFailure('error', 'first_sync', opening.startedAt, errorCause(error));
+      }
       await failRun(run);
     }
   }
