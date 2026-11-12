@@ -423,20 +423,20 @@ describe('LoanPayMore', () => {
     },
   );
 
-  it('checks a fiat-loan draft against the corresponding sat maximum', () => {
-    show(
-      loan({
-        goalCurrency: 'PHP',
-        goalAmount: '480.28',
-        maxSats: 10,
-        maxAmount: '480.28',
-      }),
-    );
-    fireEvent.change(screen.getByLabelText('Amount (PHP)'), { target: { value: '1.00' } });
-    expect(screen.getByText('Enter at most ₱480.28 · ₿10.')).toBeTruthy();
-    expect(
-      (screen.getByRole('button', { name: 'Pay this amount' }) as HTMLButtonElement).disabled,
-    ).toBe(true);
+  it('keeps the exact fiat Max payable when the current spot disagrees with max sats', () => {
+    const php = loan({
+      goalCurrency: 'PHP',
+      goalAmount: '480.28',
+      maxSats: 10,
+      maxAmount: '480.28',
+    });
+    const { onPay } = show(php);
+    fireEvent.click(screen.getByRole('button', { name: 'Max' }));
+    expect((screen.getByLabelText('Amount (PHP)') as HTMLInputElement).value).toBe('480.28');
+    const pay = screen.getByRole('button', { name: 'Pay this amount' }) as HTMLButtonElement;
+    expect(pay.disabled).toBe(false);
+    fireEvent.click(pay);
+    expect(onPay).toHaveBeenCalledWith(expect.anything(), '480.28');
   });
 
   it('explains a missing conversion rate for a fiat-loan draft', () => {
@@ -482,10 +482,10 @@ describe('LoanPayMore', () => {
       maxAmount: '480.28',
     });
     const { onPay } = show(collecting);
-    fireEvent.change(screen.getByLabelText('Amount (PHP)'), { target: { value: '56.00' } });
+    fireEvent.change(screen.getByLabelText('Amount (PHP)'), { target: { value: ' 0012.30 ' } });
     fireEvent.click(screen.getByRole('button', { name: 'Pay this amount' }));
-    fireEvent.click(screen.getByRole('button', { name: "Pay ₱56.00 · ₿1'000 and end collecting" }));
-    expect(onPay).toHaveBeenCalledWith(expect.anything(), '56.00');
+    fireEvent.click(screen.getByRole('button', { name: 'Pay ₱0012.30 · ₿220 and end collecting' }));
+    expect(onPay).toHaveBeenCalledWith(expect.anything(), '0012.30');
   });
 
   it('confirms that a first payment ends collecting when closedAt is omitted', () => {
@@ -964,7 +964,7 @@ describe('LoanPayMore', () => {
             name: 'Diego',
             username: 'diego',
             amountSats: 50,
-            amount: '2.50',
+            amount: '0012.30',
           },
         ]}
         balanceSats={21_000}
@@ -983,7 +983,7 @@ describe('LoanPayMore', () => {
     expect(screen.getByText('Waiting for Carla to set up their wallet')).toBeTruthy();
     expect(screen.getByText('Waiting for Diego to set up their wallet')).toBeTruthy();
     expect(screen.getByText('₿200 · $0.20')).toBeTruthy();
-    expect(screen.getByText('₱2.50 · ₿50')).toBeTruthy();
+    expect(screen.getByText('₱0012.30 · ₿50')).toBeTruthy();
   });
 
   it('shows close progress and a close-specific action error', () => {
@@ -1021,14 +1021,30 @@ describe('LoanPayMore', () => {
     view.rerender(
       payMoreState(collecting, view.onPay, view.onCloseCollecting, { sundayRest: true }),
     );
-    fireEvent.click(screen.getByRole('button', { name: "Pay ₿1'000 and end collecting" }));
+    const dialog = screen.getByRole('dialog', { name: 'Pay and end collecting?' });
+    const confirm = within(dialog).getByRole('button', {
+      name: "Pay ₿1'000 and end collecting",
+    }) as HTMLButtonElement;
+    expect(confirm.disabled).toBe(true);
+    fireEvent.click(confirm);
     expect(view.onPay).not.toHaveBeenCalled();
-    expect(screen.getByRole('dialog', { name: 'Pay and end collecting?' })).toBeTruthy();
+    expect(dialog).toBeTruthy();
+
+    view.rerender(
+      payMoreState(collecting, view.onPay, view.onCloseCollecting, { phase: 'unavailable' }),
+    );
+    expect(confirm.disabled).toBe(true);
+
+    view.rerender(
+      payMoreState(collecting, view.onPay, view.onCloseCollecting, { phase: 'preparing' }),
+    );
+    expect(confirm.disabled).toBe(true);
 
     view.rerender(
       payMoreState(collecting, view.onPay, view.onCloseCollecting, { phase: 'unconfirmed' }),
     );
-    fireEvent.click(screen.getByRole('button', { name: "Pay ₿1'000 and end collecting" }));
+    expect(confirm.disabled).toBe(true);
+    fireEvent.click(confirm);
     expect(view.onPay).not.toHaveBeenCalled();
   });
 

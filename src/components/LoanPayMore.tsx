@@ -17,7 +17,6 @@ import type {
 } from '@/hooks/useLoanRepay';
 import type { MyLoan, RepaymentWaiting } from '@/lib/api';
 import type { AmountUnit } from '@/lib/api-types';
-import { formatDefinedGoalAmount } from '@/lib/forum-goal';
 import {
   checkLoanAmount,
   isCollecting,
@@ -27,6 +26,7 @@ import {
 } from '@/lib/loan-repay';
 import type { NumberFormatStyle } from '@/lib/number-format';
 import {
+  fiatPrefix,
   formatBitcoin,
   parseAmountDraft,
   type FiatCode,
@@ -90,8 +90,7 @@ function displayLoanAmount(
   if (loan.goalCurrency === 'BTC') {
     return formatSats(Number(text));
   }
-  const fiat = formatDefinedGoalAmount(text, loan.goalCurrency, style);
-  return `${fiat} · ${formatBitcoin(sats, style)}`;
+  return `${fiatPrefix(loan.goalCurrency)}${text.trim()} · ${formatBitcoin(sats, style)}`;
 }
 
 function maxDraft(loan: MyLoan): string | null {
@@ -180,21 +179,13 @@ export function LoanPayMore({
   if (loanAmountText === null && parsed.kind === 'sats') {
     loanAmountText = loan.goalCurrency === 'BTC' ? String(parsed.sats) : amount.trim();
   }
-  let check: LoanAmountCheck =
+  const check: LoanAmountCheck =
     amount.trim() === ''
       ? checkLoanAmount('', effectiveLoan)
       : parsed.kind !== 'sats' || loanAmountText === null
         ? { ok: false, reason: 'invalid', max: loanMaxInput(effectiveLoan) }
         : checkLoanAmount(loanAmountText, effectiveLoan);
-  if (
-    check.ok &&
-    parsed.kind === 'sats' &&
-    effectiveLoan.maxSats !== null &&
-    effectiveLoan.maxSats !== undefined &&
-    BigInt(parsed.sats) > BigInt(effectiveLoan.maxSats)
-  ) {
-    check = { ok: false, reason: 'above_max', max: loanMaxInput(effectiveLoan) };
-  }
+  const paymentEnabled = check.ok && !serverAmountInvalid && canPay && !sharedBusy && !sundayRest;
   const apiMaxInput = loanMaxUnits(effectiveLoan) === null ? null : loanMaxInput(effectiveLoan);
   const maxInput = maxDraft(effectiveLoan);
 
@@ -313,9 +304,6 @@ export function LoanPayMore({
   }, [actionError, errorKey, matchingAction, phase, shownPendingAction, t]);
 
   const submitPay = (amountText: string): void => {
-    if (!canPay || sundayRest) {
-      return;
-    }
     setConfirming(null);
     setPendingAction('pay');
     setServerError(null);
@@ -455,9 +443,9 @@ export function LoanPayMore({
         <Button
           type="button"
           size="lg"
-          disabled={!check.ok || serverAmountInvalid || !canPay || sharedBusy || sundayRest}
+          disabled={!paymentEnabled}
           onClick={
-            check.ok
+            paymentEnabled && check.ok
               ? () => {
                   if (collecting) {
                     setConfirming('pay');
@@ -523,7 +511,12 @@ export function LoanPayMore({
             </p>
             {confirming === 'pay' ? (
               check.ok ? (
-                <Button type="button" size="lg" onClick={() => submitPay(check.text)}>
+                <Button
+                  type="button"
+                  size="lg"
+                  disabled={!paymentEnabled}
+                  onClick={paymentEnabled ? () => submitPay(check.text) : undefined}
+                >
                   {t('loans.payMoreConfirmAction', {
                     amount: displayLoanAmount(
                       check.text,

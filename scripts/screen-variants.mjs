@@ -2001,6 +2001,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/loans/repay',
+    id: 'pay-more-fiat-no-maximum',
+    image: 'loans-repay-pay-more-fiat-no-maximum.png',
+    visual: 'state-loans-repay-pay-more-fiat-no-maximum',
+    needle: 'state /loans/repay pay-more-fiat-no-maximum',
+  },
+  {
+    route: '/loans/repay',
     id: 'pay-more-server-max',
     image: 'loans-repay-pay-more-server-max.png',
     visual: 'state-loans-repay-pay-more-server-max',
