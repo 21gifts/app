@@ -187,11 +187,11 @@ describe('layoutTrustChain', () => {
   });
 
   it('stacks siblings of every role by descending role rank regardless of edge order', () => {
-    const nodes = [FOUNDER, ADA, MODERATOR, SOFTWARE_DEVELOPER, INITIATOR, FOUNDER_SIBLING];
-    const expected = [FOUNDER_SIBLING, INITIATOR, SOFTWARE_DEVELOPER, MODERATOR, ADA];
+    const nodes = [FOUNDER, ADA, MODERATOR, FOND, SOFTWARE_DEVELOPER, INITIATOR, FOUNDER_SIBLING];
+    const expected = [FOUNDER_SIBLING, INITIATOR, SOFTWARE_DEVELOPER, FOND, MODERATOR, ADA];
     const edgeOrders = [
-      [ADA, MODERATOR, SOFTWARE_DEVELOPER, INITIATOR, FOUNDER_SIBLING],
-      [FOUNDER_SIBLING, INITIATOR, SOFTWARE_DEVELOPER, MODERATOR, ADA],
+      [ADA, MODERATOR, FOND, SOFTWARE_DEVELOPER, INITIATOR, FOUNDER_SIBLING],
+      [FOUNDER_SIBLING, INITIATOR, SOFTWARE_DEVELOPER, FOND, MODERATOR, ADA],
     ];
     for (const siblings of edgeOrders) {
       const laid = layoutTrustChain({
@@ -199,7 +199,7 @@ describe('layoutTrustChain', () => {
         edges: siblings.map((node) => ({ from: 'f', to: node.id, kind: 'verify' as const })),
       });
       expect(expected.map((node) => laid.nodes.find((row) => row.id === node.id)?.y)).toEqual([
-        16, 112, 208, 304, 400,
+        16, 112, 208, 304, 400, 496,
       ]);
     }
   });
