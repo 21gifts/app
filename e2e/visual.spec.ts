@@ -40179,33 +40179,87 @@ test.describe('notifications screens', () => {
     });
   }
 
-  test('screen /notifications', async ({ page }) => {
-    await seedAda(page);
+  const BOB_REPLY = {
+    id: 'n1',
+    type: 'forum_reply',
+    parentId: 'parent-1',
+    replyId: 'reply-1',
+    name: 'Bob',
+    text: 'Nice post',
+    createdAt: '2026-08-28T12:00:00.000Z',
+    readAt: null,
+    personal: true,
+  };
+  const LIVING_ROOM_POSTS = [
+    {
+      id: 'n2',
+      type: 'forum_post',
+      parentId: 'post-olga',
+      replyId: 'post-olga',
+      name: 'Olga',
+      text: 'Fresh bread at the market today',
+      createdAt: '2026-08-28T11:00:00.000Z',
+      readAt: null,
+      personal: false,
+    },
+    {
+      id: 'n3',
+      type: 'forum_post',
+      parentId: 'post-otto',
+      replyId: 'post-otto',
+      name: 'Otto',
+      text: 'Who wants to swap seeds?',
+      createdAt: '2026-08-28T10:00:00.000Z',
+      readAt: null,
+      personal: false,
+    },
+  ];
+
+  async function routeNotifications(page: Page, notifications: unknown[]): Promise<void> {
     await page.route('**/forum/notifications', async (route) => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
-        body: JSON.stringify({
-          notifications: [
-            {
-              id: 'n1',
-              type: 'forum_reply',
-              parentId: 'parent-1',
-              replyId: 'reply-1',
-              name: 'Bob',
-              text: 'Nice post',
-              createdAt: '2026-08-28T12:00:00.000Z',
-              readAt: null,
-            },
-          ],
-          unreadCount: 1,
-        }),
+        body: JSON.stringify({ notifications, unreadCount: notifications.length }),
       });
     });
+  }
+
+  test('screen /notifications', async ({ page }) => {
+    await seedAda(page);
+    await routeNotifications(page, [BOB_REPLY, ...LIVING_ROOM_POSTS]);
     await page.goto('/notifications');
     await expect(page.getByRole('heading', { name: 'Notifications' })).toBeVisible();
     await expect(page.getByText('Bob replied')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'For you, 1 unread' })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
+    await expect(page.getByRole('button', { name: 'Living room, 2 unread' })).toBeVisible();
+    await expect(page.getByText('Olga posted')).toHaveCount(0);
     await shotScreen(page, 'screen-notifications');
+  });
+
+  test('notifications living-room', async ({ page }) => {
+    await seedAda(page);
+    await routeNotifications(page, [BOB_REPLY, ...LIVING_ROOM_POSTS]);
+    await page.goto('/notifications');
+    await expect(page.getByText('Bob replied')).toBeVisible();
+    await page.getByRole('button', { name: 'Living room, 2 unread' }).click();
+    await expect(page.getByText('Olga posted')).toBeVisible();
+    await expect(page.getByText('Otto posted')).toBeVisible();
+    await expect(page.getByText('Bob replied')).toHaveCount(0);
+    await shotScreen(page, 'state-notifications-living-room');
+  });
+
+  test('notifications living-room-empty', async ({ page }) => {
+    await seedAda(page);
+    await routeNotifications(page, [BOB_REPLY]);
+    await page.goto('/notifications');
+    await expect(page.getByText('Bob replied')).toBeVisible();
+    await page.getByRole('button', { name: 'Living room' }).click();
+    await expect(page.getByText('Nothing from the living room yet.')).toBeVisible();
+    await shotScreen(page, 'state-notifications-living-room-empty');
   });
 
   test('notifications empty', async ({ page }) => {
@@ -40218,7 +40272,7 @@ test.describe('notifications screens', () => {
       });
     });
     await page.goto('/notifications');
-    await expect(page.getByText('No notifications yet.')).toBeVisible();
+    await expect(page.getByText('Nothing for you yet.')).toBeVisible();
     await shotScreen(page, 'state-notifications-empty');
   });
 
@@ -40263,6 +40317,7 @@ test.describe('notifications screens', () => {
               text: 'Rose',
               createdAt: '2026-08-28T12:00:00.000Z',
               readAt: null,
+              personal: true,
             },
           ],
           unreadCount: 1,

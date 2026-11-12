@@ -102,6 +102,7 @@ const ROW: Notification = {
   text: 'Nice post',
   createdAt: '2026-08-28T12:00:00.000Z',
   readAt: null,
+  personal: true,
 };
 
 const APPOINTED: Notification = {
@@ -113,6 +114,7 @@ const APPOINTED: Notification = {
   text: '',
   createdAt: '2026-08-22T12:00:00.000Z',
   readAt: null,
+  personal: true,
 };
 
 const PROPOSAL_ROW: Notification = {
@@ -124,6 +126,7 @@ const PROPOSAL_ROW: Notification = {
   text: 'Rose',
   createdAt: '2026-08-22T12:00:00.000Z',
   readAt: null,
+  personal: true,
 };
 
 const LIST: NotificationList = { notifications: [ROW], unreadCount: 1 };
@@ -238,7 +241,7 @@ describe('NotificationsLoader', () => {
   it('shows empty copy', async () => {
     listMock.mockResolvedValue({ notifications: [], unreadCount: 0 });
     renderWithLocale(<NotificationsLoader />);
-    expect(await screen.findByText('No notifications yet.')).toBeTruthy();
+    expect(await screen.findByText('Nothing for you yet.')).toBeTruthy();
     await waitFor(() => {
       expect(markAllMock).toHaveBeenCalledWith('sess');
     });
@@ -585,5 +588,52 @@ describe('NotificationsLoader', () => {
       rejectRows(new Error('fail'));
     });
     expect(setBadgeMock).not.toHaveBeenCalledWith(0);
+  });
+
+  it('switching views marks nothing beyond the one mark-all after load', async () => {
+    const other: Notification = {
+      ...ROW,
+      id: 'n-other',
+      type: 'forum_post',
+      parentId: 'other-post',
+      replyId: 'other-post',
+      name: 'Olga',
+      text: 'Morning',
+      personal: false,
+    };
+    listMock.mockResolvedValue({ notifications: [ROW, other], unreadCount: 2 });
+    renderWithLocale(<NotificationsLoader />);
+    expect(await screen.findByText('Bob replied')).toBeTruthy();
+    await waitFor(() => {
+      expect(markAllMock).toHaveBeenCalledTimes(1);
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Living room, 1 unread' }));
+    expect(await screen.findByText('Olga posted')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'For you, 1 unread' }));
+    expect(await screen.findByText('Bob replied')).toBeTruthy();
+    expect(markAllMock).toHaveBeenCalledTimes(1);
+    expect(markReadMock).not.toHaveBeenCalled();
+    expect(listMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('opening a Living room row marks only that row read', async () => {
+    const other: Notification = {
+      ...ROW,
+      id: 'n-other',
+      type: 'forum_post',
+      parentId: 'other-post',
+      replyId: 'other-post',
+      name: 'Olga',
+      text: 'Morning',
+      personal: false,
+    };
+    listMock.mockResolvedValue({ notifications: [ROW, other], unreadCount: 2 });
+    renderWithLocale(<NotificationsLoader />);
+    expect(await screen.findByText('Bob replied')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Living room, 1 unread' }));
+    fireEvent.click(await screen.findByRole('button', { name: /Olga posted/ }));
+    expect(markReadMock).toHaveBeenCalledTimes(1);
+    expect(markReadMock).toHaveBeenCalledWith('sess', 'n-other');
+    expect(push).toHaveBeenCalledWith('/messages/other-post');
   });
 });

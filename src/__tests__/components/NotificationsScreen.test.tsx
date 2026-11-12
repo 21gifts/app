@@ -1,10 +1,10 @@
-import { cleanup, fireEvent, screen } from '@testing-library/react';
+import { cleanup, fireEvent, screen, within } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 vi.mock('@/components/NoteTranslate', () => ({
   NoteTranslate: () => <button type="button">Translate</button>,
 }));
 import { NotificationsScreen } from '@/components/NotificationsScreen';
-import type { Notification } from '@/lib/api-types';
+import { notificationSchema, type Notification } from '@/lib/api-types';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
 
 afterEach(cleanup);
@@ -18,6 +18,7 @@ const UNREAD: Notification = {
   text: 'Nice post',
   createdAt: '2026-08-28T12:00:00.000Z',
   readAt: null,
+  personal: true,
 };
 
 const READ: Notification = {
@@ -29,6 +30,7 @@ const READ: Notification = {
   text: 'Thanks',
   createdAt: '2026-08-27T12:00:00.000Z',
   readAt: '2026-08-28T08:00:00.000Z',
+  personal: true,
 };
 
 const PHOTO: Notification = {
@@ -40,6 +42,7 @@ const PHOTO: Notification = {
   text: '',
   createdAt: '2026-08-26T12:00:00.000Z',
   readAt: null,
+  personal: true,
 };
 
 const POST: Notification = {
@@ -51,6 +54,7 @@ const POST: Notification = {
   text: 'Hello living room',
   createdAt: '2026-08-25T12:00:00.000Z',
   readAt: null,
+  personal: false,
 };
 
 const POST_PHOTO: Notification = {
@@ -62,6 +66,7 @@ const POST_PHOTO: Notification = {
   text: '',
   createdAt: '2026-08-24T12:00:00.000Z',
   readAt: null,
+  personal: false,
 };
 
 const ZAP: Notification = {
@@ -73,6 +78,7 @@ const ZAP: Notification = {
   text: '21',
   createdAt: '2026-08-23T12:00:00.000Z',
   readAt: null,
+  personal: true,
 };
 
 const HEART: Notification = {
@@ -84,6 +90,7 @@ const HEART: Notification = {
   text: '1',
   createdAt: '2026-08-23T11:00:00.000Z',
   readAt: null,
+  personal: true,
 };
 
 const ZAP_EMPTY: Notification = {
@@ -95,6 +102,7 @@ const ZAP_EMPTY: Notification = {
   text: '',
   createdAt: '2026-08-22T12:00:00.000Z',
   readAt: null,
+  personal: true,
 };
 
 const APPOINTED: Notification = {
@@ -106,6 +114,7 @@ const APPOINTED: Notification = {
   text: '',
   createdAt: '2026-08-22T12:00:00.000Z',
   readAt: null,
+  personal: true,
 };
 const APPOINTED_TEXT: Notification = { ...APPOINTED, id: 'n9', text: 'You are a moderator' };
 
@@ -118,6 +127,7 @@ const PROPOSAL_ROW: Notification = {
   text: '',
   createdAt: '2026-08-22T12:00:00.000Z',
   readAt: null,
+  personal: true,
 };
 const PROPOSAL_TEXT: Notification = { ...PROPOSAL_ROW, id: 'n11', text: 'Rose' };
 
@@ -130,6 +140,7 @@ const MENTION: Notification = {
   text: 'hello @you',
   createdAt: '2026-08-22T12:00:00.000Z',
   readAt: null,
+  personal: true,
 };
 
 describe('NotificationsScreen', () => {
@@ -138,7 +149,7 @@ describe('NotificationsScreen', () => {
     renderWithLocale(
       <NotificationsScreen
         notifications={[
-          { ...POST, text: german },
+          { ...POST, personal: true, text: german },
           { ...UNREAD, text: german },
         ]}
         error={false}
@@ -218,7 +229,7 @@ describe('NotificationsScreen', () => {
         onOpen={() => undefined}
       />,
     );
-    expect(screen.getByText('No notifications yet.')).toBeTruthy();
+    expect(screen.getByText('Nothing for you yet.')).toBeTruthy();
   });
 
   it('shows empty copy when the list is missing after load', () => {
@@ -231,7 +242,7 @@ describe('NotificationsScreen', () => {
         onOpen={() => undefined}
       />,
     );
-    expect(screen.getByText('No notifications yet.')).toBeTruthy();
+    expect(screen.getByText('Nothing for you yet.')).toBeTruthy();
   });
 
   it('lists rows with an accessible name and unread vs read classes', () => {
@@ -316,7 +327,7 @@ describe('NotificationsScreen', () => {
         onOpen={() => undefined}
       />,
     );
-    expect(screen.getByText('No notifications yet.')).toBeTruthy();
+    expect(screen.getByText('Nothing for you yet.')).toBeTruthy();
     expect(screen.getByRole('heading', { name: 'Notifications' })).toBeTruthy();
     expect(screen.queryByRole('heading', { name: 'Unread' })).toBeNull();
     expect(screen.queryByRole('heading', { name: 'Already seen' })).toBeNull();
@@ -349,6 +360,7 @@ describe('NotificationsScreen', () => {
         onOpen={onOpen}
       />,
     );
+    fireEvent.click(screen.getByRole('button', { name: /^Living room/ }));
     expect(screen.getByText('Photo')).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: /Ivy posted/ }));
     expect(onOpen).toHaveBeenCalledWith(POST_PHOTO);
@@ -365,6 +377,7 @@ describe('NotificationsScreen', () => {
         onOpen={onOpen}
       />,
     );
+    fireEvent.click(screen.getByRole('button', { name: /^Living room/ }));
     const row = screen.getByRole('button', { name: /Eve posted/ });
     expect(row.textContent).toContain('Hello living room');
     fireEvent.click(row);
@@ -388,6 +401,7 @@ describe('NotificationsScreen', () => {
         onOpen={onOpen}
       />,
     );
+    fireEvent.click(screen.getByRole('button', { name: /^Living room/ }));
     const row = screen.getByRole('button', { name: /Caren maralas Rundina posted/ });
     expect(screen.getByText('Caren maralas Rundina posted')).toBeTruthy();
     expect(screen.queryByText('Caren maralas Rundina')).toBeNull();
@@ -423,8 +437,8 @@ describe('NotificationsScreen', () => {
         onOpen={() => undefined}
       />,
     );
-    expect(screen.getByRole('button', { name: /Ivy sent you a heart/ })).toBeTruthy();
-    expect(screen.queryByText('1')).toBeNull();
+    const row = screen.getByRole('button', { name: /Ivy sent you a heart/ });
+    expect(within(row).queryByText('1')).toBeNull();
   });
 
   it('omits extra body copy when a zap has empty text', () => {
@@ -528,5 +542,160 @@ describe('NotificationsScreen', () => {
     );
     const row = screen.getByRole('button', { name: /Ada marked you/ });
     expect(row.textContent).toContain('hello @you');
+  });
+
+  describe('views', () => {
+    const OTHER_UNREAD: Notification = { ...POST, id: 'o1', name: 'Olga', text: 'Morning' };
+    const OTHER_UNREAD_2: Notification = { ...POST, id: 'o2', name: 'Otto', text: 'Evening' };
+    const OTHER_SEEN: Notification = {
+      ...POST,
+      id: 'o3',
+      name: 'Oskar',
+      text: 'Noon',
+      readAt: '2026-08-28T08:00:00.000Z',
+    };
+
+    function renderRows(rows: Notification[]): void {
+      renderWithLocale(
+        <NotificationsScreen
+          notifications={rows}
+          error={false}
+          loading={false}
+          onRetry={() => undefined}
+          onOpen={() => undefined}
+        />,
+      );
+    }
+
+    it('selects For you on load and lists only personal rows there', () => {
+      renderRows([OTHER_UNREAD, UNREAD, READ, OTHER_SEEN]);
+      const group = screen.getByRole('group', { name: 'Notification view' });
+      const forYou = screen.getByRole('button', { name: 'For you, 1 unread' });
+      const livingRoom = screen.getByRole('button', { name: 'Living room, 1 unread' });
+      expect(group.contains(forYou)).toBe(true);
+      expect(group.contains(livingRoom)).toBe(true);
+      expect(forYou.getAttribute('aria-pressed')).toBe('true');
+      expect(livingRoom.getAttribute('aria-pressed')).toBe('false');
+      expect(screen.getByRole('button', { name: /Bob replied/ })).toBeTruthy();
+      expect(screen.getByRole('button', { name: /Carol replied/ })).toBeTruthy();
+      expect(screen.queryByRole('button', { name: /Olga posted/ })).toBeNull();
+      expect(screen.queryByRole('button', { name: /Oskar posted/ })).toBeNull();
+    });
+
+    it('shows the other rows under Living room, unread above seen in API order', () => {
+      renderRows([OTHER_SEEN, UNREAD, OTHER_UNREAD, OTHER_UNREAD_2]);
+      fireEvent.click(screen.getByRole('button', { name: 'Living room, 2 unread' }));
+      expect(
+        screen.getByRole('button', { name: 'Living room, 2 unread' }).getAttribute('aria-pressed'),
+      ).toBe('true');
+      expect(screen.queryByRole('button', { name: /Bob replied/ })).toBeNull();
+      const unreadList = screen.getByRole('list', { name: 'Unread notifications' });
+      const seenList = screen.getByRole('list', { name: 'Already seen notifications' });
+      expect(Array.from(unreadList.querySelectorAll('button')).map((b) => b.textContent)).toEqual([
+        expect.stringContaining('Olga posted'),
+        expect.stringContaining('Otto posted'),
+      ]);
+      expect(seenList.textContent).toContain('Oskar posted');
+      expect(unreadList.compareDocumentPosition(seenList) & Node.DOCUMENT_POSITION_FOLLOWING).toBe(
+        Node.DOCUMENT_POSITION_FOLLOWING,
+      );
+      fireEvent.click(screen.getByRole('button', { name: 'For you, 1 unread' }));
+      expect(screen.getByRole('button', { name: /Bob replied/ })).toBeTruthy();
+      expect(screen.queryByRole('button', { name: /Olga posted/ })).toBeNull();
+    });
+
+    it('shows each unread count as a chip and drops it at zero', () => {
+      renderRows([UNREAD, PHOTO, READ, OTHER_SEEN]);
+      const forYou = screen.getByRole('button', { name: 'For you, 2 unread' });
+      expect(forYou.textContent).toBe('For you2');
+      const livingRoom = screen.getByRole('button', { name: 'Living room' });
+      expect(livingRoom.getAttribute('aria-label')).toBeNull();
+      expect(livingRoom.textContent).toBe('Living room');
+    });
+
+    it('shows the For you empty text when only living-room rows exist', () => {
+      renderRows([OTHER_UNREAD]);
+      expect(screen.getByText('Nothing for you yet.')).toBeTruthy();
+      expect(screen.queryByRole('heading', { name: 'Unread' })).toBeNull();
+      fireEvent.click(screen.getByRole('button', { name: 'Living room, 1 unread' }));
+      expect(screen.queryByText('Nothing for you yet.')).toBeNull();
+      expect(screen.getByRole('button', { name: /Olga posted/ })).toBeTruthy();
+    });
+
+    it('shows the Living room empty text when only personal rows exist', () => {
+      renderRows([UNREAD]);
+      fireEvent.click(screen.getByRole('button', { name: 'Living room' }));
+      expect(screen.getByText('Nothing from the living room yet.')).toBeTruthy();
+      expect(screen.queryByText('Nothing for you yet.')).toBeNull();
+      expect(screen.queryByRole('button', { name: /Bob replied/ })).toBeNull();
+    });
+
+    it('puts a row whose api body has no personal field under Living room', () => {
+      const parsed = notificationSchema.parse({
+        id: 'legacy',
+        type: 'forum_reply',
+        parentId: 'parent-l',
+        replyId: 'reply-l',
+        name: 'Lena',
+        text: 'Old api',
+        createdAt: '2026-08-28T12:00:00.000Z',
+        readAt: null,
+      });
+      expect(parsed.personal).toBe(false);
+      renderRows([parsed]);
+      expect(screen.getByText('Nothing for you yet.')).toBeTruthy();
+      fireEvent.click(screen.getByRole('button', { name: 'Living room, 1 unread' }));
+      expect(screen.getByRole('button', { name: /Lena replied/ })).toBeTruthy();
+    });
+
+    it('shows no view control while loading or after an error', () => {
+      renderWithLocale(
+        <NotificationsScreen
+          notifications={null}
+          error={false}
+          loading={true}
+          onRetry={() => undefined}
+          onOpen={() => undefined}
+        />,
+      );
+      expect(screen.queryByRole('group', { name: 'Notification view' })).toBeNull();
+      cleanup();
+      renderWithLocale(
+        <NotificationsScreen
+          notifications={null}
+          error={true}
+          loading={false}
+          onRetry={() => undefined}
+          onOpen={() => undefined}
+        />,
+      );
+      expect(screen.queryByRole('group', { name: 'Notification view' })).toBeNull();
+    });
+
+    it('keeps the selected view when the list reloads', () => {
+      const { rerender } = renderWithLocale(
+        <NotificationsScreen
+          notifications={[UNREAD, OTHER_UNREAD]}
+          error={false}
+          loading={false}
+          onRetry={() => undefined}
+          onOpen={() => undefined}
+        />,
+      );
+      fireEvent.click(screen.getByRole('button', { name: 'Living room, 1 unread' }));
+      rerender(
+        <NotificationsScreen
+          notifications={[UNREAD, OTHER_UNREAD, OTHER_UNREAD_2]}
+          error={false}
+          loading={false}
+          onRetry={() => undefined}
+          onOpen={() => undefined}
+        />,
+      );
+      expect(
+        screen.getByRole('button', { name: 'Living room, 2 unread' }).getAttribute('aria-pressed'),
+      ).toBe('true');
+      expect(screen.getByRole('button', { name: /Otto posted/ })).toBeTruthy();
+    });
   });
 });

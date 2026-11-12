@@ -1501,6 +1501,11 @@ export type ConversationInvoice = z.infer<typeof conversationInvoiceSchema>;
  * body. `parentId` / `replyId` are a forum note id except on
  * `moderator_appointed` and `moderator_proposal`, where they are the subject
  * account id. `readAt` is `null` until the session marks the row read.
+ * `personal` is true when the row concerns the member personally (a mention of
+ * the member, a heart, a moderator appointment or proposal, or a reply to or
+ * payment on the member's own note) and false for other members' posts,
+ * replies, and payments. An api that does not send the field yet parses as
+ * `false`.
  */
 export const notificationSchema = z.object({
   id: z.string().min(1),
@@ -1519,6 +1524,7 @@ export const notificationSchema = z.object({
   text: z.string(),
   createdAt: z.string().datetime({ offset: true }),
   readAt: z.string().datetime({ offset: true }).nullable(),
+  personal: z.boolean().default(false),
 });
 
 /**
