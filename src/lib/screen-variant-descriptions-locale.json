@@ -4409,6 +4409,21 @@
     "es": "Apartado En este dispositivo con role=\"alert\" tras pulsar Activado en Avisos cuando Web Push está presente pero la activación falla. Texto Las notificaciones no están disponibles en este navegador.",
     "fil": "Seksiyon ng Sa device na ito na may role=\"alert\" pagkatapos i-click ang Naka-on sa Mga abiso kapag nariyan ang Web Push pero nabigo ang pag-enable. Sipi Hindi available ang mga notification sa browser na ito."
   },
+  "/settings:dfx-login": {
+    "de": "Solange das eigene Wallet in der App bereit ist, zeigt der Abschnitt Wallet unter Herz-Betrag Bei DFX einloggen: die kleine Überschrift, den Satz Öffnet DFX in einem neuen Tab, angemeldet mit deinem 21.gifts Wallet, damit du Bitcoin per Banküberweisung kaufen kannst., und die beschriftete Schaltfläche Bei DFX einloggen. Die Schaltfläche ist aktiv. Keine Statuszeile und kein Alarm. Playwright ?visual=dfx-login zeigt dieselbe Zeile, ohne das Wallet oder DFX aufzurufen, auch wenn das Wallet aus ist.",
+    "es": "Mientras la wallet de la app está lista, Wallet muestra Iniciar sesión en DFX bajo Importe del corazón: el encabezado pequeño, la frase Abre DFX en una pestaña nueva, con la sesión de tu wallet de 21.gifts, para que puedas comprar Bitcoin con una transferencia bancaria., y el botón con texto Iniciar sesión en DFX. El botón está activo. No hay línea de espera ni aviso. Playwright ?visual=dfx-login muestra la misma fila sin llamar a la wallet ni a DFX, aunque la wallet esté apagada.",
+    "fil": "Habang handa ang wallet sa app, ipinapakita ng Wallet ang Mag-log in sa DFX sa ilalim ng Halaga ng puso: ang maliit na heading, ang pangungusap Binubuksan ang DFX sa bagong tab, naka-sign in gamit ang 21.gifts wallet mo, para makabili ka ng Bitcoin sa bank transfer., at ang button na may label na Mag-log in sa DFX. Naka-enable ang button. Walang busy line at walang alert. Ipinapakita ng Playwright na ?visual=dfx-login ang parehong row nang hindi tinatawag ang wallet o ang DFX, kahit naka-off ang wallet."
+  },
+  "/settings:dfx-login-busy": {
+    "de": "?visual=dfx-login-busy zeigt die Zeile mit deaktivierter Schaltfläche und der Statuszeile DFX wird geöffnet…. Kein Alarm. Das Wallet und DFX werden nicht aufgerufen.",
+    "es": "?visual=dfx-login-busy muestra la fila con el botón desactivado y la línea de estado Abriendo DFX…. No hay aviso. Ni la wallet ni DFX se llaman.",
+    "fil": "?visual=dfx-login-busy ay nagpapakita ng row na naka-disable ang button at ang status na Binubuksan ang DFX…. Walang alert. Hindi tinatawag ang wallet at ang DFX."
+  },
+  "/settings:dfx-login-error": {
+    "de": "?visual=dfx-login-error zeigt die Zeile mit aktiver Schaltfläche und dem Alarm DFX konnte nicht geöffnet werden. Erlaube neue Tabs für diese Seite und versuche es erneut. Keine Statuszeile. Das Wallet und DFX werden nicht aufgerufen.",
+    "es": "?visual=dfx-login-error muestra la fila con el botón activo y el aviso No se pudo abrir DFX. Permite las pestañas nuevas de este sitio e inténtalo de nuevo. No hay línea de espera. Ni la wallet ni DFX se llaman.",
+    "fil": "?visual=dfx-login-error ay nagpapakita ng row na naka-enable ang button at ang alert na Hindi mabuksan ang DFX. Payagan ang mga bagong tab para sa site na ito at subukan ulit. Walang busy line. Hindi tinatawag ang wallet at ang DFX."
+  },
   "/setup/name:controls": {
     "de": "Ein Name mit einem Steuerzeichen zeigt Der Name darf keine Steuerzeichen enthalten. (name.errorControls). Weiter bleibt deaktiviert, bis der Entwurf sich ändert. Überspringen bleibt verfügbar.",
     "es": "Un nombre que incluye un carácter de control muestra El nombre no puede incluir caracteres de control. (name.errorControls). Continuar permanece deshabilitado hasta que el borrador cambie. Omitir permanece disponible.",

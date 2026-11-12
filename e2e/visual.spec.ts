@@ -44842,6 +44842,50 @@ test.describe('settings states', () => {
     await shotScreen(page, 'state-settings-push-enable-error');
   });
 
+  test('settings dfx-login', async ({ page }) => {
+    await seedSettingsAccount(page);
+    await page.goto('/settings?visual=dfx-login');
+    await expect(page.getByRole('heading', { level: 1, name: 'Settings' })).toBeVisible();
+    const button = page.getByRole('button', { name: 'Log in at DFX' });
+    await expect(button).toBeEnabled();
+    await expect(
+      page.getByText(
+        'Opens DFX in a new tab, signed in with your 21.gifts wallet, so you can buy Bitcoin with a bank transfer.',
+      ),
+    ).toBeVisible();
+    await expect(page.getByText('Opening DFX…')).toHaveCount(0);
+    await expect(page.getByRole('region', { name: 'Wallet' }).getByRole('alert')).toHaveCount(0);
+    await button.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-settings-dfx-login');
+  });
+
+  test('settings dfx-login-busy', async ({ page }) => {
+    await seedSettingsAccount(page);
+    await page.goto('/settings?visual=dfx-login-busy');
+    await expect(page.getByRole('heading', { level: 1, name: 'Settings' })).toBeVisible();
+    const button = page.getByRole('button', { name: 'Log in at DFX' });
+    await expect(button).toBeDisabled();
+    const busy = page.getByText('Opening DFX…');
+    await expect(busy).toBeVisible();
+    await expect(page.getByRole('region', { name: 'Wallet' }).getByRole('alert')).toHaveCount(0);
+    await busy.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-settings-dfx-login-busy');
+  });
+
+  test('settings dfx-login-error', async ({ page }) => {
+    await seedSettingsAccount(page);
+    await page.goto('/settings?visual=dfx-login-error');
+    await expect(page.getByRole('heading', { level: 1, name: 'Settings' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Log in at DFX' })).toBeEnabled();
+    const alert = page.getByRole('region', { name: 'Wallet' }).getByRole('alert');
+    await expect(alert).toHaveText(
+      'DFX could not be opened. Allow new tabs for this site and try again.',
+    );
+    await expect(page.getByText('Opening DFX…')).toHaveCount(0);
+    await alert.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-settings-dfx-login-error');
+  });
+
   /**
    * Answers `GET /me/previous-wallets`.
    *

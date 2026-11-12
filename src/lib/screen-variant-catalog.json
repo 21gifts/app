@@ -1794,6 +1794,24 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/settings:dfx-login",
+    "label": "/settings dfx-login",
+    "visual": "state-settings-dfx-login",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/settings:dfx-login-busy",
+    "label": "/settings dfx-login-busy",
+    "visual": "state-settings-dfx-login-busy",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/settings:dfx-login-error",
+    "label": "/settings dfx-login-error",
+    "visual": "state-settings-dfx-login-error",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/settings/held-shares:default",
     "label": "/settings/held-shares default",
     "visual": "screen-settings-held-shares",

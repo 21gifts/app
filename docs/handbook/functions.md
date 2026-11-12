@@ -5369,7 +5369,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Purpose:** Makes sure the wallet is open from the tab phrase and returns its identity public key. Reuses a ready connection and waits for one in flight; otherwise calls `connectWallet`, also while the wallet is at `error` between automatic retries, which that call supersedes.
 - **Inputs:** Optional `WalletSdkLoader`.
 - **Returns / side effects:** The identity public key. Throws `wallet-connect` without a key or a tab phrase, or when the connection fails.
-- **Used by:** `runWalletSetup`, `receiveWalletSparkAddress`, and `useSocialRecoverySetup` (**Secure my account** checks that the open wallet is the account's verified wallet).
+- **Used by:** `runWalletSetup`, `receiveWalletSparkAddress`, `signWithWallet`, and `useSocialRecoverySetup` (**Secure my account** checks that the open wallet is the account's verified wallet).
 
 ## Function: appHost
 
@@ -5383,7 +5383,21 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Purpose:** Reads the Spark address of the signed-in member's own wallet (`receiveSparkAddress` of the connection), so a balance can be sent to it.
 - **Inputs:** Optional `WalletSdkLoader`, forwarded to `ensureWalletConnected`.
 - **Returns / side effects:** The address. Opens the wallet from the tab phrase first when it is not open yet. Throws `wallet-connect` when the wallet cannot be opened or closed meanwhile, otherwise the SDK's error.
-- **Used by:** `transferRemainingBalance` on `/settings/previous-wallets/[sparkPubkey]`.
+- **Used by:** `transferRemainingBalance` on `/settings/previous-wallets/[sparkPubkey]`, and `dfxLoginUrl` on `/settings`.
+
+## Function: signWithWallet
+
+- **Purpose:** Signs text with the member's own wallet identity key. The signature is the SDK's compact r‖s hex over one SHA-256 of the UTF-8 text.
+- **Inputs:** The text to sign, and an optional `WalletSdkLoader` forwarded to `ensureWalletConnected`.
+- **Returns / side effects:** The signature hex. Opens the wallet from the tab phrase when it is not open yet. Throws `wallet-connect` when the wallet cannot be opened or closed meanwhile, otherwise the SDK's error. The text and the signature are not logged.
+- **Used by:** `dfxLoginUrl` on `/settings` (**Log in at DFX**).
+
+## Function: dfxLoginUrl
+
+- **Purpose:** Builds the DFX Buy URL for the signed-in member's own in-app wallet: reads the Spark address, signs DFX's production sign-in text plus that address, and exchanges the signature for a session token. The token is only in the returned URL. Nothing is stored, and the address, the text, the signature, the token, and the URL are not logged. The signed text is chosen in the app. DFX does not supply it.
+- **Inputs:** Optional `WalletSdkLoader`, forwarded to `receiveWalletSparkAddress` and `signWithWallet`.
+- **Returns / side effects:** The absolute `https://app.dfx.swiss/buy` URL with `session`, `blockchain=Spark`, and `asset-out=BTC`. Throws `wallet-connect` when the wallet cannot be opened. Throws `dfx-login` when DFX answers non-2xx, returns a body that is not JSON, or omits a non-empty `accessToken`. A failed request rejects with that fetch error. Performs `POST https://api.dfx.swiss/v1/auth` with `{ address, signature, wallet: '21gifts' }`.
+- **Used by:** The **Log in at DFX** row on `/settings` (`SettingsScreen`).
 
 ## Function: registerWalletAddress
 
@@ -6522,7 +6536,7 @@ The class exists so the composer can tell a refused free first post from any oth
 
 - **Purpose:** Signed-in `/settings` body: the home of the member's preferences and account actions. Profile keeps identity only.
 - **Inputs:** `session` and `account` from `useAuthStore` (`username`, `amountUnit`), the preferred fiat from `useFiatPreference`, `getAppVersion()`, and the page host for the address.
-- **Returns / side effects:** `null` without a session or before the account has loaded. Otherwise a `Card surface={false}` with **h1** **Settings** (`settings.heading`) and five `section`s, each labelled by an **h2** in the section ramp and separated by a rule: **Wallet** (`wallet.title`, id `wallet`): **21.gifts address** (id `address`): `giftsLightningAddress` in `font-mono` with an icon-only ghost Copy (`wallet.payment.copyValue`; `Check` in `text-app-success` and a polite `sr-only` **Copied** for two seconds), or, while no username is set, **Set a username first.** and `UsernameForm variant="overlay"` in place, and then **Default amount** (`settings.defaultAmount`): a neutral `SegmentedControl` ₿ / the preferred fiat code bound to `account.amountUnit` that saves through `saveAmountUnit`, with the muted hint `settings.defaultAmountHint`. **Display** (`settings.display`): `LanguagePreferenceSwitcher`, `ThemeSwitcher`, `FiatPreferenceSwitcher`, `NumberFormatSwitcher`. **Notifications** (`profile.push.heading`, id `notifications`): `PushToggle`. **Account** (`settings.account`): `LogoutButton`. **About & legal** (`settings.about`): `next/link` rows **Handbook**, **Legal & Privacy**, **Terms of Use**, **Living room rules**, **Contact**, then the muted version line (`app.version`). When the address has a hash naming one of those ids, that part scrolls into view once the card renders. Securing the account lives on `/security` (`SecurityScreen`). No passkey prompt on this page.
+- **Returns / side effects:** `null` without a session or before the account has loaded. Otherwise a `Card surface={false}` with **h1** **Settings** (`settings.heading`) and five `section`s, each labelled by an **h2** in the section ramp and separated by a rule: **Wallet** (`wallet.title`, id `wallet`): **21.gifts address** (id `address`): `giftsLightningAddress` in `font-mono` with an icon-only ghost Copy (`wallet.payment.copyValue`; `Check` in `text-app-success` and a polite `sr-only` **Copied** for two seconds), or, while no username is set, **Set a username first.** and `UsernameForm variant="overlay"` in place, and then **Default amount** (`settings.defaultAmount`): a neutral `SegmentedControl` ₿ / the preferred fiat code bound to `account.amountUnit` that saves through `saveAmountUnit`, with the muted hint `settings.defaultAmountHint`, and, while the in-app wallet is `ready` (or a pin `dfx-login`, `dfx-login-busy` or `dfx-login-error` is set), **Log in at DFX** (`settings.dfxLogin`) with the muted hint `settings.dfxLoginHint`: a press opens a new tab, calls `dfxLoginUrl` and sends that tab to the DFX Buy page; while it runs the button is disabled and a busy line shows `settings.dfxLoginBusy`, a blocked tab opens nothing, does not call `dfxLoginUrl`, and shows `settings.dfxLoginError` in a `role="alert"`, and a failure after the tab opened closes that tab and shows the same alert. **Display** (`settings.display`): `LanguagePreferenceSwitcher`, `ThemeSwitcher`, `FiatPreferenceSwitcher`, `NumberFormatSwitcher`. **Notifications** (`profile.push.heading`, id `notifications`): `PushToggle`. **Account** (`settings.account`): `LogoutButton`. **About & legal** (`settings.about`): `next/link` rows **Handbook**, **Legal & Privacy**, **Terms of Use**, **Living room rules**, **Contact**, then the muted version line (`app.version`). When the address has a hash naming one of those ids, that part scrolls into view once the card renders. Securing the account lives on `/security` (`SecurityScreen`). No passkey prompt on this page.
 - **Used by:** `SettingsPage`.
 
 ## Function: PreviousWalletsRow

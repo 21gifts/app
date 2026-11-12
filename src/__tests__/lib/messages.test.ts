@@ -141,6 +141,47 @@ describe('getCatalog', () => {
     expect(getCatalog('en')['wallet.phraseWarning']).toContain('whole account');
   });
 
+  it('keeps the DFX login copy and never calls DFX a wallet', () => {
+    expect(getCatalog('en')['settings.dfxLogin']).toBe('Log in at DFX');
+    expect(getCatalog('de')['settings.dfxLogin']).toBe('Bei DFX einloggen');
+    expect(getCatalog('es')['settings.dfxLogin']).toBe('Iniciar sesión en DFX');
+    expect(getCatalog('fil')['settings.dfxLogin']).toBe('Mag-log in sa DFX');
+    expect(getCatalog('en')['settings.dfxLoginHint']).toBe(
+      'Opens DFX in a new tab, signed in with your 21.gifts wallet, so you can buy Bitcoin with a bank transfer.',
+    );
+    expect(getCatalog('de')['settings.dfxLoginHint']).toBe(
+      'Öffnet DFX in einem neuen Tab, angemeldet mit deinem 21.gifts Wallet, damit du Bitcoin per Banküberweisung kaufen kannst.',
+    );
+    expect(getCatalog('es')['settings.dfxLoginHint']).toBe(
+      'Abre DFX en una pestaña nueva, con la sesión de tu wallet de 21.gifts, para que puedas comprar Bitcoin con una transferencia bancaria.',
+    );
+    expect(getCatalog('fil')['settings.dfxLoginHint']).toBe(
+      'Binubuksan ang DFX sa bagong tab, naka-sign in gamit ang 21.gifts wallet mo, para makabili ka ng Bitcoin sa bank transfer.',
+    );
+    expect(getCatalog('en')['settings.dfxLoginBusy']).toBe('Opening DFX…');
+    expect(getCatalog('de')['settings.dfxLoginBusy']).toBe('DFX wird geöffnet…');
+    expect(getCatalog('es')['settings.dfxLoginBusy']).toBe('Abriendo DFX…');
+    expect(getCatalog('fil')['settings.dfxLoginBusy']).toBe('Binubuksan ang DFX…');
+    expect(getCatalog('en')['settings.dfxLoginError']).toBe(
+      'DFX could not be opened. Allow new tabs for this site and try again.',
+    );
+    expect(getCatalog('de')['settings.dfxLoginError']).toBe(
+      'DFX konnte nicht geöffnet werden. Erlaube neue Tabs für diese Seite und versuche es erneut.',
+    );
+    expect(getCatalog('es')['settings.dfxLoginError']).toBe(
+      'No se pudo abrir DFX. Permite las pestañas nuevas de este sitio e inténtalo de nuevo.',
+    );
+    expect(getCatalog('fil')['settings.dfxLoginError']).toBe(
+      'Hindi mabuksan ang DFX. Payagan ang mga bagong tab para sa site na ito at subukan ulit.',
+    );
+    for (const locale of LOCALES) {
+      const hint = getCatalog(locale)['settings.dfxLoginHint'].toLowerCase();
+      expect(hint, locale).not.toContain('dfx wallet');
+      expect(hint, locale).not.toContain('dfx-wallet');
+      expect(hint, locale).not.toContain('monedero dfx');
+    }
+  });
+
   it('prefixes home.step2BodyAfter with a period in every locale', () => {
     for (const locale of LOCALES) {
       expect(getCatalog(locale)['home.step2BodyAfter']).toMatch(/^\./);

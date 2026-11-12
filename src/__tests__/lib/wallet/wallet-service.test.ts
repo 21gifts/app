@@ -16,6 +16,7 @@ import {
   payFromWallet,
   receiveWalletSparkAddress,
   refreshWallet,
+  signWithWallet,
   registerWalletAddress,
   WALLET_RETRY_BASE_MS,
   WALLET_RETRY_CAP_MS,
@@ -51,6 +52,7 @@ const MNEMONIC =
 const API_KEY = 'test-breez-api-key';
 const IDENTITY = `02${'a'.repeat(64)}`;
 const SPARK_ADDRESS = 'spark1qexampleaddress';
+const SIGNATURE = 'cd'.repeat(32);
 
 const sdkImport = vi.hoisted(() =>
   vi.fn(async () => {
@@ -93,6 +95,7 @@ function createFakeSdk(overrides?: {
     getPayment: ReturnType<typeof vi.fn>;
     listReportPayments: ReturnType<typeof vi.fn>;
     receiveSparkAddress: ReturnType<typeof vi.fn>;
+    signMessage: ReturnType<typeof vi.fn>;
     disconnect: ReturnType<typeof vi.fn>;
   };
   connect: ReturnType<typeof vi.fn>;
@@ -119,6 +122,7 @@ function createFakeSdk(overrides?: {
     getPayment: vi.fn(),
     listReportPayments: vi.fn(async () => []),
     receiveSparkAddress: vi.fn(async () => SPARK_ADDRESS),
+    signMessage: vi.fn(async () => ({ pubkey: IDENTITY, signature: SIGNATURE })),
     disconnect: vi.fn(overrides?.disconnect ?? (async () => undefined)),
   };
   const connect = vi.fn(
@@ -2227,6 +2231,59 @@ describe('receiveWalletSparkAddress', () => {
     const { loadSdk, connection } = createFakeSdk();
     connection.receiveSparkAddress.mockRejectedValueOnce(new Error('sdk failed'));
     await expect(receiveWalletSparkAddress(loadSdk)).rejects.toThrow('sdk failed');
+  });
+});
+
+describe('signWithWallet', () => {
+  it('opens the wallet from the tab phrase and returns the signature hex', async () => {
+    rememberSessionPhrase(MNEMONIC);
+    const { loadSdk, connect, connection } = createFakeSdk();
+    vi.mocked(logInteraction).mockClear();
+    vi.mocked(captureMessage).mockClear();
+    await expect(signWithWallet('dfx-sign-this-exact-text', loadSdk)).resolves.toBe(SIGNATURE);
+    expect(connect).toHaveBeenCalledWith(MNEMONIC, API_KEY, window.location.host);
+    expect(connection.signMessage).toHaveBeenCalledWith('dfx-sign-this-exact-text');
+    const logged = JSON.stringify([
+      ...vi.mocked(logInteraction).mock.calls,
+      ...vi.mocked(captureMessage).mock.calls,
+    ]);
+    expect(logged).not.toContain('dfx-sign-this-exact-text');
+    expect(logged).not.toContain(SIGNATURE);
+  });
+
+  it('reuses the open wallet', async () => {
+    rememberSessionPhrase(MNEMONIC);
+    const { loadSdk, connect, connection } = createFakeSdk();
+    await connectWallet(loadSdk);
+    await expect(signWithWallet('hello')).resolves.toBe(SIGNATURE);
+    expect(connect).toHaveBeenCalledTimes(1);
+    expect(connection.signMessage).toHaveBeenCalledWith('hello');
+  });
+
+  it('rejects when the wallet cannot be opened', async () => {
+    const { loadSdk, connect, connection } = createFakeSdk();
+    await expect(signWithWallet('hello', loadSdk)).rejects.toThrow('wallet-connect');
+    expect(connect).not.toHaveBeenCalled();
+    expect(connection.signMessage).not.toHaveBeenCalled();
+  });
+
+  it('rejects when the wallet closes before the text is signed', async () => {
+    rememberSessionPhrase(MNEMONIC);
+    const { loadSdk, connection } = createFakeSdk();
+    await connectWallet(loadSdk);
+    const pending = signWithWallet('hello', loadSdk);
+    // The wallet check has passed one tick later; the signature is read on the next.
+    await Promise.resolve();
+    void disconnectWallet();
+    await expect(pending).rejects.toThrow('wallet-connect');
+    expect(connection.signMessage).not.toHaveBeenCalled();
+  });
+
+  it('passes an SDK error on', async () => {
+    rememberSessionPhrase(MNEMONIC);
+    const { loadSdk, connection } = createFakeSdk();
+    connection.signMessage.mockRejectedValueOnce(new Error('sdk failed'));
+    await expect(signWithWallet('hello', loadSdk)).rejects.toThrow('sdk failed');
   });
 });
 
