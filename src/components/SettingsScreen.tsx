@@ -378,6 +378,9 @@ function DfxLoginRow(): ReactElement | null {
         }
         tab.location.href = url;
       } catch {
+        if (tab.closed) {
+          return;
+        }
         tab.close();
         setFailed(true);
       } finally {

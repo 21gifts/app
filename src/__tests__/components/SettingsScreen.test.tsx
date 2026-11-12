@@ -1051,4 +1051,46 @@ describe('SettingsScreen', () => {
     expect(first.href).toBe('');
     expect(screen.queryByRole('alert')).toBeNull();
   });
+
+  it('stays silent when sign-in fails after the member closes the tab, then allows another press', async () => {
+    useWalletStore.getState().setReady(21, 'id');
+    const first = fakeTab();
+    const second = fakeTab();
+    const open = vi
+      .fn()
+      .mockReturnValueOnce(first as unknown as Window)
+      .mockReturnValueOnce(second as unknown as Window);
+    vi.stubGlobal('open', open);
+    let fail: (error: Error) => void = () => undefined;
+    const pending = new Promise<string>((_resolve, reject) => {
+      fail = reject;
+    });
+    const rejectionObserved = pending.catch(() => undefined);
+    vi.mocked(dfxLoginUrl).mockReturnValueOnce(pending);
+    renderWithLocale(<SettingsScreen />);
+    const button = screen.getByRole('button', { name: 'Log in at DFX' });
+    fireEvent.click(button);
+    expect(first.opener).toBeNull();
+    first.closed = true;
+    await act(async () => {
+      fail(new Error('wallet-connect'));
+      await rejectionObserved;
+    });
+    expect(first.close).not.toHaveBeenCalled();
+    expect(first.href).toBe('');
+    expect(first.openerAtNavigation).toBe('pending');
+    expect(screen.queryByRole('alert')).toBeNull();
+    expect(screen.queryByText('Opening DFX…')).toBeNull();
+    expect(button.hasAttribute('disabled')).toBe(false);
+
+    vi.mocked(dfxLoginUrl).mockResolvedValueOnce(DFX_BUY);
+    await act(async () => {
+      fireEvent.click(button);
+    });
+    expect(open).toHaveBeenCalledTimes(2);
+    expect(dfxLoginUrl).toHaveBeenCalledTimes(2);
+    expect(second.href).toBe(DFX_BUY);
+    expect(second.openerAtNavigation).toBeNull();
+    expect(screen.queryByRole('alert')).toBeNull();
+  });
 });
