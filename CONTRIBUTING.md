@@ -1272,6 +1272,12 @@ only for a signed-in member and both through same-origin proxies:
 A payment that did not go out, and a wallet that did not open, are also sent
 to error reporting (`Payment failed`, one issue per stage and reason, and
 `Wallet did not open`, one per reason), errors-only like every other report.
+A failed read or safe update of the SDK user settings after a connection is
+sent as `Wallet settings not updated`, one issue per fixed stage (`read`,
+`private_mode`, or `viewer`). It carries only that stage and the same fixed
+error name, error code, and cause-kind classification used by wallet-open
+failures. It never carries the viewer key, wallet identity, address, SDK error
+text, or thrown value.
 A wallet that did not open is opened again automatically, in the same page:
 a failed download of the wallet code is downloaded again, and the download
 itself is not cut off by the connect deadline. Only the first

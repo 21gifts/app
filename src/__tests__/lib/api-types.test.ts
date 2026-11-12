@@ -1816,8 +1816,21 @@ describe('accountSchema', () => {
       trialUtcDate: null,
       admittedAt: null,
       reviewedByName: null,
+      shopPaymentDue: true,
+      payoutToday: { state: 'blocked' as const, reason: 'shop_payment' },
     };
     expect(accountSchema.parse({ ...account, funding }).funding).toEqual(funding);
+  });
+
+  it('accepts the wallet viewer key and top-level basis payout compatibility field', () => {
+    const walletViewerPublicKey = `02${'a'.repeat(64)}`;
+    const grantPayoutToday = { state: 'due' as const, reason: null };
+    expect(
+      accountSchema.parse({ ...account, walletViewerPublicKey, grantPayoutToday }),
+    ).toMatchObject({ walletViewerPublicKey, grantPayoutToday });
+    expect(
+      accountSchema.parse({ ...account, walletViewerPublicKey: null }).walletViewerPublicKey,
+    ).toBeNull();
   });
 
   it('rejects a garbage funding status', () => {

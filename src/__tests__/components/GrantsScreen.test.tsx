@@ -1,7 +1,8 @@
-import { act, cleanup, fireEvent, screen, waitFor } from '@testing-library/react';
+import { act, cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { GrantsScreen } from '@/components/GrantsScreen';
 import type { Account, FundingApplication } from '@/lib/api-types';
+import { consumePendingForumCompose, consumeSkipIntroduceOverlay } from '@/lib/forum-feed';
 import { useAuthStore } from '@/stores/auth-store';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
 
@@ -73,6 +74,8 @@ const APPLICATION_NEIL: FundingApplication = {
 
 beforeEach(() => {
   vi.clearAllMocks();
+  consumePendingForumCompose();
+  consumeSkipIntroduceOverlay();
   listMock.mockResolvedValue([]);
   useAuthStore.setState({ session: 'sess', account });
 });
@@ -116,6 +119,188 @@ describe('GrantsScreen', () => {
     expect(screen.queryByText('No open applications.')).toBeNull();
     expect(screen.queryByText('Loading…')).toBeNull();
     expect(listMock).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    [{ state: 'paid', reason: null }, 'Payout made today.', null],
+    [{ state: 'paid', reason: 'welcome' }, 'Your welcome gift was paid today.', null],
+    [{ state: 'due', reason: null }, "All conditions are met. Today's payout is on its way.", null],
+    [
+      { state: 'due', reason: 'payments_paused' },
+      'All conditions are met, but payouts are paused right now.',
+      null,
+    ],
+    [
+      { state: 'blocked', reason: 'verify' },
+      'A moderator must verify you in person first.',
+      '/trust-chain',
+    ],
+    [{ state: 'blocked', reason: 'wallet' }, 'Set up your wallet to receive payouts.', '/wallet'],
+    [
+      { state: 'blocked', reason: 'recovery_share' },
+      'Secure your account to receive payouts.',
+      '/settings/social-recovery',
+    ],
+    [
+      { state: 'blocked', reason: 'shop_payment' },
+      'You must have made at least one purchase in a 21.gifts shop today or yesterday.',
+      '/shops',
+    ],
+    [
+      { state: 'blocked', reason: 'media_post' },
+      'You must post at least one note with a photo today.',
+      '/welcome',
+    ],
+  ] as const)('shows exactly one payout line for case %#', (payoutToday, copy, href) => {
+    useAuthStore.setState({
+      session: 'sess',
+      account: {
+        ...account,
+        funding: { ...account.funding!, payoutToday },
+      },
+    });
+    renderWithLocale(<GrantsScreen />);
+    const group = screen.getByRole('group', { name: "Today's payout" });
+    expect(within(group).getByText(copy)).toBeTruthy();
+    expect(group.querySelectorAll('p')).toHaveLength(1);
+    const link = within(group).queryByRole('link');
+    expect(link?.getAttribute('href') ?? null).toBe(href);
+  });
+
+  it('shows the pending admission sentence without an apply link', () => {
+    useAuthStore.setState({
+      session: 'sess',
+      account: {
+        ...account,
+        funding: {
+          ...account.funding!,
+          status: 'pending',
+          payoutToday: { state: 'blocked', reason: 'admission' },
+        },
+      },
+    });
+    renderWithLocale(<GrantsScreen />);
+    const group = screen.getByRole('group', { name: "Today's payout" });
+    expect(
+      within(group).getByText(
+        'You must be admitted to the grant program. Your application is being reviewed.',
+      ),
+    ).toBeTruthy();
+    expect(within(group).queryByRole('link')).toBeNull();
+  });
+
+  it('requests the existing forum composer from the media-post sentence', () => {
+    useAuthStore.setState({
+      session: 'sess',
+      account: {
+        ...account,
+        funding: {
+          ...account.funding!,
+          payoutToday: { state: 'blocked', reason: 'media_post' },
+        },
+      },
+    });
+    renderWithLocale(<GrantsScreen />);
+    fireEvent.click(
+      screen.getByRole('link', {
+        name: 'You must post at least one note with a photo today.',
+      }),
+    );
+    expect(consumePendingForumCompose()).toBe(true);
+    expect(consumeSkipIntroduceOverlay()).toBe(true);
+  });
+
+  it.each(['none', 'rejected'] as const)(
+    'links an admission-blocked %s grant to the existing apply flow',
+    (status) => {
+      useAuthStore.setState({
+        session: 'sess',
+        account: {
+          ...account,
+          funding: {
+            ...account.funding!,
+            status,
+            payoutToday: { state: 'blocked', reason: 'admission' },
+          },
+        },
+      });
+      renderWithLocale(<GrantsScreen />);
+      expect(
+        screen
+          .getByRole('group', { name: "Today's payout" })
+          .querySelector('a')
+          ?.getAttribute('href'),
+      ).toBe('/grants/apply');
+    },
+  );
+
+  it('shows admission as information for a non-application funding status', () => {
+    useAuthStore.setState({
+      session: 'sess',
+      account: {
+        ...account,
+        funding: {
+          ...account.funding!,
+          status: 'trial',
+          payoutToday: { state: 'blocked', reason: 'admission' },
+        },
+      },
+    });
+    renderWithLocale(<GrantsScreen />);
+    const group = screen.getByRole('group', { name: "Today's payout" });
+    expect(within(group).getByText('You must be admitted to the grant program.')).toBeTruthy();
+    expect(within(group).queryByRole('link')).toBeNull();
+  });
+
+  it.each([
+    null,
+    { state: 'paid', reason: 'unknown' },
+    { state: 'due', reason: 'unknown' },
+    { state: 'blocked', reason: 'unknown' },
+  ] as const)('falls back safely for unavailable payout value %#', (payoutToday) => {
+    useAuthStore.setState({
+      session: 'sess',
+      account: {
+        ...account,
+        funding: { ...account.funding!, payoutToday },
+      },
+    });
+    renderWithLocale(<GrantsScreen />);
+    const group = screen.getByRole('group', { name: "Today's payout" });
+    expect(within(group).getByText("Today's payout status is not available.")).toBeTruthy();
+    expect(group.querySelectorAll('p')).toHaveLength(1);
+    expect(within(group).queryByRole('link')).toBeNull();
+  });
+
+  it('reads the basis-account compatibility payout field', () => {
+    useAuthStore.setState({
+      session: 'sess',
+      account: {
+        ...account,
+        role: 'basis',
+        funding: null,
+        grantPayoutToday: { state: 'paid', reason: 'welcome' },
+      },
+    });
+    renderWithLocale(<GrantsScreen />);
+    expect(screen.getByText('Your welcome gift was paid today.')).toBeTruthy();
+  });
+
+  it('prefers the payout nested in funding over the compatibility field', () => {
+    useAuthStore.setState({
+      session: 'sess',
+      account: {
+        ...account,
+        funding: {
+          ...account.funding!,
+          payoutToday: { state: 'paid', reason: null },
+        },
+        grantPayoutToday: { state: 'paid', reason: 'welcome' },
+      },
+    });
+    renderWithLocale(<GrantsScreen />);
+    expect(screen.getByText('Payout made today.')).toBeTruthy();
+    expect(screen.queryByText('Your welcome gift was paid today.')).toBeNull();
   });
 
   it('shows the grant card without the staff queue when the account is missing', () => {

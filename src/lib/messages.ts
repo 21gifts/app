@@ -1551,6 +1551,21 @@ const en = {
   'moderate.handbook.funding.ruleCap': 'New members are capped at 1 USD per day.',
   'moderate.handbook.funding.principlesLead': 'The 3 principles of 21.gifts:',
   'funding.heading': '21 gifts grant',
+  'funding.payoutToday.heading': "Today's payout",
+  'funding.payoutToday.paid': 'Payout made today.',
+  'funding.payoutToday.welcome': 'Your welcome gift was paid today.',
+  'funding.payoutToday.due': "All conditions are met. Today's payout is on its way.",
+  'funding.payoutToday.paused': 'All conditions are met, but payouts are paused right now.',
+  'funding.payoutToday.verify': 'A moderator must verify you in person first.',
+  'funding.payoutToday.admission': 'You must be admitted to the grant program.',
+  'funding.payoutToday.admissionPending':
+    'You must be admitted to the grant program. Your application is being reviewed.',
+  'funding.payoutToday.wallet': 'Set up your wallet to receive payouts.',
+  'funding.payoutToday.recoveryShare': 'Secure your account to receive payouts.',
+  'funding.payoutToday.shopPayment':
+    'You must have made at least one purchase in a 21.gifts shop today or yesterday.',
+  'funding.payoutToday.mediaPost': 'You must post at least one note with a photo today.',
+  'funding.payoutToday.unavailable': "Today's payout status is not available.",
   'funding.goals.link': 'Goals',
   'funding.goals.heading': 'Goals',
   'funding.goals.lead': 'Goal reached: 10 active shops. The grant program is open again.',
@@ -3394,6 +3409,22 @@ const de = {
   'moderate.handbook.funding.ruleCap': 'Neue Mitglieder sind auf 1 USD pro Tag begrenzt.',
   'moderate.handbook.funding.principlesLead': 'Die 3 Prinzipien von 21.gifts:',
   'funding.heading': '21-Förderprogramm',
+  'funding.payoutToday.heading': 'Heutige Auszahlung',
+  'funding.payoutToday.paid': 'Auszahlung heute erfolgt.',
+  'funding.payoutToday.welcome': 'Dein Willkommensgeschenk wurde heute ausgezahlt.',
+  'funding.payoutToday.due': 'Alle Bedingungen erfüllt. Die Auszahlung für heute ist unterwegs.',
+  'funding.payoutToday.paused':
+    'Alle Bedingungen erfüllt, aber die Auszahlungen sind gerade pausiert.',
+  'funding.payoutToday.verify': 'Ein Moderator muss dich zuerst persönlich verifizieren.',
+  'funding.payoutToday.admission': 'Du musst zum Grant-Programm zugelassen werden.',
+  'funding.payoutToday.admissionPending':
+    'Du musst zum Grant-Programm zugelassen werden. Dein Antrag wird geprüft.',
+  'funding.payoutToday.wallet': 'Richte deine Wallet ein, um Auszahlungen zu erhalten.',
+  'funding.payoutToday.recoveryShare': 'Sichere dein Konto ab, um Auszahlungen zu erhalten.',
+  'funding.payoutToday.shopPayment':
+    'Du musst heute oder gestern mindestens einen Kauf in einem 21.gifts-Shop gemacht haben.',
+  'funding.payoutToday.mediaPost': 'Du musst heute mindestens einen Post mit Bild gemacht haben.',
+  'funding.payoutToday.unavailable': 'Der Status der heutigen Auszahlung ist nicht verfügbar.',
   'funding.goals.link': 'Ziele',
   'funding.goals.heading': 'Ziele',
   'funding.goals.lead': 'Ziel erreicht: 10 aktive Shops. Das Förderprogramm ist wieder offen.',
@@ -5214,6 +5245,22 @@ const es = {
   'moderate.handbook.funding.ruleCap': 'Los miembros nuevos tienen un tope de 1 USD al día.',
   'moderate.handbook.funding.principlesLead': 'Los 3 principios de 21.gifts:',
   'funding.heading': 'Beca 21 gifts',
+  'funding.payoutToday.heading': 'Pago de hoy',
+  'funding.payoutToday.paid': 'El pago de hoy ya se realizó.',
+  'funding.payoutToday.welcome': 'Tu regalo de bienvenida se pagó hoy.',
+  'funding.payoutToday.due': 'Se cumplen todas las condiciones. El pago de hoy está en camino.',
+  'funding.payoutToday.paused':
+    'Se cumplen todas las condiciones, pero los pagos están pausados por ahora.',
+  'funding.payoutToday.verify': 'Primero, una persona moderadora debe verificarte en persona.',
+  'funding.payoutToday.admission': 'Debes ser admitido en el programa de becas.',
+  'funding.payoutToday.admissionPending':
+    'Debes ser admitido en el programa de becas. Tu solicitud está en revisión.',
+  'funding.payoutToday.wallet': 'Configura tu wallet para recibir pagos.',
+  'funding.payoutToday.recoveryShare': 'Protege tu cuenta para recibir pagos.',
+  'funding.payoutToday.shopPayment':
+    'Debes haber hecho al menos una compra en una tienda 21.gifts hoy o ayer.',
+  'funding.payoutToday.mediaPost': 'Debes publicar al menos una nota con una foto hoy.',
+  'funding.payoutToday.unavailable': 'El estado del pago de hoy no está disponible.',
   'funding.goals.link': 'Objetivos',
   'funding.goals.heading': 'Objetivos',
   'funding.goals.lead':
@@ -7039,6 +7086,24 @@ const fil = {
   'moderate.handbook.funding.ruleCap': 'Ang mga bagong miyembro ay naka-cap sa 1 USD bawat araw.',
   'moderate.handbook.funding.principlesLead': 'Ang 3 prinsipyo ng 21.gifts:',
   'funding.heading': '21 gifts grant',
+  'funding.payoutToday.heading': 'Payout ngayong araw',
+  'funding.payoutToday.paid': 'Nagawa na ang payout ngayong araw.',
+  'funding.payoutToday.welcome': 'Naibigay ngayong araw ang welcome gift mo.',
+  'funding.payoutToday.due':
+    'Kumpleto na ang lahat ng kondisyon. Papunta na ang payout ngayong araw.',
+  'funding.payoutToday.paused':
+    'Kumpleto na ang lahat ng kondisyon, pero pansamantalang naka-pause ang mga payout.',
+  'funding.payoutToday.verify': 'Kailangan ka munang personal na i-verify ng isang moderator.',
+  'funding.payoutToday.admission': 'Kailangan kang ma-admit sa grant program.',
+  'funding.payoutToday.admissionPending':
+    'Kailangan kang ma-admit sa grant program. Sinusuri ang iyong aplikasyon.',
+  'funding.payoutToday.wallet': 'I-set up ang wallet mo para makatanggap ng mga payout.',
+  'funding.payoutToday.recoveryShare': 'I-secure ang account mo para makatanggap ng mga payout.',
+  'funding.payoutToday.shopPayment':
+    'Kailangan ay nakabili ka nang kahit isang beses sa isang 21.gifts shop ngayong araw o kahapon.',
+  'funding.payoutToday.mediaPost':
+    'Kailangan kang mag-post ng kahit isang note na may larawan ngayong araw.',
+  'funding.payoutToday.unavailable': 'Hindi available ang status ng payout ngayong araw.',
   'funding.goals.link': 'Mga layunin',
   'funding.goals.heading': 'Mga layunin',
   'funding.goals.lead':

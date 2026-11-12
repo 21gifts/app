@@ -132,6 +132,11 @@ function connectionOf(balances: number[] = [0]): FakeConnection {
       reads += 1;
       return { balanceSats, identityPubkey: OLD_KEY };
     }),
+    getUserSettings: vi.fn(async () => ({
+      sparkPrivateModeEnabled: true,
+      sparkMasterIdentityPublicKey: null,
+    })),
+    updateUserSettings: vi.fn(async () => undefined),
     addEventListener: vi.fn(),
     registerAddress: vi.fn(),
     listPayments: vi.fn(),

@@ -8454,91 +8454,91 @@ The location editor is open. When POST /me/location answers 500, the form shows 
 
 ## Screen: /grants
 
-- **Purpose:** Signed-in grants page. `GrantsScreen` shows `FundingStatusCard`, then the public **Grant places** panel (`GrantPlacesPanel`: free places, admissions, that applications stay open, and the 20-shop goal that opens the next round). The only title is the page `h1` **21 gifts grant**. A signed-in account also sees a secondary large **Goals** link to `/grants/goals`, under the grant card and above the staff queue. A missing account shows no link. A viewer at least initiator (`canEditDailyPayoutRoster`), meaning initiator and founder, also sees three secondary large links, **Daily payment text** to `/grants/payments/comment`, **Daily payment amounts** to `/grants/payments/amounts`, and **Moderator payments** to `/grants/payments/moderators`. Those links do not load the roster. A moderator, a fond, or a software developer does not see them. An account at least moderator (`roleAtLeast(role, 'moderator')`), including a fond, a software developer, an initiator, and a founder, with at least one open application sees a secondary large **Open application (1)** link when the count is one and **Open applications (N)** otherwise (`funding.applications.openCount`) to `/grants/applications`. When none are open, the sentence **No open applications.** is plain text, not a link. While the count is loading, the sentence is **Loading…**. When the load fails, the error sentence and **Try again** are shown, not the applications link. The profile no longer shows this card.
+- **Purpose:** Signed-in grants page. `GrantsScreen` shows `FundingStatusCard`, a visible **Today's payout** panel with exactly one sentence from `funding.payoutToday ?? grantPayoutToday`, then the public **Grant places** panel (`GrantPlacesPanel`: free places, admissions, that applications stay open, and the 20-shop goal that opens the next round). Missing/null or unknown payout data shows **Today's payout status is not available.** The only title is the page `h1` **21 gifts grant**. A signed-in account also sees a secondary large **Goals** link to `/grants/goals`, under the grant card and above the staff queue. A missing account shows no link. A viewer at least initiator (`canEditDailyPayoutRoster`), meaning initiator and founder, also sees three secondary large links, **Daily payment text** to `/grants/payments/comment`, **Daily payment amounts** to `/grants/payments/amounts`, and **Moderator payments** to `/grants/payments/moderators`. Those links do not load the roster. A moderator, a fond, or a software developer does not see them. An account at least moderator (`roleAtLeast(role, 'moderator')`), including a fond, a software developer, an initiator, and a founder, with at least one open application sees a secondary large **Open application (1)** link when the count is one and **Open applications (N)** otherwise (`funding.applications.openCount`) to `/grants/applications`. When none are open, the sentence **No open applications.** is plain text, not a link. While the count is loading, the sentence is **Loading…**. When the load fails, the error sentence and **Try again** are shown, not the applications link. The profile no longer shows this card.
 - **Inputs:** Session account via `OnboardingGate screen="profile"` / `useAuthStore`.
-- **Actions:** Read verification or grant status. A basis account reads that it is not verified yet and does not open Apply. A verified account with status pending, trial, or admitted reads that copy. A verified account with status none or rejected reads the daily-gift sentence, opens About, or opens Apply. Every visitor reads the free grant places of the current round. Signed-in accounts open **Goals** (`/grants/goals`). A viewer at least initiator (initiator and founder) opens **Daily payment text**, **Daily payment amounts**, or **Moderator payments**. An account at least moderator, including a fond, a software developer, an initiator, and a founder, opens **Open application (1)** or **Open applications (N)** only when N is at least 1. **Try again** repeats the load after an error.
+- **Actions:** Read verification, grant status, and exactly one reason for today's payout. The payout sentence reuses the existing destination that fixes the step: Trust Chain, apply, wallet, Social Recovery, shops, or the forum composer; a pending application is information only. A basis account reads that it is not verified yet and does not open Apply. A verified account with status pending, trial, or admitted reads that copy. A verified account with status none or rejected reads the daily-gift sentence, opens About, or opens Apply. Every visitor reads the free grant places of the current round. Signed-in accounts open **Goals** (`/grants/goals`). A viewer at least initiator (initiator and founder) opens **Daily payment text**, **Daily payment amounts**, or **Moderator payments**. An account at least moderator, including a fond, a software developer, an initiator, and a founder, opens **Open application (1)** or **Open applications (N)** only when N is at least 1. **Try again** repeats the load after an error.
 - **Used by:** Route `/grants` (`GrantsPage`).
 
 ### Variant: default
 
-Verified owner with `funding.status` **none**. Page `h1` **21 gifts grant**, **Admitted members receive the daily gift. Apply so a moderator can review your posts.**, the **About** link, and the large **Apply for the 21 gifts grant** link. Under the card the **Grant places** panel reads **10 of 10 places are free.**, **Moderators have admitted 0 people in this round.**, the open-applications sentence, and **When 20 shops are active, the grant program opens for more people.** Then **Goals**.
+Verified owner with `funding.status` **none**. Page `h1` **21 gifts grant**, **Admitted members receive the daily gift. Apply so a moderator can review your posts.**, the **About** link, and the large **Apply for the 21 gifts grant** link. The payout value is absent, so **Today's payout** shows **Today's payout status is not available.** Under it the **Grant places** panel reads **10 of 10 places are free.**, **Moderators have admitted 0 people in this round.**, the open-applications sentence, and **When 20 shops are active, the grant program opens for more people.** Then **Goals**.
 
 ![21.gifts grants](images/grants.png)
 
 ### Variant: places-full
 
-Verified owner with status none when every place of the round is taken. The card still offers **Apply for the 21 gifts grant**. The **Grant places** panel reads **0 of 10 places are free.** and **All 10 places of this round are taken. Applications stay open.**, then the 20-shop goal. Needle `state-grants-places-full`.
+Verified owner with status none when every place of the round is taken. **Today's payout** shows **Payout made today.** The card still offers **Apply for the 21 gifts grant**. The **Grant places** panel reads **0 of 10 places are free.** and **All 10 places of this round are taken. Applications stay open.**, then the 20-shop goal. Needle `state-grants-places-full`.
 
 ![21.gifts grants places full](images/grants-places-full.png)
 
 ### Variant: places-error
 
-Verified owner with status none when `GET /funding/places` fails. The card and **Apply for the 21 gifts grant** stay. The panel shows **Could not load the grant places. Please try again.** and **Try again**. Needle `state-grants-places-error`.
+Verified owner with status none when `GET /funding/places` fails. **Today's payout** shows **Your welcome gift was paid today.** The card and **Apply for the 21 gifts grant** stay. The panel shows **Could not load the grant places. Please try again.** and **Try again**. Needle `state-grants-places-error`.
 
 ![21.gifts grants places error](images/grants-places-error.png)
 
 ### Variant: places-loading
 
-Verified owner with status none while `GET /funding/places` has not answered. The card and **Apply for the 21 gifts grant** stay. The **Grant places** panel shows **Loading…**. Needle `state-grants-places-loading`.
+Verified owner with status none while `GET /funding/places` has not answered. **Today's payout** shows **All conditions are met. Today's payout is on its way.** The card and **Apply for the 21 gifts grant** stay. The **Grant places** panel shows **Loading…**. Needle `state-grants-places-loading`.
 
 ![21.gifts grants places loading](images/grants-places-loading.png)
 
 ### Variant: funding-not-verified
 
-Basis owner. Grant section on `/grants`. Copy **You are not verified yet.** plus how in-person verification works. No apply button. The **Grant places** panel under the card reads **10 of 10 places are free.**
+Basis owner. Grant section on `/grants`. Copy **You are not verified yet.** plus how in-person verification works. No apply button. **Today's payout** links **A moderator must verify you in person first.** to `/trust-chain`. The **Grant places** panel under the card reads **10 of 10 places are free.**
 
 ![21.gifts profile funding not verified](images/profile-funding-not-verified.png)
 
 ### Variant: funding-pending
 
-Verified owner with `funding.status` **pending**. Copy **Your application is open. A moderator will review your posts.** The **Grant places** panel under the card reads **10 of 10 places are free.**
+Verified owner with `funding.status` **pending**. Copy **Your application is open. A moderator will review your posts.** **Today's payout** shows the one line **You must be admitted to the grant program. Your application is being reviewed.** without a link. The **Grant places** panel under the card reads **10 of 10 places are free.**
 
 ![21.gifts profile funding pending](images/profile-funding-pending.png)
 
 ### Variant: funding-trial
 
-Verified owner with `funding.status` **trial**. Copy **You are on a one-day trial. Review repeats tomorrow.** The **Grant places** panel under the card reads **10 of 10 places are free.**
+Verified owner with `funding.status` **trial**. Copy **You are on a one-day trial. Review repeats tomorrow.** **Today's payout** shows **All conditions are met, but payouts are paused right now.** The **Grant places** panel under the card reads **10 of 10 places are free.**
 
 ![21.gifts profile funding trial](images/profile-funding-trial.png)
 
 ### Variant: funding-admitted
 
-Verified owner with `funding.status` **admitted**. Copy **You are admitted to daily 21.gifts grant payouts.** plus **Takes part in the 21.gifts funding program since {date}**. When `reviewedByName` is set, that sentence names the reviewer. Trial, pending, and rejected do not show a name. The funding-program icon on the public facts is closed here. The pressed result is **funding-program-open**. The **Grant places** panel under the card reads **10 of 10 places are free.**
+Verified owner with `funding.status` **admitted**. Copy **You are admitted to daily 21.gifts grant payouts.** plus **Takes part in the 21.gifts funding program since {date}**. **Today's payout** links **Set up your wallet to receive payouts.** to `/wallet`. When `reviewedByName` is set, the participation sentence names the reviewer. Trial, pending, and rejected do not show a name. The funding-program icon on the public facts is closed here. The pressed result is **funding-program-open**. The **Grant places** panel under the card reads **10 of 10 places are free.**
 ![21.gifts profile funding admitted](images/profile-funding-admitted.png)
 
 ### Variant: funding-program-open
 
-Admitted owner on `/grants`. The participation sentence **Takes part in the 21.gifts funding program since {date}** is visible on the grant card. Viewport capture after scrolling that line into view. The **Grant places** panel under the card reads **10 of 10 places are free.**
+Admitted owner on `/grants`. The participation sentence **Takes part in the 21.gifts funding program since {date}** is visible on the grant card. **Today's payout** links **Secure your account to receive payouts.** to `/settings/social-recovery`. Viewport capture after scrolling the participation line into view. The **Grant places** panel under the card reads **10 of 10 places are free.**
 
 ![21.gifts profile funding program open](images/profile-funding-program-open.png)
 
 ### Variant: open-applications
 
-Moderator on `/grants` with two open grant applications. The grant card is shown, and **Open applications (2)** links to `/grants/applications`. When the list is empty this control is the sentence **No open applications.** and not a link; that state is **no-applications**. Needle `state-grants-open-applications`. The **Grant places** panel under the card reads **10 of 10 places are free.**
+Moderator on `/grants` with two open grant applications. **Today's payout** links **You must have made at least one purchase in a 21.gifts shop today or yesterday.** to `/shops`. The grant card is shown, and **Open applications (2)** links to `/grants/applications`. When the list is empty this control is the sentence **No open applications.** and not a link; that state is **no-applications**. Needle `state-grants-open-applications`. The **Grant places** panel under the card reads **10 of 10 places are free.**
 
 ![21.gifts grants open applications](images/grants-open-applications.png)
 
 ### Variant: no-applications
 
-Moderator on `/grants` when no grant application is open. The sentence **No open applications.** is plain text, not a button or link. Needle `state-grants-no-applications`. The **Grant places** panel under the card reads **10 of 10 places are free.**
+Moderator on `/grants` when no grant application is open. **Today's payout** links **You must post at least one note with a photo today.** to `/welcome` and requests the existing composer. The sentence **No open applications.** is plain text, not a button or link. Needle `state-grants-no-applications`. The **Grant places** panel under the card reads **10 of 10 places are free.**
 
 ![21.gifts grants no applications](images/grants-no-applications.png)
 
 ### Variant: applications-loading
 
-Moderator on `/grants` while open applications are still loading. Copy **Loading…** is plain text, not a link. Needle `state-grants-applications-loading`. The **Grant places** panel under the card reads **10 of 10 places are free.**
+Moderator on `/grants` while open applications are still loading. `funding.status` is none, so **Today's payout** links **You must be admitted to the grant program.** to `/grants/apply`. Copy **Loading…** is plain text, not a link. Needle `state-grants-applications-loading`. The **Grant places** panel under the card reads **10 of 10 places are free.**
 
 ![21.gifts grants applications loading](images/grants-applications-loading.png)
 
 ### Variant: applications-error
 
-Moderator on `/grants` when the open-application load fails. Copy **Could not load open applications. Please try again.** and button **Try again**. Not a link to the queue. Needle `state-grants-applications-error`. The **Grant places** panel under the card reads **10 of 10 places are free.**
+Moderator on `/grants` when the open-application load fails. The missing payout value shows **Today's payout status is not available.** Copy **Could not load open applications. Please try again.** and button **Try again**. Not a link to the queue. Needle `state-grants-applications-error`. The **Grant places** panel under the card reads **10 of 10 places are free.**
 
 ![21.gifts grants applications error](images/grants-applications-error.png)
 
 ### Variant: daily-payments
 
-Founder on `/grants` sees a secondary **Goals** link, secondary **Daily payment text**, **Daily payment amounts**, and **Moderator payments** links, plus **Open applications (2)**. Needle `Daily payment text`. The **Grant places** panel under the card reads **10 of 10 places are free.**
+Founder on `/grants` sees **Today's payout status is not available.**, a secondary **Goals** link, secondary **Daily payment text**, **Daily payment amounts**, and **Moderator payments** links, plus **Open applications (2)**. Needle `Daily payment text`. The **Grant places** panel under the card reads **10 of 10 places are free.**
 
 ![21.gifts grants daily payments](images/grants-daily-payments.png)
 

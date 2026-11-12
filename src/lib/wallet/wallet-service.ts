@@ -117,6 +117,82 @@ let openFailureReported = false;
  */
 let openInProgress: { run: number; startedAt: number } | null = null;
 
+/** A compressed secp256k1 public key in lower-case hex. */
+const VIEWER_PUBLIC_KEY = /^[0-9a-f]{66}$/;
+
+/** Fixed step names safe to attach to a wallet-settings error report. */
+type WalletSettingsStage = 'read' | 'private_mode' | 'viewer';
+
+/**
+ * Reports a settings failure without the viewer key, wallet identity, address,
+ * SDK error text, or thrown value.
+ *
+ * @param stage - Fixed settings operation that failed.
+ * @param failed - Rejection narrowed to the existing safe cause codes.
+ */
+function reportWalletSettingsFailure(stage: WalletSettingsStage, failed: unknown): void {
+  const { errorName, errorCode, causeKind } = errorCause(failed);
+  captureMessage('Wallet settings not updated', {
+    level: 'error',
+    fingerprint: ['wallet-settings-failed', stage],
+    tags: {
+      wallet_settings_stage: stage,
+      wallet_settings_error: errorName,
+      wallet_settings_error_code: errorCode ?? 'none',
+      wallet_settings_cause: causeKind,
+    },
+    extra: { stage, errorName, errorCode, causeKind },
+  });
+}
+
+/**
+ * Keeps one new SDK connection private and grants the configured platform
+ * viewer when `/me` supplied a valid key. Each setting changes only in the
+ * safe direction: private mode is never disabled and a viewer is never unset
+ * or replaced from an invalid value. Failures are retried only by the next
+ * wallet connection.
+ *
+ * @param conn - Newly connected wallet handle.
+ * @param viewerPublicKey - Viewer key from the signed-in owner's `/me` body.
+ */
+async function configureWalletSettings(
+  conn: WalletConnection,
+  viewerPublicKey: string | null | undefined,
+): Promise<void> {
+  let settings: Awaited<ReturnType<WalletConnection['getUserSettings']>>;
+  try {
+    settings = await conn.getUserSettings();
+  } catch (error: unknown) {
+    reportWalletSettingsFailure('read', error);
+    return;
+  }
+
+  let firstFailure: { stage: WalletSettingsStage; error: unknown } | null = null;
+  if (!settings.sparkPrivateModeEnabled) {
+    try {
+      await conn.updateUserSettings({ sparkPrivateModeEnabled: true });
+    } catch (error: unknown) {
+      firstFailure = { stage: 'private_mode', error };
+    }
+  }
+  if (
+    typeof viewerPublicKey === 'string' &&
+    VIEWER_PUBLIC_KEY.test(viewerPublicKey) &&
+    settings.sparkMasterIdentityPublicKey !== viewerPublicKey
+  ) {
+    try {
+      await conn.updateUserSettings({
+        sparkMasterIdentityPublicKey: { type: 'set', publicKey: viewerPublicKey },
+      });
+    } catch (error: unknown) {
+      firstFailure ??= { stage: 'viewer', error };
+    }
+  }
+  if (firstFailure !== null) {
+    reportWalletSettingsFailure(firstFailure.stage, firstFailure.error);
+  }
+}
+
 /**
  * Balance reads (`getInfo`) of the current connection still running, so an
  * announcement can wait for the newest balance. Cleared when the connection drops.
@@ -778,6 +854,8 @@ async function openWallet(loadSdk: WalletSdkLoader, quiet: boolean): Promise<voi
         return;
       }
       connection = next;
+      const viewerPublicKey = useAuthStore.getState().account?.walletViewerPublicKey;
+      void configureWalletSettings(next, viewerPublicKey);
       await next.addEventListener((event) => {
         if (run === runCounter && connection === next) {
           onWalletEvent(event, mnemonic);
