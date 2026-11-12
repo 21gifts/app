@@ -46,7 +46,7 @@ export function usePaymentCounterparty(payment: WalletPayment): PaymentCounterpa
   const [state, setState] = useState<{
     session: string;
     key: string;
-    sender: PaymentCounterparty | null;
+    counterparty: PaymentCounterparty | null;
   } | null>(null);
 
   useEffect(() => {
@@ -56,7 +56,7 @@ export function usePaymentCounterparty(payment: WalletPayment): PaymentCounterpa
     if (session === null || !eligible) return;
     const cached = cache.current.values.get(key);
     if (cached !== undefined) {
-      setState({ session, key, sender: cached });
+      setState({ session, key, counterparty: cached });
       return;
     }
     let active = true;
@@ -68,9 +68,9 @@ export function usePaymentCounterparty(payment: WalletPayment): PaymentCounterpa
       previousSyncCount.current = syncCount;
       const rows = await fetchPaymentCounterparties(session, [{ id: payment.id, direction }]);
       if (!active) return;
-      const sender = rows.find((row) => row.id === payment.id) ?? null;
-      if (sender !== null) cache.current.values.set(key, sender);
-      setState({ session, key, sender });
+      const counterparty = rows.find((row) => row.id === payment.id) ?? null;
+      if (counterparty !== null) cache.current.values.set(key, counterparty);
+      setState({ session, key, counterparty });
     };
     void lookup();
     return () => {
@@ -83,5 +83,5 @@ export function usePaymentCounterparty(payment: WalletPayment): PaymentCounterpa
   if (pin === 'sent-to-member' && payment.id === SENT_TO_MEMBER_COUNTERPARTY.id && eligible)
     return SENT_TO_MEMBER_COUNTERPARTY;
   if (session === null || !eligible || state?.session !== session || state.key !== key) return null;
-  return state.sender;
+  return state.counterparty;
 }
