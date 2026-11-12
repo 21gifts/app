@@ -47148,6 +47148,30 @@ test.describe('fonds screen', () => {
     await shotScreen(page, 'state-fonds-payments-empty-cursor');
   });
 
+  test('state /fonds/[username] payments-empty-cursor-loading', async ({ page }) => {
+    await fulfillSpot(page);
+    await page.route('**/fonds/tondo-fond/payments**', async (route) => {
+      const before = new URL(route.request().url()).searchParams.get('before');
+      if (before !== null) {
+        // never fulfill: the cursor request stays in flight for the picture
+        return;
+      }
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ payments: [], next: 'fond-payments-next' }),
+      });
+    });
+    await page.goto('/fonds/tondo-fond');
+    const payments = page.getByRole('region', { name: 'Payments' });
+    await expect(payments.getByRole('button', { name: 'Load more' })).toBeVisible();
+    await payments.getByRole('button', { name: 'Load more' }).click();
+    await expect(payments.getByRole('button', { name: 'Load more' })).toBeDisabled();
+    await expect(payments.getByRole('listitem')).toHaveCount(0);
+    await expect(payments.getByText('No payments yet.')).toHaveCount(0);
+    await shotScreen(page, 'state-fonds-payments-empty-cursor-loading');
+  });
+
   test('state /fonds/[username] payments-loading', async ({ page }) => {
     await fulfillSpot(page);
     await page.route('**/fonds/tondo-fond/payments', async () => {

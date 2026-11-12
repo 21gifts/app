@@ -1978,7 +1978,8 @@ export type FondSummary = z.infer<typeof fondSummarySchema>;
  * member may have `username: null` when no handle is set. `feeSats` is the
  * completed payment's fee and `paidAt` is its ISO 8601 timestamp with an
  * offset. `storedFiat` is the USD figure frozen when a paid grant payout was
- * created, or `null` for a row without a stored figure.
+ * created, or `null` for a row without a stored figure. Its `amount` is the
+ * stored string exactly as written: an integer or one to two fraction digits.
  */
 export const fondPaymentSchema = z.object({
   id: z.string().min(1),
@@ -1989,7 +1990,7 @@ export const fondPaymentSchema = z.object({
   storedFiat: z
     .object({
       currency: z.literal('USD'),
-      amount: z.string().regex(/^(0|[1-9]\d*)\.\d{2}$/),
+      amount: z.string().regex(/^(0|[1-9]\d*)(\.\d{1,2})?$/),
     })
     .nullable(),
   counterparty: z

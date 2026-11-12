@@ -12454,6 +12454,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/fonds/[username]',
+    id: 'payments-empty-cursor-loading',
+    image: 'fonds-payments-empty-cursor-loading.png',
+    visual: 'state-fonds-payments-empty-cursor-loading',
+    needle: "payments.getByRole('button', { name: 'Load more' })).toBeDisabled()",
+  },
+  {
+    route: '/fonds/[username]',
     id: 'payments-loading',
     image: 'fonds-payments-loading.png',
     visual: 'state-fonds-payments-loading',

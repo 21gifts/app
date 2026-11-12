@@ -10608,6 +10608,12 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/fonds/[username]:payments-empty-cursor-loading",
+    "label": "/fonds/[username] payments-empty-cursor-loading",
+    "visual": "state-fonds-payments-empty-cursor-loading",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/fonds/[username]:payments-loading",
     "label": "/fonds/[username] payments-loading",
     "visual": "state-fonds-payments-loading",

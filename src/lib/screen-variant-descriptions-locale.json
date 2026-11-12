@@ -8794,6 +8794,11 @@
     "es": "La misma página del Fondo cuando la api devuelve una primera página de pagos vacía pero con un cursor siguiente. Bajo las tarjetas aparece la sección Pagos sin el aviso Todavía no hay pagos. En su lugar se ve el botón Cargar más.",
     "fil": "Parehong pahina ng Fond kapag walang laman ang unang pahina ng mga bayad mula sa api ngunit may susunod na cursor. Sa ilalim ng mga tile ay may seksyong Mga bayad na walang paalalang Wala pang bayad. Sa halip ay nakikita ang button na Mag-load pa."
   },
+  "/fonds/[username]:payments-empty-cursor-loading": {
+    "de": "Dieselbe Fond-Seite, wenn die Api für die erste Zahlungsseite eine leere Liste mit einem nächsten Cursor liefert. Nach einem Tippen auf Mehr laden bleibt die Anfrage mit Cursor offen. Der Abschnitt Zahlungen zeigt keine Zeilen und keinen Hinweis Noch keine Zahlungen.; die Schaltfläche Mehr laden bleibt sichtbar und ist deaktiviert.",
+    "es": "La misma página del Fondo cuando la api devuelve una primera página de pagos vacía con un cursor siguiente. Tras pulsar Cargar más, la petición con cursor sigue en curso. La sección Pagos no muestra filas ni el aviso Todavía no hay pagos.; el botón Cargar más permanece visible y está desactivado.",
+    "fil": "Parehong pahina ng Fond kapag walang laman ang unang pahina ng mga bayad na may susunod na cursor. Pagkatapos i-tap ang Mag-load pa, nananatiling tumatakbo ang kahilingang may cursor. Walang row at walang paalalang Wala pang bayad. sa seksyong Mga bayad; nananatiling nakikita at hindi pinapagana ang button na Mag-load pa."
+  },
   "/fonds/[username]:payments-loading": {
     "de": "Dieselbe Fond-Seite, während die erste Zahlungsseite noch lädt. Die Übersicht ist bereits sichtbar; im Abschnitt Zahlungen steht Wird geladen…, und es gibt weder Zahlungszeilen noch Mehr laden.",
     "es": "La misma página del Fondo mientras carga la primera página de pagos. El resumen ya se ve; en la sección Pagos aparece Cargando… y no hay filas de pagos ni Cargar más.",

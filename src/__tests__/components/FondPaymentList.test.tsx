@@ -84,11 +84,11 @@ describe('FondPaymentList', () => {
     );
     expect(screen.getByText(/\+₿21'000/).textContent).toContain('$21.00');
     const fee = screen.getByText('Fee ₿21', { exact: false });
-    expect(fee.textContent).toContain('$0.01');
+    expect(fee.textContent).toContain('$0.02');
     expect(screen.getAllByText(/2026/)).toHaveLength(3);
   });
 
-  it('shows stored fiat beside bitcoin and derives the fee in the stored currency', async () => {
+  it('shows stored fiat beside bitcoin and the fee at the current spot', async () => {
     spot.value = { sats: 100_000_000, usd: '100000', chf: '80000', eur: null, php: null };
     vi.mocked(fetchFondPayments).mockResolvedValue({
       payments: [PAYMENTS.payments[1]!],
@@ -98,28 +98,34 @@ describe('FondPaymentList', () => {
     const row = await screen.findByRole('listitem');
     expect(row.textContent).toContain("−₿5'000 · $3.00");
     expect(row.textContent).not.toContain('CHF 4.00');
-    expect(row.textContent).toContain('$0.01');
-    expect(row.textContent).not.toContain('CHF 0.02');
+    expect(row.textContent).toContain('CHF 0.02');
+    expect(row.textContent).not.toContain('$0.01');
   });
 
-  it('derives a stored fee exactly in cents', async () => {
-    spot.value = { sats: 100_000_000, usd: '100000', chf: null, eur: null, php: null };
-    vi.mocked(fetchFondPayments).mockResolvedValue({
-      payments: [
-        {
-          ...PAYMENTS.payments[1]!,
-          id: 'stored-exact',
-          amountSats: 3_000,
-          feeSats: 21,
-        },
-      ],
-      next: null,
-    });
-    renderWithLocale(<FondPaymentList username="tondo-fond" />);
-    const row = await screen.findByRole('listitem');
-    expect(row.textContent).toContain("−₿3'000 · $3.00");
-    expect(screen.getByText('Fee ₿21', { exact: false }).textContent).toContain('$0.02');
-  });
+  it.each([
+    ['1', '$1.00'],
+    ['2.5', '$2.50'],
+    ['3.00', '$3.00'],
+  ] as const)(
+    'shows the stored USD amount %s as %s without using the spot',
+    async (amount, expected) => {
+      spot.value = { sats: 100_000_000, usd: '100000', chf: null, eur: null, php: null };
+      vi.mocked(fetchFondPayments).mockResolvedValue({
+        payments: [
+          {
+            ...PAYMENTS.payments[1]!,
+            id: `stored-${amount}`,
+            storedFiat: { currency: 'USD', amount },
+          },
+        ],
+        next: null,
+      });
+      renderWithLocale(<FondPaymentList username="tondo-fond" />);
+      const row = await screen.findByRole('listitem');
+      expect(row.textContent).toContain(`−₿5'000 · ${expected}`);
+      expect(row.textContent).not.toContain('· $5.00');
+    },
+  );
 
   it('uses the spot for a row without stored fiat', async () => {
     spot.value = { sats: 100_000_000, usd: '100000', chf: null, eur: null, php: null };
@@ -133,47 +139,16 @@ describe('FondPaymentList', () => {
     expect(within(row).getByText('Fee ₿21', { exact: false }).textContent).toContain('$0.02');
   });
 
-  it('rounds a stored fee half up in exact cents', async () => {
+  it('keeps a stored zero fee Free', async () => {
     spot.value = { sats: 100_000_000, usd: '100000', chf: null, eur: null, php: null };
     vi.mocked(fetchFondPayments).mockResolvedValue({
-      payments: [
-        {
-          ...PAYMENTS.payments[1]!,
-          id: 'fee-half-up',
-          amountSats: 1_000,
-          feeSats: 5,
-          storedFiat: { currency: 'USD', amount: '1.00' },
-        },
-        {
-          ...PAYMENTS.payments[1]!,
-          id: 'fee-half-down',
-          amountSats: 1_000,
-          feeSats: 4,
-          storedFiat: { currency: 'USD', amount: '1.00' },
-        },
-      ],
+      payments: [{ ...PAYMENTS.payments[1]!, id: 'stored-free', amountSats: 3_000, feeSats: 0 }],
       next: null,
     });
     renderWithLocale(<FondPaymentList username="tondo-fond" />);
-    const rows = await screen.findAllByRole('listitem');
-    expect(within(rows[0]!).getByText('Fee ₿5', { exact: false }).textContent).toContain('$0.01');
-    expect(within(rows[1]!).getByText('Fee ₿4', { exact: false }).textContent).toContain('$0.00');
-  });
-
-  it('keeps a stored zero fee Free and shows the spot when the amount is zero', async () => {
-    spot.value = { sats: 100_000_000, usd: '100000', chf: null, eur: null, php: null };
-    vi.mocked(fetchFondPayments).mockResolvedValue({
-      payments: [
-        { ...PAYMENTS.payments[1]!, id: 'stored-free', amountSats: 3_000, feeSats: 0 },
-        { ...PAYMENTS.payments[1]!, id: 'stored-zero', amountSats: 0, feeSats: 21 },
-      ],
-      next: null,
-    });
-    renderWithLocale(<FondPaymentList username="tondo-fond" />);
-    const rows = await screen.findAllByRole('listitem');
-    expect(within(rows[0]!).getByText('Fee Free').textContent).toBe('Fee Free');
-    expect(rows[0]?.textContent).toContain("−₿3'000 · $3.00");
-    expect(within(rows[1]!).getByText('Fee ₿21', { exact: false }).textContent).toContain('$0.02');
+    const row = await screen.findByRole('listitem');
+    expect(within(row).getByText('Fee Free').textContent).toBe('Fee Free');
+    expect(row.textContent).toContain("−₿3'000 · $3.00");
   });
 
   it('hides an incoming zero fee but shows an outgoing zero fee as Free', async () => {
@@ -332,7 +307,8 @@ describe('FondPaymentList', () => {
   });
 
   it.each([
-    ['amount', { storedFiat: { currency: 'USD', amount: '3' } }],
+    ['amount with a leading zero', { storedFiat: { currency: 'USD', amount: '03.00' } }],
+    ['amount with three decimals', { storedFiat: { currency: 'USD', amount: '3.000' } }],
     ['currency', { storedFiat: { currency: 'CHF', amount: '3.00' } }],
     ['paidAt', { paidAt: '2026-11-11 13:31' }],
   ] as const)('shows the payments error for a malformed %s body', async (_field, override) => {

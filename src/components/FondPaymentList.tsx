@@ -11,29 +11,9 @@ import { Button } from '@/components/ui';
 import { useSpotRate } from '@/hooks/useSpotRate';
 import { fetchFondPayments } from '@/lib/api';
 import type { FondPayment } from '@/lib/api-types';
-import { creditSmallestUnits } from '@/lib/credit-plan';
 import { formatDefinedGoalAmount } from '@/lib/forum-goal';
 import { formatForumTime } from '@/lib/forum-time';
-import { centsString } from '@/lib/loan-repay';
 import { formatBitcoin } from '@/lib/stats-money';
-
-/**
- * A fee in the fiat stored on its payment, rounded half up to exact cents.
- *
- * The stored amount is first read as whole cents with the same helper that
- * sums stored figures. The fee fraction is then rounded with BigInt only, so
- * the result never passes through a floating-point rate.
- *
- * @param amount - Stored two-decimal fiat amount.
- * @param feeSats - Whole-sat fee above zero.
- * @param amountSats - Whole-sat amount above zero.
- * @returns The fee amount as a two-decimal string in the stored currency.
- */
-function storedFeeFiat(amount: string, feeSats: number, amountSats: number): string {
-  const storedCents = creditSmallestUnits(amount, false)!;
-  const numerator = 2n * storedCents * BigInt(feeSats) + BigInt(amountSats);
-  return centsString(numerator / (2n * BigInt(amountSats)));
-}
 
 /** The ` · ` suffix followed by an already formatted fiat figure. */
 function fiatSuffix(text: string): ReactElement {
@@ -202,24 +182,10 @@ export function FondPaymentList({ username }: { username: string }): ReactElemen
                       payment.storedFiat.currency,
                       numberFormat,
                     );
-              const storedFeeText =
-                payment.storedFiat === null || payment.feeSats === 0 || payment.amountSats === 0
-                  ? null
-                  : formatDefinedGoalAmount(
-                      storedFeeFiat(payment.storedFiat.amount, payment.feeSats, payment.amountSats),
-                      payment.storedFiat.currency,
-                      numberFormat,
-                    );
               const amountFiat =
                 storedFiatText === null
                   ? preferredFiatSuffix(payment.amountSats, rateDay, fiat, numberFormat)
                   : fiatSuffix(storedFiatText);
-              const feeFiat =
-                payment.feeSats === 0
-                  ? null
-                  : storedFeeText === null
-                    ? preferredFiatSuffix(payment.feeSats, rateDay, fiat, numberFormat)
-                    : fiatSuffix(storedFeeText);
               const counterparty =
                 payment.counterparty === null ? (
                   <span className="truncate text-sm text-app-muted">{t('fond.private')}</span>
@@ -259,7 +225,9 @@ export function FondPaymentList({ username }: { username: string }): ReactElemen
                             {payment.feeSats === 0
                               ? t('wallet.payment.feeFree')
                               : formatBitcoin(payment.feeSats, numberFormat)}
-                            {feeFiat}
+                            {payment.feeSats === 0
+                              ? null
+                              : preferredFiatSuffix(payment.feeSats, rateDay, fiat, numberFormat)}
                           </span>
                         ) : null}
                       </div>

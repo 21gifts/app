@@ -2718,18 +2718,14 @@ describe('fondPaymentSchema', () => {
     });
   });
 
-  it('parses a stored USD figure and rejects a missing or malformed one', () => {
-    const storedFiat = { currency: 'USD', amount: '3.00' };
-    expect(fondPaymentSchema.parse({ ...payment, storedFiat })).toEqual({
-      ...payment,
-      storedFiat,
-    });
-    expect(
-      fondPaymentSchema.parse({
+  it('keeps a stored USD amount as written and rejects a missing or malformed one', () => {
+    for (const amount of ['0', '1', '2.5', '3.00']) {
+      const storedFiat = { currency: 'USD', amount };
+      expect(fondPaymentSchema.parse({ ...payment, storedFiat })).toEqual({
         ...payment,
-        storedFiat: { currency: 'USD', amount: '0.00' },
-      }).storedFiat,
-    ).toEqual({ currency: 'USD', amount: '0.00' });
+        storedFiat,
+      });
+    }
     expect(() => fondPaymentSchema.parse({ ...payment, storedFiat: undefined })).toThrow();
     expect(() =>
       fondPaymentSchema.parse({ ...payment, storedFiat: { currency: 'USD' } }),
@@ -2740,7 +2736,7 @@ describe('fondPaymentSchema', () => {
     expect(() =>
       fondPaymentSchema.parse({ ...payment, storedFiat: { currency: 'usd', amount: '3.00' } }),
     ).toThrow();
-    for (const amount of ['3', '3.0', '03.00', '-1.00', '3.000']) {
+    for (const amount of ['03.00', '-1.00', '3.000', '3.', '.5']) {
       expect(() =>
         fondPaymentSchema.parse({ ...payment, storedFiat: { currency: 'USD', amount } }),
       ).toThrow();
