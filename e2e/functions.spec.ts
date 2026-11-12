@@ -1651,6 +1651,7 @@ test('Function: pushTagForNotification — clicking a forum reply closes only th
     text: 'hello',
     createdAt: '2026-09-12T12:00:00.000Z',
     readAt: null,
+    personal: true,
   };
   await page.route(/\/me$/, async (route) => {
     await route.fulfill({
@@ -1761,6 +1762,7 @@ test('Function: currentPushEndpoint — clicking a row POSTs read with the push 
     text: 'hello',
     createdAt: '2026-09-12T12:00:00.000Z',
     readAt: null,
+    personal: true,
   };
   await page.route(/\/me$/, async (route) => {
     await route.fulfill({
@@ -1868,6 +1870,7 @@ test('Function: closeLocalPushNotifications — clicking a row closes only the m
     text: 'hello',
     createdAt: '2026-09-12T12:00:00.000Z',
     readAt: null,
+    personal: true,
   };
   await page.route(/\/me$/, async (route) => {
     await route.fulfill({
@@ -4445,6 +4448,7 @@ test('Function: markNotificationRead — clicking a row POSTs read', async ({ pa
     text: 'hello',
     createdAt: '2026-09-12T12:00:00.000Z',
     readAt: null,
+    personal: true,
   };
   await page.route(/\/me$/, async (route) => {
     await route.fulfill({
