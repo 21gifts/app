@@ -7748,9 +7748,11 @@ test.describe('loans repay screens', () => {
       visual: 'repay-close-error',
       text: 'Could not start this repayment. Please try again.',
     });
-    await expect(page.getByRole('alert')).toContainText(
-      'Could not start this repayment. Please try again.',
-    );
+    await expect(
+      page
+        .getByRole('alert')
+        .filter({ hasText: 'Could not start this repayment. Please try again.' }),
+    ).toBeVisible();
     await shotScreen(page, 'state-loans-repay-close-error');
   });
 
