@@ -22,6 +22,7 @@ const PAYMENTS = {
       paidAt: '2026-11-11T10:00:00.000Z',
       direction: 'in',
       storedFiat: null,
+      storedFee: null,
       counterparty: null,
     },
   ],

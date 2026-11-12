@@ -27,6 +27,7 @@ const PAYMENTS: FondPaymentPage = {
       feeSats: 0,
       paidAt: '2026-11-11T13:31:01.000Z',
       storedFiat: null,
+      storedFee: null,
       counterparty: null,
     },
     {
@@ -36,6 +37,7 @@ const PAYMENTS: FondPaymentPage = {
       feeSats: 21,
       paidAt: '2026-11-10T09:00:00.000Z',
       storedFiat: { currency: 'USD', amount: '3.00' },
+      storedFee: { amount: '0.01', currency: 'USD' },
       counterparty: { accountId: 'acc-alice', username: 'alice', name: 'Alice' },
     },
     {
@@ -45,6 +47,7 @@ const PAYMENTS: FondPaymentPage = {
       feeSats: 0,
       paidAt: '2026-11-09T09:00:00.000Z',
       storedFiat: null,
+      storedFee: null,
       counterparty: { accountId: 'acc-bob', username: 'bob', name: '' },
     },
   ],
@@ -72,9 +75,9 @@ describe('FondPaymentList', () => {
     expect(await screen.findByRole('region', { name: 'Payments' })).toBeTruthy();
     const rows = screen.getAllByRole('listitem');
     expect(rows).toHaveLength(3);
-    expect(within(rows[0]!).getByText('Incoming')).toBeTruthy();
-    expect(within(rows[1]!).getByText('Outgoing')).toBeTruthy();
-    expect(within(rows[2]!).getByText('Incoming')).toBeTruthy();
+    expect(within(rows[0]!).getByText('Received')).toBeTruthy();
+    expect(within(rows[1]!).getByText('Sent')).toBeTruthy();
+    expect(within(rows[2]!).getByText('Received')).toBeTruthy();
     expect(screen.getByText('Private')).toBeTruthy();
     expect(screen.getByRole('link', { name: 'Alice' }).getAttribute('href')).toBe(
       '/members/acc-alice',
@@ -84,11 +87,11 @@ describe('FondPaymentList', () => {
     );
     expect(screen.getByText(/\+₿21'000/).textContent).toContain('$21.00');
     const fee = screen.getByText('Fee ₿21', { exact: false });
-    expect(fee.textContent).toContain('$0.02');
+    expect(fee.textContent).toContain('$0.01');
     expect(screen.getAllByText(/2026/)).toHaveLength(3);
   });
 
-  it('shows stored fiat beside bitcoin and the fee at the current spot', async () => {
+  it('shows stored fiat and a stored fee without using the spot', async () => {
     spot.value = { sats: 100_000_000, usd: '100000', chf: '80000', eur: null, php: null };
     vi.mocked(fetchFondPayments).mockResolvedValue({
       payments: [PAYMENTS.payments[1]!],
@@ -98,7 +101,19 @@ describe('FondPaymentList', () => {
     const row = await screen.findByRole('listitem');
     expect(row.textContent).toContain("−₿5'000 · $3.00");
     expect(row.textContent).not.toContain('CHF 4.00');
-    expect(row.textContent).toContain('CHF 0.02');
+    expect(row.textContent).toContain('Gebühr ₿21 · $0.01');
+    expect(row.textContent).not.toContain('CHF 0.02');
+  });
+
+  it('shows the current spot for a positive fee without a stored fee', async () => {
+    spot.value = { sats: 100_000_000, usd: '100000', chf: '80000', eur: null, php: null };
+    vi.mocked(fetchFondPayments).mockResolvedValue({
+      payments: [{ ...PAYMENTS.payments[1]!, storedFee: null }],
+      next: null,
+    });
+    renderWithLocale(<FondPaymentList username="tondo-fond" />, 'de', 'ch', 'CHF');
+    const row = await screen.findByRole('listitem');
+    expect(row.textContent).toContain('Gebühr ₿21 · CHF 0.02');
     expect(row.textContent).not.toContain('$0.01');
   });
 
@@ -142,7 +157,15 @@ describe('FondPaymentList', () => {
   it('keeps a stored zero fee Free', async () => {
     spot.value = { sats: 100_000_000, usd: '100000', chf: null, eur: null, php: null };
     vi.mocked(fetchFondPayments).mockResolvedValue({
-      payments: [{ ...PAYMENTS.payments[1]!, id: 'stored-free', amountSats: 3_000, feeSats: 0 }],
+      payments: [
+        {
+          ...PAYMENTS.payments[1]!,
+          id: 'stored-free',
+          amountSats: 3_000,
+          feeSats: 0,
+          storedFee: null,
+        },
+      ],
       next: null,
     });
     renderWithLocale(<FondPaymentList username="tondo-fond" />);
@@ -163,7 +186,7 @@ describe('FondPaymentList', () => {
     const rows = await screen.findAllByRole('listitem');
     expect(rows).toHaveLength(2);
     expect(within(rows[0]!).queryByText(/^Fee /)).toBeNull();
-    expect(within(rows[1]!).getByText('Outgoing')).toBeTruthy();
+    expect(within(rows[1]!).getByText('Sent')).toBeTruthy();
     expect(within(rows[1]!).getByText('Fee Free').textContent).toBe('Fee Free');
   });
 
@@ -202,32 +225,32 @@ describe('FondPaymentList', () => {
     expect(await screen.findByText('No payments yet.')).toBeTruthy();
   });
 
-  it('keeps Load more when an empty page still has a cursor', async () => {
+  it('keeps Show more when an empty page still has a cursor', async () => {
     vi.mocked(fetchFondPayments)
       .mockResolvedValueOnce({ payments: [], next: 'cursor-2' })
       .mockResolvedValueOnce({ payments: [PAYMENTS.payments[0]!], next: null });
     renderWithLocale(<FondPaymentList username="tondo-fond" />);
-    expect(await screen.findByRole('button', { name: 'Load more' })).toBeTruthy();
+    expect(await screen.findByRole('button', { name: 'Show more' })).toBeTruthy();
     expect(screen.queryByText('No payments yet.')).toBeNull();
-    fireEvent.click(screen.getByRole('button', { name: 'Load more' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Show more' }));
     expect(await screen.findByText('Private')).toBeTruthy();
     expect(screen.queryByText('No payments yet.')).toBeNull();
     expect(fetchFondPayments).toHaveBeenLastCalledWith('tondo-fond', 'cursor-2');
   });
 
-  it('appends the next page and removes Load more at the end', async () => {
+  it('appends the next page and removes Show more at the end', async () => {
     vi.mocked(fetchFondPayments)
       .mockResolvedValueOnce({ payments: [PAYMENTS.payments[0]!], next: 'cursor-2' })
       .mockResolvedValueOnce({ payments: [PAYMENTS.payments[1]!], next: null });
     renderWithLocale(<FondPaymentList username="tondo-fond" />);
-    fireEvent.click(await screen.findByRole('button', { name: 'Load more' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Show more' }));
     expect(await screen.findByText('Alice')).toBeTruthy();
     expect(screen.getByText('Private')).toBeTruthy();
     expect(fetchFondPayments).toHaveBeenLastCalledWith('tondo-fond', 'cursor-2');
-    expect(screen.queryByRole('button', { name: 'Load more' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Show more' })).toBeNull();
   });
 
-  it('disables Load more while the next page is in flight', async () => {
+  it('disables Show more while the next page is in flight', async () => {
     let resolvePage: ((page: FondPaymentPage | null) => void) | undefined;
     vi.mocked(fetchFondPayments)
       .mockResolvedValueOnce({ payments: [PAYMENTS.payments[0]!], next: 'cursor-2' })
@@ -238,18 +261,18 @@ describe('FondPaymentList', () => {
           }),
       );
     renderWithLocale(<FondPaymentList username="tondo-fond" />);
-    const button = await screen.findByRole('button', { name: 'Load more' });
+    const button = await screen.findByRole('button', { name: 'Show more' });
     fireEvent.click(button);
     await waitFor(() => {
-      expect(screen.getByRole('button', { name: 'Load more' }).hasAttribute('disabled')).toBe(true);
+      expect(screen.getByRole('button', { name: 'Show more' }).hasAttribute('disabled')).toBe(true);
     });
     resolvePage?.({ payments: [PAYMENTS.payments[1]!], next: null });
     await waitFor(() => {
-      expect(screen.queryByRole('button', { name: 'Load more' })).toBeNull();
+      expect(screen.queryByRole('button', { name: 'Show more' })).toBeNull();
     });
   });
 
-  it('fires one next-page request when Load more is clicked twice', async () => {
+  it('fires one next-page request when Show more is clicked twice', async () => {
     let resolvePage: ((page: FondPaymentPage | null) => void) | undefined;
     vi.mocked(fetchFondPayments)
       .mockResolvedValueOnce({ payments: [PAYMENTS.payments[0]!], next: 'cursor-2' })
@@ -260,7 +283,7 @@ describe('FondPaymentList', () => {
           }),
       );
     renderWithLocale(<FondPaymentList username="tondo-fond" />);
-    const button = await screen.findByRole('button', { name: 'Load more' });
+    const button = await screen.findByRole('button', { name: 'Show more' });
     act(() => {
       button.click();
       button.click();
@@ -279,7 +302,7 @@ describe('FondPaymentList', () => {
         next: null,
       });
     renderWithLocale(<FondPaymentList username="tondo-fond" />);
-    fireEvent.click(await screen.findByRole('button', { name: 'Load more' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Show more' }));
     expect(await screen.findByText('Alice')).toBeTruthy();
     expect(screen.getAllByRole('listitem')).toHaveLength(2);
     expect(screen.getAllByText('Private')).toHaveLength(1);
@@ -310,6 +333,10 @@ describe('FondPaymentList', () => {
     ['amount with a leading zero', { storedFiat: { currency: 'USD', amount: '03.00' } }],
     ['amount with three decimals', { storedFiat: { currency: 'USD', amount: '3.000' } }],
     ['currency', { storedFiat: { currency: 'CHF', amount: '3.00' } }],
+    ['missing stored fee', { storedFee: undefined }],
+    ['stored fee amount', { storedFee: { amount: '0.001', currency: 'USD' } }],
+    ['stored fee currency', { storedFee: { amount: '0.01', currency: 'CHF' } }],
+    ['stored fee shape', { storedFee: { amount: '0.01', currency: 'USD', unexpected: true } }],
     ['paidAt', { paidAt: '2026-11-11 13:31' }],
   ] as const)('shows the payments error for a malformed %s body', async (_field, override) => {
     const actual = await vi.importActual<typeof import('@/lib/api')>('@/lib/api');
@@ -339,12 +366,12 @@ describe('FondPaymentList', () => {
       .mockRejectedValueOnce(new Error('503'))
       .mockResolvedValueOnce({ payments: [PAYMENTS.payments[1]!], next: null });
     renderWithLocale(<FondPaymentList username="tondo-fond" />);
-    fireEvent.click(await screen.findByRole('button', { name: 'Load more' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Show more' }));
     expect(
       await screen.findByText('Could not load the Fond payments. Please try again.'),
     ).toBeTruthy();
     expect(screen.getByText('Private')).toBeTruthy();
-    expect(screen.queryByRole('button', { name: 'Load more' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Show more' })).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
     expect(await screen.findByText('Alice')).toBeTruthy();
     expect(screen.getAllByRole('listitem')).toHaveLength(2);
@@ -363,7 +390,7 @@ describe('FondPaymentList', () => {
           }),
       );
     renderWithLocale(<FondPaymentList username="tondo-fond" />);
-    fireEvent.click(await screen.findByRole('button', { name: 'Load more' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Show more' }));
     expect(
       await screen.findByText('Could not load the Fond payments. Please try again.'),
     ).toBeTruthy();
@@ -374,7 +401,7 @@ describe('FondPaymentList', () => {
     });
     expect(fetchFondPayments).toHaveBeenCalledTimes(3);
     await waitFor(() => {
-      expect(screen.getByRole('button', { name: 'Load more' }).hasAttribute('disabled')).toBe(true);
+      expect(screen.getByRole('button', { name: 'Show more' }).hasAttribute('disabled')).toBe(true);
     });
     resolvePage?.({ payments: [PAYMENTS.payments[1]!], next: null });
     expect(await screen.findByText('Alice')).toBeTruthy();
@@ -387,7 +414,7 @@ describe('FondPaymentList', () => {
       .mockResolvedValueOnce({ payments: [PAYMENTS.payments[0]!], next: 'cursor-2' })
       .mockResolvedValueOnce(null);
     renderWithLocale(<FondPaymentList username="tondo-fond" />);
-    fireEvent.click(await screen.findByRole('button', { name: 'Load more' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Show more' }));
     expect(
       await screen.findByText('Could not load the Fond payments. Please try again.'),
     ).toBeTruthy();
@@ -400,7 +427,7 @@ describe('FondPaymentList', () => {
       .mockResolvedValueOnce(null)
       .mockResolvedValueOnce({ payments: [PAYMENTS.payments[1]!], next: null });
     renderWithLocale(<FondPaymentList username="tondo-fond" />);
-    fireEvent.click(await screen.findByRole('button', { name: 'Load more' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Show more' }));
     expect(
       await screen.findByText('Could not load the Fond payments. Please try again.'),
     ).toBeTruthy();
@@ -450,7 +477,7 @@ describe('FondPaymentList', () => {
           }),
       );
     const view = renderWithLocale(<FondPaymentList username="tondo-fond" />);
-    fireEvent.click(await screen.findByRole('button', { name: 'Load more' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Show more' }));
     view.unmount();
     resolveNext?.({ payments: [PAYMENTS.payments[1]!], next: null });
     await Promise.resolve();
@@ -468,7 +495,7 @@ describe('FondPaymentList', () => {
           }),
       );
     const view = renderWithLocale(<FondPaymentList username="tondo-fond" />);
-    fireEvent.click(await screen.findByRole('button', { name: 'Load more' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Show more' }));
     view.unmount();
     rejectNext?.(new Error('503'));
     await Promise.resolve();
@@ -480,10 +507,10 @@ describe('FondPaymentList', () => {
     renderWithLocale(<FondPaymentList username="tondo-fond" />, 'de');
     expect(await screen.findByText('Zahlungen')).toBeTruthy();
     const rows = screen.getAllByRole('listitem');
-    expect(within(rows[0]!).getByText('Eingang')).toBeTruthy();
-    expect(within(rows[1]!).getByText('Ausgang')).toBeTruthy();
-    expect(within(rows[2]!).getByText('Eingang')).toBeTruthy();
+    expect(within(rows[0]!).getByText('Erhalten')).toBeTruthy();
+    expect(within(rows[1]!).getByText('Gesendet')).toBeTruthy();
+    expect(within(rows[2]!).getByText('Erhalten')).toBeTruthy();
     expect(screen.getByText('Privat')).toBeTruthy();
-    expect(screen.getByText('Mehr laden')).toBeTruthy();
+    expect(screen.getByText('Mehr anzeigen')).toBeTruthy();
   });
 });

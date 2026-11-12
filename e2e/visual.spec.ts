@@ -47109,7 +47109,7 @@ test.describe('fonds screen', () => {
     await expect(page.getByText('Private').first()).toBeVisible();
     await expect(page.getByText('Alice')).toBeVisible();
     await expect(page.getByText("−₿5'000 · $3.00")).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Load more' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Show more' })).toBeVisible();
     await shotScreen(page, 'screen-fonds-username');
   });
 
@@ -47144,7 +47144,7 @@ test.describe('fonds screen', () => {
     await page.goto('/fonds/tondo-fond');
     const payments = page.getByRole('region', { name: 'Payments' });
     await expect(payments.getByText('No payments yet.')).toHaveCount(0);
-    await expect(payments.getByRole('button', { name: 'Load more' })).toBeVisible();
+    await expect(payments.getByRole('button', { name: 'Show more' })).toBeVisible();
     await shotScreen(page, 'state-fonds-payments-empty-cursor');
   });
 
@@ -47164,9 +47164,9 @@ test.describe('fonds screen', () => {
     });
     await page.goto('/fonds/tondo-fond');
     const payments = page.getByRole('region', { name: 'Payments' });
-    await expect(payments.getByRole('button', { name: 'Load more' })).toBeVisible();
-    await payments.getByRole('button', { name: 'Load more' }).click();
-    await expect(payments.getByRole('button', { name: 'Load more' })).toBeDisabled();
+    await expect(payments.getByRole('button', { name: 'Show more' })).toBeVisible();
+    await payments.getByRole('button', { name: 'Show more' }).click();
+    await expect(payments.getByRole('button', { name: 'Show more' })).toBeDisabled();
     await expect(payments.getByRole('listitem')).toHaveCount(0);
     await expect(payments.getByText('No payments yet.')).toHaveCount(0);
     await shotScreen(page, 'state-fonds-payments-empty-cursor-loading');
@@ -47204,8 +47204,8 @@ test.describe('fonds screen', () => {
   test('state /fonds/[username] payments-load-more-expanded', async ({ page }) => {
     await fulfillSpot(page);
     await page.goto('/fonds/tondo-fond');
-    await page.getByRole('button', { name: 'Load more' }).click();
-    await expect(page.getByRole('button', { name: 'Load more' })).toHaveCount(0);
+    await page.getByRole('button', { name: 'Show more' }).click();
+    await expect(page.getByRole('button', { name: 'Show more' })).toHaveCount(0);
     await expect(page.getByText("₿1'000")).toBeVisible();
     await page.evaluate(() => window.scrollTo(0, 0));
     await shotScreen(page, 'state-fonds-payments-load-more-expanded');
@@ -47231,6 +47231,7 @@ test.describe('fonds screen', () => {
               feeSats: 0,
               paidAt: '2026-11-08T08:00:00.000Z',
               storedFiat: null,
+              storedFee: null,
               counterparty: null,
             },
           ],
@@ -47240,11 +47241,11 @@ test.describe('fonds screen', () => {
     });
     await page.goto('/fonds/tondo-fond');
     const payments = page.getByRole('region', { name: 'Payments' });
-    await expect(payments.getByRole('button', { name: 'Load more' })).toBeVisible();
-    await payments.getByRole('button', { name: 'Load more' }).click();
+    await expect(payments.getByRole('button', { name: 'Show more' })).toBeVisible();
+    await payments.getByRole('button', { name: 'Show more' }).click();
     await expect(payments.getByRole('listitem')).toHaveCount(4);
     await expect(payments.getByText("₿1'000")).toBeVisible();
-    await expect(payments.getByRole('button', { name: 'Load more' })).toBeEnabled();
+    await expect(payments.getByRole('button', { name: 'Show more' })).toBeEnabled();
     await page.evaluate(() => window.scrollTo(0, 0));
     await shotScreen(page, 'state-fonds-payments-load-more-continues');
   });
@@ -47261,9 +47262,9 @@ test.describe('fonds screen', () => {
     });
     await page.goto('/fonds/tondo-fond');
     const payments = page.getByRole('region', { name: 'Payments' });
-    await expect(payments.getByRole('button', { name: 'Load more' })).toBeVisible();
-    await payments.getByRole('button', { name: 'Load more' }).click();
-    await expect(payments.getByRole('button', { name: 'Load more' })).toBeDisabled();
+    await expect(payments.getByRole('button', { name: 'Show more' })).toBeVisible();
+    await payments.getByRole('button', { name: 'Show more' }).click();
+    await expect(payments.getByRole('button', { name: 'Show more' })).toBeDisabled();
     await expect(payments.getByRole('listitem')).toHaveCount(3);
     await expect(payments.getByText('Alice')).toBeVisible();
     await shotScreen(page, 'state-fonds-payments-load-more-loading');
@@ -47285,8 +47286,8 @@ test.describe('fonds screen', () => {
     });
     await page.goto('/fonds/tondo-fond');
     const payments = page.getByRole('region', { name: 'Payments' });
-    await expect(payments.getByRole('button', { name: 'Load more' })).toBeVisible();
-    await payments.getByRole('button', { name: 'Load more' }).click();
+    await expect(payments.getByRole('button', { name: 'Show more' })).toBeVisible();
+    await payments.getByRole('button', { name: 'Show more' }).click();
     await expect(payments.getByRole('listitem')).toHaveCount(3);
     await expect(payments.getByText('Alice')).toBeVisible();
     await expect(

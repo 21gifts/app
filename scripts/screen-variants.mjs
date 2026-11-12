@@ -12457,7 +12457,7 @@ export const SCREEN_VARIANTS = [
     id: 'payments-empty-cursor-loading',
     image: 'fonds-payments-empty-cursor-loading.png',
     visual: 'state-fonds-payments-empty-cursor-loading',
-    needle: "payments.getByRole('button', { name: 'Load more' })).toBeDisabled()",
+    needle: "payments.getByRole('button', { name: 'Show more' })).toBeDisabled()",
   },
   {
     route: '/fonds/[username]',
@@ -12478,21 +12478,21 @@ export const SCREEN_VARIANTS = [
     id: 'payments-load-more-expanded',
     image: 'fonds-payments-load-more-expanded.png',
     visual: 'state-fonds-payments-load-more-expanded',
-    needle: "getByRole('button', { name: 'Load more' })).toHaveCount(0",
+    needle: "getByRole('button', { name: 'Show more' })).toHaveCount(0",
   },
   {
     route: '/fonds/[username]',
     id: 'payments-load-more-continues',
     image: 'fonds-payments-load-more-continues.png',
     visual: 'state-fonds-payments-load-more-continues',
-    needle: "payments.getByRole('button', { name: 'Load more' })).toBeEnabled()",
+    needle: "payments.getByRole('button', { name: 'Show more' })).toBeEnabled()",
   },
   {
     route: '/fonds/[username]',
     id: 'payments-load-more-loading',
     image: 'fonds-payments-load-more-loading.png',
     visual: 'state-fonds-payments-load-more-loading',
-    needle: "payments.getByRole('button', { name: 'Load more' })).toBeDisabled()",
+    needle: "payments.getByRole('button', { name: 'Show more' })).toBeDisabled()",
   },
   {
     route: '/fonds/[username]',

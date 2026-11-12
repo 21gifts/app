@@ -182,10 +182,22 @@ export function FondPaymentList({ username }: { username: string }): ReactElemen
                       payment.storedFiat.currency,
                       numberFormat,
                     );
+              const storedFeeText =
+                payment.storedFee === null
+                  ? null
+                  : formatDefinedGoalAmount(
+                      payment.storedFee.amount,
+                      payment.storedFee.currency,
+                      numberFormat,
+                    );
               const amountFiat =
                 storedFiatText === null
                   ? preferredFiatSuffix(payment.amountSats, rateDay, fiat, numberFormat)
                   : fiatSuffix(storedFiatText);
+              const feeFiat =
+                storedFeeText === null
+                  ? preferredFiatSuffix(payment.feeSats, rateDay, fiat, numberFormat)
+                  : fiatSuffix(storedFeeText);
               const counterparty =
                 payment.counterparty === null ? (
                   <span className="truncate text-sm text-app-muted">{t('fond.private')}</span>
@@ -207,7 +219,7 @@ export function FondPaymentList({ username }: { username: string }): ReactElemen
                     <div className="flex min-w-0 flex-1 flex-col gap-1">
                       <div className="flex items-baseline justify-between gap-x-3">
                         <span className="min-w-0 truncate text-sm font-medium">
-                          {incoming ? t('fond.incoming') : t('fond.outgoing')}
+                          {incoming ? t('wallet.received') : t('wallet.sent')}
                         </span>
                         <span className="shrink-0 text-sm tabular-nums lining-nums">
                           {incoming ? '+' : '−'}
@@ -225,9 +237,7 @@ export function FondPaymentList({ username }: { username: string }): ReactElemen
                             {payment.feeSats === 0
                               ? t('wallet.payment.feeFree')
                               : formatBitcoin(payment.feeSats, numberFormat)}
-                            {payment.feeSats === 0
-                              ? null
-                              : preferredFiatSuffix(payment.feeSats, rateDay, fiat, numberFormat)}
+                            {payment.feeSats === 0 ? null : feeFiat}
                           </span>
                         ) : null}
                       </div>
@@ -251,7 +261,7 @@ export function FondPaymentList({ username }: { username: string }): ReactElemen
         ) : null}
         {loadMoreFailed || next === null ? null : (
           <Button type="button" variant="secondary" disabled={loadingMore} onClick={loadMore}>
-            {t('fond.loadMore')}
+            {t('shops.showMore')}
           </Button>
         )}
       </>

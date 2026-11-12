@@ -345,6 +345,7 @@ describe('fetchFondPayments', () => {
         feeSats: 0,
         paidAt: '2026-11-11T13:31:01.000Z',
         storedFiat: null,
+        storedFee: null,
         counterparty: { accountId: 'acc-1', username: 'alice', name: 'Alice' },
       },
     ],

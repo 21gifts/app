@@ -11105,14 +11105,14 @@ After a failed translation of that reaction. The feed shows `Could not translate
 ## Screen: /fonds/[username]
 
 - **URL:** `/fonds/<username>` — public Fond page (no auth gate), e.g. `/fonds/tondo-fond`.
-- **What the user sees:** Unsigned public chrome like `/view/[viewKey]`: one top-left back arrow (previous in-app view, or `/welcome` when this tab has none) beside the home wordmark, and the light language switcher top-right. The card shows the Fond handle as its heading with the existing **Fond** role pill (`ForumRoleTag`; pressing it reveals the Fond hint). Under it, three KPI tiles in the `StatsDashboard` card style: **Received** (`receivedSats`), **Paid out** (`paidOutSats`) with **Fees** (`feesSats`) as a secondary line, and **Balance** (`balanceSats`) with **as of <time>** from `balanceSyncedAt` (`formatForumTime`); a null balance shows an em dash and **not reported yet**. Under the tiles: **3 grant payouts paid (3.00 USD)** from `payoutsPaid` and the stored `payoutsPaidUsd`. Below that, **Payments** lists completed Fond payments newest first: each row has **Incoming** / **Outgoing**, a signed ₿ amount with one fiat figure, its date/time, and a fee when the payment has one (incoming rows hide a ₿0 fee; outgoing rows show **Fee Free** for ₿0), matching the wallet-history row presentation. A paid grant payout with stored `storedFiat` shows that stored USD amount formatted to two decimals as written (`"1"` → **$1.00**, `"2.5"` → **$2.50**, `"3.00"` → **$3.00**), while a null one uses the current spot. A fee above ₿0 uses the current spot for its fee sats on every row; no fiat figure is stored for a fee. A known internal transfer links the member's name, or `@username` when the name is empty, to `/members/<accountId>`; an unknown counterparty shows **Private**. **Load more** appends the next cursor page, and an empty list shows **No payments yet.**
-- **Inputs:** Dynamic route `username`. The same-origin proxy `GET /fonds/:username/summary` reads public api `GET /fond/summary`; the proxy answers 404 when the api has no Fond or when the body's `username` is not this handle, and passes a 503 `{ error }` through. Client fetch: `fetchFondSummary`. The same-origin proxy `GET /fonds/:username/payments?before=<cursor>` first checks that the summary names this handle, then forwards the query to public api `GET /fond/payments`; client fetch: `fetchFondPayments`. Every bitcoin figure uses `formatBitcoin` with one fiat figure: the KPI tiles read the current spot (`useFiatPreference` + `useSpotRate`, `formatFiatDisplay`), a payment row with `storedFiat` shows that stored amount via `formatDefinedGoalAmount`, and a row without one uses `preferredFiatSuffix` for the amount. The fee uses `preferredFiatSuffix(feeSats, rateDay, fiat, numberFormat)` with the current spot on every row; the spot is read only, never stored.
-- **Actions:** The top-left arrow returns to the previous in-app view, or `/welcome` when this tab has none. Change language. Press the **Fond** pill for its hint. On a 503, **Try again** refetches. A 404 shows **This Fond could not be found.** On a payments failure, **Try again** retries the list or the next page. **Load more** fetches the next page and appends it. There is no second back control and no write action.
+- **What the user sees:** Unsigned public chrome like `/view/[viewKey]`: one top-left back arrow (previous in-app view, or `/welcome` when this tab has none) beside the home wordmark, and the light language switcher top-right. The card shows the Fond handle as its heading with the existing **Fond** role pill (`ForumRoleTag`; pressing it reveals the Fond hint). Under it, three KPI tiles in the `StatsDashboard` card style: **Received** (`receivedSats`), **Paid out** (`paidOutSats`) with **Fees** (`feesSats`) as a secondary line, and **Balance** (`balanceSats`) with **as of <time>** from `balanceSyncedAt` (`formatForumTime`); a null balance shows an em dash and **not reported yet**. Under the tiles: **3 grant payouts paid (3.00 USD)** from `payoutsPaid` and the stored `payoutsPaidUsd`. Below that, **Payments** lists completed Fond payments newest first: each row has **Received** / **Sent**, a signed ₿ amount with one fiat figure, its date/time, and a fee when the payment has one (received rows hide a ₿0 fee; sent rows show **Fee Free** for ₿0), matching the wallet-history row presentation. A paid grant payout with stored `storedFiat` shows that stored USD amount formatted to two decimals as written (`"1"` → **$1.00**, `"2.5"` → **$2.50**, `"3.00"` → **$3.00**), while a null one uses the current spot. A fee above ₿0 with `storedFee` shows that frozen USD figure with the same formatter; when `storedFee` is null, the fee shows the current spot in the visitor's currency. A known internal transfer links the member's name, or `@username` when the name is empty, to `/members/<accountId>`; an unknown counterparty shows **Private**. **Show more** appends the next cursor page, and an empty list shows **No payments yet.**
+- **Inputs:** Dynamic route `username`. The same-origin proxy `GET /fonds/:username/summary` reads public api `GET /fond/summary`; the proxy answers 404 when the api has no Fond or when the body's `username` is not this handle, and passes a 503 `{ error }` through. Client fetch: `fetchFondSummary`. The same-origin proxy `GET /fonds/:username/payments?before=<cursor>` first checks that the summary names this handle, then forwards the query to public api `GET /fond/payments`; client fetch: `fetchFondPayments`. Every bitcoin figure uses `formatBitcoin` with one fiat figure: the KPI tiles read the current spot (`useFiatPreference` + `useSpotRate`, `formatFiatDisplay`), a payment row with `storedFiat` shows `storedFiat.amount` via `formatDefinedGoalAmount`, and a row without one uses `preferredFiatSuffix` for the amount. A positive fee with `storedFee` shows `storedFee.amount` through the same `formatDefinedGoalAmount`; a null `storedFee` uses `preferredFiatSuffix(feeSats, rateDay, fiat, numberFormat)` with the current spot. The spot is read only, never stored.
+- **Actions:** The top-left arrow returns to the previous in-app view, or `/welcome` when this tab has none. Change language. Press the **Fond** pill for its hint. On a 503, **Try again** refetches. A 404 shows **This Fond could not be found.** On a payments failure, **Try again** retries the list or the next page. **Show more** fetches the next page and appends it. There is no second back control and no write action.
 - **Used by:** Route `/fonds/[username]` (`FondPage` → `FondSummaryLoader`).
 
 ### Variant: default
 
-`/fonds/tondo-fond` with the api's totals and a spot of $100'000 per bitcoin. The heading reads **tondo-fond** with the **Fond** pill; **Received** ₿210'000 ($210.00), **Paid out** ₿21'000 ($21.00) with **Fees** ₿210 ($0.21), **Balance** ₿189'000 ($189.00) with the synced time, and **3 grant payouts paid (3.00 USD)** below the tiles. **Payments** shows newest first: an **Incoming** ₿21'000 **Private** row, an **Incoming** ₿10'000 row linked to Alice, and an **Outgoing** ₿5'000 row with the stored **$3.00** and **Fee** ₿21 ($0.02 from the current spot), followed by **Load more**.
+`/fonds/tondo-fond` with the api's totals and a spot of $100'000 per bitcoin. The heading reads **tondo-fond** with the **Fond** pill; **Received** ₿210'000 ($210.00), **Paid out** ₿21'000 ($21.00) with **Fees** ₿210 ($0.21), **Balance** ₿189'000 ($189.00) with the synced time, and **3 grant payouts paid (3.00 USD)** below the tiles. **Payments** shows newest first: a **Received** ₿21'000 **Private** row, a **Received** ₿10'000 row linked to Alice with **Fee** ₿50 ($0.05 from the current spot because `storedFee` is null), and a **Sent** ₿5'000 row with the stored **$3.00** and **Fee** ₿21 ($0.01 from `storedFee`), followed by **Show more**.
 
 ![21.gifts public Fond page](images/fonds-username.png)
 
@@ -11124,55 +11124,55 @@ The same page while the api has not synced a wallet balance (`balanceSats` and `
 
 ### Variant: payments-empty
 
-The api returns an empty first payment page with `next: null`. The **Payments** section shows **No payments yet.** and no **Load more** button; the totals above stay visible.
+The api returns an empty first payment page with `next: null`. The **Payments** section shows **No payments yet.** and no **Show more** button; the totals above stay visible.
 
 ![21.gifts public Fond page with no payments](images/fonds-payments-empty.png)
 
 ### Variant: payments-empty-cursor
 
-The api returns an empty first payment page with `next: '<cursor>'`. The **Payments** section shows no empty sentence and the **Load more** button; the totals above stay visible.
+The api returns an empty first payment page with `next: '<cursor>'`. The **Payments** section shows no empty sentence and the **Show more** button; the totals above stay visible.
 
 ![21.gifts public Fond page with an empty first page and a cursor](images/fonds-payments-empty-cursor.png)
 
 ### Variant: payments-empty-cursor-loading
 
-The first payment page is empty and carries `next: '<cursor>'`; **Load more** was pressed and the request carrying `before` never answers. The **Payments** section shows no rows and no **No payments yet.** sentence; the **Load more** button stays in place and is disabled.
+The first payment page is empty and carries `next: '<cursor>'`; **Show more** was pressed and the request carrying `before` never answers. The **Payments** section shows no rows and no **No payments yet.** sentence; the **Show more** button stays in place and is disabled.
 
 ![21.gifts public Fond page while loading more payments from an empty first page](images/fonds-payments-empty-cursor-loading.png)
 
 ### Variant: payments-loading
 
-The first payment page is still in flight while the summary and totals are already showing. The **Payments** section shows **Loading…** with no rows and no **Load more** button.
+The first payment page is still in flight while the summary and totals are already showing. The **Payments** section shows **Loading…** with no rows and no **Show more** button.
 
 ![21.gifts public Fond page while payments load](images/fonds-payments-loading.png)
 
 ### Variant: payments-error
 
-The first payment page answers 503 `{ "error": "Fond payments are unavailable" }`, or a 200 body fails `fondPaymentListSchema` (a malformed `storedFiat` amount or currency, or a `paidAt` that is not an ISO 8601 datetime with an offset). The **Payments** section shows **Could not load the Fond payments. Please try again.** and **Try again**; the totals above stay visible.
+The first payment page answers 503 `{ "error": "Fond payments are unavailable" }`, or a 200 body fails `fondPaymentListSchema` (a malformed `storedFiat` or `storedFee`, or a `paidAt` that is not an ISO 8601 datetime with an offset). The **Payments** section shows **Could not load the Fond payments. Please try again.** and **Try again**; the totals above stay visible.
 
 ![21.gifts public Fond page with a payments error](images/fonds-payments-error.png)
 
 ### Variant: payments-load-more-expanded
 
-**Load more** was pressed on `/fonds/tondo-fond`; the second fixture page is appended and its newest **Incoming** row appears under the first three. The cursor is now null, so the button is gone.
+**Show more** was pressed on `/fonds/tondo-fond`; the second fixture page is appended and its newest **Received** row appears under the first three. The cursor is now null, so the button is gone.
 
 ![21.gifts public Fond page after loading more payments](images/fonds-payments-load-more-expanded.png)
 
 ### Variant: payments-load-more-continues
 
-**Load more** was pressed on `/fonds/tondo-fond`; the request carrying `before` appends one more **Incoming** row and returns another cursor. The appended row appears under the first three, and **Load more** stays enabled because another page follows.
+**Show more** was pressed on `/fonds/tondo-fond`; the request carrying `before` appends one more **Received** row and returns another cursor. The appended row appears under the first three, and **Show more** stays enabled because another page follows.
 
 ![21.gifts public Fond page after loading more payments with another page](images/fonds-payments-load-more-continues.png)
 
 ### Variant: payments-load-more-loading
 
-**Load more** was pressed on `/fonds/tondo-fond`; the request carrying `before` never answers. The three loaded rows stay visible; below them the **Load more** button stays in place and is disabled, and no separate in-flight text appears.
+**Show more** was pressed on `/fonds/tondo-fond`; the request carrying `before` never answers. The three loaded rows stay visible; below them the **Show more** button stays in place and is disabled, and no separate in-flight text appears.
 
 ![21.gifts public Fond page while loading more payments](images/fonds-payments-load-more-loading.png)
 
 ### Variant: payments-load-more-error
 
-**Load more** was pressed and the request carrying `before` answers 503. The three loaded rows stay visible; below them the **Payments** section shows **Could not load the Fond payments. Please try again.** and only **Try again** is shown.
+**Show more** was pressed and the request carrying `before` answers 503. The three loaded rows stay visible; below them the **Payments** section shows **Could not load the Fond payments. Please try again.** and only **Try again** is shown.
 
 ![21.gifts public Fond page after a failed load more](images/fonds-payments-load-more-error.png)
 

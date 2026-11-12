@@ -1497,7 +1497,7 @@ Ask composer on `/welcome`. A donation is four steps and the counter reads **{st
 - **Purpose:** Smallest units of a typed credit. Bitcoin is whole sats. Fiat is cents.
 - **Inputs:** Amount draft and whether that draft is bitcoin.
 - **Returns / side effects:** Non-negative bigint, or `null` when the draft is not that shape. No I/O.
-- **Used by:** `ForumAskWizard`, `ForumGoalBar`, `LoanRepayScreen`, `FondPaymentList` (a row's stored fee).
+- **Used by:** `ForumAskWizard`, `ForumGoalBar`, `LoanRepayScreen`.
 
 ## Function: splitCreditPlan
 
@@ -1576,7 +1576,7 @@ Defined Ask amount for the goal line. Prefix `$` for USD and `₱` for PHP, othe
 - **Purpose:** Show `goalAmount` exactly, not the two-decimal snapshot of the same currency.
 - **Inputs:** `amount` string, fiat `code`, number-format `style`.
 - **Returns / side effects:** Prefixed string, or `''` when the amount cannot be shown. No I/O.
-- **Used by:** `ForumGoalBar`, `LoanRepayScreen`, `PayLinkScreen`.
+- **Used by:** `ForumGoalBar`, `LoanRepayScreen`, `PayLinkScreen`, `FondPaymentList` (`storedFiat.amount` and `storedFee.amount`).
 
 ## Function: RepaymentPlanChart
 
@@ -7627,7 +7627,7 @@ The class exists so the composer can tell a refused free first post from any oth
 - **Purpose:** Writes whole cents (hundredths of a currency) as a two-decimal amount string, for example `30.00` for 3000.
 - **Inputs:** A non-negative `bigint` of cents.
 - **Returns / side effects:** The string. It is pure and performs no I/O.
-- **Used by:** `definedDueLabel`, `LoanRepayScreen` (plan slices of a fiat loan), and `FondPaymentList` (a row's stored fee).
+- **Used by:** `definedDueLabel` and `LoanRepayScreen` (plan slices of a fiat loan).
 
 ## Function: definedDueLabel
 
@@ -7817,16 +7817,16 @@ The class exists so the composer can tell a refused free first post from any oth
 
 ## Function: FondPaymentList
 
-- **Purpose:** Read-only completed-payment list below the public Fond totals. A new component rather than `WalletHistory`, whose job is the connected member's wallet with payment detail links and gift/loan/shop labels; this list is public, has no detail route, and names the counterparty. It reuses the wallet row shell, direction icons, `formatBitcoin` + `preferredFiatSuffix`, fee labels, and `formatForumTime`; a row with `storedFiat` shows that stored USD amount as written, and a fee above ₿0 uses the current spot.
+- **Purpose:** Read-only completed-payment list below the public Fond totals. A new component rather than `WalletHistory`, whose job is the connected member's wallet with payment detail links and gift/loan/shop labels; this list is public, has no detail route, and names the counterparty. It reuses the wallet row shell, direction icons, `formatBitcoin` + `preferredFiatSuffix`, fee labels, and `formatForumTime`; a row with `storedFiat` shows that stored USD amount as written, and a fee above ₿0 shows `storedFee` when present or the current spot when it is null.
 - **Inputs:** `username`. Fetches `fetchFondPayments(username)` on mount and after **Try again**; **Load more** fetches the same function with the current `next` cursor.
-- **Returns / side effects:** The **Payments** (`wallet.historyHeading`) section. Each row shows `fond.incoming` / `fond.outgoing`, the signed amount with fiat, its date/time, and the fee (`wallet.payment.fee` / `wallet.payment.feeFree`; an incoming ₿0 fee is hidden). A set `storedFiat` is rendered by `formatDefinedGoalAmount` from the stored amount as written, with two decimals and no float or spot: `"1"` → `$1.00`, `"2.5"` → `$2.50`, `"3.00"` → `$3.00`. A fee above ₿0 uses `preferredFiatSuffix(feeSats, rateDay, fiat, numberFormat)` with the current spot on every row. A null `storedFiat` uses `preferredFiatSuffix` with the current spot for the amount. A known counterparty links `/members/<accountId>` with the `name`, else `@username`; an unknown one shows `fond.private`. `fond.loadMore` appends the next page, `wallet.historyEmpty` covers an empty list, and `fond.paymentsError` with `view.retry` covers a failed first or next page.
+- **Returns / side effects:** The **Payments** (`wallet.historyHeading`) section. Each row shows `wallet.received` / `wallet.sent`, the signed amount with fiat, its date/time, and the fee (`wallet.payment.fee` / `wallet.payment.feeFree`; an incoming ₿0 fee is hidden). A set `storedFiat` is rendered by `formatDefinedGoalAmount` from `storedFiat.amount` as written, with two decimals and no float or spot: `"1"` → `$1.00`, `"2.5"` → `$2.50`, `"3.00"` → `$3.00`. A fee above ₿0 with `storedFee` uses the same formatter on `storedFee.amount`; when `storedFee` is null it uses `preferredFiatSuffix(feeSats, rateDay, fiat, numberFormat)` with the current spot. A null `storedFiat` likewise uses `preferredFiatSuffix` with the current spot for the amount. A known counterparty links `/members/<accountId>` with the `name`, else `@username`; an unknown one shows `fond.private`. `shops.showMore` appends the next page, `wallet.historyEmpty` covers an empty list, and `fond.paymentsError` with `view.retry` covers a failed first or next page.
 - **Used by:** `FondSummaryLoader` on `/fonds/[username]`.
 
 ## Function: fondPaymentSchema
 
-- **Purpose:** Runtime schema for one completed public Fond payment in `GET /fond/payments`: `{ id, direction, amountSats, feeSats, paidAt, storedFiat, counterparty }`, where `direction` is `in` | `out`, `amountSats` and `feeSats` are non-negative whole sats, `paidAt` is an ISO 8601 datetime with an offset, `storedFiat` is `{ currency: "USD", amount }` or `null` for the stored USD figure of a paid grant payout (`amount` is the stored string exactly as written, an integer or one to two fraction digits and no leading zero, matching `^(0|[1-9]\d*)(\.\d{1,2})?$`), and `counterparty` is `{ accountId, username, name }` or `null` for a private payer or recipient.
+- **Purpose:** Runtime schema for one completed public Fond payment in `GET /fond/payments`: `{ id, direction, amountSats, feeSats, paidAt, storedFiat, storedFee, counterparty }`, where `direction` is `in` | `out`, `amountSats` and `feeSats` are non-negative whole sats, `paidAt` is an ISO 8601 datetime with an offset, `storedFiat` is `{ currency: "USD", amount }` or `null` for the stored USD figure of a paid grant payout, `storedFee` is the strict object `{ amount, currency: "USD" }` or `null` for a zero fee or an older row without a frozen fee, each `amount` is the stored string exactly as written (an integer or one to two fraction digits and no leading zero, matching `^(0|[1-9]\d*)(\.\d{1,2})?$`), and `counterparty` is `{ accountId, username, name }` or `null` for a private payer or recipient.
 - **Inputs:** One payment object from the api page.
-- **Returns / side effects:** The validated payment; rejects an unknown direction, negative or fractional sats, an empty id or a `paidAt` that is not an ISO 8601 datetime with an offset, a missing or malformed `storedFiat` (another currency or an amount with a leading zero, more than two fraction digits, or no integer part), or a malformed counterparty.
+- **Returns / side effects:** The validated payment; rejects an unknown direction, negative or fractional sats, an empty id or a `paidAt` that is not an ISO 8601 datetime with an offset, a missing or malformed `storedFiat` or `storedFee` (another currency, an amount with a leading zero, more than two fraction digits, no integer part, or an extra `storedFee` key), or a malformed counterparty.
 - **Used by:** `fondPaymentListSchema` and `fetchFondPayments`.
 
 ## Function: fondPaymentListSchema

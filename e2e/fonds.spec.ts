@@ -23,15 +23,17 @@ const PAYMENTS = {
       feeSats: 0,
       paidAt: '2026-11-11T13:31:01.000Z',
       storedFiat: null,
+      storedFee: null,
       counterparty: null,
     },
     {
       id: '33333333-3333-4333-8333-333333333333',
       direction: 'in',
       amountSats: 10_000,
-      feeSats: 0,
+      feeSats: 50,
       paidAt: '2026-11-10T09:15:00.000Z',
       storedFiat: null,
+      storedFee: null,
       counterparty: {
         accountId: '44444444-4444-4444-8444-444444444444',
         username: 'alice',
@@ -45,6 +47,7 @@ const PAYMENTS = {
       feeSats: 21,
       paidAt: '2026-11-09T18:00:00.000Z',
       storedFiat: { currency: 'USD', amount: '3.00' },
+      storedFee: { amount: '0.01', currency: 'USD' },
       counterparty: null,
     },
   ],
@@ -60,6 +63,7 @@ const PAYMENTS_MORE = {
       feeSats: 0,
       paidAt: '2026-11-08T08:00:00.000Z',
       storedFiat: null,
+      storedFee: null,
       counterparty: null,
     },
   ],
@@ -79,7 +83,7 @@ test('Function: FondPage — public page shows the Fond totals', async ({ page }
   expect(response?.status()).toBe(200);
   await expect(page.getByRole('heading', { name: 'tondo-fond' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Fond' })).toBeVisible();
-  await expect(page.getByText('Received')).toBeVisible();
+  await expect(page.getByText('Received').first()).toBeVisible();
   await expect(page.getByText("₿210'000")).toBeVisible();
   await expect(page.getByText('$210.00')).toBeVisible();
   await expect(page.getByText('Paid out')).toBeVisible();
@@ -91,16 +95,18 @@ test('Function: FondPage — public page shows the Fond totals', async ({ page }
   await expect(page.getByText(/as of /)).toBeVisible();
   await expect(page.getByText('3 grant payouts paid (3.00 USD)')).toBeVisible();
   await expect(page.getByRole('region', { name: 'Payments' })).toBeVisible();
-  await expect(page.getByText('Incoming').first()).toBeVisible();
+  await expect(page.getByText('Received').first()).toBeVisible();
   await expect(page.getByText('Private').first()).toBeVisible();
   await expect(page.getByRole('link', { name: 'Alice' })).toHaveAttribute(
     'href',
     '/members/44444444-4444-4444-8444-444444444444',
   );
   await expect(page.getByText('Alice')).toBeVisible();
-  await expect(page.getByText('Outgoing')).toBeVisible();
+  await expect(page.getByText('Sent')).toBeVisible();
   await expect(page.getByText("−₿5'000 · $3.00")).toBeVisible();
   await expect(page.getByText('Fee ₿21', { exact: false })).toBeVisible();
+  await expect(page.getByText('Fee ₿21', { exact: false })).toContainText('$0.01');
+  await expect(page.getByText('Fee ₿50', { exact: false })).toContainText('$0.05');
   await expect(page.getByRole('link', { name: 'Back to the forum' })).toBeVisible();
 });
 
@@ -117,13 +123,13 @@ test('Function: FondPaymentList — empty payments show the empty line', async (
   await expect(page.getByText('No payments yet.')).toBeVisible();
 });
 
-test('Function: FondPaymentList — Load more appends the next page', async ({ page }) => {
+test('Function: FondPaymentList — Show more appends the next page', async ({ page }) => {
   await fulfillSpot(page);
   await page.goto(`/fonds/${FOND_USERNAME}`);
-  await expect(page.getByRole('button', { name: 'Load more' })).toBeVisible();
-  await page.getByRole('button', { name: 'Load more' }).click();
+  await expect(page.getByRole('button', { name: 'Show more' })).toBeVisible();
+  await page.getByRole('button', { name: 'Show more' }).click();
   await expect(page.getByText('Fee ₿21', { exact: false })).toBeVisible();
-  await expect(page.getByText('Load more')).toHaveCount(0);
+  await expect(page.getByText('Show more')).toHaveCount(0);
 });
 
 test('Function: FondSummaryLoader — balance null says not reported yet', async ({ page }) => {
@@ -188,7 +194,7 @@ test('Function: fetchFondPayments — the first page loads and another handle an
   await fulfillSpot(page);
   await page.goto(`/fonds/${FOND_USERNAME}`);
   await expect(page.getByText('Private').first()).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Load more' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Show more' })).toBeVisible();
 });
 
 test('Function: FondPaymentList — another handle is not listed', async ({ page }) => {

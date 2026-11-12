@@ -1215,10 +1215,7 @@ const en = {
     '{count, plural, one {# grant payout paid} other {# grant payouts paid}} ({usd})',
   'fond.missing': 'This Fond could not be found.',
   'fond.error': 'Could not load the Fond. Please try again.',
-  'fond.incoming': 'Incoming',
-  'fond.outgoing': 'Outgoing',
   'fond.private': 'Private',
-  'fond.loadMore': 'Load more',
   'fond.paymentsError': 'Could not load the Fond payments. Please try again.',
   'forum.laws1': '21.gifts is a donation platform: gifts are free, and nobody pays for a promise.',
   'forum.laws2': 'Donors are rare — no begging, no drama, no pressure.',
@@ -3105,10 +3102,7 @@ const de = {
     '{count, plural, one {# Grant-Auszahlung} other {# Grant-Auszahlungen}} ausgezahlt ({usd})',
   'fond.missing': 'Dieser Fond konnte nicht gefunden werden.',
   'fond.error': 'Fond konnte nicht geladen werden. Bitte versuchen Sie es erneut.',
-  'fond.incoming': 'Eingang',
-  'fond.outgoing': 'Ausgang',
   'fond.private': 'Privat',
-  'fond.loadMore': 'Mehr laden',
   'fond.paymentsError':
     'Fond-Zahlungen konnten nicht geladen werden. Bitte versuchen Sie es erneut.',
   'forum.laws1':
@@ -5004,10 +4998,7 @@ const es = {
     '{count, plural, one {# pago de beca realizado} other {# pagos de beca realizados}} ({usd})',
   'fond.missing': 'No se pudo encontrar este Fondo.',
   'fond.error': 'No se pudo cargar el Fondo. Inténtalo de nuevo.',
-  'fond.incoming': 'Entrada',
-  'fond.outgoing': 'Salida',
   'fond.private': 'Privado',
-  'fond.loadMore': 'Cargar más',
   'fond.paymentsError': 'No se pudieron cargar los pagos del Fondo. Inténtalo de nuevo.',
   'forum.laws1':
     '21.gifts es una plataforma de donaciones: los regalos son libres y nadie paga por una promesa.',
@@ -6885,10 +6876,7 @@ const fil = {
     '{count, plural, one {# grant payout na bayad} other {# grant payouts na bayad}} ({usd})',
   'fond.missing': 'Hindi mahanap ang Fond na ito.',
   'fond.error': 'Hindi ma-load ang Fond. Subukan ulit.',
-  'fond.incoming': 'Papasok',
-  'fond.outgoing': 'Palabas',
   'fond.private': 'Pribado',
-  'fond.loadMore': 'Mag-load pa',
   'fond.paymentsError': 'Hindi ma-load ang mga bayad ng Fond. Subukan ulit.',
   'forum.laws1':
     'Donation platform ang 21.gifts: libre ang mga regalo, at walang nagbabayad para sa pangako.',
