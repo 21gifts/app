@@ -321,6 +321,47 @@ export interface DueShare {
   waiting: boolean;
 }
 
+/** Validated partial payment of one repayment row, in whole sats and cents. */
+export interface ValidatedRepaymentPayment {
+  /** Paid sats, or null when positive paid sats cannot be bounded by the original sats. */
+  sats: bigint | null;
+  /** Paid cents, or null when the stored fiat relationship is missing or invalid. */
+  amount: bigint | null;
+  /** Whether the api supplied a non-null stored paid fiat amount. */
+  hasAmount: boolean;
+}
+
+/**
+ * Validates the partial-payment fields of one repayment row.
+ *
+ * Missing paid fields mean zero only while no positive satoshi payment needs a
+ * matching fiat amount. A malformed or overpaid fiat amount stays independent
+ * from valid sats, so callers can fall back to bitcoin. Invalid paid sats also
+ * invalidate the fiat side, because the row's payment is then unknown.
+ *
+ * @param row - Repayment row with its original and partial-payment values.
+ * @returns Validated whole sats/cents; null marks an unavailable relationship.
+ */
+export function validatedRepaymentPayment(
+  row: Pick<RepaymentLine, 'sats' | 'paidSats' | 'amount' | 'paidAmount'>,
+): ValidatedRepaymentPayment {
+  const paidSats = row.paidSats ?? 0;
+  const satsValid =
+    Number.isSafeInteger(paidSats) &&
+    paidSats >= 0 &&
+    (paidSats === 0 ||
+      (row.sats !== null && Number.isSafeInteger(row.sats) && row.sats >= paidSats));
+  const sats = satsValid ? BigInt(paidSats) : null;
+  const totalAmount = row.amount === null ? null : fiatUnits(row.amount.trim());
+  const hasAmount = row.paidAmount !== null && row.paidAmount !== undefined;
+  const paidAmount = !hasAmount ? (sats === 0n ? 0n : null) : fiatUnits(row.paidAmount!.trim());
+  const amount =
+    sats === null || totalAmount === null || paidAmount === null || paidAmount > totalAmount
+      ? null
+      : paidAmount;
+  return { sats, amount, hasAmount };
+}
+
 /**
  * Returns the remaining bitcoin amount for one repayment line.
  *
@@ -334,11 +375,14 @@ export interface DueShare {
 export function remainingRepaymentSats(
   row: Pick<RepaymentLine, 'sats' | 'paidSats' | 'dueSats'>,
 ): number | null {
+  const payment = validatedRepaymentPayment({ ...row, amount: null, paidAmount: null });
+  if (payment.sats === null) {
+    return null;
+  }
   if (row.dueSats !== null && row.dueSats !== undefined) {
     return row.dueSats;
   }
-  const paidSats = row.paidSats ?? 0;
-  return row.sats === null || paidSats > row.sats ? null : row.sats - paidSats;
+  return row.sats === null ? null : Number(BigInt(row.sats) - payment.sats);
 }
 
 /**
@@ -365,6 +409,7 @@ export function dueShares(
       if (row.status !== 'due') {
         return;
       }
+      const payment = validatedRepaymentPayment(row);
       rows.push({
         messageId: loan.messageId,
         loanIndex,
@@ -380,15 +425,9 @@ export function dueShares(
             ? null
             : (() => {
                 const total = creditSmallestUnits(row.amount, false);
-                const paid =
-                  row.paidAmount === null || row.paidAmount === undefined
-                    ? (row.paidSats ?? 0) > 0
-                      ? null
-                      : 0n
-                    : creditSmallestUnits(row.paidAmount, false);
-                return total === null || paid === null || paid > total
+                return total === null || payment.amount === null
                   ? null
-                  : centsString(total - paid);
+                  : centsString(total - payment.amount);
               })(),
         waiting: row.waiting ?? canReceive.get(row.accountId) === false,
         rowIndex,

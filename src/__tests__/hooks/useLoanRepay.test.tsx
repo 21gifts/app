@@ -2235,6 +2235,44 @@ describe('useLoanRepay free repayment and collecting actions', () => {
     expect(payFromWallet).not.toHaveBeenCalled();
   });
 
+  it('rejects a balanced bitcoin prepay body that exceeds the requested amount', async () => {
+    vi.mocked(prepayLoan).mockResolvedValue({
+      amountSats: 200,
+      amount: null,
+      bills: [bill('First', 200)],
+      waiting: [],
+    });
+    const current = loan('prepay-request-mismatch', 0, 100);
+    const { result } = renderHook(() =>
+      useLoanRepay({ reload: vi.fn(async () => body([current])) }),
+    );
+
+    act(() => result.current.prepay(current, '100'));
+    await waitFor(() => expect(result.current.phase).toBe('failed'));
+
+    expect(result.current.errorKey).toBe('forum.payErrorRequest');
+    expect(payFromWallet).not.toHaveBeenCalled();
+  });
+
+  it('rejects a balanced bitcoin prepay body for malformed requested sats', async () => {
+    vi.mocked(prepayLoan).mockResolvedValue({
+      amountSats: 100,
+      amount: null,
+      bills: [bill('First', 100)],
+      waiting: [],
+    });
+    const current = loan('prepay-request-invalid', 0, 100);
+    const { result } = renderHook(() =>
+      useLoanRepay({ reload: vi.fn(async () => body([current])) }),
+    );
+
+    act(() => result.current.prepay(current, 'not sats'));
+    await waitFor(() => expect(result.current.phase).toBe('failed'));
+
+    expect(result.current.errorKey).toBe('forum.payErrorRequest');
+    expect(payFromWallet).not.toHaveBeenCalled();
+  });
+
   it.each(['request', 'missing', 'malformed', 'mismatch'] as const)(
     'rejects a successful fiat prepay body with invalid %s cents',
     async (invalid) => {

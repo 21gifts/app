@@ -1006,6 +1006,49 @@ describe('LoanRepayScreen', () => {
     expect(await screen.findByText("Repaid ₱59.99 · ₿5'999 of ₱900.00")).toBeTruthy();
   });
 
+  it.each([
+    [
+      'satoshi',
+      {
+        sats: 5_000,
+        paidSats: 5_999,
+        amount: '59.99',
+        paidAmount: '59.99',
+      },
+    ],
+    [
+      'fiat',
+      {
+        sats: 5_999,
+        paidSats: 5_999,
+        amount: '50.00',
+        paidAmount: '59.99',
+      },
+    ],
+  ] as const)('falls back from an overpaid partial %s relationship', async (_kind, partial) => {
+    vi.mocked(getRepayment).mockResolvedValue(
+      ledger({
+        currency: 'PHP',
+        repayments: [
+          {
+            ...ledger().repayments[0]!,
+            dayIndex: 0,
+            status: 'due',
+            dueSats: 0,
+            ...partial,
+          },
+        ],
+      }),
+    );
+    show({
+      sundayRest: false,
+      loans: [loan({ goalCurrency: 'PHP', goalAmount: '900.00', repaidSats: 5_999 })],
+    });
+
+    expect(await screen.findByText("Repaid ₿5'999 · $6.00 of ₱900.00")).toBeTruthy();
+    expect(screen.queryByText(/Repaid ₱/)).toBeNull();
+  });
+
   it('falls back when a partial unpaid-status row has no stored paid amount', async () => {
     vi.mocked(getRepayment).mockResolvedValue(
       ledger({

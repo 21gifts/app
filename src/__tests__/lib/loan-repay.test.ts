@@ -19,6 +19,7 @@ import {
   parseLoanAmount,
   remainingRepaymentSats,
   summarizeLoans,
+  validatedRepaymentPayment,
 } from '@/lib/loan-repay';
 
 function loan(overrides: Partial<MyLoan> = {}): MyLoan {
@@ -388,6 +389,81 @@ describe('definedFiatAmounts', () => {
 });
 
 describe('dueShares', () => {
+  it('validates partial sats and integer fiat cents against their originals', () => {
+    expect(
+      validatedRepaymentPayment({
+        sats: 500,
+        paidSats: 500,
+        amount: '1.00',
+        paidAmount: '1.00',
+      }),
+    ).toEqual({ sats: 500n, amount: 100n, hasAmount: true });
+    expect(
+      validatedRepaymentPayment({
+        sats: 500,
+        paidSats: 501,
+        amount: '1.00',
+        paidAmount: '1.00',
+      }),
+    ).toEqual({ sats: null, amount: null, hasAmount: true });
+    expect(
+      validatedRepaymentPayment({
+        sats: 500,
+        paidSats: 100,
+        amount: '1.00',
+        paidAmount: '1.001',
+      }),
+    ).toEqual({ sats: 100n, amount: null, hasAmount: true });
+    expect(
+      validatedRepaymentPayment({
+        sats: 500,
+        paidSats: 100,
+        amount: '1.00',
+        paidAmount: '1.01',
+      }),
+    ).toEqual({ sats: 100n, amount: null, hasAmount: true });
+  });
+
+  it('keeps zero defaults separate from unknown partial relationships', () => {
+    expect(
+      validatedRepaymentPayment({
+        sats: null,
+        amount: '1.00',
+      }),
+    ).toEqual({ sats: 0n, amount: 0n, hasAmount: false });
+    expect(
+      validatedRepaymentPayment({
+        sats: null,
+        paidSats: 1,
+        amount: null,
+        paidAmount: null,
+      }),
+    ).toEqual({ sats: null, amount: null, hasAmount: false });
+    expect(
+      validatedRepaymentPayment({
+        sats: 500,
+        paidSats: 100,
+        amount: '1.00',
+        paidAmount: null,
+      }),
+    ).toEqual({ sats: 100n, amount: null, hasAmount: false });
+  });
+
+  it.each([
+    ['fractional paid sats', 500, 0.5],
+    ['negative paid sats', 500, -1],
+    ['fractional original sats', 500.5, 1],
+  ] as const)('rejects %s', (_case, sats, paidSats) => {
+    expect(
+      validatedRepaymentPayment({
+        sats,
+        paidSats,
+        amount: null,
+        paidAmount: null,
+      }),
+    ).toEqual({ sats: null, amount: null, hasAmount: false });
+  });
+
   it('derives and validates the remaining sats when an older api omits dueSats', () => {
     const partial = { sats: 500, paidSats: 100, dueSats: null };
     expect(remainingRepaymentSats(partial)).toBe(400);
@@ -410,6 +486,41 @@ describe('dueShares', () => {
 
   it('uses the remaining sats of a partially paid BTC due row', () => {
     expect(dueShares([loanClosedPartial], [ledgerClosedPartial])).toEqual([
+      expect.objectContaining({ sats: 400, amount: null }),
+    ]);
+  });
+
+  it('keeps overpaid satoshi and fiat due-share relationships unavailable', () => {
+    const overpaidSats = {
+      ...ledgerClosedPartial,
+      repayments: [
+        {
+          ...ledgerClosedPartial.repayments[0]!,
+          paidSats: 501,
+        },
+      ],
+    };
+    expect(dueShares([loanClosedPartial], [overpaidSats])).toEqual([
+      expect.objectContaining({ sats: null, amount: null }),
+    ]);
+
+    const fiatLoan = loan({
+      ...loanClosedPartial,
+      goalCurrency: 'PHP',
+      goalAmount: '200.00',
+      maxAmount: '197.50',
+    });
+    const overpaidFiat = {
+      ...ledgerClosedPartialFiat,
+      repayments: [
+        {
+          ...ledgerClosedPartialFiat.repayments[0]!,
+          amount: '1.00',
+          paidAmount: '1.01',
+        },
+      ],
+    };
+    expect(dueShares([fiatLoan], [overpaidFiat])).toEqual([
       expect.objectContaining({ sats: 400, amount: null }),
     ]);
   });

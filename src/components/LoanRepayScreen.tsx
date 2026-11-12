@@ -26,6 +26,7 @@ import {
   dueShares,
   fittingPrefix,
   summarizeLoans,
+  validatedRepaymentPayment,
   type DueShare,
 } from '@/lib/loan-repay';
 import {
@@ -791,15 +792,25 @@ export function LoanRepayScreen(): ReactElement {
               ledger !== null &&
               ledger.currency === loan.goalCurrency
             ) {
-              const paid = ledger.repayments
-                .filter((row) => row.status === 'paid' || (row.paidSats ?? 0) > 0)
-                .map((row) => {
-                  const partialSats = row.paidSats ?? 0;
-                  return {
-                    sats: partialSats > 0 ? partialSats : row.sats,
-                    amount: row.paidAmount ?? (row.status === 'paid' ? row.amount : null),
-                  };
-                });
+              const paid = ledger.repayments.flatMap((row) => {
+                const payment = validatedRepaymentPayment(row);
+                if (row.status !== 'paid' && payment.sats === 0n) {
+                  return [];
+                }
+                const partial = payment.sats !== null && payment.sats > 0n;
+                return [
+                  {
+                    sats: payment.sats === null ? null : partial ? Number(payment.sats) : row.sats,
+                    amount: payment.hasAmount
+                      ? payment.amount === null
+                        ? null
+                        : centsString(payment.amount)
+                      : row.status === 'paid'
+                        ? row.amount
+                        : null,
+                  },
+                ];
+              });
               const paidSats = paid.every((row) => row.sats !== null)
                 ? paid.reduce((sum, row) => sum + (row.sats as number), 0)
                 : null;

@@ -10,7 +10,7 @@ import { RepaymentPlanChart } from '@/components/RepaymentPlanChart';
 import { useSpotRate } from '@/hooks/useSpotRate';
 import { getRepayment, type RepaymentLedger, type RepaymentLine } from '@/lib/api';
 import { creditSmallestUnits } from '@/lib/credit-plan';
-import { centsString, remainingRepaymentSats } from '@/lib/loan-repay';
+import { centsString, remainingRepaymentSats, validatedRepaymentPayment } from '@/lib/loan-repay';
 import type { MessageKey } from '@/lib/messages';
 import type { NumberFormatStyle } from '@/lib/number-format';
 import {
@@ -33,14 +33,14 @@ import {
  * given plan with more than 7 dated days shows the month overview instead.
  * Still owed there counts only unpaid shares. Partial rows use `dueSats` (or
  * `sats - paidSats` when older api bodies omit it) and `amount - paidAmount`
- * in rows, charts, splits, and totals. When positive `paidSats` have no usable
- * `paidAmount`, including because it exceeds the original amount, the
- * repayment plan falls back to those remaining sats and the current spot
- * instead of the original fiat. A month names one status only when every share
- * in that month has it. A fiat plan, share, still-owed total, and chart total
- * otherwise stay in the ask
- * currency, with no bitcoin. Money already given keeps that currency and
- * bitcoin. A bitcoin amount shows the current spot beside it. The spot is not
+ * in rows, charts, splits, and totals. When positive `paidSats` have no stored
+ * `paidAmount`, or a supplied value is malformed or exceeds the original
+ * amount, the repayment plan falls back to those remaining sats and the
+ * current spot instead of the original fiat. A month names one status only
+ * when every share in that month has it. A fiat plan, share, still-owed total,
+ * and chart total otherwise stay in the ask currency, with no bitcoin. Money
+ * already given keeps that currency and bitcoin. A bitcoin amount shows the
+ * current spot beside it. The spot is not
  * written onto the row. A day matches
  * another day by the amount the page shows: the ask currency, or satoshis.
  * The footnote lists the days a month lists, and names one remaining total
@@ -692,17 +692,12 @@ function withWaiting(ledger: RepaymentLedger): RepaymentLedger {
 
 function remainingLine(row: RepaymentLine): RepaymentLine {
   let amount = row.amount;
+  const payment = validatedRepaymentPayment(row);
   if (row.amount !== null && row.amount !== undefined) {
     const total = creditSmallestUnits(row.amount, false);
-    const paid =
-      (row.paidSats ?? 0) > 0
-        ? row.paidAmount === null || row.paidAmount === undefined
-          ? null
-          : creditSmallestUnits(row.paidAmount, false)
-        : 0n;
-    if (total !== null && paid !== null && total >= paid) {
-      amount = centsString(total - paid);
-    } else if ((row.paidSats ?? 0) > 0) {
+    if (total !== null && payment.amount !== null) {
+      amount = centsString(total - payment.amount);
+    } else {
       amount = null;
     }
   }

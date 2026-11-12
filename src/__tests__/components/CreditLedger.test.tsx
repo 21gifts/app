@@ -230,6 +230,28 @@ describe('CreditLedger', () => {
     expect(screen.getByRole('img').textContent).toContain('₿800');
   });
 
+  it('shows no invented bitcoin remainder for an overpaid partial row', async () => {
+    ledger({
+      ...ledgerClosedPartial,
+      repayments: [
+        {
+          ...ledgerClosedPartial.repayments[0]!,
+          sats: 100,
+          paidSats: 101,
+          dueSats: 0,
+        },
+      ],
+    });
+    renderWithLocale(<CreditLedger messageId="partial-btc-overpaid" list="page" />);
+
+    const names = await screen.findAllByText('Bruno @bruno');
+    const dueRow = names
+      .map((name) => name.closest('li'))
+      .find((row) => row?.textContent?.includes('Due'));
+    expect(dueRow).toBeTruthy();
+    expect(dueRow?.textContent).not.toContain('₿');
+  });
+
   it('falls back to remaining bitcoin when a partial fiat amount is missing or malformed', async () => {
     const partial = ledgerClosedPartialFiat.repayments[0]!;
     const omittedPaidAmount = {
@@ -253,7 +275,7 @@ describe('CreditLedger', () => {
             name: 'Cara',
             username: 'cara',
             amount: '5.00',
-            paidSats: 50,
+            paidSats: 0,
             paidAmount: 'bad partial',
             dueSats: 200,
           },

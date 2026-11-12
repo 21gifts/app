@@ -17,6 +17,7 @@ import {
   loanMaxUnits,
   parseLoanAmount,
   remainingRepaymentSats,
+  validatedRepaymentPayment,
 } from '../src/lib/loan-repay';
 import {
   buildShopStickerPdf,
@@ -51,6 +52,7 @@ import {
   fulfillLedger,
   fulfillMyLoans,
   ledgerA,
+  ledgerB,
   loanA,
   loanB,
   loanCollecting,
@@ -16544,6 +16546,32 @@ test('Function: remainingRepaymentSats — partial rows keep only their unpaid s
   await openLoanUi(page, '/loans/repay?visual=repay-ready');
   await page.getByRole('button', { name: 'Who gets paid' }).click();
   await expect(page.getByText('Bruno', { exact: true })).toBeVisible();
+});
+
+test('Function: validatedRepaymentPayment — invalid fiat falls back to bitcoin', async ({
+  page,
+}) => {
+  expect(
+    validatedRepaymentPayment({
+      sats: 720,
+      paidSats: 0,
+      amount: '18.00',
+      paidAmount: 'bad partial',
+    }),
+  ).toEqual({ sats: 0n, amount: null, hasAmount: true });
+  await fulfillLedger(page, 'loan-b', {
+    ...ledgerB,
+    repayments: ledgerB.repayments.map((row) =>
+      row.status === 'due' && row.accountId === 'acc_elena'
+        ? { ...row, paidAmount: 'bad partial' }
+        : row,
+    ),
+  });
+  await openLoanUi(page, '/loans/repay?visual=repay-ready', myLoans([loanB]), false);
+  await page.getByRole('button', { name: 'Who gets paid' }).click();
+  const elena = page.getByText('Elena', { exact: true }).locator('..').locator('..');
+  await expect(elena).toContainText('₿720');
+  await expect(elena).not.toContainText('₱18.00');
 });
 
 test('Function: dueShares — Who gets paid lists every due lender', async ({ page }) => {

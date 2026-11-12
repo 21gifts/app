@@ -7,6 +7,7 @@ import { useTranslations } from '@/components/LocaleProvider';
 import { Button } from '@/components/ui';
 import type { RepaymentLedger } from '@/lib/api';
 import { creditSmallestUnits } from '@/lib/credit-plan';
+import { validatedRepaymentPayment } from '@/lib/loan-repay';
 
 type LoanBlockState = 'collecting' | 'funded' | 'repaying' | 'repaid';
 
@@ -37,10 +38,9 @@ function paidBackPercent(ledger: RepaymentLedger): number {
     total += value;
     if (row.status === 'paid') {
       paid += value;
-    } else if (fiat) {
-      paid += creditSmallestUnits(row.paidAmount ?? '0', false) ?? 0n;
     } else {
-      paid += BigInt(row.paidSats ?? 0);
+      const payment = validatedRepaymentPayment(row);
+      paid += (fiat ? payment.amount : payment.sats) ?? 0n;
     }
   }
   return total <= 0n ? 0 : Math.min(100, Number((paid * 100n) / total));

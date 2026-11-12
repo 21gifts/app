@@ -18,6 +18,7 @@ import {
   type RepaymentWaiting,
 } from '@/lib/api';
 import { creditSmallestUnits } from '@/lib/credit-plan';
+import { parseLoanAmount } from '@/lib/loan-repay';
 import { MissingRequirementsError } from '@/lib/missing-requirements';
 import { visualPin } from '@/lib/visual-pin';
 import { reportPaymentFailure } from '@/lib/wallet/payment-failure';
@@ -179,12 +180,14 @@ function actionErrorOf(error: unknown, messageId: string): LoanRepayActionError 
 /** Rejects internally inconsistent successful prepay bodies before any wallet work begins. */
 function prepayResponseMatches(prepay: LoanPrepay, loan: MyLoan, amountText: string): boolean {
   const rows = [...prepay.bills, ...prepay.waiting];
-  const distributedSats = rows.reduce((sum, row) => sum + row.amountSats, 0);
-  if (distributedSats !== prepay.amountSats) {
+  const responseSats = BigInt(prepay.amountSats);
+  const distributedSats = rows.reduce((sum, row) => sum + BigInt(row.amountSats), 0n);
+  if (distributedSats !== responseSats) {
     return false;
   }
   if (loan.goalCurrency === 'BTC') {
-    return true;
+    const requested = parseLoanAmount(amountText, 'BTC');
+    return requested !== null && requested.units === responseSats;
   }
   const requestedCents = creditSmallestUnits(amountText, false);
   if (requestedCents === null) {

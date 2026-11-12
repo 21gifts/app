@@ -7795,13 +7795,16 @@ test.describe('loans repay screens', () => {
     await shotScreen(page, 'state-loans-repay-pay-more-shortfall-collapsed');
   });
 
-  test('state /loans/repay pay-more-shortfall-copied', async ({ page }) => {
+  test('state /loans/repay pay-more-shortfall-copied', async ({ page, context }) => {
+    await context.grantPermissions(['clipboard-read', 'clipboard-write']);
     await loanShot(page, {
       loans: [paidLoan],
       visual: 'repay-pay-more-shortfall',
       text: 'Your wallet has ₿500 · $0.50. Still missing ₿500 · $0.50.',
       qr: true,
     });
+    const now = await page.evaluate(() => Date.now());
+    await page.clock.pauseAt(now + 1_000);
     await page.getByRole('button', { name: 'Copy' }).click();
     await expect(page.getByRole('button', { name: 'Copied' })).toBeVisible();
     await shotScreen(page, 'state-loans-repay-pay-more-shortfall-copied');

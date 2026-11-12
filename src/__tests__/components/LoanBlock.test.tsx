@@ -233,6 +233,33 @@ describe('LoanBlock', () => {
     expect(screen.getByRole('img', { name: '0% paid back' })).toBeTruthy();
   });
 
+  it('treats bitcoin and fiat overpayments as unpaid', () => {
+    block({
+      percent: 100,
+      funded: true,
+      ledger: ledgerOf([{ ...line(0, 'due', 50), paidSats: 51, dueSats: 0 }]),
+    });
+    expect(screen.getByRole('img', { name: '0% paid back' })).toBeTruthy();
+    cleanup();
+
+    block({
+      percent: 100,
+      funded: true,
+      ledger: ledgerOf(
+        [
+          {
+            ...line(0, 'due', 40),
+            amount: '4.00',
+            paidSats: 10,
+            paidAmount: '4.01',
+          },
+        ],
+        'PHP',
+      ),
+    });
+    expect(screen.getByRole('img', { name: '0% paid back' })).toBeTruthy();
+  });
+
   it('shows 0% paid back when the ledger has no amounts yet', () => {
     block({ percent: 100, funded: true, ledger: ledgerOf([line(0, 'due', null)]) });
     expect(screen.getByRole('img', { name: '0% paid back' })).toBeTruthy();
