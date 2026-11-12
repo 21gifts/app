@@ -7587,6 +7587,13 @@ The class exists so the composer can tell a refused free first post from any oth
 - **Returns / side effects:** Returns counts, payable and waiting totals, the largest api `behindDays` (not recomputed, so a share waiting for a lender's wallet never counts), the earliest next due day with its summed `next.sats` and its defined fiat amount, card tone, and whether payment is available. The defined next amount sums the stored `next.amount` strings per fiat currency on that day and joins the formatted results with `+` in the first currency order they appear in the loan list (for example **₱2.00 + $3.00**). It is null when a loan on that day is BTC, lacks a string, or carries an invalid string; the caller then shows bitcoin with the current spot. It keeps the same `next.sats !== null` condition as the sum. There is no combined goal or collected total because every loan keeps its own `ForumGoalBar`. It is pure and performs no I/O.
 - **Used by:** `LoansCard`, `MenuAccountHeader`, and `LoanRepayScreen`.
 
+## Function: remainingRepaymentSats
+
+- **Purpose:** Resolves the bitcoin amount still owed on one repayment line without inventing a negative remainder.
+- **Inputs:** A repayment line's original `sats`, optional `paidSats`, and optional authoritative `dueSats`.
+- **Returns / side effects:** Returns `dueSats` when the api provides it; for an older api body, returns `sats - paidSats` (with missing `paidSats` treated as zero), or null when `sats` is unknown or less than `paidSats`. It is pure and performs no I/O.
+- **Used by:** `dueShares` and `CreditLedger`.
+
 ## Function: dueShares
 
 - **Purpose:** Builds one oldest-first list of every due ledger share across the member's loans.

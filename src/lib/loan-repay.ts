@@ -1,4 +1,4 @@
-import type { MyLoan, MyLoans, RepaymentLedger } from '@/lib/api';
+import type { MyLoan, MyLoans, RepaymentLedger, RepaymentLine } from '@/lib/api';
 import { creditSmallestUnits } from '@/lib/credit-plan';
 import { formatDefinedGoalAmount } from '@/lib/forum-goal';
 import type { NumberFormatStyle } from '@/lib/number-format';
@@ -310,7 +310,7 @@ export interface DueShare {
   dueOn: string | null;
   accountId: string;
   name: string;
-  /** Remaining row.dueSats when known, else row.sats; null when neither is known. */
+  /** Remaining row.dueSats, or sats less paidSats for an older api; null if invalid. */
   sats: number | null;
   /** Remaining row.amount after paidAmount when the ledger uses the loan currency. */
   amount: string | null;
@@ -319,6 +319,26 @@ export interface DueShare {
    * (older api), the giver's givers[].canReceive is false (a giver not listed can receive).
    */
   waiting: boolean;
+}
+
+/**
+ * Returns the remaining bitcoin amount for one repayment line.
+ *
+ * `dueSats` is authoritative when present. Older api bodies omit it, so a
+ * partial row falls back to its original sats less the paid sats. An invalid
+ * relationship never becomes a negative or otherwise invented remainder.
+ *
+ * @param row - Repayment line with original, paid, and optional due sats.
+ * @returns Remaining whole sats, or null when the relationship is unknown or invalid.
+ */
+export function remainingRepaymentSats(
+  row: Pick<RepaymentLine, 'sats' | 'paidSats' | 'dueSats'>,
+): number | null {
+  if (row.dueSats !== null && row.dueSats !== undefined) {
+    return row.dueSats;
+  }
+  const paidSats = row.paidSats ?? 0;
+  return row.sats === null || paidSats > row.sats ? null : row.sats - paidSats;
 }
 
 /**
@@ -352,7 +372,7 @@ export function dueShares(
         dueOn: row.dueOn,
         accountId: row.accountId,
         name: row.name,
-        sats: row.dueSats ?? row.sats,
+        sats: remainingRepaymentSats(row),
         amount:
           ledger.currency !== loan.goalCurrency ||
           loan.goalCurrency === 'BTC' ||
@@ -382,7 +402,17 @@ export function dueShares(
         left.loanIndex - right.loanIndex ||
         left.rowIndex - right.rowIndex,
     )
-    .map(({ rowIndex: _rowIndex, ...row }) => row);
+    .map((row) => ({
+      messageId: row.messageId,
+      loanIndex: row.loanIndex,
+      dayIndex: row.dayIndex,
+      dueOn: row.dueOn,
+      accountId: row.accountId,
+      name: row.name,
+      sats: row.sats,
+      amount: row.amount,
+      waiting: row.waiting,
+    }));
 }
 
 /**

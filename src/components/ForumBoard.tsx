@@ -548,7 +548,9 @@ function fallbackCopy(text: string): boolean {
  * An author-wallet or loan-no-longer-collecting line from an earlier refused
  * heart (`view.cannotReceive` / `view.creditClosed`) stays until the next tap:
  * under a heart a refresh disables, and alone when a refresh makes the note not
- * payable. Click stops the card from expanding. The
+ * payable. When an authoritative loan close removes this control, ForumBoard
+ * retains the stored `creditClosed` line beside the remaining actions. Click
+ * stops the card from expanding. The
  * count sits immediately to the right of the icon; the fill remains after a
  * tap. Who does not see the heart does not see the count.
  *
@@ -1874,6 +1876,13 @@ export function ForumBoard({
                 <div className="ml-auto flex flex-wrap items-center gap-5">
                   <div id={`note-translate-${message.id}`} className="contents" />
                   {cannotReceive ? <CannotReceiveLabel /> : null}
+                  {loanClosed &&
+                  heartTipViews !== undefined &&
+                  heartTipViews[message.id]?.creditClosed === true ? (
+                    <p role="alert" className="text-xs text-app-danger">
+                      {t('forum.payErrorCreditClosed')}
+                    </p>
+                  ) : null}
                   {loanClosed ? null : (
                     <ForumHeartControl
                       messageId={message.id}

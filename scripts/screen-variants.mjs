@@ -1980,6 +1980,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/loans/repay',
+    id: 'pay-more-invalid',
+    image: 'loans-repay-pay-more-invalid.png',
+    visual: 'state-loans-repay-pay-more-invalid',
+    needle: 'state /loans/repay pay-more-invalid',
+  },
+  {
+    route: '/loans/repay',
     id: 'pay-more-no-rate',
     image: 'loans-repay-pay-more-no-rate.png',
     visual: 'state-loans-repay-pay-more-no-rate',
@@ -2001,6 +2008,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/loans/repay',
+    id: 'pay-more-server-invalid',
+    image: 'loans-repay-pay-more-server-invalid.png',
+    visual: 'state-loans-repay-pay-more-server-invalid',
+    needle: 'state /loans/repay pay-more-server-invalid',
+  },
+  {
+    route: '/loans/repay',
     id: 'pay-more-error',
     image: 'loans-repay-pay-more-error.png',
     visual: 'state-loans-repay-pay-more-error',
@@ -2019,6 +2033,20 @@ export const SCREEN_VARIANTS = [
     image: 'loans-repay-pay-more-waiting.png',
     visual: 'state-loans-repay-pay-more-waiting',
     needle: 'state /loans/repay pay-more-waiting',
+  },
+  {
+    route: '/loans/repay',
+    id: 'pay-more-unconfirmed',
+    image: 'loans-repay-pay-more-unconfirmed.png',
+    visual: 'state-loans-repay-pay-more-unconfirmed',
+    needle: 'state /loans/repay pay-more-unconfirmed',
+  },
+  {
+    route: '/loans/repay',
+    id: 'pay-more-success',
+    image: 'loans-repay-pay-more-success.png',
+    visual: 'state-loans-repay-pay-more-success',
+    needle: 'state /loans/repay pay-more-success',
   },
   {
     route: '/loans/repay',
@@ -3861,6 +3889,13 @@ export const SCREEN_VARIANTS = [
     image: 'welcome-loan-pay-closed.png',
     visual: 'state-welcome-loan-pay-closed',
     needle: 'state /welcome loan-pay-closed',
+  },
+  {
+    route: '/welcome',
+    id: 'loan-initial-closed',
+    image: 'welcome-loan-initial-closed.png',
+    visual: 'state-welcome-loan-initial-closed',
+    needle: 'state /welcome loan-initial-closed',
   },
   {
     route: '/welcome',
@@ -5919,6 +5954,13 @@ export const SCREEN_VARIANTS = [
     image: 'members-posts-open-loan-pay-closed.png',
     visual: 'state-members-posts-open-loan-pay-closed',
     needle: 'state /members posts-open-loan-pay-closed',
+  },
+  {
+    route: '/members/[accountId]',
+    id: 'posts-open-loan-initial-closed',
+    image: 'members-posts-open-loan-initial-closed.png',
+    visual: 'state-members-posts-open-loan-initial-closed',
+    needle: 'state /members posts-open-loan-initial-closed',
   },
   {
     route: '/members/[accountId]',
@@ -9210,6 +9252,13 @@ export const SCREEN_VARIANTS = [
     image: 'messages-id-loan-pay-closed.png',
     visual: 'state-messages-id-loan-pay-closed',
     needle: 'state /messages/[id] loan-pay-closed',
+  },
+  {
+    route: '/messages/[id]',
+    id: 'loan-initial-closed',
+    image: 'messages-id-loan-initial-closed.png',
+    visual: 'state-messages-id-loan-initial-closed',
+    needle: 'state /messages/[id] loan-initial-closed',
   },
   {
     route: '/messages/[id]',

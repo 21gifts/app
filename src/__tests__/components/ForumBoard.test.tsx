@@ -11294,6 +11294,61 @@ describe('ForumBoard author who cannot receive', () => {
     );
   });
 
+  it('keeps a refused-heart alert after a refresh closes the stale-open loan', () => {
+    const loan: ForumMessage = {
+      ...NOTE,
+      id: 'loan1',
+      sats: 10_500,
+      goalSats: 21_000,
+      goalRepayable: true,
+      goalTermDays: 30,
+    };
+    const props: Partial<ForumBoardProps> = {
+      messages: [loan],
+      onHeartTip: () => undefined,
+    };
+    const view = renderWithLocale(board(props));
+    expect(screen.queryByRole('alert')).toBeNull();
+    expect(screen.getByRole('button', { name: 'Send ₿1' })).toBeTruthy();
+
+    const refused = {
+      ...props,
+      heartTipViews: {
+        loan1: { pressed: false, plusOne: false, needsBalance: false, creditClosed: true },
+      },
+    };
+    view.rerender(
+      <LocaleProvider locale="en" messages={getCatalog('en')}>
+        <ThemeProvider>{board(refused)}</ThemeProvider>
+      </LocaleProvider>,
+    );
+    expect(screen.getByRole('alert').textContent).toBe(
+      'This loan is no longer collecting and cannot receive more money.',
+    );
+    expect(screen.getByRole('button', { name: 'Send ₿1' })).toBeTruthy();
+
+    view.rerender(
+      <LocaleProvider locale="en" messages={getCatalog('en')}>
+        <ThemeProvider>
+          {board({
+            ...refused,
+            messages: [
+              {
+                ...loan,
+                goalClosedAt: '2026-10-03T10:00:00.000Z',
+              },
+            ],
+          })}
+        </ThemeProvider>
+      </LocaleProvider>,
+    );
+    expect(screen.getByRole('alert').textContent).toBe(
+      'This loan is no longer collecting and cannot receive more money.',
+    );
+    expect(screen.queryByRole('button', { name: 'Send ₿1' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Lend' })).toBeNull();
+  });
+
   it('cancels an open gift sheet when a refresh says the reply author cannot receive', () => {
     const onPayCancel = vi.fn();
     const reply: ForumMessage = {

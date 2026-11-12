@@ -7650,6 +7650,18 @@ test.describe('loans repay screens', () => {
     await shotScreen(page, 'state-loans-repay-pay-more-above-max');
   });
 
+  test('state /loans/repay pay-more-invalid', async ({ page }) => {
+    await loanShot(page, {
+      loans: [loanA],
+      ledgers: { 'loan-a': ledgerA },
+      visual: 'repay-ready',
+      text: 'Pay more',
+    });
+    await page.getByLabel('Amount (₿)').fill('12.5');
+    await expect(page.getByText('Enter a whole ₿ amount greater than zero.')).toBeVisible();
+    await shotScreen(page, 'state-loans-repay-pay-more-invalid');
+  });
+
   test('state /loans/repay pay-more-no-rate', async ({ page }) => {
     await loanShot(page, {
       loans: [{ ...repaidLoanB, maxSats: null, maxAmount: null }],
@@ -7683,6 +7695,16 @@ test.describe('loans repay screens', () => {
     await shotScreen(page, 'state-loans-repay-pay-more-server-max');
   });
 
+  test('state /loans/repay pay-more-server-invalid', async ({ page }) => {
+    await loanShot(page, {
+      loans: [paidLoan],
+      visual: 'repay-pay-more-server-invalid',
+      text: 'Enter a whole ₿ amount greater than zero.',
+    });
+    await expect(page.getByLabel('Amount (₿)')).toHaveAttribute('aria-invalid', 'true');
+    await shotScreen(page, 'state-loans-repay-pay-more-server-invalid');
+  });
+
   test('state /loans/repay pay-more-error', async ({ page }) => {
     await loanShot(page, {
       loans: [paidLoan],
@@ -7708,6 +7730,32 @@ test.describe('loans repay screens', () => {
       text: 'Waiting for Carla to set up their wallet',
     });
     await shotScreen(page, 'state-loans-repay-pay-more-waiting');
+  });
+
+  test('state /loans/repay pay-more-unconfirmed', async ({ page }) => {
+    await loanShot(page, {
+      loans: [paidLoan],
+      visual: 'repay-pay-more-unconfirmed',
+      text: 'This payment is not confirmed yet. Check your balance again later.',
+    });
+    await shotScreen(page, 'state-loans-repay-pay-more-unconfirmed');
+  });
+
+  test('state /loans/repay pay-more-success', async ({ page }) => {
+    await loanShot(page, {
+      loans: [loanWith(paidLoan, { maxSats: 18_000 })],
+      visual: 'repay-ready',
+      text: /Repaid ₿12'000/,
+    });
+    await page.getByRole('button', { name: 'Max' }).click();
+    await expect(page.getByLabel('Amount (₿)')).toHaveValue('18000');
+    await page.evaluate(() => {
+      window.history.replaceState({}, '', '/loans/repay?visual=repay-pay-more-success');
+    });
+    await page.getByRole('button', { name: 'Pay this amount' }).click();
+    await expect(page.getByLabel('Amount (₿)')).toHaveValue('');
+    await expect(page.getByRole('img', { name: /Repaid ₿12'000/ })).toBeVisible();
+    await shotScreen(page, 'state-loans-repay-pay-more-success');
   });
 
   test('state /loans/repay pay-more-shortfall', async ({ page }) => {
@@ -16610,7 +16658,12 @@ test.describe('onboarding screens', () => {
   });
 
   /** Signed-in Ada on Carol's profile, whose one post is a loan that still collects. */
-  async function seedCarolLoan(page: Page, sats = 10500, cannotReceive = false): Promise<string> {
+  async function seedCarolLoan(
+    page: Page,
+    sats = 10500,
+    cannotReceive = false,
+    closed = false,
+  ): Promise<string> {
     const memberId = '22222222-2222-4222-8222-222222222222';
     const loanId = '44444444-4444-4444-8444-444444444444';
     await page.route(/\/messages\/[^/]+\/repayment$/, async (route) => {
@@ -16669,6 +16722,7 @@ test.describe('onboarding screens', () => {
               goalSats: 21000,
               goalRepayable: true,
               goalTermDays: 30,
+              ...(closed ? { goalClosedAt: '2026-08-03T10:00:00.000Z' } : {}),
               ...(cannotReceive ? { payable: false, authorCanReceive: false } : { payable: true }),
               hasPhoto: false,
               hasVideo: false,
@@ -16792,6 +16846,18 @@ test.describe('onboarding screens', () => {
     await expect(line).toBeVisible();
     await centreAtRest(line);
     await shotScreen(page, 'state-members-posts-open-loan-pay-closed');
+  });
+
+  test('state /members posts-open-loan-initial-closed', async ({ page }) => {
+    const memberId = await seedCarolLoan(page, 10500, false, true);
+    await page.goto(`/members/${memberId}`);
+    await page.getByRole('button', { name: '1 post' }).click();
+    await expect(page.getByRole('region', { name: 'Loan request' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Lend' })).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Send ₿1' })).toHaveCount(0);
+    await expect(page.getByLabel('Amount to lend')).toHaveCount(0);
+    await expect(page.getByRole('dialog')).toHaveCount(0);
+    await shotScreen(page, 'state-members-posts-open-loan-initial-closed');
   });
 
   test('state /members posts-open-loan-pay-full', async ({ page }) => {
@@ -22459,6 +22525,7 @@ test.describe('onboarding screens', () => {
     page: Page,
     sats = 10500,
     cannotReceive = false,
+    closed = false,
   ): Promise<string> {
     const id = '55555555-5555-4555-8555-555555555555';
     await page.addInitScript(() => {
@@ -22510,6 +22577,7 @@ test.describe('onboarding screens', () => {
       goalSats: 21000,
       goalRepayable: true,
       goalTermDays: 30,
+      ...(closed ? { goalClosedAt: '2026-08-29T10:00:00.000Z' } : {}),
       ...(cannotReceive ? { payable: false, authorCanReceive: false } : { payable: true }),
       hasPhoto: false,
       role: 'basis',
@@ -22614,6 +22682,17 @@ test.describe('onboarding screens', () => {
     await expect(line).toBeVisible();
     await centreAtRest(line);
     await shotScreen(page, 'state-messages-id-loan-pay-closed');
+  });
+
+  test('state /messages/[id] loan-initial-closed', async ({ page }) => {
+    const id = await seedMariaLoanNote(page, 10500, false, true);
+    await page.goto(`/messages/${id}`);
+    await expect(page.getByRole('region', { name: 'Loan request' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Lend' })).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Send ₿1' })).toHaveCount(0);
+    await expect(page.getByLabel('Amount to lend')).toHaveCount(0);
+    await expect(page.getByRole('dialog')).toHaveCount(0);
+    await shotScreen(page, 'state-messages-id-loan-initial-closed');
   });
 
   test('state /messages/[id] loan-pay-full', async ({ page }) => {
@@ -29569,7 +29648,12 @@ test.describe('welcome forum variants', () => {
   });
 
   /** Signed-in Ada and Maria's loan that still collects (or is full), with an empty thread. */
-  async function seedLoanCard(page: Page, sats = 10500, cannotReceive = false): Promise<void> {
+  async function seedLoanCard(
+    page: Page,
+    sats = 10500,
+    cannotReceive = false,
+    closed = false,
+  ): Promise<void> {
     await seedAda(page);
     await fulfillRateDay(page);
     await page.route(/\/messages(?:\?|$)/, async (route) => {
@@ -29588,6 +29672,7 @@ test.describe('welcome forum variants', () => {
               goalSats: 21000,
               goalRepayable: true,
               goalTermDays: 30,
+              ...(closed ? { goalClosedAt: '2026-08-29T10:00:00.000Z' } : {}),
               ...(cannotReceive ? { payable: false, authorCanReceive: false } : { payable: true }),
               hasPhoto: false,
               role: 'basis',
@@ -29695,6 +29780,18 @@ test.describe('welcome forum variants', () => {
     await expect(line).toBeVisible();
     await centreAtRest(line);
     await shotScreen(page, 'state-welcome-loan-pay-closed');
+  });
+
+  test('state /welcome loan-initial-closed', async ({ page }) => {
+    await seedLoanCard(page, 10500, false, true);
+    await page.goto('/welcome');
+    await chooseForumView(page, 'All');
+    await expect(page.getByRole('region', { name: 'Loan request' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Lend' })).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Send ₿1' })).toHaveCount(0);
+    await expect(page.getByLabel('Amount to lend')).toHaveCount(0);
+    await expect(page.getByRole('dialog')).toHaveCount(0);
+    await shotScreen(page, 'state-welcome-loan-initial-closed');
   });
 
   test('state /welcome loan-pay-full', async ({ page }) => {

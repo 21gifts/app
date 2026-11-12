@@ -1576,6 +1576,12 @@ Loan A while **19001** is entered: the field is invalid, its live counter remain
 
 ![21.gifts loans repay pay more above maximum](images/loans-repay-pay-more-above-max.png)
 
+### Variant: pay-more-invalid
+
+Loan A with malformed sats input **12.5**. The standard AmountEntry marks the field invalid, shows **Enter a whole ₿ amount greater than zero.** directly below it, and disables **Pay this amount**.
+
+![21.gifts loans repay malformed pay more amount](images/loans-repay-pay-more-invalid.png)
+
 ### Variant: pay-more-no-rate
 
 A PHP loan without a current conversion rate. The standard AmountEntry keeps ₿ selected, disables PHP in its switch, and shows **No exchange rate yet**. **Pay more** also explains **No PHP exchange rate is available now, so paying more is disabled.** Both **Max** and **Pay this amount** are disabled.
@@ -1594,6 +1600,12 @@ The api lowered the available maximum to **₿6'000 · $6.00**. The standard Amo
 
 ![21.gifts loans repay adjusted server maximum](images/loans-repay-pay-more-server-max.png)
 
+### Variant: pay-more-server-invalid
+
+The free-payment api answered `invalid_amount`. The empty AmountEntry is marked invalid and shows the field-level **Enter a whole ₿ amount greater than zero.** feedback instead of the generic payment-error line.
+
+![21.gifts loans repay server invalid amount](images/loans-repay-pay-more-server-invalid.png)
+
 ### Variant: pay-more-error
 
 The free-payment request was refused because an earlier payment is still open. The red api error is visible while AmountEntry's unit switch, live counter, field, and controls remain available for a later retry.
@@ -1611,6 +1623,18 @@ The free payment is being sent through the wallet. **Paying more…** and its sp
 The free payment is waiting after its payable bills were sent. A muted **Waiting for Carla to set up their wallet** line keeps the returned waiting share and **₿200 · $0.20** visible beside the matching loan's active wallet status; the due box keeps its own state.
 
 ![21.gifts loans repay pay more waiting recipient](images/loans-repay-pay-more-waiting.png)
+
+### Variant: pay-more-unconfirmed
+
+The matching free payment was sent but is not confirmed. **This payment is not confirmed yet. Check your balance again later.** appears in Pay more while the amount field, unit switch, and Max remain visible.
+
+![21.gifts loans repay pay more unconfirmed](images/loans-repay-pay-more-unconfirmed.png)
+
+### Variant: pay-more-success
+
+After a successful free payment, the loan progress is updated to **Repaid ₿12'000 · $12.00 of ₿30'000 · $30.00** and its green bar advances. The submitted AmountEntry field is cleared; its unit switch, Max, and **Pay this amount** are ready for another payment.
+
+![21.gifts loans repay pay more success](images/loans-repay-pay-more-success.png)
 
 ### Variant: pay-more-shortfall
 
@@ -3669,6 +3693,12 @@ Maria's collecting loan is still shown from the open list response, but the hear
 The same stale-open loan after **Lend**, **₿210**, and `Count me in!` are submitted and the contribution invoice answers `credit_closed`. No pay sheet opens; the reaction's amount form stays on the card and shows the red line **This loan is no longer collecting and cannot receive more money.**
 
 ![21.gifts welcome closed loan payment refusal](images/welcome-loan-pay-closed.png)
+
+### Variant: loan-initial-closed
+
+Maria's below-goal loan is authoritative as soon as it loads (`goalClosedAt` is present at **₿10'500 · $10.50 of ₿21'000 · $21.00**). The initial card has no **Lend**, heart, amount entry, or pay sheet.
+
+![21.gifts welcome initially closed loan](images/welcome-loan-initial-closed.png)
 
 ### Variant: loan-pay-full
 
@@ -7241,6 +7271,12 @@ The same profile loan after **Lend**, **₿210**, and `Count me in!` are submitt
 
 ![21.gifts member posts closed loan payment refusal](images/members-posts-open-loan-pay-closed.png)
 
+### Variant: posts-open-loan-initial-closed
+
+Ada sees Carol's posts list with a below-goal loan that arrives with authoritative `goalClosedAt`: **₿10'500 · $10.50 of ₿21'000 · $21.00**. The initial profile card has no **Lend**, heart, amount entry, or pay sheet.
+
+![21.gifts member posts initially closed loan](images/members-posts-open-loan-initial-closed.png)
+
 ### Variant: posts-open-loan-pay-full
 
 Carol's loan once it is full (`sats` equals `goalSats`): the loan block reads **Fully funded** and offers no **Lend**, so the money reaction is opened with **React** and keeps the label **Amount**. After **₿210** is posted, the pay sheet reads **Send to Carol**, **₿210** large with **$0.21** under it, and the full-width wallet button **Send ₿210 · $0.21**. Behind it, at the top of the disabled reaction form, the note says **This loan is already fully funded. What you send now is a gift to Carol.**
@@ -10223,6 +10259,12 @@ The signed-in permalink still has an open copy of Maria's loan, but the heart in
 The same permalink after **Lend**, **₿210**, and `Count me in!` are submitted and the contribution invoice answers `credit_closed`. No pay sheet opens; the reaction amount form remains visible with the red line **This loan is no longer collecting and cannot receive more money.**
 
 ![21.gifts public message closed loan payment refusal](images/messages-id-loan-pay-closed.png)
+
+### Variant: loan-initial-closed
+
+The signed-in permalink loads Maria's below-goal loan with authoritative `goalClosedAt`, at **₿10'500 · $10.50 of ₿21'000 · $21.00**. The already-open note has no **Lend**, heart, amount entry, or pay sheet.
+
+![21.gifts public message initially closed loan](images/messages-id-loan-initial-closed.png)
 
 ### Variant: loan-pay-full
 

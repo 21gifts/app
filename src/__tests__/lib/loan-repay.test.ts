@@ -17,6 +17,7 @@ import {
   loanMaxInput,
   loanMaxUnits,
   parseLoanAmount,
+  remainingRepaymentSats,
   summarizeLoans,
 } from '@/lib/loan-repay';
 
@@ -387,6 +388,26 @@ describe('definedFiatAmounts', () => {
 });
 
 describe('dueShares', () => {
+  it('derives and validates the remaining sats when an older api omits dueSats', () => {
+    const partial = { sats: 500, paidSats: 100, dueSats: null };
+    expect(remainingRepaymentSats(partial)).toBe(400);
+    expect(remainingRepaymentSats({ ...partial, dueSats: 375 })).toBe(375);
+    expect(remainingRepaymentSats({ ...partial, paidSats: 501 })).toBeNull();
+    expect(remainingRepaymentSats({ ...partial, sats: null })).toBeNull();
+  });
+
+  it('uses the derived remaining sats for a due row without dueSats', () => {
+    const partial = {
+      ...ledger().repayments[0]!,
+      sats: 500,
+      paidSats: 100,
+      dueSats: null,
+    };
+    expect(dueShares([loan()], [ledger({ repayments: [partial] })])).toEqual([
+      expect.objectContaining({ sats: 400 }),
+    ]);
+  });
+
   it('uses the remaining sats of a partially paid BTC due row', () => {
     expect(dueShares([loanClosedPartial], [ledgerClosedPartial])).toEqual([
       expect.objectContaining({ sats: 400, amount: null }),

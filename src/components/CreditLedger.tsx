@@ -10,7 +10,7 @@ import { RepaymentPlanChart } from '@/components/RepaymentPlanChart';
 import { useSpotRate } from '@/hooks/useSpotRate';
 import { getRepayment, type RepaymentLedger, type RepaymentLine } from '@/lib/api';
 import { creditSmallestUnits } from '@/lib/credit-plan';
-import { centsString } from '@/lib/loan-repay';
+import { centsString, remainingRepaymentSats } from '@/lib/loan-repay';
 import type { MessageKey } from '@/lib/messages';
 import type { NumberFormatStyle } from '@/lib/number-format';
 import {
@@ -31,8 +31,9 @@ import {
  * link to the repayment list. `list="page"` omits that link. A short plan, or
  * one that is not fully given or is missing a date, lists each day. A fully
  * given plan with more than 7 dated days shows the month overview instead.
- * Still owed there counts only unpaid shares. Partial rows use `dueSats` and
- * `amount - paidAmount` in rows, charts, splits, and totals. When positive
+ * Still owed there counts only unpaid shares. Partial rows use `dueSats` (or
+ * `sats - paidSats` when older api bodies omit it) and `amount - paidAmount`
+ * in rows, charts, splits, and totals. When positive
  * `paidSats` have no usable `paidAmount`, the repayment plan falls back to
  * those remaining sats and the current spot instead of the original fiat.
  * A month names one status only when every share in that month has it. A fiat
@@ -707,7 +708,7 @@ function remainingLine(row: RepaymentLine): RepaymentLine {
   return {
     ...row,
     amount,
-    sats: row.dueSats ?? row.sats,
+    sats: remainingRepaymentSats(row),
   };
 }
 

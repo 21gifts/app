@@ -349,6 +349,18 @@ const PINNED_RESULTS: Record<string, PinnedLoanRepay> = {
       maxAmount: null,
     },
   },
+  'repay-pay-more-server-invalid': {
+    ...PIN_BASE,
+    phase: 'failed',
+    balanceSats: 21_000,
+    activeAction: { kind: 'prepay', messageId: 'loan-a' },
+    actionError: {
+      messageId: 'loan-a',
+      code: 'invalid_amount',
+      maxSats: null,
+      maxAmount: null,
+    },
+  },
   'repay-pay-more-error': {
     ...PIN_BASE,
     phase: 'failed',
@@ -383,6 +395,20 @@ const PINNED_RESULTS: Record<string, PinnedLoanRepay> = {
       },
     ],
     prepayMessageId: 'loan-a',
+  },
+  'repay-pay-more-unconfirmed': {
+    ...PIN_BASE,
+    phase: 'unconfirmed',
+    balanceSats: 21_000,
+    activeAction: { kind: 'prepay', messageId: 'loan-a' },
+  },
+  'repay-pay-more-success': {
+    ...PIN_BASE,
+    phase: 'repaid',
+    balanceSats: 21_000,
+    activeAction: { kind: 'prepay', messageId: 'loan-a' },
+    sentSats: 1_000,
+    sentNames: ['Bruno', 'Carla', 'Diego'],
   },
   'repay-pay-more-shortfall': {
     ...PIN_BASE,

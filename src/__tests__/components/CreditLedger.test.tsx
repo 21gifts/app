@@ -203,6 +203,33 @@ describe('CreditLedger', () => {
     expect(screen.getByRole('img').textContent).toContain('₱10.00');
   });
 
+  it('shows remaining sats for due and scheduled partial rows without dueSats', async () => {
+    const partial = {
+      ...btc.repayments[0]!,
+      sats: 500,
+      paidSats: 100,
+      paidAmount: null,
+      dueSats: null,
+    };
+    ledger({
+      ...btc,
+      repayments: [
+        partial,
+        {
+          ...partial,
+          dayIndex: 1,
+          dueOn: '2026-11-02',
+          status: 'scheduled' as const,
+        },
+      ],
+    });
+    renderWithLocale(<CreditLedger messageId="partial-without-due" list="page" />);
+    await screen.findByText('Paid back');
+    expect(screen.getAllByText('₿400').length).toBeGreaterThanOrEqual(2);
+    expect(screen.queryByText('₿500')).toBeNull();
+    expect(screen.getByRole('img').textContent).toContain('₿800');
+  });
+
   it('falls back to remaining bitcoin when a partial fiat amount is missing or malformed', async () => {
     const partial = ledgerClosedPartialFiat.repayments[0]!;
     const omittedPaidAmount = {

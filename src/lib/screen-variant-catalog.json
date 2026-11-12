@@ -1632,6 +1632,12 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/loans/repay:pay-more-invalid",
+    "label": "/loans/repay pay-more-invalid",
+    "visual": "state-loans-repay-pay-more-invalid",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/loans/repay:pay-more-no-rate",
     "label": "/loans/repay pay-more-no-rate",
     "visual": "state-loans-repay-pay-more-no-rate",
@@ -1650,6 +1656,12 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/loans/repay:pay-more-server-invalid",
+    "label": "/loans/repay pay-more-server-invalid",
+    "visual": "state-loans-repay-pay-more-server-invalid",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/loans/repay:pay-more-error",
     "label": "/loans/repay pay-more-error",
     "visual": "state-loans-repay-pay-more-error",
@@ -1665,6 +1677,18 @@
     "id": "/loans/repay:pay-more-waiting",
     "label": "/loans/repay pay-more-waiting",
     "visual": "state-loans-repay-pay-more-waiting",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/loans/repay:pay-more-unconfirmed",
+    "label": "/loans/repay pay-more-unconfirmed",
+    "visual": "state-loans-repay-pay-more-unconfirmed",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/loans/repay:pay-more-success",
+    "label": "/loans/repay pay-more-success",
+    "visual": "state-loans-repay-pay-more-success",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
@@ -3243,6 +3267,12 @@
     "id": "/welcome:loan-pay-closed",
     "label": "/welcome loan-pay-closed",
     "visual": "state-welcome-loan-pay-closed",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:loan-initial-closed",
+    "label": "/welcome loan-initial-closed",
+    "visual": "state-welcome-loan-initial-closed",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
@@ -5007,6 +5037,12 @@
     "id": "/members/[accountId]:posts-open-loan-pay-closed",
     "label": "/members/[accountId] posts-open-loan-pay-closed",
     "visual": "state-members-posts-open-loan-pay-closed",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/members/[accountId]:posts-open-loan-initial-closed",
+    "label": "/members/[accountId] posts-open-loan-initial-closed",
+    "visual": "state-members-posts-open-loan-initial-closed",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
@@ -7827,6 +7863,12 @@
     "id": "/messages/[id]:loan-pay-closed",
     "label": "/messages/[id] loan-pay-closed",
     "visual": "state-messages-id-loan-pay-closed",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/messages/[id]:loan-initial-closed",
+    "label": "/messages/[id] loan-initial-closed",
+    "visual": "state-messages-id-loan-initial-closed",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {

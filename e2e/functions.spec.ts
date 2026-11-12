@@ -16,6 +16,7 @@ import {
   loanMaxInput,
   loanMaxUnits,
   parseLoanAmount,
+  remainingRepaymentSats,
 } from '../src/lib/loan-repay';
 import {
   buildShopStickerPdf,
@@ -16533,6 +16534,16 @@ test('Function: definedFiatAmounts — stored amounts add per currency', async (
   expect(definedFiatAmounts([{ code: 'BTC', amount: null }], 'ch')).toBeNull();
   await openLoanUi(page, '/loans/repay?visual=repay-ready', myLoans([loanB]), false);
   await expect(page.getByText('₱30.00', { exact: true })).toBeVisible();
+});
+
+test('Function: remainingRepaymentSats — partial rows keep only their unpaid sats', async ({
+  page,
+}) => {
+  expect(remainingRepaymentSats({ sats: 500, paidSats: 100, dueSats: null })).toBe(400);
+  expect(remainingRepaymentSats({ sats: 500, paidSats: 100, dueSats: 375 })).toBe(375);
+  await openLoanUi(page, '/loans/repay?visual=repay-ready');
+  await page.getByRole('button', { name: 'Who gets paid' }).click();
+  await expect(page.getByText('Bruno', { exact: true })).toBeVisible();
 });
 
 test('Function: dueShares — Who gets paid lists every due lender', async ({ page }) => {
