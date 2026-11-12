@@ -7714,6 +7714,15 @@ test.describe('loans repay screens', () => {
     await shotScreen(page, 'state-loans-repay-pay-more-error');
   });
 
+  test('state /loans/repay pay-more-nothing-due', async ({ page }) => {
+    await loanShot(page, {
+      loans: [paidLoan],
+      visual: 'repay-pay-more-nothing-due',
+      text: 'There is nothing left to repay.',
+    });
+    await shotScreen(page, 'state-loans-repay-pay-more-nothing-due');
+  });
+
   test('state /loans/repay pay-more-sending', async ({ page }) => {
     await loanShot(page, {
       loans: [paidLoan],
@@ -7766,6 +7775,29 @@ test.describe('loans repay screens', () => {
       qr: true,
     });
     await shotScreen(page, 'state-loans-repay-pay-more-shortfall');
+  });
+
+  test('state /loans/repay pay-more-shortfall-collapsed', async ({ page }) => {
+    await loanShot(page, {
+      loans: [paidLoan],
+      visual: 'repay-pay-more-shortfall-collapsed',
+      text: 'Your wallet has ₿500 · $0.50. Still missing ₿500 · $0.50.',
+    });
+    await expect(page.getByRole('button', { name: 'Top up your wallet' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Copy' })).toHaveCount(0);
+    await shotScreen(page, 'state-loans-repay-pay-more-shortfall-collapsed');
+  });
+
+  test('state /loans/repay pay-more-shortfall-copied', async ({ page }) => {
+    await loanShot(page, {
+      loans: [paidLoan],
+      visual: 'repay-pay-more-shortfall',
+      text: 'Your wallet has ₿500 · $0.50. Still missing ₿500 · $0.50.',
+      qr: true,
+    });
+    await page.getByRole('button', { name: 'Copy' }).click();
+    await expect(page.getByRole('button', { name: 'Copied' })).toBeVisible();
+    await shotScreen(page, 'state-loans-repay-pay-more-shortfall-copied');
   });
 
   test('state /loans/repay collecting-pay-confirm', async ({ page }) => {
@@ -16829,6 +16861,18 @@ test.describe('onboarding screens', () => {
     await shotScreen(page, 'state-members-posts-open-loan-heart-closed');
   });
 
+  test('state /members posts-open-loan-heart-refreshed-closed', async ({ page }) => {
+    const memberId = await seedCarolLoan(page, 10500, false, true);
+    await page.goto(`/members/${memberId}?visual=heart-credit-closed-refreshed`);
+    await page.getByRole('button', { name: '1 post' }).click();
+    const line = page.getByText('This loan is no longer collecting and cannot receive more money.');
+    await expect(line).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Send ₿1' })).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Lend' })).toHaveCount(0);
+    await centreAtRest(line);
+    await shotScreen(page, 'state-members-posts-open-loan-heart-refreshed-closed');
+  });
+
   test('state /members posts-open-loan-pay-closed', async ({ page }) => {
     const memberId = await seedCarolLoan(page);
     await rejectClosedCreditInvoices(page);
@@ -22664,6 +22708,17 @@ test.describe('onboarding screens', () => {
     await expect(line).toBeVisible();
     await centreAtRest(line);
     await shotScreen(page, 'state-messages-id-loan-heart-closed');
+  });
+
+  test('state /messages/[id] loan-heart-refreshed-closed', async ({ page }) => {
+    const id = await seedMariaLoanNote(page, 10500, false, true);
+    await page.goto(`/messages/${id}?visual=heart-credit-closed-refreshed`);
+    const line = page.getByText('This loan is no longer collecting and cannot receive more money.');
+    await expect(line).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Send ₿1' })).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Lend' })).toHaveCount(0);
+    await centreAtRest(line);
+    await shotScreen(page, 'state-messages-id-loan-heart-refreshed-closed');
   });
 
   test('state /messages/[id] loan-pay-closed', async ({ page }) => {
@@ -29761,6 +29816,18 @@ test.describe('welcome forum variants', () => {
     await expect(line).toBeVisible();
     await centreAtRest(line);
     await shotScreen(page, 'state-welcome-loan-heart-closed');
+  });
+
+  test('state /welcome loan-heart-refreshed-closed', async ({ page }) => {
+    await seedLoanCard(page, 10500, false, true);
+    await page.goto('/welcome?visual=heart-credit-closed-refreshed');
+    await chooseForumView(page, 'All');
+    const line = page.getByText('This loan is no longer collecting and cannot receive more money.');
+    await expect(line).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Send ₿1' })).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Lend' })).toHaveCount(0);
+    await centreAtRest(line);
+    await shotScreen(page, 'state-welcome-loan-heart-refreshed-closed');
   });
 
   test('state /welcome loan-pay-closed', async ({ page }) => {

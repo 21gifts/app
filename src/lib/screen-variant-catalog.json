@@ -1668,6 +1668,12 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/loans/repay:pay-more-nothing-due",
+    "label": "/loans/repay pay-more-nothing-due",
+    "visual": "state-loans-repay-pay-more-nothing-due",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/loans/repay:pay-more-sending",
     "label": "/loans/repay pay-more-sending",
     "visual": "state-loans-repay-pay-more-sending",
@@ -1695,6 +1701,18 @@
     "id": "/loans/repay:pay-more-shortfall",
     "label": "/loans/repay pay-more-shortfall",
     "visual": "state-loans-repay-pay-more-shortfall",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/loans/repay:pay-more-shortfall-collapsed",
+    "label": "/loans/repay pay-more-shortfall-collapsed",
+    "visual": "state-loans-repay-pay-more-shortfall-collapsed",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/loans/repay:pay-more-shortfall-copied",
+    "label": "/loans/repay pay-more-shortfall-copied",
+    "visual": "state-loans-repay-pay-more-shortfall-copied",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
@@ -3261,6 +3279,12 @@
     "id": "/welcome:loan-heart-closed",
     "label": "/welcome loan-heart-closed",
     "visual": "state-welcome-loan-heart-closed",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:loan-heart-refreshed-closed",
+    "label": "/welcome loan-heart-refreshed-closed",
+    "visual": "state-welcome-loan-heart-refreshed-closed",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
@@ -5031,6 +5055,12 @@
     "id": "/members/[accountId]:posts-open-loan-heart-closed",
     "label": "/members/[accountId] posts-open-loan-heart-closed",
     "visual": "state-members-posts-open-loan-heart-closed",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/members/[accountId]:posts-open-loan-heart-refreshed-closed",
+    "label": "/members/[accountId] posts-open-loan-heart-refreshed-closed",
+    "visual": "state-members-posts-open-loan-heart-refreshed-closed",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
@@ -7857,6 +7887,12 @@
     "id": "/messages/[id]:loan-heart-closed",
     "label": "/messages/[id] loan-heart-closed",
     "visual": "state-messages-id-loan-heart-closed",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/messages/[id]:loan-heart-refreshed-closed",
+    "label": "/messages/[id] loan-heart-refreshed-closed",
+    "visual": "state-messages-id-loan-heart-refreshed-closed",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {

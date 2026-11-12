@@ -1069,6 +1069,11 @@
     "es": "Pagar más muestra el error rojo Un pago anterior de esta parte sigue abierto. Inténtalo de nuevo más tarde. El selector, contador en vivo, campo y controles de AmountEntry permanecen visibles.",
     "fil": "Ipinapakita ng Magbayad pa ang pulang API error na Bukas pa ang naunang bayad para sa bahaging ito. Subukan muli mamaya. Nakikita pa rin ang AmountEntry switch, live counter, field, at controls."
   },
+  "/loans/repay:pay-more-nothing-due": {
+    "de": "Die typisierte Ablehnung nothing_due zeigt unter AmountEntry die kurze rote Zeile „Es ist nichts mehr zurückzuzahlen.“; Einheitenschalter, Live-Gegenwert, Feld und Kontrollen bleiben sichtbar. Dies ist der kompakte Vertreter für Ablehnungen mit demselben Kontrolllayout; pay-more-error vertritt die umgebrochenen Meldungen für payment_open, Ratenbegrenzung, Dienst-Nichtverfügbarkeit, fehlende Anforderungen und allgemeine Anfragefehler.",
+    "es": "El rechazo tipado nothing_due muestra bajo AmountEntry la línea roja breve «No queda nada por devolver.»; el selector de unidad, contador en vivo, campo y controles siguen visibles. Es el representante compacto de los rechazos con la misma disposición de controles; pay-more-error representa los mensajes con salto de línea de payment_open, límite de solicitudes, servicio no disponible, requisitos pendientes y error genérico.",
+    "fil": "Ipinapakita ng typed na nothing_due refusal ang maikling pulang linyang Wala nang natitirang babayaran. sa ilalim ng AmountEntry; nakikita pa rin ang unit switch, live counterpart, field, at controls. Ito ang compact representative ng mga refusal na pareho ang control layout; kinakatawan ng pay-more-error ang wrapped na payment_open, rate limit, service unavailable, missing requirements, at generic request failure."
+  },
   "/loans/repay:pay-more-sending": {
     "de": "Eine freie Rückzahlung wird gerade über die Wallet gesendet. Statt Betrag zahlen stehen ein Spinner und Mehr wird zurückgezahlt…; AmountEntry-Feld, Einheitenschalter und Maximum sind deaktiviert, der Live-Gegenwert bleibt sichtbar.",
     "es": "Se está enviando un pago libre desde la wallet. En lugar de Pagar este importe aparecen un indicador y Pagando más…; el campo, selector de unidad y Máximo están desactivados, y el contador en vivo sigue visible.",
@@ -1093,6 +1098,16 @@
     "de": "Der freien Rückzahlung fehlen ₿500 · $0.50. Der geöffnete Aufladeblock im passenden Mehr-zurückzahlen-Bereich zeigt Guthaben und Fehlbetrag mit Fiat, Adas Adresse, genau einen Open-CryptoPay-QR und Ihre Aufladung wird erwartet…; die Fälligkeitskarte behält Senden.",
     "es": "Al pago libre le faltan ₿500 · $0.50. El bloque de recarga abierto en Pagar más muestra saldo y falta con fiat, la dirección de Ada, exactamente un QR de Open CryptoPay y Esperando tu recarga…; la caja de vencimiento conserva Enviar.",
     "fil": "Kulang ng ₿500 · $0.50 para sa libreng repayment. Ipinapakita ng bukas na top-up block sa katugmang Magbayad pa ang balance at kakulangan na may fiat, address ni Ada, eksaktong isang Open CryptoPay QR, at Hinihintay ang pagdagdag mo…; nananatili ang Ipadala sa due box."
+  },
+  "/loans/repay:pay-more-shortfall-collapsed": {
+    "de": "Derselbe Fehlbetrag der freien Rückzahlung vor dem Öffnen des Aufladeblocks. Der passende Mehr-zurückzahlen-Bereich zeigt Guthaben, Fehlbetrag und Wallet aufladen; Adresse, QR und Wartezeile fehlen noch, und die Fälligkeitskarte behält ihren Senden-Zustand.",
+    "es": "La misma falta del pago libre antes de abrir el bloque de recarga. El bloque Pagar más correspondiente muestra saldo, falta y Recargar tu wallet; aún no hay dirección, QR ni línea de espera, y la caja de vencimiento conserva su estado Enviar.",
+    "fil": "Parehong kakulangan sa libreng repayment bago buksan ang top-up block. Ipinapakita ng katugmang Magbayad pa ang balance, kakulangan, at Dagdagan ang wallet mo; wala pang address, QR, o waiting line, at nananatili ang Send state ng due box."
+  },
+  "/loans/repay:pay-more-shortfall-copied": {
+    "de": "Der geöffnete Fehlbetrag der freien Rückzahlung, nachdem Adas Adresse kopiert wurde. Die Adresskontrolle zeigt Kopiert, genau ein Open-CryptoPay-QR bleibt sichtbar und Ihre Aufladung wird erwartet… steht weiter darunter; die Fälligkeitskarte behält ihren Senden-Zustand.",
+    "es": "La falta abierta del pago libre después de copiar la dirección de Ada. El control de la dirección muestra Copiado, exactamente un QR de Open CryptoPay sigue visible y Esperando tu recarga… permanece debajo; la caja de vencimiento conserva su estado Enviar.",
+    "fil": "Ang bukas na kakulangan sa libreng repayment matapos kopyahin ang address ni Ada. Nakalagay sa address control ang Nakopya, nananatiling nakikita ang eksaktong isang Open CryptoPay QR, at nasa ibaba pa rin ang Hinihintay ang pagdagdag mo…; nananatili ang Send state ng due box."
   },
   "/loans/repay:collecting-pay-confirm": {
     "de": "Ein noch sammelnder Kredit nach Maximum und Betrag zahlen. Hinter dem Dialog behält AmountEntry Schalter und Live-Gegenwert. Zahlen und Sammeln beenden? erklärt die endgültige Folge. Aktionen: ₿18'000 · $18.00 zahlen und Sammeln beenden, Abbrechen und Schließen.",
@@ -8699,6 +8714,11 @@
     "es": "El préstamo de Maria aún aparece abierto, pero la factura del corazón responde credit_closed. El corazón se revierte y debajo aparece en rojo: Este préstamo ya no reúne fondos y no puede recibir más dinero. Es el estado de rechazo propio del corazón, separado de una billetera que no puede recibir.",
     "fil": "Mukhang bukas pa ang pautang ni Maria, ngunit sumasagot ang invoice ng puso ng credit_closed. Ibinabalik ang puso at lumalabas sa ilalim ang pulang linyang Hindi na nag-iipon ang pautang na ito at hindi na ito makatatanggap ng dagdag na pera. Hiwalay itong estado ng pagtanggi ng puso sa wallet na hindi makatanggap."
   },
+  "/welcome:loan-heart-refreshed-closed": {
+    "de": "Nach dem abgelehnten Herz markiert eine maßgebliche Aktualisierung Marias Kredit unter dem Ziel als geschlossen. Der rote Hinweis „Dieser Kredit sammelt nicht mehr und kann kein weiteres Geld erhalten.“ bleibt, während Herz und Leihen verschwunden sind.",
+    "es": "Después del corazón rechazado, una actualización autoritativa marca como cerrado el préstamo de Maria que sigue por debajo de la meta. Permanece el aviso rojo «Este préstamo ya no reúne fondos y no puede recibir más dinero.», mientras desaparecen el corazón y Prestar.",
+    "fil": "Pagkatapos ng tinanggihang puso, minamarkahan ng authoritative refresh na sarado ang below-goal loan ni Maria. Nananatili ang pulang alert na “Hindi na nag-iipon ang pautang na ito at hindi na ito makatatanggap ng dagdag na pera.” habang wala na ang puso at Magpahiram."
+  },
   "/welcome:loan-pay-closed": {
     "de": "Beim noch offen angezeigten Kredit werden Leihen, ₿210 und Count me in! gesendet, doch die Beitragsrechnung antwortet credit_closed. Es öffnet sich kein Zahlungsblatt; das Betragsformular bleibt auf der Karte und zeigt rot: Dieser Kredit sammelt nicht mehr und kann kein weiteres Geld erhalten.",
     "es": "En el préstamo que aún aparece abierto se envían Prestar, ₿210 y Count me in!, pero la factura de la contribución responde credit_closed. No se abre ninguna hoja de pago; el formulario del importe permanece en la tarjeta y muestra en rojo: Este préstamo ya no reúne fondos y no puede recibir más dinero.",
@@ -8714,6 +8734,11 @@
     "es": "Ada ve la lista de publicaciones de Carol mientras el préstamo aún parece abierto, pero la factura del corazón responde credit_closed. El corazón se revierte y la tarjeta del perfil muestra en rojo: Este préstamo ya no reúne fondos y no puede recibir más dinero.",
     "fil": "Nakikita ni Ada ang listahan ng mga post ni Carol habang mukhang bukas pa ang pautang, ngunit sumasagot ang invoice ng puso ng credit_closed. Ibinabalik ang puso at ipinapakita ng profile card sa pula na Hindi na nag-iipon ang pautang na ito at hindi na ito makatatanggap ng dagdag na pera."
   },
+  "/members/[accountId]:posts-open-loan-heart-refreshed-closed": {
+    "de": "Nach dem abgelehnten Herz schließt Carols aktualisierter Beitrag den Kredit unter dem Ziel maßgeblich. Der rote Hinweis „Dieser Kredit sammelt nicht mehr und kann kein weiteres Geld erhalten.“ bleibt auf der Profilkarte, während Herz und Leihen verschwunden sind.",
+    "es": "Después del corazón rechazado, la publicación actualizada de Carol cierra de forma autoritativa el préstamo por debajo de la meta. El aviso rojo «Este préstamo ya no reúne fondos y no puede recibir más dinero.» permanece en la tarjeta del perfil, mientras desaparecen el corazón y Prestar.",
+    "fil": "Pagkatapos ng tinanggihang puso, authoritative nang isinasara ng refreshed post ni Carol ang below-goal loan. Nananatili sa profile card ang pulang alert na “Hindi na nag-iipon ang pautang na ito at hindi na ito makatatanggap ng dagdag na pera.” habang wala na ang puso at Magpahiram."
+  },
   "/members/[accountId]:posts-open-loan-pay-closed": {
     "de": "Auf demselben Profil werden Leihen, ₿210 und Count me in! gesendet, doch die Beitragsrechnung antwortet credit_closed. Das Betragsformular bleibt ohne Zahlungsblatt offen und zeigt rot: Dieser Kredit sammelt nicht mehr und kann kein weiteres Geld erhalten.",
     "es": "En el mismo perfil se envían Prestar, ₿210 y Count me in!, pero la factura de la contribución responde credit_closed. El formulario del importe permanece abierto sin hoja de pago y muestra en rojo: Este préstamo ya no reúne fondos y no puede recibir más dinero.",
@@ -8728,6 +8753,11 @@
     "de": "Der angemeldete Permalink hat noch eine offene Kopie von Marias Kredit, doch die Herz-Rechnung antwortet credit_closed. Das Herz wird zurückgesetzt, und darunter steht rot: Dieser Kredit sammelt nicht mehr und kann kein weiteres Geld erhalten.",
     "es": "El enlace permanente con sesión iniciada aún tiene una copia abierta del préstamo de Maria, pero la factura del corazón responde credit_closed. El corazón se revierte y debajo aparece en rojo: Este préstamo ya no reúne fondos y no puede recibir más dinero.",
     "fil": "May bukas pang kopya ng pautang ni Maria ang naka-sign na permalink, ngunit sumasagot ang invoice ng puso ng credit_closed. Ibinabalik ang puso at lumalabas sa ilalim ang pulang linyang Hindi na nag-iipon ang pautang na ito at hindi na ito makatatanggap ng dagdag na pera."
+  },
+  "/messages/[id]:loan-heart-refreshed-closed": {
+    "de": "Nach dem abgelehnten Herz aktualisiert sich der Permalink auf Marias maßgeblich geschlossenen Kredit unter dem Ziel. Der rote Hinweis „Dieser Kredit sammelt nicht mehr und kann kein weiteres Geld erhalten.“ bleibt, während Herz und Leihen verschwunden sind.",
+    "es": "Después del corazón rechazado, el enlace permanente se actualiza al préstamo de Maria cerrado de forma autoritativa y aún por debajo de la meta. Permanece el aviso rojo «Este préstamo ya no reúne fondos y no puede recibir más dinero.», mientras desaparecen el corazón y Prestar.",
+    "fil": "Pagkatapos ng tinanggihang puso, nagre-refresh ang permalink sa authoritative na saradong below-goal loan ni Maria. Nananatili ang pulang alert na “Hindi na nag-iipon ang pautang na ito at hindi na ito makatatanggap ng dagdag na pera.” habang wala na ang puso at Magpahiram."
   },
   "/messages/[id]:loan-pay-closed": {
     "de": "Auf demselben Permalink werden Leihen, ₿210 und Count me in! gesendet, doch die Beitragsrechnung antwortet credit_closed. Es öffnet sich kein Zahlungsblatt; das Betragsformular bleibt sichtbar und zeigt rot: Dieser Kredit sammelt nicht mehr und kann kein weiteres Geld erhalten.",

@@ -174,6 +174,7 @@ export function LoanPayMore({
   const [serverError, setServerError] = useState<string | null>(null);
   const [serverAmountInvalid, setServerAmountInvalid] = useState(false);
   const [serverMaximum, setServerMaximum] = useState<ServerMaximum | null>(null);
+  const processedActionError = useRef<string | null>(null);
   const collecting = isCollecting(loan);
   const entryFiat: FiatCode = loan.goalCurrency === 'BTC' ? fiat : loan.goalCurrency;
   const matchingAction =
@@ -246,13 +247,20 @@ export function LoanPayMore({
   }, [loan.maxAmount, loan.maxSats, loan.messageId]);
 
   useEffect(() => {
-    if (
-      actionError === null ||
-      actionError.messageId !== loan.messageId ||
-      shownPendingAction === null
-    ) {
+    if (actionError === null) {
+      processedActionError.current = null;
       return;
     }
+    if (actionError.messageId !== loan.messageId || shownPendingAction === null) {
+      return;
+    }
+    const errorGeneration = `${actionError.messageId}:${actionError.code}:${String(
+      actionError.maxSats,
+    )}:${String(actionError.maxAmount)}`;
+    if (processedActionError.current === errorGeneration) {
+      return;
+    }
+    processedActionError.current = errorGeneration;
     setServerAmountInvalid(false);
     if (shownPendingAction === 'pay' && actionError.code === 'invalid_amount') {
       setServerError(null);

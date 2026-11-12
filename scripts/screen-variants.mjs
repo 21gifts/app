@@ -2022,6 +2022,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/loans/repay',
+    id: 'pay-more-nothing-due',
+    image: 'loans-repay-pay-more-nothing-due.png',
+    visual: 'state-loans-repay-pay-more-nothing-due',
+    needle: 'state /loans/repay pay-more-nothing-due',
+  },
+  {
+    route: '/loans/repay',
     id: 'pay-more-sending',
     image: 'loans-repay-pay-more-sending.png',
     visual: 'state-loans-repay-pay-more-sending',
@@ -2054,6 +2061,20 @@ export const SCREEN_VARIANTS = [
     image: 'loans-repay-pay-more-shortfall.png',
     visual: 'state-loans-repay-pay-more-shortfall',
     needle: 'state /loans/repay pay-more-shortfall',
+  },
+  {
+    route: '/loans/repay',
+    id: 'pay-more-shortfall-collapsed',
+    image: 'loans-repay-pay-more-shortfall-collapsed.png',
+    visual: 'state-loans-repay-pay-more-shortfall-collapsed',
+    needle: 'state /loans/repay pay-more-shortfall-collapsed',
+  },
+  {
+    route: '/loans/repay',
+    id: 'pay-more-shortfall-copied',
+    image: 'loans-repay-pay-more-shortfall-copied.png',
+    visual: 'state-loans-repay-pay-more-shortfall-copied',
+    needle: 'state /loans/repay pay-more-shortfall-copied',
   },
   {
     route: '/loans/repay',
@@ -3882,6 +3903,13 @@ export const SCREEN_VARIANTS = [
     image: 'welcome-loan-heart-closed.png',
     visual: 'state-welcome-loan-heart-closed',
     needle: 'state /welcome loan-heart-closed',
+  },
+  {
+    route: '/welcome',
+    id: 'loan-heart-refreshed-closed',
+    image: 'welcome-loan-heart-refreshed-closed.png',
+    visual: 'state-welcome-loan-heart-refreshed-closed',
+    needle: 'state /welcome loan-heart-refreshed-closed',
   },
   {
     route: '/welcome',
@@ -5947,6 +5975,13 @@ export const SCREEN_VARIANTS = [
     image: 'members-posts-open-loan-heart-closed.png',
     visual: 'state-members-posts-open-loan-heart-closed',
     needle: 'state /members posts-open-loan-heart-closed',
+  },
+  {
+    route: '/members/[accountId]',
+    id: 'posts-open-loan-heart-refreshed-closed',
+    image: 'members-posts-open-loan-heart-refreshed-closed.png',
+    visual: 'state-members-posts-open-loan-heart-refreshed-closed',
+    needle: 'state /members posts-open-loan-heart-refreshed-closed',
   },
   {
     route: '/members/[accountId]',
@@ -9245,6 +9280,13 @@ export const SCREEN_VARIANTS = [
     image: 'messages-id-loan-heart-closed.png',
     visual: 'state-messages-id-loan-heart-closed',
     needle: 'state /messages/[id] loan-heart-closed',
+  },
+  {
+    route: '/messages/[id]',
+    id: 'loan-heart-refreshed-closed',
+    image: 'messages-id-loan-heart-refreshed-closed.png',
+    visual: 'state-messages-id-loan-heart-refreshed-closed',
+    needle: 'state /messages/[id] loan-heart-refreshed-closed',
   },
   {
     route: '/messages/[id]',

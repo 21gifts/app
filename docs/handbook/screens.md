@@ -1612,6 +1612,12 @@ The free-payment request was refused because an earlier payment is still open. T
 
 ![21.gifts loans repay pay more api error](images/loans-repay-pay-more-error.png)
 
+### Variant: pay-more-nothing-due
+
+The typed `nothing_due` refusal shows the short red line **There is nothing left to repay.** below AmountEntry while its unit switch, live counterpart, field, and controls remain visible. This is the compact representative for refusal messages that keep this same control layout; the existing `pay-more-error` is the wrapped representative for `payment_open`, rate limiting, service unavailability, missing requirements, and generic request failure.
+
+![21.gifts loans repay pay more nothing due](images/loans-repay-pay-more-nothing-due.png)
+
 ### Variant: pay-more-sending
 
 The free payment is being sent through the wallet. **Paying more…** and its spinner replace the pay button; AmountEntry's field and unit switch plus Max are disabled during the send, while its live counter remains visible.
@@ -1641,6 +1647,18 @@ After a successful free payment, the loan progress is updated to **Repaid ₿12'
 The wallet is **₿500 · $0.50** short for the free payment and the matching Pay-more top-up block is already open. It shows the balance and missing amount with preferred fiat, Ada's address, exactly one Open CryptoPay QR, and **Waiting for your top-up…**; the due box keeps its own Send state.
 
 ![21.gifts loans repay pay more shortfall](images/loans-repay-pay-more-shortfall.png)
+
+### Variant: pay-more-shortfall-collapsed
+
+The same free-payment shortfall before the top-up block is opened. The matching Pay-more block shows the balance, missing amount, and **Top up your wallet**; it has no address, QR, or waiting line yet, and the due box keeps its own Send state.
+
+![21.gifts loans repay pay more shortfall collapsed](images/loans-repay-pay-more-shortfall-collapsed.png)
+
+### Variant: pay-more-shortfall-copied
+
+The opened free-payment shortfall after Ada's address is copied. Its address control reads **Copied**, the Open CryptoPay QR remains visible exactly once, and **Waiting for your top-up…** stays below it; the due box keeps its own Send state.
+
+![21.gifts loans repay pay more shortfall copied](images/loans-repay-pay-more-shortfall-copied.png)
 
 ### Variant: collecting-pay-confirm
 
@@ -3687,6 +3705,12 @@ The same loan after **₿210** and `Count me in!` were posted. The pay sheet sli
 Maria's collecting loan is still shown from the open list response, but the heart invoice answers `credit_closed`. The heart rolls back and a red line under it says **This loan is no longer collecting and cannot receive more money.** This is the heart-specific refusal state, separate from an author wallet that cannot receive.
 
 ![21.gifts welcome closed loan heart refusal](images/welcome-loan-heart-closed.png)
+
+### Variant: loan-heart-refreshed-closed
+
+After that refused heart, an authoritative refresh marks Maria's below-goal loan closed. The red **This loan is no longer collecting and cannot receive more money.** alert remains, while the heart and **Lend** controls have disappeared.
+
+![21.gifts welcome refreshed closed loan heart refusal](images/welcome-loan-heart-refreshed-closed.png)
 
 ### Variant: loan-pay-closed
 
@@ -7265,6 +7289,12 @@ Ada is on Carol's posts list while Carol's loan still looks open, but the heart 
 
 ![21.gifts member posts closed loan heart refusal](images/members-posts-open-loan-heart-closed.png)
 
+### Variant: posts-open-loan-heart-refreshed-closed
+
+After that refused heart, Carol's refreshed post authoritatively closes the below-goal loan. The red **This loan is no longer collecting and cannot receive more money.** alert remains on the profile card, while the heart and **Lend** controls have disappeared.
+
+![21.gifts member posts refreshed closed loan heart refusal](images/members-posts-open-loan-heart-refreshed-closed.png)
+
 ### Variant: posts-open-loan-pay-closed
 
 The same profile loan after **Lend**, **₿210**, and `Count me in!` are submitted and the contribution invoice answers `credit_closed`. The amount form stays open without a pay sheet and shows **This loan is no longer collecting and cannot receive more money.** in red.
@@ -10253,6 +10283,12 @@ Signed-in permalink of Maria's loan that still collects (`sats: 10500` of `goalS
 The signed-in permalink still has an open copy of Maria's loan, but the heart invoice answers `credit_closed`. The heart rolls back and the permalink shows the red line **This loan is no longer collecting and cannot receive more money.** under it.
 
 ![21.gifts public message closed loan heart refusal](images/messages-id-loan-heart-closed.png)
+
+### Variant: loan-heart-refreshed-closed
+
+After that refused heart, the permalink refreshes to Maria's authoritatively closed below-goal loan. The red **This loan is no longer collecting and cannot receive more money.** alert remains, while the heart and **Lend** controls have disappeared.
+
+![21.gifts public message refreshed closed loan heart refusal](images/messages-id-loan-heart-refreshed-closed.png)
 
 ### Variant: loan-pay-closed
 

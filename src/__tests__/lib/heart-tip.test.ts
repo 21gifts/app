@@ -1888,6 +1888,20 @@ describe('useHeartTip', () => {
     expect(postMessageInvoice).not.toHaveBeenCalled();
   });
 
+  it('pins the refused-heart view after an authoritative close for screenshots', () => {
+    vi.mocked(getE2eNow).mockReturnValue('2026-01-07T12:00:00.000Z');
+    window.history.replaceState({}, '', '/welcome?visual=heart-credit-closed-refreshed');
+    const heartCounts = { m1: 0 };
+    const { result } = renderHook(() => useHeartTip({ readOnly: false, heartCounts }));
+    expect(result.current.heartTipViews['m1']).toEqual({
+      pressed: false,
+      plusOne: false,
+      needsBalance: false,
+      extra: 0,
+      creditClosed: true,
+    });
+  });
+
   it('keeps plusOne on screen when visual=heart-paid', async () => {
     vi.mocked(getE2eNow).mockReturnValue('2026-01-07T12:00:00.000Z');
     window.history.replaceState({}, '', '/welcome?visual=heart-paid');

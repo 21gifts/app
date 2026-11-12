@@ -279,6 +279,38 @@ describe('LoanPayMore', () => {
     ).toBe(true);
   });
 
+  it('does not reapply a consumed invalid-amount refusal after an unrelated rerender', () => {
+    const item = loan();
+    const view = show(item);
+    fireEvent.change(screen.getByLabelText('Amount (₿)'), { target: { value: '1000' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Pay this amount' }));
+    const refusal: LoanRepayActionError = {
+      messageId: 'loan-1',
+      code: 'invalid_amount',
+      maxSats: null,
+      maxAmount: null,
+    };
+    view.rerender(
+      payMoreState(item, view.onPay, view.onCloseCollecting, {
+        phase: 'failed',
+        activeAction: { kind: 'prepay', messageId: 'loan-1' },
+        actionError: refusal,
+      }),
+    );
+    const input = screen.getByLabelText('Amount (₿)') as HTMLInputElement;
+    fireEvent.change(input, { target: { value: '999' } });
+    view.rerender(
+      payMoreState({ ...item }, view.onPay, view.onCloseCollecting, {
+        phase: 'failed',
+        activeAction: { kind: 'prepay', messageId: 'loan-1' },
+        actionError: { ...refusal },
+        formatSats: (sats) => `₿${sats}`,
+      }),
+    );
+    expect(input.value).toBe('999');
+    expect(input.getAttribute('aria-invalid')).toBeNull();
+  });
+
   it('uses unique amount and error ids when more than one loan is shown', () => {
     const onPay = vi.fn();
     const onCloseCollecting = vi.fn();
@@ -569,6 +601,42 @@ describe('LoanPayMore', () => {
       'An earlier payment for this share is still open. Try again later.',
     );
   });
+
+  it.each(['amount_too_high', 'too_many_shares'] as const)(
+    'does not reapply a consumed %s maximum after an unrelated rerender',
+    (code) => {
+      const item = loan();
+      const view = show(item);
+      fireEvent.change(screen.getByLabelText('Amount (₿)'), { target: { value: '7000' } });
+      fireEvent.click(screen.getByRole('button', { name: 'Pay this amount' }));
+      const refusal: LoanRepayActionError = {
+        messageId: 'loan-1',
+        code,
+        maxSats: 6_000,
+        maxAmount: null,
+      };
+      view.rerender(
+        payMoreState(item, view.onPay, view.onCloseCollecting, {
+          phase: 'failed',
+          activeAction: { kind: 'prepay', messageId: 'loan-1' },
+          actionError: refusal,
+        }),
+      );
+      const input = screen.getByLabelText('Amount (₿)') as HTMLInputElement;
+      expect(input.value).toBe('6000');
+      fireEvent.change(input, { target: { value: '5000' } });
+      view.rerender(
+        payMoreState({ ...item }, view.onPay, view.onCloseCollecting, {
+          phase: 'failed',
+          activeAction: { kind: 'prepay', messageId: 'loan-1' },
+          actionError: { ...refusal },
+          formatSats: (sats) => `₿${sats}`,
+        }),
+      );
+      expect(input.value).toBe('5000');
+      expect(screen.queryByText(/maximum changed/)).toBeNull();
+    },
+  );
 
   it("does not apply another loan's action error", () => {
     const item = loan();

@@ -209,10 +209,16 @@ export function LoanRepayScreen(): ReactElement {
     }
     return `${bitcoin} · ${formatFiatDisplay(figure.amount, figure.code, numberFormat)}`;
   };
+  const completedPrepayTargetMissing =
+    repay.phase === 'repaid' &&
+    repay.activeAction?.kind === 'prepay' &&
+    (repay.sentSats > 0 || repay.pinned) &&
+    paidLoans.some((loan) => loan.messageId === repay.activeAction?.messageId) &&
+    !loans.loans.some((loan) => loan.messageId === repay.activeAction?.messageId);
   const repaidWithEmptyList =
     loans.loans.length === 0 &&
     repay.phase === 'repaid' &&
-    (repay.activeAction?.kind === 'due' || repay.activeAction?.kind === 'prepay') &&
+    (repay.activeAction?.kind === 'due' || completedPrepayTargetMissing) &&
     (repay.sentSats > 0 || repay.pinned) &&
     paidLoans.length > 0;
 
@@ -345,7 +351,7 @@ export function LoanRepayScreen(): ReactElement {
   const lastLoan = paidSource.find((loan) => loan.due.lastPayment);
   const sentAmount = fiatPayLabel(repay.sentAmounts, repay.sentSats);
   const successBox =
-    showRepaid || repaidWithEmptyList ? (
+    showRepaid || repaidWithEmptyList || completedPrepayTargetMissing ? (
       <div className="w-full rounded-2xl border border-app-success/50 bg-app-card-muted p-4">
         {lastLoan !== undefined && paidSource.length === 1 ? (
           <>

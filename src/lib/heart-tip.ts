@@ -909,6 +909,21 @@ export function useHeartTip(options: {
       lastAppliedRef,
       setHeartTipViews,
     );
+    if (visualPin() === 'heart-credit-closed-refreshed') {
+      setHeartTipViews((current) => {
+        const pinned = { ...current };
+        for (const messageId of Object.keys(heartCounts)) {
+          pinned[messageId] = {
+            pressed: false,
+            plusOne: false,
+            needsBalance: false,
+            extra: 0,
+            creditClosed: true,
+          };
+        }
+        return pinned;
+      });
+    }
   }, [heartCounts]);
 
   const onHeartTip = useCallback(

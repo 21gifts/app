@@ -1623,7 +1623,7 @@ describe('LoanRepayScreen', () => {
       { sundayRest: false, loans: [loan({ next: null })] },
       repay({ phase: 'repaid', sentSats: 0, pinned: true }),
     );
-    expect(screen.getByText('Repaid ₿0 · $0.00')).toBeTruthy();
+    expect(screen.getByText(/Repaid ₿0/)).toBeTruthy();
     expect(screen.queryByText(/^Fee/)).toBeNull();
     expect(screen.queryByText(/^Next:/)).toBeNull();
   });
@@ -1822,6 +1822,76 @@ describe('LoanRepayScreen', () => {
     expect(screen.queryByText('You have no loan to repay.')).toBeNull();
   });
 
+  it('keeps a prepayment success when its target disappears but another loan remains', () => {
+    const paidTarget = loan({
+      maxSats: 500,
+      due: { ...loan().due, payableSats: 0, payablePeople: 0 },
+    });
+    const remaining = loan({ messageId: 'loan-2', text: 'A second loan' });
+    const data = { sundayRest: false, loans: [paidTarget, remaining] };
+    const reload = vi.fn().mockResolvedValue(data);
+    const state = repay({ activeAction: null });
+    vi.mocked(useMyLoans).mockReturnValue({ loans: data, reload });
+    vi.mocked(useLoanRepay).mockReturnValue(state);
+    const view = renderWithLocale(<LoanRepayScreen />);
+    const targetCard = screen.getByText(paidTarget.text).closest('article');
+    expect(targetCard).not.toBeNull();
+    fireEvent.change(within(targetCard as HTMLElement).getByLabelText('Amount (₿)'), {
+      target: { value: '500' },
+    });
+    fireEvent.click(
+      within(targetCard as HTMLElement).getByRole('button', { name: 'Pay this amount' }),
+    );
+
+    vi.mocked(useLoanRepay).mockReturnValue(
+      repay({
+        phase: 'repaid',
+        activeAction: { kind: 'prepay', messageId: paidTarget.messageId },
+        sentSats: 0,
+      }),
+    );
+    view.rerender(<LoanRepayScreen />);
+    expect(screen.queryByText('Repaid ₿500 · $0.50')).toBeNull();
+
+    vi.mocked(useLoanRepay).mockReturnValue(
+      repay({
+        phase: 'repaid',
+        activeAction: { kind: 'prepay', messageId: paidTarget.messageId },
+        sentSats: 500,
+        sentNames: ['Bruno'],
+      }),
+    );
+    view.rerender(<LoanRepayScreen />);
+    expect(screen.queryByText('Repaid ₿500 · $0.50')).toBeNull();
+
+    vi.mocked(useMyLoans).mockReturnValue({
+      loans: { sundayRest: false, loans: [remaining] },
+      reload,
+    });
+    vi.mocked(useLoanRepay).mockReturnValue(
+      repay({
+        phase: 'repaid',
+        activeAction: { kind: 'prepay', messageId: paidTarget.messageId },
+        sentSats: 500,
+        sentNames: ['Bruno'],
+      }),
+    );
+    view.rerender(<LoanRepayScreen />);
+    expect(screen.getByText('Repaid ₿500 · $0.50')).toBeTruthy();
+    expect(screen.getByText('A second loan')).toBeTruthy();
+
+    vi.mocked(useLoanRepay).mockReturnValue(
+      repay({
+        phase: 'repaid',
+        activeAction: { kind: 'prepay', messageId: paidTarget.messageId },
+        sentSats: 0,
+        pinned: true,
+      }),
+    );
+    view.rerender(<LoanRepayScreen />);
+    expect(screen.getByText('Repaid ₿0 · $0.00')).toBeTruthy();
+  });
+
   it('does not invent a completed payment for an empty list without remembered loans', () => {
     show({ sundayRest: false, loans: [] }, repay({ phase: 'repaid', sentSats: 1_000 }));
     expect(screen.getByText('You have no loan to repay.')).toBeTruthy();
@@ -1829,6 +1899,16 @@ describe('LoanRepayScreen', () => {
     cleanup();
     show({ sundayRest: false, loans: [] }, repay({ phase: 'repaid', sentSats: 0, pinned: false }));
     expect(screen.getByText('You have no loan to repay.')).toBeTruthy();
+    cleanup();
+    show(
+      { sundayRest: false, loans: [loan({ messageId: 'loan-2' })] },
+      repay({
+        phase: 'repaid',
+        activeAction: { kind: 'prepay', messageId: 'loan-1' },
+        sentSats: 500,
+      }),
+    );
+    expect(screen.queryByText('Repaid ₿500 · $0.50')).toBeNull();
   });
 
   it('shows several loan cards, grouping labels, counts, and fiat plans', async () => {
