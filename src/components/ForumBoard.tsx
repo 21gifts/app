@@ -1003,13 +1003,16 @@ export function ForumBoard({
   scrollerRef.current = scroller;
   const shownReplies = replies === null ? -1 : replies.length;
   // A gift sheet or gift invoice whose author a refresh now reports as unable to
-  // receive is cancelled; the posting fee (`payHost` composer) pays 21.gifts, not
-  // the author, and stays.
+  // receive, or whose loan is now closed, is cancelled. The posting fee
+  // (`payHost` composer) pays 21.gifts, not the author, and stays.
   const payTargetBlocked =
     payMessageId !== null &&
     payHost !== 'composer' &&
     [...(messages ?? []), ...(Array.isArray(replies) ? replies : [])].some(
-      (row) => row.id === payMessageId && authorCannotReceive(row, viewerAccountId),
+      (row) =>
+        row.id === payMessageId &&
+        (authorCannotReceive(row, viewerAccountId) ||
+          (row.goalRepayable === true && row.goalClosedAt !== undefined)),
     );
   const onPayCancelRef = useRef(onPayCancel);
   onPayCancelRef.current = onPayCancel;
@@ -1549,24 +1552,6 @@ export function ForumBoard({
           const roleHintOpen = openRoleMessageId === message.id;
           const expanded = expandedId === message.id;
           const cannotReceive = authorCannotReceive(message, viewerAccountId);
-          const replyPayLocked =
-            (payInvoice !== null && payMessageId === message.id && payHost !== 'composer') ||
-            reactionHold.held === message.id;
-          const reactionPay =
-            replyPayPreview !== null &&
-            payInvoice !== null &&
-            !cannotReceive &&
-            payMessageId === message.id &&
-            payHost === 'card' &&
-            payInvoice.messageId === message.id
-              ? {
-                  amountSats: payInvoice.amountSats,
-                  pr: payInvoice.pr,
-                  sparkInvoice: payInvoice.sparkInvoice,
-                  ...(payInvoice.figure === undefined ? {} : { figure: payInvoice.figure }),
-                }
-              : null;
-          const reactionPayPage = reactionPay !== null;
           const loanOfCard: LoanPayTarget | null =
             message.parentId === undefined &&
             message.goalRepayable === true &&
@@ -1579,6 +1564,26 @@ export function ForumBoard({
                   full: message.sats >= message.goalSats,
                 }
               : null;
+          const loanClosed = message.goalRepayable === true && message.goalClosedAt !== undefined;
+          const replyPayLocked =
+            (payInvoice !== null && payMessageId === message.id && payHost !== 'composer') ||
+            reactionHold.held === message.id;
+          const reactionPay =
+            replyPayPreview !== null &&
+            payInvoice !== null &&
+            !cannotReceive &&
+            !loanClosed &&
+            payMessageId === message.id &&
+            payHost === 'card' &&
+            payInvoice.messageId === message.id
+              ? {
+                  amountSats: payInvoice.amountSats,
+                  pr: payInvoice.pr,
+                  sparkInvoice: payInvoice.sparkInvoice,
+                  ...(payInvoice.figure === undefined ? {} : { figure: payInvoice.figure }),
+                }
+              : null;
+          const reactionPayPage = reactionPay !== null;
           const copied = copiedId === message.id;
           const shopNote = message.parentId === undefined && isShopNote(message.text);
           const displayText = shopNote ? stripShopHashtag(message.text) : message.text;
@@ -1818,12 +1823,14 @@ export function ForumBoard({
                   amountEur={message.amountEur}
                   amountPhp={message.amountPhp}
                   goalRepayable={message.goalRepayable}
+                  goalClosedAt={message.goalClosedAt}
                   goalTermDays={message.goalTermDays}
                   messageId={message.id}
                   ledgerCollapsed={truncate}
                   onLend={
                     !readOnly &&
                     !sunday &&
+                    !loanClosed &&
                     message.payable &&
                     message.deletedAt === undefined &&
                     !isOwnNote(viewerAccountId, message.accountId)
@@ -1835,7 +1842,7 @@ export function ForumBoard({
                         }
                       : undefined
                   }
-                  lendBlocked={!readOnly && !sunday && cannotReceive}
+                  lendBlocked={!readOnly && !sunday && !loanClosed && cannotReceive}
                 />
               ) : null}
               <div className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-2">
@@ -1867,19 +1874,21 @@ export function ForumBoard({
                 <div className="ml-auto flex flex-wrap items-center gap-5">
                   <div id={`note-translate-${message.id}`} className="contents" />
                   {cannotReceive ? <CannotReceiveLabel /> : null}
-                  <ForumHeartControl
-                    messageId={message.id}
-                    accountId={message.accountId}
-                    deletedAt={message.deletedAt}
-                    payable={message.payable}
-                    cannotReceive={cannotReceive}
-                    heartViewerId={heartViewerId}
-                    heartViewerSats={heartViewerSats}
-                    heartCount={message.heartCount}
-                    hearted={message.hearted}
-                    view={heartTipViews === undefined ? undefined : heartTipViews[message.id]}
-                    onHeartTip={onHeartTip}
-                  />
+                  {loanClosed ? null : (
+                    <ForumHeartControl
+                      messageId={message.id}
+                      accountId={message.accountId}
+                      deletedAt={message.deletedAt}
+                      payable={message.payable}
+                      cannotReceive={cannotReceive}
+                      heartViewerId={heartViewerId}
+                      heartViewerSats={heartViewerSats}
+                      heartCount={message.heartCount}
+                      hearted={message.hearted}
+                      view={heartTipViews === undefined ? undefined : heartTipViews[message.id]}
+                      onHeartTip={onHeartTip}
+                    />
+                  )}
                   {/* Signed-out forum is readOnly and still shows React. The author feed sets both flags. */}
                   {message.parentId === undefined &&
                   message.deletedAt === undefined &&
@@ -2007,6 +2016,7 @@ export function ForumBoard({
                 show={
                   !reactionPayPage &&
                   !cannotReceive &&
+                  !loanClosed &&
                   payMessageId === message.id &&
                   payHost !== 'composer'
                 }
@@ -2353,12 +2363,13 @@ export function ForumBoard({
                             {/* How a loan comes back stays on the page; the sheet shows no notice.
                                 No lending to an author who cannot receive, so no promise either. */}
                             {loanOfCard !== null &&
+                            !loanClosed &&
                             !cannotReceive &&
                             !isOwnNote(viewerAccountId, message.accountId) ? (
                               <LoanPayNotice {...loanOfCard} />
                             ) : null}
                             {/* On your own note the reply is free: no amount to gift yourself. */}
-                            {isOwnNote(viewerAccountId, message.accountId) ? null : (
+                            {isOwnNote(viewerAccountId, message.accountId) || loanClosed ? null : (
                               <AmountEntry
                                 id="forum-reply-amount"
                                 layout="inline"

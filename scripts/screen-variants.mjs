@@ -3850,6 +3850,20 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/welcome',
+    id: 'loan-heart-closed',
+    image: 'welcome-loan-heart-closed.png',
+    visual: 'state-welcome-loan-heart-closed',
+    needle: 'state /welcome loan-heart-closed',
+  },
+  {
+    route: '/welcome',
+    id: 'loan-pay-closed',
+    image: 'welcome-loan-pay-closed.png',
+    visual: 'state-welcome-loan-pay-closed',
+    needle: 'state /welcome loan-pay-closed',
+  },
+  {
+    route: '/welcome',
     id: 'loan-pay-full',
     image: 'welcome-loan-pay-full.png',
     visual: 'state-welcome-loan-pay-full',
@@ -5891,6 +5905,20 @@ export const SCREEN_VARIANTS = [
     image: 'members-posts-open-loan-pay.png',
     visual: 'state-members-posts-open-loan-pay',
     needle: 'state /members posts-open-loan-pay',
+  },
+  {
+    route: '/members/[accountId]',
+    id: 'posts-open-loan-heart-closed',
+    image: 'members-posts-open-loan-heart-closed.png',
+    visual: 'state-members-posts-open-loan-heart-closed',
+    needle: 'state /members posts-open-loan-heart-closed',
+  },
+  {
+    route: '/members/[accountId]',
+    id: 'posts-open-loan-pay-closed',
+    image: 'members-posts-open-loan-pay-closed.png',
+    visual: 'state-members-posts-open-loan-pay-closed',
+    needle: 'state /members posts-open-loan-pay-closed',
   },
   {
     route: '/members/[accountId]',
@@ -9168,6 +9196,20 @@ export const SCREEN_VARIANTS = [
     image: 'messages-id-loan-pay.png',
     visual: 'state-messages-id-loan-pay',
     needle: 'state /messages/[id] loan-pay',
+  },
+  {
+    route: '/messages/[id]',
+    id: 'loan-heart-closed',
+    image: 'messages-id-loan-heart-closed.png',
+    visual: 'state-messages-id-loan-heart-closed',
+    needle: 'state /messages/[id] loan-heart-closed',
+  },
+  {
+    route: '/messages/[id]',
+    id: 'loan-pay-closed',
+    image: 'messages-id-loan-pay-closed.png',
+    visual: 'state-messages-id-loan-pay-closed',
+    needle: 'state /messages/[id] loan-pay-closed',
   },
   {
     route: '/messages/[id]',

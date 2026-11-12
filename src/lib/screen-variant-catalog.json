@@ -3234,6 +3234,18 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/welcome:loan-heart-closed",
+    "label": "/welcome loan-heart-closed",
+    "visual": "state-welcome-loan-heart-closed",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:loan-pay-closed",
+    "label": "/welcome loan-pay-closed",
+    "visual": "state-welcome-loan-pay-closed",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/welcome:loan-pay-full",
     "label": "/welcome loan-pay-full",
     "visual": "state-welcome-loan-pay-full",
@@ -4983,6 +4995,18 @@
     "id": "/members/[accountId]:posts-open-loan-pay",
     "label": "/members/[accountId] posts-open-loan-pay",
     "visual": "state-members-posts-open-loan-pay",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/members/[accountId]:posts-open-loan-heart-closed",
+    "label": "/members/[accountId] posts-open-loan-heart-closed",
+    "visual": "state-members-posts-open-loan-heart-closed",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/members/[accountId]:posts-open-loan-pay-closed",
+    "label": "/members/[accountId] posts-open-loan-pay-closed",
+    "visual": "state-members-posts-open-loan-pay-closed",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
@@ -7791,6 +7815,18 @@
     "id": "/messages/[id]:loan-pay",
     "label": "/messages/[id] loan-pay",
     "visual": "state-messages-id-loan-pay",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/messages/[id]:loan-heart-closed",
+    "label": "/messages/[id] loan-heart-closed",
+    "visual": "state-messages-id-loan-heart-closed",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/messages/[id]:loan-pay-closed",
+    "label": "/messages/[id] loan-pay-closed",
+    "visual": "state-messages-id-loan-pay-closed",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {

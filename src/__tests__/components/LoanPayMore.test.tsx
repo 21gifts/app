@@ -213,6 +213,96 @@ describe('LoanPayMore', () => {
     expect(onPay).not.toHaveBeenCalled();
   });
 
+  it('keeps a server invalid amount on the field and blocks retry until the draft changes', () => {
+    const item = loan();
+    const view = show(item);
+    const input = screen.getByLabelText('Amount (₿)') as HTMLInputElement;
+    fireEvent.change(input, { target: { value: '1000' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Pay this amount' }));
+    expect(view.onPay).toHaveBeenCalledTimes(1);
+
+    view.rerender(
+      payMoreState(item, view.onPay, view.onCloseCollecting, {
+        phase: 'failed',
+        actionError: {
+          messageId: 'loan-1',
+          code: 'invalid_amount',
+          maxSats: null,
+          maxAmount: null,
+        },
+      }),
+    );
+
+    const rejected = screen.getByLabelText('Amount (₿)') as HTMLInputElement;
+    expect(rejected.getAttribute('aria-invalid')).toBe('true');
+    expect(rejected.getAttribute('aria-describedby')).toBe(`${rejected.id}-error`);
+    expect(screen.getByRole('alert').textContent).toBe('Enter a whole ₿ amount greater than zero.');
+    const blocked = screen.getByRole('button', {
+      name: 'Pay this amount',
+    }) as HTMLButtonElement;
+    expect(blocked.disabled).toBe(true);
+    fireEvent.click(blocked);
+    expect(view.onPay).toHaveBeenCalledTimes(1);
+
+    fireEvent.change(rejected, { target: { value: '999' } });
+    expect(rejected.getAttribute('aria-invalid')).toBeNull();
+    expect(rejected.getAttribute('aria-describedby')).toBeNull();
+    expect(blocked.disabled).toBe(false);
+
+    cleanup();
+    const php = loan({
+      goalCurrency: 'PHP',
+      goalAmount: '480.28',
+      maxSats: 9_283,
+      maxAmount: '480.28',
+    });
+    const fiatView = show(php);
+    switchToFiat('PHP');
+    fireEvent.change(screen.getByLabelText('Amount (PHP)'), { target: { value: '100.00' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Pay this amount' }));
+    fiatView.rerender(
+      payMoreState(php, fiatView.onPay, fiatView.onCloseCollecting, {
+        phase: 'failed',
+        actionError: {
+          messageId: 'loan-1',
+          code: 'invalid_amount',
+          maxSats: null,
+          maxAmount: null,
+        },
+      }),
+    );
+    expect(screen.getByRole('alert').textContent).toBe(
+      'Enter an amount greater than zero with at most two decimals.',
+    );
+    expect(
+      (screen.getByRole('button', { name: 'Pay this amount' }) as HTMLButtonElement).disabled,
+    ).toBe(true);
+  });
+
+  it('uses unique amount and error ids when more than one loan is shown', () => {
+    const onPay = vi.fn();
+    const onCloseCollecting = vi.fn();
+    renderWithLocale(
+      <>
+        {payMoreState(loan({ messageId: 'loan-1' }), onPay, onCloseCollecting)}
+        {payMoreState(loan({ messageId: 'loan-2' }), onPay, onCloseCollecting)}
+      </>,
+    );
+    const inputs = screen.getAllByLabelText('Amount (₿)') as HTMLInputElement[];
+    expect(inputs).toHaveLength(2);
+    expect(inputs[0]?.id).toBeTruthy();
+    expect(inputs[1]?.id).toBeTruthy();
+    expect(inputs[0]?.id).not.toBe(inputs[1]?.id);
+
+    fireEvent.change(inputs[0] as HTMLInputElement, { target: { value: 'bad' } });
+    fireEvent.change(inputs[1] as HTMLInputElement, { target: { value: 'bad' } });
+    expect(inputs[0]?.getAttribute('aria-describedby')).toBe(`${inputs[0]?.id}-error`);
+    expect(inputs[1]?.getAttribute('aria-describedby')).toBe(`${inputs[1]?.id}-error`);
+    expect(inputs[0]?.getAttribute('aria-describedby')).not.toBe(
+      inputs[1]?.getAttribute('aria-describedby'),
+    );
+  });
+
   it('uses currency-specific validation copy for malformed BTC and fiat amounts', () => {
     show();
     fireEvent.change(screen.getByLabelText('Amount (₿)'), { target: { value: '1.5' } });

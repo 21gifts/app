@@ -8673,5 +8673,35 @@
     "de": "Wartet auf das Abrufen der Fond-Übersicht. Wird geladen…",
     "es": "Esperando la obtención del resumen del Fondo. Cargando…",
     "fil": "Naghihintay sa pagkuha ng buod ng Fond. Naglo-load…"
+  },
+  "/welcome:loan-heart-closed": {
+    "de": "Marias Kredit wird noch als offen angezeigt, doch die Herz-Rechnung antwortet credit_closed. Das Herz wird zurückgesetzt, und darunter steht rot: Dieser Kredit sammelt nicht mehr und kann kein weiteres Geld erhalten. Dies ist der eigene Ablehnungszustand des Herzens, getrennt von einer Wallet, die nicht empfangen kann.",
+    "es": "El préstamo de Maria aún aparece abierto, pero la factura del corazón responde credit_closed. El corazón se revierte y debajo aparece en rojo: Este préstamo ya no reúne fondos y no puede recibir más dinero. Es el estado de rechazo propio del corazón, separado de una billetera que no puede recibir.",
+    "fil": "Mukhang bukas pa ang pautang ni Maria, ngunit sumasagot ang invoice ng puso ng credit_closed. Ibinabalik ang puso at lumalabas sa ilalim ang pulang linyang Hindi na nag-iipon ang pautang na ito at hindi na ito makatatanggap ng dagdag na pera. Hiwalay itong estado ng pagtanggi ng puso sa wallet na hindi makatanggap."
+  },
+  "/welcome:loan-pay-closed": {
+    "de": "Beim noch offen angezeigten Kredit werden Leihen, ₿210 und Count me in! gesendet, doch die Beitragsrechnung antwortet credit_closed. Es öffnet sich kein Zahlungsblatt; das Betragsformular bleibt auf der Karte und zeigt rot: Dieser Kredit sammelt nicht mehr und kann kein weiteres Geld erhalten.",
+    "es": "En el préstamo que aún aparece abierto se envían Prestar, ₿210 y Count me in!, pero la factura de la contribución responde credit_closed. No se abre ninguna hoja de pago; el formulario del importe permanece en la tarjeta y muestra en rojo: Este préstamo ya no reúne fondos y no puede recibir más dinero.",
+    "fil": "Sa pautang na mukhang bukas pa, isinusumite ang Magpahiram, ₿210, at Count me in!, ngunit sumasagot ang invoice ng ambag ng credit_closed. Walang pay sheet na bubukas; nananatili sa card ang form ng halaga at ipinapakita nito sa pula na Hindi na nag-iipon ang pautang na ito at hindi na ito makatatanggap ng dagdag na pera."
+  },
+  "/members/[accountId]:posts-open-loan-heart-closed": {
+    "de": "Ada sieht Carols Beitragsliste, während der Kredit noch offen wirkt, doch die Herz-Rechnung antwortet credit_closed. Das Herz wird zurückgesetzt, und die Profilkarte zeigt rot: Dieser Kredit sammelt nicht mehr und kann kein weiteres Geld erhalten.",
+    "es": "Ada ve la lista de publicaciones de Carol mientras el préstamo aún parece abierto, pero la factura del corazón responde credit_closed. El corazón se revierte y la tarjeta del perfil muestra en rojo: Este préstamo ya no reúne fondos y no puede recibir más dinero.",
+    "fil": "Nakikita ni Ada ang listahan ng mga post ni Carol habang mukhang bukas pa ang pautang, ngunit sumasagot ang invoice ng puso ng credit_closed. Ibinabalik ang puso at ipinapakita ng profile card sa pula na Hindi na nag-iipon ang pautang na ito at hindi na ito makatatanggap ng dagdag na pera."
+  },
+  "/members/[accountId]:posts-open-loan-pay-closed": {
+    "de": "Auf demselben Profil werden Leihen, ₿210 und Count me in! gesendet, doch die Beitragsrechnung antwortet credit_closed. Das Betragsformular bleibt ohne Zahlungsblatt offen und zeigt rot: Dieser Kredit sammelt nicht mehr und kann kein weiteres Geld erhalten.",
+    "es": "En el mismo perfil se envían Prestar, ₿210 y Count me in!, pero la factura de la contribución responde credit_closed. El formulario del importe permanece abierto sin hoja de pago y muestra en rojo: Este préstamo ya no reúne fondos y no puede recibir más dinero.",
+    "fil": "Sa parehong profile, isinusumite ang Magpahiram, ₿210, at Count me in!, ngunit sumasagot ang invoice ng ambag ng credit_closed. Nananatiling bukas ang form ng halaga nang walang pay sheet at ipinapakita nito sa pula na Hindi na nag-iipon ang pautang na ito at hindi na ito makatatanggap ng dagdag na pera."
+  },
+  "/messages/[id]:loan-heart-closed": {
+    "de": "Der angemeldete Permalink hat noch eine offene Kopie von Marias Kredit, doch die Herz-Rechnung antwortet credit_closed. Das Herz wird zurückgesetzt, und darunter steht rot: Dieser Kredit sammelt nicht mehr und kann kein weiteres Geld erhalten.",
+    "es": "El enlace permanente con sesión iniciada aún tiene una copia abierta del préstamo de Maria, pero la factura del corazón responde credit_closed. El corazón se revierte y debajo aparece en rojo: Este préstamo ya no reúne fondos y no puede recibir más dinero.",
+    "fil": "May bukas pang kopya ng pautang ni Maria ang naka-sign na permalink, ngunit sumasagot ang invoice ng puso ng credit_closed. Ibinabalik ang puso at lumalabas sa ilalim ang pulang linyang Hindi na nag-iipon ang pautang na ito at hindi na ito makatatanggap ng dagdag na pera."
+  },
+  "/messages/[id]:loan-pay-closed": {
+    "de": "Auf demselben Permalink werden Leihen, ₿210 und Count me in! gesendet, doch die Beitragsrechnung antwortet credit_closed. Es öffnet sich kein Zahlungsblatt; das Betragsformular bleibt sichtbar und zeigt rot: Dieser Kredit sammelt nicht mehr und kann kein weiteres Geld erhalten.",
+    "es": "En el mismo enlace permanente se envían Prestar, ₿210 y Count me in!, pero la factura de la contribución responde credit_closed. No se abre ninguna hoja de pago; el formulario del importe permanece visible y muestra en rojo: Este préstamo ya no reúne fondos y no puede recibir más dinero.",
+    "fil": "Sa parehong permalink, isinusumite ang Magpahiram, ₿210, at Count me in!, ngunit sumasagot ang invoice ng ambag ng credit_closed. Walang pay sheet na bubukas; nananatiling nakikita ang form ng halaga at ipinapakita nito sa pula na Hindi na nag-iipon ang pautang na ito at hindi na ito makatatanggap ng dagdag na pera."
   }
 }

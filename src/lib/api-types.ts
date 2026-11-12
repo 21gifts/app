@@ -932,7 +932,9 @@ export type ForumPlaceRow = z.infer<typeof forumPlaceRowSchema>;
  * the typed amount string). Optional so an older payload still parses.
  * Absent `goalCurrency` with `goalSats` is a legacy Ask.
  * `goalRepayable` is `true` on a credit Ask; omitted on a donation and on
- * older payloads. `false` is not accepted.
+ * older payloads. `false` is not accepted. `goalClosedAt` is the ISO time a
+ * credit stopped collecting; it is omitted while the credit is open and on
+ * older payloads.
  * `goalAmountUsd` / `goalAmountChf` / `goalAmountEur` / `goalAmountPhp` are
  * frozen two-decimal snapshots of that goal, optional, each a string or null.
  * `amountUsd` / `amountChf` / `amountEur` / `amountPhp` are the fiat stored for
@@ -971,6 +973,7 @@ export const forumMessageSchema = z
     goalCurrency: z.enum(FORUM_GOAL_CURRENCIES).optional(),
     goalAmount: z.string().regex(FORUM_GOAL_AMOUNT_RE).optional(),
     goalRepayable: z.literal(true).optional(),
+    goalClosedAt: z.string().datetime({ offset: true }).optional(),
     goalTermDays: z.number().int().min(1).max(3650).optional(),
     goalAmountUsd: fiatAmountSchema.optional(),
     goalAmountChf: fiatAmountSchema.optional(),

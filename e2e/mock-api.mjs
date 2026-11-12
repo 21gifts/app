@@ -17,7 +17,7 @@ const byToken = new Map();
 const byPasskey = new Map();
 /** @type {Map<string, object>} */
 const byPasskeyCredential = new Map();
-/** @type {Array<{ id: string, accountId?: string, name: string, text: string, createdAt: string, sats: number, payable: boolean, hasPhoto: boolean, role: string, deletedAt?: string, inReplyTo?: string, parent?: string }>} */
+/** @type {Array<{ id: string, accountId?: string, name: string, text: string, createdAt: string, sats: number, payable: boolean, hasPhoto: boolean, role: string, goalSats?: number, goalRepayable?: true, goalClosedAt?: string, deletedAt?: string, inReplyTo?: string, parent?: string }>} */
 const forumMessages = [];
 /** @type {Array<{ id: string, name: string, text: string, createdAt: string }>} */
 const contactMessages = [];
@@ -95,6 +95,15 @@ const repaymentLoans = new Map([
     },
   ],
 ]);
+
+/** Keep a public credit fixture's authoritative close stamp in step with its repayment fixture. */
+function syncForumLoanClosedAt(messageId, closedAt) {
+  if (closedAt === null) return;
+  const message = forumMessages.find((row) => row.id === messageId && row.goalRepayable === true);
+  if (message !== undefined) {
+    message.goalClosedAt = closedAt;
+  }
+}
 
 /** @param {string} text @returns {bigint | null} positive decimal cents, without floats. */
 function mockFiatCents(text) {
@@ -1292,6 +1301,7 @@ const server = http.createServer(async (req, res) => {
     if (loan.closedAt === null) {
       loan.closedAt = new Date().toISOString();
     }
+    syncForumLoanClosedAt(messageId, loan.closedAt);
     json(res, 200, {
       fundedAt: loan.fundedAt,
       closedAt: loan.closedAt,
@@ -1352,6 +1362,7 @@ const server = http.createServer(async (req, res) => {
     if (loan.fundedAt === null && loan.closedAt === null) {
       loan.closedAt = new Date().toISOString();
     }
+    syncForumLoanClosedAt(messageId, loan.closedAt);
     const amountSats = Number(loan.currency === 'BTC' ? units : units * MOCK_FIAT_SATS_PER_CENT);
     json(res, 200, {
       amountSats,
@@ -1386,6 +1397,10 @@ const server = http.createServer(async (req, res) => {
       (invoiceMatch[1] === COMPOSE_TARGET.id ? COMPOSE_TARGET : undefined);
     if (row === undefined) {
       json(res, 404, { error: 'Not found' });
+      return;
+    }
+    if (row.goalRepayable === true && typeof row.goalClosedAt === 'string') {
+      json(res, 409, { code: 'credit_closed' });
       return;
     }
     if (row.payable !== true) {

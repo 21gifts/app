@@ -1,7 +1,7 @@
 'use client';
 
 import { Loader2, X } from 'lucide-react';
-import { useEffect, useRef, useState, type ReactElement } from 'react';
+import { useEffect, useId, useRef, useState, type ReactElement } from 'react';
 import { AmountEntry } from '@/components/AmountEntry';
 import { useFiatPreference } from '@/components/FiatPreferenceProvider';
 import { useTranslations } from '@/components/LocaleProvider';
@@ -163,6 +163,7 @@ export function LoanPayMore({
   const { t } = useTranslations();
   const { fiat } = useFiatPreference();
   const { numberFormat } = useNumberFormat();
+  const amountId = `${useId()}-loan-pay-more`;
   const accountUnit = useAuthStore((state) => state.account?.amountUnit ?? 'btc');
   const [amount, setAmount] = useState('');
   const [amountUnit, setAmountUnit] = useState<AmountUnit>(accountUnit);
@@ -171,6 +172,7 @@ export function LoanPayMore({
   const [pendingAction, setPendingAction] = useState<PendingAction>(null);
   const [confirming, setConfirming] = useState<'pay' | 'close' | null>(null);
   const [serverError, setServerError] = useState<string | null>(null);
+  const [serverAmountInvalid, setServerAmountInvalid] = useState(false);
   const [serverMaximum, setServerMaximum] = useState<ServerMaximum | null>(null);
   const collecting = isCollecting(loan);
   const entryFiat: FiatCode = loan.goalCurrency === 'BTC' ? fiat : loan.goalCurrency;
@@ -240,6 +242,7 @@ export function LoanPayMore({
 
   useEffect(() => {
     setServerMaximum(null);
+    setServerAmountInvalid(false);
   }, [loan.maxAmount, loan.maxSats, loan.messageId]);
 
   useEffect(() => {
@@ -248,6 +251,12 @@ export function LoanPayMore({
       actionError.messageId !== loan.messageId ||
       shownPendingAction === null
     ) {
+      return;
+    }
+    setServerAmountInvalid(false);
+    if (shownPendingAction === 'pay' && actionError.code === 'invalid_amount') {
+      setServerError(null);
+      setServerAmountInvalid(true);
       return;
     }
     if (
@@ -301,6 +310,7 @@ export function LoanPayMore({
       setExactLoanAmount(null);
       setPendingAction(null);
       setServerError(null);
+      setServerAmountInvalid(false);
     }
   }, [matchingAction, phase, shownPendingAction]);
 
@@ -326,7 +336,11 @@ export function LoanPayMore({
     onPay(loan, amountText);
   };
 
-  const actionErrorText = shownPendingAction === 'pay' && inputError !== null ? null : serverError;
+  const serverAmountError = serverAmountInvalid
+    ? t(amountUnit === 'btc' ? 'loans.payMoreInvalidBitcoin' : 'loans.payMoreInvalidFiat')
+    : null;
+  const fieldError = inputError ?? serverAmountError;
+  const actionErrorText = shownPendingAction === 'pay' && fieldError !== null ? null : serverError;
   const shortfall =
     showShortfall &&
     matchingAction === 'prepay' &&
@@ -341,6 +355,7 @@ export function LoanPayMore({
       <h3 className="text-sm font-semibold text-app-fg">{t('loans.payMoreTitle')}</h3>
       <div className="flex items-end gap-2">
         <AmountEntry
+          id={amountId}
           className="min-w-0 flex-1"
           label={t('loans.payMoreAmount', {
             unit: amountUnit === 'btc' ? t('loans.payMoreSats') : entryFiat,
@@ -350,7 +365,7 @@ export function LoanPayMore({
           fiatCode={entryFiat}
           rateDay={rateDay}
           disabled={sharedBusy}
-          {...(inputError === null ? {} : { error: inputError })}
+          {...(fieldError === null ? {} : { error: fieldError })}
           onUnitChange={(unit) => {
             if (unit === amountUnit) {
               return;
@@ -373,6 +388,7 @@ export function LoanPayMore({
             setAmount(value);
             setExactLoanAmount(null);
             setServerError(null);
+            setServerAmountInvalid(false);
             setPendingAction(null);
           }}
         />
@@ -385,6 +401,7 @@ export function LoanPayMore({
               setAmount(maxInput);
               setExactLoanAmount(apiMaxInput);
               setServerError(null);
+              setServerAmountInvalid(false);
               setPendingAction(null);
             }
           }}
@@ -469,7 +486,7 @@ export function LoanPayMore({
         <Button
           type="button"
           size="lg"
-          disabled={!check.ok || !canPay || sharedBusy || sundayRest}
+          disabled={!check.ok || serverAmountInvalid || !canPay || sharedBusy || sundayRest}
           onClick={
             check.ok
               ? () => {

@@ -3658,6 +3658,18 @@ The same loan after **₿210** and `Count me in!` were posted. The pay sheet sli
 
 ![21.gifts welcome loan pay](images/welcome-loan-pay.png)
 
+### Variant: loan-heart-closed
+
+Maria's collecting loan is still shown from the open list response, but the heart invoice answers `credit_closed`. The heart rolls back and a red line under it says **This loan is no longer collecting and cannot receive more money.** This is the heart-specific refusal state, separate from an author wallet that cannot receive.
+
+![21.gifts welcome closed loan heart refusal](images/welcome-loan-heart-closed.png)
+
+### Variant: loan-pay-closed
+
+The same stale-open loan after **Lend**, **₿210**, and `Count me in!` are submitted and the contribution invoice answers `credit_closed`. No pay sheet opens; the reaction's amount form stays on the card and shows the red line **This loan is no longer collecting and cannot receive more money.**
+
+![21.gifts welcome closed loan payment refusal](images/welcome-loan-pay-closed.png)
+
 ### Variant: loan-pay-full
 
 Maria's loan once it is full (`sats` equals `goalSats`): there is no **Lend**, so the money reaction is opened with **React** and keeps the label **Amount**. After **₿210** is posted the pay sheet reads **Send to Maria**, **₿210** large with **$0.21** under it, and the full-width wallet button **Send ₿210 · $0.21**. Behind it, at the top of the disabled reaction form, the note says **This loan is already fully funded. What you send now is a gift to Maria.**
@@ -7217,6 +7229,18 @@ The same loan after **₿210** and `Count me in!` were posted. The pay sheet sli
 
 ![21.gifts member posts loan pay](images/members-posts-open-loan-pay.png)
 
+### Variant: posts-open-loan-heart-closed
+
+Ada is on Carol's posts list while Carol's loan still looks open, but the heart invoice answers `credit_closed`. The heart rolls back and the profile card shows the red line **This loan is no longer collecting and cannot receive more money.**
+
+![21.gifts member posts closed loan heart refusal](images/members-posts-open-loan-heart-closed.png)
+
+### Variant: posts-open-loan-pay-closed
+
+The same profile loan after **Lend**, **₿210**, and `Count me in!` are submitted and the contribution invoice answers `credit_closed`. The amount form stays open without a pay sheet and shows **This loan is no longer collecting and cannot receive more money.** in red.
+
+![21.gifts member posts closed loan payment refusal](images/members-posts-open-loan-pay-closed.png)
+
 ### Variant: posts-open-loan-pay-full
 
 Carol's loan once it is full (`sats` equals `goalSats`): the loan block reads **Fully funded** and offers no **Lend**, so the money reaction is opened with **React** and keeps the label **Amount**. After **₿210** is posted, the pay sheet reads **Send to Carol**, **₿210** large with **$0.21** under it, and the full-width wallet button **Send ₿210 · $0.21**. Behind it, at the top of the disabled reaction form, the note says **This loan is already fully funded. What you send now is a gift to Carol.**
@@ -10187,6 +10211,18 @@ Signed-in permalink of Maria's collecting loan with `authorCanReceive: false`. *
 Signed-in permalink of Maria's loan that still collects (`sats: 10500` of `goalSats: 21000`, 30 days), after **Lend**, **₿210** and `Count me in!` were posted. The pay sheet slides up over the dimmed permalink: **Lend to Maria**, **₿210** large with **$0.21** under it, and the full-width wallet button **Lend ₿210 · $0.21**. The muted note **You are lending to Maria. Once the loan is fully funded, you get it back in 30 daily payments.** stays at the top of the disabled reaction form behind the sheet.
 
 ![21.gifts public message loan pay](images/messages-id-loan-pay.png)
+
+### Variant: loan-heart-closed
+
+The signed-in permalink still has an open copy of Maria's loan, but the heart invoice answers `credit_closed`. The heart rolls back and the permalink shows the red line **This loan is no longer collecting and cannot receive more money.** under it.
+
+![21.gifts public message closed loan heart refusal](images/messages-id-loan-heart-closed.png)
+
+### Variant: loan-pay-closed
+
+The same permalink after **Lend**, **₿210**, and `Count me in!` are submitted and the contribution invoice answers `credit_closed`. No pay sheet opens; the reaction amount form remains visible with the red line **This loan is no longer collecting and cannot receive more money.**
+
+![21.gifts public message closed loan payment refusal](images/messages-id-loan-pay-closed.png)
 
 ### Variant: loan-pay-full
 

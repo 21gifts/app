@@ -235,6 +235,17 @@ async function fillPayAmount(field: Locator, value: string): Promise<void> {
   await field.fill(value);
 }
 
+/** Makes every forum contribution invoice report that its credit stopped collecting. */
+async function rejectClosedCreditInvoices(page: Page): Promise<void> {
+  await page.route(/\/messages\/[^/]+\/invoice$/, async (route) => {
+    await route.fulfill({
+      status: 409,
+      contentType: 'application/json',
+      body: JSON.stringify({ code: 'credit_closed' }),
+    });
+  });
+}
+
 /**
  * Blurs the focused field and waits until the page rests. A focused field folds the footer, and
  * `AppHeightSync` reveals it again after every viewport resize, so a capture taken while a field
@@ -16752,6 +16763,37 @@ test.describe('onboarding screens', () => {
     await shotScreen(page, 'state-members-posts-open-loan-pay');
   });
 
+  test('state /members posts-open-loan-heart-closed', async ({ page }) => {
+    const memberId = await seedCarolLoan(page);
+    await rejectClosedCreditInvoices(page);
+    await page.goto(`/members/${memberId}`);
+    await page.getByRole('button', { name: '1 post' }).click();
+    await page.getByRole('button', { name: 'Send ₿1' }).click();
+    const line = page.getByText('This loan is no longer collecting and cannot receive more money.');
+    await expect(line).toBeVisible();
+    await centreAtRest(line);
+    await shotScreen(page, 'state-members-posts-open-loan-heart-closed');
+  });
+
+  test('state /members posts-open-loan-pay-closed', async ({ page }) => {
+    const memberId = await seedCarolLoan(page);
+    await rejectClosedCreditInvoices(page);
+    await page.goto(`/members/${memberId}`);
+    await page.getByRole('button', { name: '1 post' }).click();
+    await page.getByRole('button', { name: 'Lend' }).click();
+    await expect(page.getByLabel('Your reaction')).toBeEnabled();
+    await motionSettled(page);
+    await page.getByLabel('Amount to lend').fill('210');
+    await page.getByLabel('Your reaction').fill('Count me in!');
+    const form = page.getByLabel('Your reaction').locator('xpath=ancestor::form');
+    await motionSettled(page);
+    await form.getByRole('button', { name: 'Post' }).click();
+    const line = page.getByText('This loan is no longer collecting and cannot receive more money.');
+    await expect(line).toBeVisible();
+    await centreAtRest(line);
+    await shotScreen(page, 'state-members-posts-open-loan-pay-closed');
+  });
+
   test('state /members posts-open-loan-pay-full', async ({ page }) => {
     const memberId = await seedCarolLoan(page, 21000);
     await page.goto(`/members/${memberId}?visual=wallet-pay-confirm`);
@@ -22543,6 +22585,35 @@ test.describe('onboarding screens', () => {
       node.scrollIntoView({ block: 'start', inline: 'nearest' });
     });
     await shotScreen(page, 'state-messages-id-loan-pay');
+  });
+
+  test('state /messages/[id] loan-heart-closed', async ({ page }) => {
+    const id = await seedMariaLoanNote(page);
+    await rejectClosedCreditInvoices(page);
+    await page.goto(`/messages/${id}`);
+    await page.getByRole('button', { name: 'Send ₿1' }).click();
+    const line = page.getByText('This loan is no longer collecting and cannot receive more money.');
+    await expect(line).toBeVisible();
+    await centreAtRest(line);
+    await shotScreen(page, 'state-messages-id-loan-heart-closed');
+  });
+
+  test('state /messages/[id] loan-pay-closed', async ({ page }) => {
+    const id = await seedMariaLoanNote(page);
+    await rejectClosedCreditInvoices(page);
+    await page.goto(`/messages/${id}`);
+    await page.getByRole('button', { name: 'Lend' }).click();
+    await expect(page.getByLabel('Amount to lend')).toBeFocused();
+    await motionSettled(page);
+    await page.getByLabel('Amount to lend').fill('210');
+    await page.getByLabel('Your reaction').fill('Count me in!');
+    const form = page.getByLabel('Your reaction').locator('xpath=ancestor::form');
+    await motionSettled(page);
+    await form.getByRole('button', { name: 'Post' }).click();
+    const line = page.getByText('This loan is no longer collecting and cannot receive more money.');
+    await expect(line).toBeVisible();
+    await centreAtRest(line);
+    await shotScreen(page, 'state-messages-id-loan-pay-closed');
   });
 
   test('state /messages/[id] loan-pay-full', async ({ page }) => {
@@ -29593,6 +29664,37 @@ test.describe('welcome forum variants', () => {
       node.scrollIntoView({ block: 'start', inline: 'nearest' });
     });
     await shotScreen(page, 'state-welcome-loan-pay');
+  });
+
+  test('state /welcome loan-heart-closed', async ({ page }) => {
+    await seedLoanCard(page);
+    await rejectClosedCreditInvoices(page);
+    await page.goto('/welcome');
+    await chooseForumView(page, 'All');
+    await page.getByRole('button', { name: 'Send ₿1' }).click();
+    const line = page.getByText('This loan is no longer collecting and cannot receive more money.');
+    await expect(line).toBeVisible();
+    await centreAtRest(line);
+    await shotScreen(page, 'state-welcome-loan-heart-closed');
+  });
+
+  test('state /welcome loan-pay-closed', async ({ page }) => {
+    await seedLoanCard(page);
+    await rejectClosedCreditInvoices(page);
+    await page.goto('/welcome');
+    await chooseForumView(page, 'All');
+    await page.getByRole('button', { name: 'Lend' }).click();
+    await expect(page.getByLabel('Your reaction')).toBeEnabled();
+    await motionSettled(page);
+    await page.getByLabel('Amount to lend').fill('210');
+    await page.getByLabel('Your reaction').fill('Count me in!');
+    const form = page.getByLabel('Your reaction').locator('xpath=ancestor::form');
+    await motionSettled(page);
+    await form.getByRole('button', { name: 'Post' }).click();
+    const line = page.getByText('This loan is no longer collecting and cannot receive more money.');
+    await expect(line).toBeVisible();
+    await centreAtRest(line);
+    await shotScreen(page, 'state-welcome-loan-pay-closed');
   });
 
   test('state /welcome loan-pay-full', async ({ page }) => {

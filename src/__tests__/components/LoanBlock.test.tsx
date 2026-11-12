@@ -138,6 +138,18 @@ describe('LoanBlock', () => {
     expect(screen.queryByRole('button', { name: 'Lend' })).toBeNull();
   });
 
+  it('hides Lend from the first render when the message says the below-goal loan is closed', () => {
+    block({
+      goalClosedAt: '2026-10-01T12:00:00.000Z',
+      ledger: null,
+      ledgerLink: false,
+      onLend: vi.fn(),
+      lendBlocked: true,
+    });
+    expect(section().getAttribute('data-loan-block')).toBe('collecting');
+    expect(screen.queryByRole('button', { name: 'Lend' })).toBeNull();
+  });
+
   it('stops a Repayment list click from toggling the card', () => {
     block();
     const click = new MouseEvent('click', { bubbles: true, cancelable: true });

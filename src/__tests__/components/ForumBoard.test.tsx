@@ -10777,6 +10777,45 @@ describe('ForumBoard loan block', () => {
     expect(screen.getByLabelText('Amount to lend')).toBe(amountField());
   });
 
+  it('hides every contribution entry point on an unexpanded closed loan card', () => {
+    const onPayOpen = vi.fn();
+    const onHeartTip = vi.fn();
+    renderWithLocale(
+      board({
+        messages: [{ ...LOAN, goalClosedAt: '2026-10-03T10:00:00.000Z' }],
+        onPayOpen,
+        onHeartTip,
+      }),
+    );
+    expect(screen.getByRole('region', { name: 'Loan request' })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Lend' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Send ₿1' })).toBeNull();
+    expect(screen.queryByLabelText('Amount to lend')).toBeNull();
+    expect(onPayOpen).not.toHaveBeenCalled();
+    expect(onHeartTip).not.toHaveBeenCalled();
+  });
+
+  it('cancels and hides a contribution sheet when its loan is already closed', () => {
+    const onPayCancel = vi.fn();
+    renderWithLocale(
+      board({
+        messages: [{ ...LOAN, goalClosedAt: '2026-10-03T10:00:00.000Z' }],
+        expandedId: 'loan1',
+        replies: [],
+        payMessageId: 'loan1',
+        payHost: 'card',
+        payDraft: '210',
+        payInvoice: { messageId: 'loan1', pr: 'lnbc1', amountSats: 210 },
+        replyPayPreview: 'Count me in!',
+        onPayCancel,
+      }),
+    );
+    expect(onPayCancel).toHaveBeenCalledTimes(1);
+    expect(screen.queryByRole('button', { name: 'Continue' })).toBeNull();
+    expect(screen.queryByLabelText('Amount to lend')).toBeNull();
+    expect(document.querySelector('[data-loan-notice]')).toBeNull();
+  });
+
   it('focuses the amount field of an open card and reveals its form in the scrollport', () => {
     const onToggleExpand = vi.fn();
     renderWithLocale(
