@@ -533,15 +533,15 @@ app/
 
 ### Branches
 
-| Branch    | Purpose                            | Deploy target |
-| --------- | ---------------------------------- | ------------- |
-| `develop` | Default branch, active development | DEV           |
-| `staging` | Experimental testing               | staging       |
-| `main`    | Production releases                | PRD           |
+| Branch    | Purpose                                                          | Deploy target |
+| --------- | ---------------------------------------------------------------- | ------------- |
+| `develop` | Default branch, active development                               | DEV           |
+| `staging` | Experimental testing (branch currently absent, no pull requests) | staging       |
+| `main`    | Production releases                                              | PRD           |
 
-- Open feature work through a **feature branch and a pull request**. The pull request targets `staging` unless another base was explicitly requested. It must not target `main`. The GitHub default branch stays `develop`; that does not change the pull-request base.
+- Open feature work through a **feature branch and a pull request**. Feature pull requests target `develop`; they must not target `main` or `staging`.
 - `main` is protected. The only pull request that may target `main` is the automatic release (`Release: develop -> main`). Production still deploys when `main` itself is pushed.
-- **Hard requirement:** `staging` is the environment for experimental testing. It publishes `21gifts/app:staging`. A change that is good there is released to `develop` by a release pull request (`Release: staging -> develop`). That release is the explicit request to target `develop`. `main` receives changes only through `Release: develop -> main`. `staging` is never released directly to `main`. An open release pull request is left unchanged. The staging release is not opened when the three-dot diff against `develop` has no file changes.
+- **Hard requirement:** `staging` is the environment for experimental testing. It publishes `21gifts/app:staging`. No pull request targets `staging` at present. The product owner decides whether pull requests may target `staging` again and how experimental changes reach it; this section is updated before that changes. When the `staging` branch exists, its changes reach `develop` only through a release pull request (`Release: staging -> develop`); that release is the explicit request to target `develop`. `main` receives changes only through `Release: develop -> main`. `staging` is never released directly to `main`. An open release pull request is left unchanged. The staging release is not opened when the three-dot diff against `develop` has no file changes.
 - Never force-push, never amend published commits, except publishing a rebase of `staging` onto `develop` with `git push --force-with-lease` to `staging` only.
 
 ### Commit messages
@@ -962,7 +962,7 @@ still passes, the pixels moved only by rendering noise, and the check fails
 and names the file to restore (`git checkout <base> -- <file>`). A baseline
 for a new screen or variant is not compared. In a pull request run the base
 is the base commit the CI merge was built on; locally it is the merge base
-with `origin/staging`, or `SCREENSHOT_BASE` when set. Regenerate with
+with `origin/develop`, or `SCREENSHOT_BASE` when set. Regenerate with
 `npm run e2e:update-snapshots`, which rewrites only shots that no longer
 match, never with `--update-snapshots=all` and never by copying every CI
 `-actual.png`.
