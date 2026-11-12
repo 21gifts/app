@@ -167,11 +167,11 @@ Accent on those same panels:
 
 **(A) Marketing shell** (`bg-ink`): orange is the primary filled CTA plus kickers.
 
-| Orange                                                                                              | Not orange                                                |
-| --------------------------------------------------------------------------------------------------- | --------------------------------------------------------- |
-| Header **Log in**, hero **Ask for help**, stats **Try again**                                       | Hero **Send help** (outline `border-paper/20 text-paper`) |
-| Kickers: `HOW IT WORKS`, `WHY THIS EXISTS`, `FAQ`, `TOTAL SPEND OVER TIME`, `BY PERSON`, `BY MONTH` | Nav links, footer links                                   |
-| Stats chart paint (spend series)                                                                    | KPI tile chrome                                           |
+| Orange                                                                                 | Not orange                                                |
+| -------------------------------------------------------------------------------------- | --------------------------------------------------------- |
+| Header **Log in**, hero **Ask for help**, stats **Try again**                          | Hero **Send help** (outline `border-paper/20 text-paper`) |
+| Kickers: `HOW IT WORKS`, `WHY THIS EXISTS`, `FAQ`, `TOTAL SPEND OVER TIME`, `BY MONTH` | Nav links, footer links                                   |
+| Stats chart paint (spend series)                                                       | KPI tile chrome                                           |
 
 This is not “Log in is a gift.” Ink pages have one filled accent, and it is Bitcoin orange.
 
