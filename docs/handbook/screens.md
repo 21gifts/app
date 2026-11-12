@@ -9355,6 +9355,12 @@ No notifications. **For you** is selected with copy **Nothing for you yet.** Nei
 
 ![21.gifts notifications empty](images/notifications-empty.png)
 
+### Variant: for-you-empty
+
+Loaded list with only rows that are not personal, for example while the api does not send `personal` yet: **For you** is selected with copy **Nothing for you yet.** and no list; **Living room** shows the chip **2** (accessible name **Living room, 2 unread**).
+
+![21.gifts notifications for you empty](images/notifications-for-you-empty.png)
+
 ### Variant: living-room
 
 After pressing **Living room** on the default list: **Living room** is selected and lists the two unread posts by other members (**Olga posted**, **Otto posted**) under **Unread**. Bob's reply stays under **For you**, which keeps its chip **1**.

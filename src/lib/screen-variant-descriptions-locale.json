@@ -3204,6 +3204,11 @@
     "es": "No hay notificaciones. Para ti está seleccionado con el texto Aún no hay nada para ti. Ninguna opción muestra un contador.",
     "fil": "Walang mga abiso. Napili ang Para sa iyo na may tekstong Wala pang para sa iyo. Walang opsyon na nagpapakita ng bilang."
   },
+  "/notifications:for-you-empty": {
+    "de": "Geladene Liste nur mit nicht persönlichen Zeilen, etwa solange die API personal noch nicht sendet: Für dich ist ausgewählt mit dem Text Noch nichts für dich. und ohne Liste; Wohnzimmer zeigt den Zähler 2 (zugänglicher Name Wohnzimmer, 2 ungelesen).",
+    "es": "Lista cargada solo con filas no personales, por ejemplo mientras la API aún no envía personal: Para ti está seleccionado con el texto Aún no hay nada para ti. y sin lista; Salón muestra el contador 2 (nombre accesible Salón, 2 sin leer).",
+    "fil": "Nai-load na listahan na may mga hilerang hindi personal lamang, halimbawa habang hindi pa ipinapadala ng API ang personal: napili ang Para sa iyo na may tekstong Wala pang para sa iyo. at walang listahan; ipinapakita ng Living room ang bilang na 2 (accessible na pangalan Living room, 2 hindi pa nababasa)."
+  },
   "/notifications:living-room": {
     "de": "Nach dem Tippen auf Wohnzimmer in der Standardliste: Wohnzimmer ist ausgewählt und listet unter Ungelesen die zwei ungelesenen Beiträge anderer Mitglieder (Olga hat gepostet, Otto hat gepostet). Bobs Antwort bleibt unter Für dich, das seinen Zähler 1 behält.",
     "es": "Tras pulsar Salón en la lista por defecto: Salón está seleccionado y lista bajo No leídas las dos publicaciones no leídas de otros miembros (Olga publicó, Otto publicó). La respuesta de Bob queda en Para ti, que mantiene su contador 1.",

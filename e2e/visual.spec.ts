@@ -40262,6 +40262,15 @@ test.describe('notifications screens', () => {
     await shotScreen(page, 'state-notifications-living-room-empty');
   });
 
+  test('notifications for-you-empty', async ({ page }) => {
+    await seedAda(page);
+    await routeNotifications(page, LIVING_ROOM_POSTS);
+    await page.goto('/notifications');
+    await expect(page.getByText('Nothing for you yet.')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Living room, 2 unread' })).toBeVisible();
+    await shotScreen(page, 'state-notifications-for-you-empty');
+  });
+
   test('notifications empty', async ({ page }) => {
     await seedAda(page);
     await page.route('**/forum/notifications', async (route) => {
