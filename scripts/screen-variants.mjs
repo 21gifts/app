@@ -2043,6 +2043,27 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/loans/repay',
+    id: 'close-sending',
+    image: 'loans-repay-close-sending.png',
+    visual: 'state-loans-repay-close-sending',
+    needle: 'state /loans/repay close-sending',
+  },
+  {
+    route: '/loans/repay',
+    id: 'close-error',
+    image: 'loans-repay-close-error.png',
+    visual: 'state-loans-repay-close-error',
+    needle: 'state /loans/repay close-error',
+  },
+  {
+    route: '/loans/repay',
+    id: 'closed-loan',
+    image: 'loans-repay-closed-loan.png',
+    visual: 'state-loans-repay-closed-loan',
+    needle: 'state /loans/repay closed-loan',
+  },
+  {
+    route: '/loans/repay',
     id: 'none',
     image: 'loans-repay-none.png',
     visual: 'state-loans-repay-none',

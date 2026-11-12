@@ -96,7 +96,7 @@ import {
   proxyMessagesInvoicePost,
   proxyMessagesRepaymentClosePost,
   proxyMessagesRepaymentDuePost,
-  proxyMessagesRepaymentPrepayPost,
+  proxyMessagesRepaymentPost,
   proxyMessagesPhotoGet,
   proxyMessagesPhotoExtGet,
   proxyMessagesPost,
@@ -1284,17 +1284,20 @@ describe('api proxy wrappers', () => {
     expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/messages/a%2Fb/repayment/close');
   });
 
-  it('proxyMessagesRepaymentPrepayPost hits POST /messages/:id/repayment/prepay', async () => {
+  it('proxyMessagesRepaymentPost forwards a free-amount body to POST /messages/:id/repayment', async () => {
     const fetchMock = stubApi();
-    await proxyMessagesRepaymentPrepayPost(
-      new Request('http://localhost/messages/m1/repayment/prepay', {
+    await proxyMessagesRepaymentPost(
+      new Request('http://localhost/messages/m1/repayment', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
         body: '{"amount":"21"}',
       }),
       'a/b',
     );
-    expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/messages/a%2Fb/repayment/prepay');
+    expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/messages/a%2Fb/repayment');
+    expect(
+      new TextDecoder().decode((fetchMock.mock.calls[0]?.[1] as RequestInit).body as ArrayBuffer),
+    ).toBe('{"amount":"21"}');
   });
 
   it('proxyViewGet hits /view/:viewKey (encoded)', async () => {

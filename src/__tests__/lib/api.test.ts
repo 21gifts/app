@@ -2809,7 +2809,7 @@ describe('prepayLoan', () => {
       ...success,
       bills: [{ ...success.bills[0]!, sparkInvoice: null }],
     });
-    expect(fetchMock).toHaveBeenCalledWith('/messages/a%2Fb/repayment/prepay', {
+    expect(fetchMock).toHaveBeenCalledWith('/messages/a%2Fb/repayment', {
       method: 'POST',
       headers: { Authorization: 'Bearer sess', 'Content-Type': 'application/json' },
       body: JSON.stringify({ amount: '12,50' }),

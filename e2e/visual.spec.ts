@@ -12,7 +12,7 @@ import {
   stubCurrentIphone,
 } from './no-prf';
 import { pageFrameProblems } from '../src/lib/page-frame';
-import { fulfillSpot, spotRatesFromStats } from './fx-spot';
+import { fulfillSpot, spotRatesFromStats, type SpotRates } from './fx-spot';
 import { motionSettled } from './motion';
 import { fulfillStablecoinUnavailable, stubPlainPayLink, stubShopPayment } from './shop-payment';
 import {
@@ -6919,6 +6919,9 @@ test.describe('loans repay screens', () => {
     },
     next: null,
   });
+  const closedLoan = loanWith(collectingLoan, {
+    closedAt: '2026-10-07T09:00:00.000Z',
+  });
 
   async function loanShot(
     page: Page,
@@ -6931,9 +6934,13 @@ test.describe('loans repay screens', () => {
       sundayRest?: boolean;
       qr?: boolean;
       ledgerFetch?: 'hang' | 'error';
+      spotRates?: SpotRates;
     },
   ): Promise<void> {
     await seedLoanMember(page);
+    if (options.spotRates !== undefined) {
+      await fulfillSpot(page, options.spotRates);
+    }
     await seedLoanData(page, options.loans, options.ledgers ?? {}, options.sundayRest);
     if (options.ledgerFetch === 'hang') {
       await page.route(/\/messages\/[^/]+\/repayment$/, () => new Promise(() => undefined));
@@ -7637,7 +7644,10 @@ test.describe('loans repay screens', () => {
       loans: [{ ...repaidLoanB, maxSats: null, maxAmount: null }],
       visual: 'repay-ready',
       text: 'No PHP exchange rate is available now',
+      spotRates: { USD: '100000.00' },
     });
+    await expect(page.getByRole('button', { name: 'PHP' })).toBeDisabled();
+    await expect(page.getByText('No exchange rate yet')).toBeVisible();
     await shotScreen(page, 'state-loans-repay-pay-more-no-rate');
   });
 
@@ -7720,6 +7730,39 @@ test.describe('loans repay screens', () => {
     await page.getByRole('button', { name: 'End collecting' }).click();
     await expect(page.getByRole('dialog', { name: 'End collecting?' })).toBeVisible();
     await shotScreen(page, 'state-loans-repay-collecting-close-confirm');
+  });
+
+  test('state /loans/repay close-sending', async ({ page }) => {
+    await loanShot(page, {
+      loans: [collectingLoan],
+      visual: 'repay-close-sending',
+      text: 'Ending collecting…',
+    });
+    await expect(page.getByRole('button', { name: 'End collecting' })).toBeDisabled();
+    await shotScreen(page, 'state-loans-repay-close-sending');
+  });
+
+  test('state /loans/repay close-error', async ({ page }) => {
+    await loanShot(page, {
+      loans: [collectingLoan],
+      visual: 'repay-close-error',
+      text: 'Could not start this repayment. Please try again.',
+    });
+    await expect(page.getByRole('alert')).toContainText(
+      'Could not start this repayment. Please try again.',
+    );
+    await shotScreen(page, 'state-loans-repay-close-error');
+  });
+
+  test('state /loans/repay closed-loan', async ({ page }) => {
+    await loanShot(page, {
+      loans: [closedLoan],
+      visual: 'repay-ready',
+      text: 'Pay more',
+    });
+    await expect(page.getByRole('button', { name: 'End collecting' })).toHaveCount(0);
+    await expect(page.getByText(/The first payment ends collecting/)).toHaveCount(0);
+    await shotScreen(page, 'state-loans-repay-closed-loan');
   });
 
   test('state /loans/repay none', async ({ page }) => {

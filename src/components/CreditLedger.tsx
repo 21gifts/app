@@ -32,11 +32,14 @@ import {
  * one that is not fully given or is missing a date, lists each day. A fully
  * given plan with more than 7 dated days shows the month overview instead.
  * Still owed there counts only unpaid shares. Partial rows use `dueSats` and
- * `amount - paidAmount` in rows, charts, splits, and totals. A month names one status only
- * when every share in that month has it. A fiat plan, share, still-owed
- * total, and chart total stay in the ask currency, with no bitcoin. Money
- * already given keeps that currency and bitcoin. A bitcoin amount shows the
- * current spot beside it. The spot is not written onto the row. A day matches
+ * `amount - paidAmount` in rows, charts, splits, and totals. When positive
+ * `paidSats` have no usable `paidAmount`, the repayment plan falls back to
+ * those remaining sats and the current spot instead of the original fiat.
+ * A month names one status only when every share in that month has it. A fiat
+ * plan, share, still-owed total, and chart total otherwise stay in the ask
+ * currency, with no bitcoin. Money already given keeps that currency and
+ * bitcoin. A bitcoin amount shows the current spot beside it. The spot is not
+ * written onto the row. A day matches
  * another day by the amount the page shows: the ask currency, or satoshis.
  * The footnote lists the days a month lists, and names one remaining total
  * only when every other day shares it.
@@ -105,6 +108,10 @@ export function CreditLedger({
   }
   const ledger = withWaiting(current);
   const fiat = ledger.currency === 'BTC' ? null : (ledger.currency as FiatCode);
+  const repaymentFiat =
+    fiat !== null && ledger.repayments.some((row) => row.amount === null && row.sats !== null)
+      ? null
+      : fiat;
   const spot: SpotPair = { rateDay, visitorFiat };
   return (
     <div className="mt-3 rounded-xl bg-app-card-muted px-3 py-2.5">
@@ -164,12 +171,12 @@ export function CreditLedger({
         {fiat !== null ? (
           <p className="mt-1 text-xs text-app-muted">{t('forum.creditFiatHow')}</p>
         ) : null}
-        <RepaymentChart ledger={ledger} fiat={fiat} locale={locale} spot={spot} />
+        <RepaymentChart ledger={ledger} fiat={repaymentFiat} locale={locale} spot={spot} />
         {list === 'page' ? (
           isLongRepayment(ledger) ? (
             <LongRepayment
               ledger={ledger}
-              fiat={fiat}
+              fiat={repaymentFiat}
               locale={locale}
               numberFormat={numberFormat}
               spot={spot}
@@ -179,7 +186,7 @@ export function CreditLedger({
             <DayGroups
               groups={groupsOf(ledger.repayments)}
               fundedAt={ledger.fundedAt}
-              fiat={fiat}
+              fiat={repaymentFiat}
               locale={locale}
               numberFormat={numberFormat}
               spot={spot}
@@ -685,9 +692,16 @@ function remainingLine(row: RepaymentLine): RepaymentLine {
   let amount = row.amount;
   if (row.amount !== null && row.amount !== undefined) {
     const total = creditSmallestUnits(row.amount, false);
-    const paid = creditSmallestUnits(row.paidAmount ?? '0', false);
+    const paid =
+      (row.paidSats ?? 0) > 0
+        ? row.paidAmount === null || row.paidAmount === undefined
+          ? null
+          : creditSmallestUnits(row.paidAmount, false)
+        : 0n;
     if (total !== null && paid !== null) {
       amount = centsString(total > paid ? total - paid : 0n);
+    } else if ((row.paidSats ?? 0) > 0) {
+      amount = null;
     }
   }
   return {

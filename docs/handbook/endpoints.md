@@ -773,9 +773,9 @@
 
 ## Endpoint: POST /messages/[id]/repayment
 
-- **Purpose:** Same-origin Bearer proxy of api POST `/messages/:id/repayment`. The author pays the next giver their share of the next due day. Success `{ pr, amountSats, sparkInvoice? }`; `sparkInvoice` is the request the in-app wallet pays instead of `pr`, or `null`, and may be absent.
-- **Errors:** Upstream 401/400/404/409/429/503, or 502 if the api is unreachable.
-- **Used by:** No screen since `/loans/repay` asks for every payable bill at once (`POST /messages/[id]/repayment/due`); kept as the api's single-share proxy.
+- **Purpose:** Same-origin Bearer proxy of api POST `/messages/:id/repayment`. Without a body (or with an empty body), the author pays the next giver their share of the next due day and receives `{ pr, amountSats, sparkInvoice? }`. With JSON `{ amount }`, it requests a freely chosen repayment amount in whole sats for BTC or at most two decimals in the loan currency and returns `{ amountSats, amount, bills, waiting }` with the due endpoint's bill shapes. The first free-amount payment of a collecting loan also closes collecting in the api. The optional body is passed through unchanged.
+- **Errors:** The no-body form keeps its upstream 401/400/404/409/429/503 errors. The amount form can also return 400 `amount_too_high`, `invalid_amount`, `too_many_shares`, or `Nothing is due`; 403 `SUNDAY_REST`; 409 `missing_requirements` or an open share payment; 429/503; or 502 if the api is unreachable. Max errors carry `maxSats` and `maxAmount`.
+- **Used by:** `prepayLoan` through `useLoanRepay.prepay`, before the shared wallet send path. No screen uses the no-body single-share form because `/loans/repay` asks for every payable bill at once (`POST /messages/[id]/repayment/due`).
 - **Auth:** Bearer.
 
 ## Endpoint: POST /messages/[id]/invoice
@@ -811,13 +811,6 @@
 - **Purpose:** Same-origin proxy of api `POST /messages/:id/repayment/close`. With no body, it permanently stops an ask from collecting and returns `{ fundedAt, closedAt, collectedSats, collectedAmount }`; repayment remains available.
 - **Errors:** Upstream 401/404/409 `missing_requirements`, or 502 if the api is unreachable.
 - **Used by:** `closeLoan` through `useLoanRepay.closeCollecting`, followed by `GET /me/loans`.
-- **Auth:** Bearer.
-
-## Endpoint: POST /messages/[id]/repayment/prepay
-
-- **Purpose:** Same-origin proxy of api `POST /messages/:id/repayment/prepay`. Body `{ amount }` uses whole sats for BTC or at most two decimals in the loan currency; success returns `{ amountSats, amount, bills, waiting }` with the due endpoint's bill shapes. The first prepayment of a collecting loan also closes collecting in the api.
-- **Errors:** Upstream 400 `amount_too_high`, `invalid_amount`, `too_many_shares`, or `Nothing is due`; 403 `SUNDAY_REST`; 409 `missing_requirements` or an open share payment; 429/503; or 502 if the api is unreachable. Max errors carry `maxSats` and `maxAmount`.
-- **Used by:** `prepayLoan` through `useLoanRepay.prepay`, before the shared wallet send path.
 - **Auth:** Bearer.
 
 ## Endpoint: POST /lnurl/invoice

@@ -1686,6 +1686,24 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/loans/repay:close-sending",
+    "label": "/loans/repay close-sending",
+    "visual": "state-loans-repay-close-sending",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/loans/repay:close-error",
+    "label": "/loans/repay close-error",
+    "visual": "state-loans-repay-close-error",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/loans/repay:closed-loan",
+    "label": "/loans/repay closed-loan",
+    "visual": "state-loans-repay-closed-loan",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/loans/repay:none",
     "label": "/loans/repay none",
     "visual": "state-loans-repay-none",

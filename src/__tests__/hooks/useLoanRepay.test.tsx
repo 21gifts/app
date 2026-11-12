@@ -2401,6 +2401,8 @@ describe('useLoanRepay visual pins', () => {
     ['repay-pay-more-sending', 'sending', 21_000],
     ['repay-pay-more-waiting', 'waiting', 21_000],
     ['repay-pay-more-shortfall', 'idle', 500],
+    ['repay-close-sending', 'sending', 21_000],
+    ['repay-close-error', 'failed', 21_000],
   ] as const;
 
   it.each(pins)('pins %s only in a Playwright build', (visual, phase, balanceSats) => {

@@ -392,6 +392,24 @@ const PINNED_RESULTS: Record<string, PinnedLoanRepay> = {
     missingSats: 500,
     topUpOpen: true,
   },
+  'repay-close-sending': {
+    ...PIN_BASE,
+    phase: 'sending',
+    balanceSats: 21_000,
+    activeAction: { kind: 'close', messageId: 'loan-a' },
+  },
+  'repay-close-error': {
+    ...PIN_BASE,
+    phase: 'failed',
+    balanceSats: 21_000,
+    activeAction: { kind: 'close', messageId: 'loan-a' },
+    actionError: {
+      messageId: 'loan-a',
+      code: 'request_failed',
+      maxSats: null,
+      maxAmount: null,
+    },
+  },
 };
 
 /** Shares reserved from the start of their send until it is known they did not go out. */

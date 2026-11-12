@@ -18,7 +18,13 @@ import type {
 import type { MyLoan, RepaymentWaiting } from '@/lib/api';
 import type { AmountUnit } from '@/lib/api-types';
 import { formatDefinedGoalAmount } from '@/lib/forum-goal';
-import { checkLoanAmount, isCollecting, loanMaxInput, loanMaxUnits } from '@/lib/loan-repay';
+import {
+  checkLoanAmount,
+  isCollecting,
+  loanMaxInput,
+  loanMaxUnits,
+  type LoanAmountCheck,
+} from '@/lib/loan-repay';
 import type { NumberFormatStyle } from '@/lib/number-format';
 import {
   fiatDraftForSats,
@@ -27,6 +33,7 @@ import {
   type FiatCode,
   type FiatRateDay,
 } from '@/lib/stats-money';
+import { useAuthStore } from '@/stores/auth-store';
 
 /** Props for one loan's free-amount repayment and collecting controls. */
 export interface LoanPayMoreProps {
@@ -156,8 +163,9 @@ export function LoanPayMore({
   const { t } = useTranslations();
   const { fiat } = useFiatPreference();
   const { numberFormat } = useNumberFormat();
+  const accountUnit = useAuthStore((state) => state.account?.amountUnit ?? 'btc');
   const [amount, setAmount] = useState('');
-  const [amountUnit, setAmountUnit] = useState<AmountUnit>('btc');
+  const [amountUnit, setAmountUnit] = useState<AmountUnit>(accountUnit);
   const [exactLoanAmount, setExactLoanAmount] = useState<string | null>(null);
   const switchingExactMaximum = useRef(false);
   const [pendingAction, setPendingAction] = useState<PendingAction>(null);
@@ -186,7 +194,12 @@ export function LoanPayMore({
           ? amount.trim()
           : satsToFiatAmount(parsed.sats, rateDay, loan.goalCurrency);
   }
-  let check = checkLoanAmount(loanAmountText ?? amount, effectiveLoan);
+  let check: LoanAmountCheck =
+    amount.trim() === ''
+      ? checkLoanAmount('', effectiveLoan)
+      : parsed.kind !== 'sats' || loanAmountText === null
+        ? { ok: false, reason: 'invalid', max: loanMaxInput(effectiveLoan) }
+        : checkLoanAmount(loanAmountText, effectiveLoan);
   if (
     check.ok &&
     parsed.kind === 'sats' &&

@@ -16292,11 +16292,6 @@ test('POST /messages/[id]/repayment/close without bearer is 401', async ({ reque
   expect(response.status()).toBe(401);
 });
 
-test('POST /messages/[id]/repayment/prepay without bearer is 401', async ({ request }) => {
-  const response = await request.post('/messages/[id]/repayment/prepay');
-  expect(response.status()).toBe(401);
-});
-
 test('Function: postRepaymentDue — POST /messages/[id]/repayment/due answers empty lists', async ({
   request,
 }) => {
@@ -16333,7 +16328,7 @@ test('Function: LoanRepaymentError — a max refusal updates the running repayme
   await stubGiftStats(page, AMOUNT_RATE_STATS);
   await fulfillMyLoans(page, myLoans([loanA]));
   await fulfillLedger(page, loanA.messageId, ledgerA);
-  await page.route('**/messages/loan-a/repayment/prepay', async (route) => {
+  await page.route('**/messages/loan-a/repayment', async (route) => {
     await route.fulfill({
       status: 400,
       contentType: 'application/json',
@@ -16376,11 +16371,11 @@ test('Function: CreditClosedError — a closed loan invoice shows the localized 
   ).toBeVisible();
 });
 
-test('Function: proxyMessagesRepaymentPrepayPost — POST /messages/[id]/repayment/prepay is forwarded', async ({
+test('Function: proxyMessagesRepaymentPost — POST /messages/[id]/repayment forwards an amount body', async ({
   request,
 }) => {
   const token = await loginHttp(request);
-  const response = await request.post('/messages/loan-a/repayment/prepay', {
+  const response = await request.post('/messages/loan-a/repayment', {
     headers: { authorization: `Bearer ${token}` },
     data: { amount: '21' },
   });
@@ -16391,7 +16386,7 @@ test('Function: prepayLoan — fiat prepay converts cents with the fixed mock ra
   request,
 }) => {
   const token = await loginHttp(request);
-  const response = await request.post('/messages/loan-b/repayment/prepay', {
+  const response = await request.post('/messages/loan-b/repayment', {
     headers: { authorization: `Bearer ${token}` },
     data: { amount: '1.23' },
   });
@@ -16403,7 +16398,9 @@ test('Function: prepayLoan — fiat prepay converts cents with the fixed mock ra
   });
 });
 
-test('repayment close and prepay return 404 for unknown loan ids', async ({ request }) => {
+test('repayment close and free-amount repayment return 404 for unknown loan ids', async ({
+  request,
+}) => {
   const token = await loginHttp(request);
   const headers = { authorization: `Bearer ${token}` };
   expect((await request.post('/messages/unknown-loan/repayment/close', { headers })).status()).toBe(
@@ -16411,7 +16408,7 @@ test('repayment close and prepay return 404 for unknown loan ids', async ({ requ
   );
   expect(
     (
-      await request.post('/messages/unknown-loan/repayment/prepay', {
+      await request.post('/messages/unknown-loan/repayment', {
         headers,
         data: { amount: '1' },
       })
@@ -16424,7 +16421,7 @@ test('Function: prepayLoan — prepay returns due-shaped bills and enforces max'
 }) => {
   const token = await loginHttp(request);
   const headers = { authorization: `Bearer ${token}` };
-  const response = await request.post('/messages/loan-closed-partial/repayment/prepay', {
+  const response = await request.post('/messages/loan-closed-partial/repayment', {
     headers,
     data: { amount: '500' },
   });
@@ -16433,7 +16430,7 @@ test('Function: prepayLoan — prepay returns due-shaped bills and enforces max'
     bills: [{ amountSats: 500 }],
     waiting: [],
   });
-  const tooHigh = await request.post('/messages/loan-closed-partial/repayment/prepay', {
+  const tooHigh = await request.post('/messages/loan-closed-partial/repayment', {
     headers,
     data: { amount: '7901' },
   });

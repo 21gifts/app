@@ -1226,7 +1226,7 @@ The same when the background wallet setup gave up (pin `?visual=balance-setup-fa
 - **What the user sees:** The due box comes first and keeps all existing due, recipient, wallet, top-up, waiting, Sunday, success, and error states. Beneath it, **Your loan** or **Your loans** lists the plan, progress and **Repayment list**. Every loan then shows **Pay more** with the shared `AmountEntry`: ₿ / fiat unit switch, live other-unit counter, exact **Max**, and **Pay this amount**. BTC figures in validation, server-limit, confirmation, waiting, and shortfall copy carry the preferred-fiat spot whenever it is available. Validation sits directly under the field while typing; malformed, zero, over-maximum, and rate-less amounts are disabled. A collecting loan says its first payment ends collecting, confirms that permanent consequence before paying, and also offers a final **End collecting** dialog; both dialogs say a new loan is needed to collect more. A closed loan still shows **Pay more** but no collecting controls. Maximum api refusals replace the draft with the returned limit; open earlier payments, Sunday rest, throttling, unavailable service, missing requirements, and request failures have clear inline messages. A BTC loan without an api maximum says that its repayment maximum is unavailable, not that a BTC exchange rate is missing. The empty state says **You have no loan to repay.** A failed read says **Could not load your loans.** with **Try again**.
 - **Actions:** Open or close **Who gets paid**; tap **Send** once to pay all currently payable shares; when short, open **Top up your wallet**, copy the own address, or send now exactly the shares the link names. Per loan, enter a free amount, choose exact **Max**, and use **Pay this amount**; a collecting loan confirms that its first payment ends collecting and independently confirms **End collecting** as final. Open **Repayment list**, retry a failed load, use the single top-left arrow, or open **Menu**.
 - **Correctness details:** A fiat loan needs both `maxAmount` and a non-null `maxSats` rate signal before Max or payment is enabled. The body sent to prepay remains in the loan currency: whole sats for BTC, the loan-currency decimal for fiat; validation compares bigint sats/cents and Max preserves the api's exact maximum across the shown unit. If a collecting-loan pay dialog becomes invalid while open, its pay action disables and never changes into **End collecting permanently**. The hook's active kind and message id keep prepay/close sending, failure, waiting, and shortfall inside only the matching `LoanPayMore`; the due box uses those states only for a due run. Waiting recipients and typed action errors likewise apply only to their matching loan. A final prepayment remembers the loan list before starting, so an empty refreshed list renders repayment success rather than the ordinary no-loan state.
-- **Calls:** `LoanRepayPage`, `LoanRepayScreen`, `LoanPayMore`, `useMyLoans`, `useLoanRepay`, `useSpotRate`, `getRepayment`, `postRepaymentDue`, `prepayLoan`, `closeLoan`, `checkLoanAmount`, `loanMaxInput`, `isCollecting`, `payFromWallet`, `WalletOwnAddress`, `WalletSetupNote`, `GET /me/loans`, `GET /messages/:id/repayment`, and the `due`, `prepay`, and `close` repayment POST routes.
+- **Calls:** `LoanRepayPage`, `LoanRepayScreen`, `LoanPayMore`, `useMyLoans`, `useLoanRepay`, `useSpotRate`, `getRepayment`, `postRepaymentDue`, `prepayLoan`, `closeLoan`, `checkLoanAmount`, `loanMaxInput`, `isCollecting`, `payFromWallet`, `WalletOwnAddress`, `WalletSetupNote`, `GET /me/loans`, `GET /messages/:id/repayment`, and the no-body/free-amount `repayment`, `due`, and `close` POST routes.
 
 ### Variant: default
 
@@ -1629,6 +1629,24 @@ A still-collecting loan after Max and **Pay this amount**: behind the modal, Amo
 A still-collecting loan after **End collecting**: the modal **End collecting?** says this is final and a new loan is needed for more money, with **End collecting permanently**, **Cancel**, and icon-only **Close**.
 
 ![21.gifts loans repay end collecting confirmation](images/loans-repay-collecting-close-confirm.png)
+
+### Variant: close-sending
+
+A still-collecting loan while its permanent close request is being sent. The AmountEntry field, unit switch, **Max**, **Pay this amount**, and **End collecting** are disabled; a spinner and **Ending collecting…** sit below the close action, with no confirmation dialog.
+
+![21.gifts loans repay ending collecting](images/loans-repay-close-sending.png)
+
+### Variant: close-error
+
+A still-collecting loan after its permanent close request failed. The red close-specific alert **Could not start this repayment. Please try again.** sits below **End collecting**; AmountEntry and both actions are available again, with no confirmation dialog.
+
+![21.gifts loans repay end collecting error](images/loans-repay-close-error.png)
+
+### Variant: closed-loan
+
+A manually closed loan after collecting ended without a payment. Its ordinary **Pay more** AmountEntry, unit switch, **Max**, and **Pay this amount** remain, while the collecting notice and **End collecting** action are absent.
+
+![21.gifts loans repay closed loan](images/loans-repay-closed-loan.png)
 
 ### Variant: none
 
@@ -10600,7 +10618,7 @@ Unsigned permalink of Cyrill's reply **You got it right.** The parent **Hello fr
 
 ## Screen: /messages/[id]/repayment-list
 
-- **Purpose:** The repayment list for one credit note: who gave, the chart, and the plan. A fully given plan of more than 7 dated days is grouped by calendar month and lists only the days that differ from that month's usual amount; the pictured 2-day state still lists each day. The day rows render only here. The note, the forum, and a profile show a link instead of those rows. Nothing renders until the public ledger loads. A failed read stays blank. Chrome is PublicMessageChrome. There is no second back control.
+- **Purpose:** The repayment list for one credit note: who gave, the chart, and the plan. Partial rows use their remaining `dueSats` and stored `amount - paidAmount`; when positive `paidSats` have no usable `paidAmount`, the row, chart, split, and still-owed total fall back to the remaining bitcoin and current spot instead of showing the original fiat. A fully given plan of more than 7 dated days is grouped by calendar month and lists only the days that differ from that month's usual amount; the pictured 2-day state still lists each day. The day rows render only here. The note, the forum, and a profile show a link instead of those rows. Nothing renders until the public ledger loads. A failed read stays blank. Chrome is PublicMessageChrome. There is no second back control.
 - **Inputs:** Dynamic route `id`. Loads `GET /messages/:id/repayment` through `getRepayment`. No session is required to view. Chrome follows the hydrated session.
 - **Actions:** The top-left arrow is the existing ProfileChromeLeft control (previous in-app view, or `/welcome` when this tab has none). No other control. Names are text.
 - **Used by:** Route `/messages/[id]/repayment-list` (`RepaymentListPage`). The **Repayment list** link on a collapsed `ForumGoalBar` and on `CreditLedger` summary.

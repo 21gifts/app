@@ -5,6 +5,7 @@ import { LoanPayMore, type LoanPayMoreProps } from '@/components/LoanPayMore';
 import type { LoanRepayActionError } from '@/hooks/useLoanRepay';
 import type { MyLoan } from '@/lib/api';
 import { formatBitcoin, type FiatRateDay } from '@/lib/stats-money';
+import { useAuthStore } from '@/stores/auth-store';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
 
 vi.mock('@/components/WalletSetupNote', () => ({
@@ -126,12 +127,25 @@ function payMoreState(
   );
 }
 
-afterEach(cleanup);
+afterEach(() => {
+  cleanup();
+  useAuthStore.setState({ session: null, account: null });
+});
 
 describe('LoanPayMore', () => {
   const switchToFiat = (code: string): void => {
     fireEvent.click(screen.getByRole('button', { name: code }));
   };
+
+  it("starts in the signed-in member's account amount unit", () => {
+    useAuthStore.setState({
+      session: 'session',
+      account: { amountUnit: 'fiat' } as never,
+    });
+    show();
+    expect(screen.getByLabelText('Amount (USD)')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'USD' }).getAttribute('aria-pressed')).toBe('true');
+  });
 
   it('fills Max exactly and pays a valid BTC amount', () => {
     const { onPay } = show();
@@ -218,6 +232,42 @@ describe('LoanPayMore', () => {
     expect(
       screen.getByText('Enter an amount greater than zero with at most two decimals.'),
     ).toBeTruthy();
+  });
+
+  it('never reinterprets decimal or comma sats as the fiat loan currency', () => {
+    const php = loan({
+      goalCurrency: 'PHP',
+      goalAmount: '480.28',
+      maxSats: 9_283,
+      maxAmount: '480.28',
+    });
+    const { onPay } = show(php);
+    const input = screen.getByLabelText('Amount (₿)');
+    for (const value of ['1.5', '1,5']) {
+      fireEvent.change(input, { target: { value } });
+      expect(screen.getByText('Enter a whole ₿ amount greater than zero.')).toBeTruthy();
+      const pay = screen.getByRole('button', { name: 'Pay this amount' }) as HTMLButtonElement;
+      expect(pay.disabled).toBe(true);
+      fireEvent.click(pay);
+    }
+    expect(onPay).not.toHaveBeenCalled();
+  });
+
+  it('never submits sats for a fiat loan when conversion is unavailable', () => {
+    const php = loan({
+      goalCurrency: 'PHP',
+      goalAmount: '480.28',
+      maxSats: 9_283,
+      maxAmount: '480.28',
+    });
+    const onPay = vi.fn();
+    renderWithLocale(payMoreState(php, onPay, vi.fn(), { rateDay: null }));
+    fireEvent.change(screen.getByLabelText('Amount (₿)'), { target: { value: '1' } });
+    expect(screen.getByText(/No PHP exchange rate is available now/)).toBeTruthy();
+    const pay = screen.getByRole('button', { name: 'Pay this amount' }) as HTMLButtonElement;
+    expect(pay.disabled).toBe(true);
+    fireEvent.click(pay);
+    expect(onPay).not.toHaveBeenCalled();
   });
 
   it('keeps fiat cents exact and disables the form without a maximum rate', () => {

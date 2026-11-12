@@ -1301,15 +1301,19 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
-  const repaymentPrepayMatch = pathName.match(/^\/messages\/([^/]+)\/repayment\/prepay$/);
-  if (repaymentPrepayMatch && method === 'POST') {
+  const repaymentMatch = pathName.match(/^\/messages\/([^/]+)\/repayment$/);
+  if (repaymentMatch && method === 'POST') {
     const token = bearer(req);
     const account = token === null ? undefined : byToken.get(token);
     if (!account) {
       json(res, 401, { error: 'Unauthorized' });
       return;
     }
-    const messageId = decodeURIComponent(repaymentPrepayMatch[1]);
+    if (rawBody === '') {
+      json(res, 200, { pr: 'lnbc1', amountSats: 21 });
+      return;
+    }
+    const messageId = decodeURIComponent(repaymentMatch[1]);
     const loan = repaymentLoans.get(messageId);
     if (loan === undefined) {
       json(res, 404, { error: 'Not found' });
@@ -1366,18 +1370,6 @@ const server = http.createServer(async (req, res) => {
       ],
       waiting: [],
     });
-    return;
-  }
-
-  const repaymentMatch = pathName.match(/^\/messages\/([^/]+)\/repayment$/);
-  if (repaymentMatch && method === 'POST') {
-    const token = bearer(req);
-    const account = token === null ? undefined : byToken.get(token);
-    if (!account) {
-      json(res, 401, { error: 'Unauthorized' });
-      return;
-    }
-    json(res, 200, { pr: 'lnbc1', amountSats: 21 });
     return;
   }
 

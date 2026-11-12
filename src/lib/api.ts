@@ -3512,7 +3512,7 @@ export class LoanRepaymentError extends Error {
 /** Successful `POST /messages/:id/repayment/close` body. */
 export type LoanClose = z.infer<typeof repaymentCloseSchema>;
 
-/** Successful `POST /messages/:id/repayment/prepay` body. */
+/** Successful free-amount `POST /messages/:id/repayment` body. */
 export type LoanPrepay = z.infer<typeof repaymentPrepaySchema>;
 
 async function throwLoanRepaymentError(response: Response): Promise<never> {
@@ -3613,7 +3613,7 @@ export async function prepayLoan(
   messageId: string,
   amount: string,
 ): Promise<LoanPrepay> {
-  const response = await fetch(`/messages/${encodeURIComponent(messageId)}/repayment/prepay`, {
+  const response = await fetch(`/messages/${encodeURIComponent(messageId)}/repayment`, {
     method: 'POST',
     headers: {
       Authorization: `Bearer ${sessionToken}`,

@@ -1084,6 +1084,21 @@
     "es": "Un préstamo que aún recauda después de Terminar la recaudación. El diálogo ¿Terminar la recaudación? dice que es definitivo y que hará falta otro préstamo para más dinero, con Terminar definitivamente, Cancelar y Cerrar.",
     "fil": "Loan na nangangalap pa pagkatapos ng Tapusin ang pangangalap. Sinasabi ng dialog na Tapusin ang pangangalap? na permanente ito at kailangan ng bagong loan para sa dagdag na pera, na may Permanenteng tapusin, Kanselahin, at Isara."
   },
+  "/loans/repay:close-sending": {
+    "de": "Ein noch sammelnder Kredit, während die endgültige Schließanfrage gesendet wird. AmountEntry-Feld, Einheitenschalter, Maximum, Betrag zahlen und Sammeln beenden sind deaktiviert; darunter stehen ein Spinner und Das Sammeln wird beendet…, ohne Bestätigungsdialog.",
+    "es": "Un préstamo que aún recauda mientras se envía la solicitud para cerrarlo definitivamente. El campo y selector de AmountEntry, Máximo, Pagar este importe y Terminar la recaudación están desactivados; debajo aparecen un indicador y Finalizando la recaudación…, sin diálogo de confirmación.",
+    "fil": "Loan na nangangalap pa habang ipinapadala ang permanenteng close request. Hindi aktibo ang AmountEntry field, unit switch, Max, Bayaran ang halagang ito, at Tapusin ang pangangalap; nasa ibaba ang spinner at Tinatapos ang pangongolekta…, na walang confirmation dialog."
+  },
+  "/loans/repay:close-error": {
+    "de": "Ein noch sammelnder Kredit, nachdem seine endgültige Schließanfrage fehlgeschlagen ist. Der rote schließspezifische Hinweis Diese Rückzahlung konnte nicht gestartet werden. Bitte versuchen Sie es erneut. steht unter Sammeln beenden; AmountEntry und beide Aktionen sind wieder verfügbar, ohne Bestätigungsdialog.",
+    "es": "Un préstamo que aún recauda después de fallar la solicitud para cerrarlo definitivamente. El aviso rojo específico del cierre No se pudo iniciar esta devolución. Inténtalo de nuevo. aparece bajo Terminar la recaudación; AmountEntry y ambas acciones vuelven a estar disponibles, sin diálogo de confirmación.",
+    "fil": "Loan na nangangalap pa matapos mabigo ang permanenteng close request. Nasa ilalim ng Tapusin ang pangangalap ang pulang close-specific alert na Hindi masimulan ang pagbabayad na ito. Pakisubukan muli. Available ulit ang AmountEntry at parehong action, na walang confirmation dialog."
+  },
+  "/loans/repay:closed-loan": {
+    "de": "Ein manuell geschlossener Kredit, nachdem das Sammeln ohne Zahlung beendet wurde. Das normale Mehr zurückzahlen mit AmountEntry, Einheitenschalter, Maximum und Betrag zahlen bleibt; der Sammelhinweis und Sammeln beenden fehlen.",
+    "es": "Un préstamo cerrado manualmente después de terminar la recaudación sin un pago. Permanece Pagar más con AmountEntry, selector de unidad, Máximo y Pagar este importe; faltan el aviso de recaudación y Terminar la recaudación.",
+    "fil": "Manu-manong isinara ang loan matapos tapusin ang pangangalap nang walang bayad. Nananatili ang karaniwang Magbayad pa na may AmountEntry, unit switch, Max, at Bayaran ang halagang ito; wala ang collecting notice at Tapusin ang pangangalap."
+  },
   "/loans/repay:connecting": {
     "de": "Kredit A zeigt weiter den fälligen Betrag, die empfangenden Personen und den Fortschritt. Die Wallet ist noch nicht bereit, daher stehen im Zahlungsbereich ein Spinner und Ihre Wallet wird geprüft… statt Guthaben und Senden.",
     "es": "El préstamo A sigue mostrando el importe vencido, los destinatarios y el progreso. La wallet aún no está lista, así que el área de pago muestra un indicador giratorio y Comprobando tu wallet… en lugar del saldo y Enviar.",

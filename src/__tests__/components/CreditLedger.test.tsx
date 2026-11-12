@@ -26,13 +26,26 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 
-function ledger(body: unknown): void {
+function ledger(
+  body: unknown,
+  spotRates: Partial<Record<'USD' | 'CHF' | 'EUR' | 'PHP', string>> | null = null,
+): void {
   vi.stubGlobal(
     'fetch',
     vi.fn(async (input: RequestInfo) => {
       const url = String(input);
       if (url.includes('/gifts/stats')) {
         return new Response(JSON.stringify({ spendOverTime: [] }), { status: 200 });
+      }
+      if (url.includes('/fx/spot') && spotRates !== null) {
+        return new Response(
+          JSON.stringify({
+            asOf: '2026-11-01T00:00:00.000Z',
+            source: 'test',
+            rates: spotRates,
+          }),
+          { status: 200 },
+        );
       }
       return new Response(JSON.stringify(body), { status: 200 });
     }),
@@ -188,6 +201,52 @@ describe('CreditLedger', () => {
     expect(screen.queryByText('₱12.50')).toBeNull();
     expect(screen.getByText('₱0.00')).toBeTruthy();
     expect(screen.getByRole('img').textContent).toContain('₱10.00');
+  });
+
+  it('falls back to remaining bitcoin when a partial fiat amount is missing or malformed', async () => {
+    const partial = ledgerClosedPartialFiat.repayments[0]!;
+    const omittedPaidAmount = {
+      ...partial,
+      accountId: 'acc_diego',
+      name: 'Diego',
+      username: 'diego',
+      amount: '2.50',
+      paidSats: 25,
+      dueSats: 100,
+    };
+    delete omittedPaidAmount.paidAmount;
+    ledger(
+      {
+        ...ledgerClosedPartialFiat,
+        repayments: [
+          { ...partial, paidAmount: null },
+          {
+            ...partial,
+            accountId: 'acc_cara',
+            name: 'Cara',
+            username: 'cara',
+            amount: '5.00',
+            paidSats: 50,
+            paidAmount: 'bad partial',
+            dueSats: 200,
+          },
+          omittedPaidAmount,
+        ],
+      },
+      { USD: '100000.00' },
+    );
+    renderWithLocale(<CreditLedger messageId="partial-fiat-fallback" list="page" />);
+    await screen.findByText('Cara @cara');
+    await waitFor(() => expect(document.body.textContent).toContain('$0.70'));
+    expect(document.body.textContent).toContain('₿400');
+    expect(document.body.textContent).toContain('₿200');
+    expect(document.body.textContent).toContain('₿100');
+    expect(document.body.textContent).not.toContain('₱12.50');
+    expect(document.body.textContent).not.toContain('₱5.00');
+    expect(document.body.textContent).not.toContain('₱2.50');
+    const chart = screen.getByRole('img');
+    expect(chart.textContent).toContain('₿700 · $0.70');
+    expect(chart.getAttribute('aria-label')).toContain('₿700 · $0.70');
   });
 
   it('marks a due line that waits for the giver wallet in muted type', async () => {
@@ -613,7 +672,7 @@ describe('CreditLedger', () => {
     expect(screen.queryByText(/Sep 27/)).toBeNull();
   });
 
-  it('sums a fiat chart in the ask currency and ignores satoshis', async () => {
+  it('falls back to satoshis for a fiat chart without a stored paid amount', async () => {
     ledger({
       ...btc,
       currency: 'USD',
@@ -656,8 +715,8 @@ describe('CreditLedger', () => {
     renderWithLocale(<CreditLedger messageId="m1" />);
     const chart = await screen.findByRole('img', { name: /Day 1/ });
     const label = chart.getAttribute('aria-label') ?? '';
-    expect(label).toMatch(/\$1\.50 owed/);
-    expect(label).not.toMatch(/₿|\$5/);
+    expect(label).toMatch(/₿66 owed/);
+    expect(label).not.toMatch(/\$1\.50|\$5/);
     expect(label).toContain('2026');
     expect(label).not.toMatch(/\$5/);
   });
