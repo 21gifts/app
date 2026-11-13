@@ -353,8 +353,8 @@ Fetch failed. Button **Try again**.
 ## Screen: /stats
 
 - **URL:** `/stats` — public donation totals, a posts total, and self-reported wallet totals (no auth gate).
-- **What the user sees:** Dark 21.gifts header with one top-left arrow (previous in-app view, or `/welcome` when this tab has none) beside the wordmark (wordmark the localized public home when unsigned, `/welcome` when a session is hydrated; the wordmark is not that arrow) and a language switcher, heading **Donations**. When post stats load, a **Posts** total sits above the donation cards: living notes and replies counted together, hidden notes excluded, with a bar on each UTC day that has posts and a gap where a day has none. When wallet stats load, a **Wallets** section sits directly after **Posts** and before the gift tiles: tiles **In wallets** (BIP-177 **₿** of `totalSats` over the preferred-fiat spot in the same two-line layout as **Total spent**) and **Wallets with balance** (`fundedWalletCount`), the caption that this is the total of all 21.gifts wallets at the end of each UTC day as reported by the wallets themselves and that the fiat figures use today's spot rather than the day's price, and a line/area chart of `balanceOverTime[].totalSats` with ₿ ticks. Each chart point's `<title>` is the day, ₿, and the same spot fiat; bitcoin stands alone only while no spot is available. The wallet chart uses the gift chart's drawing, axes, and accent paint but has no `/stats/{day}` links (those are gift days). A single day is a horizontal line; an empty series omits the Wallets section, like a failed fetch. A failed post or wallet fetch omits only its own block and still shows the gift diagrams. Four KPI cards (total spent as BIP-177 **₿** plus the selected fiat, donations, people, period), a FiatPicker (CHF | EUR | USD | PHP) above the cards **only when unsigned**, then diagrams: **Total spend over time** (one cumulative chart; days with spend are markers on the series, not a wrapping date list) and **By month**. Each diagram has a `SegmentedControl tone="gift" shell="dark"` ₿ | selected fiat control that defaults to ₿; over time switches the series, and month bars rescale with the selected unit while each label shows only that unit. A missing fiat amount on a month label is an em dash when fiat is selected. Signed-in visitors still display and scale with the preferred code and cannot change it here. Empty database copy: **No donations recorded yet.** Stats body copy stays English.
-- **Actions:** Change language. Read the posts total, the wallet totals and chart, and the donation charts. Open a spend day (`/stats/{YYYY-MM-DD}`) from **Total spend over time** by clicking a day with spend. The wallet chart has no day links. When unsigned, pick CHF | EUR | USD | PHP on FiatPicker (writes cookie `fiat`). Switch **Total spend over time** and **By month** between ₿ and the selected fiat. **By month** labels show only the selected unit. Header **Stats** stays on this page; **Log in** goes to `/login`.
+- **What the user sees:** Dark 21.gifts header with one top-left arrow (previous in-app view, or `/welcome` when this tab has none) beside the wordmark (wordmark the localized public home when unsigned, `/welcome` when a session is hydrated; the wordmark is not that arrow) and a language switcher, heading **Donations**. When post stats load, a **Posts** total sits above the donation cards: living notes and replies counted together, hidden notes excluded, with a bar on each UTC day that has posts and a gap where a day has none. When wallet stats load, a **Wallets** section sits directly after **Posts** and before the gift tiles: tiles **In wallets** (BIP-177 **₿** of `totalSats` over the preferred-fiat spot in the same two-line layout as **Total spent**) and **Wallets with balance** (`fundedWalletCount`), the caption that this is the total of all 21.gifts wallets at the end of each UTC day as reported by the wallets themselves and that the fiat figures use today's spot rather than the day's price, and a line/area chart of `balanceOverTime[].totalSats` with ₿ ticks. Each chart point's `<title>` is the day, ₿, and the same spot fiat; bitcoin stands alone only while no spot is available. The wallet chart uses the gift chart's drawing, axes, and accent paint but has no `/stats/{day}` links (those are gift days). A single day is a horizontal line; an empty series omits the Wallets section, like a failed fetch. When the Wallets section is shown, **See how the wallet is used** links to `/stats/wallet`. A failed post or wallet fetch omits only its own block and still shows the gift diagrams. Four KPI cards (total spent as BIP-177 **₿** plus the selected fiat, donations, people, period), a FiatPicker (CHF | EUR | USD | PHP) above the cards **only when unsigned**, then diagrams: **Total spend over time** (one cumulative chart; days with spend are markers on the series, not a wrapping date list) and **By month**. Each diagram has a `SegmentedControl tone="gift" shell="dark"` ₿ | selected fiat control that defaults to ₿; over time switches the series, and month bars rescale with the selected unit while each label shows only that unit. A missing fiat amount on a month label is an em dash when fiat is selected. Signed-in visitors still display and scale with the preferred code and cannot change it here. Empty database copy: **No donations recorded yet.** Stats body copy stays English.
+- **Actions:** Change language. Read the posts total, the wallet totals and chart, and the donation charts. Open a spend day (`/stats/{YYYY-MM-DD}`) from **Total spend over time** by clicking a day with spend. The wallet chart has no day links. Open **See how the wallet is used** (`/stats/wallet`) when the Wallets section is shown. When unsigned, pick CHF | EUR | USD | PHP on FiatPicker (writes cookie `fiat`). Switch **Total spend over time** and **By month** between ₿ and the selected fiat. **By month** labels show only the selected unit. Header **Stats** stays on this page; **Log in** goes to `/login`.
 - **Calls:** `StatsPage`, `StatsLoader`, `StatsDashboard`, `FiatPicker`, `useSpotRate` (same-origin `GET /fx/spot` for the wallet fiat), `fetchGiftStats` (same-origin `GET /gifts/stats`), `fetchPostStats` (same-origin `GET /messages/stats`), `fetchWalletStats` (same-origin `GET /wallets/stats`), `LanguageSwitcher`.
 
 ### Variant: default
@@ -373,13 +373,13 @@ Inverted ranking fixture (June tall in ₿ / short in USD, July the reverse). **
 
 ### Variant: wallets
 
-Loaded gift and post stats plus the self-reported wallet series. **Wallets** shows **In wallets** ₿89'096 over **$89.10**, the current spot in the visitor's currency rather than a day's price, **Wallets with balance** 32, the UTC-day caption, and the ₿ line/area chart with no gift-day links. Each point tooltip is the day, ₿, and the same spot fiat.
+Loaded gift and post stats plus the self-reported wallet series. **Wallets** shows **In wallets** ₿89'096 over **$89.10**, the current spot in the visitor's currency rather than a day's price, **Wallets with balance** 32, the UTC-day caption, the link **See how the wallet is used** to `/stats/wallet`, and the ₿ line/area chart with no gift-day links. Each point tooltip is the day, ₿, and the same spot fiat.
 
 ![21.gifts wallet stats](images/stats-wallets.png)
 
 ### Variant: wallets-no-rate
 
-Loaded gift and post stats plus the self-reported wallet series. **Wallets** shows **In wallets** ₿89'096 with no fiat line because no spot rate is available, **Wallets with balance** 32, the UTC-day caption, and the ₿ line/area chart with no gift-day links. Each point tooltip is the day and ₿ only.
+Loaded gift and post stats plus the self-reported wallet series. **Wallets** shows **In wallets** ₿89'096 with no fiat line because no spot rate is available, **Wallets with balance** 32, the UTC-day caption, the link **See how the wallet is used** to `/stats/wallet`, and the ₿ line/area chart with no gift-day links. Each point tooltip is the day and ₿ only.
 
 ![21.gifts wallet stats without spot](images/stats-wallets-no-rate.png)
 
@@ -400,6 +400,67 @@ Waiting on `GET /gifts/stats`. Copy **Loading…**
 Fetch failed. Copy **Could not load donation stats. Please try again.** and **Try again**.
 
 ![21.gifts stats error](images/stats-error.png)
+
+## Screen: /stats/wallet
+
+- **URL:** `/stats/wallet` — public aggregates of how the in-app wallet is used since the production release (no auth gate, no person, account, or payment).
+- **What the user sees:** Same dark marketing frame as `/stats`: one top-left arrow, wordmark, language switcher, heading **Wallet usage**. Under it, the release instant and the as-of time (or a line that figures have no as-of time), then one takeaway: payments since release, active wallets, and how many times as often the forum is paid per day as in the 28 days before. Six tiles: **Payments**, **Volume** (₿ over the preferred fiat, or ₿ alone when no spot is available), **Wallets** (wallets with a balance from `GET /wallets/stats`, plus sending wallets; the balance count is omitted when that fetch fails), **Forum payments per day** (after · before), **Paid till charges**, and **Tondo fund balance** (end of the last day, computed from fund flows starting at 0 on the release day). Then, in order: **Payments per day by purpose** (stacked bars of payment counts, one colour per purpose whose count is above 0 on any day, including a purpose paid 0 sats; legend; tooltip per day with the count and the sats plus spot fiat), **Forum payments before and after the release** (gifts and hearts, release line), **Shop till: charges created and paid** (created muted, paid on top, release line), **Payment sizes** (one bar per bucket, count labels, sats in the tooltip), **Time of day (Manila, UTC+8)** (24 bars), and **Wallets per day** only when wallet stats loaded and the series from the release day is non-empty (line = wallets with a balance, bars = active wallets that day). **Where the money comes from and where it goes** has a **Day** `FilterMenu` (**All days**, then each UTC day, newest last; the control sits on a rounded `bg-paper` plate with padding, inside `scheme-light` with the light app tokens pinned by the homepage shops filters) and an Amount/Count switch shared by two diagrams, **Tondo fund** and **Member wallets (all together)**. Each diagram stays the three-column SVG while its container is at least 520 px wide. Below that it is a **Where from** list, the account with the shared-scale total, and a **Where to** list: the same nodes and order, body text at `text-sm` or larger, and a horizontal bar on the shared scale in the purpose colour (balance rows muted and last; a balance of exactly 0 adds no row). Then **All flows** over every day (from, to, purpose, payments, sats, fee), sorted by sats descending: a table from the `sm` breakpoint up, and below `sm` one stacked entry per flow (**From → To** and the purpose, then payments, sats with fiat when a spot exists, and fee) that does not break words. A closed **How these numbers are made** explains that a payment is counted once, diagram balances start at 0 on the release day, the headline balance on `/stats` can lag, the Tondo fund pays daily, moderator and welcome gifts, days are UTC, and the time-of-day chart is Manila time. Stats body copy stays English. There is no FiatPicker.
+- **Actions:** Change language. Read the tiles, charts, diagrams, and table. Open the **Day** list. Choose **All days** or one UTC day. Switch **Amount** / **Count**. Open **How these numbers are made**. Hover or focus a flow ribbon, or a row of the narrow diagram, to read its status line. Header **Stats** stays on `/stats`; this page is not a second back control. **Log in** goes to `/login`.
+- **Calls:** `WalletUsagePage`, `WalletUsageLoader`, `WalletUsageDashboard`, `FilterMenu`, `WalletFlowDiagram`, `accountBalances`, `OverTimeChart`, `formatCount`, `fetchWalletUsage` (same-origin `GET /wallets/usage`), `fetchWalletStats` (same-origin `GET /wallets/stats`), `useSpotRate` (same-origin `GET /fx/spot`), `LanguageSwitcher`.
+
+### Variant: default
+
+All days, Amount. Tiles include 661 payments, volume ₿1'875'089 over $1'875.09, 48 wallets with a balance and 33 sending, forum pace 110 after · 3 before, 84 paid till charges, and Tondo fund balance ₿425'057 over $425.06. **Payments per day by purpose** is the stacked chart. Both flow diagrams and **All flows** are visible. **How these numbers are made** stays closed.
+
+![21.gifts wallet usage](images/stats-wallet.png)
+
+### Variant: day
+
+Day 2026-11-10, still Amount. The **Tondo fund** diagram shows **Balance at start of day**. **All flows** still covers every day.
+
+![21.gifts wallet usage one day](images/stats-wallet-day.png)
+
+### Variant: day-open
+
+The **Day** list is open. The option **2026-11-10** is visible. **All days**, **2026-11-09**, **2026-11-11**, and **2026-11-12** are listed. **Amount** stays selected. The menu sits on a paper plate.
+
+![21.gifts wallet usage day list open](images/stats-wallet-day-open.png)
+
+### Variant: count
+
+All days, Count. Flow ribbons use payment counts. **Balance at start of day**, **Balance at end of day**, and **Fees** are absent.
+
+![21.gifts wallet usage by count](images/stats-wallet-count.png)
+
+### Variant: error
+
+`GET /wallets/usage` failed. One line: **Could not load wallet usage. Please try again.** No **Try again** button. No charts.
+
+![21.gifts wallet usage error](images/stats-wallet-error.png)
+
+### Variant: loading
+
+Waiting on `GET /wallets/usage`. Copy **Loading…**
+
+![21.gifts wallet usage loading](images/stats-wallet-loading.png)
+
+### Variant: method
+
+All days, Amount, with **How these numbers are made** open. The note says wallet payments are counted once, flow balances start at 0 on the release day, the `/stats` headline balance can lag, the Tondo fund pays daily, moderator and welcome gifts, days are UTC, and the time-of-day chart is Manila time.
+
+![21.gifts wallet usage method](images/stats-wallet-method.png)
+
+### Variant: no-rate
+
+All days, Amount, with wallet stats loaded and no spot. Volume and the Tondo fund balance show ₿ only. $1'875.09 is absent. **Wallets per day** is visible.
+
+![21.gifts wallet usage without spot](images/stats-wallet-no-rate.png)
+
+### Variant: no-wallets
+
+All days, Amount. `GET /wallets/stats` failed, so **Wallets per day** is absent. Sending wallets still show 33 sending. The other charts stay.
+
+![21.gifts wallet usage without wallet stats](images/stats-wallet-no-wallets.png)
 
 ## Screen: /trust-chain
 

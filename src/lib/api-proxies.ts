@@ -828,6 +828,16 @@ export async function proxyWalletStatsGet(request: Request): Promise<Response> {
 }
 
 /**
+ * Proxies GET /wallets/usage to the 21.gifts api.
+ *
+ * @param request - Incoming App Router request.
+ * @returns The upstream response.
+ */
+export async function proxyWalletUsageGet(request: Request): Promise<Response> {
+  return proxyApiRequest(request, '/wallets/usage');
+}
+
+/**
  * Proxies GET /trust-chain to the 21.gifts api (Bearer forwarded).
  *
  * @param request - Incoming App Router request (Bearer session).

@@ -943,6 +943,52 @@ const WALLET_STATS_DEFAULT = {
   ],
 };
 
+/** Wallet series for `/stats/wallet`. The day before release is dropped by the chart. */
+const WALLET_USAGE_SERIES = {
+  walletCount: 80,
+  fundedWalletCount: 48,
+  totalSats: 500000,
+  totalBtc: '0.00500000',
+  asOf: '2026-11-12T08:00:00.000Z',
+  balanceOverTime: [
+    {
+      day: '2026-11-08',
+      totalSats: 1000,
+      totalBtc: '0.00001000',
+      walletCount: 10,
+      fundedWalletCount: 4,
+    },
+    {
+      day: '2026-11-09',
+      totalSats: 200000,
+      totalBtc: '0.00200000',
+      walletCount: 40,
+      fundedWalletCount: 20,
+    },
+    {
+      day: '2026-11-10',
+      totalSats: 300000,
+      totalBtc: '0.00300000',
+      walletCount: 55,
+      fundedWalletCount: 30,
+    },
+    {
+      day: '2026-11-11',
+      totalSats: 400000,
+      totalBtc: '0.00400000',
+      walletCount: 70,
+      fundedWalletCount: 40,
+    },
+    {
+      day: '2026-11-12',
+      totalSats: 500000,
+      totalBtc: '0.00500000',
+      walletCount: 80,
+      fundedWalletCount: 48,
+    },
+  ],
+};
+
 /**
  * Serves the self-reported wallet series so `/stats` wallet baselines include it.
  *
@@ -43282,6 +43328,105 @@ test.describe('stats variant baselines', () => {
     await page.goto('/stats');
     await expect(page.getByRole('button', { name: 'Try again' })).toBeVisible();
     await shotScreen(page, 'state-stats-error');
+  });
+
+  test('stats wallet', async ({ page }) => {
+    await stubWalletStats(page, WALLET_USAGE_SERIES);
+    await fulfillSpot(page);
+    await page.goto('/stats/wallet');
+    await expect(page.getByRole('heading', { name: 'Payments per day by purpose' })).toBeVisible();
+    await expect(page.getByText("$1'875.09", { exact: true })).toBeVisible();
+    await shotScreen(page, 'screen-stats-wallet');
+  });
+
+  test('stats wallet day', async ({ page }) => {
+    await stubWalletStats(page, WALLET_USAGE_SERIES);
+    await fulfillSpot(page);
+    await page.goto('/stats/wallet');
+    await expect(page.getByText("$1'875.09", { exact: true })).toBeVisible();
+    await page.getByRole('combobox', { name: 'Day' }).click();
+    await page.getByRole('option', { name: '2026-11-10', exact: true }).click();
+    await expect(
+      page
+        .getByRole('img', { name: 'Tondo fund' })
+        .locator('[data-flow="Balance at start of day"]'),
+    ).toBeVisible();
+    await shotScreen(page, 'state-stats-wallet-day');
+  });
+
+  test('stats wallet day open', async ({ page }) => {
+    await stubWalletStats(page, WALLET_USAGE_SERIES);
+    await fulfillSpot(page);
+    await page.goto('/stats/wallet');
+    await expect(page.getByText("$1'875.09", { exact: true })).toBeVisible();
+    const day = page.getByRole('combobox', { name: 'Day' });
+    // The pill sits low on a long page. Centering it keeps the open list
+    // below the pill instead of pinning it to the window.
+    await day.evaluate((node) => {
+      node.scrollIntoView({ block: 'center', inline: 'nearest' });
+    });
+    await day.click();
+    await expect(page.getByRole('option', { name: '2026-11-10', exact: true })).toBeVisible();
+    await expect(page.getByRole('option', { name: 'All days', exact: true })).toBeVisible();
+    await shotScreen(page, 'state-stats-wallet-day-open');
+  });
+
+  test('stats wallet count', async ({ page }) => {
+    await stubWalletStats(page, WALLET_USAGE_SERIES);
+    await fulfillSpot(page);
+    await page.goto('/stats/wallet');
+    await expect(page.getByText("$1'875.09", { exact: true })).toBeVisible();
+    await page
+      .getByRole('group', { name: 'Flow metric' })
+      .getByRole('button', { name: 'Count' })
+      .click();
+    await expect(page.locator('[data-flow="Balance at end of day"]')).toHaveCount(0);
+    await shotScreen(page, 'state-stats-wallet-count');
+  });
+
+  test('stats wallet error', async ({ page }) => {
+    await page.route('**/wallets/usage', async (route) => {
+      await route.fulfill({ status: 503, contentType: 'application/json', body: '{}' });
+    });
+    await page.goto('/stats/wallet');
+    await expect(page.getByText('Could not load wallet usage. Please try again.')).toBeVisible();
+    await shotScreen(page, 'state-stats-wallet-error');
+  });
+
+  test('stats wallet loading', async ({ page }) => {
+    await page.route('**/wallets/usage', () => new Promise(() => undefined));
+    await page.goto('/stats/wallet');
+    await expect(page.getByText('Loading…')).toBeVisible();
+    await shotScreen(page, 'state-stats-wallet-loading');
+  });
+
+  test('stats wallet method', async ({ page }) => {
+    await stubWalletStats(page, WALLET_USAGE_SERIES);
+    await fulfillSpot(page);
+    await page.goto('/stats/wallet');
+    await expect(page.getByText("$1'875.09", { exact: true })).toBeVisible();
+    await page.getByText('How these numbers are made').click();
+    await expect(page.locator('details')).toHaveJSProperty('open', true);
+    await shotScreen(page, 'state-stats-wallet-method');
+  });
+
+  test('stats wallet no-rate', async ({ page }) => {
+    await stubWalletStats(page, WALLET_USAGE_SERIES);
+    await fulfillSpot(page, {});
+    const spot = page.waitForResponse('**/fx/spot');
+    await page.goto('/stats/wallet');
+    await spot;
+    await expect(page.getByText("₿1'875'089", { exact: true })).toBeVisible();
+    await expect(page.getByText("$1'875.09", { exact: true })).toHaveCount(0);
+    await shotScreen(page, 'state-stats-wallet-no-rate');
+  });
+
+  test('stats wallet no-wallets', async ({ page }) => {
+    await fulfillSpot(page);
+    await page.goto('/stats/wallet');
+    await expect(page.getByText("$1'875.09", { exact: true })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Wallets per day' })).toHaveCount(0);
+    await shotScreen(page, 'state-stats-wallet-no-wallets');
   });
 
   test('stats day empty', async ({ page }) => {

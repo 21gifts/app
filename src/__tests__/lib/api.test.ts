@@ -31,6 +31,7 @@ import {
   FUNDING_PLACES_FULL_ERROR,
   fetchPostStats,
   fetchWalletStats,
+  fetchWalletUsage,
   fetchAboutMePhoto,
   fetchProfilePhoto,
   fetchWideBanner,
@@ -1750,6 +1751,70 @@ describe('fetchWalletStats', () => {
     stubFetch({ ok: true, status: 200, body: { ...stats, totalSats: -1 } });
     await expect(fetchWalletStats()).rejects.toThrow(
       'Could not load wallet stats. Please try again.',
+    );
+  });
+});
+
+describe('fetchWalletUsage', () => {
+  const zero = { count: 0, sats: 0 };
+  const usage = {
+    releasedAt: '2026-11-09T11:17:00.000Z',
+    asOf: null,
+    totals: {
+      paymentCount: 1,
+      volumeSats: 10,
+      feeSats: 0,
+      medianSats: 10,
+      averageSats: 2.5,
+      activeWalletCount: 1,
+      sendingWalletCount: 1,
+      topFiveSenderShare: 0,
+      heartCount: 0,
+      paidShopChargeCount: 0,
+    },
+    days: [
+      {
+        day: '2026-11-09',
+        purposes: {
+          deposit: { count: 1, sats: 10 },
+          withdrawal: zero,
+          shop_purchase: zero,
+          forum_gift: zero,
+          transfer: zero,
+          fund_deposit: zero,
+          fund_payout: zero,
+          other: zero,
+        },
+        activeWalletCount: 1,
+        sendingWalletCount: 1,
+        receivingWalletCount: 0,
+      },
+    ],
+    flows: [],
+    amountBuckets: [],
+    hours: Array.from({ length: 24 }, (_, hourUtc) => ({ hourUtc, count: 0 })),
+    forum: [],
+    shopCharges: [],
+  };
+
+  it('returns the validated usage payload', async () => {
+    const fetchMock = stubFetch({ ok: true, status: 200, body: usage });
+    await expect(fetchWalletUsage()).resolves.toEqual(usage);
+    expect(fetchMock).toHaveBeenCalledWith('/wallets/usage');
+  });
+
+  it('throws visitor copy on a non-ok response, a failed fetch, and a bad body', async () => {
+    stubFetch({ ok: false, status: 503, body: { error: 'down' } });
+    await expect(fetchWalletUsage()).rejects.toThrow(
+      'Could not load wallet usage. Please try again.',
+    );
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new TypeError('Failed to fetch')));
+    await expect(fetchWalletUsage()).rejects.toThrow(
+      'Could not load wallet usage. Please try again.',
+    );
+    stubFetch({ ok: true, status: 200, body: { releasedAt: '2026-11-09' } });
+    await expect(fetchWalletUsage()).rejects.toThrow(
+      'Could not load wallet usage. Please try again.',
     );
   });
 });

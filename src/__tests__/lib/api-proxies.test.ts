@@ -93,6 +93,7 @@ import {
   proxyMessagesHiddenGet,
   proxyMessagesPlacesGet,
   proxyWalletStatsGet,
+  proxyWalletUsageGet,
   proxyMessagesInvoicePost,
   proxyMessagesRepaymentClosePost,
   proxyMessagesRepaymentDuePost,
@@ -825,6 +826,12 @@ describe('api proxy wrappers', () => {
     const fetchMock = stubApi();
     await proxyWalletStatsGet(new Request('http://localhost/wallets/stats'));
     expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/wallets/stats');
+  });
+
+  it('proxyWalletUsageGet hits /wallets/usage', async () => {
+    const fetchMock = stubApi();
+    await proxyWalletUsageGet(new Request('http://localhost/wallets/usage'));
+    expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/wallets/usage');
   });
 
   it('proxyGiftsStatsGet forwards recipient', async () => {

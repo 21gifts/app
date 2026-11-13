@@ -5904,6 +5904,51 @@
     "es": "En espera de GET /gifts. Texto Loading…",
     "fil": "Naghihintay sa GET /gifts. Teksto Loading…"
   },
+  "/stats/wallet:count": {
+    "de": "Alle Tage, Anzahl. Die Bänder nutzen die Zahlungsanzahl. Balance at start of day, Balance at end of day und Fees fehlen.",
+    "es": "Todos los días, cantidad. Las cintas usan el número de pagos. Faltan Balance at start of day, Balance at end of day y Fees.",
+    "fil": "Lahat ng araw, bilang. Gumagamit ang mga laso ng bilang ng bayad. Wala ang Balance at start of day, Balance at end of day, at Fees."
+  },
+  "/stats/wallet:day": {
+    "de": "Tag 2026-11-10, weiterhin Betrag. Das Diagramm Tondo fund zeigt Balance at start of day. All flows umfasst weiterhin alle Tage.",
+    "es": "Día 2026-11-10, sigue en importe. El diagrama Tondo fund muestra Balance at start of day. All flows sigue cubriendo todos los días.",
+    "fil": "Araw na 2026-11-10, halaga pa rin. Ipinapakita ng dayagram na Tondo fund ang Balance at start of day. Saklaw pa rin ng All flows ang bawat araw."
+  },
+  "/stats/wallet:day-open": {
+    "de": "Die Liste Day ist geöffnet. Die Option 2026-11-10 ist sichtbar. All days, 2026-11-09, 2026-11-11 und 2026-11-12 stehen in der Liste. Amount bleibt gewählt. Das Menü sitzt auf einer Papierfläche.",
+    "es": "La lista Day está abierta. La opción 2026-11-10 es visible. All days, 2026-11-09, 2026-11-11 y 2026-11-12 están en la lista. Amount sigue seleccionado. El menú está sobre una superficie de papel.",
+    "fil": "Bukas ang listahan ng Day. Nakikita ang opsyong 2026-11-10. Nasa listahan ang All days, 2026-11-09, 2026-11-11, at 2026-11-12. Napili pa rin ang Amount. Nasa ibabaw na papel ang menu."
+  },
+  "/stats/wallet:default": {
+    "de": "Alle Tage, Betrag. Die Kacheln zeigen 661 Zahlungen, Volumen ₿1'875'089 über $1'875.09, 48 Wallets mit Guthaben und 33 sendende, Foren-Tempo 110 nach · 3 vor, 84 bezahlte Kassenbelastungen und den Saldo des Tondo-Fonds ₿425'057 über $425.06. Payments per day by purpose ist das gestapelte Diagramm. Beide Flussdiagramme und All flows sind sichtbar. How these numbers are made bleibt zu.",
+    "es": "Todos los días, importe. Las fichas muestran 661 pagos, volumen ₿1'875'089 sobre $1'875.09, 48 wallets con saldo y 33 que envían, ritmo del foro 110 después · 3 antes, 84 cargos de caja pagados y el saldo del fondo Tondo ₿425'057 sobre $425.06. Payments per day by purpose es el gráfico apilado. Los dos diagramas de flujo y All flows están visibles. How these numbers are made sigue cerrado.",
+    "fil": "Lahat ng araw, halaga. Ipinapakita ng mga tile ang 661 bayad, dami na ₿1'875'089 sa ibabaw ng $1'875.09, 48 wallet na may balanse at 33 nagpapadala, bilis ng forum na 110 pagkatapos · 3 bago, 84 bayad na singil sa kahera, at ang balanse ng pondo ng Tondo na ₿425'057 sa ibabaw ng $425.06. Ang Payments per day by purpose ang nakasalansan na grapiko. Nakikita ang dalawang dayagram ng daloy at ang All flows. Sarado pa ang How these numbers are made."
+  },
+  "/stats/wallet:error": {
+    "de": "GET /wallets/usage ist fehlgeschlagen. Eine Zeile: Could not load wallet usage. Please try again. Keine Schaltfläche Try again. Keine Diagramme.",
+    "es": "Falló GET /wallets/usage. Una línea: Could not load wallet usage. Please try again. Sin botón Try again. Sin gráficos.",
+    "fil": "Nabigo ang GET /wallets/usage. Isang linya: Could not load wallet usage. Please try again. Walang pindutang Try again. Walang mga grapiko."
+  },
+  "/stats/wallet:loading": {
+    "de": "Wartet auf GET /wallets/usage. Text Loading…",
+    "es": "En espera de GET /wallets/usage. Texto Loading…",
+    "fil": "Naghihintay sa GET /wallets/usage. Teksto Loading…"
+  },
+  "/stats/wallet:method": {
+    "de": "Alle Tage, Betrag, mit geöffnetem How these numbers are made. Der Hinweis sagt, dass Wallet-Zahlungen einmal zählen, die Fluss-Salden am Release-Tag bei 0 beginnen, der Saldo auf /stats nachhängen kann, der Tondo-Fonds tägliche, Moderatoren- und Willkommensgeschenke zahlt, Tage UTC sind und das Tageszeitdiagramm Manila-Zeit ist.",
+    "es": "Todos los días, importe, con How these numbers are made abierto. La nota dice que los pagos del wallet se cuentan una vez, los saldos del flujo empiezan en 0 el día del lanzamiento, el saldo de /stats puede ir rezagado, el fondo Tondo paga los regalos diarios, de moderación y de bienvenida, los días son UTC y el gráfico de hora del día es hora de Manila.",
+    "fil": "Lahat ng araw, halaga, bukas ang How these numbers are made. Sinasabi ng tala na isang beses lang binibilang ang mga bayad sa wallet, nagsisimula sa 0 ang mga balanse ng daloy sa araw ng release, maaaring mahuli ang balanse sa /stats, ang pondo ng Tondo ang nagbabayad ng araw-araw, moderator, at welcome na mga regalo, UTC ang mga araw, at oras sa Maynila ang grapiko ng oras ng araw."
+  },
+  "/stats/wallet:no-rate": {
+    "de": "Alle Tage, Betrag, mit geladenen Wallet-Statistiken und ohne Spot. Volumen und der Saldo des Tondo-Fonds zeigen nur ₿. $1'875.09 fehlt. Wallets per day ist sichtbar.",
+    "es": "Todos los días, importe, con estadísticas de wallets cargadas y sin spot. El volumen y el saldo del fondo Tondo muestran solo ₿. Falta $1'875.09. Wallets per day está visible.",
+    "fil": "Lahat ng araw, halaga, naka-load ang estadistika ng wallet at walang spot. ₿ lamang ang dami at ang balanse ng pondo ng Tondo. Wala ang $1'875.09. Nakikita ang Wallets per day."
+  },
+  "/stats/wallet:no-wallets": {
+    "de": "Alle Tage, Betrag. GET /wallets/stats ist fehlgeschlagen, daher fehlt Wallets per day. Sendende Wallets zeigen weiterhin 33 sending. Die übrigen Diagramme bleiben.",
+    "es": "Todos los días, importe. Falló GET /wallets/stats, así que falta Wallets per day. Las wallets que envían siguen mostrando 33 sending. Los demás gráficos permanecen.",
+    "fil": "Lahat ng araw, halaga. Nabigo ang GET /wallets/stats, kaya wala ang Wallets per day. Ipinapakita pa rin ng mga wallet na nagpapadala ang 33 sending. Nanatili ang ibang mga grapiko."
+  },
   "/stats:default": {
     "de": "Geladene Statistiken. Posts zeigt Notizen und Antworten als eine Summe, mit einem Balken an Tagen mit Beiträgen und einer Lücke an Tagen ohne. Ein kumulatives Verlaufsdiagramm ist sichtbar. Die Skala ist standardmäßig ₿. Die Beschriftungen von By month zeigen nur den ₿-Betrag.\n\nSchlägt GET /wallets/stats fehl, entfällt der Abschnitt Wallets, und die Seite ist diese Standardvariante /stats. Der e2e-Mock antwortet auf /wallets/stats standardmäßig mit 503, sodass jede /stats-Variante außer wallets und wallets-no-rate diesen Zustand zeigt.",
     "es": "Estadísticas cargadas. Posts muestra notas y respuestas como un total, con una barra en los días que tienen publicaciones y un hueco en los días que no tienen. Un gráfico acumulativo a lo largo del tiempo es visible. La escala es ₿ por omisión. Las etiquetas de By month muestran solo el importe en ₿.\n\nCuando falla GET /wallets/stats, se omite la sección Wallets y la página es esta variante predeterminada de /stats. El mock de e2e responde a /wallets/stats con 503 por defecto, así que cada variante de /stats excepto wallets y wallets-no-rate muestra este estado.",
@@ -5930,14 +5975,14 @@
     "fil": "Baligtad na hanay ng ranggo (Hunyo mataas sa ₿ / maikli sa USD, Hulyo ang kabaligtaran). Ang Posts ay parehong kabuuan ng mga tala at sagot. Lumipat ang sukat sa USD sa Total spend over time at By month. Ang mga label ng By month ay nagpapakita lamang ng halaga sa USD."
   },
   "/stats:wallets": {
-    "de": "Geladene Spenden- und Post-Statistiken plus die selbst gemeldete Wallet-Reihe. Wallets zeigt In wallets ₿89'096 über $89.10, den aktuellen Spot in der Währung des Besuchers statt eines Tagespreises, Wallets with balance 32, die UTC-Tagesbeschriftung und das ₿-Linien-/Flächendiagramm ohne Links zu Geschenktagen. Der Tooltip jedes Punkts ist der Tag, ₿ und dasselbe Spot-Fiat.",
-    "es": "Estadísticas de donaciones y publicaciones cargadas más la serie de wallets autoinformada. Wallets muestra In wallets ₿89'096 sobre $89.10, el spot actual en la moneda del visitante en lugar del precio de un día, Wallets with balance 32, la leyenda del día UTC y el gráfico de línea/área en ₿ sin enlaces a días de regalos. El tooltip de cada punto es el día, ₿ y el mismo fiat del spot.",
-    "fil": "Nai-load na estadistika ng donasyon at post kasama ang self-reported na serye ng wallet. Ipinapakita ng Wallets ang In wallets ₿89'096 sa ibabaw ng $89.10, ang kasalukuyang spot sa pera ng bisita sa halip na ang presyo ng isang araw, Wallets with balance 32, ang caption ng araw sa UTC, at ang ₿ line/area chart na walang link sa mga araw ng regalo. Ang tooltip ng bawat punto ay ang araw, ₿, at ang parehong spot fiat."
+    "de": "Geladene Spenden- und Post-Statistiken plus die selbst gemeldete Wallet-Reihe. Wallets zeigt In wallets ₿89'096 über $89.10, den aktuellen Spot in der Währung des Besuchers statt eines Tagespreises, Wallets with balance 32, die UTC-Tagesbeschriftung, den Link See how the wallet is used nach /stats/wallet und das ₿-Linien-/Flächendiagramm ohne Links zu Geschenktagen. Der Tooltip jedes Punkts ist der Tag, ₿ und dasselbe Spot-Fiat.",
+    "es": "Estadísticas de donaciones y publicaciones cargadas más la serie de wallets autoinformada. Wallets muestra In wallets ₿89'096 sobre $89.10, el spot actual en la moneda del visitante en lugar del precio de un día, Wallets with balance 32, la leyenda del día UTC, el enlace See how the wallet is used hacia /stats/wallet y el gráfico de línea/área en ₿ sin enlaces a días de regalos. El tooltip de cada punto es el día, ₿ y el mismo fiat del spot.",
+    "fil": "Nai-load na estadistika ng donasyon at post kasama ang self-reported na serye ng wallet. Ipinapakita ng Wallets ang In wallets ₿89'096 sa ibabaw ng $89.10, ang kasalukuyang spot sa pera ng bisita sa halip na ang presyo ng isang araw, Wallets with balance 32, ang caption ng araw sa UTC, ang link na See how the wallet is used papunta sa /stats/wallet, at ang ₿ line/area chart na walang link sa mga araw ng regalo. Ang tooltip ng bawat punto ay ang araw, ₿, at ang parehong spot fiat."
   },
   "/stats:wallets-no-rate": {
-    "de": "Geladene Spenden- und Post-Statistiken plus die selbst gemeldete Wallet-Reihe. Wallets zeigt In wallets ₿89'096 ohne Fiat-Zeile, weil kein Spot-Kurs verfügbar ist, Wallets with balance 32, die UTC-Tagesbeschriftung und das ₿-Linien-/Flächendiagramm ohne Links zu Geschenktagen. Der Tooltip jedes Punkts ist nur der Tag und ₿.",
-    "es": "Estadísticas de donaciones y publicaciones cargadas más la serie de wallets autoinformada. Wallets muestra In wallets ₿89'096 sin línea de fiat porque no hay un tipo de cambio al contado disponible, Wallets with balance 32, la leyenda del día UTC y el gráfico de línea/área en ₿ sin enlaces a días de regalos. El tooltip de cada punto es solo el día y ₿.",
-    "fil": "Nai-load na estadistika ng donasyon at post kasama ang self-reported na serye ng wallet. Ipinapakita ng Wallets ang In wallets ₿89'096 na walang linya ng fiat dahil walang available na spot rate, Wallets with balance 32, ang caption ng araw sa UTC, at ang ₿ line/area chart na walang link sa mga araw ng regalo. Ang tooltip ng bawat punto ay ang araw at ₿ lamang."
+    "de": "Geladene Spenden- und Post-Statistiken plus die selbst gemeldete Wallet-Reihe. Wallets zeigt In wallets ₿89'096 ohne Fiat-Zeile, weil kein Spot-Kurs verfügbar ist, Wallets with balance 32, die UTC-Tagesbeschriftung, den Link See how the wallet is used nach /stats/wallet und das ₿-Linien-/Flächendiagramm ohne Links zu Geschenktagen. Der Tooltip jedes Punkts ist nur der Tag und ₿.",
+    "es": "Estadísticas de donaciones y publicaciones cargadas más la serie de wallets autoinformada. Wallets muestra In wallets ₿89'096 sin línea de fiat porque no hay un tipo de cambio al contado disponible, Wallets with balance 32, la leyenda del día UTC, el enlace See how the wallet is used hacia /stats/wallet y el gráfico de línea/área en ₿ sin enlaces a días de regalos. El tooltip de cada punto es solo el día y ₿.",
+    "fil": "Nai-load na estadistika ng donasyon at post kasama ang self-reported na serye ng wallet. Ipinapakita ng Wallets ang In wallets ₿89'096 na walang linya ng fiat dahil walang available na spot rate, Wallets with balance 32, ang caption ng araw sa UTC, ang link na See how the wallet is used papunta sa /stats/wallet, at ang ₿ line/area chart na walang link sa mga araw ng regalo. Ang tooltip ng bawat punto ay ang araw at ₿ lamang."
   },
   "/terms:default": {
     "de": "Der einzige Zustand: Titel, Datum der letzten Aktualisierung, die Überschrift Wallet und Daten und die fünf nummerierten Klauseln, Marketing-Rahmen.",

@@ -7044,6 +7044,60 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/stats/wallet:default",
+    "label": "/stats/wallet default",
+    "visual": "screen-stats-wallet",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/stats/wallet:day",
+    "label": "/stats/wallet day",
+    "visual": "state-stats-wallet-day",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/stats/wallet:day-open",
+    "label": "/stats/wallet day-open",
+    "visual": "state-stats-wallet-day-open",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/stats/wallet:count",
+    "label": "/stats/wallet count",
+    "visual": "state-stats-wallet-count",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/stats/wallet:error",
+    "label": "/stats/wallet error",
+    "visual": "state-stats-wallet-error",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/stats/wallet:loading",
+    "label": "/stats/wallet loading",
+    "visual": "state-stats-wallet-loading",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/stats/wallet:method",
+    "label": "/stats/wallet method",
+    "visual": "state-stats-wallet-method",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/stats/wallet:no-rate",
+    "label": "/stats/wallet no-rate",
+    "visual": "state-stats-wallet-no-rate",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/stats/wallet:no-wallets",
+    "label": "/stats/wallet no-wallets",
+    "visual": "state-stats-wallet-no-wallets",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/trust-chain:default",
     "label": "/trust-chain default",
     "visual": "screen-trust-chain",
