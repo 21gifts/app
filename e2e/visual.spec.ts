@@ -30553,6 +30553,7 @@ test.describe('welcome forum variants', () => {
     const collecting = loanWith(loanA, {
       sats: 18_000,
       fundedAt: null,
+      closedAt: null,
       daysDue: 0,
       daysPaid: 0,
       repaidSats: 0,
@@ -30581,6 +30582,7 @@ test.describe('welcome forum variants', () => {
     const collecting = loanWith(loanA, {
       sats: 18_000,
       fundedAt: null,
+      closedAt: null,
       daysDue: 0,
       daysPaid: 0,
       repaidSats: 0,
