@@ -990,6 +990,30 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/wallet:loans-collecting-sunday",
+    "label": "/wallet loans-collecting-sunday",
+    "visual": "state-wallet-loans-collecting-sunday",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/wallet:loans-collecting-sunday-open",
+    "label": "/wallet loans-collecting-sunday-open",
+    "visual": "state-wallet-loans-collecting-sunday-open",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/wallet:loans-due-no-rate",
+    "label": "/wallet loans-due-no-rate",
+    "visual": "state-wallet-loans-due-no-rate",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/wallet:loans-due-no-rate-open",
+    "label": "/wallet loans-due-no-rate-open",
+    "visual": "state-wallet-loans-due-no-rate-open",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/wallet:loans-multi",
     "label": "/wallet loans-multi",
     "visual": "state-wallet-loans-multi",
@@ -1761,6 +1785,12 @@
     "id": "/loans/repay:pay-more-waiting",
     "label": "/loans/repay pay-more-waiting",
     "visual": "state-loans-repay-pay-more-waiting",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/loans/repay:pay-more-all-waiting",
+    "label": "/loans/repay pay-more-all-waiting",
+    "visual": "state-loans-repay-pay-more-all-waiting",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
@@ -3420,6 +3450,30 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/welcome:loans-collecting-sunday",
+    "label": "/welcome loans-collecting-sunday",
+    "visual": "state-welcome-loans-collecting-sunday",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:loans-collecting-sunday-open",
+    "label": "/welcome loans-collecting-sunday-open",
+    "visual": "state-welcome-loans-collecting-sunday-open",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:loans-due-no-rate",
+    "label": "/welcome loans-due-no-rate",
+    "visual": "state-welcome-loans-due-no-rate",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:loans-due-no-rate-open",
+    "label": "/welcome loans-due-no-rate-open",
+    "visual": "state-welcome-loans-due-no-rate-open",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/welcome:loans-due",
     "label": "/welcome loans-due",
     "visual": "state-welcome-loans-due",
@@ -5010,6 +5064,12 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/profile:posts-open-repay-collecting",
+    "label": "/profile posts-open-repay-collecting",
+    "visual": "state-profile-posts-open-repay-collecting",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/profile:mention-suggest-reply",
     "label": "/profile mention-suggest-reply",
     "visual": "state-profile-mention-suggest-reply",
@@ -5193,6 +5253,12 @@
     "id": "/members/[accountId]:posts-open-repay-today",
     "label": "/members/[accountId] posts-open-repay-today",
     "visual": "state-members-posts-open-repay-today",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/members/[accountId]:posts-open-repay-collecting",
+    "label": "/members/[accountId] posts-open-repay-collecting",
+    "visual": "state-members-posts-open-repay-collecting",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {

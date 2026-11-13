@@ -247,7 +247,7 @@ export function LoanRepayScreen(): ReactElement {
   const payable = summary.payableSats;
   const waiting = summary.waitingSats;
   const hasPayable = summary.payableLoans > 0;
-  const hasWaiting = waiting === null ? summary.waitingPeople > 0 : waiting > 0;
+  const hasWaiting = summary.waitingPeople > 0 || (waiting !== null && waiting > 0);
   const payablePeople = ledgersMissing
     ? loans.loans.reduce((sum, loan) => sum + loan.due.payablePeople, 0)
     : new Set(shares.filter((share) => !share.waiting).map((share) => share.accountId)).size;
@@ -281,12 +281,15 @@ export function LoanRepayScreen(): ReactElement {
     const tomorrow = new Date();
     tomorrow.setDate(tomorrow.getDate() + 1);
     const nextIsTomorrow = summary.next.dueOn === localDay(tomorrow);
-    const amount =
+    const amount: string | null =
       summary.next.sats === null
-        ? (summary.next.amount as string)
+        ? summary.next.amount
         : summary.next.amount === null
           ? money(summary.next.sats)
           : `${summary.next.amount} · ${bitcoinText(summary.next.sats)}`;
+    if (amount === null) {
+      return null;
+    }
     const variables = {
       amount,
       count: nextPeople,
@@ -312,9 +315,9 @@ export function LoanRepayScreen(): ReactElement {
 
   const definedPayableLabel = definedDueLabel(loans.loans, 'payable', numberFormat);
   const definedWaiting = definedDueLabel(loans.loans, 'waiting', numberFormat);
-  const waitingLabel =
+  const waitingLabel: string | null =
     waiting === null
-      ? (definedWaiting as string)
+      ? definedWaiting
       : definedWaiting === null
         ? money(waiting)
         : `${definedWaiting} · ${bitcoinText(waiting)}`;
@@ -326,9 +329,9 @@ export function LoanRepayScreen(): ReactElement {
       .map((loan) => loan.goalCurrency),
   );
   const singlePayableFiat = payableCurrencies.size === 1 && !payableCurrencies.has('BTC');
-  const bigAmount =
+  const bigAmount: string | null =
     payable === null
-      ? (definedPayableLabel as string)
+      ? definedPayableLabel
       : definedPayableLabel === null
         ? formatBitcoin(payable, numberFormat)
         : singlePayableFiat
@@ -425,7 +428,7 @@ export function LoanRepayScreen(): ReactElement {
             ) : null}
           </>
         )}
-        {hasWaiting ? (
+        {hasWaiting && waitingLabel !== null ? (
           <p className="mt-2 text-sm tabular-nums lining-nums text-app-muted">
             {t('loans.waitsLater', { amount: waitingLabel })}
           </p>
@@ -434,7 +437,13 @@ export function LoanRepayScreen(): ReactElement {
       </div>
     ) : null;
 
-  const payableShares = shares.filter((share) => !share.waiting);
+  const payableLoans = loans.loans.filter(
+    (loan) => loan.due.payableSats !== null && loan.due.payableSats > 0,
+  );
+  const payableLoanIds = new Set(payableLoans.map((loan) => loan.messageId));
+  const payableShares = shares.filter(
+    (share) => !share.waiting && payableLoanIds.has(share.messageId),
+  );
   const keptByLoan = new Map<string, number>();
   const payableWithinDue = payableShares.filter((share) => {
     const kept = keptByLoan.get(share.messageId) ?? 0;
@@ -444,9 +453,6 @@ export function LoanRepayScreen(): ReactElement {
     keptByLoan.set(share.messageId, kept + 1);
     return true;
   });
-  const payableLoans = loans.loans.filter((loan) =>
-    loan.due.payableSats === null ? loan.due.payablePeople > 0 : loan.due.payableSats > 0,
-  );
   const payableLoanAmounts = payableLoans.map((loan) => ({
     code: loan.goalCurrency,
     amount: loan.due.payableAmount,
@@ -494,11 +500,11 @@ export function LoanRepayScreen(): ReactElement {
     repay.activeAction.kind !== 'due' &&
     (repay.phase === 'preparing' || repay.phase === 'sending' || repay.phase === 'waiting');
   const rememberAndPay = (onlyShares?: ReadonlySet<string>): void => {
-    setPaidLoans(loans.loans);
+    setPaidLoans(payableLoans);
     setSendingSats(onlyShares === undefined ? fullSendSats : fittingSats);
     const amounts = onlyShares === undefined ? fullSendAmounts : fittingAmounts;
     setSendingAmounts(amounts);
-    repay.pay(loans.loans, onlyShares, shareAmounts);
+    repay.pay(payableLoans, onlyShares, shareAmounts);
   };
 
   const idleControls =
@@ -655,9 +661,11 @@ export function LoanRepayScreen(): ReactElement {
       </p>
       {!hasPayable ? null : (
         <>
-          <p className="mt-1 text-3xl font-semibold tabular-nums lining-nums text-app-fg">
-            {bigAmount}
-          </p>
+          {bigAmount === null ? null : (
+            <p className="mt-1 text-3xl font-semibold tabular-nums lining-nums text-app-fg">
+              {bigAmount}
+            </p>
+          )}
           {smallAmount === null ? null : (
             <p className="text-sm tabular-nums lining-nums text-app-muted">{smallAmount}</p>
           )}
@@ -671,7 +679,7 @@ export function LoanRepayScreen(): ReactElement {
       )}
       {hasWaiting ? (
         <p className="mt-3 rounded-xl bg-app-card px-3 py-2 text-sm text-app-muted">
-          {hasPayable
+          {hasPayable && waitingLabel !== null
             ? t(summary.waitingPeople === 1 ? 'loans.waitsOne' : 'loans.waitsMany', {
                 amount: waitingLabel,
                 count: summary.waitingPeople,

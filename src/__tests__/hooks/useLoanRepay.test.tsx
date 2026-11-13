@@ -2741,6 +2741,7 @@ describe('useLoanRepay visual pins', () => {
     ['repay-pay-more-nothing-due', 'failed', 21_000],
     ['repay-pay-more-sending', 'sending', 21_000],
     ['repay-pay-more-waiting', 'waiting', 21_000],
+    ['repay-pay-more-all-waiting', 'repaid', 21_000],
     ['repay-pay-more-unconfirmed', 'unconfirmed', 21_000],
     ['repay-pay-more-success', 'repaid', 21_000],
     ['repay-pay-more-shortfall', 'idle', 500],

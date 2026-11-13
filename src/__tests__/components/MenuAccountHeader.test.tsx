@@ -251,6 +251,104 @@ describe('MenuAccountHeader', () => {
     expect(screen.getByText("₱30.00 + $3.00 · ₿1'000")).toBeTruthy();
   });
 
+  it('keeps a known bitcoin due visible beside an unpriced fiat loan', () => {
+    signIn();
+    vi.mocked(useMyLoans).mockReturnValue({
+      loans: {
+        sundayRest: false,
+        loans: [
+          {
+            due: {
+              payableSats: 1_000,
+              payablePeople: 1,
+              waitingSats: 0,
+              waitingPeople: 0,
+              behindDays: 0,
+              payableAmount: null,
+              waitingAmount: null,
+              lastPayment: false,
+            },
+            fundedAt: '2026-10-01',
+            goalCurrency: 'BTC',
+            goalSats: 10_000,
+            sats: 10_000,
+            next: null,
+          } as never,
+          {
+            due: {
+              payableSats: null,
+              payablePeople: 1,
+              waitingSats: null,
+              waitingPeople: 0,
+              behindDays: 0,
+              payableAmount: '30.00',
+              waitingAmount: null,
+              lastPayment: false,
+            },
+            fundedAt: '2026-10-01',
+            goalCurrency: 'PHP',
+            goalSats: 10_000,
+            sats: 10_000,
+            next: null,
+          } as never,
+        ],
+      },
+      reload: vi.fn(),
+    });
+    renderWithLocale(<MenuAccountHeader onNavigate={vi.fn()} tight={false} open />);
+    expect(screen.getByText("₿1'000").textContent).toBe("₿1'000 · $1.00");
+    expect(screen.getByRole('link', { name: 'Send' })).toBeTruthy();
+  });
+
+  it('keeps a priced fiat due visible beside an unpriced fiat loan', () => {
+    signIn();
+    vi.mocked(useMyLoans).mockReturnValue({
+      loans: {
+        sundayRest: false,
+        loans: [
+          {
+            due: {
+              payableSats: 1_000,
+              payablePeople: 1,
+              waitingSats: 0,
+              waitingPeople: 0,
+              behindDays: 0,
+              payableAmount: '30.00',
+              waitingAmount: null,
+              lastPayment: false,
+            },
+            fundedAt: '2026-10-01',
+            goalCurrency: 'PHP',
+            goalSats: 10_000,
+            sats: 10_000,
+            next: null,
+          } as never,
+          {
+            due: {
+              payableSats: null,
+              payablePeople: 1,
+              waitingSats: null,
+              waitingPeople: 0,
+              behindDays: 0,
+              payableAmount: '15.00',
+              waitingAmount: null,
+              lastPayment: false,
+            },
+            fundedAt: '2026-10-01',
+            goalCurrency: 'PHP',
+            goalSats: 10_000,
+            sats: 10_000,
+            next: null,
+          } as never,
+        ],
+      },
+      reload: vi.fn(),
+    });
+    renderWithLocale(<MenuAccountHeader onNavigate={vi.fn()} tight={false} open />);
+    expect(screen.getByText("₱45.00 · ₿1'000")).toBeTruthy();
+    expect(screen.getByRole('link', { name: 'Send' })).toBeTruthy();
+  });
+
   it('re-reads loans once whenever the Menu opens', () => {
     signIn();
     const reload = vi.fn().mockResolvedValue(null);

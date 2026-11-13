@@ -312,6 +312,17 @@ describe('LoansCard', () => {
     expect(screen.queryByRole('link', { name: 'Pay early or end collecting' })).toBeNull();
   });
 
+  it('uses ordinary repayment wording for a manually closed underfunded loan', () => {
+    show({
+      sundayRest: true,
+      loans: [loan({ fundedAt: null, closedAt: '2026-10-09T12:00:00.000Z' })],
+    });
+    expect(screen.queryByText('Not fully funded yet.')).toBeNull();
+    expect(screen.queryByText('No repayments on Sundays')).toBeNull();
+    expect(screen.queryByRole('link', { name: 'Pay early or end collecting' })).toBeNull();
+    expect(screen.getByRole('link', { name: 'Repay your loan' })).toBeTruthy();
+  });
+
   it('shows an ordinary due-today row with the funded status', () => {
     show({ sundayRest: false, loans: [loan()] });
     expect(screen.getByText('Fully funded.')).toBeTruthy();
@@ -364,6 +375,55 @@ describe('LoansCard', () => {
     expect(screen.getByRole('link', { name: 'Repayment details' })).toBeTruthy();
   });
 
+  it('omits unavailable due, waiting, and next amounts instead of rendering null', () => {
+    const unavailable = phpLoan({
+      totalSats: null,
+      maxSats: null,
+      due: {
+        ...loan().due,
+        payableSats: null,
+        payablePeople: 1,
+        payableAmount: null,
+        waitingSats: null,
+        waitingPeople: 1,
+        waitingAmount: null,
+      },
+      next: { dueOn: '2026-10-11', sats: null, amount: null },
+    });
+    show({ sundayRest: false, loans: [unavailable] });
+    expect(screen.getByText('Due today')).toBeTruthy();
+    expect(screen.queryByText(/null/)).toBeNull();
+    expect(screen.queryByText(/waiting for/)).toBeNull();
+    expect(screen.getByRole('link', { name: 'Repayment details' })).toBeTruthy();
+
+    cleanup();
+    show({
+      sundayRest: false,
+      loans: [
+        {
+          ...unavailable,
+          due: {
+            ...unavailable.due,
+            payablePeople: 0,
+          },
+        },
+        loan({
+          messageId: 'known-zero',
+          due: {
+            ...loan().due,
+            payableSats: 0,
+            payablePeople: 0,
+            waitingSats: 0,
+            waitingPeople: 0,
+          },
+        }),
+      ],
+    });
+    expect(screen.getByText('Nothing to send now')).toBeTruthy();
+    expect(screen.queryByText(/^Next:/)).toBeNull();
+    expect(screen.queryByText(/null/)).toBeNull();
+  });
+
   it('shows every payable fiat currency with its own sum', () => {
     show({
       sundayRest: false,
@@ -383,6 +443,51 @@ describe('LoansCard', () => {
       ],
     });
     expect(screen.getByText("₱30.00 + $3.00 · ₿1'000")).toBeTruthy();
+  });
+
+  it('keeps a known bitcoin due payable beside an unpriced fiat loan', () => {
+    show({
+      sundayRest: false,
+      loans: [
+        loan(),
+        phpLoan({
+          messageId: 'unpriced',
+          due: {
+            ...loan().due,
+            payableSats: null,
+            payablePeople: 1,
+            payableAmount: '30.00',
+          },
+        }),
+      ],
+    });
+    expect(screen.getByText("₿1'000").textContent).toBe("₿1'000 · $1.00");
+    expect(screen.queryByText(/null/)).toBeNull();
+    expect(screen.getByRole('link', { name: 'Send' })).toBeTruthy();
+  });
+
+  it('keeps a priced fiat due payable beside an unpriced fiat loan', () => {
+    show({
+      sundayRest: false,
+      loans: [
+        phpLoan({
+          messageId: 'priced',
+          due: { ...loan().due, payableSats: 1_000, payableAmount: '30.00' },
+        }),
+        phpLoan({
+          messageId: 'unpriced',
+          due: {
+            ...loan().due,
+            payableSats: null,
+            payablePeople: 1,
+            payableAmount: '15.00',
+          },
+        }),
+      ],
+    });
+    expect(screen.getByText("₱45.00 · ₿1'000")).toBeTruthy();
+    expect(screen.queryByText(/null/)).toBeNull();
+    expect(screen.getByRole('link', { name: 'Send' })).toBeTruthy();
   });
 
   it('shows the stored next amount beside its bitcoin', () => {

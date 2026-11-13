@@ -13,7 +13,7 @@ import { useMyLoans } from '@/hooks/useMyLoans';
 import { useSpotRate } from '@/hooks/useSpotRate';
 import type { MyLoan } from '@/lib/api';
 import { forumGoalPercent } from '@/lib/forum-goal';
-import { definedDueLabel, summarizeLoans } from '@/lib/loan-repay';
+import { definedDueLabel, isCollecting, summarizeLoans } from '@/lib/loan-repay';
 import { formatBitcoin, formatFiatDisplay, satsToFiatAmount } from '@/lib/stats-money';
 
 /** Props for {@link LoansCard}. */
@@ -49,14 +49,19 @@ export function LoansCard({ place }: LoansCardProps): ReactElement | null {
     return null;
   }
   const summary = summarizeLoans(loans, numberFormat);
+  const collecting = loans.loans.some(isCollecting);
   const definedPayable = definedDueLabel(loans.loans, 'payable', numberFormat);
   const definedWaiting = definedDueLabel(loans.loans, 'waiting', numberFormat);
   const hasWaiting =
-    summary.waitingSats === null ? summary.waitingPeople > 0 : summary.waitingSats > 0;
+    summary.waitingPeople > 0 || (summary.waitingSats !== null && summary.waitingSats > 0);
   const single = summary.count === 1;
   const title = single ? t('welcome.loanTitle') : t('welcome.loansTitle', { count: summary.count });
   const status = single
-    ? t(summary.fundedCount === 1 ? 'welcome.loanFunded' : 'welcome.loanCollecting')
+    ? collecting
+      ? t('welcome.loanCollecting')
+      : summary.fundedCount === 1
+        ? t('welcome.loanFunded')
+        : null
     : t('welcome.loansFunded', { funded: summary.fundedCount, count: summary.count });
   const border =
     summary.tone === 'danger'
@@ -71,13 +76,13 @@ export function LoansCard({ place }: LoansCardProps): ReactElement | null {
       ? bitcoin
       : `${bitcoin} · ${formatFiatDisplay(amount, fiat, numberFormat)}`;
   };
-  const definedWithBitcoin = (defined: string | null, sats: number | null): string => {
+  const definedWithBitcoin = (defined: string | null, sats: number | null): string | null => {
     if (sats === null) {
-      // The api leaves only the priced sat field null; the stored fiat amount remains present.
-      return defined as string;
+      return defined;
     }
     return defined === null ? money(sats) : `${defined} · ${formatBitcoin(sats, numberFormat)}`;
   };
+  const waitingAmount = definedWithBitcoin(definedWaiting, summary.waitingSats);
   const nextLine = (): string | null => {
     if (summary.next === null) {
       return null;
@@ -85,6 +90,9 @@ export function LoansCard({ place }: LoansCardProps): ReactElement | null {
     const tomorrow = new Date();
     tomorrow.setDate(tomorrow.getDate() + 1);
     const amount = definedWithBitcoin(summary.next.amount, summary.next.sats);
+    if (amount === null) {
+      return null;
+    }
     if (summary.next.dueOn === localDay(tomorrow)) {
       return t('loans.nextTomorrow', { amount });
     }
@@ -122,7 +130,7 @@ export function LoansCard({ place }: LoansCardProps): ReactElement | null {
     >
       <div>
         <h2 className="text-sm font-semibold text-app-fg">{title}</h2>
-        <p className="mt-1 text-sm text-app-muted">{status}</p>
+        {status === null ? null : <p className="mt-1 text-sm text-app-muted">{status}</p>}
       </div>
       {single && loans.loans[0] !== undefined ? (
         renderGoalBar(loans.loans[0])
@@ -157,22 +165,24 @@ export function LoansCard({ place }: LoansCardProps): ReactElement | null {
                         days: summary.behindDays,
                       })}
                 </p>
-                <p
-                  className={`text-base font-semibold tabular-nums lining-nums ${
-                    summary.behindDays > 0 ? 'text-app-danger' : 'text-app-fg'
-                  }`}
-                >
-                  {summary.payableSats === null ? (
-                    (definedPayable as string)
-                  ) : definedPayable === null ? (
-                    <>
-                      {formatBitcoin(summary.payableSats, numberFormat)}
-                      {preferredFiatSuffix(summary.payableSats, rateDay, fiat, numberFormat)}
-                    </>
-                  ) : (
-                    `${definedPayable} · ${formatBitcoin(summary.payableSats, numberFormat)}`
-                  )}
-                </p>
+                {summary.payableSats === null && definedPayable === null ? null : (
+                  <p
+                    className={`text-base font-semibold tabular-nums lining-nums ${
+                      summary.behindDays > 0 ? 'text-app-danger' : 'text-app-fg'
+                    }`}
+                  >
+                    {summary.payableSats === null ? (
+                      definedPayable
+                    ) : definedPayable === null ? (
+                      <>
+                        {formatBitcoin(summary.payableSats, numberFormat)}
+                        {preferredFiatSuffix(summary.payableSats, rateDay, fiat, numberFormat)}
+                      </>
+                    ) : (
+                      `${definedPayable} · ${formatBitcoin(summary.payableSats, numberFormat)}`
+                    )}
+                  </p>
+                )}
               </div>
               {summary.payableSats === null ? (
                 <Link
@@ -212,16 +222,16 @@ export function LoansCard({ place }: LoansCardProps): ReactElement | null {
               </Link>
             </div>
           )}
-          {hasWaiting ? (
+          {hasWaiting && waitingAmount !== null ? (
             <p className="mt-1 text-xs tabular-nums lining-nums text-app-muted">
               {t(summary.waitingPeople === 1 ? 'loans.waitingOne' : 'loans.waitingMany', {
-                amount: definedWithBitcoin(definedWaiting, summary.waitingSats),
+                amount: waitingAmount,
                 count: summary.waitingPeople,
               })}
             </p>
           ) : null}
         </div>
-      ) : summary.sundayRest ? (
+      ) : collecting && summary.sundayRest ? (
         <div className="mt-3 rounded-xl bg-app-card px-3 py-2">
           <p className="font-semibold text-app-fg">{t('loans.sundayRest')}</p>
         </div>
@@ -230,7 +240,7 @@ export function LoansCard({ place }: LoansCardProps): ReactElement | null {
           href="/loans/repay"
           className="mt-3 flex min-h-11 items-center justify-between gap-3 rounded-xl bg-app-card px-3 py-2 text-sm font-medium text-app-fg"
         >
-          {t('loans.collectingOpen')}
+          {t(collecting ? 'loans.collectingOpen' : 'forum.repayOpen')}
           <ChevronRight aria-hidden="true" className="h-5 w-5 shrink-0 text-app-muted" />
         </Link>
       )}

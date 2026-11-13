@@ -518,6 +518,23 @@ const PINNED_RESULTS: Record<string, PinnedLoanRepay> = {
     ],
     prepayMessageId: 'loan-a',
   },
+  'repay-pay-more-all-waiting': {
+    ...PIN_BASE,
+    phase: 'repaid',
+    balanceSats: 21_000,
+    activeAction: { kind: 'prepay', messageId: 'loan-a' },
+    prepayWaiting: [
+      {
+        dayIndex: 12,
+        recipientAccountId: 'acc_carla',
+        name: 'Carla',
+        username: 'carla',
+        amountSats: 200,
+        amount: null,
+      },
+    ],
+    prepayMessageId: 'loan-a',
+  },
   'repay-pay-more-unconfirmed': {
     ...PIN_BASE,
     phase: 'unconfirmed',
