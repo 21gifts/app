@@ -285,7 +285,7 @@ app/
 │   │   ├── WalletFooterActions.tsx # Receive / Send footer buttons shared by /wallet and /welcome
 │   │   ├── WalletPanelView.tsx  # Open Receive or Send view as the page body (/wallet and over /welcome)
 │   │   ├── WalletReceive.tsx    # Receive view: address QR, 21.gifts address, Copy, Set an amount, Move Bitcoin from another wallet (hadExternalWallet)
-│   │   ├── WalletPaymentDetails.tsx # /wallet/payment one payment: amount, status, sender, summary, technical details
+│   │   ├── WalletPaymentDetails.tsx # /wallet/payment one payment: amount, status, counterparty, summary, technical details
 │   │   ├── WalletBalance.tsx    # /wallet large balance (connecting / ready with ₿/fiat tap / error or setup note)
 │   │   ├── WalletHistory.tsx    # /wallet payments card (newest first, paged on scroll)
 │   │   ├── WalletSetupNote.tsx  # Inline wallet setup note on money screens (Try again)
