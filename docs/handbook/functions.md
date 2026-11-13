@@ -7665,6 +7665,13 @@ The class exists so the composer can tell a refused free first post from any oth
 - **Returns / side effects:** The stored figures of every loan whose corresponding payable/waiting people count is above zero, grouped by fiat currency, summed with `definedFiatSum`, and joined in first-seen currency order with `+` (for example **₱30.00 + $3.00**); null when any part is bitcoin, missing, or invalid, or when nothing is in that part. Using the people count preserves the stored fiat display when the matching sat total is null. It delegates to `definedFiatAmounts`. It is pure and performs no I/O.
 - **Used by:** `LoanRepayScreen` (the due amount, **Send**, and the waiting notes), `LoansCard` (the due box and the waiting line), and `MenuAccountHeader` (its repayment row).
 
+## Function: unpricedDueLabels
+
+- **Purpose:** Keeps each active fiat loan whose payable or waiting satoshi price is unavailable on its own fiat-only display line, so it is never combined with bitcoin belonging to another loan.
+- **Inputs:** Loans of `GET /me/loans`, the part (`payable` reads `due.payableAmount`, `waiting` reads `due.waitingAmount`), and the visitor number format.
+- **Returns / side effects:** Returns the usable stored fiat label, loan index, and people count for every matching loan with a null satoshi field and a positive people count, in loan order. It omits priced loans (including known zeroes), inactive parts, BTC amounts, and missing or invalid stored amounts. It is pure and performs no I/O.
+- **Used by:** `LoanRepayScreen` and `LoansCard` for separate fiat-only payable and waiting lines.
+
 ## Function: definedFiatSum
 
 - **Purpose:** One summing rule for stored fiat amounts: convert each string to cents, add them, and format the total in the same currency.

@@ -19,6 +19,7 @@ import {
   parseLoanAmount,
   remainingRepaymentSats,
   summarizeLoans,
+  unpricedDueLabels,
   validatedRepaymentPayment,
 } from '@/lib/loan-repay';
 
@@ -241,7 +242,12 @@ describe('summarizeLoans', () => {
       behindDays: 2,
       payableLoans: 4,
       lastPayment: true,
-      next: { dueOn: '2026-10-10', sats: null, amount: '₱2.00' },
+      next: {
+        dueOn: '2026-10-10',
+        sats: null,
+        amount: null,
+        unpriced: [{ loanIndex: 3, amount: '₱2.00' }],
+      },
       tone: 'danger',
       payable: true,
     });
@@ -320,7 +326,7 @@ describe('summarizeLoans', () => {
         },
         'ch',
       ).next,
-    ).toEqual({ dueOn: '2026-10-11', sats: 40, amount: null });
+    ).toEqual({ dueOn: '2026-10-11', sats: 40, amount: null, unpriced: [] });
   });
 
   it('sums the stored next amounts of one fiat currency on the same day', () => {
@@ -332,7 +338,7 @@ describe('summarizeLoans', () => {
     expect(
       summarizeLoans({ sundayRest: false, loans: [php('199.99', 40), php('200.48', 60)] }, 'ch')
         .next,
-    ).toEqual({ dueOn: '2026-10-11', sats: 100, amount: '₱400.47' });
+    ).toEqual({ dueOn: '2026-10-11', sats: 100, amount: '₱400.47', unpriced: [] });
   });
 
   it('sums the known next sats when one same-day fiat loan has no rate', () => {
@@ -361,7 +367,34 @@ describe('summarizeLoans', () => {
         },
         'ch',
       ).next,
-    ).toEqual({ dueOn, sats: 120, amount: '₱9.00' });
+    ).toEqual({
+      dueOn,
+      sats: 120,
+      amount: '₱6.00',
+      unpriced: [{ loanIndex: 0, amount: '₱3.00' }],
+    });
+  });
+
+  it('keeps a known-zero next amount fiat-only instead of showing bitcoin zero', () => {
+    expect(
+      summarizeLoans(
+        {
+          sundayRest: false,
+          loans: [
+            loan({
+              goalCurrency: 'PHP',
+              next: { dueOn: '2026-10-11', sats: 0, amount: '3.00' },
+            }),
+          ],
+        },
+        'ch',
+      ).next,
+    ).toEqual({
+      dueOn: '2026-10-11',
+      sats: null,
+      amount: null,
+      unpriced: [{ loanIndex: 0, amount: '₱3.00' }],
+    });
   });
 
   it('sums known due sats while retaining people and stored fiat for an unpriced loan', () => {
@@ -412,7 +445,7 @@ describe('summarizeLoans', () => {
     });
   });
 
-  it('leaves a due part null only when every loan lacks its sat field', () => {
+  it('leaves a due part null when no loan has positive known sats', () => {
     const summary = summarizeLoans(
       {
         sundayRest: false,
@@ -439,6 +472,38 @@ describe('summarizeLoans', () => {
     expect(summary).toMatchObject({ payableSats: null, waitingSats: null, payable: false });
   });
 
+  it('keeps active unpriced due parts null beside a known-zero sibling', () => {
+    const unpriced = loan({
+      goalCurrency: 'PHP',
+      due: {
+        ...loan().due,
+        payableSats: null,
+        payablePeople: 1,
+        payableAmount: '30.00',
+        waitingSats: null,
+        waitingPeople: 1,
+        waitingAmount: '15.00',
+      },
+    });
+    const zero = loan({
+      messageId: 'zero',
+      due: {
+        ...loan().due,
+        payableSats: 0,
+        payablePeople: 0,
+        waitingSats: 0,
+        waitingPeople: 0,
+      },
+    });
+    expect(summarizeLoans({ sundayRest: false, loans: [unpriced, zero] }, 'ch')).toMatchObject({
+      payableSats: null,
+      waitingSats: null,
+      payableLoans: 1,
+      waitingPeople: 1,
+      payable: false,
+    });
+  });
+
   it('sums mixed same-day currencies in first-seen order and leaves undefined parts null', () => {
     const dueOn = '2026-10-11';
     const mixed = summarizeLoans(
@@ -452,7 +517,7 @@ describe('summarizeLoans', () => {
       },
       'ch',
     );
-    expect(mixed.next).toEqual({ dueOn, sats: 120, amount: '₱3.00 + $3.00' });
+    expect(mixed.next).toEqual({ dueOn, sats: 120, amount: '₱3.00 + $3.00', unpriced: [] });
     const missing = summarizeLoans(
       {
         sundayRest: false,
@@ -463,12 +528,12 @@ describe('summarizeLoans', () => {
       },
       'ch',
     );
-    expect(missing.next).toEqual({ dueOn, sats: 100, amount: null });
+    expect(missing.next).toEqual({ dueOn, sats: 100, amount: null, unpriced: [] });
     const bitcoin = summarizeLoans(
       { sundayRest: false, loans: [loan({ next: { dueOn, sats: 100, amount: '3.00' } })] },
       'ch',
     );
-    expect(bitcoin.next).toEqual({ dueOn, sats: 100, amount: null });
+    expect(bitcoin.next).toEqual({ dueOn, sats: 100, amount: null, unpriced: [] });
     const mixedBitcoin = summarizeLoans(
       {
         sundayRest: false,
@@ -479,7 +544,7 @@ describe('summarizeLoans', () => {
       },
       'ch',
     );
-    expect(mixedBitcoin.next).toEqual({ dueOn, sats: 100, amount: null });
+    expect(mixedBitcoin.next).toEqual({ dueOn, sats: 100, amount: null, unpriced: [] });
   });
 });
 
@@ -909,5 +974,31 @@ describe('definedDueLabel', () => {
     ).toBeNull();
     expect(definedDueLabel([php('30.00', null)], 'waiting', 'ch')).toBeNull();
     expect(definedDueLabel([], 'payable', 'ch')).toBeNull();
+  });
+
+  it('keeps unpriced active loans out of the priced sum and formats each separately', () => {
+    const unpriced = php('15.00', '3.00');
+    unpriced.due.payableSats = null;
+    unpriced.due.payablePeople = 1;
+    unpriced.due.waitingSats = null;
+    unpriced.due.waitingPeople = 2;
+    expect(definedDueLabel([php('30.00', '6.00'), unpriced], 'payable', 'ch')).toBe('₱30.00');
+    expect(definedDueLabel([php('30.00', '6.00'), unpriced], 'waiting', 'ch')).toBe('₱6.00');
+    expect(unpricedDueLabels([php('30.00', '6.00'), unpriced], 'payable', 'ch')).toEqual([
+      { loanIndex: 1, label: '₱15.00', people: 1 },
+    ]);
+    expect(unpricedDueLabels([php('30.00', '6.00'), unpriced], 'waiting', 'ch')).toEqual([
+      { loanIndex: 1, label: '₱3.00', people: 2 },
+    ]);
+  });
+
+  it('omits inactive or unusable unpriced due labels', () => {
+    const inactive = php('15.00', '3.00');
+    inactive.due.payableSats = null;
+    inactive.due.payablePeople = 0;
+    const bitcoin = loan({
+      due: { ...loan().due, payableSats: null, payablePeople: 1, payableAmount: null },
+    });
+    expect(unpricedDueLabels([inactive, bitcoin], 'payable', 'ch')).toEqual([]);
   });
 });

@@ -1244,6 +1244,20 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/wallet',
+    id: 'loans-closed-underfunded',
+    image: 'wallet-loans-closed-underfunded.png',
+    visual: 'state-wallet-loans-closed-underfunded',
+    needle: 'state /wallet loans-closed-underfunded',
+  },
+  {
+    route: '/wallet',
+    id: 'loans-closed-underfunded-open',
+    image: 'wallet-loans-closed-underfunded-open.png',
+    visual: 'state-wallet-loans-closed-underfunded-open',
+    needle: 'state /wallet loans-closed-underfunded-open',
+  },
+  {
+    route: '/wallet',
     id: 'loans-due-no-rate',
     image: 'wallet-loans-due-no-rate.png',
     visual: 'state-wallet-loans-due-no-rate',
@@ -1255,6 +1269,20 @@ export const SCREEN_VARIANTS = [
     image: 'wallet-loans-due-no-rate-open.png',
     visual: 'state-wallet-loans-due-no-rate-open',
     needle: 'state /wallet loans-due-no-rate-open',
+  },
+  {
+    route: '/wallet',
+    id: 'loans-mixed-rate',
+    image: 'wallet-loans-mixed-rate.png',
+    visual: 'state-wallet-loans-mixed-rate',
+    needle: 'state /wallet loans-mixed-rate',
+  },
+  {
+    route: '/wallet',
+    id: 'loans-mixed-rate-open',
+    image: 'wallet-loans-mixed-rate-open.png',
+    visual: 'state-wallet-loans-mixed-rate-open',
+    needle: 'state /wallet loans-mixed-rate-open',
   },
   {
     route: '/wallet',
@@ -1620,6 +1648,13 @@ export const SCREEN_VARIANTS = [
     image: 'loans-repay.png',
     visual: 'screen-loans-repay',
     needle: 'screen /loans/repay',
+  },
+  {
+    route: '/loans/repay',
+    id: 'mixed-rate',
+    image: 'loans-repay-mixed-rate.png',
+    visual: 'state-loans-repay-mixed-rate',
+    needle: 'state /loans/repay mixed-rate',
   },
   {
     route: '/loans/repay',
@@ -4032,6 +4067,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/welcome',
+    id: 'repay-closed',
+    image: 'welcome-repay-closed.png',
+    visual: 'state-welcome-repay-closed',
+    needle: 'state /welcome repay-closed',
+  },
+  {
+    route: '/welcome',
     id: 'loan-lend',
     image: 'welcome-loan-lend.png',
     visual: 'state-welcome-loan-lend',
@@ -4116,6 +4158,20 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/welcome',
+    id: 'loans-closed-underfunded',
+    image: 'welcome-loans-closed-underfunded.png',
+    visual: 'state-welcome-loans-closed-underfunded',
+    needle: 'state /welcome loans-closed-underfunded',
+  },
+  {
+    route: '/welcome',
+    id: 'loans-closed-underfunded-open',
+    image: 'welcome-loans-closed-underfunded-open.png',
+    visual: 'state-welcome-loans-closed-underfunded-open',
+    needle: 'state /welcome loans-closed-underfunded-open',
+  },
+  {
+    route: '/welcome',
     id: 'loans-due-no-rate',
     image: 'welcome-loans-due-no-rate.png',
     visual: 'state-welcome-loans-due-no-rate',
@@ -4127,6 +4183,20 @@ export const SCREEN_VARIANTS = [
     image: 'welcome-loans-due-no-rate-open.png',
     visual: 'state-welcome-loans-due-no-rate-open',
     needle: 'state /welcome loans-due-no-rate-open',
+  },
+  {
+    route: '/welcome',
+    id: 'loans-mixed-rate',
+    image: 'welcome-loans-mixed-rate.png',
+    visual: 'state-welcome-loans-mixed-rate',
+    needle: 'state /welcome loans-mixed-rate',
+  },
+  {
+    route: '/welcome',
+    id: 'loans-mixed-rate-open',
+    image: 'welcome-loans-mixed-rate-open.png',
+    visual: 'state-welcome-loans-mixed-rate-open',
+    needle: 'state /welcome loans-mixed-rate-open',
   },
   {
     route: '/welcome',
@@ -5992,6 +6062,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/profile',
+    id: 'posts-open-repay-closed',
+    image: 'profile-posts-open-repay-closed.png',
+    visual: 'state-profile-posts-open-repay-closed',
+    needle: 'state /profile posts-open-repay-closed',
+  },
+  {
+    route: '/profile',
     id: 'mention-suggest-reply',
     image: 'profile-mention-suggest-reply.png',
     visual: 'state-profile-mention-suggest-reply',
@@ -6206,6 +6283,13 @@ export const SCREEN_VARIANTS = [
     image: 'members-posts-open-repay-today.png',
     visual: 'state-members-posts-open-repay-today',
     needle: 'state /members posts-open-repay-today',
+  },
+  {
+    route: '/members/[accountId]',
+    id: 'posts-open-repay-closed',
+    image: 'members-posts-open-repay-closed.png',
+    visual: 'state-members-posts-open-repay-closed',
+    needle: 'state /members posts-open-repay-closed',
   },
   {
     route: '/members/[accountId]',

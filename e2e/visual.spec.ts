@@ -25,7 +25,9 @@ import {
   ledgerWith,
   loanA,
   loanB,
+  loanClosedUnderfunded,
   loanCollecting,
+  mixedPricedUnpricedLoans,
   productionPhpLoans,
   loanWith,
   myLoans,
@@ -3964,6 +3966,26 @@ test.describe('screen baselines', () => {
     await shotScreen(page, 'state-wallet-loans-collecting-sunday-open');
   });
 
+  test('state /wallet loans-closed-underfunded', async ({ page }) => {
+    await seedLoanMember(page);
+    await seedLoanData(page, [loanClosedUnderfunded], {}, true);
+    await page.goto('/wallet?visual=balance-ready');
+    const card = page.getByRole('region', { name: 'Your loan' });
+    await expect(card.getByText('No repayments on Sundays')).toBeVisible();
+    await expect(card.getByRole('link', { name: 'Repay your loan' })).toHaveCount(0);
+    await shotScreen(page, 'state-wallet-loans-closed-underfunded');
+  });
+
+  test('state /wallet loans-closed-underfunded-open', async ({ page }) => {
+    await seedLoanMember(page);
+    await seedLoanData(page, [loanClosedUnderfunded], {}, true);
+    await page.goto('/wallet?visual=balance-ready');
+    await page.getByRole('button', { name: 'Show loan' }).click();
+    await expect(page.getByRole('link', { name: loanClosedUnderfunded.text })).toBeVisible();
+    await expect(page.getByText('No repayments on Sundays')).toBeVisible();
+    await shotScreen(page, 'state-wallet-loans-closed-underfunded-open');
+  });
+
   test('state /wallet loans-due-no-rate', async ({ page }) => {
     const noRateLoan = loanWith(loanB, {
       totalSats: null,
@@ -4000,6 +4022,28 @@ test.describe('screen baselines', () => {
     await expect(page.getByRole('link', { name: noRateLoan.text })).toBeVisible();
     await expect(page.getByRole('link', { name: 'Repayment details' })).toBeVisible();
     await shotScreen(page, 'state-wallet-loans-due-no-rate-open');
+  });
+
+  test('state /wallet loans-mixed-rate', async ({ page }) => {
+    await seedLoanMember(page);
+    await seedLoanData(page, mixedPricedUnpricedLoans, {});
+    await page.goto('/wallet?visual=balance-ready');
+    const card = page.getByRole('region', { name: 'Your loans (2)' });
+    await expect(card.getByText("₱30.00 · ₿1'000", { exact: true })).toBeVisible();
+    await expect(card.getByText('₱15.00', { exact: true })).toBeVisible();
+    await expect(card.getByRole('link', { name: 'Send' })).toBeVisible();
+    await shotScreen(page, 'state-wallet-loans-mixed-rate');
+  });
+
+  test('state /wallet loans-mixed-rate-open', async ({ page }) => {
+    await seedLoanMember(page);
+    await seedLoanData(page, mixedPricedUnpricedLoans, {});
+    await page.goto('/wallet?visual=balance-ready');
+    await page.getByRole('button', { name: 'Show loans' }).click();
+    await expect(page.getByRole('link', { name: mixedPricedUnpricedLoans[0]!.text })).toBeVisible();
+    await expect(page.getByRole('link', { name: mixedPricedUnpricedLoans[1]!.text })).toBeVisible();
+    await expect(page.getByText('₱15.00', { exact: true })).toBeVisible();
+    await shotScreen(page, 'state-wallet-loans-mixed-rate-open');
   });
 
   test('state /wallet loans-multi', async ({ page }) => {
@@ -7052,6 +7096,27 @@ test.describe('loans repay screens', () => {
       text: 'Due today',
     });
     await shotScreen(page, 'screen-loans-repay');
+  });
+
+  test('state /loans/repay mixed-rate', async ({ page }) => {
+    const unpricedLedger = ledgerWith(ledgerB, {
+      repayments: ledgerB.repayments.map((row) =>
+        row.status === 'due' ? { ...row, sats: null, dueSats: null } : row,
+      ),
+    });
+    await loanShot(page, {
+      loans: mixedPricedUnpricedLoans,
+      ledgers: {
+        'loan-mixed-priced': ledgerB,
+        'loan-mixed-unpriced': unpricedLedger,
+      },
+      text: 'Due today',
+    });
+    await expect(page.getByText("₱30.00 · ₿1'000", { exact: true })).toBeVisible();
+    await expect(page.getByText('₱15.00', { exact: true })).toBeVisible();
+    await expect(page.getByText(/₱6\.00 · ₿120 waits for a lender/)).toBeVisible();
+    await expect(page.getByText(/₱3\.00 waits for a lender/)).toBeVisible();
+    await shotScreen(page, 'state-loans-repay-mixed-rate');
   });
 
   test('state /loans/repay who-open', async ({ page }) => {
@@ -13333,6 +13398,50 @@ test.describe('onboarding screens', () => {
     await shotScreen(page, 'state-profile-posts-open-repay-collecting');
   });
 
+  test('state /profile posts-open-repay-closed', async ({ page }) => {
+    await seedProfilePage(page);
+    await page.route(/\/messages\/[^/]+\/repayment$/, async (route) => {
+      await route.fulfill({ status: 404, contentType: 'application/json', body: '{}' });
+    });
+    await fulfillRateDay(page);
+    await page.clock.install({ time: LOAN_CLOCK });
+    await page.route(/\/forum\/members\/acc_e2e\/posts$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [
+            {
+              id: '44444444-4444-4444-8444-444444444444',
+              accountId: 'acc_e2e',
+              name: 'Ada',
+              text: 'Need help with a train ticket',
+              createdAt: '2026-08-02T10:00:00.000Z',
+              sats: 10500,
+              goalSats: 21000,
+              goalRepayable: true,
+              goalTermDays: 30,
+              goalClosedAt: '2026-08-03T10:00:00.000Z',
+              payable: true,
+              hasPhoto: false,
+              hasVideo: false,
+              videoContentType: null,
+              role: 'basis',
+              replyCount: 0,
+            },
+          ],
+        }),
+      });
+    });
+    await openProfile(page);
+    await page.getByRole('button', { name: '14 posts' }).click();
+    const repay = page.getByRole('link', { name: 'Repay your loan' });
+    await expect(page.getByText('50%')).toBeVisible();
+    await expect(repay).toHaveAttribute('href', '/loans/repay');
+    await repay.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-profile-posts-open-repay-closed');
+  });
+
   /** Posts open on `/profile`, Ada's note expanded, reaction field ready. */
   async function openProfileReaction(page: Page): Promise<Locator> {
     await seedProfilePage(page);
@@ -17520,6 +17629,95 @@ test.describe('onboarding screens', () => {
     await expect(repay).toBeVisible();
     await repay.scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-members-posts-open-repay-today');
+  });
+
+  test('state /members posts-open-repay-closed', async ({ page }) => {
+    const memberId = '11111111-1111-4111-8111-111111111111';
+    await page.route(/\/messages\/[^/]+\/repayment$/, async (route) => {
+      await route.fulfill({ status: 404, contentType: 'application/json', body: '{}' });
+    });
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          id: memberId,
+          name: 'Ada',
+          username: 'alice',
+          lightningAddress: 'alice@walletofsatoshi.com',
+          rulesAgreedAt: 1_700_000_001,
+          setup: null,
+          missing: [],
+        }),
+      });
+    });
+    await page.route(`**/forum/members/${memberId}`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          id: memberId,
+          name: 'Ada',
+          username: 'alice',
+          lightningAddress: 'alice@walletofsatoshi.com',
+          role: 'basis',
+          location: null,
+          createdAt: '2026-01-15T12:00:00.000Z',
+          aboutMe: null,
+          profileMessage: null,
+          postCount: 1,
+          replyCount: 0,
+        }),
+      });
+    });
+    await page.route(`**/forum/members/${memberId}/posts`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [
+            {
+              id: '44444444-4444-4444-8444-444444444444',
+              accountId: memberId,
+              name: 'Ada',
+              text: 'Need help with a train ticket',
+              createdAt: '2026-08-02T10:00:00.000Z',
+              sats: 10500,
+              goalSats: 21000,
+              goalRepayable: true,
+              goalTermDays: 30,
+              goalClosedAt: '2026-08-03T10:00:00.000Z',
+              payable: true,
+              hasPhoto: false,
+              hasVideo: false,
+              videoContentType: null,
+              role: 'basis',
+              replyCount: 0,
+            },
+          ],
+        }),
+      });
+    });
+    await fulfillRateDay(page);
+    await page.clock.install({ time: LOAN_CLOCK });
+    await page.route(`**/forum/members/${memberId}/activity`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(EMPTY_ACTIVITY),
+      });
+    });
+    await page.goto(`/members/${memberId}`);
+    await page.getByRole('button', { name: '1 post' }).click();
+    await expect(page.getByText('50%')).toBeVisible();
+    const repay = page.getByRole('link', { name: 'Repay your loan' });
+    await expect(repay).toHaveAttribute('href', '/loans/repay');
+    await repay.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-members-posts-open-repay-closed');
   });
 
   test('state /members posts-open-repay-collecting', async ({ page }) => {
@@ -30346,6 +30544,48 @@ test.describe('welcome forum variants', () => {
     await shotScreen(page, 'state-welcome-repay-collecting');
   });
 
+  test('state /welcome repay-closed', async ({ page }) => {
+    await page.route(/\/messages\/[^/]+\/repayment$/, async (route) => {
+      await route.fulfill({ status: 404, contentType: 'application/json', body: '{}' });
+    });
+    await seedAda(page);
+    await fulfillRateDay(page);
+    await page.clock.install({ time: LOAN_CLOCK });
+    await page.route(/\/messages(?:\?|$)/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [
+            {
+              id: 'm-goal-credit',
+              accountId: 'acc_e2e',
+              name: 'Ada',
+              text: 'Need help with a train ticket',
+              createdAt: '2026-08-28T12:00:00.000Z',
+              sats: 10500,
+              goalSats: 21000,
+              goalRepayable: true,
+              goalTermDays: 30,
+              goalClosedAt: '2026-08-29T10:00:00.000Z',
+              payable: true,
+              hasPhoto: false,
+              role: 'basis',
+            },
+          ],
+        }),
+      });
+    });
+    await page.goto('/welcome');
+    await chooseForumView(page, 'All');
+    await expect(page.getByText('50%')).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Repay your loan' })).toHaveAttribute(
+      'href',
+      '/loans/repay',
+    );
+    await shotScreen(page, 'state-welcome-repay-closed');
+  });
+
   /** Signed-in Ada and Maria's loan that still collects (or is full), with an empty thread. */
   async function seedLoanCard(
     page: Page,
@@ -30624,6 +30864,22 @@ test.describe('welcome forum variants', () => {
     await shotScreen(page, 'state-welcome-loans-collecting-sunday-open');
   });
 
+  test('state /welcome loans-closed-underfunded', async ({ page }) => {
+    await openWelcomeLoans(page, myLoans([loanClosedUnderfunded], true));
+    const card = page.getByRole('region', { name: 'Your loan' });
+    await expect(card.getByText('No repayments on Sundays')).toBeVisible();
+    await expect(card.getByRole('link', { name: 'Repay your loan' })).toHaveCount(0);
+    await shotScreen(page, 'state-welcome-loans-closed-underfunded');
+  });
+
+  test('state /welcome loans-closed-underfunded-open', async ({ page }) => {
+    await openWelcomeLoans(page, myLoans([loanClosedUnderfunded], true));
+    await page.getByRole('button', { name: 'Show loan' }).click();
+    await expect(page.getByRole('link', { name: loanClosedUnderfunded.text })).toBeVisible();
+    await expect(page.getByText('No repayments on Sundays')).toBeVisible();
+    await shotScreen(page, 'state-welcome-loans-closed-underfunded-open');
+  });
+
   test('state /welcome loans-due-no-rate', async ({ page }) => {
     const noRateLoan = loanWith(loanB, {
       totalSats: null,
@@ -30656,6 +30912,24 @@ test.describe('welcome forum variants', () => {
     await expect(page.getByRole('link', { name: noRateLoan.text })).toBeVisible();
     await expect(page.getByRole('link', { name: 'Repayment details' })).toBeVisible();
     await shotScreen(page, 'state-welcome-loans-due-no-rate-open');
+  });
+
+  test('state /welcome loans-mixed-rate', async ({ page }) => {
+    await openWelcomeLoans(page, myLoans(mixedPricedUnpricedLoans));
+    const card = page.getByRole('region', { name: 'Your loans (2)' });
+    await expect(card.getByText("₱30.00 · ₿1'000", { exact: true })).toBeVisible();
+    await expect(card.getByText('₱15.00', { exact: true })).toBeVisible();
+    await expect(card.getByRole('link', { name: 'Send' })).toBeVisible();
+    await shotScreen(page, 'state-welcome-loans-mixed-rate');
+  });
+
+  test('state /welcome loans-mixed-rate-open', async ({ page }) => {
+    await openWelcomeLoans(page, myLoans(mixedPricedUnpricedLoans));
+    await page.getByRole('button', { name: 'Show loans' }).click();
+    await expect(page.getByRole('link', { name: mixedPricedUnpricedLoans[0]!.text })).toBeVisible();
+    await expect(page.getByRole('link', { name: mixedPricedUnpricedLoans[1]!.text })).toBeVisible();
+    await expect(page.getByText('₱15.00', { exact: true })).toBeVisible();
+    await shotScreen(page, 'state-welcome-loans-mixed-rate-open');
   });
 
   test('state /welcome loans-due', async ({ page }) => {

@@ -12,7 +12,7 @@ import { useSpotRate } from '@/hooks/useSpotRate';
 import { useWallet } from '@/hooks/useWallet';
 import { fetchProfilePhoto } from '@/lib/api';
 import { loadSession } from '@/lib/session-storage';
-import { definedDueLabel, summarizeLoans } from '@/lib/loan-repay';
+import { definedDueLabel, summarizeLoans, unpricedDueLabels } from '@/lib/loan-repay';
 import { formatBitcoin, formatFiatDisplay, satsToFiatAmount } from '@/lib/stats-money';
 import { useAuthStore } from '@/stores/auth-store';
 
@@ -208,6 +208,7 @@ export function MenuAccountHeader({
 
   const loanSummary = loans === null ? null : summarizeLoans(loans, numberFormat);
   const definedDue = loans === null ? null : definedDueLabel(loans.loans, 'payable', numberFormat);
+  const unpricedDue = loans === null ? [] : unpricedDueLabels(loans.loans, 'payable', numberFormat);
 
   return (
     <div className={`flex flex-col gap-3 rounded-xl bg-app-card-muted p-3${tight ? ' mt-2' : ''}`}>
@@ -263,33 +264,45 @@ export function MenuAccountHeader({
         {balance}
       </div>
       {loanSummary?.payable === true ? (
-        <div className="flex items-center justify-between gap-3 rounded-lg bg-app-card px-3 py-2">
-          <div className="min-w-0">
+        <div className="rounded-lg bg-app-card px-3 py-2">
+          <div className="flex items-center justify-between gap-3">
+            <div className="min-w-0">
+              <p
+                className={`text-[11px] ${
+                  loanSummary.behindDays > 0 ? 'font-medium text-app-danger' : 'text-app-muted'
+                }`}
+              >
+                {t(loanSummary.behindDays > 0 ? 'loans.menuBehind' : 'loans.menuDue')}
+              </p>
+              <p
+                className={`text-sm font-semibold tabular-nums lining-nums ${
+                  loanSummary.behindDays > 0 ? 'text-app-danger' : 'text-app-fg'
+                }`}
+              >
+                {definedDue === null ? (
+                  <>
+                    {formatBitcoin(loanSummary.payableSats, numberFormat)}
+                    {preferredFiatSuffix(loanSummary.payableSats, rateDay, fiat, numberFormat)}
+                  </>
+                ) : (
+                  `${definedDue} · ${formatBitcoin(loanSummary.payableSats, numberFormat)}`
+                )}
+              </p>
+            </div>
+            <ButtonLink href="/loans/repay" size="sm" onClick={onNavigate}>
+              {t('wallet.payFromWallet')}
+            </ButtonLink>
+          </div>
+          {unpricedDue.map(({ loanIndex, label }) => (
             <p
-              className={`text-[11px] ${
-                loanSummary.behindDays > 0 ? 'font-medium text-app-danger' : 'text-app-muted'
-              }`}
-            >
-              {t(loanSummary.behindDays > 0 ? 'loans.menuBehind' : 'loans.menuDue')}
-            </p>
-            <p
+              key={loanIndex}
               className={`text-sm font-semibold tabular-nums lining-nums ${
                 loanSummary.behindDays > 0 ? 'text-app-danger' : 'text-app-fg'
               }`}
             >
-              {definedDue === null ? (
-                <>
-                  {formatBitcoin(loanSummary.payableSats, numberFormat)}
-                  {preferredFiatSuffix(loanSummary.payableSats, rateDay, fiat, numberFormat)}
-                </>
-              ) : (
-                `${definedDue} · ${formatBitcoin(loanSummary.payableSats, numberFormat)}`
-              )}
+              {label}
             </p>
-          </div>
-          <ButtonLink href="/loans/repay" size="sm" onClick={onNavigate}>
-            {t('wallet.payFromWallet')}
-          </ButtonLink>
+          ))}
         </div>
       ) : null}
     </div>

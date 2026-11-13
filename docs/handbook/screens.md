@@ -494,6 +494,18 @@ The same Sunday collecting card after **Show loan** is pressed. The linked credi
 
 ![21.gifts wallet collecting loan Sunday open](images/wallet-loans-collecting-sunday-open.png)
 
+### Variant: loans-closed-underfunded
+
+A manually closed loan that did not reach its goal, shown on Sunday with **Show loan** closed. It keeps its partial funding bar and, like a funded loan, shows **No repayments on Sundays** with no **Repay your loan** entry link. The Sunday box is therefore present for every not-funded loan, whether collecting or manually closed.
+
+![21.gifts wallet closed underfunded loan](images/wallet-loans-closed-underfunded.png)
+
+### Variant: loans-closed-underfunded-open
+
+The same manually closed underfunded Sunday card after **Show loan** is pressed. The linked credit-note text and **Hide loan** are visible; **No repayments on Sundays** remains and there is still no repayment entry link.
+
+![21.gifts wallet closed underfunded loan open](images/wallet-loans-closed-underfunded-open.png)
+
 ### Variant: loans-due-no-rate
 
 The collapsed funded PHP loan has a stored due amount but no satoshi price. **Due today** shows **₱30.00** without bitcoin; the icon-only **Repayment details** link replaces **Send**.
@@ -505,6 +517,18 @@ The collapsed funded PHP loan has a stored due amount but no satoshi price. **Du
 The same no-rate due card after **Show loan** is pressed. Its linked credit-note text and **Hide loan** appear while **₱30.00** and the icon-only repayment-details link remain; there is no **Send**.
 
 ![21.gifts wallet loan due without rate open](images/wallet-loans-due-no-rate-open.png)
+
+### Variant: loans-mixed-rate
+
+Two funded PHP loans with **Show loans** closed: the priced loan's payable amount is **₱30.00 · ₿1'000** and keeps **Send**; the no-rate sibling is its own **₱15.00** fiat-only line. Waiting amounts are likewise split into **₱6.00 · ₿120** and **₱3.00**, so no fiat is paired with another loan's bitcoin.
+
+![21.gifts wallet mixed priced and unpriced loans](images/wallet-loans-mixed-rate.png)
+
+### Variant: loans-mixed-rate-open
+
+The same mixed-rate card after **Show loans** is pressed. Both linked credit-note rows are visible; the priced payable and waiting lines, the separate fiat-only lines, and **Send** remain unchanged.
+
+![21.gifts wallet mixed priced and unpriced loans open](images/wallet-loans-mixed-rate-open.png)
 
 ### Variant: loans-multi
 
@@ -1270,6 +1294,12 @@ Loan A ready to pay: **Due today**, **₿1'000** with **$1.00** under it, **to 3
 
 ![21.gifts loans repay](images/loans-repay.png)
 
+### Variant: mixed-rate
+
+Two PHP loans are due together. The positive priced part is **₱30.00 · ₿1'000** and is the only amount covered by **Send**; the no-rate sibling appears on its own as **₱15.00**. The waiting notice is also split into **₱6.00 · ₿120** and the fiat-only **₱3.00**. No line shows bitcoin beside fiat from a different loan.
+
+![21.gifts loans repay mixed priced and unpriced](images/loans-repay-mixed-rate.png)
+
 ### Variant: who-open
 
 The default state after **Who gets paid** is opened. The list shows Bruno **₿500 · $0.50**, Carla **₿300 · $0.30**, and Diego **₿200 · $0.20**; the due total remains **₿1'000 · $1.00** and the one-tap Send control remains visible.
@@ -1404,13 +1434,13 @@ The waiting state with **Who gets paid** open: Bruno **₿500 · $0.50** and Car
 
 ### Variant: waiting-all
 
-All three lenders are unavailable. The box says **Nothing to send now** with no amount and no people count, followed by the muted note **Your lenders haven't set up their wallets yet. Today's payment waits until they do.** There is no wallet balance line or Send control.
+All three lenders are unavailable. The box says **Nothing to send now** with no payable amount and no people count, followed by the muted priced waiting line **₿1'000 · $1.00 waits for 3 lenders who haven't set up their wallets yet.** There is no wallet balance line or Send control.
 
 ![21.gifts loans repay all lenders waiting](images/loans-repay-waiting-all.png)
 
 ### Variant: waiting-all-who-open
 
-The all-lenders-waiting state with **Who gets paid** open. The box still says **Nothing to send now** with no amount; Bruno **₿500 · $0.50**, Carla **₿300 · $0.30**, and Diego **₿200 · $0.20** are muted rows, each with its own **Waiting for … to set up their wallet** line under the name (for example **Waiting for Bruno to set up their wallet**) and no warning icon. **Your lenders haven't set up their wallets yet. Today's payment waits until they do.** remains visible, with no wallet balance line or Send control.
+The all-lenders-waiting state with **Who gets paid** open. The box still says **Nothing to send now** with no payable amount; Bruno **₿500 · $0.50**, Carla **₿300 · $0.30**, and Diego **₿200 · $0.20** are muted rows, each with its own **Waiting for … to set up their wallet** line under the name (for example **Waiting for Bruno to set up their wallet**) and no warning icon. The priced waiting line **₿1'000 · $1.00 waits for 3 lenders who haven't set up their wallets yet.** remains visible, with no wallet balance line or Send control.
 
 ![21.gifts loans repay all waiting recipients](images/loans-repay-waiting-all-who-open.png)
 
@@ -3108,6 +3138,18 @@ The same Sunday collecting card after **Show loan** is pressed. The linked credi
 
 ![21.gifts welcome collecting loan Sunday open](images/welcome-loans-collecting-sunday-open.png)
 
+### Variant: loans-closed-underfunded
+
+A manually closed loan that did not reach its goal, shown on Sunday with **Show loan** closed. It keeps its partial funding bar and, like a funded loan, shows **No repayments on Sundays** with no **Repay your loan** entry link. The Sunday box is shown for the manually closed not-funded state as well as the collecting state.
+
+![21.gifts welcome closed underfunded loan](images/welcome-loans-closed-underfunded.png)
+
+### Variant: loans-closed-underfunded-open
+
+The same manually closed underfunded Sunday card after **Show loan** is pressed. The linked credit-note text and **Hide loan** are visible; **No repayments on Sundays** remains and the repayment entry link stays absent.
+
+![21.gifts welcome closed underfunded loan open](images/welcome-loans-closed-underfunded-open.png)
+
 ### Variant: loans-due-no-rate
 
 The collapsed funded PHP loan has a stored due amount but no satoshi price. **Due today** shows **₱30.00** without bitcoin; the icon-only **Repayment details** link replaces **Send**.
@@ -3119,6 +3161,18 @@ The collapsed funded PHP loan has a stored due amount but no satoshi price. **Du
 The same no-rate due card after **Show loan** is pressed. Its linked credit-note text and **Hide loan** appear while **₱30.00** and the icon-only repayment-details link remain; there is no **Send**.
 
 ![21.gifts welcome loan due without rate open](images/welcome-loans-due-no-rate-open.png)
+
+### Variant: loans-mixed-rate
+
+Two funded PHP loans with **Show loans** closed. The priced payable line is **₱30.00 · ₿1'000** with **Send**; the no-rate sibling is a separate fiat-only **₱15.00** line. Their waiting amounts are separately **₱6.00 · ₿120** and **₱3.00**, never one combined fiat total beside partial bitcoin.
+
+![21.gifts welcome mixed priced and unpriced loans](images/welcome-loans-mixed-rate.png)
+
+### Variant: loans-mixed-rate-open
+
+The same mixed-rate card after **Show loans** is pressed. Both linked credit-note rows and **Hide loans** are visible; the priced lines, separate fiat-only lines, and **Send** stay unchanged.
+
+![21.gifts welcome mixed priced and unpriced loans open](images/welcome-loans-mixed-rate-open.png)
 
 ### Variant: loans-due
 
@@ -3837,6 +3891,12 @@ On **All**: Ada's own filled credit (`accountId` matches the signed-in account, 
 On **All**: Ada's own credit is still collecting at **50%**. There is no **Lend** on her own note. **Pay early or end collecting** is a clear link to `/loans/repay`, where paying ends collecting after confirmation; **Repayment list** remains a link.
 
 ![21.gifts welcome repay collecting](images/welcome-repay-collecting.png)
+
+### Variant: repay-closed
+
+On **All**: Ada's own credit is manually closed at **50%** (`goalClosedAt` is present). There is no **Lend** and collecting has ended, so **Repay your loan** links to `/loans/repay`; **Repayment list** remains a link.
+
+![21.gifts welcome repay closed underfunded loan](images/welcome-repay-closed.png)
 
 ### Variant: loan-lend
 
@@ -7499,6 +7559,12 @@ Identity card of the signed-in member; posts pressed; the listed post is her own
 
 ![21.gifts member posts repay collecting](images/members-posts-open-repay-collecting.png)
 
+### Variant: posts-open-repay-closed
+
+Identity card of the signed-in member; posts pressed; the listed own credit is manually closed at **50%** with `goalClosedAt`. There is no **Lend**. **Repay your loan** links to `/loans/repay`; **Repayment list** remains a link.
+
+![21.gifts member posts repay closed underfunded loan](images/members-posts-open-repay-closed.png)
+
 ### Variant: posts-open-photos
 
 Identity card; posts pressed; profile note hidden; the listed post has `hasPhoto` and `photoCount: 2` and shows two stills (`Photo from Carol`) in `ForumPhotoGallery` (horizontal snap row, `data-scroll-x`, 88% peek, `1/2` chip, dots) above the text, same ForumBoard paint as `/welcome` `photos`.
@@ -8502,6 +8568,12 @@ Account whose role is `software_developer`. Beside the centered name, a clickabl
 **14 posts** is pressed and the feed shows Ada's own credit at **50%**, still without `goalClosedAt`. There is no **Lend**. **Pay early or end collecting** links to `/loans/repay`; **Repayment list** remains a link.
 
 ![21.gifts profile posts repay collecting](images/profile-posts-open-repay-collecting.png)
+
+### Variant: posts-open-repay-closed
+
+**14 posts** is pressed and the feed shows Ada's own manually closed credit at **50%** with `goalClosedAt`. There is no **Lend**. **Repay your loan** links to `/loans/repay`; **Repayment list** remains a link.
+
+![21.gifts profile posts repay closed underfunded loan](images/profile-posts-open-repay-closed.png)
 
 ### Variant: mention-suggest-reply
 

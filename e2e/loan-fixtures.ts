@@ -189,6 +189,50 @@ export const loanCollecting: MyLoan = {
   next: null,
 };
 
+/** A manually closed loan that never reached its funding goal. */
+export const loanClosedUnderfunded: MyLoan = {
+  ...loanCollecting,
+  messageId: 'loan-closed-underfunded',
+  text: 'Closed after enough was collected for the most important tools.',
+  closedAt: '2026-10-03T10:00:00.000Z',
+};
+
+/** The bitcoin-priced half of the mixed PHP repayment display. */
+export const mixedPricedLoan: MyLoan = loanWith(loanB, {
+  messageId: 'loan-mixed-priced',
+  text: 'Priced school supplies loan.',
+  due: {
+    payableSats: 1_000,
+    payablePeople: 1,
+    payableAmount: '30.00',
+    waitingSats: 120,
+    waitingPeople: 1,
+    waitingAmount: '6.00',
+  },
+  next: { dueOn: '2026-10-08', sats: 120, amount: '6.00' },
+});
+
+/** The no-rate half of the mixed PHP repayment display. */
+export const mixedUnpricedLoan: MyLoan = loanWith(loanB, {
+  messageId: 'loan-mixed-unpriced',
+  text: 'School supplies loan waiting for its PHP rate.',
+  totalSats: null,
+  maxSats: null,
+  maxAmount: null,
+  due: {
+    payableSats: null,
+    payablePeople: 1,
+    payableAmount: '15.00',
+    waitingSats: null,
+    waitingPeople: 1,
+    waitingAmount: '3.00',
+  },
+  next: { dueOn: '2026-10-08', sats: null, amount: '3.00' },
+});
+
+/** Priced and unpriced siblings used by card and repayment visual states. */
+export const mixedPricedUnpricedLoans: readonly MyLoan[] = [mixedPricedLoan, mixedUnpricedLoan];
+
 /** A manually closed, partially repaid BTC loan. */
 export const loanClosedPartial: MyLoan = {
   ...loanA,

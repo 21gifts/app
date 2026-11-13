@@ -1002,6 +1002,18 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/wallet:loans-closed-underfunded",
+    "label": "/wallet loans-closed-underfunded",
+    "visual": "state-wallet-loans-closed-underfunded",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/wallet:loans-closed-underfunded-open",
+    "label": "/wallet loans-closed-underfunded-open",
+    "visual": "state-wallet-loans-closed-underfunded-open",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/wallet:loans-due-no-rate",
     "label": "/wallet loans-due-no-rate",
     "visual": "state-wallet-loans-due-no-rate",
@@ -1011,6 +1023,18 @@
     "id": "/wallet:loans-due-no-rate-open",
     "label": "/wallet loans-due-no-rate-open",
     "visual": "state-wallet-loans-due-no-rate-open",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/wallet:loans-mixed-rate",
+    "label": "/wallet loans-mixed-rate",
+    "visual": "state-wallet-loans-mixed-rate",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/wallet:loans-mixed-rate-open",
+    "label": "/wallet loans-mixed-rate-open",
+    "visual": "state-wallet-loans-mixed-rate-open",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
@@ -1323,6 +1347,12 @@
     "id": "/loans/repay:default",
     "label": "/loans/repay default",
     "visual": "screen-loans-repay",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/loans/repay:mixed-rate",
+    "label": "/loans/repay mixed-rate",
+    "visual": "state-loans-repay-mixed-rate",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
@@ -3390,6 +3420,12 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/welcome:repay-closed",
+    "label": "/welcome repay-closed",
+    "visual": "state-welcome-repay-closed",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/welcome:loan-lend",
     "label": "/welcome loan-lend",
     "visual": "state-welcome-loan-lend",
@@ -3462,6 +3498,18 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/welcome:loans-closed-underfunded",
+    "label": "/welcome loans-closed-underfunded",
+    "visual": "state-welcome-loans-closed-underfunded",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:loans-closed-underfunded-open",
+    "label": "/welcome loans-closed-underfunded-open",
+    "visual": "state-welcome-loans-closed-underfunded-open",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/welcome:loans-due-no-rate",
     "label": "/welcome loans-due-no-rate",
     "visual": "state-welcome-loans-due-no-rate",
@@ -3471,6 +3519,18 @@
     "id": "/welcome:loans-due-no-rate-open",
     "label": "/welcome loans-due-no-rate-open",
     "visual": "state-welcome-loans-due-no-rate-open",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:loans-mixed-rate",
+    "label": "/welcome loans-mixed-rate",
+    "visual": "state-welcome-loans-mixed-rate",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:loans-mixed-rate-open",
+    "label": "/welcome loans-mixed-rate-open",
+    "visual": "state-welcome-loans-mixed-rate-open",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
@@ -5070,6 +5130,12 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/profile:posts-open-repay-closed",
+    "label": "/profile posts-open-repay-closed",
+    "visual": "state-profile-posts-open-repay-closed",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/profile:mention-suggest-reply",
     "label": "/profile mention-suggest-reply",
     "visual": "state-profile-mention-suggest-reply",
@@ -5253,6 +5319,12 @@
     "id": "/members/[accountId]:posts-open-repay-today",
     "label": "/members/[accountId] posts-open-repay-today",
     "visual": "state-members-posts-open-repay-today",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/members/[accountId]:posts-open-repay-closed",
+    "label": "/members/[accountId] posts-open-repay-closed",
+    "visual": "state-members-posts-open-repay-closed",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {

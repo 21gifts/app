@@ -145,7 +145,7 @@ interface LoansSummaryCommon {
   fundedCount: number;
   /** Mirrors `sundayRest`. */
   sundayRest: boolean;
-  /** Sum of known due.waitingSats, or null when no loan has known waiting sats. */
+  /** Sum of positive known due.waitingSats, or null when none are positive. */
   waitingSats: number | null;
   /** Sum of due.waitingPeople. */
   waitingPeople: number;
@@ -156,12 +156,17 @@ interface LoansSummaryCommon {
   /** True when an active payable loan has due.lastPayment. */
   lastPayment: boolean;
   /**
-   * Earliest next.dueOn among loans whose next is non-null. `sats` is the known sum for that day, or
-   * null when every share lacks sats. The amount is the sum per fiat currency of every
-   * stored next.amount string on that day, in first-seen currency order, joined with " + "; null
-   * when a BTC loan, a missing string, or an invalid string keeps the total undefined.
+   * Earliest next.dueOn among loans whose next is non-null. `sats` is the positive known sum for
+   * that day, or null when none are positive. `amount` contains only the stored fiat amounts of
+   * those positive-priced loans. Loans without a positive known sat amount stay in separate
+   * fiat-only `unpriced` entries.
    */
-  next: { dueOn: string; sats: number | null; amount: string | null } | null;
+  next: {
+    dueOn: string;
+    sats: number | null;
+    amount: string | null;
+    unpriced: readonly { loanIndex: number; amount: string }[];
+  } | null;
   /**
    * Card outline: 'danger' when fundedCount \> 0 and behindDays \> 0; 'success' when fundedCount \> 0,
    * !sundayRest, and nobody is payable or waiting; otherwise 'neutral'.
@@ -197,10 +202,10 @@ export function summarizeLoans(data: MyLoans, style: NumberFormatStyle): LoansSu
     if (loan.fundedAt !== null) {
       fundedCount += 1;
     }
-    if (loan.due.payableSats !== null) {
+    if (loan.due.payableSats !== null && loan.due.payableSats > 0) {
       payableSats = (payableSats ?? 0) + loan.due.payableSats;
     }
-    if (loan.due.waitingSats !== null) {
+    if (loan.due.waitingSats !== null && loan.due.waitingSats > 0) {
       waitingSats = (waitingSats ?? 0) + loan.due.waitingSats;
     }
     waitingPeople += loan.due.waitingPeople;
@@ -212,9 +217,9 @@ export function summarizeLoans(data: MyLoans, style: NumberFormatStyle): LoansSu
     if (loan.next !== null) {
       if (nextDueOn === null || loan.next.dueOn < nextDueOn) {
         nextDueOn = loan.next.dueOn;
-        nextSats = loan.next.sats;
+        nextSats = loan.next.sats !== null && loan.next.sats > 0 ? loan.next.sats : null;
       } else if (loan.next.dueOn === nextDueOn) {
-        if (loan.next.sats !== null) {
+        if (loan.next.sats !== null && loan.next.sats > 0) {
           nextSats = (nextSats ?? 0) + loan.next.sats;
         }
       }
@@ -222,16 +227,30 @@ export function summarizeLoans(data: MyLoans, style: NumberFormatStyle): LoansSu
   }
 
   let nextAmount: string | null = null;
+  const nextUnpriced: { loanIndex: number; amount: string }[] = [];
   if (nextDueOn !== null) {
     const amounts: { code: MyLoan['goalCurrency']; amount: string | null }[] = [];
-    for (const loan of data.loans) {
+    data.loans.forEach((loan, loanIndex) => {
       if (loan.next !== null && loan.next.dueOn === nextDueOn) {
-        amounts.push({ code: loan.goalCurrency, amount: loan.next.amount });
+        if (loan.next.sats !== null && loan.next.sats > 0) {
+          amounts.push({ code: loan.goalCurrency, amount: loan.next.amount });
+        } else {
+          const amount = definedFiatAmounts(
+            [{ code: loan.goalCurrency, amount: loan.next.amount }],
+            style,
+          );
+          if (amount !== null) {
+            nextUnpriced.push({ loanIndex, amount });
+          }
+        }
       }
-    }
+    });
     nextAmount = definedFiatAmounts(amounts, style);
   }
-  const next = nextDueOn === null ? null : { dueOn: nextDueOn, sats: nextSats, amount: nextAmount };
+  const next =
+    nextDueOn === null
+      ? null
+      : { dueOn: nextDueOn, sats: nextSats, amount: nextAmount, unpriced: nextUnpriced };
 
   const tone =
     fundedCount > 0 && behindDays > 0
@@ -240,7 +259,7 @@ export function summarizeLoans(data: MyLoans, style: NumberFormatStyle): LoansSu
           !data.sundayRest &&
           payableLoans === 0 &&
           waitingPeople === 0 &&
-          (waitingSats === null || waitingSats === 0)
+          waitingSats === null
         ? 'success'
         : 'neutral';
   const payable = !data.sundayRest && payableSats !== null && payableSats > 0;
@@ -529,9 +548,11 @@ export function centsString(cents: bigint): string {
 }
 
 /**
- * The stored fiat figure of what is payable or waiting across loans. The stored
- * amounts are summed per currency and joined in first-seen order, like the
- * sending line; otherwise the caller shows bitcoin with the current spot.
+ * The stored fiat figure of the positive, bitcoin-priced loans that are payable
+ * or waiting. The stored amounts are summed per currency and joined in
+ * first-seen order, like the sending line; otherwise the caller shows bitcoin
+ * with the current spot. Unpriced active loans are deliberately excluded so a
+ * fiat total is never paired with sats belonging to different loans.
  *
  * @param loans - Loans of `GET /me/loans`.
  * @param part - `payable` (`due.payableAmount`) or `waiting` (`due.waitingAmount`).
@@ -545,10 +566,52 @@ export function definedDueLabel(
 ): string | null {
   const active = loans.filter((loan) => {
     const sats = loan.due[`${part}Sats`];
-    return sats === null ? loan.due[`${part}People`] > 0 : sats > 0;
+    return sats !== null && sats > 0;
   });
   return definedFiatAmounts(
     active.map((loan) => ({ code: loan.goalCurrency, amount: loan.due[`${part}Amount`] })),
     style,
   );
+}
+
+/** One active due part whose bitcoin price is unavailable. */
+export interface UnpricedDueLabel {
+  /** Index in the supplied loan list. */
+  loanIndex: number;
+  /** The loan's own stored fiat amount, never combined with another loan. */
+  label: string;
+  /** People represented by this loan's due part. */
+  people: number;
+}
+
+/**
+ * Formats each active unpriced payable or waiting loan as its own fiat-only line.
+ * A known zero is not unpriced and therefore cannot turn another loan into a
+ * bitcoin-zero display.
+ *
+ * @param loans - Loans of `GET /me/loans`.
+ * @param part - `payable` (`due.payableAmount`) or `waiting` (`due.waitingAmount`).
+ * @param style - Visitor number format.
+ * @returns Individually formatted fiat-only labels, in loan order.
+ */
+export function unpricedDueLabels(
+  loans: readonly MyLoan[],
+  part: 'payable' | 'waiting',
+  style: NumberFormatStyle,
+): UnpricedDueLabel[] {
+  const labels: UnpricedDueLabel[] = [];
+  loans.forEach((loan, loanIndex) => {
+    const people = loan.due[`${part}People`];
+    if (loan.due[`${part}Sats`] !== null || people <= 0) {
+      return;
+    }
+    const label = definedFiatAmounts(
+      [{ code: loan.goalCurrency, amount: loan.due[`${part}Amount`] }],
+      style,
+    );
+    if (label !== null) {
+      labels.push({ loanIndex, label, people });
+    }
+  });
+  return labels;
 }

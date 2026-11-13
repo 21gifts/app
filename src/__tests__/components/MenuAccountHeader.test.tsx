@@ -345,8 +345,58 @@ describe('MenuAccountHeader', () => {
       reload: vi.fn(),
     });
     renderWithLocale(<MenuAccountHeader onNavigate={vi.fn()} tight={false} open />);
-    expect(screen.getByText("₱45.00 · ₿1'000")).toBeTruthy();
+    expect(screen.getByText("₱30.00 · ₿1'000")).toBeTruthy();
+    expect(screen.getByText('₱15.00')).toBeTruthy();
     expect(screen.getByRole('link', { name: 'Send' })).toBeTruthy();
+  });
+
+  it('marks an unpriced fiat amount as behind with the rest of the loan summary', () => {
+    signIn();
+    vi.mocked(useMyLoans).mockReturnValue({
+      loans: {
+        sundayRest: false,
+        loans: [
+          {
+            due: {
+              payableSats: 1_000,
+              payablePeople: 1,
+              waitingSats: 0,
+              waitingPeople: 0,
+              behindDays: 2,
+              payableAmount: '30.00',
+              waitingAmount: null,
+              lastPayment: false,
+            },
+            fundedAt: '2026-10-01',
+            goalCurrency: 'PHP',
+            goalSats: 10_000,
+            sats: 10_000,
+            next: null,
+          } as never,
+          {
+            due: {
+              payableSats: null,
+              payablePeople: 1,
+              waitingSats: null,
+              waitingPeople: 0,
+              behindDays: 2,
+              payableAmount: '15.00',
+              waitingAmount: null,
+              lastPayment: false,
+            },
+            fundedAt: '2026-10-01',
+            goalCurrency: 'PHP',
+            goalSats: 10_000,
+            sats: 10_000,
+            next: null,
+          } as never,
+        ],
+      },
+      reload: vi.fn(),
+    });
+    renderWithLocale(<MenuAccountHeader onNavigate={vi.fn()} tight={false} open />);
+    expect(screen.getByText("You're behind on your loan")).toBeTruthy();
+    expect(screen.getByText('₱15.00').className).toContain('text-app-danger');
   });
 
   it('re-reads loans once whenever the Menu opens', () => {
