@@ -43229,7 +43229,11 @@ test.describe('stats variant baselines', () => {
     await expect(page.getByText("$1'875.09", { exact: true })).toBeVisible();
     await page.getByRole('combobox', { name: 'Day' }).click();
     await page.getByRole('option', { name: '2026-11-10', exact: true }).click();
-    await expect(page.getByText('Balance at start of day').first()).toBeVisible();
+    await expect(
+      page
+        .getByRole('img', { name: 'Tondo fund' })
+        .locator('[data-flow="Balance at start of day"]'),
+    ).toBeVisible();
     await shotScreen(page, 'state-stats-wallet-day');
   });
 
@@ -43259,7 +43263,7 @@ test.describe('stats variant baselines', () => {
       .getByRole('group', { name: 'Flow metric' })
       .getByRole('button', { name: 'Count' })
       .click();
-    await expect(page.getByText('Balance at end of day')).toHaveCount(0);
+    await expect(page.locator('[data-flow="Balance at end of day"]')).toHaveCount(0);
     await shotScreen(page, 'state-stats-wallet-count');
   });
 

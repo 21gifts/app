@@ -924,7 +924,7 @@ export function WalletFlowDiagram({
         }}
       >
         <path
-          d={ribbonPath(centerRight, VIEW_W - LABEL_W, labelY, rightStack, thickness)}
+          d={ribbonPath(VIEW_W - LABEL_W, centerRight, labelY, rightStack, thickness)}
           className={ribbonClass(node)}
           data-metric={node.metric}
         />

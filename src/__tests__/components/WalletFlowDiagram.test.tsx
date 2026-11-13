@@ -482,6 +482,66 @@ describe('WalletFlowDiagram', () => {
     expect(status.textContent).toBe('');
   });
 
+  it('starts each outgoing ribbon at its label and stacks the account edges', () => {
+    render(
+      <WalletFlowDiagram
+        account="members"
+        accountLabel="Member wallets"
+        flows={[
+          flow('2026-11-09', 'members', 'outside', 'withdrawal', 1, 2, 0),
+          flow('2026-11-09', 'members', 'fund', 'shop_purchase', 1, 1, 0),
+        ]}
+        startSats={0}
+        endSats={0}
+        metric="amount"
+        numberFormat="ch"
+      />,
+    );
+    const diagram = screen.getByRole('img', { name: 'Member wallets' });
+    expect(diagram.getAttribute('data-layout')).toBe('sankey');
+    const outgoing = diagram.querySelectorAll('[data-side="to"]');
+    expect(outgoing.length).toBeGreaterThanOrEqual(2);
+    const labelX = 510;
+    let previousBottom: number | null = null;
+    const thicknesses: number[] = [];
+    for (const node of outgoing) {
+      const numbers = pathNumbers(node);
+      const startX = numbers[0];
+      const startY = numbers[1];
+      const accountTop = numbers[7];
+      const accountBottom = numbers[9];
+      const label = node.querySelector('text');
+      const labelYRaw = label?.getAttribute('y');
+      if (
+        startX === undefined ||
+        startY === undefined ||
+        accountTop === undefined ||
+        accountBottom === undefined ||
+        labelYRaw === null ||
+        labelYRaw === undefined
+      ) {
+        throw new Error('short outgoing ribbon');
+      }
+      const labelY = Number(labelYRaw);
+      const thickness = accountBottom - accountTop;
+      expect(startX).toBe(labelX);
+      expect(startY).toBe(labelY - thickness / 2);
+      if (previousBottom !== null) {
+        expect(accountTop).toBe(previousBottom);
+      }
+      previousBottom = accountBottom;
+      thicknesses.push(thickness);
+    }
+    const wider = thicknesses[0];
+    const narrower = thicknesses[1];
+    if (wider === undefined || narrower === undefined) {
+      throw new Error('missing outgoing ribbon');
+    }
+    expect(wider).not.toBe(narrower);
+    expect(wider).toBeGreaterThan(0);
+    expect(narrower).toBeGreaterThan(0);
+  });
+
   it('pins the opening balance under a taller outgoing column', () => {
     render(
       <WalletFlowDiagram

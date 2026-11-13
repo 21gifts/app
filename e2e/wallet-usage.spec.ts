@@ -102,16 +102,22 @@ test('Function: formatCount — payment and sending counts use grouped figures',
 test('Function: OverTimeChart — wallets per day draws the balance line', async ({ page }) => {
   await stubWalletStats(page);
   await page.goto('/stats/wallet');
-  await expect(page.getByRole('group', { name: 'Wallets per day' })).toBeVisible();
-  await expect(page.getByText('48 with a balance')).toBeVisible();
+  const wallets = page.getByRole('group', { name: 'Wallets per day' });
+  await expect(wallets).toBeVisible();
+  await expect(
+    wallets.getByText('2026-11-12: 48 with a balance · 71 active', { exact: true }),
+  ).toBeAttached();
+  await expect(page.getByText('48 with a balance', { exact: true })).toBeVisible();
 });
 
 test('selecting one usage day keeps the all-days flow table', async ({ page }) => {
   await page.goto('/stats/wallet');
-  await expect(page.getByText('Balance at start of day')).toHaveCount(0);
+  await expect(page.locator('[data-flow="Balance at start of day"]')).toHaveCount(0);
   await page.getByRole('combobox', { name: 'Day' }).click();
   await page.getByRole('option', { name: '2026-11-10', exact: true }).click();
-  await expect(page.getByText('Balance at start of day')).toBeVisible();
+  await expect(
+    page.getByRole('img', { name: 'Tondo fund' }).locator('[data-flow="Balance at start of day"]'),
+  ).toBeVisible();
   await expect(page.getByRole('table')).toContainText("₿471'705");
 });
 
@@ -129,8 +135,8 @@ test('Count mode drops the balance ribbons', async ({ page }) => {
     .getByRole('group', { name: 'Flow metric' })
     .getByRole('button', { name: 'Count' })
     .click();
-  await expect(page.getByText('Balance at end of day')).toHaveCount(0);
-  await expect(page.getByText('Fees')).toHaveCount(0);
+  await expect(page.locator('[data-flow="Balance at end of day"]')).toHaveCount(0);
+  await expect(page.locator('[data-flow="Fees"]')).toHaveCount(0);
 });
 
 test('a failed usage fetch shows one quiet error line', async ({ page }) => {
