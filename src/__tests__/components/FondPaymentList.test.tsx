@@ -16,7 +16,7 @@ vi.mock('@/lib/api', async (importOriginal) => {
   return { ...actual, fetchFondPayments: vi.fn() };
 });
 
-import { fetchFondPayments } from '@/lib/api';
+import { fetchFondPayments, FondPaymentsError } from '@/lib/api';
 
 const PAYMENTS: FondPaymentPage = {
   payments: [
@@ -96,8 +96,8 @@ describe('FondPaymentList', () => {
   });
 
   it.each([
-    ['1', '$1.00'],
-    ['2.5', '$2.50'],
+    ['1', '$1'],
+    ['2.5', '$2.5'],
     ['3.00', '$3.00'],
   ] as const)(
     'shows the stored USD amount %s as %s without using the spot',
@@ -371,7 +371,7 @@ describe('FondPaymentList', () => {
   it('keeps the list and retries a failed next page', async () => {
     vi.mocked(fetchFondPayments)
       .mockResolvedValueOnce({ payments: [PAYMENTS.payments[0]!], next: 'cursor-2' })
-      .mockRejectedValueOnce(new Error('503'))
+      .mockRejectedValueOnce(new FondPaymentsError(503))
       .mockResolvedValueOnce({ payments: [PAYMENTS.payments[1]!], next: null });
     renderWithLocale(<FondPaymentList username="tondo-fond" />);
     fireEvent.click(await screen.findByRole('button', { name: 'Show more' }));
@@ -384,6 +384,27 @@ describe('FondPaymentList', () => {
     expect(await screen.findByText('Alice')).toBeTruthy();
     expect(screen.getAllByRole('listitem')).toHaveLength(2);
     expect(fetchFondPayments).toHaveBeenLastCalledWith('tondo-fond', 'cursor-2');
+  });
+
+  it('drops the list and reloads the first page after an invalid cursor', async () => {
+    let resolveReload: ((page: FondPaymentPage | null) => void) | undefined;
+    vi.mocked(fetchFondPayments)
+      .mockResolvedValueOnce({ payments: [PAYMENTS.payments[0]!], next: 'cursor-2' })
+      .mockRejectedValueOnce(new FondPaymentsError(400))
+      .mockImplementationOnce(
+        () =>
+          new Promise((resolve) => {
+            resolveReload = resolve;
+          }),
+      );
+    renderWithLocale(<FondPaymentList username="tondo-fond" />);
+    fireEvent.click(await screen.findByRole('button', { name: 'Show more' }));
+    expect(await screen.findByText('Loading…')).toBeTruthy();
+    expect(screen.queryByText('Private')).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Try again' })).toBeNull();
+    expect(fetchFondPayments).toHaveBeenLastCalledWith('tondo-fond');
+    resolveReload?.({ payments: [PAYMENTS.payments[1]!], next: null });
+    expect(await screen.findByText('Alice')).toBeTruthy();
   });
 
   it('appends a successful Try again page once', async () => {

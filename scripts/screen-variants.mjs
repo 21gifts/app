@@ -12503,6 +12503,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/fonds/[username]',
+    id: 'payments-empty-cursor-error',
+    image: 'fonds-payments-empty-cursor-error.png',
+    visual: 'state-fonds-payments-empty-cursor-error',
+    needle: "payments.getByRole('listitem')).toHaveCount(0",
+  },
+  {
+    route: '/fonds/[username]',
     id: 'error',
     image: 'fonds-error.png',
     visual: 'state-fonds-error',

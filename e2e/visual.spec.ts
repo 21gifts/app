@@ -47295,6 +47295,36 @@ test.describe('fonds screen', () => {
     await shotScreen(page, 'state-fonds-payments-load-more-error');
   });
 
+  test('state /fonds/[username] payments-empty-cursor-error', async ({ page }) => {
+    await fulfillSpot(page);
+    await page.route('**/fonds/tondo-fond/payments**', async (route) => {
+      const before = new URL(route.request().url()).searchParams.get('before');
+      if (before === null) {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({ payments: [], next: 'empty-cursor' }),
+        });
+        return;
+      }
+      await route.fulfill({
+        status: 503,
+        contentType: 'application/json',
+        body: JSON.stringify({ error: 'Fond payments are unavailable' }),
+      });
+    });
+    await page.goto('/fonds/tondo-fond');
+    const payments = page.getByRole('region', { name: 'Payments' });
+    await expect(payments.getByRole('button', { name: 'Show more' })).toBeVisible();
+    await payments.getByRole('button', { name: 'Show more' }).click();
+    await expect(payments.getByRole('listitem')).toHaveCount(0);
+    await expect(
+      payments.getByText('Could not load the Fond payments. Please try again.'),
+    ).toBeVisible();
+    await expect(payments.getByRole('button', { name: 'Try again' })).toBeVisible();
+    await shotScreen(page, 'state-fonds-payments-empty-cursor-error');
+  });
+
   test('state /fonds/[username] role-hint', async ({ page }) => {
     await fulfillSpot(page);
     await page.goto('/fonds/tondo-fond');

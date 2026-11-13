@@ -9,11 +9,10 @@ import { useNumberFormat } from '@/components/NumberFormatProvider';
 import { preferredFiatSuffix } from '@/components/PreferredFiatSuffix';
 import { Button } from '@/components/ui';
 import { useSpotRate } from '@/hooks/useSpotRate';
-import { fetchFondPayments } from '@/lib/api';
+import { fetchFondPayments, FondPaymentsError } from '@/lib/api';
 import type { FondPayment } from '@/lib/api-types';
-import { formatDefinedGoalAmount } from '@/lib/forum-goal';
 import { formatForumTime } from '@/lib/forum-time';
-import { formatBitcoin } from '@/lib/stats-money';
+import { formatBitcoin, formatStoredFiat } from '@/lib/stats-money';
 
 /** The ` · ` suffix followed by an already formatted fiat figure. */
 function fiatSuffix(text: string): ReactElement {
@@ -45,7 +44,8 @@ function appendPayments(current: FondPayment[], page: FondPayment[]): FondPaymen
  * shops. The Fond list is public, has no payment detail route, and names the
  * counterparty (or **Private**). It reuses the same row shell, direction
  * icons, `formatBitcoin` + `preferredFiatSuffix` amounts, and formatForumTime
- * as the wallet history. The rows carry no fee.
+ * as the wallet history. A stored fiat figure uses `formatStoredFiat` so its
+ * decimal string is unchanged. The rows carry no fee.
  *
  * @param props - The Fond handle from the validated summary.
  * @param props.username - Fond handle whose payments are listed.
@@ -130,12 +130,20 @@ export function FondPaymentList({ username }: { username: string }): ReactElemen
         setPayments((current) => appendPayments(current, page.payments));
         setNext(page.next);
       },
-      () => {
+      (error) => {
         if (!mounted.current || generation.current !== requestGeneration) {
           return;
         }
         busy.current = false;
         setLoadingMore(false);
+        if (error instanceof FondPaymentsError && error.status === 400) {
+          setStatus('loading');
+          setPayments([]);
+          setNext(null);
+          setLoadMoreFailed(false);
+          setAttempt((n) => n + 1);
+          return;
+        }
         setLoadMoreFailed(true);
       },
     );
@@ -182,11 +190,7 @@ export function FondPaymentList({ username }: { username: string }): ReactElemen
               const storedFiatText =
                 payment.storedFiat === null
                   ? null
-                  : formatDefinedGoalAmount(
-                      payment.storedFiat.amount,
-                      payment.storedFiat.currency,
-                      numberFormat,
-                    );
+                  : formatStoredFiat(payment.storedFiat.amount, payment.storedFiat.currency);
               const amountFiat =
                 storedFiatText === null
                   ? preferredFiatSuffix(payment.amountSats, rateDay, fiat, numberFormat)

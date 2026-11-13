@@ -10650,6 +10650,12 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/fonds/[username]:payments-empty-cursor-error",
+    "label": "/fonds/[username] payments-empty-cursor-error",
+    "visual": "state-fonds-payments-empty-cursor-error",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/fonds/[username]:error",
     "label": "/fonds/[username] error",
     "visual": "state-fonds-error",

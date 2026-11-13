@@ -3228,7 +3228,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Purpose:** Amount prefix for a fiat code. `$` and `₱` sit tight against the number, the same way `₿` does. CHF and EUR keep the code and a trailing space (`CHF `, `EUR `).
 - **Inputs:** `code` (`FiatCode`: CHF, EUR, USD, or PHP).
 - **Returns / side effects:** `'$'`, `'₱'`, `'CHF '`, or `'EUR '`. No grouping and no network.
-- **Used by:** `formatFiatDisplay`, `formatFiatTick`, and `formatDefinedGoalAmount`.
+- **Used by:** `formatFiatDisplay`, `formatStoredFiat`, `formatFiatTick`, and `formatDefinedGoalAmount`.
 
 ## Function: formatFiatDisplay
 
@@ -3236,6 +3236,13 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Inputs:** `amount` (`string | null`), `code` (`FiatCode`), and optional `style` `NumberFormatStyle` (default `ch`).
 - **Returns / side effects:** Display string such as `$1'425.00` / `CHF 1'425.00`. No `Intl.NumberFormat`. No network.
 - **Used by:** `StatsDashboard`, `GiftDayTable`, `DayLoader`, `WalletSend`, `LoansCard`, `LoanRepayScreen`, `MenuAccountHeader`.
+
+## Function: formatStoredFiat
+
+- **Purpose:** Shows a fiat decimal exactly as it was stored with a committed amount, preceded only by its currency symbol or code.
+- **Inputs:** `amount`, the stored decimal string; `code`, one of CHF, EUR, USD, or PHP.
+- **Returns / side effects:** `$`, `₱`, `CHF `, or `EUR ` followed by the unchanged string. It does not parse, pad, group, round, or use a rate.
+- **Used by:** `FondPaymentList` for a payment row's `storedFiat`.
 
 ## Function: formatFiatTick
 
@@ -7798,8 +7805,15 @@ The class exists so the composer can tell a refused free first post from any oth
 
 - **Purpose:** Reads one page of the same-origin `GET /fonds/:username/payments` proxy and validates it with `fondPaymentListSchema`.
 - **Inputs:** `username` — Fond handle from the route; optional `before` — cursor from the previous page (`null` or omitted means the first page).
-- **Returns / side effects:** The `FondPaymentList`, or `null` on 404 (no Fond, or another handle). Throws on any other non-2xx status or a body that fails validation.
+- **Returns / side effects:** The `FondPaymentList`, or `null` on 404 (no Fond, or another handle). Throws `FondPaymentsError` with the HTTP status on any other non-2xx answer, or the validation error for an invalid success body.
 - **Used by:** `FondPaymentList` inside `FondSummaryLoader` on `/fonds/[username]`.
+
+## Function: FondPaymentsError
+
+- **Purpose:** Carries a non-404 HTTP refusal from the public Fond payments proxy without making callers parse error text.
+- **Inputs:** The HTTP `status` returned by the proxy.
+- **Returns / side effects:** An `Error` named `FondPaymentsError` whose public `status` property is the supplied status.
+- **Used by:** `fetchFondPayments`; `FondPaymentList` treats status 400 as an invalid cursor and reloads the first page.
 
 ## Function: FondPage
 
@@ -7817,14 +7831,14 @@ The class exists so the composer can tell a refused free first post from any oth
 
 ## Function: FondPaymentList
 
-- **Purpose:** Read-only completed-payment list below the public Fond totals. A new component rather than `WalletHistory`, whose job is the connected member's wallet with payment detail links and gift/loan/shop labels; this list is public, has no detail route, and names the counterparty. It reuses the wallet row shell, direction icons, `formatBitcoin` + `preferredFiatSuffix`, and `formatForumTime`; a row with `storedFiat` shows that stored USD amount as written. Rows show no fee because no fiat figure fixed for one exists.
-- **Inputs:** `username`. Fetches `fetchFondPayments(username)` on mount and after **Try again**; **Load more** fetches the same function with the current `next` cursor.
-- **Returns / side effects:** The **Payments** (`wallet.historyHeading`) section. Each row shows `wallet.received` / `wallet.sent`, the signed amount with fiat, its date/time, and the counterparty; rows carry no fee. A set `storedFiat` is rendered by `formatDefinedGoalAmount` from `storedFiat.amount` as written, with two decimals and no float or spot: `"1"` → `$1.00`, `"2.5"` → `$2.50`, `"3.00"` → `$3.00`. A null `storedFiat` uses `preferredFiatSuffix` with the current spot for the amount. A known counterparty links `/members/<accountId>` with the `name`, else `@username`; an unknown one shows `fond.private`. `shops.showMore` appends the next page, `wallet.historyEmpty` covers an empty list, and `fond.paymentsError` with `view.retry` covers a failed first or next page. First-page and next-page results are scoped to the current `username`; changing the handle resets the paging lock and drops a stale result or rejection.
+- **Purpose:** Read-only completed-payment list below the public Fond totals. A new component rather than `WalletHistory`, whose job is the connected member's wallet with payment detail links and gift/loan/shop labels; this list is public, has no detail route, and names the counterparty. It reuses the wallet row shell, direction icons, `formatBitcoin` + `preferredFiatSuffix`, and `formatForumTime`; a row with `storedFiat` shows that stored USD amount exactly as stored. Rows carry no fee.
+- **Inputs:** `username`. Fetches `fetchFondPayments(username)` on mount and after **Try again**; **Show more** fetches the same function with the current `next` cursor.
+- **Returns / side effects:** The **Payments** (`wallet.historyHeading`) section. Each row shows `wallet.received` / `wallet.sent`, the signed amount with fiat, its date/time, and the counterparty; rows carry no fee. A set `storedFiat` is rendered by `formatStoredFiat` exactly as stored, without parsing or padding: `"1"` → `$1`, `"2.5"` → `$2.5`, `"3.00"` → `$3.00`. A null `storedFiat` uses `preferredFiatSuffix` with the current spot for the amount. A direct member-transfer counterparty links `/members/<accountId>` with the `name`, else `@username`; every other category shows `fond.private`. `shops.showMore` appends the next page, `wallet.historyEmpty` covers an empty list, and `fond.paymentsError` with `view.retry` covers a failed first or next page. A 400 from a next-page request discards the invalid cursor and loaded rows and reloads the first page with the normal loading state; other next-page failures keep the rows and retry the same cursor. First-page and next-page results are scoped to the current `username`; changing the handle resets the paging lock and drops a stale result or rejection.
 - **Used by:** `FondSummaryLoader` on `/fonds/[username]`.
 
 ## Function: fondPaymentSchema
 
-- **Purpose:** Runtime schema for one completed public Fond payment in `GET /fond/payments`: `{ id, direction, amountSats, paidAt, storedFiat, counterparty }`, where `direction` is `in` | `out`, `amountSats` is a non-negative whole-sat amount, `paidAt` is an ISO 8601 datetime with an offset, `storedFiat` is `{ currency: "USD", amount }` or `null` for the stored USD figure of a paid grant payout, `amount` is the stored string exactly as written (an integer or one to two fraction digits and no leading zero, matching `^(0|[1-9]\d*)(\.\d{1,2})?$`), and `counterparty` is `{ accountId, username, name }` or `null` for a private payer or recipient. Rows carry no fee.
+- **Purpose:** Runtime schema for one completed public Fond payment in `GET /fond/payments`: `{ id, direction, amountSats, paidAt, storedFiat, counterparty }`, where `direction` is `in` | `out`, `amountSats` is a non-negative whole-sat amount, `paidAt` is an ISO 8601 datetime with an offset, `storedFiat` is `{ currency: "USD", amount }` or `null` for the stored USD figure of a paid grant payout, `amount` is the stored string exactly as written (an integer or one to two fraction digits and no leading zero, matching `^(0|[1-9]\d*)(\.\d{1,2})?$`), and `counterparty` is `{ accountId, username, name }` only for a direct member transfer (`category = member`) or `null` for every other category. Rows carry no fee.
 - **Inputs:** One payment object from the api page.
 - **Returns / side effects:** The validated payment; rejects an unknown direction, negative or fractional sats, an empty id or a `paidAt` that is not an ISO 8601 datetime with an offset, a missing or malformed `storedFiat` (another currency, an amount with a leading zero, more than two fraction digits, or no integer part), or a malformed counterparty.
 - **Used by:** `fondPaymentListSchema` and `fetchFondPayments`.

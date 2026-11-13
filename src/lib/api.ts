@@ -240,6 +240,21 @@ export class AppOutdatedError extends Error {
   }
 }
 
+/** Non-404 HTTP refusal while loading the public Fond payment list. */
+export class FondPaymentsError extends Error {
+  /** HTTP status returned by the same-origin proxy. */
+  public readonly status: number;
+
+  /**
+   * @param status - HTTP status returned by the same-origin proxy.
+   */
+  public constructor(status: number) {
+    super(`Failed to fetch Fond payments: ${status}`);
+    this.name = 'FondPaymentsError';
+    this.status = status;
+  }
+}
+
 /**
  * Reads `code` from a clone of an api error body, so the caller can still
  * read the body.
@@ -827,7 +842,8 @@ export async function fetchViewAboutMePhoto(viewKey: string): Promise<Blob> {
  * @returns The {@link Account}, or `null` when the token is rejected (401) —
  * the caller treats that as "not logged in" and clears local state.
  * @throws {@link WrongAccountError} on 403 with the duplicate-account api string.
- * @throws Error on any other non-2xx status or a body that fails validation.
+ * @throws Error with the HTTP `status` on any other non-2xx answer, or a
+ * validation error when the success body is invalid.
  */
 export async function fetchMe(sessionToken: string): Promise<Account | null> {
   const response = await fetch('/me', {
@@ -2354,7 +2370,7 @@ export async function fetchFondPayments(
     return null;
   }
   if (!response.ok) {
-    throw new Error(`Failed to fetch Fond payments: ${response.status}`);
+    throw new FondPaymentsError(response.status);
   }
   return fondPaymentListSchema.parse(await response.json());
 }

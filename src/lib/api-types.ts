@@ -1973,10 +1973,10 @@ export type FondSummary = z.infer<typeof fondSummarySchema>;
 /**
  * Runtime schema for one entry of the public `GET /fond/payments` list.
  *
- * `counterparty` names the member behind an internal transfer when the api
- * knows them; `null` means the payer or recipient stays private. A known
- * member may have `username: null` when no handle is set. `paidAt` is its ISO
- * 8601 timestamp with an offset. `storedFiat` is the USD figure frozen when a
+ * `counterparty` names the member only for a direct member transfer
+ * (`category = member`); every other category is private and uses `null`. A
+ * known member may have `username: null` when no handle is set. `paidAt` is
+ * its ISO 8601 timestamp with an offset. `storedFiat` is the USD figure frozen when a
  * paid grant payout was created, or `null` for a row without a stored figure.
  * Each `amount` is the stored string exactly as written: an integer or one to
  * two fraction digits.

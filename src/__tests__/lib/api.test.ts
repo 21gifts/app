@@ -378,9 +378,10 @@ describe('fetchFondPayments', () => {
 
   it('throws on a non-404 non-ok response', async () => {
     stubFetch({ ok: false, status: 503, body: { error: 'unavailable' } });
-    await expect(fetchFondPayments('tondo-fond')).rejects.toThrow(
-      'Failed to fetch Fond payments: 503',
-    );
+    await expect(fetchFondPayments('tondo-fond')).rejects.toMatchObject({
+      message: 'Failed to fetch Fond payments: 503',
+      status: 503,
+    });
   });
 
   it('throws when the body fails validation', async () => {

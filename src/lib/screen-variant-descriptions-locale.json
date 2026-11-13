@@ -8829,6 +8829,11 @@
     "es": "La misma página del Fondo tras pulsar Mostrar más cuando la petición con cursor responde con 503. Las tres filas ya cargadas siguen visibles; debajo aparecen No se pudieron cargar los pagos del Fondo. Inténtalo de nuevo. y solo se muestra Intentar de nuevo.",
     "fil": "Parehong pahina ng Fond pagkatapos i-tap ang Magpakita pa kapag nagbalik ng 503 ang kahilingang may cursor. Nananatiling nakikita ang tatlong na-load nang row; sa ibaba ay may Hindi ma-load ang mga bayad ng Fond. Subukan ulit. at ang Subukan ulit lang ang ipinapakita."
   },
+  "/fonds/[username]:payments-empty-cursor-error": {
+    "de": "Die erste Zahlungsseite ist leer, enthält aber einen Cursor. Nach einem Tippen auf Mehr anzeigen antwortet die Anfrage mit Cursor mit 503; es bleiben keine Zahlungszeilen sichtbar, und der Ladefehler mit Erneut versuchen erscheint.",
+    "es": "La primera página de pagos está vacía, pero contiene un cursor. Tras pulsar Mostrar más, la petición con cursor responde con 503; no queda ninguna fila visible y aparece el error de carga con Intentar de nuevo.",
+    "fil": "Walang row ang unang pahina ng mga bayad ngunit may cursor ito. Pagkatapos i-tap ang Magpakita pa, nagbabalik ng 503 ang kahilingang may cursor; walang nakikitang row at lumalabas ang error sa pag-load na may Subukan ulit."
+  },
   "/fonds/[username]:error": {
     "de": "Die Api antwortet mit 503. Die Karte zeigt den Hinweis Fond konnte nicht geladen werden. Bitte versuchen Sie es erneut. und die Schaltfläche Erneut versuchen.",
     "es": "La api responde con 503. La tarjeta muestra el aviso No se pudo cargar el Fondo. Inténtalo de nuevo. y el botón Intentar de nuevo.",
