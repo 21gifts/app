@@ -2430,6 +2430,10 @@ describe('walletUsageSchema', () => {
   };
 
   it('accepts the payload and strips unknown fields', () => {
+    const firstFlow = usage.flows[0];
+    if (!firstFlow) {
+      throw new Error('fixture has no flow');
+    }
     expect(walletUsageSchema.parse(usage)).toEqual(usage);
     expect(walletUsageSchema.parse({ ...usage, extra: true, asOf: null })).toEqual({
       ...usage,
@@ -2438,7 +2442,7 @@ describe('walletUsageSchema', () => {
     expect(
       walletUsageSchema.parse({
         ...usage,
-        flows: [{ ...usage.flows[0], note: 'no person' }],
+        flows: [{ ...firstFlow, note: 'no person' }],
       }),
     ).toEqual(usage);
   });
@@ -2462,6 +2466,18 @@ describe('walletUsageSchema', () => {
   });
 
   it('rejects a missing field, a bad day, a bad party, and a bad share', () => {
+    const firstDay = usage.days[0];
+    if (!firstDay) {
+      throw new Error('fixture has no day');
+    }
+    const firstFlow = usage.flows[0];
+    if (!firstFlow) {
+      throw new Error('fixture has no flow');
+    }
+    const firstBucket = usage.amountBuckets[0];
+    if (!firstBucket) {
+      throw new Error('fixture has no bucket');
+    }
     expect(() =>
       walletUsageSchema.parse(
         Object.fromEntries(Object.entries(usage).filter(([key]) => key !== 'totals')),
@@ -2470,7 +2486,7 @@ describe('walletUsageSchema', () => {
     expect(() =>
       walletUsageSchema.parse({
         ...usage,
-        days: [{ ...usage.days[0], day: '2026-11-9' }],
+        days: [{ ...firstDay, day: '2026-11-9' }],
       }),
     ).toThrow();
     expect(() =>
@@ -2478,9 +2494,9 @@ describe('walletUsageSchema', () => {
         ...usage,
         days: [
           {
-            ...usage.days[0],
+            ...firstDay,
             purposes: Object.fromEntries(
-              Object.entries(usage.days[0].purposes).filter(([key]) => key !== 'deposit'),
+              Object.entries(firstDay.purposes).filter(([key]) => key !== 'deposit'),
             ),
           },
         ],
@@ -2489,7 +2505,7 @@ describe('walletUsageSchema', () => {
     expect(() =>
       walletUsageSchema.parse({
         ...usage,
-        flows: [{ ...usage.flows[0], from: 'person' }],
+        flows: [{ ...firstFlow, from: 'person' }],
       }),
     ).toThrow();
     expect(() =>
@@ -2519,7 +2535,7 @@ describe('walletUsageSchema', () => {
     expect(() =>
       walletUsageSchema.parse({
         ...usage,
-        amountBuckets: [{ ...usage.amountBuckets[0], maxSats: -1 }],
+        amountBuckets: [{ ...firstBucket, maxSats: -1 }],
       }),
     ).toThrow();
   });

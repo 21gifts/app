@@ -1,11 +1,7 @@
 'use client';
 
 import { useState, type ReactElement } from 'react';
-import type {
-  WalletParty,
-  WalletPurpose,
-  WalletUsageFlow,
-} from '@/lib/api-types';
+import type { WalletParty, WalletPurpose, WalletUsageFlow } from '@/lib/api-types';
 import {
   formatBitcoin,
   formatFiatDisplay,
@@ -322,11 +318,7 @@ function ribbonAmount(
  *   beside the bitcoin figure.
  * @returns Count and sats, or a signed balance.
  */
-function ribbonTip(
-  node: RibbonNode,
-  style: NumberFormatStyle,
-  spot: FlowSpot | undefined,
-): string {
+function ribbonTip(node: RibbonNode, style: NumberFormatStyle, spot: FlowSpot | undefined): string {
   const amount = ribbonAmount(node, style, spot);
   if (node.kind === 'balance') {
     return `${node.label}: ${amount}`;

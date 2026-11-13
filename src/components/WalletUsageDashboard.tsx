@@ -95,8 +95,8 @@ function monthName(monthIndex: number): string {
       return 'November';
     case 11:
       return 'December';
+    /* v8 ignore next 2 -- Date#getUTCMonth only returns 0 through 11 */
     default:
-      /* v8 ignore next -- Date#getUTCMonth only returns 0 through 11 */
       throw new Error('Invalid month');
   }
 }
@@ -498,10 +498,15 @@ function slotX(index: number, count: number): number {
 /**
  * Colour legend.
  *
- * @param items - Swatch and label pairs.
+ * @param props - Legend props.
+ * @param props.items - Swatch and label pairs.
  * @returns A wrapping list.
  */
-function SwatchLegend(items: readonly { label: string; swatch: string }[]): ReactElement {
+function SwatchLegend({
+  items,
+}: {
+  readonly items: readonly { label: string; swatch: string }[];
+}): ReactElement {
   return (
     <ul className="flex flex-wrap gap-x-4 gap-y-2 text-sm text-paper/80">
       {items.map((item) => (
@@ -726,13 +731,7 @@ function ForumChart(
           return (
             <g key={row.day}>
               {row.gifts > 0 ? (
-                <rect
-                  x={x}
-                  y={base - giftH}
-                  width={barW}
-                  height={giftH}
-                  className="fill-accent"
-                />
+                <rect x={x} y={base - giftH} width={barW} height={giftH} className="fill-accent" />
               ) : null}
               {row.hearts > 0 ? (
                 <rect
@@ -956,13 +955,7 @@ function SizeChart(
         const x = slotX(index, buckets.length) + (slot - barW) / 2;
         return (
           <g key={bucket.key}>
-            <rect
-              x={x}
-              y={base - barH}
-              width={barW}
-              height={barH}
-              className="fill-accent"
-            >
+            <rect x={x} y={base - barH} width={barW} height={barH} className="fill-accent">
               <title>
                 {`${bucket.key}: ${bitcoinWithFiat(bucket.sats, rateDay, fiat, style)}`}
               </title>
@@ -1118,8 +1111,8 @@ function WalletsPerDay({
     <section className="space-y-3" aria-label="Wallets per day">
       <h2 className="text-lg font-semibold">Wallets per day</h2>
       <p className="text-sm text-paper/60">
-        The line is wallets with a balance, on the axis scale. The bars are wallets active that
-        day, on their own scale.
+        The line is wallets with a balance, on the axis scale. The bars are wallets active that day,
+        on their own scale.
       </p>
       <ul className="flex flex-wrap gap-4 text-sm text-paper/80">
         <li className="flex items-center gap-2">
@@ -1478,13 +1471,15 @@ export function WalletUsageDashboard({
       </section>
 
       <details>
-        <summary className="cursor-pointer text-lg font-semibold">How these numbers are made</summary>
+        <summary className="cursor-pointer text-lg font-semibold">
+          How these numbers are made
+        </summary>
         <p className="mt-3 text-sm text-paper/80">
           Wallet payments are counted once even when both sides are 21.gifts wallets. Balances in
           the flow diagrams are computed from payments starting at 0 on the release day. The
-          headline wallet balance on /stats is the last reported balance and can lag. The Tondo
-          fund is the account paying daily, moderator and welcome gifts. Days are UTC. The
-          time-of-day chart is Manila time (UTC+8).
+          headline wallet balance on /stats is the last reported balance and can lag. The Tondo fund
+          is the account paying daily, moderator and welcome gifts. Days are UTC. The time-of-day
+          chart is Manila time (UTC+8).
         </p>
       </details>
     </div>

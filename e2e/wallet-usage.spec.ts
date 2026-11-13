@@ -61,9 +61,7 @@ test('Function: WalletUsageDashboard — purpose chart and all-flows table are v
   await expect(page.getByRole('heading', { name: 'All flows' })).toBeVisible();
 });
 
-test('Function: WalletFlowDiagram — the Tondo fund diagram names the account', async ({
-  page,
-}) => {
+test('Function: WalletFlowDiagram — the Tondo fund diagram names the account', async ({ page }) => {
   await page.goto('/stats/wallet');
   await expect(page.getByRole('img', { name: 'Tondo fund' })).toBeVisible();
   await expect(page.getByRole('img', { name: 'Member wallets' })).toBeVisible();
@@ -90,16 +88,12 @@ test('Function: fetchWalletUsage — the page shows 661 payments and the forum p
   ).toBeVisible();
 });
 
-test('Function: accountBalances — the Tondo fund balance is the last day end', async ({
-  page,
-}) => {
+test('Function: accountBalances — the Tondo fund balance is the last day end', async ({ page }) => {
   await page.goto('/stats/wallet');
   await expect(page.getByText("₿425'057")).toBeVisible();
 });
 
-test('Function: formatCount — payment and sending counts use grouped figures', async ({
-  page,
-}) => {
+test('Function: formatCount — payment and sending counts use grouped figures', async ({ page }) => {
   await page.goto('/stats/wallet');
   await expect(page.getByText('661', { exact: true })).toBeVisible();
   await expect(page.getByText('33 sending')).toBeVisible();

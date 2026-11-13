@@ -1,9 +1,6 @@
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
-import {
-  accountBalances,
-  WalletFlowDiagram,
-} from '@/components/WalletFlowDiagram';
+import { accountBalances, WalletFlowDiagram } from '@/components/WalletFlowDiagram';
 import type { WalletParty, WalletPurpose, WalletUsageFlow } from '@/lib/api-types';
 
 afterEach(cleanup);
@@ -340,6 +337,39 @@ describe('WalletFlowDiagram', () => {
     expect(status.textContent).toBe('');
     fireEvent.focus(ribbon);
     expect(status.textContent).toContain('Deposits from outside');
+    fireEvent.blur(ribbon);
+    expect(status.textContent).toBe('');
+  });
+
+  it('shows and hides the tooltip on a right-side ribbon', () => {
+    render(
+      <WalletFlowDiagram
+        account="members"
+        accountLabel="Member wallets"
+        flows={[flow('2026-11-09', 'members', 'outside', 'withdrawal', 3, 40, 0)]}
+        startSats={50}
+        endSats={80}
+        metric="amount"
+        numberFormat="ch"
+      />,
+    );
+    const diagram = screen.getByRole('img', { name: 'Member wallets' });
+    const ribbon = diagram.querySelector('[data-side="to"]');
+    const frame = diagram.parentElement;
+    if (ribbon === null || frame === null) {
+      throw new Error('missing right-side ribbon');
+    }
+    expect(ribbon.getAttribute('data-flow')).toBe('Withdrawals to outside');
+    const status = frame.querySelector('[role="status"]');
+    if (status === null) {
+      throw new Error('missing status');
+    }
+    fireEvent.mouseEnter(ribbon);
+    expect(status.textContent).toBe('Withdrawals to outside: 3 payments · \u20bf40');
+    fireEvent.mouseLeave(ribbon);
+    expect(status.textContent).toBe('');
+    fireEvent.focus(ribbon);
+    expect(status.textContent).toBe('Withdrawals to outside: 3 payments · \u20bf40');
     fireEvent.blur(ribbon);
     expect(status.textContent).toBe('');
   });

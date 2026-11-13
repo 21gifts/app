@@ -54,7 +54,5 @@ export function WalletUsageLoader(): ReactElement {
     };
   }, []);
 
-  return (
-    <WalletUsageDashboard usage={usage} wallets={wallets} error={error} loading={loading} />
-  );
+  return <WalletUsageDashboard usage={usage} wallets={wallets} error={error} loading={loading} />;
 }

@@ -203,6 +203,34 @@ function sizeTitles(): (string | null)[] {
   return chartTitles('size-chart');
 }
 
+const WALLET_INNER_W = 800 - 96 - 16;
+
+function balancePoint(
+  day: string,
+  fundedWalletCount: number,
+): WalletStats['balanceOverTime'][number] {
+  return {
+    day,
+    totalSats: fundedWalletCount,
+    totalBtc: '0.00000000',
+    walletCount: fundedWalletCount,
+    fundedWalletCount,
+  };
+}
+
+function activeBarBoxes(): { x: number; width: number; height: number }[] {
+  const region = screen.getByRole('region', { name: 'Wallets per day' });
+  return [...region.querySelectorAll('[data-testid="wallet-active-bars"] rect')].map((rect) => {
+    const x = rect.getAttribute('x');
+    const width = rect.getAttribute('width');
+    const height = rect.getAttribute('height');
+    if (x === null || width === null || height === null) {
+      throw new Error('missing bar geometry');
+    }
+    return { x: Number(x), width: Number(width), height: Number(height) };
+  });
+}
+
 beforeEach(() => {
   vi.mocked(useSpotRate).mockReset().mockReturnValue(RATE_DAY);
 });
@@ -214,25 +242,30 @@ describe('WalletUsageDashboard', () => {
     show(BASE, WALLETS, null, false);
     expect(useSpotRate).toHaveBeenCalledWith(true);
     expect(
-      screen.getByText(
-        'Released 9 November 2026, 11:17 UTC. As of 12 November 2026, 08:00 UTC.',
-      ),
+      screen.getByText('Released 9 November 2026, 11:17 UTC. As of 12 November 2026, 08:00 UTC.'),
     ).toBeTruthy();
     expect(
       screen.getByText(
         '9 payments since the release, from 4 active wallets. The forum is paid 2 times as often per day as in the 28 days before.',
       ),
     ).toBeTruthy();
-    expect(screen.getByText('\u20bf100\'000')).toBeTruthy();
+    expect(screen.getByText("\u20bf100'000")).toBeTruthy();
     expect(screen.getByText('$100.00')).toBeTruthy();
     expect(screen.getByText('7 with a balance')).toBeTruthy();
     expect(screen.getByText('3 sending')).toBeTruthy();
     expect(screen.getByText('3.5 after \u00b7 2 before')).toBeTruthy();
-    expect(screen.getByText('\u20bf1\'200')).toBeTruthy();
+    expect(screen.getByText("\u20bf1'200")).toBeTruthy();
     expect(screen.getByText('$1.20')).toBeTruthy();
     expect(screen.getAllByText('Deposit').length).toBeGreaterThan(0);
     expect(screen.getAllByText('Forum gifts & hearts').length).toBeGreaterThan(0);
-    expect(screen.queryByText('Withdrawal')).toBeNull();
+    const purpose = screen.getByRole('heading', {
+      name: 'Payments per day by purpose',
+    }).parentElement;
+    if (purpose === null) {
+      throw new Error('missing purpose section');
+    }
+    const legend = within(purpose).getByRole('list');
+    expect(within(legend).queryByText('Withdrawal')).toBeNull();
     expect(screen.getAllByTestId('release-line')).toHaveLength(2);
     const hours = [...screen.getByTestId('manila-chart').querySelectorAll('title')].map(
       (node) => node.textContent,
@@ -262,9 +295,16 @@ describe('WalletUsageDashboard', () => {
     ]);
     expect(sizeTitles()).toEqual(['1: \u20bf5 · $0.01', '101-1k: \u20bf200 · $0.20']);
     const table = screen.getByRole('table');
-    expect(table.textContent).toContain('\u20bf1\'000 · $1.00');
+    expect(table.textContent).toContain("\u20bf1'000 · $1.00");
     expect(table.textContent).toContain('\u20bf540 · $0.54');
     expect(table.textContent).toContain('\u20bf10 · $0.01');
+    const withdrawalRow = within(table).getByText('Withdrawal').closest('tr');
+    if (withdrawalRow === null) {
+      throw new Error('missing withdrawal row');
+    }
+    expect(withdrawalRow.textContent).toContain('Members');
+    expect(withdrawalRow.textContent).toContain('Outside');
+    expect(withdrawalRow.textContent).toContain('\u20bf50 · $0.05');
     expect(within(table).queryByText('Other')).toBeNull();
     expect(screen.getByText(/Wallet payments are counted once/)).toBeTruthy();
     const fund = screen.getByRole('img', { name: 'Tondo fund' });
@@ -279,11 +319,11 @@ describe('WalletUsageDashboard', () => {
     }
     fireEvent.mouseEnter(depositRibbon);
     expect(fundFrame.querySelector('[role="status"]')?.textContent).toBe(
-      'Deposits from outside: 1 payments · \u20bf1\'000 · $1.00',
+      "Deposits from outside: 1 payments · \u20bf1'000 · $1.00",
     );
     fireEvent.mouseEnter(endRibbon);
     expect(fundFrame.querySelector('[role="status"]')?.textContent).toBe(
-      'Balance at end of day: \u20bf1\'200 · $1.20',
+      "Balance at end of day: \u20bf1'200 · $1.20",
     );
     expect(
       screen.getByRole('img', { name: 'Member wallets' }).querySelector('[data-flow="Fees"]'),
@@ -298,7 +338,7 @@ describe('WalletUsageDashboard', () => {
         .getByRole('img', { name: 'Member wallets' })
         .querySelector('[data-flow="Forum gifts from members"]'),
     ).toBeNull();
-    expect(screen.getByRole('table').textContent).toContain('\u20bf1\'000');
+    expect(screen.getByRole('table').textContent).toContain("\u20bf1'000");
 
     fireEvent.click(screen.getByRole('button', { name: 'Count' }));
     const members = screen.getByRole('img', { name: 'Member wallets' });
@@ -310,16 +350,20 @@ describe('WalletUsageDashboard', () => {
   it('names every month and both clock widths', () => {
     for (const [index, name] of MONTHS.entries()) {
       const month = String(index + 1).padStart(2, '0');
-      show(
-        usageWith({ releasedAt: `2026-${month}-15T12:30:00.000Z` }),
-        null,
-        null,
-        false,
-      );
+      show(usageWith({ releasedAt: `2026-${month}-15T12:30:00.000Z` }), null, null, false);
       expect(
         screen.getByText(`Released 15 ${name} 2026, 12:30 UTC.`, { exact: false }),
       ).toBeTruthy();
       cleanup();
+    }
+  });
+
+  it('throws when the calendar month is outside 0 through 11', () => {
+    const month = vi.spyOn(Date.prototype, 'getUTCMonth').mockReturnValue(12);
+    try {
+      expect(() => show(BASE, null, null, false)).toThrow(/Invalid month/);
+    } finally {
+      month.mockRestore();
     }
   });
 
@@ -362,12 +406,70 @@ describe('WalletUsageDashboard', () => {
       ),
     ).toEqual(oneHour);
     const wallets = screen.getByRole('region', { name: 'Wallets per day' });
-    expect(
-      [...wallets.querySelectorAll('title')].map((node) => node.textContent),
-    ).toContain('2026-11-09: 0 with a balance · 0 active');
+    expect([...wallets.querySelectorAll('title')].map((node) => node.textContent)).toContain(
+      '2026-11-09: 0 with a balance · 0 active',
+    );
     expect(wallets.querySelectorAll('[data-testid="wallet-active-bars"] rect')).toHaveLength(0);
     expect(wallets.querySelectorAll('circle')).toHaveLength(0);
     expect(screen.getAllByText('No payments on this day')).toHaveLength(2);
+  });
+
+  it('centers the active-wallet bar when only one day has wallets', () => {
+    show(
+      usageWith({
+        days: [usageDay('2026-11-09', 4, ZERO, ZERO)],
+        flows: [],
+      }),
+      {
+        ...WALLETS,
+        balanceOverTime: [balancePoint('2026-11-09', 2)],
+      },
+      null,
+      false,
+    );
+    const wallets = screen.getByRole('region', { name: 'Wallets per day' });
+    expect([...wallets.querySelectorAll('title')].map((node) => node.textContent)).toContain(
+      '2026-11-09: 2 with a balance · 4 active',
+    );
+    const [bar] = activeBarBoxes();
+    if (bar === undefined) {
+      throw new Error('missing active bar');
+    }
+    expect(activeBarBoxes()).toHaveLength(1);
+    expect(bar.height).toBeGreaterThan(0);
+    expect(bar.width).toBeCloseTo(WALLET_INNER_W * 0.2, 5);
+    expect(bar.x + bar.width / 2).toBeCloseTo(96 + WALLET_INNER_W / 2, 5);
+  });
+
+  it('spaces active-wallet bars across several days', () => {
+    show(
+      usageWith({
+        days: [usageDay('2026-11-09', 4, ZERO, ZERO), usageDay('2026-11-10', 2, ZERO, ZERO)],
+        flows: [],
+      }),
+      {
+        ...WALLETS,
+        balanceOverTime: [balancePoint('2026-11-09', 3), balancePoint('2026-11-10', 5)],
+      },
+      null,
+      false,
+    );
+    const wallets = screen.getByRole('region', { name: 'Wallets per day' });
+    const titles = [...wallets.querySelectorAll('title')].map((node) => node.textContent);
+    expect(titles).toContain('2026-11-09: 3 with a balance · 4 active');
+    expect(titles).toContain('2026-11-10: 5 with a balance · 2 active');
+    const [first, second] = activeBarBoxes();
+    if (first === undefined || second === undefined) {
+      throw new Error('missing active bars');
+    }
+    const step = WALLET_INNER_W;
+    const barW = step * 0.45;
+    expect(activeBarBoxes()).toHaveLength(2);
+    expect(first.width).toBeCloseTo(barW, 5);
+    expect(second.width).toBeCloseTo(barW, 5);
+    expect(first.x + first.width / 2).toBeCloseTo(96, 5);
+    expect(second.x + second.width / 2).toBeCloseTo(96 + WALLET_INNER_W, 5);
+    expect(first.height).toBeCloseTo(second.height * 2, 5);
   });
 
   it('hides wallets per day when every balance day is before the release', () => {
@@ -418,9 +520,7 @@ describe('WalletUsageDashboard', () => {
       null,
       false,
     );
-    expect(
-      screen.getByText(/The forum had no payments per day before the release/),
-    ).toBeTruthy();
+    expect(screen.getByText(/The forum had no payments per day before the release/)).toBeTruthy();
     expect(screen.getByText('4 after \u00b7 0 before')).toBeTruthy();
   });
 
@@ -474,7 +574,7 @@ describe('WalletUsageDashboard', () => {
   it('shows bitcoin alone when there is no spot', () => {
     vi.mocked(useSpotRate).mockReturnValue(null);
     show(BASE, WALLETS, null, false);
-    expect(screen.getByText('\u20bf100\'000')).toBeTruthy();
+    expect(screen.getByText("\u20bf100'000")).toBeTruthy();
     expect(screen.queryByText('$100.00')).toBeNull();
     expect(screen.queryByText('$1.20')).toBeNull();
     expect(purposeTitles()).toEqual([
@@ -490,7 +590,7 @@ describe('WalletUsageDashboard', () => {
     ]);
     expect(sizeTitles()).toEqual(['1: \u20bf5', '101-1k: \u20bf200']);
     const table = screen.getByRole('table');
-    expect(table.textContent).toContain('\u20bf1\'000');
+    expect(table.textContent).toContain("\u20bf1'000");
     expect(table.textContent).not.toContain('$');
     const fund = screen.getByRole('img', { name: 'Tondo fund' });
     const frame = fund.parentElement;
@@ -500,7 +600,7 @@ describe('WalletUsageDashboard', () => {
     }
     fireEvent.mouseEnter(ribbon);
     expect(frame.querySelector('[role="status"]')?.textContent).toBe(
-      'Deposits from outside: 1 payments · \u20bf1\'000',
+      "Deposits from outside: 1 payments · \u20bf1'000",
     );
   });
 
