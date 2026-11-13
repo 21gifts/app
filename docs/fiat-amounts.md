@@ -4,7 +4,9 @@ This rule is binding for every screen, every stored amount, and every review.
 It wins over any sentence that replaces a stored fiat figure with the current
 spot, a later daily close, or a round trip through sats. Every amount still
 shows bitcoin and one fiat figure. A shop payment opened for an amount typed
-in bitcoin shows only bitcoin. The minted fallback still shows the spot.
+in bitcoin shows only bitcoin. The minted fallback still shows the spot. The
+**By month** bars on `/stats` show only the unit selected on their ₿ | fiat
+control (user decision 2026-11-11).
 
 The supported currencies are USD, CHF, EUR, and PHP. The rule is the same for
 each of them. No currency is special.
@@ -26,9 +28,11 @@ The other supported currencies are the amounts frozen at that same moment.
 Later screens show those frozen strings. They do not recompute them.
 
 Every amount shows bitcoin and one fiat figure, except a shop payment opened
-for an amount typed in bitcoin. A stored string is that
-figure, shown as-is. A missing frozen string is not written back and is not
-filled from a daily close. The fiat shown beside the bitcoin is then the
+for an amount typed in bitcoin. The **By month** bars on `/stats` show only
+the unit selected on their ₿ | fiat control (user decision 2026-11-11).
+A stored string is that figure, shown as-is. A missing frozen string is not
+written back and is not filled from a daily close. The fiat shown beside the
+bitcoin is then the
 current spot in the viewer's currency. Bitcoin stands alone only when that
 spot is not available yet. A shop payment opened for an amount the payer
 typed in bitcoin also shows only bitcoin.

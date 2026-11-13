@@ -22,8 +22,9 @@ import { IconButton } from '@/components/ui';
 import type { WalletPaySent } from '@/hooks/useWalletPay';
 import { committedFiatFigure, type FiatCode, type StoredFiat } from '@/lib/committed-fiat';
 import { formatDefinedGoalAmount } from '@/lib/forum-goal';
-import type { NumberFormatStyle } from '@/lib/number-format';
+import { keepTabInside } from '@/lib/modal-focus';
 import { MOTION_FOLD_MS } from '@/lib/motion';
+import type { NumberFormatStyle } from '@/lib/number-format';
 import {
   formatBitcoin,
   formatFiatDisplay,
@@ -49,42 +50,6 @@ export const PAY_SHEET_SUCCESS_MS = 1400;
  * the member closed slides away at once and is only kept, inert and hidden, for the rest.
  */
 export const PAY_SHEET_HOLD_MS = PAY_SHEET_SUCCESS_MS + MOTION_FOLD_MS;
-
-/** What the Tab key can reach inside the sheet. */
-const FOCUSABLE = 'a[href], button, input, select, textarea, [tabindex]:not([tabindex="-1"])';
-
-/**
- * Keeps Tab and Shift+Tab inside the open sheet, so the keyboard never reaches the page behind the
- * scrim. Focus outside the panel moves to its first control; with no control, the panel keeps it.
- *
- * @param event - The Tab keydown.
- * @param panel - The sheet's dialog panel.
- */
-function keepTabInside(event: KeyboardEvent, panel: HTMLElement): void {
-  const items = Array.from(panel.querySelectorAll<HTMLElement>(FOCUSABLE)).filter(
-    (item) => !item.hasAttribute('disabled') && item.closest('[inert]') === null,
-  );
-  const active = document.activeElement;
-  const first = items[0];
-  const last = items[items.length - 1];
-  if (first === undefined || last === undefined) {
-    event.preventDefault();
-    panel.focus({ preventScroll: true });
-    return;
-  }
-  if (!(active instanceof Node) || !panel.contains(active)) {
-    event.preventDefault();
-    first.focus({ preventScroll: true });
-    return;
-  }
-  if (event.shiftKey && (active === first || active === panel)) {
-    event.preventDefault();
-    last.focus({ preventScroll: true });
-  } else if (!event.shiftKey && active === last) {
-    event.preventDefault();
-    first.focus({ preventScroll: true });
-  }
-}
 
 const PaySheetCloseContext = createContext<(() => void) | null>(null);
 

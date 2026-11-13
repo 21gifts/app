@@ -1,7 +1,7 @@
 import { cleanup, fireEvent, screen, waitFor } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { StatsLoader } from '@/app/(marketing)/stats/stats-loader';
-import type { GiftStats } from '@/lib/api-types';
+import type { GiftStats, WalletStats } from '@/lib/api-types';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
 
 const EMPTY: GiftStats = {
@@ -16,7 +16,6 @@ const EMPTY: GiftStats = {
   firstPaidAt: null,
   lastPaidAt: null,
   spendOverTime: [],
-  byRecipient: [],
   byMonth: [],
   fx: {
     quote: 'BTC-USD',
@@ -26,21 +25,67 @@ const EMPTY: GiftStats = {
   },
 };
 
+const WALLETS: WalletStats = {
+  walletCount: 61,
+  fundedWalletCount: 32,
+  totalSats: 89096,
+  totalBtc: '0.00089096',
+  asOf: '2026-11-10T06:21:04.985Z',
+  balanceOverTime: [
+    {
+      day: '2026-11-09',
+      totalSats: 80000,
+      totalBtc: '0.00080000',
+      walletCount: 55,
+      fundedWalletCount: 30,
+    },
+    {
+      day: '2026-11-10',
+      totalSats: 89096,
+      totalBtc: '0.00089096',
+      walletCount: 61,
+      fundedWalletCount: 32,
+    },
+  ],
+};
+
 vi.mock('@/lib/api', () => ({
   fetchGiftStats: vi.fn(),
   fetchPostStats: vi.fn().mockResolvedValue({ postCount: 0, postsOverTime: [] }),
+  fetchWalletStats: vi.fn().mockResolvedValue({
+    walletCount: 0,
+    fundedWalletCount: 0,
+    totalSats: 0,
+    totalBtc: '0.00000000',
+    asOf: null,
+    balanceOverTime: [],
+  }),
 }));
 
-import { fetchGiftStats, fetchPostStats } from '@/lib/api';
+vi.mock('@/hooks/useSpotRate', () => ({
+  useSpotRate: (): null => null,
+}));
+
+import { fetchGiftStats, fetchPostStats, fetchWalletStats } from '@/lib/api';
 
 const fetchMock = vi.mocked(fetchGiftStats);
 const fetchPostsMock = vi.mocked(fetchPostStats);
+const fetchWalletsMock = vi.mocked(fetchWalletStats);
 
 afterEach(() => {
   cleanup();
   fetchMock.mockReset();
   fetchPostsMock.mockReset();
   fetchPostsMock.mockResolvedValue({ postCount: 0, postsOverTime: [] });
+  fetchWalletsMock.mockReset();
+  fetchWalletsMock.mockResolvedValue({
+    walletCount: 0,
+    fundedWalletCount: 0,
+    totalSats: 0,
+    totalBtc: '0.00000000',
+    asOf: null,
+    balanceOverTime: [],
+  });
 });
 
 describe('StatsLoader', () => {
@@ -60,6 +105,27 @@ describe('StatsLoader', () => {
       expect(screen.getByText('No donations recorded yet.')).toBeTruthy();
     });
     expect(screen.queryByRole('region', { name: 'Posts' })).toBeNull();
+  });
+
+  it('renders wallet totals and omits wallets when that fetch fails', async () => {
+    fetchMock.mockResolvedValue(EMPTY);
+    fetchWalletsMock.mockResolvedValueOnce(WALLETS);
+    renderWithLocale(<StatsLoader />);
+    await waitFor(() => {
+      expect(screen.getByRole('region', { name: 'Wallets' })).toBeTruthy();
+    });
+    expect(screen.getByRole('region', { name: 'Wallets' }).textContent).toContain("₿89'096");
+
+    cleanup();
+    fetchMock.mockResolvedValue(EMPTY);
+    fetchWalletsMock.mockRejectedValueOnce(
+      new Error('Could not load wallet stats. Please try again.'),
+    );
+    renderWithLocale(<StatsLoader />);
+    await waitFor(() => {
+      expect(screen.getByText('No donations recorded yet.')).toBeTruthy();
+    });
+    expect(screen.queryByRole('region', { name: 'Wallets' })).toBeNull();
   });
 
   it('shows a fetch error and retries', async () => {

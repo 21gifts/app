@@ -3,16 +3,22 @@
 import type { MouseEvent, ReactElement } from 'react';
 import { useTranslations } from '@/components/LocaleProvider';
 import type { MessageKey } from '@/lib/messages';
-import { verifiedChipHiddenByStaffTag } from '@/lib/roles';
+import type { Role } from '@/lib/roles';
 
 /** Roles that show a clickable tag beside a forum member's name. */
-export type ForumTaggedRole = 'founder' | 'moderator' | 'initiator' | 'verified';
+export type ForumTaggedRole =
+  'founder' | 'moderator' | 'fond' | 'software_developer' | 'initiator' | 'verified';
 
 /** Catalog keys for a tagged forum role's label and explanation. */
 export const FORUM_ROLE_TAG_KEYS: Record<ForumTaggedRole, { label: MessageKey; hint: MessageKey }> =
   {
     founder: { label: 'forum.role.founder', hint: 'forum.role.founderHint' },
     moderator: { label: 'forum.role.moderator', hint: 'forum.role.moderatorHint' },
+    fond: { label: 'forum.role.fond', hint: 'forum.role.fondHint' },
+    software_developer: {
+      label: 'forum.role.softwareDeveloper',
+      hint: 'forum.role.softwareDeveloperHint',
+    },
     initiator: { label: 'forum.role.initiator', hint: 'forum.role.initiatorHint' },
     verified: { label: 'forum.role.verified', hint: 'forum.role.verifiedHint' },
   };
@@ -31,27 +37,25 @@ export function forumTaggedRole(role: string): ForumTaggedRole | null {
  * Clickable role pill shared by a member's identity card, forum notes and
  * replies, and the paid-heart sender list.
  *
- * The pill is absent for an untagged role and when the Software Developer
- * label hides the Verified tag. The caller owns the open state so each list
- * can show one hint at a time.
+ * The pill shows exactly the api role through {@link forumTaggedRole}. It is
+ * absent for basis. The caller owns the open state so each list can show one
+ * hint at a time.
  *
- * @param props - Live role, optional staff tag, open state, and toggle.
+ * @param props - Live role, open state, and toggle.
  * @returns The pill, or `null` when this role has no tag.
  */
 export function ForumRoleTag({
   role,
-  staffTag,
   expanded,
   onToggle,
 }: {
-  role: string;
-  staffTag?: string | undefined;
+  role: Role;
   expanded: boolean;
   onToggle: (event: MouseEvent<HTMLButtonElement>) => void;
 }): ReactElement | null {
   const { t } = useTranslations();
   const tagged = forumTaggedRole(role);
-  if (tagged === null || verifiedChipHiddenByStaffTag(role, staffTag)) {
+  if (tagged === null) {
     return null;
   }
   return (
@@ -69,19 +73,15 @@ export function ForumRoleTag({
 /**
  * Sentence revealed under a {@link ForumRoleTag}.
  *
- * @param props - Live role and optional staff tag.
+ * Uses the api role, like the pill itself.
+ *
+ * @param props - Live role.
  * @returns The status sentence, or `null` when this role has no tag.
  */
-export function ForumRoleHint({
-  role,
-  staffTag,
-}: {
-  role: string;
-  staffTag?: string | undefined;
-}): ReactElement | null {
+export function ForumRoleHint({ role }: { role: Role }): ReactElement | null {
   const { t } = useTranslations();
   const tagged = forumTaggedRole(role);
-  if (tagged === null || verifiedChipHiddenByStaffTag(role, staffTag)) {
+  if (tagged === null) {
     return null;
   }
   return <>{t(FORUM_ROLE_TAG_KEYS[tagged].hint)}</>;

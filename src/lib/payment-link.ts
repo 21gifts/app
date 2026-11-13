@@ -37,6 +37,6 @@ export function lightningHref(request: string): string {
 
 /**
  * Pause between two reads of a pay poll (ms): the forum's pay and payable
- * polls and the payment page's status and pay-link reads.
+ * polls, and the payment page's status and pay-link reads.
  */
 export const PAY_POLL_MS = 2000;

@@ -27,6 +27,7 @@ import { getBreezApiKey } from '@/lib/config';
 import { relockHeldShares } from '@/lib/held-shares';
 import { logInteraction } from '@/lib/interaction-log';
 import { mergePrfExtension } from '@/lib/passkey-renew';
+import { refreshOwnerAccount } from '@/lib/owner-account-refresh';
 import {
   classifyWebAuthnError,
   mnemonicFromPrfFirst,
@@ -637,7 +638,8 @@ function restart(f: Flow, a: Attempt, begin: RecoveryBegin): void {
  * the authenticator about an unknown passkey. The new wallet is closed first,
  * so the member's own wallet can open it. On success the tab phrase of any
  * earlier session is cleared, the new words are derived from the passkey's
- * PRF output into the tab phrase, the session is stored, `login` and
+ * PRF output into the tab phrase, the session is stored, its sparse account
+ * is refreshed from `GET /me` without holding up recovery, `login` and
  * `recovery_done` are logged, and every part of the move but the balance is
  * done (the api lets the passkey sign in only once the account and address moved).
  * While the old words are still in memory, the shares the member keeps for
@@ -688,6 +690,7 @@ async function signIn(f: Flow, a: Attempt): Promise<SignInOutcome> {
     });
     void relockHeldShares(session.token, session.account.id, f.oldWords, a.newWords);
     useAuthStore.getState().setAuth(session.token, session.account);
+    refreshOwnerAccount(session.token);
     logInteraction('login');
     logInteraction('recovery_done');
     a.done = { ...a.done, account: true, address: true, signedIn: true };

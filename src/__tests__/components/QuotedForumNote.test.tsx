@@ -867,6 +867,30 @@ describe('ForumQuotedBody', () => {
     expect(screen.queryByText('Moderator')).toBeNull();
   });
 
+  it('shows the Fond pill for a fond quoted author', async () => {
+    const fondNote: ForumMessage = {
+      ...quotedNote,
+      name: 'Fiona',
+      role: 'fond',
+      hasPhoto: false,
+      photoCount: 0,
+      text: 'fund note',
+    };
+    renderWithLocale(
+      <ForumQuotedBody
+        text={QUOTED_URL}
+        knownNotes={[fondNote]}
+        excludeId={PARENT_ID}
+        rateDay={null}
+        fiat="USD"
+      />,
+    );
+    await waitFor(() => {
+      expect(screen.getByText('fund note')).toBeTruthy();
+    });
+    expect(screen.getByText('Fond')).toBeTruthy();
+  });
+
   it('collapses long remaining text behind Show more on the feed', () => {
     const text = `${'a'.repeat(560)} TAILTOKEN`;
     renderWithLocale(
@@ -1068,11 +1092,10 @@ describe('ForumQuotedBody', () => {
     expect(screen.queryByText('Founder')).toBeNull();
   });
 
-  it('hides Verified when Software Developer is shown on a quoted note with the staff tag', async () => {
+  it('shows one Software Developer badge and no Verified', async () => {
     const tagged: ForumMessage = {
       ...quotedNote,
-      role: 'verified',
-      staffTag: 'software_developer',
+      role: 'software_developer',
       hasPhoto: false,
       photoCount: 0,
     };
@@ -1086,17 +1109,16 @@ describe('ForumQuotedBody', () => {
       />,
     );
     await waitFor(() => {
-      expect(screen.getByText('Software Developer')).toBeTruthy();
+      expect(screen.getAllByText('Software Developer')).toHaveLength(1);
     });
     expect(screen.queryByText('Verified')).toBeNull();
   });
 
-  it('hides Verified and External on a quoted verified nostr note with the staff tag', async () => {
+  it('shows one Software Developer badge and no Verified or External on a nostr note', async () => {
     const tagged: ForumMessage = {
       ...quotedNote,
-      role: 'verified',
+      role: 'software_developer',
       via: 'nostr',
-      staffTag: 'software_developer',
       hasPhoto: false,
       photoCount: 0,
     };
@@ -1110,34 +1132,10 @@ describe('ForumQuotedBody', () => {
       />,
     );
     await waitFor(() => {
-      expect(screen.getByText('Software Developer')).toBeTruthy();
+      expect(screen.getAllByText('Software Developer')).toHaveLength(1);
     });
     expect(screen.queryByText('Verified')).toBeNull();
     expect(screen.queryByText('External')).toBeNull();
-  });
-
-  it('shows External and Software Developer on a quoted nostr note with the staff tag', async () => {
-    const tagged: ForumMessage = {
-      ...quotedNote,
-      role: 'basis',
-      via: 'nostr',
-      staffTag: 'software_developer',
-      hasPhoto: false,
-      photoCount: 0,
-    };
-    renderWithLocale(
-      <ForumQuotedBody
-        text={QUOTED_URL}
-        knownNotes={[tagged]}
-        excludeId={PARENT_ID}
-        rateDay={null}
-        fiat="USD"
-      />,
-    );
-    await waitFor(() => {
-      expect(screen.getByText('External')).toBeTruthy();
-    });
-    expect(screen.getByText('Software Developer')).toBeTruthy();
   });
 
   it('shows an external quoted author as a View profile link without a member link', async () => {

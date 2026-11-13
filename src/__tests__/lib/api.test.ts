@@ -30,6 +30,7 @@ import {
   fetchGrantPlaces,
   FUNDING_PLACES_FULL_ERROR,
   fetchPostStats,
+  fetchWalletStats,
   fetchAboutMePhoto,
   fetchProfilePhoto,
   fetchWideBanner,
@@ -69,6 +70,7 @@ import {
   fetchViewActivity,
   fetchViewForumList,
   fetchViewProfile,
+  fetchFondSummary,
   fetchPreviousWallets,
   deletePreviousWallet,
   fetchHeldShareBoxes,
@@ -114,10 +116,14 @@ import {
   CANNOT_RECEIVE_CODE,
   WalletRequiredError,
   CannotReceiveError,
+  CreditClosedError,
   throwIfWalletAnswer,
   postMessageInvoice,
   getRepayment,
   getMyLoans,
+  closeLoan,
+  LoanRepaymentError,
+  prepayLoan,
   postRepaymentDue,
   postMessageVideo,
   postNotificationLevel,
@@ -289,6 +295,42 @@ describe('fetchViewProfile', () => {
   it('throws when the body fails validation', async () => {
     stubFetch({ ok: true, status: 200, body: { name: '' } });
     await expect(fetchViewProfile(viewKey)).rejects.toThrow();
+  });
+});
+
+describe('fetchFondSummary', () => {
+  const summary = {
+    username: 'tondo-fond',
+    receivedSats: 210_000,
+    paidOutSats: 21_000,
+    feesSats: 210,
+    balanceSats: 189_000,
+    balanceSyncedAt: '2026-11-11T10:00:00.000Z',
+    payoutsPaid: 3,
+    payoutsPaidUsd: '3.00',
+  };
+
+  it('returns the validated summary from the same-origin proxy path', async () => {
+    const fetchMock = stubFetch({ ok: true, status: 200, body: summary });
+    await expect(fetchFondSummary('tondo-fond')).resolves.toEqual(summary);
+    expect(fetchMock).toHaveBeenCalledWith('/fonds/tondo-fond/summary');
+  });
+
+  it('returns null on 404', async () => {
+    stubFetch({ ok: false, status: 404, body: { error: 'Not found' } });
+    await expect(fetchFondSummary('other-fond')).resolves.toBeNull();
+  });
+
+  it('throws on a non-404 non-ok response', async () => {
+    stubFetch({ ok: false, status: 503, body: { error: 'unavailable' } });
+    await expect(fetchFondSummary('tondo-fond')).rejects.toThrow(
+      'Failed to fetch Fond summary: 503',
+    );
+  });
+
+  it('throws when the body fails validation', async () => {
+    stubFetch({ ok: true, status: 200, body: { username: 'tondo-fond' } });
+    await expect(fetchFondSummary('tondo-fond')).rejects.toThrow();
   });
 });
 
@@ -1326,18 +1368,6 @@ describe('fetchGiftStats', () => {
         cumulativePhp: '0.50',
       },
     ],
-    byRecipient: [
-      {
-        recipient: 'alice',
-        giftCount: 1,
-        sats: 10,
-        btc: '0.00000010',
-        usd: '0.01',
-        chf: '0.01',
-        eur: '0.01',
-        php: '0.50',
-      },
-    ],
     byMonth: [
       {
         month: '2026-06',
@@ -1369,28 +1399,27 @@ describe('fetchGiftStats', () => {
     expect(fetchMock).toHaveBeenCalledWith('/gifts/stats');
   });
 
-  it('appends recipient when the handle is non-empty after trim', async () => {
-    const fetchMock = stubFetch({ ok: true, status: 200, body: stats });
-    await expect(fetchGiftStats('alice')).resolves.toEqual(stats);
-    expect(fetchMock).toHaveBeenCalledWith('/gifts/stats?recipient=alice');
-  });
-
-  it('trims recipient spaces before appending', async () => {
-    const fetchMock = stubFetch({ ok: true, status: 200, body: stats });
-    await expect(fetchGiftStats('  alice  ')).resolves.toEqual(stats);
-    expect(fetchMock).toHaveBeenCalledWith('/gifts/stats?recipient=alice');
-  });
-
-  it('URL-encodes special characters in recipient', async () => {
-    const fetchMock = stubFetch({ ok: true, status: 200, body: stats });
-    await expect(fetchGiftStats('a b/c')).resolves.toEqual(stats);
-    expect(fetchMock).toHaveBeenCalledWith(`/gifts/stats?recipient=${encodeURIComponent('a b/c')}`);
-  });
-
-  it('omits recipient when blank after trim', async () => {
-    const fetchMock = stubFetch({ ok: true, status: 200, body: stats });
-    await expect(fetchGiftStats('   ')).resolves.toEqual(stats);
-    expect(fetchMock).toHaveBeenCalledWith('/gifts/stats');
+  it('accepts a payload that still includes byRecipient', async () => {
+    stubFetch({
+      ok: true,
+      status: 200,
+      body: {
+        ...stats,
+        byRecipient: [
+          {
+            recipient: 'alice',
+            giftCount: 1,
+            sats: 10,
+            btc: '0.00000010',
+            usd: '0.01',
+            chf: null,
+            eur: null,
+            php: null,
+          },
+        ],
+      },
+    });
+    await expect(fetchGiftStats()).resolves.toEqual(stats);
   });
 
   it('throws visitor copy on a non-ok response', async () => {
@@ -1681,6 +1710,46 @@ describe('fetchPostStats', () => {
     await expect(fetchPostStats()).rejects.toThrow('Could not load post stats. Please try again.');
     stubFetch({ ok: true, status: 200, body: { postCount: -1 } });
     await expect(fetchPostStats()).rejects.toThrow('Could not load post stats. Please try again.');
+  });
+});
+
+describe('fetchWalletStats', () => {
+  const stats = {
+    walletCount: 61,
+    fundedWalletCount: 32,
+    totalSats: 89096,
+    totalBtc: '0.00089096',
+    asOf: '2026-11-10T06:21:04.985Z',
+    balanceOverTime: [
+      {
+        day: '2026-11-09',
+        totalSats: 80000,
+        totalBtc: '0.00080000',
+        walletCount: 55,
+        fundedWalletCount: 30,
+      },
+    ],
+  };
+
+  it('returns the validated wallet series', async () => {
+    const fetchMock = stubFetch({ ok: true, status: 200, body: stats });
+    await expect(fetchWalletStats()).resolves.toEqual(stats);
+    expect(fetchMock).toHaveBeenCalledWith('/wallets/stats');
+  });
+
+  it('throws visitor copy on a non-ok response, a failed fetch, and a bad body', async () => {
+    stubFetch({ ok: false, status: 503, body: { error: 'Wallet stats are unavailable' } });
+    await expect(fetchWalletStats()).rejects.toThrow(
+      'Could not load wallet stats. Please try again.',
+    );
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new TypeError('Failed to fetch')));
+    await expect(fetchWalletStats()).rejects.toThrow(
+      'Could not load wallet stats. Please try again.',
+    );
+    stubFetch({ ok: true, status: 200, body: { ...stats, totalSats: -1 } });
+    await expect(fetchWalletStats()).rejects.toThrow(
+      'Could not load wallet stats. Please try again.',
+    );
   });
 });
 
@@ -2357,6 +2426,7 @@ describe('fetchComposeTarget', () => {
 const LEDGER = {
   currency: 'BTC',
   fundedAt: '2026-09-26T12:00:00.000Z',
+  closedAt: null,
   termDays: 1,
   daysDue: 1,
   daysPaid: 0,
@@ -2379,6 +2449,8 @@ const LEDGER = {
       username: 'bea',
       amount: null,
       sats: 21,
+      paidSats: 0,
+      paidAmount: null,
       status: 'due',
       via: 'lightning',
     },
@@ -2500,6 +2572,9 @@ const MY_LOAN = {
   amountPhp: null,
   termDays: 30,
   fundedAt: '2026-10-02T12:00:00.000Z',
+  closedAt: null,
+  maxSats: 19_000,
+  maxAmount: null,
   daysDue: 12,
   daysPaid: 11,
   repaidSats: 11_000,
@@ -2669,7 +2744,157 @@ describe('postRepaymentDue', () => {
   });
 });
 
+describe('closeLoan', () => {
+  it('posts without a body and validates the final collecting state', async () => {
+    const result = {
+      fundedAt: null,
+      closedAt: '2026-11-11T10:00:00.000Z',
+      collectedSats: 900,
+      collectedAmount: null,
+    };
+    const fetchMock = stubFetch({ ok: true, status: 200, body: result });
+    await expect(closeLoan('sess', 'a/b')).resolves.toEqual(result);
+    expect(fetchMock).toHaveBeenCalledWith('/messages/a%2Fb/repayment/close', {
+      method: 'POST',
+      headers: { Authorization: 'Bearer sess' },
+    });
+  });
+
+  it('keeps missing requirements typed and rejects malformed success bodies', async () => {
+    stubFetch({
+      ok: false,
+      status: 409,
+      body: { error: 'missing_requirements', missing: ['rules'] },
+    });
+    await expect(closeLoan('sess', 'm1')).rejects.toBeInstanceOf(MissingRequirementsError);
+    stubFetch({ ok: true, status: 200, body: { closedAt: null } });
+    await expect(closeLoan('sess', 'm1')).rejects.toThrow();
+  });
+});
+
+describe('prepayLoan', () => {
+  const success = {
+    amountSats: 500,
+    amount: '12.50',
+    bills: [
+      {
+        dayIndex: 3,
+        recipientAccountId: 'acc_1',
+        name: 'Bruno',
+        username: 'bruno',
+        amountSats: 500,
+        amount: '12.50',
+        pr: 'lnbc500n1prepay',
+      },
+    ],
+    waiting: [],
+  };
+
+  it('posts the amount and validates bills with the due response shape', async () => {
+    const fetchMock = stubFetch({ ok: true, status: 200, body: success });
+    await expect(prepayLoan('sess', 'a/b', '12,50')).resolves.toEqual({
+      ...success,
+      bills: [{ ...success.bills[0]!, sparkInvoice: null }],
+    });
+    expect(fetchMock).toHaveBeenCalledWith('/messages/a%2Fb/repayment', {
+      method: 'POST',
+      headers: { Authorization: 'Bearer sess', 'Content-Type': 'application/json' },
+      body: JSON.stringify({ amount: '12,50' }),
+    });
+  });
+
+  it.each([
+    [{ code: 'invalid_amount' }, 400, 'invalid_amount'],
+    [{ error: 'Nothing is due' }, 400, 'nothing_due'],
+    [{ error: 'SUNDAY_REST' }, 403, 'sunday_rest'],
+    [{ code: 'SUNDAY_REST' }, 403, 'sunday_rest'],
+    [{ error: 'A payment for this share is still open' }, 409, 'payment_open'],
+    [{ error: 'slow down' }, 429, 'rate_limited'],
+    [{ error: 'offline' }, 503, 'service_unavailable'],
+    [{ error: 'not found' }, 404, 'request_failed'],
+  ] as const)('maps %j at %i to typed code %s', async (errorBody, status, code) => {
+    stubFetch({ ok: false, status, body: errorBody });
+    const error = await prepayLoan('sess', 'm1', '1').catch((reason: unknown) => reason);
+    expect(error).toMatchObject({
+      name: 'LoanRepaymentError',
+      code,
+      status,
+      maxSats: null,
+      maxAmount: null,
+    });
+  });
+
+  it.each(['amount_too_high', 'too_many_shares'] as const)(
+    'carries the api maximum for %s',
+    async (code) => {
+      stubFetch({
+        ok: false,
+        status: 400,
+        body: { code, maxSats: 750, maxAmount: '18.75' },
+      });
+      const error = await prepayLoan('sess', 'm1', '20').catch((reason: unknown) => reason);
+      expect(error).toBeInstanceOf(LoanRepaymentError);
+      expect(error).toMatchObject({ code, maxSats: 750, maxAmount: '18.75' });
+    },
+  );
+
+  it('drops unusable maximum fields from a typed max refusal', async () => {
+    stubFetch({
+      ok: false,
+      status: 400,
+      body: { code: 'amount_too_high', maxSats: -1, maxAmount: 20 },
+    });
+    await expect(prepayLoan('sess', 'm1', '20')).rejects.toMatchObject({
+      maxSats: null,
+      maxAmount: null,
+    });
+    stubFetch({
+      ok: false,
+      status: 400,
+      body: { code: 'amount_too_high', maxSats: 1.5, maxAmount: null },
+    });
+    await expect(prepayLoan('sess', 'm1', '20')).rejects.toMatchObject({ maxSats: null });
+  });
+
+  it('keeps wallet and missing-requirements refusals typed', async () => {
+    stubFetch({ ok: false, status: 400, body: { code: 'wallet_required' } });
+    await expect(prepayLoan('sess', 'm1', '1')).rejects.toBeInstanceOf(WalletRequiredError);
+    stubFetch({
+      ok: false,
+      status: 409,
+      body: { error: 'missing_requirements', missing: ['name'] },
+    });
+    await expect(prepayLoan('sess', 'm1', '1')).rejects.toBeInstanceOf(MissingRequirementsError);
+  });
+
+  it('uses a typed fallback for an unreadable refusal and rejects invalid success', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: false,
+        status: 400,
+        json: () => Promise.reject(new SyntaxError('bad json')),
+        clone() {
+          return this;
+        },
+      } as unknown as Response),
+    );
+    await expect(prepayLoan('sess', 'm1', '1')).rejects.toMatchObject({
+      code: 'request_failed',
+    });
+    stubFetch({ ok: true, status: 200, body: { ...success, amountSats: 0 } });
+    await expect(prepayLoan('sess', 'm1', '1')).rejects.toThrow();
+  });
+});
+
 describe('postMessageInvoice', () => {
+  it('throws CreditClosedError on a 409 credit_closed invoice refusal', async () => {
+    stubFetch({ ok: false, status: 409, body: { code: 'credit_closed' } });
+    await expect(postMessageInvoice('sess', 'm1', 21)).rejects.toBeInstanceOf(CreditClosedError);
+    stubFetch({ ok: false, status: 409, body: { error: 'credit_closed' } });
+    await expect(postMessageInvoice('sess', 'm1', 21)).rejects.toBeInstanceOf(CreditClosedError);
+  });
+
   it('returns sparkInvoice when the api issues one', async () => {
     stubFetch({
       ok: true,

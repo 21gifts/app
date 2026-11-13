@@ -978,6 +978,18 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/wallet:loans-multi",
+    "label": "/wallet loans-multi",
+    "visual": "state-wallet-loans-multi",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/wallet:loans-multi-open",
+    "label": "/wallet loans-multi-open",
+    "visual": "state-wallet-loans-multi-open",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/wallet:loans-waiting-all",
     "label": "/wallet loans-waiting-all",
     "visual": "state-wallet-loans-waiting-all",
@@ -1647,6 +1659,222 @@
     "id": "/loans/repay:collecting",
     "label": "/loans/repay collecting",
     "visual": "state-loans-repay-collecting",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/loans/repay:collecting-connecting",
+    "label": "/loans/repay collecting-connecting",
+    "visual": "state-loans-repay-collecting-connecting",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/loans/repay:collecting-setup-failed",
+    "label": "/loans/repay collecting-setup-failed",
+    "visual": "state-loans-repay-collecting-setup-failed",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/loans/repay:collecting-unavailable",
+    "label": "/loans/repay collecting-unavailable",
+    "visual": "state-loans-repay-collecting-unavailable",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/loans/repay:pay-more-max",
+    "label": "/loans/repay pay-more-max",
+    "visual": "state-loans-repay-pay-more-max",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/loans/repay:pay-more-fiat",
+    "label": "/loans/repay pay-more-fiat",
+    "visual": "state-loans-repay-pay-more-fiat",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/loans/repay:pay-more-above-max",
+    "label": "/loans/repay pay-more-above-max",
+    "visual": "state-loans-repay-pay-more-above-max",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/loans/repay:pay-more-invalid",
+    "label": "/loans/repay pay-more-invalid",
+    "visual": "state-loans-repay-pay-more-invalid",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/loans/repay:pay-more-no-rate",
+    "label": "/loans/repay pay-more-no-rate",
+    "visual": "state-loans-repay-pay-more-no-rate",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/loans/repay:pay-more-no-maximum",
+    "label": "/loans/repay pay-more-no-maximum",
+    "visual": "state-loans-repay-pay-more-no-maximum",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/loans/repay:pay-more-fiat-no-maximum",
+    "label": "/loans/repay pay-more-fiat-no-maximum",
+    "visual": "state-loans-repay-pay-more-fiat-no-maximum",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/loans/repay:pay-more-server-max",
+    "label": "/loans/repay pay-more-server-max",
+    "visual": "state-loans-repay-pay-more-server-max",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/loans/repay:pay-more-server-invalid",
+    "label": "/loans/repay pay-more-server-invalid",
+    "visual": "state-loans-repay-pay-more-server-invalid",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/loans/repay:pay-more-error",
+    "label": "/loans/repay pay-more-error",
+    "visual": "state-loans-repay-pay-more-error",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/loans/repay:pay-more-rate-limit",
+    "label": "/loans/repay pay-more-rate-limit",
+    "visual": "state-loans-repay-pay-more-rate-limit",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/loans/repay:pay-more-service-unavailable",
+    "label": "/loans/repay pay-more-service-unavailable",
+    "visual": "state-loans-repay-pay-more-service-unavailable",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/loans/repay:pay-more-missing-requirements",
+    "label": "/loans/repay pay-more-missing-requirements",
+    "visual": "state-loans-repay-pay-more-missing-requirements",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/loans/repay:pay-more-request-failure",
+    "label": "/loans/repay pay-more-request-failure",
+    "visual": "state-loans-repay-pay-more-request-failure",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/loans/repay:pay-more-wallet-failure",
+    "label": "/loans/repay pay-more-wallet-failure",
+    "visual": "state-loans-repay-pay-more-wallet-failure",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/loans/repay:pay-more-cannot-receive",
+    "label": "/loans/repay pay-more-cannot-receive",
+    "visual": "state-loans-repay-pay-more-cannot-receive",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/loans/repay:pay-more-api-sunday",
+    "label": "/loans/repay pay-more-api-sunday",
+    "visual": "state-loans-repay-pay-more-api-sunday",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/loans/repay:pay-more-nothing-due",
+    "label": "/loans/repay pay-more-nothing-due",
+    "visual": "state-loans-repay-pay-more-nothing-due",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/loans/repay:pay-more-sending",
+    "label": "/loans/repay pay-more-sending",
+    "visual": "state-loans-repay-pay-more-sending",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/loans/repay:pay-more-waiting",
+    "label": "/loans/repay pay-more-waiting",
+    "visual": "state-loans-repay-pay-more-waiting",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/loans/repay:pay-more-unconfirmed",
+    "label": "/loans/repay pay-more-unconfirmed",
+    "visual": "state-loans-repay-pay-more-unconfirmed",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/loans/repay:pay-more-success",
+    "label": "/loans/repay pay-more-success",
+    "visual": "state-loans-repay-pay-more-success",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/loans/repay:pay-more-shortfall",
+    "label": "/loans/repay pay-more-shortfall",
+    "visual": "state-loans-repay-pay-more-shortfall",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/loans/repay:pay-more-shortfall-collapsed",
+    "label": "/loans/repay pay-more-shortfall-collapsed",
+    "visual": "state-loans-repay-pay-more-shortfall-collapsed",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/loans/repay:pay-more-shortfall-copied",
+    "label": "/loans/repay pay-more-shortfall-copied",
+    "visual": "state-loans-repay-pay-more-shortfall-copied",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/loans/repay:collecting-pay-confirm",
+    "label": "/loans/repay collecting-pay-confirm",
+    "visual": "state-loans-repay-collecting-pay-confirm",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/loans/repay:collecting-close-confirm",
+    "label": "/loans/repay collecting-close-confirm",
+    "visual": "state-loans-repay-collecting-close-confirm",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/loans/repay:close-sending",
+    "label": "/loans/repay close-sending",
+    "visual": "state-loans-repay-close-sending",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/loans/repay:close-error",
+    "label": "/loans/repay close-error",
+    "visual": "state-loans-repay-close-error",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/loans/repay:close-rate-limit",
+    "label": "/loans/repay close-rate-limit",
+    "visual": "state-loans-repay-close-rate-limit",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/loans/repay:close-service-unavailable",
+    "label": "/loans/repay close-service-unavailable",
+    "visual": "state-loans-repay-close-service-unavailable",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/loans/repay:close-missing-requirements",
+    "label": "/loans/repay close-missing-requirements",
+    "visual": "state-loans-repay-close-missing-requirements",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/loans/repay:closed-loan",
+    "label": "/loans/repay closed-loan",
+    "visual": "state-loans-repay-closed-loan",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
@@ -3177,6 +3405,30 @@
     "id": "/welcome:loan-pay",
     "label": "/welcome loan-pay",
     "visual": "state-welcome-loan-pay",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:loan-heart-closed",
+    "label": "/welcome loan-heart-closed",
+    "visual": "state-welcome-loan-heart-closed",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:loan-heart-refreshed-closed",
+    "label": "/welcome loan-heart-refreshed-closed",
+    "visual": "state-welcome-loan-heart-refreshed-closed",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:loan-pay-closed",
+    "label": "/welcome loan-pay-closed",
+    "visual": "state-welcome-loan-pay-closed",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:loan-initial-closed",
+    "label": "/welcome loan-initial-closed",
+    "visual": "state-welcome-loan-initial-closed",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
@@ -4929,6 +5181,30 @@
     "id": "/members/[accountId]:posts-open-loan-pay",
     "label": "/members/[accountId] posts-open-loan-pay",
     "visual": "state-members-posts-open-loan-pay",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/members/[accountId]:posts-open-loan-heart-closed",
+    "label": "/members/[accountId] posts-open-loan-heart-closed",
+    "visual": "state-members-posts-open-loan-heart-closed",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/members/[accountId]:posts-open-loan-heart-refreshed-closed",
+    "label": "/members/[accountId] posts-open-loan-heart-refreshed-closed",
+    "visual": "state-members-posts-open-loan-heart-refreshed-closed",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/members/[accountId]:posts-open-loan-pay-closed",
+    "label": "/members/[accountId] posts-open-loan-pay-closed",
+    "visual": "state-members-posts-open-loan-pay-closed",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/members/[accountId]:posts-open-loan-initial-closed",
+    "label": "/members/[accountId] posts-open-loan-initial-closed",
+    "visual": "state-members-posts-open-loan-initial-closed",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
@@ -6744,6 +7020,18 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/stats:wallets",
+    "label": "/stats wallets",
+    "visual": "state-stats-wallets",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/stats:wallets-no-rate",
+    "label": "/stats wallets-no-rate",
+    "visual": "state-stats-wallets-no-rate",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/stats:empty",
     "label": "/stats empty",
     "visual": "state-stats-empty",
@@ -7725,6 +8013,30 @@
     "id": "/messages/[id]:loan-pay",
     "label": "/messages/[id] loan-pay",
     "visual": "state-messages-id-loan-pay",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/messages/[id]:loan-heart-closed",
+    "label": "/messages/[id] loan-heart-closed",
+    "visual": "state-messages-id-loan-heart-closed",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/messages/[id]:loan-heart-refreshed-closed",
+    "label": "/messages/[id] loan-heart-refreshed-closed",
+    "visual": "state-messages-id-loan-heart-refreshed-closed",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/messages/[id]:loan-pay-closed",
+    "label": "/messages/[id] loan-pay-closed",
+    "visual": "state-messages-id-loan-pay-closed",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/messages/[id]:loan-initial-closed",
+    "label": "/messages/[id] loan-initial-closed",
+    "visual": "state-messages-id-loan-initial-closed",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
@@ -10056,6 +10368,24 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/messages/[id]/repayment-list:partial-btc",
+    "label": "/messages/[id]/repayment-list partial-btc",
+    "visual": "state-messages-id-repayment-list-partial-btc",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/messages/[id]/repayment-list:partial-fiat",
+    "label": "/messages/[id]/repayment-list partial-fiat",
+    "visual": "state-messages-id-repayment-list-partial-fiat",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/messages/[id]/repayment-list:partial-fiat-fallback",
+    "label": "/messages/[id]/repayment-list partial-fiat-fallback",
+    "visual": "state-messages-id-repayment-list-partial-fiat-fallback",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/messages/[id]/repayment-list:loading",
     "label": "/messages/[id]/repayment-list loading",
     "visual": "state-messages-id-repayment-list-loading",
@@ -10287,6 +10617,42 @@
     "id": "/messages/[id]/author:replies-translate-error",
     "label": "/messages/[id]/author replies-translate-error",
     "visual": "state-messages-id-author-replies-translate-error",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/fonds/[username]:default",
+    "label": "/fonds/[username] default",
+    "visual": "screen-fonds-username",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/fonds/[username]:balance-null",
+    "label": "/fonds/[username] balance-null",
+    "visual": "state-fonds-balance-null",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/fonds/[username]:error",
+    "label": "/fonds/[username] error",
+    "visual": "state-fonds-error",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/fonds/[username]:role-hint",
+    "label": "/fonds/[username] role-hint",
+    "visual": "state-fonds-role-hint",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/fonds/[username]:missing",
+    "label": "/fonds/[username] missing",
+    "visual": "state-fonds-missing",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/fonds/[username]:loading",
+    "label": "/fonds/[username] loading",
+    "visual": "state-fonds-loading",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   }
 ]

@@ -19,7 +19,7 @@ const HIDDEN = {
 
 async function seedAdaSession(
   page: import('@playwright/test').Page,
-  role: 'basis' | 'verified' | 'moderator' | 'founder' = 'basis',
+  role: 'basis' | 'verified' | 'moderator' | 'fond' | 'founder' = 'basis',
 ): Promise<void> {
   await page.addInitScript(() => {
     localStorage.setItem('21gifts.session', 'sess-e2e');
@@ -331,7 +331,6 @@ async function stubModeratorGroupStipend(page: import('@playwright/test').Page):
             cumulativePhp: '280.00',
           },
         ],
-        byRecipient: [],
         byMonth: [],
         fx: {
           quote: 'BTC-USD',
@@ -545,6 +544,14 @@ test('Function: roleAtLeast — a founder opens the Moderators tool from the hub
   page,
 }) => {
   await seedAdaSession(page, 'founder');
+  await stubModeratorGroup(page);
+  await page.goto('/moderate');
+  await page.getByRole('link', { name: 'Moderators chat group' }).click();
+  await expect(page.getByText('Hello mods')).toBeVisible();
+});
+
+test('Function: roleAtLeast — a fond account inherits the moderator tools', async ({ page }) => {
+  await seedAdaSession(page, 'fond');
   await stubModeratorGroup(page);
   await page.goto('/moderate');
   await page.getByRole('link', { name: 'Moderators chat group' }).click();

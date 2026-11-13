@@ -25,6 +25,16 @@ export const ownerFundingSchema = z.object({
   reviewedByName: z.string().nullable(),
   /** True when the owner should see the stopped-daily-payout notice. Optional so older payloads still parse. */
   dailyPayoutStoppedNotice: z.boolean().optional(),
+  /** Whether a qualifying shop purchase is still missing, or `null` when the read failed. */
+  shopPaymentDue: z.boolean().nullable().optional(),
+  /** Today's one payout state and, when present, its single reason. */
+  payoutToday: z
+    .object({
+      state: z.enum(['paid', 'due', 'blocked']),
+      reason: z.string().nullable(),
+    })
+    .nullable()
+    .optional(),
 });
 
 /**
@@ -105,6 +115,11 @@ export const accountSchema = z.object({
    */
   sparkPubkey: z.string().nullable().optional(),
   /**
+   * Public identity key that 21.gifts' read-only Spark viewer uses. The wallet
+   * validates its exact 66-character lower-case hex shape before using it.
+   */
+  walletViewerPublicKey: z.string().nullable().optional(),
+  /**
    * True once the in-app wallet registered the account's address. The wallet
    * and the username are then fixed. Optional so older api bodies still
    * parse; the setup step only opens when this is strictly `false`.
@@ -171,16 +186,28 @@ export const accountSchema = z.object({
    * Missing or `undefined` is the same as `null` (no funding object).
    */
   funding: ownerFundingSchema.nullable().optional(),
-  /** Optional staff label; only `software_developer` is accepted. */
-  staffTag: z.literal('software_developer').optional(),
+  /**
+   * Compatibility location for today's payout on basis accounts. Funding's
+   * `payoutToday` is the only source whenever `funding` is an object, including
+   * when `payoutToday` is null; this field is read only when `funding` is null
+   * or absent.
+   */
+  grantPayoutToday: z
+    .object({
+      state: z.enum(['paid', 'due', 'blocked']),
+      reason: z.string().nullable(),
+    })
+    .nullable()
+    .optional(),
 });
 
 /**
  * An authenticated 21.gifts account.
  *
- * `role` is the live membership tier (`basis`, `verified`, `moderator`, or
- * `founder`); `linkingKey` is a leftover wallet public key from the retired
- * LNURL-auth login, or `null` for passkey-created accounts.
+ * `role` is the live membership tier (`basis`, `verified`, `moderator`,
+ * `fond`, `software_developer`, `initiator`, or `founder`); `linkingKey` is a
+ * leftover wallet public key from the retired LNURL-auth login, or `null` for
+ * passkey-created accounts.
  * `name` is the non-empty display name, or `null` until the giver sets one.
  * `location` is an optional free-text place (never `""`; empty clears to `null`).
  * `lightningAddress` and `lightningAddressVerified` are accepted from the api
@@ -243,7 +270,6 @@ export const accountSchema = z.object({
  * not be synchronized, while `null` means the account preference is unset.
  * `funding` is the owner grant object, `null` for `basis`, and omitted on
  * older api builds (treat missing like `null`).
- * `staffTag` is an optional staff label; only `software_developer` is accepted.
  */
 export type Account = z.infer<typeof accountSchema>;
 
@@ -305,8 +331,6 @@ export const viewProfileSchema = z.object({
   profileMessage: z.record(z.unknown()).nullable().optional(),
   fundingReviewedAt: z.number().nullable().optional(),
   fundingReviewedByName: z.string().nullable().optional(),
-  /** Optional staff label; only `software_developer` is accepted. */
-  staffTag: z.literal('software_developer').optional(),
 });
 
 /**
@@ -365,20 +389,6 @@ export const spendDaySchema = z.object({
 });
 
 /**
- * Per-recipient totals from `GET /gifts/stats`.
- */
-export const recipientSpendSchema = z.object({
-  recipient: z.string(),
-  giftCount: z.number().int().nonnegative(),
-  sats: z.number().int().nonnegative(),
-  btc: btcAmountStringSchema,
-  usd: usdAmountStringSchema,
-  chf: fiatAmountSchema,
-  eur: fiatAmountSchema,
-  php: fiatAmountSchema,
-});
-
-/**
  * Per-month totals from `GET /gifts/stats`.
  */
 export const monthSpendSchema = z.object({
@@ -407,7 +417,6 @@ export const giftStatsSchema = z.object({
   firstPaidAt: z.string().nullable(),
   lastPaidAt: z.string().nullable(),
   spendOverTime: z.array(spendDaySchema),
-  byRecipient: z.array(recipientSpendSchema),
   byMonth: z.array(monthSpendSchema),
   fx: giftStatsFxSchema,
 });
@@ -561,6 +570,35 @@ export const postStatsSchema = z.object({
 
 /** Living forum notes and replies, by UTC day. */
 export type PostStats = z.infer<typeof postStatsSchema>;
+
+/**
+ * One UTC day in the wallet balance series from `GET /wallets/stats`.
+ * Each wallet's last reported balance is carried forward.
+ */
+export const walletStatsDaySchema = z.object({
+  day: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  totalSats: z.number().int().nonnegative(),
+  totalBtc: btcAmountStringSchema,
+  walletCount: z.number().int().nonnegative(),
+  fundedWalletCount: z.number().int().nonnegative(),
+});
+
+/**
+ * Runtime schema for the payload of `GET /wallets/stats`.
+ * `walletCount` counts wallets that ever reported a balance; `fundedWalletCount`
+ * is the subset with a current balance above zero.
+ */
+export const walletStatsSchema = z.object({
+  walletCount: z.number().int().nonnegative(),
+  fundedWalletCount: z.number().int().nonnegative(),
+  totalSats: z.number().int().nonnegative(),
+  totalBtc: btcAmountStringSchema,
+  asOf: z.string().nullable(),
+  balanceOverTime: z.array(walletStatsDaySchema),
+});
+
+/** Self-reported 21.gifts wallet totals, by UTC day. */
+export type WalletStats = z.infer<typeof walletStatsSchema>;
 
 /**
  * FX on account activity. `quotes` is optional so payloads from an api that
@@ -907,7 +945,9 @@ export type ForumPlaceRow = z.infer<typeof forumPlaceRowSchema>;
  * the typed amount string). Optional so an older payload still parses.
  * Absent `goalCurrency` with `goalSats` is a legacy Ask.
  * `goalRepayable` is `true` on a credit Ask; omitted on a donation and on
- * older payloads. `false` is not accepted.
+ * older payloads. `false` is not accepted. `goalClosedAt` is the ISO time a
+ * credit stopped collecting; it is omitted while the credit is open and on
+ * older payloads.
  * `goalAmountUsd` / `goalAmountChf` / `goalAmountEur` / `goalAmountPhp` are
  * frozen two-decimal snapshots of that goal, optional, each a string or null.
  * `amountUsd` / `amountChf` / `amountEur` / `amountPhp` are the fiat stored for
@@ -923,7 +963,6 @@ export type ForumPlaceRow = z.infer<typeof forumPlaceRowSchema>;
  * `shopAccount` is optional on a shop note (`id`, `username`, `name`); omitted when cleared.
  * `shopNpub` is the listed shop identity, null for every other note, and
  * optional only so a rolling api deployment still parses.
- * `staffTag` is an optional staff label; only `software_developer` is accepted.
  */
 export const forumMessageSchema = z
   .object({
@@ -947,6 +986,7 @@ export const forumMessageSchema = z
     goalCurrency: z.enum(FORUM_GOAL_CURRENCIES).optional(),
     goalAmount: z.string().regex(FORUM_GOAL_AMOUNT_RE).optional(),
     goalRepayable: z.literal(true).optional(),
+    goalClosedAt: z.string().datetime({ offset: true }).optional(),
     goalTermDays: z.number().int().min(1).max(3650).optional(),
     goalAmountUsd: fiatAmountSchema.optional(),
     goalAmountChf: fiatAmountSchema.optional(),
@@ -1001,8 +1041,6 @@ export const forumMessageSchema = z
         }),
       )
       .optional(),
-    /** Optional staff label; only `software_developer` is accepted. */
-    staffTag: z.literal('software_developer').optional(),
   })
   .refine(
     (message) => message.text !== '' || message.hasPhoto || message.hasVideo || message.sats > 0,
@@ -1585,7 +1623,6 @@ export type AccountTrust = z.infer<typeof accountTrustSchema>;
  * is the shop-note total and optional `creditCount` is the credit-note total.
  * Activity feeds are capped at 200.
  * `trust` defaults to all-null when an older api omits the field.
- * `staffTag` is an optional staff label; only `software_developer` is accepted.
  */
 export const memberProfileSchema = z.object({
   id: z.string(),
@@ -1625,8 +1662,6 @@ export const memberProfileSchema = z.object({
    * payload still parses; `null` when unnamed.
    */
   fundingReviewedByName: z.string().nullable().optional(),
-  /** Optional staff label; only `software_developer` is accepted. */
-  staffTag: z.literal('software_developer').optional(),
 });
 
 /**
@@ -1640,7 +1675,7 @@ export type MemberProfile = z.infer<typeof memberProfileSchema>;
 export const trustChainNodeSchema = z.object({
   id: z.string(),
   name: z.string().nullable(),
-  role: z.enum(['verified', 'moderator', 'initiator', 'founder']),
+  role: z.enum(['verified', 'moderator', 'fond', 'software_developer', 'initiator', 'founder']),
 });
 
 /**
@@ -1864,3 +1899,73 @@ export const dailyRosterSchema = z.object({
  * moderator payments switch, and moderator stipend list.
  */
 export type DailyRoster = z.infer<typeof dailyRosterSchema>;
+
+/**
+ * Runtime schema for one open row of `GET /fond/payouts`.
+ *
+ * The api owns every amount, so a row carries no amount: the app asks for the
+ * row's invoice and pays what it says. `paymentHash` is present for
+ * `invoiced` and `settling` rows and null for `owed` and `issuing`; it is
+ * optional so an api without the field still parses.
+ */
+export const fondPayoutSchema = z.object({
+  id: z.string().min(1),
+  kind: z.enum(['daily', 'moderator', 'welcome']),
+  status: z.enum(['owed', 'issuing', 'invoiced', 'settling']),
+  utcDay: z.string(),
+  paymentHash: z.string().nullable().optional(),
+});
+
+/**
+ * Runtime schema for the `GET /fond/payouts` body: today's open rows in list order.
+ */
+export const fondPayoutListSchema = z.object({
+  payouts: z.array(fondPayoutSchema),
+});
+
+/**
+ * One open Fond payout row: what to pay, in which state, and for which UTC day.
+ */
+export type FondPayout = z.infer<typeof fondPayoutSchema>;
+
+/**
+ * The open Fond payouts for today, in the order the api lists them.
+ */
+export type FondPayoutList = z.infer<typeof fondPayoutListSchema>;
+
+/**
+ * Runtime schema for a `POST /fond/payouts/:id/invoice` success body.
+ */
+export const fondPayoutInvoiceSchema = z.object({
+  id: z.string().min(1),
+  bolt11: z.string().min(1),
+  paymentHash: z.string().min(1),
+  sparkInvoice: z.string().nullable(),
+});
+
+/**
+ * One payout invoice: the BOLT11, the fee-free Spark invoice when the
+ * recipient's wallet has one, and the payment hash that identifies the send.
+ */
+export type FondPayoutInvoice = z.infer<typeof fondPayoutInvoiceSchema>;
+
+/**
+ * Runtime schema for the public `GET /fond/summary` body.
+ *
+ * `balanceSats` and `balanceSyncedAt` may be `null` until the api has synced
+ * the Fond's wallet. `payoutsPaidUsd` is the stored two-decimal USD figure at
+ * the moment each grant payout was created and is never recomputed.
+ */
+export const fondSummarySchema = z.object({
+  username: z.string().min(1),
+  receivedSats: z.number().int().nonnegative(),
+  paidOutSats: z.number().int().nonnegative(),
+  feesSats: z.number().int().nonnegative(),
+  balanceSats: z.number().int().nullable(),
+  balanceSyncedAt: z.string().min(1).nullable(),
+  payoutsPaid: z.number().int().nonnegative(),
+  payoutsPaidUsd: z.string(),
+});
+
+/** Public Fond totals: received, paid out with fees, balance, and paid grant payouts. */
+export type FondSummary = z.infer<typeof fondSummarySchema>;

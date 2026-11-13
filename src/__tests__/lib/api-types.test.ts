@@ -27,6 +27,7 @@ import {
   forumPlacesResponseSchema,
   hiddenMessageSchema,
   giftStatsSchema,
+  walletStatsSchema,
   shopActivitySchema,
   shopResponseSchema,
   memberProfileSchema,
@@ -39,6 +40,9 @@ import {
   fundingPayoutDaysResponseSchema,
   fundingApplicationDetailSchema,
   fundingDecisionResultSchema,
+  fondPayoutInvoiceSchema,
+  fondPayoutListSchema,
+  fondSummarySchema,
   trustActionResultSchema,
   trustChainSchema,
   passkeyBeginSchema,
@@ -293,30 +297,12 @@ describe('memberProfileSchema', () => {
     ).toThrow();
   });
 
-  it('accepts staffTag software_developer and keeps the value', () => {
+  it('accepts role software_developer', () => {
     const profile = {
       id: '22222222-2222-4222-8222-222222222222',
       name: 'Carol',
       location: null,
-      role: 'basis' as const,
-      lightningAddress: null,
-      createdAt: '2026-01-15T12:00:00.000Z',
-      aboutMe: null,
-      aboutMeHasPhoto: false,
-      profileMessage: null,
-      postCount: 0,
-      replyCount: 0,
-      staffTag: 'software_developer' as const,
-    };
-    expect(memberProfileSchema.parse(profile).staffTag).toBe('software_developer');
-  });
-
-  it('leaves omitted staffTag undefined on a member profile', () => {
-    const profile = {
-      id: '22222222-2222-4222-8222-222222222222',
-      name: 'Carol',
-      location: null,
-      role: 'basis' as const,
+      role: 'software_developer' as const,
       lightningAddress: null,
       createdAt: '2026-01-15T12:00:00.000Z',
       aboutMe: null,
@@ -325,45 +311,7 @@ describe('memberProfileSchema', () => {
       postCount: 0,
       replyCount: 0,
     };
-    expect(memberProfileSchema.parse(profile).staffTag).toBeUndefined();
-  });
-
-  it('rejects an unknown staffTag on a member profile', () => {
-    expect(() =>
-      memberProfileSchema.parse({
-        id: '22222222-2222-4222-8222-222222222222',
-        name: 'Carol',
-        location: null,
-        role: 'basis',
-        lightningAddress: null,
-        createdAt: '2026-01-15T12:00:00.000Z',
-        aboutMe: null,
-        aboutMeHasPhoto: false,
-        profileMessage: null,
-        postCount: 0,
-        replyCount: 0,
-        staffTag: 'nope',
-      }),
-    ).toThrow();
-  });
-
-  it('rejects null staffTag on a member profile', () => {
-    expect(() =>
-      memberProfileSchema.parse({
-        id: '22222222-2222-4222-8222-222222222222',
-        name: 'Carol',
-        location: null,
-        role: 'basis',
-        lightningAddress: null,
-        createdAt: '2026-01-15T12:00:00.000Z',
-        aboutMe: null,
-        aboutMeHasPhoto: false,
-        profileMessage: null,
-        postCount: 0,
-        replyCount: 0,
-        staffTag: null,
-      }),
-    ).toThrow();
+    expect(memberProfileSchema.parse(profile).role).toBe('software_developer');
   });
 });
 
@@ -395,6 +343,22 @@ describe('trustChainSchema', () => {
   it('accepts an initiator node', () => {
     const body = {
       nodes: [{ id: 'i', name: 'Ivy', role: 'initiator' as const }],
+      edges: [],
+    };
+    expect(trustChainSchema.parse(body)).toEqual(body);
+  });
+
+  it('accepts a software developer node', () => {
+    const body = {
+      nodes: [{ id: 's', name: 'Sam', role: 'software_developer' as const }],
+      edges: [],
+    };
+    expect(trustChainSchema.parse(body)).toEqual(body);
+  });
+
+  it('accepts a fond node', () => {
+    const body = {
+      nodes: [{ id: 'fond', name: 'Fiona', role: 'fond' as const }],
       edges: [],
     };
     expect(trustChainSchema.parse(body)).toEqual(body);
@@ -1308,6 +1272,22 @@ describe('forumMessageSchema', () => {
     expect(forumMessageSchema.parse({ ...base, goalRepayable: true }).goalRepayable).toBe(true);
   });
 
+  it('keeps an optional ISO goalClosedAt and omits it on an open or older credit', () => {
+    const open = forumMessageSchema.parse({ ...base, goalRepayable: true });
+    expect(open.goalClosedAt).toBeUndefined();
+    expect(Object.prototype.hasOwnProperty.call(open, 'goalClosedAt')).toBe(false);
+    expect(
+      forumMessageSchema.parse({
+        ...base,
+        goalRepayable: true,
+        goalClosedAt: '2026-10-03T10:00:00.000Z',
+      }).goalClosedAt,
+    ).toBe('2026-10-03T10:00:00.000Z');
+    expect(() =>
+      forumMessageSchema.parse({ ...base, goalRepayable: true, goalClosedAt: 'closed' }),
+    ).toThrow();
+  });
+
   it('rejects goalRepayable false', () => {
     expect(() => forumMessageSchema.parse({ ...base, goalRepayable: false })).toThrow();
   });
@@ -1656,24 +1636,6 @@ describe('forumMessageSchema place', () => {
       }),
     ).toThrow();
   });
-
-  it('accepts staffTag software_developer and keeps the value', () => {
-    expect(forumMessageSchema.parse({ ...base, staffTag: 'software_developer' }).staffTag).toBe(
-      'software_developer',
-    );
-  });
-
-  it('leaves omitted staffTag undefined on a forum message', () => {
-    expect(forumMessageSchema.parse(base).staffTag).toBeUndefined();
-  });
-
-  it('rejects an unknown staffTag on a forum message', () => {
-    expect(() => forumMessageSchema.parse({ ...base, staffTag: 'nope' })).toThrow();
-  });
-
-  it('rejects null staffTag on a forum message', () => {
-    expect(() => forumMessageSchema.parse({ ...base, staffTag: null })).toThrow();
-  });
 });
 
 describe('accountSchema', () => {
@@ -1716,8 +1678,12 @@ describe('accountSchema', () => {
     expect(() => accountSchema.parse({ ...account, name: '' })).toThrow();
   });
 
-  it('accepts founder and verified roles', () => {
+  it('accepts founder, fond, software developer, and verified roles', () => {
     expect(accountSchema.parse({ ...account, role: 'founder' }).role).toBe('founder');
+    expect(accountSchema.parse({ ...account, role: 'fond' }).role).toBe('fond');
+    expect(accountSchema.parse({ ...account, role: 'software_developer' }).role).toBe(
+      'software_developer',
+    );
     expect(accountSchema.parse({ ...account, role: 'verified' }).role).toBe('verified');
   });
 
@@ -1866,8 +1832,45 @@ describe('accountSchema', () => {
       trialUtcDate: null,
       admittedAt: null,
       reviewedByName: null,
+      shopPaymentDue: true,
+      payoutToday: { state: 'blocked' as const, reason: 'shop_payment' },
     };
     expect(accountSchema.parse({ ...account, funding }).funding).toEqual(funding);
+  });
+
+  it('accepts an unknown shop-payment requirement', () => {
+    const funding = {
+      status: 'none' as const,
+      trialUtcDate: null,
+      admittedAt: null,
+      reviewedByName: null,
+      shopPaymentDue: null,
+    };
+    expect(accountSchema.parse({ ...account, funding }).funding).toEqual(funding);
+  });
+
+  it('accepts the wallet viewer key and top-level basis payout compatibility field', () => {
+    const walletViewerPublicKey = `02${'a'.repeat(64)}`;
+    const grantPayoutToday = { state: 'due' as const, reason: null };
+    expect(
+      accountSchema.parse({ ...account, walletViewerPublicKey, grantPayoutToday }),
+    ).toMatchObject({ walletViewerPublicKey, grantPayoutToday });
+    expect(
+      accountSchema.parse({ ...account, walletViewerPublicKey: null }).walletViewerPublicKey,
+    ).toBeNull();
+    expect(
+      accountSchema.parse({
+        ...account,
+        funding: {
+          status: 'none',
+          trialUtcDate: null,
+          admittedAt: null,
+          reviewedByName: null,
+          payoutToday: null,
+        },
+        grantPayoutToday: null,
+      }),
+    ).toMatchObject({ funding: { payoutToday: null }, grantPayoutToday: null });
   });
 
   it('rejects a garbage funding status', () => {
@@ -1877,24 +1880,6 @@ describe('accountSchema', () => {
         funding: { status: 'open', trialUtcDate: null, admittedAt: null, reviewedByName: null },
       }),
     ).toThrow();
-  });
-
-  it('accepts staffTag software_developer and keeps the value', () => {
-    expect(accountSchema.parse({ ...account, staffTag: 'software_developer' }).staffTag).toBe(
-      'software_developer',
-    );
-  });
-
-  it('leaves omitted staffTag undefined on an account', () => {
-    expect(accountSchema.parse(account).staffTag).toBeUndefined();
-  });
-
-  it('rejects an unknown staffTag on an account', () => {
-    expect(() => accountSchema.parse({ ...account, staffTag: 'nope' })).toThrow();
-  });
-
-  it('rejects null staffTag on an account', () => {
-    expect(() => accountSchema.parse({ ...account, staffTag: null })).toThrow();
   });
 });
 
@@ -2050,8 +2035,12 @@ describe('forumMessageSchema', () => {
     });
   });
 
-  it('accepts founder, verified, and moderator roles', () => {
+  it('accepts founder, fond, software developer, verified, and moderator roles', () => {
     expect(forumMessageSchema.parse({ ...message, role: 'founder' }).role).toBe('founder');
+    expect(forumMessageSchema.parse({ ...message, role: 'fond' }).role).toBe('fond');
+    expect(forumMessageSchema.parse({ ...message, role: 'software_developer' }).role).toBe(
+      'software_developer',
+    );
     expect(forumMessageSchema.parse({ ...message, role: 'verified' }).role).toBe('verified');
     expect(forumMessageSchema.parse({ ...message, role: 'moderator' }).role).toBe('moderator');
   });
@@ -2210,18 +2199,6 @@ describe('giftStatsSchema', () => {
         cumulativePhp: '0.50',
       },
     ],
-    byRecipient: [
-      {
-        recipient: 'alice',
-        giftCount: 1,
-        sats: 10,
-        btc: '0.00000010',
-        usd: '0.01',
-        chf: '0.01',
-        eur: '0.01',
-        php: '0.50',
-      },
-    ],
     byMonth: [
       {
         month: '2026-06',
@@ -2239,6 +2216,26 @@ describe('giftStatsSchema', () => {
 
   it('accepts a full stats payload', () => {
     expect(giftStatsSchema.parse(stats)).toEqual(stats);
+  });
+
+  it('drops byRecipient when an older api still sends it', () => {
+    const parsed = giftStatsSchema.parse({
+      ...stats,
+      byRecipient: [
+        {
+          recipient: 'alice',
+          giftCount: 1,
+          sats: 10,
+          btc: '0.00000010',
+          usd: '0.01',
+          chf: '0.01',
+          eur: '0.01',
+          php: '0.50',
+        },
+      ],
+    });
+    expect(parsed).toEqual(stats);
+    expect(Object.hasOwn(parsed, 'byRecipient')).toBe(false);
   });
 
   it('accepts a spendOverTime day without giftCount', () => {
@@ -2267,7 +2264,6 @@ describe('giftStatsSchema', () => {
       firstPaidAt: null,
       lastPaidAt: null,
       spendOverTime: [],
-      byRecipient: [],
       byMonth: [],
     };
     expect(giftStatsSchema.parse(empty)).toEqual(empty);
@@ -2317,6 +2313,62 @@ describe('giftStatsSchema', () => {
         ...stats,
         spendOverTime: [{ ...day, usd: null }],
       }),
+    ).toThrow();
+  });
+});
+
+describe('walletStatsSchema', () => {
+  const stats = {
+    walletCount: 61,
+    fundedWalletCount: 32,
+    totalSats: 89096,
+    totalBtc: '0.00089096',
+    asOf: '2026-11-10T06:21:04.985Z',
+    balanceOverTime: [
+      {
+        day: '2026-11-09',
+        totalSats: 80000,
+        totalBtc: '0.00080000',
+        walletCount: 55,
+        fundedWalletCount: 30,
+      },
+    ],
+  };
+
+  it('accepts the wallet stats payload', () => {
+    expect(walletStatsSchema.parse(stats)).toEqual(stats);
+  });
+
+  it('accepts the empty payload', () => {
+    const empty = {
+      walletCount: 0,
+      fundedWalletCount: 0,
+      totalSats: 0,
+      totalBtc: '0.00000000',
+      asOf: null,
+      balanceOverTime: [],
+    };
+    expect(walletStatsSchema.parse(empty)).toEqual(empty);
+  });
+
+  it('rejects negative counts, a bad day, and a bad BTC string', () => {
+    expect(() => walletStatsSchema.parse({ ...stats, walletCount: -1 })).toThrow();
+    expect(() => walletStatsSchema.parse({ ...stats, fundedWalletCount: -1 })).toThrow();
+    expect(() => walletStatsSchema.parse({ ...stats, totalSats: -1 })).toThrow();
+    expect(() => walletStatsSchema.parse({ ...stats, totalBtc: '0.0008909' })).toThrow();
+    expect(() =>
+      walletStatsSchema.parse({
+        ...stats,
+        balanceOverTime: [{ ...stats.balanceOverTime[0], day: '2026-11-9' }],
+      }),
+    ).toThrow();
+  });
+
+  it('rejects a missing field', () => {
+    expect(() =>
+      walletStatsSchema.parse(
+        Object.fromEntries(Object.entries(stats).filter(([key]) => key !== 'balanceOverTime')),
+      ),
     ).toThrow();
   });
 });
@@ -2608,5 +2660,94 @@ describe('lnurlInvoiceSchema', () => {
   it('parses { pr } and rejects an empty pr', () => {
     expect(lnurlInvoiceSchema.parse({ pr: 'lnbc1' })).toEqual({ pr: 'lnbc1' });
     expect(() => lnurlInvoiceSchema.parse({ pr: '' })).toThrow();
+  });
+});
+
+describe('fondSummarySchema', () => {
+  const summary = {
+    username: 'tondo-fond',
+    receivedSats: 210_000,
+    paidOutSats: 21_000,
+    feesSats: 210,
+    balanceSats: 189_000,
+    balanceSyncedAt: '2026-11-11T10:00:00.000Z',
+    payoutsPaid: 3,
+    payoutsPaidUsd: '3.00',
+  };
+
+  it('parses a full summary', () => {
+    expect(fondSummarySchema.parse(summary)).toEqual(summary);
+  });
+
+  it('accepts a null balance and null synced time', () => {
+    const bare = { ...summary, balanceSats: null, balanceSyncedAt: null };
+    expect(fondSummarySchema.parse(bare)).toEqual(bare);
+  });
+
+  it('rejects an empty username, negative sats, and a non-integer count', () => {
+    expect(() => fondSummarySchema.parse({ ...summary, username: '' })).toThrow();
+    expect(() => fondSummarySchema.parse({ ...summary, receivedSats: -1 })).toThrow();
+    expect(() => fondSummarySchema.parse({ ...summary, payoutsPaid: 1.5 })).toThrow();
+  });
+
+  it('rejects a non-string USD figure and an empty synced time', () => {
+    expect(() => fondSummarySchema.parse({ ...summary, payoutsPaidUsd: 3 })).toThrow();
+    expect(() => fondSummarySchema.parse({ ...summary, balanceSyncedAt: '' })).toThrow();
+  });
+});
+
+describe('fondPayoutListSchema', () => {
+  const row = { id: 'row-1', kind: 'daily', status: 'owed', utcDay: '2026-11-10' };
+
+  it('parses every kind and status', () => {
+    const payouts = [
+      row,
+      { ...row, id: 'r2', kind: 'moderator', status: 'issuing' },
+      { ...row, id: 'r3', kind: 'welcome', status: 'invoiced', paymentHash: 'aa'.repeat(32) },
+      { ...row, id: 'r4', status: 'settling', paymentHash: 'bb'.repeat(32) },
+    ];
+    expect(fondPayoutListSchema.parse({ payouts })).toEqual({ payouts });
+  });
+
+  it('accepts a null or absent payment hash and rejects another type', () => {
+    expect(fondPayoutListSchema.parse({ payouts: [{ ...row, paymentHash: null }] })).toEqual({
+      payouts: [{ ...row, paymentHash: null }],
+    });
+    expect(fondPayoutListSchema.parse({ payouts: [row] })).toEqual({ payouts: [row] });
+    expect(() => fondPayoutListSchema.parse({ payouts: [{ ...row, paymentHash: 7 }] })).toThrow();
+  });
+
+  it('rejects an unknown kind, status, or empty id', () => {
+    expect(() => fondPayoutListSchema.parse({ payouts: [{ ...row, kind: 'gift' }] })).toThrow();
+    expect(() => fondPayoutListSchema.parse({ payouts: [{ ...row, status: 'paid' }] })).toThrow();
+    expect(() => fondPayoutListSchema.parse({ payouts: [{ ...row, id: '' }] })).toThrow();
+  });
+});
+
+describe('fondPayoutInvoiceSchema', () => {
+  const invoice = {
+    id: 'row-1',
+    bolt11: 'lnbc1',
+    paymentHash: 'aa'.repeat(32),
+    sparkInvoice: 'spark1invoice',
+  };
+
+  it('parses one invoice with a Spark invoice or null', () => {
+    expect(fondPayoutInvoiceSchema.parse(invoice)).toEqual(invoice);
+    expect(fondPayoutInvoiceSchema.parse({ ...invoice, sparkInvoice: null })).toEqual({
+      ...invoice,
+      sparkInvoice: null,
+    });
+  });
+
+  it('rejects an empty invoice or hash and a missing Spark invoice field', () => {
+    expect(() => fondPayoutInvoiceSchema.parse({ ...invoice, bolt11: '' })).toThrow();
+    expect(() => fondPayoutInvoiceSchema.parse({ ...invoice, paymentHash: '' })).toThrow();
+    const withoutSparkInvoice = {
+      id: invoice.id,
+      bolt11: invoice.bolt11,
+      paymentHash: invoice.paymentHash,
+    };
+    expect(() => fondPayoutInvoiceSchema.parse(withoutSparkInvoice)).toThrow();
   });
 });

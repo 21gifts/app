@@ -61,6 +61,38 @@ describe('screenVariantDescription', () => {
     expect(screenVariantDescription('en', '/welcome:repay-today', english, 'label')).toBe(english);
   });
 
+  it('lists all six role pills in the welcome descriptions', () => {
+    const descriptions = {
+      de: screenVariantDescription(
+        'de',
+        '/welcome:default',
+        'Founder / Moderator / Fond / Software Developer / Initiator / Verified pills',
+        'label',
+      ),
+      es: screenVariantDescription(
+        'es',
+        '/welcome:default',
+        'Founder / Moderator / Fond / Software Developer / Initiator / Verified pills',
+        'label',
+      ),
+      fil: screenVariantDescription(
+        'fil',
+        '/welcome:default',
+        'Founder / Moderator / Fond / Software Developer / Initiator / Verified pills',
+        'label',
+      ),
+    };
+    expect(descriptions.de).toContain('Fond');
+    expect(descriptions.de).toContain('Software-Entwickler');
+    expect(descriptions.de).toContain('dieser sechs');
+    expect(descriptions.es).toContain('Fondo');
+    expect(descriptions.es).toContain('Desarrollador de software');
+    expect(descriptions.es).toContain('esos seis');
+    expect(descriptions.fil).toContain('Fond');
+    expect(descriptions.fil).toContain('Developer ng software');
+    expect(descriptions.fil).toContain('anim na iyon');
+  });
+
   it('returns the catalog label when English is missing or blank', () => {
     expect(screenVariantDescription('de', '/:nope', undefined, 'Fallback label')).toBe(
       'Fallback label',

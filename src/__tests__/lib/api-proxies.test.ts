@@ -29,6 +29,9 @@ import {
   proxyMeHeldShareDelete,
   proxyMeHeldSharePut,
   proxyMeHeldSharesGet,
+  proxyFondPayoutInvoicePost,
+  proxyFondPayoutsGet,
+  proxyFondSummaryGet,
   proxyMePreviousWalletDelete,
   proxyMePreviousWalletsGet,
   proxyMeRecoverySharePut,
@@ -90,8 +93,11 @@ import {
   proxyMessagesGet,
   proxyMessagesHiddenGet,
   proxyMessagesPlacesGet,
+  proxyWalletStatsGet,
   proxyMessagesInvoicePost,
+  proxyMessagesRepaymentClosePost,
   proxyMessagesRepaymentDuePost,
+  proxyMessagesRepaymentPost,
   proxyMessagesPhotoGet,
   proxyMessagesPhotoExtGet,
   proxyMessagesPost,
@@ -414,6 +420,43 @@ describe('api proxy wrappers', () => {
     const [url, init] = fetchMock.mock.calls[0] as [URL, RequestInit];
     expect(url.pathname).toBe('/me/held-shares/a%2Fb');
     expect(init.method).toBe('DELETE');
+    expect(new Headers(init.headers).get('authorization')).toBe('Bearer token');
+  });
+
+  it('proxyFondPayoutsGet hits GET /fond/payouts', async () => {
+    const fetchMock = stubApi();
+    await proxyFondPayoutsGet(
+      new Request('http://localhost/fond/payouts', {
+        headers: { authorization: 'Bearer token' },
+      }),
+    );
+    const [url, init] = fetchMock.mock.calls[0] as [URL, RequestInit];
+    expect(url.pathname).toBe('/fond/payouts');
+    expect(init.method).toBe('GET');
+    expect(new Headers(init.headers).get('authorization')).toBe('Bearer token');
+  });
+
+  it('proxyFondSummaryGet hits GET /fond/summary without adding auth', async () => {
+    const fetchMock = stubApi();
+    await proxyFondSummaryGet(new Request('http://localhost/fonds/tondo-fond/summary'));
+    const [url, init] = fetchMock.mock.calls[0] as [URL, RequestInit];
+    expect(url.pathname).toBe('/fond/summary');
+    expect(init.method).toBe('GET');
+    expect(new Headers(init.headers).get('authorization')).toBeNull();
+  });
+
+  it('proxyFondPayoutInvoicePost hits the encoded /fond/payouts/:id/invoice', async () => {
+    const fetchMock = stubApi();
+    await proxyFondPayoutInvoicePost(
+      new Request('http://localhost/fond/payouts/x/invoice', {
+        method: 'POST',
+        headers: { authorization: 'Bearer token' },
+      }),
+      'a/b',
+    );
+    const [url, init] = fetchMock.mock.calls[0] as [URL, RequestInit];
+    expect(url.pathname).toBe('/fond/payouts/a%2Fb/invoice');
+    expect(init.method).toBe('POST');
     expect(new Headers(init.headers).get('authorization')).toBe('Bearer token');
   });
 
@@ -794,6 +837,12 @@ describe('api proxy wrappers', () => {
     const fetchMock = stubApi();
     await proxyGiftsStatsGet(new Request('http://localhost/gifts/stats'));
     expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/gifts/stats');
+  });
+
+  it('proxyWalletStatsGet hits /wallets/stats', async () => {
+    const fetchMock = stubApi();
+    await proxyWalletStatsGet(new Request('http://localhost/wallets/stats'));
+    expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/wallets/stats');
   });
 
   it('proxyGiftsStatsGet forwards recipient', async () => {
@@ -1243,6 +1292,31 @@ describe('api proxy wrappers', () => {
       'a/b',
     );
     expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/messages/a%2Fb/repayment/due');
+  });
+
+  it('proxyMessagesRepaymentClosePost hits POST /messages/:id/repayment/close', async () => {
+    const fetchMock = stubApi();
+    await proxyMessagesRepaymentClosePost(
+      new Request('http://localhost/messages/m1/repayment/close', { method: 'POST' }),
+      'a/b',
+    );
+    expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/messages/a%2Fb/repayment/close');
+  });
+
+  it('proxyMessagesRepaymentPost forwards a free-amount body to POST /messages/:id/repayment', async () => {
+    const fetchMock = stubApi();
+    await proxyMessagesRepaymentPost(
+      new Request('http://localhost/messages/m1/repayment', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: '{"amount":"21"}',
+      }),
+      'a/b',
+    );
+    expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/messages/a%2Fb/repayment');
+    expect(
+      new TextDecoder().decode((fetchMock.mock.calls[0]?.[1] as RequestInit).body as ArrayBuffer),
+    ).toBe('{"amount":"21"}');
   });
 
   it('proxyViewGet hits /view/:viewKey (encoded)', async () => {

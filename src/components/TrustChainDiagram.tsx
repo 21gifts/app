@@ -29,6 +29,8 @@ function roleMessageKey(role: TrustChainNode['role']): MessageKey {
   const keys: Record<TrustChainNode['role'], MessageKey> = {
     founder: 'forum.role.founder',
     moderator: 'forum.role.moderator',
+    fond: 'forum.role.fond',
+    software_developer: 'forum.role.softwareDeveloper',
     initiator: 'forum.role.initiator',
     verified: 'forum.role.verified',
   };

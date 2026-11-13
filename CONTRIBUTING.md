@@ -167,6 +167,10 @@ app/
 │   │   │   ├── trial/route.ts                    # POST /funding/trial
 │   │   │   ├── admit/route.ts                    # POST /funding/admit
 │   │   │   └── reject/route.ts                   # POST /funding/reject
+│   │   ├── fond/
+│   │   │   └── payouts/
+│   │   │       ├── route.ts              # GET /fond/payouts (today's open Fond rows)
+│   │   │       └── [id]/invoice/route.ts # POST /fond/payouts/:id/invoice (Spark invoice or BOLT11)
 │   │   ├── login/
 │   │   │   └── page.tsx         # GET /login — login + signed-in form
 │   │   ├── recover/
@@ -286,6 +290,7 @@ app/
 │   │   ├── WalletHistory.tsx    # /wallet payments card (newest first, paged on scroll)
 │   │   ├── WalletSetupNote.tsx  # Inline wallet setup note on money screens (Try again)
 │   │   ├── WalletSync.tsx       # Root-mounted wallet phrase and background setup listeners + wallet data report triggers (renders nothing)
+│   │   ├── FondPayoutSync.tsx   # Root-mounted automatic Fond payout loop while the Fond wallet is ready (renders nothing)
 │   │   ├── InteractionLog.tsx   # Root-mounted interaction log: screen views, flush timer (renders nothing)
 │   │   ├── WalletPay.tsx        # In-app wallet pay slot of the pay sheet (the only way to pay)
 │   │   ├── PaySheet.tsx         # Bottom sheet for the last tap of every in-app wallet payment (title, amount, pay slot, success step)
@@ -420,7 +425,9 @@ app/
 │   │   │   ├── heart-context.ts # fetchHeartPosts: gift payment hashes → POST /me/wallet/hearts
 │   │   │   ├── payment-counterparty.ts # fetchPaymentCounterparties: payments → POST /me/wallet/counterparties
 │   │   │   ├── wallet-report.ts # reportWallet: balance + unacknowledged payments → POST /me/wallet/report
+│   │   │   ├── fond-payouts.ts  # runFondPayoutTick: list → invoice → pay sparkInvoice ?? bolt11 once
 │   │   │   ├── payment-failure.ts # reportPaymentFailure: payment_failed event + `Payment failed` error report
+│   │   │   ├── error-cause.ts   # errorCause, CAUSE_KINDS: name, code, and cause kind of a wallet that did not open
 │   │   │   └── lnurl-relay.ts   # lnurlRelayTarget: outside address or LNURL goes through the api
 │   │   ├── gifts-address.ts     # Public username@21.gifts display handle
 │   │   ├── shop-sticker.ts      # Shop-sticker SVG/PDF/PNG/JPG from the member pay QR; ?lang=Kikamba (no PDF library)
@@ -503,6 +510,7 @@ app/
 │   ├── messages.spec.ts         # Inbox HTML /messages vs public /messages/[id]
 │   ├── proposals.spec.ts        # /moderate/proposals staff confirm/reject queue
 │   ├── applications.spec.ts     # /grants grant card, queue, and review; old paths redirect
+│   ├── fond-payouts.spec.ts     # /fond/payouts proxies, client calls, invoice/settle tick loop
 │   ├── proxy.spec.ts            # Same-origin api proxy round-trips against the stub
 │   ├── view.spec.ts             # /view/[viewKey] public profile
 │   ├── mock-api.mjs             # Local 21.gifts api protocol stub for proxies
@@ -528,15 +536,15 @@ app/
 
 ### Branches
 
-| Branch    | Purpose                            | Deploy target |
-| --------- | ---------------------------------- | ------------- |
-| `develop` | Default branch, active development | DEV           |
-| `staging` | Experimental testing               | staging       |
-| `main`    | Production releases                | PRD           |
+| Branch    | Purpose                                                          | Deploy target |
+| --------- | ---------------------------------------------------------------- | ------------- |
+| `develop` | Default branch, active development                               | DEV           |
+| `staging` | Experimental testing (branch currently absent, no pull requests) | staging       |
+| `main`    | Production releases                                              | PRD           |
 
-- Open feature work through a **feature branch and a pull request**. The pull request targets `staging` unless another base was explicitly requested. It must not target `main`. The GitHub default branch stays `develop`; that does not change the pull-request base.
+- Open feature work through a **feature branch and a pull request**. Feature pull requests target `develop`; they must not target `main` or `staging`.
 - `main` is protected. The only pull request that may target `main` is the automatic release (`Release: develop -> main`). Production still deploys when `main` itself is pushed.
-- **Hard requirement:** `staging` is the environment for experimental testing. It publishes `21gifts/app:staging`. A change that is good there is released to `develop` by a release pull request (`Release: staging -> develop`). That release is the explicit request to target `develop`. `main` receives changes only through `Release: develop -> main`. `staging` is never released directly to `main`. An open release pull request is left unchanged. The staging release is not opened when the three-dot diff against `develop` has no file changes.
+- **Hard requirement:** `staging` is the environment for experimental testing. It publishes `21gifts/app:staging`. No pull request targets `staging` at present. The product owner decides whether pull requests may target `staging` again and how experimental changes reach it; this section is updated before that changes. When the `staging` branch exists, its changes reach `develop` only through a release pull request (`Release: staging -> develop`); that release is the explicit request to target `develop`. `main` receives changes only through `Release: develop -> main`. `staging` is never released directly to `main`. An open release pull request is left unchanged. The staging release is not opened when the three-dot diff against `develop` has no file changes.
 - Never force-push, never amend published commits, except publishing a rebase of `staging` onto `develop` with `git push --force-with-lease` to `staging` only.
 
 ### Commit messages
@@ -570,7 +578,7 @@ update stuff
   values; explicitly optional ones (`getE2eNow`, `getBreezApiKey`,
   `getPlatformUsername`, `getSentryDsn`, `getSentryEnvironment`,
   `getSentryTracesSampleRate`) return `null`. No silent fallbacks.
-- **Viewer permission checks use `roleAtLeast`** (`src/lib/roles.ts`), never an equality test on the viewer's role — a higher role must always do and see everything a lower role can. The one named exception is `canEditDailyPayoutRoster` in `src/lib/roles.ts`, because initiator and moderator share rank 2, so a rank check cannot exclude moderators. It is true only for initiator and founder. No further equality checks.
+- **Viewer permission checks use `roleAtLeast`** (`src/lib/roles.ts`), never an equality test on the viewer's role — a higher role must always do and see everything a lower role can. Every viewer permission check, including the daily payout roster (`canEditDailyPayoutRoster` in `src/lib/roles.ts`), is a `roleAtLeast` minimum; the roster's minimum is `initiator`. No equality checks. The rank order is basis 0, verified 1, moderator 2, fond 3, software_developer 4, initiator 5, founder 6. The software developer is in the moderators' group and has every moderator permission, but cannot edit the daily payout roster because it ranks below initiator. `fond` also ranks below initiator and cannot edit that roster.
 
 ### Styling
 
@@ -745,15 +753,15 @@ The open wallet keeps its recovery phrase in the tab's memory only. A document l
 
 ### Staff actions (hard requirement)
 
-A stack of labeled moderator or founder actions on a member card is not shown as loose buttons. One closed disclosure (`staff.functions`, English "Moderator functions") is a `details` / `summary` row, not a full-width button, and reveals only the actions that viewer may take on that person. Founder-only actions such as appoint use the same disclosure. Delete on a note stays the icon in the footer icon row. Routes under `/moderate` are the opened workspace and do not wrap their own tools again. The Menu **Moderation** row stays. The staff inbox origin filter stays. Role pills are not actions. A new labeled staff-action stack on a member card that renders before this disclosure is opened is an undeclared deviation. The closed row and the screen after that control is pressed are separate screenshot states. Reviewers follow `docs/ui.md` principle **Staff action stacks stay closed.**
+A stack of labeled actions available to accounts at least moderator on a member card is not shown as loose buttons. One closed disclosure (`staff.functions`, English "Moderator functions") is a `details` / `summary` row, not a full-width button, and reveals only the actions that viewer may take on that person. Founder-only actions such as appoint use the same disclosure. Delete on a note stays the icon in the footer icon row. Routes under `/moderate` are the opened workspace and do not wrap their own tools again. The Menu **Moderation** row stays. The staff inbox origin filter stays. Role pills are not actions. A new labeled staff-action stack on a member card that renders before this disclosure is opened is an undeclared deviation. The closed row and the screen after that control is pressed are separate screenshot states. Reviewers follow `docs/ui.md` principle **Staff action stacks stay closed.**
 
 ### Amount entry (hard requirement)
 
-Every control where a person types an amount uses `AmountEntry`: the gift `SegmentedControl` (₿ and the member's fiat code) and the other unit directly under the field. Bitcoin entry shows the preferred fiat. Fiat entry shows the bitcoin equivalent. The last unit a signed-in member chooses is `account.amountUnit` (`btc` or `fiat`, default `btc`) and is the default on every amount field. A signed-out pay link still shows the switch, starts at ₿, and does not store the choice. The submitted amount is always whole sats. Fiat entry uses the current spot rate to turn the digits still being typed into sats. The currency that was typed is stored and shown as that exact figure, as [docs/fiat-amounts.md](docs/fiat-amounts.md) requires. While the preferred fiat has no rate, that fiat is disabled on the switch, ₿ stays, and the line under the field reads **No exchange rate yet**, so a fiat amount is only typed while it can be converted. The point of sale never answers a fiat amount with a whole-number error. A new amount field without the switch or the counter is an undeclared deviation. The daily payout roster on `/grants/payments/amounts` and the moderator roster on `/grants/payments/moderators` are not one of these fields: each amount is the USD figure spend stores and pays, so those inputs stay `Field` and the saved body stays `amountUsd`. Fiat mode is its own screenshot state. In the inbox composer the message and send stay on one row, under the photo icon row (camera and attach). The amount is the next row: the switch beside the input, the other unit under that input, and no visible label (the input keeps the accessible name).
+Every control where a person types an amount uses `AmountEntry`: the gift `SegmentedControl` (₿ and the member's fiat code) and the other unit directly under the field. Bitcoin entry shows the preferred fiat. Fiat entry shows the bitcoin equivalent. The last unit a signed-in member chooses is `account.amountUnit` (`btc` or `fiat`, default `btc`) and is the default on every amount field. A signed-out pay link still shows the switch, starts at ₿, and does not store the choice. The submitted amount is always whole sats. Fiat entry uses the current spot rate to turn the digits still being typed into sats. The currency that was typed is stored and shown as that exact figure, as [docs/fiat-amounts.md](docs/fiat-amounts.md) requires. While the preferred fiat has no rate, that fiat is disabled on the switch, ₿ stays, and the line under the field reads **No exchange rate yet**, so a fiat amount is only typed while it can be converted. The point of sale never answers a fiat amount with a whole-number error. A new amount field without the switch or the counter is an undeclared deviation. The daily payout roster on `/grants/payments/amounts` and the moderator roster on `/grants/payments/moderators` are not one of these fields: each amount is the USD figure spend stores and pays, so those inputs stay `Field` and the saved body stays `amountUsd`. A loan's **Pay more** field is another explicit exception: it stays in the loan unit — ₿ sats for a BTC loan or the loan currency for a fiat loan — without a unit switch. Its typed string is submitted unchanged and shown as that exact figure, with the bitcoin it buys beside it. Fiat mode is its own screenshot state. In the inbox composer the message and send stay on one row, under the photo icon row (camera and attach). The amount is the next row: the switch beside the input, the other unit under that input, and no visible label (the input keeps the accessible name).
 
 ### Shown amounts (hard requirement)
 
-Every place that shows a bitcoin amount also shows one fiat figure. A stored string for the visitor's currency, or the currency that was typed, is that figure and is shown as-is. When no fiat string was stored, the fiat beside the bitcoin is the current spot in the visitor's currency. Bitcoin stands alone only when that spot is not available yet. A repayment due box whose payable loans were all defined in one fiat currency shows that currency alone. **Send** on that box still shows the currency together with the bitcoin being paid. A shop payment opened for an amount typed in bitcoin shows only bitcoin, even when the spot is available. The minted fallback for that amount still shows the current spot beside the bitcoin, and that spot is not stored. A till charge on that pay link still shows the stored figure, or the current spot when none was stored.
+Every place that shows a bitcoin amount also shows one fiat figure. A stored string for the visitor's currency, or the currency that was typed, is that figure and is shown as-is. When no fiat string was stored, the fiat beside the bitcoin is the current spot in the visitor's currency. Bitcoin stands alone only when that spot is not available yet. A repayment due box whose payable loans were all defined in one fiat currency shows that currency alone. **Send** on that box still shows the currency together with the bitcoin being paid. A shop payment opened for an amount typed in bitcoin shows only bitcoin, even when the spot is available. The minted fallback for that amount still shows the current spot beside the bitcoin, and that spot is not stored. A till charge on that pay link still shows the stored figure, or the current spot when none was stored. The **By month** bars on `/stats` show only the unit selected on their ₿ | fiat control (user decision 2026-11-11).
 
 Signed in, the code is the currency stored for that person. `useFiatPreference` is that code: a profile choice they already stored wins. Signed out, there is no profile currency, so the code is the one implied by the UI language (`defaultFiatForLocale`: German CHF, English USD, Spanish EUR, Filipino PHP).
 
@@ -957,7 +965,7 @@ still passes, the pixels moved only by rendering noise, and the check fails
 and names the file to restore (`git checkout <base> -- <file>`). A baseline
 for a new screen or variant is not compared. In a pull request run the base
 is the base commit the CI merge was built on; locally it is the merge base
-with `origin/staging`, or `SCREENSHOT_BASE` when set. Regenerate with
+with `origin/develop`, or `SCREENSHOT_BASE` when set. Regenerate with
 `npm run e2e:update-snapshots`, which rewrites only shots that no longer
 match, never with `--update-snapshots=all` and never by copying every CI
 `-actual.png`.
@@ -1257,7 +1265,8 @@ only for a signed-in member and both through same-origin proxies:
   session is cleared). Visitors without a session are not recorded.
   `payment_failed` (every wallet payment that did not go out: `stage`,
   `reason`, `method`, `flow`, `amountSats`) and `wallet_open_failed`
-  (`reason` `timeout` or `error`) go out in batches of their own, and so do
+  (`reason` `timeout` or `error`, `stage`, `errorName`, `errorCode`,
+  `causeKind`, `elapsedMs`, `online`, `visibility`) go out in batches of their own, and so do
   the wallet tour and move-funds events (`wallet_tour_*`, `wallet_move_*`) as
   a group of their own, and `recovery_done` (the sign-in that ends a social
   recovery) as another, so an api that does not accept those names yet cannot
@@ -1266,6 +1275,12 @@ only for a signed-in member and both through same-origin proxies:
 A payment that did not go out, and a wallet that did not open, are also sent
 to error reporting (`Payment failed`, one issue per stage and reason, and
 `Wallet did not open`, one per reason), errors-only like every other report.
+A failed read or safe update of the SDK user settings after a connection is
+sent as `Wallet settings not updated`, one issue per fixed stage (`read`,
+`private_mode`, or `viewer`). It carries only that stage and the same fixed
+error name, error code, and cause-kind classification used by wallet-open
+failures. It never carries the viewer key, wallet identity, address, SDK error
+text, or thrown value.
 A wallet that did not open is opened again automatically, in the same page:
 a failed download of the wallet code is downloaded again, and the download
 itself is not cut off by the connect deadline. Only the first
@@ -1275,7 +1290,14 @@ Member state (too little balance, an amount below the minimum, no wallet
 connection) and hearts (`Heart not sent`) are not sent as `Payment failed`.
 Reason, stage, method, flow, and the error name and code are short codes; the
 text of an SDK or api error is never sent, because it can carry invoices,
-addresses, or keys.
+addresses, or keys. A wallet that did not open also sends where it stopped
+(`stage`: `sdk_load`, `connect`, `first_sync`, or `deadline`), its cause kind
+(`causeKind`: one identifier from the fixed table `CAUSE_KINDS` in
+`src/lib/wallet/error-cause.ts`, such as `fetch_failed` or
+`wasm_out_of_memory`, chosen on the device by matching the error's name, code,
+and message against it, `unknown` when no row matches; the matched text itself
+is never sent), the time since the attempt started, and whether the browser
+was online and the page visible.
 
 **Hard requirement:** neither report, nor any other request, log, or error
 report, ever carries the recovery phrase, the seed, PRF output, a preimage, or
@@ -1292,15 +1314,15 @@ performance traces, both through its scrubber.
 
 ## CI / CD
 
-| Workflow                | Trigger                                                           | Action                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
-| ----------------------- | ----------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `ci.yaml`               | PR (including drafts); `workflow_dispatch`                        | Lint (`npm run lint` on Node 22) + Check (typecheck, handbook, e2e-check, test (100% coverage), build on Node 22) + Screenshot baselines (`npm run screenshot:check`, 10 minutes) + three behavior shard jobs (`E2E (behavior, shard 1/3)` to `3/3`) + E2E (behavior), green only when all three shards are green, + sixteen visual shard jobs (`Visual (<combo>, shard 1/4)` to `4/4`) + four Visual (<combo>) jobs, green only when all sixteen visual shards are green; Check **15 minutes**, every other job **10 minutes**; Playwright `v1.61.1-noble` |
-| `deploy-dev.yaml`       | push to `develop`                                                 | Docker build (`NEXT_PUBLIC_BREEZ_API_KEY` from `BREEZ_API_KEY_DEV`) → push `21gifts/app:beta` and `21gifts/app:beta-<sha>` → notify → wait for deploy                                                                                                                                                                                                                                                                                                                                                                                                       |
-| `deploy-staging.yaml`   | push to `staging`                                                 | Docker build (`NEXT_PUBLIC_BREEZ_API_KEY` from `BREEZ_API_KEY_STAGING`) → push `21gifts/app:staging` and `21gifts/app:staging-<sha>` → notify → wait for deploy                                                                                                                                                                                                                                                                                                                                                                                             |
-| `deploy-prd.yaml`       | push to `main`                                                    | Fail when `BREEZ_API_KEY_PRD` is empty → Docker build (`NEXT_PUBLIC_BREEZ_API_KEY` from `BREEZ_API_KEY_PRD`) → push `21gifts/app:latest` and `21gifts/app:latest-<sha>` → notify → wait for deploy                                                                                                                                                                                                                                                                                                                                                          |
-| `auto-release-pr.yaml`  | push to `develop` or `staging`                                    | Open a missing release only (`staging → develop`, and `develop → main`). Leave an open release unchanged. Skip `staging → develop` when that diff has no file changes.                                                                                                                                                                                                                                                                                                                                                                                      |
-| `a38-guard.yml`         | `pull_request_target`; PR comments; schedule; `workflow_dispatch` | `dfx pr guard` verifies the A38 report, releases held fork runs of `ci.yaml`, and sets ready; never checks out the PR code                                                                                                                                                                                                                                                                                                                                                                                                                                  |
-| `visual-baselines.yaml` | `workflow_dispatch`, and a push that changes this file            | Regenerate Linux Chromium baselines, upload the artifact, and do not gate a pull request                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
+| Workflow                | Trigger                                                                           | Action                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| ----------------------- | --------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `ci.yaml`               | PR (including drafts); `workflow_dispatch`                                        | Lint (`npm run lint` on Node 22) + Check (typecheck, handbook, e2e-check, test (100% coverage), build on Node 22) + Screenshot baselines (`npm run screenshot:check`, 10 minutes) + three behavior shard jobs (`E2E (behavior, shard 1/3)` to `3/3`) + E2E (behavior), green only when all three shards are green, + sixteen visual shard jobs (`Visual (<combo>, shard 1/4)` to `4/4`) + four Visual (<combo>) jobs, green only when all sixteen visual shards are green; Check **15 minutes**, every other job **10 minutes**; Playwright `v1.61.1-noble` |
+| `deploy-dev.yaml`       | push to `develop`                                                                 | Docker build (`NEXT_PUBLIC_BREEZ_API_KEY` from `BREEZ_API_KEY_DEV`) → push `21gifts/app:beta` and `21gifts/app:beta-<sha>` → notify → wait for deploy                                                                                                                                                                                                                                                                                                                                                                                                       |
+| `deploy-staging.yaml`   | push to `staging`                                                                 | Docker build (`NEXT_PUBLIC_BREEZ_API_KEY` from `BREEZ_API_KEY_STAGING`) → push `21gifts/app:staging` and `21gifts/app:staging-<sha>` → notify → wait for deploy                                                                                                                                                                                                                                                                                                                                                                                             |
+| `deploy-prd.yaml`       | push to `main`                                                                    | Fail when `BREEZ_API_KEY_PRD` is empty → Docker build (`NEXT_PUBLIC_BREEZ_API_KEY` from `BREEZ_API_KEY_PRD`) → push `21gifts/app:latest` and `21gifts/app:latest-<sha>` → notify → wait for deploy                                                                                                                                                                                                                                                                                                                                                          |
+| `auto-release-pr.yaml`  | push to `develop` or `staging`                                                    | Open a missing release only (`staging → develop`, and `develop → main`). Leave an open release unchanged. Skip `staging → develop` when that diff has no file changes.                                                                                                                                                                                                                                                                                                                                                                                      |
+| `a38-guard.yml`         | `pull_request_target`; PR comments; `workflow_run`; schedule; `workflow_dispatch` | `dfx pr guard` verifies the A38 report, releases held fork runs of `ci.yaml`, and sets ready; never checks out the PR code                                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| `visual-baselines.yaml` | `workflow_dispatch`, and a push that changes this file                            | Regenerate Linux Chromium baselines, upload the artifact, and do not gate a pull request                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
 
 Images target `linux/arm64`. Every deploy passes the build-arg
 `NEXT_PUBLIC_BUILD_ID` as the full commit SHA (`github.sha`), read by the

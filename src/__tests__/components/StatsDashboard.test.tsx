@@ -1,7 +1,9 @@
 import { cleanup, fireEvent, screen, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { StatsDashboard } from '@/components/StatsDashboard';
-import type { GiftStats } from '@/lib/api-types';
+import { useSpotRate } from '@/hooks/useSpotRate';
+import type { GiftStats, WalletStats } from '@/lib/api-types';
+import type { FiatRateDay } from '@/lib/stats-money';
 import { useAuthStore } from '@/stores/auth-store';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
 
@@ -11,8 +13,21 @@ vi.mock('@/hooks/useHydrateSession', () => ({
   useHydrateSession: (): { ready: boolean } => ({ ready: hydrateReady }),
 }));
 
+vi.mock('@/hooks/useSpotRate', () => ({
+  useSpotRate: vi.fn(),
+}));
+
+const RATE_DAY: FiatRateDay = {
+  sats: 100_000_000,
+  usd: '100000.00',
+  chf: '80000.00',
+  eur: '90000.00',
+  php: '5600000.00',
+};
+
 beforeEach(() => {
   hydrateReady = true;
+  vi.mocked(useSpotRate).mockReset().mockReturnValue(RATE_DAY);
 });
 
 afterEach(() => {
@@ -100,28 +115,6 @@ const SAMPLE: GiftStats = {
       cumulativePhp: '80000.00',
     },
   ],
-  byRecipient: [
-    {
-      recipient: 'alice',
-      giftCount: 2,
-      sats: 1_000_000,
-      btc: '0.01000000',
-      usd: '950.00',
-      chf: '800.00',
-      eur: '860.00',
-      php: '53200.00',
-    },
-    {
-      recipient: 'bob',
-      giftCount: 1,
-      sats: 500_000,
-      btc: '0.00500000',
-      usd: '475.00',
-      chf: '400.00',
-      eur: '430.00',
-      php: '26600.00',
-    },
-  ],
   byMonth: [
     {
       month: '2026-06',
@@ -149,9 +142,32 @@ const EMPTY: GiftStats = {
   firstPaidAt: null,
   lastPaidAt: null,
   spendOverTime: [],
-  byRecipient: [],
   byMonth: [],
   fx: FX_USD,
+};
+
+const WALLETS: WalletStats = {
+  walletCount: 61,
+  fundedWalletCount: 32,
+  totalSats: 89096,
+  totalBtc: '0.00089096',
+  asOf: '2026-11-10T06:21:04.985Z',
+  balanceOverTime: [
+    {
+      day: '2026-11-09',
+      totalSats: 80000,
+      totalBtc: '0.00080000',
+      walletCount: 55,
+      fundedWalletCount: 30,
+    },
+    {
+      day: '2026-11-10',
+      totalSats: 89096,
+      totalBtc: '0.00089096',
+      walletCount: 61,
+      fundedWalletCount: 32,
+    },
+  ],
 };
 
 describe('StatsDashboard', () => {
@@ -188,6 +204,145 @@ describe('StatsDashboard', () => {
       />,
     );
     expect(screen.getByRole('region', { name: 'Posts' }).textContent).toContain('0');
+  });
+
+  it('shows wallet tiles and a day chart without gift day links', () => {
+    renderWithLocale(
+      <StatsDashboard
+        stats={EMPTY}
+        wallets={WALLETS}
+        error={null}
+        loading={false}
+        onRetry={() => undefined}
+      />,
+    );
+    const wallets = screen.getByRole('region', { name: 'Wallets' });
+    expect(wallets.textContent).toContain("₿89'096");
+    expect(wallets.textContent).toContain('$89.10');
+    expect(wallets.textContent).toContain('32');
+    expect(wallets.textContent).toContain(
+      'Total of all 21.gifts wallets at the end of each UTC day, as reported by the wallets ' +
+        "themselves. Fiat figures use today's spot, not the day's price.",
+    );
+    const chart = screen.getByLabelText('Wallet balance over time in ₿');
+    expect(chart.getAttribute('role')).toBe('group');
+    expect(within(chart).getByText('2026-11-09')).toBeTruthy();
+    expect(within(chart).getByText('2026-11-10')).toBeTruthy();
+    expect(chart.querySelectorAll('rect title')[0]?.textContent).toBe(
+      "2026-11-09: ₿80'000 · $80.00",
+    );
+    expect(chart.querySelectorAll('rect title')[1]?.textContent).toBe(
+      "2026-11-10: ₿89'096 · $89.10",
+    );
+    expect(chart.querySelectorAll('rect')).toHaveLength(2);
+    expect(chart.querySelectorAll('circle')).toHaveLength(2);
+    expect(
+      [...chart.querySelectorAll('circle')].every(
+        (el) => el.getAttribute('pointer-events') === 'none',
+      ),
+    ).toBe(true);
+    expect(within(chart).queryByRole('link')).toBeNull();
+  });
+
+  it('shows wallet bitcoin without fiat when no spot is available', () => {
+    vi.mocked(useSpotRate).mockReturnValue(null);
+    renderWithLocale(
+      <StatsDashboard
+        stats={EMPTY}
+        wallets={WALLETS}
+        error={null}
+        loading={false}
+        onRetry={() => undefined}
+      />,
+    );
+    const wallets = screen.getByRole('region', { name: 'Wallets' });
+    expect(wallets.textContent).toContain("₿89'096");
+    expect(wallets.textContent).not.toContain('$89.10');
+    const chart = screen.getByLabelText('Wallet balance over time in ₿');
+    expect(chart.querySelectorAll('rect title')[0]?.textContent).toBe("2026-11-09: ₿80'000");
+    expect(chart.querySelectorAll('rect title')[1]?.textContent).toBe("2026-11-10: ₿89'096");
+  });
+
+  it('omits the Wallets section for an empty balance series', () => {
+    renderWithLocale(
+      <StatsDashboard
+        stats={EMPTY}
+        wallets={{ ...WALLETS, balanceOverTime: [] }}
+        error={null}
+        loading={false}
+        onRetry={() => undefined}
+      />,
+    );
+    expect(screen.queryByRole('region', { name: 'Wallets' })).toBeNull();
+    expect(useSpotRate).toHaveBeenCalledWith(false);
+    expect(useSpotRate).not.toHaveBeenCalledWith(true);
+  });
+
+  it('keeps zero wallet days hoverable without drawing their dot', () => {
+    renderWithLocale(
+      <StatsDashboard
+        stats={EMPTY}
+        wallets={{
+          ...WALLETS,
+          balanceOverTime: [
+            {
+              day: '2026-11-08',
+              totalSats: 0,
+              totalBtc: '0.00000000',
+              walletCount: 55,
+              fundedWalletCount: 0,
+            },
+            ...WALLETS.balanceOverTime,
+          ],
+        }}
+        error={null}
+        loading={false}
+        onRetry={() => undefined}
+      />,
+    );
+    const chart = screen.getByLabelText('Wallet balance over time in ₿');
+    expect(chart.querySelectorAll('rect')).toHaveLength(3);
+    expect(chart.querySelectorAll('rect title')).toHaveLength(3);
+    expect(chart.querySelector('rect title')?.textContent).toBe('2026-11-08: ₿0 · $0.00');
+    expect(chart.querySelectorAll('circle')).toHaveLength(2);
+    expect(within(chart).getByText('2026-11-08')).toBeTruthy();
+  });
+
+  it('draws one wallet day as a horizontal line', () => {
+    const firstDay = WALLETS.balanceOverTime[0] as WalletStats['balanceOverTime'][number];
+    renderWithLocale(
+      <StatsDashboard
+        stats={EMPTY}
+        wallets={{ ...WALLETS, balanceOverTime: [firstDay] }}
+        error={null}
+        loading={false}
+        onRetry={() => undefined}
+      />,
+    );
+    const chart = screen.getByLabelText('Wallet balance over time in ₿');
+    const line = chart.querySelector('polyline');
+    const coords = (line?.getAttribute('points') ?? '').split(/[ ,]+/).map(Number);
+    const [x1 = 0, y1 = 0, x2 = 0, y2 = 0] = coords;
+    expect(y1).toBe(y2);
+    expect(x2).toBeGreaterThan(x1);
+  });
+
+  it('omits wallets when absent or null', () => {
+    const view = renderWithLocale(
+      <StatsDashboard stats={EMPTY} error={null} loading={false} onRetry={() => undefined} />,
+    );
+    expect(screen.queryByRole('region', { name: 'Wallets' })).toBeNull();
+    view.unmount();
+    renderWithLocale(
+      <StatsDashboard
+        stats={EMPTY}
+        wallets={null}
+        error={null}
+        loading={false}
+        onRetry={() => undefined}
+      />,
+    );
+    expect(screen.queryByRole('region', { name: 'Wallets' })).toBeNull();
   });
 
   it('shows loading copy', () => {
@@ -251,7 +406,7 @@ describe('StatsDashboard', () => {
     expect(screen.getByLabelText('Spend over time in ₿')).toBeTruthy();
     expect(screen.getByLabelText('Spend over time in ₿').getAttribute('role')).toBe('img');
     expect(screen.queryByLabelText('Spend over time in USD')).toBeNull();
-    expect(screen.getByLabelText('Spend by person in ₿')).toBeTruthy();
+    expect(screen.queryByRole('heading', { name: 'By person' })).toBeNull();
     expect(screen.getByLabelText('Spend by month in ₿')).toBeTruthy();
   });
 
@@ -314,22 +469,23 @@ describe('StatsDashboard', () => {
     ).toBeNull();
   });
 
-  it('renders KPIs, footnote, BTC/USD charts, and person labels', () => {
+  it('renders KPIs, the People count, footnote, and BTC charts', () => {
     renderWithLocale(
       <StatsDashboard stats={SAMPLE} error={null} loading={false} onRetry={() => undefined} />,
     );
     expect(screen.getAllByText("₿1'500'000")).toHaveLength(3);
-    expect(screen.getAllByText("$1'425.00")).toHaveLength(2);
+    expect(screen.getAllByText("$1'425.00")).toHaveLength(1);
     expect(
       screen.getByText("USD is the BTC-USD daily close (UTC) on each donation's day."),
     ).toBeTruthy();
+    expect(screen.getByText('People')).toBeTruthy();
+    expect(screen.getByText('2')).toBeTruthy();
+    expect(screen.queryByRole('heading', { name: 'By person' })).toBeNull();
+    expect(screen.queryByRole('group', { name: 'By person bar scale' })).toBeNull();
     expect(screen.getByText('Total spend over time')).toBeTruthy();
     expect(screen.getByLabelText('Spend over time in ₿')).toBeTruthy();
     expect(screen.queryByLabelText('Spend over time in USD')).toBeNull();
-    expect(screen.getByLabelText('Spend by person in ₿')).toBeTruthy();
     expect(screen.getByLabelText('Spend by month in ₿')).toBeTruthy();
-    expect(screen.getByText('alice')).toBeTruthy();
-    expect(screen.getByText("₿1'000'000 · $950.00")).toBeTruthy();
     const svg = screen.getByLabelText('Spend over time in ₿');
     expect(svg.getAttribute('role')).toBe('group');
     expect(within(svg).getByRole('link', { name: '2026-06-01' }).getAttribute('href')).toBe(
@@ -522,13 +678,22 @@ describe('StatsDashboard', () => {
     expect(screen.getByLabelText('Spend by month in ₿').textContent).toContain('2026-06');
   });
 
-  it('shows BIP-177 and USD amounts on the by-month chart', () => {
+  it('shows only the selected unit on by-month labels', () => {
     renderWithLocale(
       <StatsDashboard stats={SAMPLE} error={null} loading={false} onRetry={() => undefined} />,
     );
-    const svg = screen.getByLabelText('Spend by month in ₿');
-    expect(svg.textContent).toContain("₿1'500'000");
-    expect(svg.textContent).toContain("$1'425.00");
+    const btcSvg = screen.getByLabelText('Spend by month in ₿');
+    expect(btcSvg.textContent).toContain("₿1'500'000");
+    expect(btcSvg.textContent).not.toContain('$');
+    expect(btcSvg.textContent).not.toContain('USD');
+    fireEvent.click(
+      within(screen.getByRole('group', { name: 'By month bar scale' })).getByRole('button', {
+        name: 'USD',
+      }),
+    );
+    const usdSvg = screen.getByLabelText('Spend by month in USD');
+    expect(usdSvg.textContent).toContain("$1'425.00");
+    expect(usdSvg.textContent).not.toContain('₿');
   });
 
   it('labels zero-amount months on the by-month chart', () => {
@@ -564,8 +729,18 @@ describe('StatsDashboard', () => {
     expect(svg.textContent).toContain('2026-02');
     expect(svg.textContent).toContain('2026-03');
     expect(svg.textContent).toContain('₿0');
-    expect(svg.textContent).toContain('$0.00');
+    expect(svg.textContent).not.toContain('$');
     expect(svg.querySelectorAll('rect')).toHaveLength(1);
+    fireEvent.click(
+      within(screen.getByRole('group', { name: 'By month bar scale' })).getByRole('button', {
+        name: 'USD',
+      }),
+    );
+    const usdSvg = screen.getByLabelText('Spend by month in USD');
+    expect(usdSvg.textContent).toContain('$0.00');
+    expect(usdSvg.textContent).toContain('$475.00');
+    expect(usdSvg.textContent).not.toContain('₿');
+    expect(usdSvg.querySelectorAll('rect')).toHaveLength(1);
   });
 
   it('keeps a one-pixel floor for tiny positive months', () => {
@@ -654,96 +829,9 @@ describe('StatsDashboard', () => {
     expect(within(group).getByRole('button', { name: '₿' }).getAttribute('aria-pressed')).toBe(
       'true',
     );
-    expect(screen.getByLabelText('Spend by person in ₿')).toBeTruthy();
-  });
-
-  it('sizes by-person bars by USD independently of the month scale', () => {
-    const mixed: GiftStats = {
-      ...SAMPLE,
-      byRecipient: [
-        {
-          recipient: 'alice',
-          giftCount: 1,
-          sats: 1_000_000,
-          btc: '0.01000000',
-          usd: '50.00',
-          chf: '42.00',
-          eur: '45.00',
-          php: '2800.00',
-        },
-        {
-          recipient: 'bob',
-          giftCount: 1,
-          sats: 100_000,
-          btc: '0.00100000',
-          usd: '900.00',
-          chf: '756.00',
-          eur: '820.00',
-          php: '50400.00',
-        },
-        {
-          recipient: 'carol',
-          giftCount: 0,
-          sats: 0,
-          btc: '0.00000000',
-          usd: '0.00',
-          chf: '0.00',
-          eur: '0.00',
-          php: '0.00',
-        },
-      ],
-      byMonth: [
-        {
-          month: '2026-06',
-          giftCount: 1,
-          sats: 1_000_000,
-          btc: '0.01000000',
-          usd: '50.00',
-          chf: '42.00',
-          eur: '45.00',
-          php: '2800.00',
-        },
-        {
-          month: '2026-07',
-          giftCount: 1,
-          sats: 100_000,
-          btc: '0.00100000',
-          usd: '900.00',
-          chf: '756.00',
-          eur: '820.00',
-          php: '50400.00',
-        },
-      ],
-    };
-    renderWithLocale(
-      <StatsDashboard stats={mixed} error={null} loading={false} onRetry={() => undefined} />,
-    );
-    const personBtc = [...screen.getByLabelText('Spend by person in ₿').querySelectorAll('rect')];
-    expect(personBtc).toHaveLength(2);
-    expect(Number(personBtc[0]?.getAttribute('width'))).toBeGreaterThan(
-      Number(personBtc[1]?.getAttribute('width')),
-    );
-    fireEvent.click(
-      within(screen.getByRole('group', { name: 'By month bar scale' })).getByRole('button', {
-        name: 'USD',
-      }),
-    );
-    expect(screen.getByLabelText('Spend by person in ₿')).toBeTruthy();
-    const personStillBtc = [
-      ...screen.getByLabelText('Spend by person in ₿').querySelectorAll('rect'),
-    ];
-    expect(Number(personStillBtc[0]?.getAttribute('width'))).toBeGreaterThan(
-      Number(personStillBtc[1]?.getAttribute('width')),
-    );
-    fireEvent.click(
-      within(screen.getByRole('group', { name: 'By person bar scale' })).getByRole('button', {
-        name: 'USD',
-      }),
-    );
-    const personUsd = [...screen.getByLabelText('Spend by person in USD').querySelectorAll('rect')];
-    expect(Number(personUsd[1]?.getAttribute('width'))).toBeGreaterThan(
-      Number(personUsd[0]?.getAttribute('width')),
-    );
+    const back = screen.getByLabelText('Spend by month in ₿');
+    expect(back.textContent).toContain("₿1'000'000");
+    expect(back.textContent).not.toContain('$');
   });
 
   it('switches over-time series independently of the month scale', () => {
@@ -758,7 +846,6 @@ describe('StatsDashboard', () => {
     );
     expect(screen.getByLabelText('Spend over time in USD')).toBeTruthy();
     expect(screen.queryByLabelText('Spend over time in ₿')).toBeNull();
-    expect(screen.getByLabelText('Spend by person in ₿')).toBeTruthy();
     expect(screen.getByLabelText('Spend by month in ₿')).toBeTruthy();
     fireEvent.click(
       within(screen.getByRole('group', { name: 'Over time scale' })).getByRole('button', {
@@ -768,17 +855,13 @@ describe('StatsDashboard', () => {
     expect(screen.getByLabelText('Spend over time in ₿')).toBeTruthy();
     expect(screen.queryByLabelText('Spend over time in USD')).toBeNull();
     fireEvent.click(
-      within(screen.getByRole('group', { name: 'By person bar scale' })).getByRole('button', {
-        name: 'USD',
-      }),
-    );
-    fireEvent.click(
       within(screen.getByRole('group', { name: 'By month bar scale' })).getByRole('button', {
         name: 'USD',
       }),
     );
-    expect(screen.getByLabelText('Spend by person in USD')).toBeTruthy();
-    expect(screen.getByLabelText('Spend by month in USD')).toBeTruthy();
+    const month = screen.getByLabelText('Spend by month in USD');
+    expect(month.textContent).toContain("$1'425.00");
+    expect(month.textContent).not.toContain('₿');
     expect(screen.getByLabelText('Spend over time in ₿')).toBeTruthy();
   });
 
@@ -849,11 +932,7 @@ describe('StatsDashboard', () => {
         name: 'CHF',
       }),
     ).toBeTruthy();
-    expect(
-      within(screen.getByRole('group', { name: 'By person bar scale' })).getByRole('button', {
-        name: 'CHF',
-      }),
-    ).toBeTruthy();
+    expect(screen.queryByRole('group', { name: 'By person bar scale' })).toBeNull();
     expect(
       within(screen.getByRole('group', { name: 'By month bar scale' })).getByRole('button', {
         name: 'CHF',
@@ -907,7 +986,7 @@ describe('StatsDashboard', () => {
     expect(svg.textContent).not.toContain('CHF 0');
   });
 
-  it('switches over-time and person bars to EUR and PHP', () => {
+  it('switches over-time and month labels to EUR and PHP', () => {
     const { unmount } = renderWithLocale(
       <StatsDashboard stats={SAMPLE} error={null} loading={false} onRetry={() => undefined} />,
       'en',
@@ -921,11 +1000,13 @@ describe('StatsDashboard', () => {
     );
     expect(screen.getByLabelText('Spend over time in EUR')).toBeTruthy();
     fireEvent.click(
-      within(screen.getByRole('group', { name: 'By person bar scale' })).getByRole('button', {
+      within(screen.getByRole('group', { name: 'By month bar scale' })).getByRole('button', {
         name: 'EUR',
       }),
     );
-    expect(screen.getByLabelText('Spend by person in EUR')).toBeTruthy();
+    const eur = screen.getByLabelText('Spend by month in EUR');
+    expect(eur.textContent).toContain("EUR 1'300.00");
+    expect(eur.textContent).not.toContain('₿');
     unmount();
     renderWithLocale(
       <StatsDashboard stats={SAMPLE} error={null} loading={false} onRetry={() => undefined} />,
@@ -944,25 +1025,34 @@ describe('StatsDashboard', () => {
         name: 'PHP',
       }),
     );
-    expect(screen.getByLabelText('Spend by month in PHP')).toBeTruthy();
+    const php = screen.getByLabelText('Spend by month in PHP');
+    expect(php.textContent).toContain("₱80'000.00");
+    expect(php.textContent).not.toContain('₿');
   });
 
-  it('sizes person bars at zero when the selected fiat amount is null', () => {
-    const nullPerson: GiftStats = {
+  it('shows an em dash on a month label when the selected fiat amount is null', () => {
+    const nullMonth: GiftStats = {
       ...SAMPLE,
-      byRecipient: SAMPLE.byRecipient.map((row) => ({ ...row, chf: null })),
+      byMonth: SAMPLE.byMonth.map((row) => ({ ...row, chf: null })),
     };
     renderWithLocale(
-      <StatsDashboard stats={nullPerson} error={null} loading={false} onRetry={() => undefined} />,
+      <StatsDashboard stats={nullMonth} error={null} loading={false} onRetry={() => undefined} />,
       'en',
       'ch',
       'CHF',
     );
+    const btcSvg = screen.getByLabelText('Spend by month in ₿');
+    expect(btcSvg.textContent).toContain("₿1'500'000");
+    expect(btcSvg.textContent).not.toContain('\u2014');
     fireEvent.click(
-      within(screen.getByRole('group', { name: 'By person bar scale' })).getByRole('button', {
+      within(screen.getByRole('group', { name: 'By month bar scale' })).getByRole('button', {
         name: 'CHF',
       }),
     );
-    expect(screen.getByLabelText('Spend by person in CHF')).toBeTruthy();
+    const chfSvg = screen.getByLabelText('Spend by month in CHF');
+    expect(chfSvg.textContent).toContain('\u2014');
+    expect(chfSvg.textContent).not.toContain('₿');
+    expect(chfSvg.textContent).not.toContain('CHF 0');
+    expect(chfSvg.querySelectorAll('rect')).toHaveLength(0);
   });
 });

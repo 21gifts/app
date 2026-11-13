@@ -9,6 +9,17 @@ import { fulfillSpot, SPOT_RATES, spotRatesFromStats } from './fx-spot';
 import { motionSettled } from './motion';
 import { fulfillStablecoinUnavailable, stubShopPayment } from './shop-payment';
 import {
+  checkLoanAmount,
+  definedFiatAmounts,
+  definedFiatSum,
+  isCollecting,
+  loanMaxInput,
+  loanMaxUnits,
+  parseLoanAmount,
+  remainingRepaymentSats,
+  validatedRepaymentPayment,
+} from '../src/lib/loan-repay';
+import {
   buildShopStickerPdf,
   buildShopStickerSvg,
   shopStickerLangFromQuery,
@@ -41,10 +52,13 @@ import {
   fulfillLedger,
   fulfillMyLoans,
   ledgerA,
+  ledgerB,
   loanA,
   loanB,
+  loanCollecting,
   loanWith,
   myLoans,
+  productionPhpLoans,
 } from './loan-fixtures';
 
 /** The Playwright build's id, which the stub api requires on every passkey step. */
@@ -201,28 +215,6 @@ const POPULATED_STATS = {
       cumulativePhp: '80.00',
     },
   ],
-  byRecipient: [
-    {
-      recipient: 'alice',
-      giftCount: 2,
-      sats: 1000,
-      btc: '0.00001000',
-      usd: '0.95',
-      chf: '0.80',
-      eur: '0.86',
-      php: '53.00',
-    },
-    {
-      recipient: 'bob',
-      giftCount: 1,
-      sats: 500,
-      btc: '0.00000500',
-      usd: '0.48',
-      chf: '0.40',
-      eur: '0.44',
-      php: '27.00',
-    },
-  ],
   byMonth: [
     {
       month: '2026-06',
@@ -260,10 +252,43 @@ const EMPTY_STATS = {
   firstPaidAt: null,
   lastPaidAt: null,
   spendOverTime: [],
-  byRecipient: [],
   byMonth: [],
   fx: FX_USD,
 };
+
+const WALLET_STATS = {
+  walletCount: 61,
+  fundedWalletCount: 32,
+  totalSats: 89096,
+  totalBtc: '0.00089096',
+  asOf: '2026-11-10T06:21:04.985Z',
+  balanceOverTime: [
+    {
+      day: '2026-11-09',
+      totalSats: 80000,
+      totalBtc: '0.00080000',
+      walletCount: 55,
+      fundedWalletCount: 30,
+    },
+    {
+      day: '2026-11-10',
+      totalSats: 89096,
+      totalBtc: '0.00089096',
+      walletCount: 61,
+      fundedWalletCount: 32,
+    },
+  ],
+};
+
+async function stubWalletStats(page: Page, body: object = WALLET_STATS): Promise<void> {
+  await page.route('**/wallets/stats', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(body),
+    });
+  });
+}
 
 async function stubPayableNote(page: Page): Promise<void> {
   await page.route(/\/messages(?:\?|$)/, async (route) => {
@@ -764,6 +789,29 @@ test('Function: GET — healthz is ok', async ({ request }) => {
   const res = await request.get('/healthz');
   expect(res.status()).toBe(200);
   expect(await res.json()).toEqual({ status: 'ok' });
+});
+
+test('Function: FondPayoutSync — the loop requests nothing while signed out', async ({ page }) => {
+  await page.addInitScript(() => {
+    localStorage.removeItem('21gifts.session');
+  });
+  let requests = 0;
+  page.on('request', (request) => {
+    if (new URL(request.url()).pathname === '/fond/payouts') {
+      requests += 1;
+    }
+  });
+  await page.route(/\/forum\/messages(?:\?|$)/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ messages: [] }),
+    });
+  });
+  await page.goto('/welcome');
+  await expect(page.getByRole('heading', { name: 'Welcome' })).toBeVisible();
+  await page.waitForTimeout(250);
+  expect(requests).toBe(0);
 });
 
 test('Function: getApiUrl — proxy reaches the stub', async ({ request }) => {
@@ -5840,6 +5888,19 @@ test('Function: WalletPay — the forum pay sheet is wallet-only, with no invoic
   expect(await recordedWalletAssign(page)).toBeUndefined();
 });
 
+test('Function: keepTabInside — Tab past the last pay-sheet control wraps inside the dialog', async ({
+  page,
+  request,
+}) => {
+  await openPayInvoice(page, request);
+  const sheet = page.getByRole('dialog', { name: 'Send to Carol' });
+  const close = sheet.getByRole('button', { name: 'Close' });
+  await close.focus();
+  await expect(close).toBeFocused();
+  await page.keyboard.press('Tab');
+  await expect(close).toBeFocused();
+});
+
 test('Function: ForumPaySheet — the amount form keeps its controls clear of the Close hit area', async ({
   page,
   request,
@@ -6671,6 +6732,14 @@ test('Function: proxyGiftsStatsGet — GET /gifts/stats is empty', async ({ requ
   expect(((await res.json()) as { giftCount: number }).giftCount).toBe(0);
 });
 
+test('Function: proxyWalletStatsGet — GET /wallets/stats forwards the api 503', async ({
+  request,
+}) => {
+  const res = await request.get('/wallets/stats');
+  expect(res.status()).toBe(503);
+  expect(((await res.json()) as { error: string }).error).toBe('Wallet stats are unavailable');
+});
+
 test('Function: proxyFxSpotGet — GET /fx/spot has no rate on the stub', async ({ request }) => {
   const res = await request.get('/fx/spot');
   expect(res.status()).toBe(200);
@@ -6692,6 +6761,38 @@ test('Function: fetchPostStats — stats page shows notes and replies as posts',
   await page.goto('/stats');
   await expect(page.getByRole('region', { name: 'Posts' })).toBeVisible();
   await expect(page.getByRole('region', { name: 'Posts' })).toContainText('4');
+});
+
+test('Function: fetchWalletStats — stats page shows the wallet section', async ({ page }) => {
+  await stubGiftStats(page, EMPTY_STATS);
+  await stubWalletStats(page);
+  await fulfillSpot(page);
+  await page.goto('/stats');
+  const wallets = page.getByRole('region', { name: 'Wallets' });
+  await expect(wallets).toBeVisible();
+  await expect(wallets).toContainText("₿89'096");
+  await expect(wallets).toContainText('$89.10');
+  await expect(wallets).toContainText('32');
+  await expect(page.getByLabel('Wallet balance over time in ₿')).toBeVisible();
+});
+
+test('Function: StatsDashboard — wallet chart days are not gift-day links', async ({ page }) => {
+  await stubGiftStats(page, EMPTY_STATS);
+  await stubWalletStats(page);
+  await page.goto('/stats');
+  const chart = page.getByLabel('Wallet balance over time in ₿');
+  await expect(chart).toBeVisible();
+  await expect(chart.getByRole('link')).toHaveCount(0);
+});
+
+test('Function: StatsLoader — a failed wallet fetch keeps the gift stats', async ({ page }) => {
+  await stubGiftStats(page, POPULATED_STATS);
+  await page.route('**/wallets/stats', async (route) => {
+    await route.fulfill({ status: 503, contentType: 'application/json', body: '{}' });
+  });
+  await page.goto('/stats');
+  await expect(page.getByRole('heading', { name: 'Total spend over time' })).toBeVisible();
+  await expect(page.getByRole('region', { name: 'Wallets' })).toHaveCount(0);
 });
 
 test('Function: fetchGiftStats — stats page shows the empty copy', async ({ page }) => {
@@ -6763,11 +6864,16 @@ test('Function: StatsDashboard — month USD scale makes the higher-USD month ta
     ],
   });
   await page.goto('/stats');
+  const btc = page.getByLabel('Spend by month in ₿');
+  await expect(btc).toContainText("₿1'000'000");
+  await expect(btc).not.toContainText('$50.00');
   await page
     .getByRole('group', { name: 'By month bar scale' })
     .getByRole('button', { name: 'USD' })
     .click();
   const svg = page.getByLabel('Spend by month in USD');
+  await expect(svg).toContainText('$900.00');
+  await expect(svg).not.toContainText('₿');
   const juneH = Number(await svg.locator('rect').nth(0).getAttribute('height'));
   const julyH = Number(await svg.locator('rect').nth(1).getAttribute('height'));
   expect(julyH).toBeGreaterThan(juneH);
@@ -14199,7 +14305,7 @@ test('Function: forumTaggedRole — untagged notes show no role pill', async ({ 
   await page.goto('/welcome');
   await expect(page.getByText('Hello from the heart list.')).toBeVisible();
   await expect(
-    page.getByRole('button', { name: /^(?:Founder|Moderator|Initiator|Verified)$/ }),
+    page.getByRole('button', { name: /^(?:Founder|Moderator|Fond|Initiator|Verified)$/ }),
   ).toHaveCount(0);
 });
 
@@ -16179,15 +16285,160 @@ test('Function: proxyMessagesRepaymentDuePost — POST /messages/[id]/repayment/
   expect(response.status()).toBe(401);
 });
 
+test('POST /messages/[id]/repayment/close without bearer is 401', async ({ request }) => {
+  const response = await request.post('/messages/[id]/repayment/close');
+  expect(response.status()).toBe(401);
+});
+
 test('Function: postRepaymentDue — POST /messages/[id]/repayment/due answers empty lists', async ({
   request,
 }) => {
   const token = await loginHttp(request);
-  const response = await request.post('/messages/[id]/repayment/due', {
+  const response = await request.post('/messages/loan-a/repayment/due', {
     headers: { authorization: `Bearer ${token}` },
   });
   expect(response.status()).toBe(200);
   expect(await response.json()).toEqual({ bills: [], waiting: [] });
+});
+
+test('Function: proxyMessagesRepaymentClosePost — POST /messages/[id]/repayment/close is forwarded', async ({
+  request,
+}) => {
+  const token = await loginHttp(request);
+  const response = await request.post('/messages/loan-a/repayment/close', {
+    headers: { authorization: `Bearer ${token}` },
+  });
+  expect(response.status()).toBe(200);
+});
+
+test('Function: closeLoan — closing returns the final collecting state', async ({ request }) => {
+  const token = await loginHttp(request);
+  const response = await request.post('/messages/loan-collecting/repayment/close', {
+    headers: { authorization: `Bearer ${token}` },
+  });
+  expect(await response.json()).toMatchObject({ fundedAt: null, collectedSats: 8_000 });
+});
+
+test('Function: LoanRepaymentError — a max refusal updates the running repayment form', async ({
+  page,
+}) => {
+  await seedAdaSession(page);
+  await stubGiftStats(page, AMOUNT_RATE_STATS);
+  await fulfillMyLoans(page, myLoans([loanA]));
+  await fulfillLedger(page, loanA.messageId, ledgerA);
+  await page.route('**/messages/loan-a/repayment', async (route) => {
+    if (route.request().method() !== 'POST') {
+      await route.fallback();
+      return;
+    }
+    await route.fulfill({
+      status: 400,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        code: 'amount_too_high',
+        maxSats: 6_000,
+        maxAmount: null,
+      }),
+    });
+  });
+  await page.goto('/loans/repay?visual=repay-e2e-payment');
+  const input = page.getByLabel('Amount (₿)');
+  await input.fill('7000');
+  await page.getByRole('button', { name: 'Pay this amount' }).click();
+  await expect(input).toHaveValue('6000');
+  const payMore = page.getByRole('heading', { name: 'Pay more' }).locator('..');
+  await expect(payMore.getByRole('alert')).toContainText("maximum changed to ₿6'000");
+});
+
+test('Function: CreditClosedError — a closed loan invoice shows the localized refusal', async ({
+  page,
+}) => {
+  await seedAdaSession(page);
+  await stubPayableNote(page);
+  await page.route('**/messages/r-pay/invoice', async (route) => {
+    await route.fulfill({
+      status: 409,
+      contentType: 'application/json',
+      body: JSON.stringify({ code: 'credit_closed' }),
+    });
+  });
+  await page.goto('/welcome');
+  await chooseForumView(page, 'All');
+  await page.getByRole('button', { name: 'Show reactions' }).click();
+  const replyCard = page.locator('[data-reply-id="r-pay"]');
+  await replyCard.getByRole('button', { name: 'Send Bitcoin' }).click();
+  await replyCard.getByLabel('Amount').fill('21');
+  await submitPayAmount(page);
+  await expect(
+    page.getByText('This loan is no longer collecting and cannot receive more money.'),
+  ).toBeVisible();
+});
+
+test('Function: proxyMessagesRepaymentPost — POST /messages/[id]/repayment forwards an amount body', async ({
+  request,
+}) => {
+  const token = await loginHttp(request);
+  const response = await request.post('/messages/loan-a/repayment', {
+    headers: { authorization: `Bearer ${token}` },
+    data: { amount: '21' },
+  });
+  expect(response.status()).toBe(200);
+});
+
+test('Function: prepayLoan — fiat prepay converts cents with the fixed mock rate', async ({
+  request,
+}) => {
+  const token = await loginHttp(request);
+  const response = await request.post('/messages/loan-b/repayment', {
+    headers: { authorization: `Bearer ${token}` },
+    data: { amount: '1.23' },
+  });
+  expect(response.status()).toBe(200);
+  expect(await response.json()).toMatchObject({
+    amount: '1.23',
+    amountSats: 1_230,
+    bills: [{ amount: '1.23', amountSats: 1_230 }],
+  });
+});
+
+test('repayment close and free-amount repayment return 404 for unknown loan ids', async ({
+  request,
+}) => {
+  const token = await loginHttp(request);
+  const headers = { authorization: `Bearer ${token}` };
+  expect((await request.post('/messages/unknown-loan/repayment/close', { headers })).status()).toBe(
+    404,
+  );
+  expect(
+    (
+      await request.post('/messages/unknown-loan/repayment', {
+        headers,
+        data: { amount: '1' },
+      })
+    ).status(),
+  ).toBe(404);
+});
+
+test('Function: prepayLoan — prepay returns due-shaped bills and enforces max', async ({
+  request,
+}) => {
+  const token = await loginHttp(request);
+  const headers = { authorization: `Bearer ${token}` };
+  const response = await request.post('/messages/loan-closed-partial/repayment', {
+    headers,
+    data: { amount: '500' },
+  });
+  expect(await response.json()).toMatchObject({
+    amountSats: 500,
+    bills: [{ amountSats: 500 }],
+    waiting: [],
+  });
+  const tooHigh = await request.post('/messages/loan-closed-partial/repayment', {
+    headers,
+    data: { amount: '7901' },
+  });
+  expect(tooHigh.status()).toBe(400);
+  expect(await tooHigh.json()).toMatchObject({ code: 'amount_too_high', maxSats: 7_900 });
 });
 
 async function openLoanUi(
@@ -16206,14 +16457,121 @@ async function openLoanUi(
   await page.goto(pathname);
 }
 
-test('Function: summarizeLoans — the welcome card shows the combined behind state', async ({
-  page,
-}) => {
+test('Function: summarizeLoans — the welcome card shows the behind state', async ({ page }) => {
   const behind = loanWith(loanA, {
     due: { payableSats: 3_000, payablePeople: 3, behindDays: 2 },
   });
   await openLoanUi(page, '/welcome', myLoans([behind]), false);
   await expect(page.getByText("You're 2 days behind")).toBeVisible();
+});
+
+test('Function: summarizeLoans — the production PHP pair keeps its next amount', async ({
+  page,
+}) => {
+  await openLoanUi(page, '/welcome', myLoans(productionPhpLoans), false);
+  const card = page.getByRole('region', { name: 'Your loans (2)' });
+  await expect(card).toContainText("Next: Monday, November 16, ₱199.99 · ₿3'857");
+});
+
+test('Function: parseLoanAmount — BTC sats and fiat cents stay integer based', async ({ page }) => {
+  expect(parseLoanAmount('1000', 'BTC')).toEqual({ units: 1_000n, text: '1000' });
+  expect(parseLoanAmount('10,50', 'CHF')).toEqual({ units: 1_050n, text: '10,50' });
+  await openLoanUi(page, '/loans/repay?visual=repay-ready', myLoans([loanA]), false);
+  await expect(page.getByText('Due today')).toBeVisible();
+});
+
+test('Function: loanMaxUnits — api maxima compare as sats or cents', async ({ page }) => {
+  expect(loanMaxUnits(loanA)).toBe(19_000n);
+  expect(loanMaxUnits(loanB)).toBe(18_000n);
+  await openLoanUi(page, '/loans/repay?visual=repay-ready', myLoans([loanB]), false);
+  await expect(page.getByText('₱30.00', { exact: true })).toBeVisible();
+});
+
+test('Function: checkLoanAmount — above-max input is rejected before a request', async ({
+  page,
+}) => {
+  expect(checkLoanAmount('19001', loanA)).toEqual({
+    ok: false,
+    reason: 'above_max',
+    max: '19000',
+  });
+  await openLoanUi(page, '/loans/repay?visual=repay-ready', myLoans([loanA]), false);
+  await expect(page.getByText('Due today')).toBeVisible();
+});
+
+test('Function: loanMaxInput — Max keeps the api input representation', async ({ page }) => {
+  expect(loanMaxInput(loanA)).toBe('19000');
+  expect(loanMaxInput(loanB)).toBe('180.00');
+  await openLoanUi(page, '/loans/repay?visual=repay-ready', myLoans([loanB]), false);
+  await expect(page.getByText('₱30.00', { exact: true })).toBeVisible();
+});
+
+test('Function: isCollecting — only an unfunded unclosed loan collects', async ({ page }) => {
+  expect(isCollecting(loanCollecting)).toBe(true);
+  expect(isCollecting(loanA)).toBe(false);
+  await openLoanUi(page, '/loans/repay?visual=repay-ready', myLoans([loanCollecting]), false);
+  await expect(page.getByText('Not fully funded yet.')).toBeVisible();
+});
+
+test('Function: definedFiatSum — stored PHP amounts add in their currency', async ({ page }) => {
+  expect(definedFiatSum('PHP', ['199.99', '200.48'], 'ch')).toBe('₱400.47');
+  expect(definedFiatSum('PHP', ['199.99', null], 'ch')).toBeNull();
+  expect(definedFiatSum('PHP', [], 'ch')).toBeNull();
+  expect(definedFiatSum('PHP', ['not-an-amount'], 'ch')).toBeNull();
+  await openLoanUi(page, '/loans/repay?visual=repay-ready', myLoans([loanB]), false);
+  await expect(page.getByText('₱30.00', { exact: true })).toBeVisible();
+});
+
+test('Function: definedFiatAmounts — stored amounts add per currency', async ({ page }) => {
+  expect(
+    definedFiatAmounts(
+      [
+        { code: 'PHP', amount: '1.00' },
+        { code: 'USD', amount: '2.00' },
+        { code: 'PHP', amount: '1.50' },
+      ],
+      'ch',
+    ),
+  ).toBe('₱2.50 + $2.00');
+  expect(definedFiatAmounts([{ code: 'BTC', amount: null }], 'ch')).toBeNull();
+  await openLoanUi(page, '/loans/repay?visual=repay-ready', myLoans([loanB]), false);
+  await expect(page.getByText('₱30.00', { exact: true })).toBeVisible();
+});
+
+test('Function: remainingRepaymentSats — partial rows keep only their unpaid sats', async ({
+  page,
+}) => {
+  expect(remainingRepaymentSats({ sats: 500, paidSats: 100, dueSats: null })).toBe(400);
+  expect(remainingRepaymentSats({ sats: 500, paidSats: 100, dueSats: 375 })).toBe(375);
+  await openLoanUi(page, '/loans/repay?visual=repay-ready');
+  await page.getByRole('button', { name: 'Who gets paid' }).click();
+  await expect(page.getByText('Bruno', { exact: true })).toBeVisible();
+});
+
+test('Function: validatedRepaymentPayment — invalid fiat falls back to bitcoin', async ({
+  page,
+}) => {
+  expect(
+    validatedRepaymentPayment({
+      sats: 720,
+      paidSats: 0,
+      amount: '18.00',
+      paidAmount: 'bad partial',
+    }),
+  ).toEqual({ sats: 0n, amount: null, hasAmount: true });
+  await fulfillLedger(page, 'loan-b', {
+    ...ledgerB,
+    repayments: ledgerB.repayments.map((row) =>
+      row.status === 'due' && row.accountId === 'acc_elena'
+        ? { ...row, paidAmount: 'bad partial' }
+        : row,
+    ),
+  });
+  await openLoanUi(page, '/loans/repay?visual=repay-ready', myLoans([loanB]), false);
+  await page.getByRole('button', { name: 'Who gets paid' }).click();
+  const elena = page.getByText('Elena', { exact: true }).locator('..').locator('..');
+  await expect(elena).toContainText('₿720');
+  await expect(elena).not.toContainText('₱18.00');
 });
 
 test('Function: dueShares — Who gets paid lists every due lender', async ({ page }) => {
@@ -16271,6 +16629,34 @@ test('Function: useLoanRepay — wallet availability and sending pins reach the 
 test('Function: LoansCard — the welcome screen renders the loan card', async ({ page }) => {
   await openLoanUi(page, '/welcome', myLoans([loanA]), false);
   await expect(page.getByRole('region', { name: 'Your loan' })).toContainText("₿1'000");
+});
+
+test('Function: LoansCard — a PHP and a bitcoin loan keep their own goal bars', async ({
+  page,
+}) => {
+  await openLoanUi(page, '/welcome', myLoans([loanA, loanB]), false);
+  const card = page.getByRole('region', { name: 'Your loans (2)' });
+  await expect(card).toContainText('₱300.00');
+  await expect(card).toContainText("₿30'000");
+  await expect(card.getByText(loanA.text)).toBeVisible();
+  await expect(card.getByText(loanB.text)).toBeVisible();
+  await card.getByRole('button', { name: 'Show loans' }).click();
+  await expect(card.getByRole('link', { name: loanA.text })).toBeVisible();
+  await expect(card.getByRole('link', { name: loanB.text })).toBeVisible();
+});
+
+test('Function: MenuAccountHeader — a PHP payable amount shows its stored figure with bitcoin', async ({
+  page,
+}) => {
+  const phpDue = loanWith(loanB, {
+    due: { payableSats: 1_200, payablePeople: 2, payableAmount: '30.00' },
+  });
+  await openLoanUi(page, '/welcome', myLoans([phpDue]), false);
+  await page.getByRole('button', { name: 'Menu' }).click();
+  const menu = page.locator('#signed-in-menu');
+  const dueRow = menu.getByText('Loan repayment due today').locator('..');
+  await expect(dueRow.getByText("₱30.00 · ₿1'200", { exact: true })).toBeVisible();
+  await expect(dueRow).not.toContainText(/\$[\d,.'’]+/);
 });
 
 test('Function: LenderWaitingCard — the welcome screen asks a lender to open the wallet', async ({
@@ -17088,50 +17474,6 @@ test('Function: postLnurlInvoice — amount and comment refusals', async ({ requ
   });
   expect(comment.status()).toBe(400);
   expect(await comment.json()).toEqual({ error: 'Comment too long' });
-});
-
-test('Function: verifiedChipHiddenByStaffTag — a verified author with the staff label has no Verified pill', async ({
-  page,
-}) => {
-  await seedAdaSession(page);
-  await page.route(/\/messages(?:\?|$)/, async (route) => {
-    await route.fulfill({
-      status: 200,
-      contentType: 'application/json',
-      body: JSON.stringify({
-        messages: [
-          {
-            id: 'm-staff-verified',
-            name: 'Ada',
-            text: 'Hello from the developer',
-            createdAt: '2026-08-28T12:00:00.000Z',
-            sats: 0,
-            payable: false,
-            hasPhoto: false,
-            role: 'verified',
-            staffTag: 'software_developer',
-          },
-          {
-            id: 'm-staff-moderator',
-            name: 'Bea',
-            text: 'Hello from the moderator',
-            createdAt: '2026-08-28T12:01:00.000Z',
-            sats: 0,
-            payable: false,
-            hasPhoto: false,
-            role: 'moderator',
-            staffTag: 'software_developer',
-          },
-        ],
-      }),
-    });
-  });
-  await page.goto('/welcome');
-  await chooseForumView(page, 'All');
-  await expect(page.getByText('Hello from the developer')).toBeVisible();
-  await expect(page.getByText('Software Developer')).toHaveCount(2);
-  await expect(page.getByRole('button', { name: 'Verified' })).toHaveCount(0);
-  await expect(page.getByRole('button', { name: 'Moderator' })).toBeVisible();
 });
 
 async function seedSignedInAda(page: Page): Promise<void> {

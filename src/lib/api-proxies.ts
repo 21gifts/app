@@ -403,6 +403,27 @@ export async function proxyMeHeldShareDelete(request: Request, id: string): Prom
 }
 
 /**
+ * Proxies GET /fond/payouts to the 21.gifts api.
+ *
+ * @param request - Incoming App Router request (Bearer session).
+ * @returns The upstream response.
+ */
+export async function proxyFondPayoutsGet(request: Request): Promise<Response> {
+  return proxyApiRequest(request, '/fond/payouts');
+}
+
+/**
+ * Proxies POST /fond/payouts/:id/invoice to the 21.gifts api.
+ *
+ * @param request - Incoming App Router request (Bearer session).
+ * @param id - Payout row id from the path.
+ * @returns The upstream response.
+ */
+export async function proxyFondPayoutInvoicePost(request: Request, id: string): Promise<Response> {
+  return proxyApiRequest(request, `/fond/payouts/${encodeURIComponent(id)}/invoice`);
+}
+
+/**
  * Proxies POST /me/wallet/report (wallet data report) to the 21.gifts api.
  *
  * @param request - Incoming App Router request (Bearer session + JSON
@@ -807,6 +828,16 @@ export async function proxyMessagesStatsGet(request: Request): Promise<Response>
 }
 
 /**
+ * Proxies GET /wallets/stats to the 21.gifts api.
+ *
+ * @param request - Incoming App Router request.
+ * @returns The upstream response.
+ */
+export async function proxyWalletStatsGet(request: Request): Promise<Response> {
+  return proxyApiRequest(request, '/wallets/stats');
+}
+
+/**
  * Proxies GET /trust-chain to the 21.gifts api (Bearer forwarded).
  *
  * @param request - Incoming App Router request (Bearer session).
@@ -899,7 +930,7 @@ export async function proxyFundingApplicationsGet(request: Request): Promise<Res
 }
 
 /**
- * Proxies GET /funding/daily-roster to the 21.gifts api (founder/initiator Bearer).
+ * Proxies GET /funding/daily-roster to the 21.gifts api (at least initiator).
  *
  * @param request - Incoming App Router request (Bearer session).
  * @returns The upstream response.
@@ -1402,7 +1433,7 @@ export async function proxyMessagesRepaymentGet(
 /**
  * Proxies POST /messages/:id/repayment to the 21.gifts api.
  *
- * @param request - Incoming App Router request (Bearer session).
+ * @param request - Incoming App Router request (Bearer session, optional JSON `{ amount }`).
  * @param messageId - Credit note id.
  * @returns The upstream response.
  */
@@ -1425,6 +1456,20 @@ export async function proxyMessagesRepaymentDuePost(
   messageId: string,
 ): Promise<Response> {
   return proxyApiRequest(request, `/messages/${encodeURIComponent(messageId)}/repayment/due`);
+}
+
+/**
+ * Proxies POST /messages/:id/repayment/close to the 21.gifts api.
+ *
+ * @param request - Incoming App Router request (Bearer session, no body).
+ * @param messageId - Credit note id.
+ * @returns The upstream response.
+ */
+export async function proxyMessagesRepaymentClosePost(
+  request: Request,
+  messageId: string,
+): Promise<Response> {
+  return proxyApiRequest(request, `/messages/${encodeURIComponent(messageId)}/repayment/close`);
 }
 
 /**
@@ -1862,4 +1907,14 @@ export async function proxyMessagesEditsGet(
   messageId: string,
 ): Promise<Response> {
   return proxyApiRequest(request, `/messages/${encodeURIComponent(messageId)}/edits`);
+}
+
+/**
+ * Proxies GET /fond/summary to the 21.gifts api (public; no auth).
+ *
+ * @param request - Incoming App Router request.
+ * @returns The upstream response.
+ */
+export async function proxyFondSummaryGet(request: Request): Promise<Response> {
+  return proxyApiRequest(request, '/fond/summary');
 }

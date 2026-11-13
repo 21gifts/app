@@ -18,6 +18,9 @@ const POPULATED: TrustChain = {
 
 const EXPLAIN_FOUNDER = 'A founder started 21.gifts and is the first link of the chain.';
 const EXPLAIN_INITIATOR = 'An initiator is named directly. There is no proposal step.';
+const EXPLAIN_SOFTWARE_DEVELOPER =
+  'A software developer builds 21.gifts and is in the moderators’ group, with every moderator permission. They cannot edit the daily payout roster.';
+const EXPLAIN_FOND = 'Fond: pays the daily gifts from the 21.gifts fund.';
 
 describe('TrustChainScreen', () => {
   it('shows loading copy and the role explanation', () => {
@@ -37,7 +40,9 @@ describe('TrustChainScreen', () => {
     expect(heading.className).not.toContain('text-paper');
     expect(screen.getByText('Loading…')).toBeTruthy();
     expect(screen.getByText(EXPLAIN_FOUNDER)).toBeTruthy();
+    expect(screen.getByText(EXPLAIN_FOND)).toBeTruthy();
     expect(screen.getByText(EXPLAIN_INITIATOR)).toBeTruthy();
+    expect(screen.getByText(EXPLAIN_SOFTWARE_DEVELOPER)).toBeTruthy();
     expect(container.querySelector('svg')).toBeNull();
   });
 
@@ -61,6 +66,7 @@ describe('TrustChainScreen', () => {
     fireEvent.click(retry);
     expect(onRetry).toHaveBeenCalledTimes(1);
     expect(screen.getByText(EXPLAIN_FOUNDER)).toBeTruthy();
+    expect(screen.getByText(EXPLAIN_FOND)).toBeTruthy();
   });
 
   it('keeps the diagram when a hop error arrives with nodes', () => {
@@ -92,6 +98,7 @@ describe('TrustChainScreen', () => {
     expect(screen.getByText('No one is on the Trust Chain yet.')).toBeTruthy();
     expect(container.querySelector('svg')).toBeNull();
     expect(screen.getByText(EXPLAIN_FOUNDER)).toBeTruthy();
+    expect(screen.getByText(EXPLAIN_FOND)).toBeTruthy();
   });
 
   it('shows empty copy when the chain is null and not loading', () => {

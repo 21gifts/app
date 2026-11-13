@@ -80,6 +80,7 @@ vi.mock('@/lib/api', () => ({
   fetchPublicReplies: vi.fn(),
   PublicForumUnauthorizedError: class PublicForumUnauthorizedError extends Error {},
   CannotReceiveError: class CannotReceiveError extends Error {},
+  CreditClosedError: class CreditClosedError extends Error {},
   WalletRequiredError: class WalletRequiredError extends Error {},
   PostFeeRequiredError: class PostFeeRequiredError extends Error {},
   NoteDeletedError: class NoteDeletedError extends Error {
@@ -136,6 +137,7 @@ vi.mock('@/lib/push', async (importOriginal) => {
 import {
   agreeToRules,
   CannotReceiveError,
+  CreditClosedError,
   dismissForumLaws,
   fetchFxSpot,
   fetchMessagePhoto,
@@ -7035,6 +7037,24 @@ describe('ForumLoader', () => {
     expect(screen.getByRole('alert').textContent).toBe('This note was deleted.');
   });
 
+  it('shows the closed-credit pay error when the invoice target stopped collecting', async () => {
+    fetchMock.mockResolvedValue(forumPage([{ ...SAMPLE, replyCount: 1 }]));
+    repliesMock.mockResolvedValue([{ ...PAYABLE_REPLY }]);
+    invoiceMock.mockRejectedValue(new CreditClosedError());
+    renderWithLocale(<ForumLoader />);
+    await waitFor(() => {
+      expect(screen.getByText('No message has received Bitcoin yet.')).toBeTruthy();
+    });
+    await revealAll();
+    await waitFor(() => expect(screen.getByText('Hello from Ada')).toBeTruthy());
+    const replyCard = await clickReplyGift();
+    fireEvent.change(within(replyCard).getByLabelText('Amount'), { target: { value: '21' } });
+    fireEvent.click(within(replyCard).getByRole('button', { name: 'Continue' }));
+    expect((await screen.findByRole('alert')).textContent).toBe(
+      'This loan is no longer collecting and cannot receive more money.',
+    );
+  });
+
   it('treats the author-wallet text without a code as a generic pay failure', async () => {
     fetchMock.mockResolvedValue(forumPage([{ ...SAMPLE, replyCount: 1 }]));
     repliesMock.mockResolvedValue([{ ...PAYABLE_REPLY }]);
@@ -9102,6 +9122,14 @@ describe('ForumLoader', () => {
     await waitFor(() => {
       expect(screen.getByRole('alert').textContent).toBe('This note was deleted.');
     });
+  });
+
+  it('moves a paid reply onto the card when the loan stopped collecting', async () => {
+    invoiceMock.mockRejectedValue(new CreditClosedError());
+    await expandForeignAndPayReply('Hi Bob', '21');
+    expect((await screen.findByRole('alert')).textContent).toBe(
+      'This loan is no longer collecting and cannot receive more money.',
+    );
   });
 
   it('opens the wallet overlay when a paid reply invoice requires a wallet', async () => {

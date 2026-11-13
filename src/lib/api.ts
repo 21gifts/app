@@ -30,6 +30,7 @@ import {
   grantContinuationSchema,
   grantPlacesSchema,
   postStatsSchema,
+  walletStatsSchema,
   accountActivitySchema,
   memberProfileSchema,
   messageInvoiceSchema,
@@ -40,6 +41,9 @@ import {
   fundingPayoutDaysResponseSchema,
   fundingDecisionResultSchema,
   dailyRosterSchema,
+  fondPayoutListSchema,
+  fondSummarySchema,
+  fondPayoutInvoiceSchema,
   trustActionResultSchema,
   trustChainSchema,
   passkeyBeginSchema,
@@ -76,6 +80,7 @@ import {
   type GrantContinuation,
   type GrantPlaces,
   type PostStats,
+  type WalletStats,
   type AccountActivity,
   type LnurlInvoice,
   type LnurlPayRequest,
@@ -87,6 +92,9 @@ import {
   type FundingPayoutDays,
   type FundingDecisionResult,
   type DailyRoster,
+  type FondPayout,
+  type FondSummary,
+  type FondPayoutInvoice,
   type OwnerFunding,
   type PasskeyBegin,
   type PasskeySession,
@@ -188,6 +196,14 @@ export class CannotReceiveError extends Error {
   constructor() {
     super('cannot_receive');
     this.name = 'CannotReceiveError';
+  }
+}
+
+/** Api 409 `credit_closed`: gifts are final-disabled because this credit stopped collecting. */
+export class CreditClosedError extends Error {
+  constructor() {
+    super('credit_closed');
+    this.name = 'CreditClosedError';
   }
 }
 
@@ -1352,20 +1368,15 @@ export async function fetchGiftDay(day: string): Promise<GiftDay> {
 }
 
 /**
- * Fetches aggregated outbound gift statistics, optionally filtered by recipient.
+ * Fetches aggregated outbound gift statistics.
  *
- * @param recipient - Optional recipient handle; appended as `?recipient=` when
- * non-empty after trim (caller may pass a handle already stripped of `@domain`).
  * @returns The {@link GiftStats} payload.
  * @throws Error with visitor-facing copy when the api is unavailable or the
  * body fails {@link giftStatsSchema}.
  */
-export async function fetchGiftStats(recipient?: string): Promise<GiftStats> {
+export async function fetchGiftStats(): Promise<GiftStats> {
   try {
-    const trimmed = recipient?.trim() ?? '';
-    const path =
-      trimmed === '' ? '/gifts/stats' : `/gifts/stats?recipient=${encodeURIComponent(trimmed)}`;
-    const response = await fetch(path);
+    const response = await fetch('/gifts/stats');
     if (!response.ok) {
       throw new Error('Could not load donation stats. Please try again.');
     }
@@ -1506,6 +1517,25 @@ export async function fetchPostStats(): Promise<PostStats> {
     return postStatsSchema.parse(await response.json());
   } catch {
     throw new Error('Could not load post stats. Please try again.');
+  }
+}
+
+/**
+ * Fetches self-reported 21.gifts wallet totals and the daily balance series.
+ *
+ * @returns The {@link WalletStats} payload.
+ * @throws Error with visitor-facing copy when the api is unavailable or the
+ * body fails {@link walletStatsSchema}.
+ */
+export async function fetchWalletStats(): Promise<WalletStats> {
+  try {
+    const response = await fetch('/wallets/stats');
+    if (!response.ok) {
+      throw new Error('Could not load wallet stats. Please try again.');
+    }
+    return walletStatsSchema.parse(await response.json());
+  } catch {
+    throw new Error('Could not load wallet stats. Please try again.');
   }
 }
 
@@ -1935,7 +1965,7 @@ async function postFundingAction(
 /**
  * Admits a member to daily grant payouts (staff). Target pending or trial.
  *
- * @param sessionToken - Bearer session of a founder or moderator.
+ * @param sessionToken - Bearer session of at least moderator.
  * @param accountId - Subject account id.
  * @returns The updated account snapshot.
  * @throws Error({@link FUNDING_PLACES_FULL_ERROR}) when the round has no free
@@ -1952,7 +1982,7 @@ export async function postFundingAdmit(
 /**
  * Rejects a grant application (staff). The subject may re-apply.
  *
- * @param sessionToken - Bearer session of a founder or moderator.
+ * @param sessionToken - Bearer session of at least moderator.
  * @param accountId - Subject account id.
  * @returns The updated account snapshot.
  * @throws Error with visitor-facing copy on 401/403/404/409/503 or any other failure.
@@ -1965,7 +1995,8 @@ export async function postFundingReject(
 }
 
 /**
- * Fetches the daily payout roster for founder and initiator editors.
+ * Fetches the daily payout roster for editors at least initiator
+ * (initiator and founder).
  *
  * Hits same-origin `GET /funding/daily-roster` (Bearer). Next.js forbids a
  * `route.ts` beside `/grants/payments/comment`, `/grants/payments/amounts`,
@@ -2273,6 +2304,28 @@ export async function fetchViewActivity(viewKey: string): Promise<AccountActivit
   } catch {
     throw new Error('Could not load gift stats. Please try again.');
   }
+}
+
+/**
+ * Fetches the public Fond totals for one handle.
+ *
+ * Reads the same-origin `GET /fonds/:username/summary` proxy. The proxy
+ * answers 404 when the api has no Fond or when the handle is not the Fond's
+ * own handle.
+ *
+ * @param username - Fond handle from the route (e.g. `tondo-fond`).
+ * @returns The {@link FondSummary}, or `null` when the Fond is unknown (404).
+ * @throws Error on any other non-2xx status or a body that fails validation.
+ */
+export async function fetchFondSummary(username: string): Promise<FondSummary | null> {
+  const response = await fetch(`/fonds/${encodeURIComponent(username)}/summary`);
+  if (response.status === 404) {
+    return null;
+  }
+  if (!response.ok) {
+    throw new Error(`Failed to fetch Fond summary: ${response.status}`);
+  }
+  return fondSummarySchema.parse(await response.json());
 }
 
 /** One cursor-paginated page of the forum feed. */
@@ -3130,7 +3183,8 @@ export async function fetchComposeTarget(
  * @throws {@link NoteDeletedError} on 404 (missing or deleted invoice target).
  * @throws {@link WalletRequiredError} or {@link CannotReceiveError} on a 400 with that `code`.
  * @throws Error with collapsed visitor copy on 400/403/429/503 (and other
- * non-2xx), {@link MissingRequirementsError} on 409, or when the body fails
+ * non-2xx), {@link MissingRequirementsError} or {@link CreditClosedError} on 409,
+ * or when the body fails
  * {@link messageInvoiceSchema}. A 403 `SUNDAY_REST` keeps that code in the
  * thrown message so a heart click can show the Sunday copy. A 503
  * `HEART_UNAVAILABLE` (the api cannot issue a heart as a fee-free Spark
@@ -3179,6 +3233,10 @@ export async function postMessageInvoice(
     if (missing !== null) {
       throw missing;
     }
+    const conflict = body as { code?: unknown; error?: unknown };
+    if (conflict.code === 'credit_closed' || conflict.error === 'credit_closed') {
+      throw new CreditClosedError();
+    }
     throw new Error('Could not start the Bitcoin payment');
   }
   if (response.status === 404) {
@@ -3206,6 +3264,10 @@ const repaymentLineSchema = z.object({
   username: z.string().nullable(),
   amount: z.string().nullable(),
   sats: z.number().int().nonnegative().nullable(),
+  /** Optional while an older api omits how much of this line was already paid. */
+  paidSats: z.number().int().nonnegative().optional(),
+  /** Optional while an older api omits the paid loan-currency amount. */
+  paidAmount: z.string().nullable().optional(),
   /** Optional until every deployed api includes the live sats value for due fiat shares. */
   dueSats: z.number().int().nonnegative().nullable().optional().default(null),
   status: z.enum(['scheduled', 'due', 'paid']),
@@ -3217,6 +3279,8 @@ const repaymentLineSchema = z.object({
 const repaymentLedgerSchema = z.object({
   currency: z.enum(['BTC', 'USD', 'CHF', 'EUR', 'PHP']),
   fundedAt: z.string().nullable(),
+  /** Optional while an older api omits the final collecting timestamp. */
+  closedAt: z.string().nullable().optional(),
   startsOn: z.string().nullable().optional(),
   termDays: z.number().int(),
   daysDue: z.number().int().nonnegative(),
@@ -3248,13 +3312,14 @@ const repaymentLedgerSchema = z.object({
 /**
  * Public credit ledger from `GET /messages/:id/repayment`.
  * `givers[].canReceive` defaults to true while older api bodies omit it;
- * `repayments[].waiting` marks a due line whose giver cannot receive.
+ * `repayments[].waiting` marks a due line whose giver cannot receive. Newer
+ * bodies also carry collecting `closedAt` and each line's paid sats/amount.
  */
 export type RepaymentLedger = z.infer<typeof repaymentLedgerSchema>;
 
 /**
  * One row of {@link RepaymentLedger}; `dueSats` defaults to null while older
- * api bodies omit it.
+ * api bodies omit it; `paidSats` and `paidAmount` describe partial payment.
  */
 export type RepaymentLine = z.infer<typeof repaymentLineSchema>;
 
@@ -3294,6 +3359,12 @@ const myLoanSchema = z.object({
   amountPhp: fiatAmountSchema,
   termDays: z.number().int().positive(),
   fundedAt: z.string().nullable(),
+  /** Optional while an older api omits the final collecting timestamp. */
+  closedAt: z.string().nullable().optional(),
+  /** Most the author can repay now, in sats; null when a fiat rate is unavailable. */
+  maxSats: z.number().int().nonnegative().nullable().optional(),
+  /** Most the author can repay now in the fiat loan currency, otherwise null. */
+  maxAmount: z.string().nullable().optional(),
   daysDue: z.number().int().nonnegative(),
   daysPaid: z.number().int().nonnegative(),
   repaidSats: z.number().int().nonnegative(),
@@ -3381,6 +3452,116 @@ const repaymentDueSchema = z.object({
   waiting: z.array(repaymentWaitingSchema),
 });
 
+const repaymentCloseSchema = z.object({
+  fundedAt: z.string().nullable(),
+  closedAt: z.string(),
+  collectedSats: z.number().int().nonnegative(),
+  collectedAmount: z.string().nullable(),
+});
+
+const repaymentPrepaySchema = repaymentDueSchema.extend({
+  amountSats: z.number().int().positive(),
+  amount: z.string().nullable(),
+});
+
+/** Machine-readable refusal returned by a close or free-amount repayment request. */
+export type LoanRepaymentErrorCode =
+  | 'amount_too_high'
+  | 'too_many_shares'
+  | 'invalid_amount'
+  | 'nothing_due'
+  | 'sunday_rest'
+  | 'payment_open'
+  | 'rate_limited'
+  | 'service_unavailable'
+  | 'request_failed';
+
+/** Typed error thrown by a close or free-amount repayment request. */
+export class LoanRepaymentError extends Error {
+  readonly code: LoanRepaymentErrorCode;
+  readonly status: number;
+  readonly maxSats: number | null;
+  readonly maxAmount: string | null;
+
+  /**
+   * @param code - Stable client-facing refusal code.
+   * @param status - Upstream HTTP status.
+   * @param maxSats - Current maximum in sats for max-related errors.
+   * @param maxAmount - Current maximum in the fiat loan currency for max-related errors.
+   */
+  constructor(
+    code: LoanRepaymentErrorCode,
+    status: number,
+    maxSats: number | null = null,
+    maxAmount: string | null = null,
+  ) {
+    super(code);
+    this.name = 'LoanRepaymentError';
+    this.code = code;
+    this.status = status;
+    this.maxSats = maxSats;
+    this.maxAmount = maxAmount;
+  }
+}
+
+/** Successful `POST /messages/:id/repayment/close` body. */
+export type LoanClose = z.infer<typeof repaymentCloseSchema>;
+
+/** Successful free-amount `POST /messages/:id/repayment` body. */
+export type LoanPrepay = z.infer<typeof repaymentPrepaySchema>;
+
+async function throwLoanRepaymentError(response: Response): Promise<never> {
+  let body: unknown = null;
+  try {
+    body = await response.json();
+  } catch {
+    // The status still supplies a typed fallback below.
+  }
+  if (response.status === 409) {
+    const missing = parseMissingRequirements(body);
+    if (missing !== null) {
+      throw missing;
+    }
+  }
+  const record =
+    typeof body === 'object' && body !== null
+      ? (body as {
+          code?: unknown;
+          error?: unknown;
+          maxSats?: unknown;
+          maxAmount?: unknown;
+        })
+      : null;
+  const rawMaxSats = record?.maxSats;
+  const maxSats =
+    typeof rawMaxSats === 'number' && Number.isSafeInteger(rawMaxSats) && rawMaxSats >= 0
+      ? rawMaxSats
+      : null;
+  const maxAmount = typeof record?.maxAmount === 'string' ? record.maxAmount : null;
+  if (record?.code === 'amount_too_high' || record?.code === 'too_many_shares') {
+    throw new LoanRepaymentError(record.code, response.status, maxSats, maxAmount);
+  }
+  if (record?.code === 'invalid_amount') {
+    throw new LoanRepaymentError('invalid_amount', response.status);
+  }
+  if (record?.error === 'Nothing is due') {
+    throw new LoanRepaymentError('nothing_due', response.status);
+  }
+  if (record?.error === 'SUNDAY_REST' || record?.code === 'SUNDAY_REST') {
+    throw new LoanRepaymentError('sunday_rest', response.status);
+  }
+  if (record?.error === 'A payment for this share is still open') {
+    throw new LoanRepaymentError('payment_open', response.status);
+  }
+  if (response.status === 429) {
+    throw new LoanRepaymentError('rate_limited', response.status);
+  }
+  if (response.status === 503) {
+    throw new LoanRepaymentError('service_unavailable', response.status);
+  }
+  throw new LoanRepaymentError('request_failed', response.status);
+}
+
 /**
  * `POST /messages/:id/repayment/due` body; a missing bill `sparkInvoice` defaults to null.
  */
@@ -3388,6 +3569,60 @@ export type RepaymentDue = z.infer<typeof repaymentDueSchema>;
 
 /** One bill of {@link RepaymentDue}. */
 export type RepaymentBill = RepaymentDue['bills'][number];
+
+/** One recipient whose wallet cannot receive a due or prepaid share yet. */
+export type RepaymentWaiting = RepaymentDue['waiting'][number];
+
+/**
+ * Permanently stops a loan from collecting without changing its repayment plan.
+ *
+ * @param sessionToken - Bearer session of the credit's author.
+ * @param messageId - Credit note id.
+ * @returns The final collecting state and collected amounts.
+ * @throws {@link MissingRequirementsError} on a matching 409 response, otherwise
+ *   a typed {@link LoanRepaymentError} on a refusal.
+ */
+export async function closeLoan(sessionToken: string, messageId: string): Promise<LoanClose> {
+  const response = await fetch(`/messages/${encodeURIComponent(messageId)}/repayment/close`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${sessionToken}`, ...deviceTimeZoneHeader() },
+  });
+  if (!response.ok) {
+    return throwLoanRepaymentError(response);
+  }
+  return repaymentCloseSchema.parse(await response.json());
+}
+
+/**
+ * Requests recipient bills for a free repayment amount, including future shares.
+ *
+ * @param sessionToken - Bearer session of the credit's author.
+ * @param messageId - Credit note id.
+ * @param amount - Whole sats for BTC, or a decimal amount in the fiat loan currency.
+ * @returns The converted amount plus payable bills and waiting shares.
+ * @throws {@link MissingRequirementsError} on a matching 409 response, otherwise
+ *   a typed {@link LoanRepaymentError}; max errors carry `maxSats` and `maxAmount`.
+ */
+export async function prepayLoan(
+  sessionToken: string,
+  messageId: string,
+  amount: string,
+): Promise<LoanPrepay> {
+  const response = await fetch(`/messages/${encodeURIComponent(messageId)}/repayment`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${sessionToken}`,
+      'Content-Type': 'application/json',
+      ...deviceTimeZoneHeader(),
+    },
+    body: JSON.stringify({ amount }),
+  });
+  await throwIfWalletAnswer(response);
+  if (!response.ok) {
+    return throwLoanRepaymentError(response);
+  }
+  return repaymentPrepaySchema.parse(await response.json());
+}
 
 /**
  * Asks for every payable bill of the author's funded loan at once.
@@ -5099,4 +5334,106 @@ export async function postLnurlInvoice(
     throw new LnurlRelayError('failed');
   }
   return parsed.data;
+}
+
+/**
+ * Failure of a Fond payout call, without throwing on an HTTP status.
+ *
+ * `status` is the HTTP status of the same-origin proxy answer (also for a 2xx
+ * whose body is unreadable or fails the schema, then with `error: null`), or
+ * `0` when the request itself failed (network error).
+ */
+export interface FondPayoutFailure {
+  ok: false;
+  /** HTTP status, or `0` for a network failure. */
+  status: number;
+  /** The api's `error` text, or `null` when the body was not that envelope. */
+  error: string | null;
+}
+
+/**
+ * Calls one `/fond/payouts` endpoint and reads its body without logging the
+ * invoice or address.
+ *
+ * @param path - Same-origin path.
+ * @param session - Bearer session.
+ * @param init - Method, `GET` when omitted.
+ * @returns The raw response and its parsed JSON body, or a status `0` failure
+ *   when the request did not answer.
+ */
+async function fondPayoutRequest(
+  path: string,
+  session: string,
+  init: { method?: 'POST' } = {},
+): Promise<{ response: Response; body: unknown } | FondPayoutFailure> {
+  let response: Response;
+  try {
+    response = await fetch(path, {
+      ...(init.method === undefined ? {} : { method: init.method }),
+      headers: {
+        Authorization: `Bearer ${session}`,
+      },
+    });
+  } catch {
+    return { ok: false, status: 0, error: null };
+  }
+  if (!response.ok) {
+    return { ok: false, status: response.status, error: await readApiError(response) };
+  }
+  const body: unknown = await response.json().catch(() => null);
+  return { response, body };
+}
+
+/**
+ * Lists today's open Fond payouts through `GET /fond/payouts` (Bearer).
+ *
+ * Never throws on an HTTP status: `404` means the api's Fond surface is off,
+ * `403` means this session is not the Fond account, and any other failure is
+ * retried by the next tick.
+ *
+ * @param session - Bearer session of the Fond account.
+ * @returns The parsed rows, or a {@link FondPayoutFailure}.
+ */
+export async function fetchFondPayouts(
+  session: string,
+): Promise<{ ok: true; payouts: FondPayout[] } | FondPayoutFailure> {
+  const result = await fondPayoutRequest('/fond/payouts', session);
+  if ('ok' in result) {
+    return result;
+  }
+  const parsed = fondPayoutListSchema.safeParse(result.body);
+  if (!parsed.success) {
+    return { ok: false, status: result.response.status, error: null };
+  }
+  return { ok: true, payouts: parsed.data.payouts };
+}
+
+/**
+ * Asks the api for one payout's invoice through `POST /fond/payouts/:id/invoice`.
+ *
+ * The api computes the amount from its stored USD amount; the app pays the
+ * returned Spark invoice when there is one and the BOLT11 otherwise, and never
+ * rounds an amount itself.
+ *
+ * @param session - Bearer session of the Fond account.
+ * @param id - Payout row id (URL-encoded into the path).
+ * @returns The invoice, or a {@link FondPayoutFailure}.
+ */
+export async function postFondPayoutInvoice(
+  session: string,
+  id: string,
+): Promise<{ ok: true; invoice: FondPayoutInvoice } | FondPayoutFailure> {
+  const result = await fondPayoutRequest(
+    `/fond/payouts/${encodeURIComponent(id)}/invoice`,
+    session,
+    { method: 'POST' },
+  );
+  if ('ok' in result) {
+    return result;
+  }
+  const parsed = fondPayoutInvoiceSchema.safeParse(result.body);
+  if (!parsed.success) {
+    return { ok: false, status: result.response.status, error: null };
+  }
+  return { ok: true, invoice: parsed.data };
 }

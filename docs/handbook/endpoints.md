@@ -185,6 +185,15 @@
 - **Used by:** `fetchGiftStats` on `/stats` and the people-count chart on `/statistics` (every visitor, including signed-out, no goal). Historical amounts there stay on each day's rate; live amounts use `GET /fx/spot`.
 - **Auth:** Public.
 
+## Endpoint: GET /wallets/stats
+
+- **Purpose:** Same-origin proxy of api `GET /wallets/stats` (self-reported member-wallet totals and the gap-free UTC-day balance series).
+- **Inputs:** None.
+- **Outputs:** `{ walletCount, fundedWalletCount, totalSats, totalBtc, asOf, balanceOverTime }` from the api. `walletCount` counts wallets that ever reported a balance; `fundedWalletCount` counts those with a current balance above zero. Empty data is zeros, `asOf: null`, and `balanceOverTime: []`.
+- **Errors:** The proxy forwards the upstream status, including 503 `{ error: "Wallet stats are unavailable" }`, or answers 502 if the api is unreachable.
+- **Used by:** `fetchWalletStats` on `/stats`. A failed fetch omits the Wallets section without breaking the gift stats.
+- **Auth:** Public.
+
 ## Endpoint: GET /habits
 
 - **Purpose:** Same-origin proxy of api `GET /habits` (public habit list, review week, and comments). Forwards `Authorization` when the browser sent it, so the owner can receive internal notes.
@@ -203,7 +212,7 @@
 
 - **Purpose:** Same-origin proxy of api `GET /fx/spot`: the current price of 1 BTC in USD, CHF, EUR, and PHP with `asOf` and `source`. A code the api could not price is left out of `rates`. Without any quote the body is `{ "asOf": null, "source": null, "rates": {} }`; the route has no error status of its own.
 - **Errors:** The proxy forwards the upstream status, or 502 if this proxy cannot reach the api.
-- **Used by:** `fetchFxSpot` through `useSpotRate`, on every screen that enters or converts an amount live (the amount field, `/pos`, gift and reaction amounts, the wallet, and the payment fiat suffixes).
+- **Used by:** `fetchFxSpot` through `useSpotRate`, on every screen that enters or converts an amount live (the amount field, `/pos`, gift and reaction amounts, the wallet, the payment fiat suffixes, and the `/stats` wallet totals and point tooltips).
 - **Auth:** Public. No bearer.
 
 ## Endpoint: GET /shops/activity
@@ -764,16 +773,16 @@
 
 ## Endpoint: GET /messages/[id]/repayment
 
-- **Purpose:** Same-origin proxy of api GET `/messages/:id/repayment`. Public ledger of givers and each bitcoin repayment; a `due` line whose giver cannot receive yet carries `waiting: true`, and `waitingShares` counts those lines. The body is passed through unchanged.
+- **Purpose:** Same-origin proxy of api GET `/messages/:id/repayment`. Public ledger of givers and each bitcoin repayment, including loan `closedAt` and each line's `paidSats`/`paidAmount`; a partially paid line remains due/scheduled and its `dueSats` is the remainder. A `due` line whose giver cannot receive yet carries `waiting: true`, and `waitingShares` counts those lines. The body is passed through unchanged.
 - **Errors:** Upstream 404/503, or 502 if the api is unreachable.
 - **Used by:** `getRepayment`.
 - **Auth:** Public.
 
 ## Endpoint: POST /messages/[id]/repayment
 
-- **Purpose:** Same-origin Bearer proxy of api POST `/messages/:id/repayment`. The author pays the next giver their share of the next due day. Success `{ pr, amountSats, sparkInvoice? }`; `sparkInvoice` is the request the in-app wallet pays instead of `pr`, or `null`, and may be absent.
-- **Errors:** Upstream 401/400/404/409/429/503, or 502 if the api is unreachable.
-- **Used by:** No screen since `/loans/repay` asks for every payable bill at once (`POST /messages/[id]/repayment/due`); kept as the api's single-share proxy.
+- **Purpose:** Same-origin Bearer proxy of api POST `/messages/:id/repayment`. Without a body (or with an empty body), the author pays the next giver their share of the next due day and receives `{ pr, amountSats, sparkInvoice? }`. With JSON `{ amount }`, it requests a freely chosen repayment amount in whole sats for BTC or at most two decimals in the loan currency and returns `{ amountSats, amount, bills, waiting }` with the due endpoint's bill shapes. The first free-amount payment of a collecting loan also closes collecting in the api. The optional body is passed through unchanged.
+- **Errors:** The no-body form keeps its upstream 401/400/404/409/429/503 errors. The amount form can also return 400 `amount_too_high`, `invalid_amount`, `too_many_shares`, or `Nothing is due`; 403 `SUNDAY_REST`; 409 `missing_requirements` or an open share payment; 429/503; or 502 if the api is unreachable. Max errors carry `maxSats` and `maxAmount`.
+- **Used by:** `prepayLoan` through `useLoanRepay.prepay`, before the shared wallet send path. No screen uses the no-body single-share form because `/loans/repay` asks for every payable bill at once (`POST /messages/[id]/repayment/due`).
 - **Auth:** Bearer.
 
 ## Endpoint: POST /messages/[id]/invoice
@@ -792,7 +801,7 @@
 
 ## Endpoint: GET /me/loans
 
-- **Purpose:** Same-origin proxy of api `GET /me/loans`, listing the signed-in member's loans that are still collecting or being repaid plus the Sunday-rest flag. Each loan's `due.waitingShares` counts the shares waiting for a lender's wallet, and `lenderWaiting` `{ shares, loans, sats }` counts the repayments owed to the caller while the caller cannot receive. The body is passed through unchanged.
+- **Purpose:** Same-origin proxy of api `GET /me/loans`, listing the signed-in member's loans that are still collecting or being repaid plus the Sunday-rest flag. Each loan includes `closedAt`, current free-repayment `maxSats`, and fiat `maxAmount`; `due.waitingShares` counts the shares waiting for a lender's wallet, and `lenderWaiting` `{ shares, loans, sats }` counts repayments owed to the caller while the caller cannot receive. The body is passed through unchanged.
 - **Errors:** Upstream 401 or service errors, or 502 if the api is unreachable.
 - **Used by:** `getMyLoans` through `useMyLoans` for the loans card, the lender card, Menu row, and `/loans/repay`.
 - **Auth:** Bearer.
@@ -802,6 +811,13 @@
 - **Purpose:** Same-origin proxy of api `POST /messages/:id/repayment/due`. It returns every currently payable recipient bill for the author's funded loan, oldest first, plus waiting shares whose recipients cannot receive; one call is capped at 60 bills.
 - **Errors:** Upstream 401/400/404/409/429/503, or 502 if the api is unreachable.
 - **Used by:** `postRepaymentDue` through `useLoanRepay` before wallet preparation.
+- **Auth:** Bearer.
+
+## Endpoint: POST /messages/[id]/repayment/close
+
+- **Purpose:** Same-origin proxy of api `POST /messages/:id/repayment/close`. With no body, it permanently stops an ask from collecting and returns `{ fundedAt, closedAt, collectedSats, collectedAmount }`; repayment remains available.
+- **Errors:** Upstream 401, 404, 409 `missing_requirements`, 429, or 503; 502 if the api is unreachable.
+- **Used by:** `closeLoan` through `useLoanRepay.closeCollecting`, followed by `GET /me/loans`.
 - **Auth:** Bearer.
 
 ## Endpoint: POST /lnurl/invoice
@@ -1038,121 +1054,121 @@
 ## Endpoint: GET /funding/payout-days
 
 - **Purpose:** Same-origin Bearer proxy of api `GET /funding/payout-days` (seven-day grant payout matrix for moderators). Lives under `/funding/payout-days` because Next.js forbids a `route.ts` beside the HTML page at `/moderate/payouts`.
-- **Errors:** Upstream 401 without a Bearer session, 403 when the account is not founder or moderator, 503 when the api is unavailable, or 502 JSON if this proxy cannot reach the api origin.
+- **Errors:** Upstream 401 without a Bearer session, 403 when the account is below moderator, 503 when the api is unavailable, or 502 JSON if this proxy cannot reach the api origin.
 - **Used by:** `fetchFundingPayoutDays` via `FundingPayoutsScreen` on `/moderate/payouts`.
-- **Auth:** Bearer session; the api requires founder or moderator. The app does not fetch this list for other signed-in roles (forbidden copy, no request).
+- **Auth:** Bearer session; the api requires at least moderator. The app does not fetch this list for other signed-in roles (forbidden copy, no request).
 
 ## Endpoint: GET /funding/applications
 
 - **Purpose:** Same-origin Bearer proxy of api `GET /funding/applications` (open grant applications for moderators). Lives under `/funding/applications` because Next.js forbids a `route.ts` beside the HTML page at `/grants/applications` (`/moderate/applications` redirects there).
-- **Errors:** Upstream 401 without a Bearer session, 403 when the account is not founder or moderator, 503 when the api is unavailable, or 502 JSON if this proxy cannot reach the api origin.
+- **Errors:** Upstream 401 without a Bearer session, 403 when the account is below moderator, 503 when the api is unavailable, or 502 JSON if this proxy cannot reach the api origin.
 - **Used by:** `fetchFundingApplications` via `FundingApplicationsScreen` on `/grants/applications`. `ModerateScreen` on `/moderate` does not call this GET.
-- **Auth:** Bearer session; the api requires founder or moderator. The app does not fetch this list for other signed-in roles (forbidden copy, no request).
+- **Auth:** Bearer session; the api requires at least moderator. The app does not fetch this list for other signed-in roles (forbidden copy, no request).
 
 ## Endpoint: GET /funding/daily-roster
 
 - **Purpose:** Same-origin Bearer proxy of api `GET /funding/daily-roster` (daily payout comment, payments switch, `defaultAmountUsd`, recipient rows, moderator payments switch, and moderator rows). Lives under `/funding/daily-roster` because Next.js forbids a `route.ts` beside the HTML pages at `/grants/payments/comment`, `/grants/payments/amounts`, and `/grants/payments/moderators`.
-- **Errors:** Upstream 401 without a Bearer session, 403 when the account is not an initiator or founder, 503 when the api is unavailable, or 502 JSON if this proxy cannot reach the api origin.
+- **Errors:** Upstream 401 without a Bearer session, 403 when the account is below initiator, 503 when the api is unavailable, or 502 JSON if this proxy cannot reach the api origin.
 - **Used by:** `fetchDailyRoster` via `DailyPaymentCommentScreen` on `/grants/payments/comment`, `DailyPaymentAmountsScreen` on `/grants/payments/amounts`, and `DailyPaymentModeratorsScreen` on `/grants/payments/moderators`.
-- **Auth:** Bearer session. The api allows an initiator or founder only. The app does not fetch this roster for other signed-in roles (forbidden copy, no request).
+- **Auth:** Bearer session. The api allows at least initiator (initiator and founder) only; fond and software_developer are below that minimum. The app does not fetch this roster for other signed-in roles (forbidden copy, no request).
 
 ## Endpoint: POST /funding/daily-roster/comment
 
 - **Purpose:** Same-origin Bearer proxy of api `POST /funding/daily-roster/comment` with `{ comment }`.
 - **Errors:** Upstream 400 `Invalid comment`, 401, 403, 503, or 502 if the api is unreachable.
 - **Used by:** `saveDailyRosterComment` in `DailyPaymentCommentScreen`.
-- **Auth:** Bearer session. The api allows an initiator or founder only.
+- **Auth:** Bearer session. The api allows at least initiator (initiator and founder) only; fond and software_developer are below that minimum.
 
 ## Endpoint: POST /funding/daily-roster/payments
 
 - **Purpose:** Same-origin Bearer proxy of api `POST /funding/daily-roster/payments` with `{ enabled }` (boolean). Sets the daily payments switch only.
 - **Errors:** Upstream 400 `Invalid payments switch`, 401, 403, 503, or 502 if the api is unreachable.
 - **Used by:** `saveDailyRosterPayments` in `DailyPaymentAmountsScreen`.
-- **Auth:** Bearer session. The api allows an initiator or founder only.
+- **Auth:** Bearer session. The api allows at least initiator (initiator and founder) only; fond and software_developer are below that minimum.
 
 ## Endpoint: POST /funding/daily-roster/recipients
 
 - **Purpose:** Same-origin Bearer proxy of api `POST /funding/daily-roster/recipients` with `{ accountId, amountUsd }`. Appends one daily recipient for that person.
 - **Errors:** Upstream 400 `Invalid person or amount`, `Unknown person`, `Person has no Lightning address`, or `Address already listed`, 401, 403, 503, or 502 if the api is unreachable.
 - **Used by:** `addDailyRosterRecipient` in `DailyPaymentAmountsScreen`.
-- **Auth:** Bearer session. The api allows an initiator or founder only.
+- **Auth:** Bearer session. The api allows at least initiator (initiator and founder) only; fond and software_developer are below that minimum.
 
 ## Endpoint: POST /funding/daily-roster/recipients/update
 
 - **Purpose:** Same-origin Bearer proxy of api `POST /funding/daily-roster/recipients/update` with `{ address, amountUsd }`. Changes one daily amount.
 - **Errors:** Upstream 400 `Unknown address` or `Invalid address or amount`, 401, 403, 503, or 502 if the api is unreachable.
 - **Used by:** `updateDailyRosterRecipient` in `DailyPaymentAmountsScreen`.
-- **Auth:** Bearer session. The api allows an initiator or founder only.
+- **Auth:** Bearer session. The api allows at least initiator (initiator and founder) only; fond and software_developer are below that minimum.
 
 ## Endpoint: POST /funding/daily-roster/recipients/delete
 
 - **Purpose:** Same-origin Bearer proxy of api `POST /funding/daily-roster/recipients/delete` with `{ address }`. Removes one daily recipient.
 - **Errors:** Upstream 400 `Unknown address`, 401, 403, 503, or 502 if the api is unreachable.
 - **Used by:** `deleteDailyRosterRecipient` in `DailyPaymentAmountsScreen`.
-- **Auth:** Bearer session. The api allows an initiator or founder only.
+- **Auth:** Bearer session. The api allows at least initiator (initiator and founder) only; fond and software_developer are below that minimum.
 
 ## Endpoint: POST /funding/daily-roster/moderators
 
 - **Purpose:** Same-origin Bearer proxy of api `POST /funding/daily-roster/moderators` with `{ accountId, amountUsd }`. Appends one moderator stipend for that person.
 - **Errors:** Upstream 400 `Invalid person or amount`, `Unknown person`, `Person has no Lightning address`, or `Address already listed`, 401, 403, 503, or 502 if the api is unreachable.
 - **Used by:** `addDailyRosterModerator` in `DailyPaymentModeratorsScreen`.
-- **Auth:** Bearer session. The api allows an initiator or founder only.
+- **Auth:** Bearer session. The api allows at least initiator (initiator and founder) only; fond and software_developer are below that minimum.
 
 ## Endpoint: POST /funding/daily-roster/moderators/update
 
 - **Purpose:** Same-origin Bearer proxy of api `POST /funding/daily-roster/moderators/update` with `{ address, amountUsd }`. Changes one moderator stipend.
 - **Errors:** Upstream 400 `Unknown address` or `Invalid address or amount`, 401, 403, 503, or 502 if the api is unreachable.
 - **Used by:** `updateDailyRosterModerator` in `DailyPaymentModeratorsScreen`.
-- **Auth:** Bearer session. The api allows an initiator or founder only.
+- **Auth:** Bearer session. The api allows at least initiator (initiator and founder) only; fond and software_developer are below that minimum.
 
 ## Endpoint: POST /funding/daily-roster/moderators/delete
 
 - **Purpose:** Same-origin Bearer proxy of api `POST /funding/daily-roster/moderators/delete` with `{ address }`. Removes one moderator.
 - **Errors:** Upstream 400 `Unknown address`, 401, 403, 503, or 502 if the api is unreachable.
 - **Used by:** `deleteDailyRosterModerator` in `DailyPaymentModeratorsScreen`.
-- **Auth:** Bearer session. The api allows an initiator or founder only.
+- **Auth:** Bearer session. The api allows at least initiator (initiator and founder) only; fond and software_developer are below that minimum.
 
 ## Endpoint: POST /funding/daily-roster/moderators/payments
 
 - **Purpose:** Same-origin Bearer proxy of api `POST /funding/daily-roster/moderators/payments` with `{ enabled }` (boolean). Sets the moderator payments switch only.
 - **Errors:** Upstream 400 `Invalid payments switch`, 401, 403, 503, or 502 if the api is unreachable.
 - **Used by:** `saveDailyRosterModeratorPayments` in `DailyPaymentModeratorsScreen`.
-- **Auth:** Bearer session. The api allows an initiator or founder only.
+- **Auth:** Bearer session. The api allows at least initiator (initiator and founder) only; fond and software_developer are below that minimum.
 
 ## Endpoint: GET /funding/applications/[accountId]
 
 - **Purpose:** Same-origin Bearer proxy of api `GET /funding/applications/:accountId` (staff review payload: account, grant, living-room posts).
 - **Errors:** Upstream 401/403/404/503, or 502 if the api is unreachable.
 - **Used by:** `fetchFundingApplication` via `FundingApplicationDetailScreen` on `/grants/applications/[accountId]`.
-- **Auth:** Bearer session; the api requires founder or moderator.
+- **Auth:** Bearer session; the api requires at least moderator.
 
 ## Endpoint: POST /funding/trial
 
 - **Purpose:** Same-origin Bearer proxy of api `POST /funding/trial` with `{ accountId }`. Target must be effective pending.
 - **Errors:** Upstream 400/401/403/404/409/503, or 502 if the api is unreachable.
 - **Used by:** `proxyFundingTrialPost` (API still exposes trial; the staff UI no longer calls it).
-- **Auth:** Bearer (founder or moderator).
+- **Auth:** Bearer (at least moderator).
 
 ## Endpoint: POST /funding/admit
 
 - **Purpose:** Same-origin Bearer proxy of api `POST /funding/admit` with `{ accountId }`. Target pending or trial.
 - **Errors:** Upstream 400/401/403/404/409/503, or 502 if the api is unreachable. A 409 `{ error: 'All grant places are taken' }` means the round has no free place; `postFundingAdmit` throws `FUNDING_PLACES_FULL_ERROR` for it.
 - **Used by:** `postFundingAdmit` in `FundingApplicationDetailScreen`.
-- **Auth:** Bearer (founder or moderator).
+- **Auth:** Bearer (at least moderator).
 
 ## Endpoint: POST /funding/reject
 
 - **Purpose:** Same-origin Bearer proxy of api `POST /funding/reject` with `{ accountId }`. The subject may re-apply.
 - **Errors:** Upstream 400/401/403/404/409/503, or 502 if the api is unreachable.
 - **Used by:** `postFundingReject` in `FundingApplicationDetailScreen`.
-- **Auth:** Bearer (founder or moderator).
+- **Auth:** Bearer (at least moderator).
 
 ## Endpoint: GET /forum/messages/[id]
 
-- **Purpose:** Same-origin Bearer proxy of api GET `/messages/:id`. App path is `/forum/messages/[id]` so HTML `/messages/[id]` can stay the page. Staff (founder/moderator) receive a soft-hidden row with `deletedAt` / `deletedBy`; unsigned/non-staff hidden ids stay 404.
+- **Purpose:** Same-origin Bearer proxy of api GET `/messages/:id`. App path is `/forum/messages/[id]` so HTML `/messages/[id]` can stay the page. Staff (at least moderator) receive a soft-hidden row with `deletedAt` / `deletedBy`; unsigned/non-staff hidden ids stay 404.
 - **Errors:** Upstream 401/403/404, or 502 if the api is unreachable.
 - **Used by:** `fetchForumMessage` via `PublicMessageLoader` on `/messages/[id]`.
-- **Auth:** Bearer; staff hide-stamps only when the api role is founder or moderator.
+- **Auth:** Bearer; staff hide-stamps only when the api role is at least moderator.
 
 ## Endpoint: DELETE /forum/messages/[id]
 
@@ -1216,3 +1232,26 @@
 - **Errors:** 400 invalid body, 401 without a session, 404 when the thread or message is missing, 503 not configured, 502 upstream.
 - **Used by:** `translateConversationMessage` from `NoteTranslate` on inbox and moderator-room prose.
 - **Auth:** Forwards Bearer authorization. The api requires a participant session.
+
+## Endpoint: GET /fond/payouts
+
+- **Purpose:** Same-origin Bearer proxy of api `GET /fond/payouts`. Lists today's open Fond payout rows (`id`, `kind`, `status`, `utcDay`, `paymentHash`) in the api's order; it carries no amounts. `paymentHash` is a string or null and may be absent from an older api.
+- **Auth:** Bearer session of the account named `FOND_USERNAME`. The api answers 403 `Fond only` for another session and 404 when its Fond surface is off.
+- **Returns:** Upstream 200 `{ payouts: [{ id, kind, status, utcDay, paymentHash }] }`, where `paymentHash` is a string or null and may be absent from an older api.
+- **Errors:** Upstream 401 without a Bearer session, 403 for another account, 404 when the surface is off, 503 when the queue is unavailable, or 502 when this proxy cannot reach the api.
+- **Used by:** `fetchFondPayouts` through `runFondPayoutTick`; the route is also covered by the e2e proxy spec.
+
+## Endpoint: POST /fond/payouts/[id]/invoice
+
+- **Purpose:** Same-origin Bearer proxy of api `POST /fond/payouts/:id/invoice`. The api converts the row's stored USD amount at the current spot and returns `{ id, bolt11, paymentHash, sparkInvoice }`; the app pays `sparkInvoice ?? bolt11` once and sends no proof.
+- **Auth:** Bearer session of the Fond account. The api answers 403 `Fond only` for another session.
+- **Returns:** Upstream 200 `{ id, bolt11, paymentHash, sparkInvoice }`, with `sparkInvoice` a string or null. After the payment, the api detects the send by payment hash, BOLT11, or Spark invoice string and settles the row itself.
+- **Errors:** Upstream 404 for an unknown or malformed id, 409 in progress / not payable / amount below one sat, 401, 403, 503, or 502 when unreachable.
+
+## Endpoint: GET /fonds/[username]/summary
+
+- **Purpose:** Same-origin public proxy of api `GET /fond/summary` for the Fond page. The 200 body is `{ username, receivedSats, paidOutSats, feesSats, balanceSats, balanceSyncedAt, payoutsPaid, payoutsPaidUsd }`; `balanceSats` and `balanceSyncedAt` may be null, and `payoutsPaidUsd` is the stored two-decimal figure. The route answers 404 when the body's `username` is not the path handle, and answers a malformed 200 body with 502.
+- **Auth:** Public, no session.
+- **Returns:** Upstream 200 with `Cache-Control: no-store`, or the route's own 404 `{ error: "Not found" }`.
+- **Errors:** Upstream 404 when the api runs without the Fond, 503 `{ error }` on failure, 502 when the api is unreachable or its 200 body is invalid, or the route's 404 for another handle.
+- **Used by:** `fetchFondSummary` through `FondSummaryLoader` on `/fonds/[username]`.

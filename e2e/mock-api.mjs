@@ -17,7 +17,7 @@ const byToken = new Map();
 const byPasskey = new Map();
 /** @type {Map<string, object>} */
 const byPasskeyCredential = new Map();
-/** @type {Array<{ id: string, accountId?: string, name: string, text: string, createdAt: string, sats: number, payable: boolean, hasPhoto: boolean, role: string, deletedAt?: string, inReplyTo?: string, parent?: string }>} */
+/** @type {Array<{ id: string, accountId?: string, name: string, text: string, createdAt: string, sats: number, payable: boolean, hasPhoto: boolean, role: string, goalSats?: number, goalRepayable?: true, goalClosedAt?: string, deletedAt?: string, inReplyTo?: string, parent?: string }>} */
 const forumMessages = [];
 /** @type {Array<{ id: string, name: string, text: string, createdAt: string }>} */
 const contactMessages = [];
@@ -38,6 +38,80 @@ const interactionEvents = new Map();
 /** Share boxes: box id → `{ accountId, ciphertext, createdAt, updatedAt }` (`/me/held-shares`). */
 const heldShareBoxes = new Map();
 
+/**
+ * Fixed mock fiat rate for every fiat currency: 100,000 currency units per BTC.
+ * Therefore one cent is exactly 10 sats and conversion stays integer-only.
+ */
+const MOCK_FIAT_SATS_PER_CENT = 10n;
+
+/** Mutable, explicitly known repayment fixtures used by the loan endpoint tests. */
+const repaymentLoans = new Map([
+  [
+    'loan-a',
+    {
+      currency: 'BTC',
+      fundedAt: '2026-09-26T10:00:00.000Z',
+      closedAt: '2026-09-26T10:00:00.000Z',
+      collectedSats: 30_000,
+      collectedAmount: null,
+      maxSats: 19_000,
+      maxAmount: null,
+    },
+  ],
+  [
+    'loan-b',
+    {
+      currency: 'PHP',
+      fundedAt: '2026-09-26T10:00:00.000Z',
+      closedAt: '2026-09-26T10:00:00.000Z',
+      collectedSats: 300_000,
+      collectedAmount: '300.00',
+      maxSats: 180_000,
+      maxAmount: '180.00',
+    },
+  ],
+  [
+    'loan-collecting',
+    {
+      currency: 'BTC',
+      fundedAt: null,
+      closedAt: null,
+      collectedSats: 8_000,
+      collectedAmount: null,
+      maxSats: 8_000,
+      maxAmount: null,
+    },
+  ],
+  [
+    'loan-closed-partial',
+    {
+      currency: 'BTC',
+      fundedAt: null,
+      closedAt: '2026-10-03T10:00:00.000Z',
+      collectedSats: 8_000,
+      collectedAmount: null,
+      maxSats: 7_900,
+      maxAmount: null,
+    },
+  ],
+]);
+
+/** Keep a public credit fixture's authoritative close stamp in step with its repayment fixture. */
+function syncForumLoanClosedAt(messageId, closedAt) {
+  if (closedAt === null) return;
+  const message = forumMessages.find((row) => row.id === messageId && row.goalRepayable === true);
+  if (message !== undefined) {
+    message.goalClosedAt = closedAt;
+  }
+}
+
+/** @param {string} text @returns {bigint | null} positive decimal cents, without floats. */
+function mockFiatCents(text) {
+  const match = /^(\d+)(?:[.,](\d{1,2}))?$/.exec(text);
+  if (match === null) return null;
+  return BigInt(match[1]) * 100n + BigInt((match[2] ?? '').padEnd(2, '0') || '0');
+}
+
 /** Most boxes one account keeps, as the api allows. */
 const HELD_SHARES_MAX = 50;
 
@@ -57,10 +131,115 @@ function heldShareBoxIdFromPath(pathName) {
 }
 
 /** Same order as `ROLE_ORDER` in `src/lib/roles.ts`: a named role means that role or higher. */
-const ROLE_ORDER = ['basis', 'verified', 'moderator', 'initiator', 'founder'];
+const ROLE_ORDER = [
+  'basis',
+  'verified',
+  'moderator',
+  'fond',
+  'software_developer',
+  'initiator',
+  'founder',
+];
+
+/** The one open payout each Fond fixture account sees today. */
+const FOND_PAYOUT_ROW = {
+  id: '11111111-1111-4111-8111-111111111111',
+  kind: 'daily',
+  status: 'owed',
+  utcDay: '2026-01-07',
+  paymentHash: null,
+};
+
+/** BOLT11 and fee-free Spark invoice the fixture returns. */
+const FOND_INVOICE = {
+  bolt11: 'lnbc1e2efondpayout',
+  sparkInvoice: 'spark1e2efondpayout',
+};
+
+/** The fixture invoice's payment hash, as the api identifies the send. */
+const FOND_PAYMENT_HASH = 'ab'.repeat(32);
+
+/** Public `GET /fond/summary` fixture, as the api answers for `/fonds/tondo-fond`. */
+const FOND_SUMMARY = {
+  username: 'tondo-fond',
+  receivedSats: 210000,
+  paidOutSats: 21000,
+  feesSats: 210,
+  balanceSats: 189000,
+  balanceSyncedAt: '2026-11-11T10:00:00.000Z',
+  payoutsPaid: 3,
+  payoutsPaidUsd: '3.00',
+};
+
+/**
+ * Per-session Fond fixture state. Keeping it per bearer lets parallel tests
+ * each invoice and settle their own fixture row.
+ *
+ * @type {Map<string, { lists: number, invoices: number, invoiceRequests: number, invoice: { id: string, bolt11: string, paymentHash: string, sparkInvoice: string | null } | null, sparkInvoice: string | null, settled: boolean }>}
+ */
+const fondPayoutStates = new Map();
+
+/**
+ * The Fond fixture state of one session, created empty on first use.
+ *
+ * @param {string} token - Bearer session.
+ * @returns The session's list, invoice, and settlement state.
+ */
+function fondPayoutState(token) {
+  let state = fondPayoutStates.get(token);
+  if (state === undefined) {
+    state = {
+      lists: 0,
+      invoices: 0,
+      invoiceRequests: 0,
+      invoice: null,
+      sparkInvoice: FOND_INVOICE.sparkInvoice,
+      settled: false,
+    };
+    fondPayoutStates.set(token, state);
+  }
+  return state;
+}
+
+/**
+ * The fixture row as the api would list it now: still owed before an invoice,
+ * `invoiced` with that invoice's payment hash after one, and gone once the
+ * worker records the send.
+ *
+ * @param {{ invoice: { paymentHash: string } | null, settled: boolean }} state - Session state.
+ * @returns The row, or `null` when the api worker has settled it.
+ */
+function fondPayoutRow(state) {
+  if (state.settled) {
+    return null;
+  }
+  if (state.invoice === null) {
+    return FOND_PAYOUT_ROW;
+  }
+  return {
+    ...FOND_PAYOUT_ROW,
+    status: 'invoiced',
+    paymentHash: state.invoice.paymentHash,
+  };
+}
 
 function roleAtLeast(role, min) {
   return ROLE_ORDER.indexOf(role) >= ROLE_ORDER.indexOf(min);
+}
+
+/**
+ * Whether a bearer may use the Fond payout fixtures: an account minted by
+ * `/e2e/role-session` at rank `fond` or above.
+ *
+ * @param {string | null} token - Bearer session.
+ * @returns {boolean} Whether the Fond fixture handlers answer it.
+ */
+function fondPayer(token) {
+  if (token === null) {
+    return false;
+  }
+  const account = byToken.get(token);
+  return account !== undefined && roleAtLeast(account.role, 'fond');
 }
 
 function hex(bytes) {
@@ -954,7 +1133,7 @@ const server = http.createServer(async (req, res) => {
       filtered = living.filter((message) => message.sats === 0);
     } else if (mode === 'active') {
       filtered = living.filter(
-        (message) => message.sats > 0 || message.role === 'founder' || message.role === 'moderator',
+        (message) => message.sats > 0 || roleAtLeast(message.role, 'moderator'),
       );
     } else if (mode === 'popular') {
       filtered = living.filter((message) => message.sats > 0);
@@ -1034,6 +1213,60 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
+  const repaymentReadMatch = pathName.match(/^\/messages\/([^/]+)\/repayment$/);
+  if (repaymentReadMatch && method === 'GET') {
+    const messageId = decodeURIComponent(repaymentReadMatch[1]);
+    const loan = repaymentLoans.get(messageId);
+    if (loan === undefined) {
+      json(res, 404, { error: 'Not found' });
+      return;
+    }
+    const partial = messageId === 'loan-closed-partial';
+    json(res, 200, {
+      currency: loan.currency,
+      fundedAt: loan.fundedAt,
+      closedAt: loan.closedAt,
+      termDays: partial ? 16 : 30,
+      daysDue: partial ? 1 : 0,
+      daysPaid: 0,
+      waitingShares: 0,
+      unassignedSats: 0,
+      givers: [
+        {
+          accountId: 'acc_repayment_fixture',
+          name: 'Repayment fixture',
+          username: null,
+          givenSats: loan.collectedSats,
+          givenAmount: loan.collectedAmount,
+          canReceive: true,
+        },
+      ],
+      repayments: partial
+        ? [
+            {
+              dayIndex: 0,
+              dueOn: '2026-10-07',
+              accountId: 'acc_repayment_fixture',
+              name: 'Repayment fixture',
+              username: null,
+              amount: null,
+              sats: 500,
+              paidSats: 100,
+              paidAmount: null,
+              dueSats: 400,
+              status: 'due',
+              waiting: false,
+              via: 'lightning',
+            },
+          ]
+        : [],
+      next: partial
+        ? { dayIndex: 0, sats: 400, recipientAccountId: 'acc_repayment_fixture' }
+        : null,
+    });
+    return;
+  }
+
   const repaymentDueMatch = pathName.match(/^\/messages\/([^/]+)\/repayment\/due$/);
   if (repaymentDueMatch && method === 'POST') {
     const token = bearer(req);
@@ -1042,7 +1275,39 @@ const server = http.createServer(async (req, res) => {
       json(res, 401, { error: 'Unauthorized' });
       return;
     }
+    const messageId = decodeURIComponent(repaymentDueMatch[1]);
+    if (!repaymentLoans.has(messageId)) {
+      json(res, 404, { error: 'Not found' });
+      return;
+    }
     json(res, 200, { bills: [], waiting: [] });
+    return;
+  }
+
+  const repaymentCloseMatch = pathName.match(/^\/messages\/([^/]+)\/repayment\/close$/);
+  if (repaymentCloseMatch && method === 'POST') {
+    const token = bearer(req);
+    const account = token === null ? undefined : byToken.get(token);
+    if (!account) {
+      json(res, 401, { error: 'Unauthorized' });
+      return;
+    }
+    const messageId = decodeURIComponent(repaymentCloseMatch[1]);
+    const loan = repaymentLoans.get(messageId);
+    if (loan === undefined) {
+      json(res, 404, { error: 'Not found' });
+      return;
+    }
+    if (loan.closedAt === null) {
+      loan.closedAt = new Date().toISOString();
+    }
+    syncForumLoanClosedAt(messageId, loan.closedAt);
+    json(res, 200, {
+      fundedAt: loan.fundedAt,
+      closedAt: loan.closedAt,
+      collectedSats: loan.collectedSats,
+      collectedAmount: loan.collectedAmount,
+    });
     return;
   }
 
@@ -1054,7 +1319,68 @@ const server = http.createServer(async (req, res) => {
       json(res, 401, { error: 'Unauthorized' });
       return;
     }
-    json(res, 200, { pr: 'lnbc1', amountSats: 21 });
+    if (rawBody === '') {
+      json(res, 200, { pr: 'lnbc1', amountSats: 21 });
+      return;
+    }
+    const messageId = decodeURIComponent(repaymentMatch[1]);
+    const loan = repaymentLoans.get(messageId);
+    if (loan === undefined) {
+      json(res, 404, { error: 'Not found' });
+      return;
+    }
+    let parsed;
+    try {
+      parsed = JSON.parse(rawBody);
+    } catch {
+      json(res, 400, { code: 'invalid_amount' });
+      return;
+    }
+    const amount = typeof parsed?.amount === 'string' ? parsed.amount.trim() : '';
+    const units =
+      loan.currency === 'BTC'
+        ? /^\d+$/.test(amount)
+          ? BigInt(amount)
+          : null
+        : mockFiatCents(amount);
+    const maxUnits =
+      loan.currency === 'BTC'
+        ? BigInt(loan.maxSats ?? 0)
+        : (mockFiatCents(loan.maxAmount ?? '') ?? 0n);
+    if (units === null || units <= 0n) {
+      json(res, 400, { code: 'invalid_amount' });
+      return;
+    }
+    if (units > maxUnits) {
+      json(res, 400, {
+        code: 'amount_too_high',
+        maxSats: loan.maxSats,
+        maxAmount: loan.maxAmount,
+      });
+      return;
+    }
+    if (loan.fundedAt === null && loan.closedAt === null) {
+      loan.closedAt = new Date().toISOString();
+    }
+    syncForumLoanClosedAt(messageId, loan.closedAt);
+    const amountSats = Number(loan.currency === 'BTC' ? units : units * MOCK_FIAT_SATS_PER_CENT);
+    json(res, 200, {
+      amountSats,
+      amount: loan.currency === 'BTC' ? null : amount.replace(',', '.'),
+      bills: [
+        {
+          dayIndex: 0,
+          recipientAccountId: 'acc_repayment_fixture',
+          name: 'Repayment fixture',
+          username: null,
+          amountSats,
+          amount: loan.currency === 'BTC' ? null : amount.replace(',', '.'),
+          pr: `lnbc${amountSats}nprepay`,
+          sparkInvoice: `spark-${messageId}-${amountSats}`,
+        },
+      ],
+      waiting: [],
+    });
     return;
   }
 
@@ -1071,6 +1397,10 @@ const server = http.createServer(async (req, res) => {
       (invoiceMatch[1] === COMPOSE_TARGET.id ? COMPOSE_TARGET : undefined);
     if (row === undefined) {
       json(res, 404, { error: 'Not found' });
+      return;
+    }
+    if (row.goalRepayable === true && typeof row.goalClosedAt === 'string') {
+      json(res, 409, { code: 'credit_closed' });
       return;
     }
     if (row.payable !== true) {
@@ -1735,6 +2065,11 @@ const server = http.createServer(async (req, res) => {
         { day: '2026-07-01', postCount: 4 },
       ],
     });
+    return;
+  }
+
+  if (method === 'GET' && pathName === '/wallets/stats') {
+    json(res, 503, { error: 'Wallet stats are unavailable' });
     return;
   }
 
@@ -2644,7 +2979,6 @@ const server = http.createServer(async (req, res) => {
       firstPaidAt: null,
       lastPaidAt: null,
       spendOverTime: [],
-      byRecipient: [],
       byMonth: [],
       fx: {
         quote: 'BTC-USD',
@@ -2969,6 +3303,43 @@ const server = http.createServer(async (req, res) => {
     const token = hex(randomBytes(32));
     byToken.set(token, account);
     json(res, 200, { viewKey: account.viewKey, id: account.id, name: 'Ada' });
+    return;
+  }
+
+  if (method === 'POST' && pathName === '/e2e/role-session') {
+    let parsed;
+    try {
+      parsed = JSON.parse(rawBody);
+    } catch {
+      json(res, 400, { error: 'Expected a JSON body with role and name' });
+      return;
+    }
+    const role = parsed?.role;
+    const name = parsed?.name;
+    const sparkInvoice = parsed?.sparkInvoice;
+    if (
+      !ROLE_ORDER.includes(role) ||
+      typeof name !== 'string' ||
+      name === '' ||
+      (sparkInvoice !== undefined && sparkInvoice !== null && typeof sparkInvoice !== 'string')
+    ) {
+      json(res, 400, { error: 'Expected a JSON body with role and name' });
+      return;
+    }
+    const account = newAccount(null);
+    account.role = role;
+    account.name = name;
+    account.username = role === 'fond' ? 'fond' : 'mod';
+    account.rulesAgreedAt = Date.now();
+    account.forumLawsDismissed = true;
+    account.setup = null;
+    afterFieldWrite(account);
+    const token = hex(randomBytes(32));
+    byToken.set(token, account);
+    if (sparkInvoice !== undefined) {
+      fondPayoutState(token).sparkInvoice = sparkInvoice;
+    }
+    json(res, 200, { token, account });
     return;
   }
 
@@ -3886,6 +4257,93 @@ const server = http.createServer(async (req, res) => {
       return;
     }
     json(res, 404, { error: 'Not found' });
+    return;
+  }
+
+  if (method === 'GET' && pathName === '/fond/summary') {
+    json(res, 200, FOND_SUMMARY, { 'cache-control': 'no-store' });
+    return;
+  }
+
+  if (method === 'GET' && pathName === '/fond/payouts') {
+    const token = bearer(req);
+    if (token === null) {
+      json(res, 401, { error: 'Unauthorized' });
+      return;
+    }
+    if (!fondPayer(token)) {
+      json(res, 403, { error: 'Fond only' });
+      return;
+    }
+    const state = fondPayoutState(token);
+    state.lists += 1;
+    const row = fondPayoutRow(state);
+    json(res, 200, { payouts: row === null ? [] : [row] });
+    return;
+  }
+
+  const fondInvoiceMatch = pathName.match(/^\/fond\/payouts\/([^/]+)\/invoice$/);
+  if (method === 'POST' && fondInvoiceMatch) {
+    const token = bearer(req);
+    if (token === null) {
+      json(res, 401, { error: 'Unauthorized' });
+      return;
+    }
+    if (!fondPayer(token)) {
+      json(res, 403, { error: 'Fond only' });
+      return;
+    }
+    let id;
+    try {
+      id = decodeURIComponent(fondInvoiceMatch[1] ?? '');
+    } catch {
+      id = '';
+    }
+    const state = fondPayoutState(token);
+    state.invoiceRequests += 1;
+    if (id !== FOND_PAYOUT_ROW.id || state.settled) {
+      json(res, 404, { error: 'Not found' });
+      return;
+    }
+    if (state.invoice === null) {
+      state.invoice = {
+        id,
+        bolt11: FOND_INVOICE.bolt11,
+        paymentHash: FOND_PAYMENT_HASH,
+        sparkInvoice: state.sparkInvoice,
+      };
+      state.invoices += 1;
+    }
+    json(res, 200, state.invoice);
+    return;
+  }
+
+  if (method === 'GET' && pathName === '/e2e/fond-payouts') {
+    const token = bearer(req);
+    if (token === null || !fondPayer(token)) {
+      json(res, 401, { error: 'Unauthorized' });
+      return;
+    }
+    const state = fondPayoutState(token);
+    json(res, 200, {
+      lists: state.lists,
+      invoices: state.invoices,
+      invoiceRequests: state.invoiceRequests,
+      invoice: state.invoice,
+      paid: state.settled,
+    });
+    return;
+  }
+
+  if (method === 'POST' && pathName === '/e2e/fond-payouts/settle') {
+    const token = bearer(req);
+    if (token === null || !fondPayer(token)) {
+      json(res, 401, { error: 'Unauthorized' });
+      return;
+    }
+    const state = fondPayoutState(token);
+    state.settled = true;
+    json(res, 200, { paid: state.settled, invoice: state.invoice });
     return;
   }
 

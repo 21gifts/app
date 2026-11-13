@@ -6,6 +6,8 @@ import { type ReactElement, type ReactNode } from 'react';
 import { useTranslations } from '@/components/LocaleProvider';
 import { Button } from '@/components/ui';
 import type { RepaymentLedger } from '@/lib/api';
+import { creditSmallestUnits } from '@/lib/credit-plan';
+import { validatedRepaymentPayment } from '@/lib/loan-repay';
 
 type LoanBlockState = 'collecting' | 'funded' | 'repaying' | 'repaid';
 
@@ -22,19 +24,26 @@ function loanBlockState(funded: boolean, ledger: RepaymentLedger | null): LoanBl
 
 function paidBackPercent(ledger: RepaymentLedger): number {
   const fiat = ledger.currency !== 'BTC';
-  let paid = 0;
-  let total = 0;
+  let paid = 0n;
+  let total = 0n;
   for (const row of ledger.repayments) {
-    const value = fiat ? Math.round(Number(row.amount ?? '0') * 100) : (row.sats ?? 0);
-    if (!Number.isFinite(value) || value <= 0) {
+    const value = fiat
+      ? creditSmallestUnits(row.amount ?? '', false)
+      : row.sats === null
+        ? null
+        : BigInt(row.sats);
+    if (value === null || value <= 0n) {
       continue;
     }
     total += value;
     if (row.status === 'paid') {
       paid += value;
+    } else {
+      const payment = validatedRepaymentPayment(row);
+      paid += (fiat ? payment.amount : payment.sats) ?? 0n;
     }
   }
-  return total <= 0 ? 0 : Math.min(100, Math.floor((paid * 100) / total));
+  return total <= 0n ? 0 : Math.min(100, Number((paid * 100n) / total));
 }
 
 /**
@@ -43,8 +52,9 @@ function paidBackPercent(ledger: RepaymentLedger): number {
  *
  * Collecting and funded follow the api: a loan is funded once its collected
  * sats reach the asked sats, whatever the percent label (a fiat ask shows the
- * percent in its own currency). The paid-back share and **Paid back** need the
- * public ledger with its funding date, which only the open note passes;
+ * percent in its own currency). The paid-back share includes `paidSats` and
+ * `paidAmount` from partial rows. It and **Paid back** need the public ledger
+ * with its funding date, which only the open note passes;
  * without it a full loan reads **Fully funded**.
  *
  * @param props - `messageId` (loan note id); `ask` (ask amount markup: defined
@@ -52,6 +62,8 @@ function paidBackPercent(ledger: RepaymentLedger): number {
  *   fiat for the status line); `percent` (collected percent for the label,
  *   uncapped); `funded` (collected sats reached the asked sats);
  *   `ledger` (public ledger, or `null` when it is not loaded here);
+ *   `goalClosedAt` (the message's authoritative close time, which hides
+ *   giving before a ledger is loaded);
  *   `ledgerLink` (show the **Repayment list** link on feed and profile cards);
  *   `onLend` (opens the money reaction; omitted when the viewer cannot lend);
  *   `lendBlocked` (the borrower cannot receive yet: **Lend** shows disabled).
@@ -65,6 +77,7 @@ export function LoanBlock({
   percent,
   funded,
   ledger,
+  goalClosedAt,
   ledgerLink,
   onLend,
   lendBlocked = false,
@@ -76,6 +89,7 @@ export function LoanBlock({
   percent: number;
   funded: boolean;
   ledger: RepaymentLedger | null;
+  goalClosedAt?: string | undefined;
   ledgerLink: boolean;
   onLend?: (() => void) | undefined;
   lendBlocked?: boolean | undefined;
@@ -89,8 +103,10 @@ export function LoanBlock({
   // percent of a fiat ask (its own currency) and the sats that decide funding drift apart.
   const shownPercent = state === 'collecting' ? Math.min(99, percent) : Math.max(100, percent);
   const barPercent = paidShown ? paid : Math.min(100, Math.max(0, shownPercent));
-  const canLend = state === 'collecting' && onLend !== undefined;
-  const showLend = canLend || (state === 'collecting' && lendBlocked);
+  const closed =
+    goalClosedAt !== undefined || (ledger?.closedAt !== null && ledger?.closedAt !== undefined);
+  const canLend = state === 'collecting' && !closed && onLend !== undefined;
+  const showLend = canLend || (state === 'collecting' && !closed && lendBlocked);
   return (
     <section
       data-loan-block={state}

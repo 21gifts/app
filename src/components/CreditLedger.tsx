@@ -9,6 +9,8 @@ import { preferredFiatSuffix } from '@/components/PreferredFiatSuffix';
 import { RepaymentPlanChart } from '@/components/RepaymentPlanChart';
 import { useSpotRate } from '@/hooks/useSpotRate';
 import { getRepayment, type RepaymentLedger, type RepaymentLine } from '@/lib/api';
+import { creditSmallestUnits } from '@/lib/credit-plan';
+import { centsString, remainingRepaymentSats, validatedRepaymentPayment } from '@/lib/loan-repay';
 import type { MessageKey } from '@/lib/messages';
 import type { NumberFormatStyle } from '@/lib/number-format';
 import {
@@ -29,11 +31,18 @@ import {
  * link to the repayment list. `list="page"` omits that link. A short plan, or
  * one that is not fully given or is missing a date, lists each day. A fully
  * given plan with more than 7 dated days shows the month overview instead.
- * Still owed there counts only unpaid shares. A month names one status only
- * when every share in that month has it. A fiat plan, share, still-owed
- * total, and chart total stay in the ask currency, with no bitcoin. Money
+ * Still owed there counts only unpaid shares. Partial due and scheduled rows
+ * use `dueSats` (or `sats - paidSats` when older api bodies omit it) and
+ * `amount - paidAmount` in rows, charts, splits, and totals. Paid rows keep
+ * their original committed amounts. When positive `paidSats` have no stored
+ * `paidAmount`, or a supplied value is malformed or exceeds the original
+ * amount, the repayment plan falls back to those remaining sats and the
+ * current spot instead of the original fiat. A month names one status only
+ * when every share in that month has it. A fiat plan, share, still-owed total,
+ * and chart total otherwise stay in the ask currency, with no bitcoin. Money
  * already given keeps that currency and bitcoin. A bitcoin amount shows the
- * current spot beside it. The spot is not written onto the row. A day matches
+ * current spot beside it. The spot is not
+ * written onto the row. A day matches
  * another day by the amount the page shows: the ask currency, or satoshis.
  * The footnote lists the days a month lists, and names one remaining total
  * only when every other day shares it.
@@ -102,6 +111,13 @@ export function CreditLedger({
   }
   const ledger = withWaiting(current);
   const fiat = ledger.currency === 'BTC' ? null : (ledger.currency as FiatCode);
+  const repaymentFiat =
+    fiat !== null &&
+    ledger.repayments.some(
+      (row) => row.status !== 'paid' && row.amount === null && row.sats !== null && row.sats > 0,
+    )
+      ? null
+      : fiat;
   const spot: SpotPair = { rateDay, visitorFiat };
   return (
     <div className="mt-3 rounded-xl bg-app-card-muted px-3 py-2.5">
@@ -161,12 +177,12 @@ export function CreditLedger({
         {fiat !== null ? (
           <p className="mt-1 text-xs text-app-muted">{t('forum.creditFiatHow')}</p>
         ) : null}
-        <RepaymentChart ledger={ledger} fiat={fiat} locale={locale} spot={spot} />
+        <RepaymentChart ledger={ledger} fiat={repaymentFiat} locale={locale} spot={spot} />
         {list === 'page' ? (
           isLongRepayment(ledger) ? (
             <LongRepayment
               ledger={ledger}
-              fiat={fiat}
+              fiat={repaymentFiat}
               locale={locale}
               numberFormat={numberFormat}
               spot={spot}
@@ -176,7 +192,7 @@ export function CreditLedger({
             <DayGroups
               groups={groupsOf(ledger.repayments)}
               fundedAt={ledger.fundedAt}
-              fiat={fiat}
+              fiat={repaymentFiat}
               locale={locale}
               numberFormat={numberFormat}
               spot={spot}
@@ -669,11 +685,33 @@ function withWaiting(ledger: RepaymentLedger): RepaymentLedger {
   );
   return {
     ...ledger,
-    repayments: ledger.repayments.map((row) =>
-      row.waiting !== undefined || row.status !== 'due'
-        ? row
-        : { ...row, waiting: cannotReceive.has(row.accountId) },
-    ),
+    repayments: ledger.repayments.map((row) => {
+      const remaining = remainingLine(row);
+      return remaining.waiting !== undefined || remaining.status !== 'due'
+        ? remaining
+        : { ...remaining, waiting: cannotReceive.has(remaining.accountId) };
+    }),
+  };
+}
+
+function remainingLine(row: RepaymentLine): RepaymentLine {
+  if (row.status === 'paid') {
+    return row;
+  }
+  let amount = row.amount;
+  const payment = validatedRepaymentPayment(row);
+  if (row.amount !== null && row.amount !== undefined) {
+    const total = creditSmallestUnits(row.amount, false);
+    if (total !== null && payment.amount !== null) {
+      amount = centsString(total - payment.amount);
+    } else {
+      amount = null;
+    }
+  }
+  return {
+    ...row,
+    amount,
+    sats: remainingRepaymentSats(row),
   };
 }
 
@@ -781,7 +819,12 @@ function RepaymentChart({
   if (groups.length === 0) {
     return null;
   }
-  const amounts = groups.map((group) => dayAmount(group.rows, fiat));
+  const amounts = groups.map((group) =>
+    dayAmount(
+      group.rows.filter((row) => row.status !== 'paid'),
+      fiat,
+    ),
+  );
   const total = amounts.reduce((sum, amount) => sum + amount, 0);
   if (total <= 0) {
     return null;

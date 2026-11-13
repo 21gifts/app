@@ -5,12 +5,21 @@ import { WALLET_PAY_BALANCE_POLL_MS, WALLET_PAY_CONFIRM_WAIT_MS } from '@/hooks/
 import { useWalletSetup } from '@/hooks/useWalletSetup';
 import {
   CannotReceiveError,
+  closeLoan,
+  LoanRepaymentError,
   postRepaymentDue,
+  prepayLoan,
   WalletRequiredError,
+  type LoanPrepay,
+  type LoanRepaymentErrorCode,
   type MyLoan,
   type MyLoans,
   type RepaymentBill,
+  type RepaymentWaiting,
 } from '@/lib/api';
+import { creditSmallestUnits } from '@/lib/credit-plan';
+import { parseLoanAmount } from '@/lib/loan-repay';
+import { MissingRequirementsError } from '@/lib/missing-requirements';
 import { visualPin } from '@/lib/visual-pin';
 import { reportPaymentFailure } from '@/lib/wallet/payment-failure';
 import { canUnlockWallet } from '@/lib/wallet/wallet-phrase';
@@ -50,12 +59,24 @@ export type LoanRepayPhase =
 /** State and actions of the all-loans wallet repayment flow. */
 export interface LoanRepayResult {
   phase: LoanRepayPhase;
+  /** Initiating flow and, for a per-loan action, the matching loan id. */
+  activeAction: LoanRepayActiveAction | null;
   /** Wallet balance in whole sats while the wallet is ready, else null. */
   balanceSats: number | null;
   /** Sats of bills that went out in the last run (0 before any). */
   sentSats: number;
+  /**
+   * Stored amount of every bill that went out in the last run, in send order.
+   * A bill's own `amount` wins; otherwise the screen's `shareAmounts` entry for
+   * the same loan, day, and recipient supplies its stored loan-currency amount.
+   */
+  sentAmounts: { code: MyLoan['goalCurrency']; amount: string | null }[];
   /** Names of the recipients paid in the last run, in pay order, without duplicates. */
   sentNames: string[];
+  /** Waiting recipients returned by the latest free-amount prepay request. */
+  prepayWaiting: RepaymentWaiting[];
+  /** Message id whose latest free-amount request returned `prepayWaiting`. */
+  prepayMessageId: string | null;
   /** Sum of prepared fees of the bills that went out (0 when none). */
   feeSats: number;
   /**
@@ -75,6 +96,8 @@ export interface LoanRepayResult {
     | 'wallet.payUnavailable'
     | 'loans.errorCannotReceive'
     | null;
+  /** Typed close/prepay refusal; max errors carry the api's current limit. */
+  actionError: LoanRepayActionError | null;
   /** True while the top-up block is open. */
   topUpOpen: boolean;
   /** Opens the top-up block (the screen's "Top up your wallet"); starts the balance poll. */
@@ -100,15 +123,90 @@ export interface LoanRepayResult {
    * @param onlyShares - Optional exact share keys to pay; only those named shares are
    *   prepared. An insufficient prepare in the set, fees that do not fit the
    *   balance, or a named share missing from the due answer, send nothing.
+   * @param shareAmounts - Stored loan-currency amounts by share key
+   *   (`messageId:dayIndex:recipientAccountId`). Used for a bill whose own `amount` is
+   *   null; the screen derives these from the matching `DueShare` rows (same loan, day,
+   *   and recipient).
    */
-  pay: (loans: readonly MyLoan[], onlyShares?: ReadonlySet<string>) => void;
+  pay: (
+    loans: readonly MyLoan[],
+    onlyShares?: ReadonlySet<string>,
+    shareAmounts?: ReadonlyMap<string, string | null>,
+  ) => void;
+  /** Requests a reconciled free-amount split and sends it through the same wallet path as `pay`. */
+  prepay: (loan: MyLoan, amountText: string) => void;
+  /** Permanently ends collecting for one still-collecting loan, then reloads the loan list. */
+  closeCollecting: (loan: MyLoan) => void;
   /** True while a `repay-*` visual pin, including its fixed sent totals, applies. */
   pinned: boolean;
 }
 
+/** Close/prepay error state exposed to the repayment screen. */
+export interface LoanRepayActionError {
+  /** Loan whose close or free repayment produced this refusal. */
+  messageId: string;
+  code: LoanRepaymentErrorCode | 'missing_requirements';
+  maxSats: number | null;
+  maxAmount: string | null;
+}
+
+/** Flow that owns the shared repayment phase and wallet result. */
+export type LoanRepayActiveAction =
+  { kind: 'due'; messageId: null } | { kind: 'prepay' | 'close'; messageId: string };
+
 type LivePhase = 'idle' | 'preparing' | 'sending' | 'waiting' | 'repaid' | 'unconfirmed' | 'failed';
 type ErrorKey = Exclude<LoanRepayResult['errorKey'], null>;
 type OrderedBill = RepaymentBill & { messageId: string };
+
+const ACTIVE_RUN_PHASES = new Set<LivePhase>(['preparing', 'sending', 'waiting']);
+
+function isLoanRepaymentError(error: unknown): error is LoanRepaymentError {
+  return error instanceof LoanRepaymentError;
+}
+
+function actionErrorOf(error: unknown, messageId: string): LoanRepayActionError | null {
+  if (isLoanRepaymentError(error)) {
+    return {
+      messageId,
+      code: error.code,
+      maxSats: error.maxSats,
+      maxAmount: error.maxAmount,
+    };
+  }
+  if (error instanceof MissingRequirementsError) {
+    return { messageId, code: 'missing_requirements', maxSats: null, maxAmount: null };
+  }
+  return null;
+}
+
+/** Rejects internally inconsistent successful prepay bodies before any wallet work begins. */
+function prepayResponseMatches(prepay: LoanPrepay, loan: MyLoan, amountText: string): boolean {
+  const rows = [...prepay.bills, ...prepay.waiting];
+  const responseSats = BigInt(prepay.amountSats);
+  const distributedSats = rows.reduce((sum, row) => sum + BigInt(row.amountSats), 0n);
+  if (distributedSats !== responseSats) {
+    return false;
+  }
+  const requested = parseLoanAmount(amountText, loan.goalCurrency);
+  if (requested === null) {
+    return false;
+  }
+  if (loan.goalCurrency === 'BTC') {
+    return requested.units === responseSats;
+  }
+  let distributedCents = 0n;
+  for (const row of rows) {
+    if (row.amount === null) {
+      return false;
+    }
+    const cents = creditSmallestUnits(row.amount, false);
+    if (cents === null) {
+      return false;
+    }
+    distributedCents += cents;
+  }
+  return distributedCents === requested.units;
+}
 
 /** Orders bills by repayment day, loan order, then api order. */
 function orderBills(
@@ -157,9 +255,11 @@ interface SettlementTarget {
 
 interface SendRun {
   sentSats: number;
+  sentAmounts: { code: MyLoan['goalCurrency']; amount: string | null }[];
   feeSats: number;
   names: string[];
   seenNames: Set<string>;
+  shares: { messageId: string; key: string }[];
   targets: Map<string, SettlementTarget>;
   failed: boolean;
   latePending: boolean;
@@ -171,23 +271,34 @@ interface SendRun {
 type PinnedLoanRepay = Pick<
   LoanRepayResult,
   | 'phase'
+  | 'activeAction'
   | 'balanceSats'
   | 'sentSats'
+  | 'sentAmounts'
   | 'sentNames'
+  | 'prepayWaiting'
+  | 'prepayMessageId'
   | 'feeSats'
   | 'missingSats'
   | 'errorKey'
+  | 'actionError'
   | 'topUpOpen'
 >;
 
 const PIN_BASE = {
+  activeAction: null as LoanRepayActiveAction | null,
   sentSats: 0,
+  sentAmounts: [] as { code: MyLoan['goalCurrency']; amount: string | null }[],
   sentNames: [] as string[],
+  prepayWaiting: [] as RepaymentWaiting[],
+  prepayMessageId: null,
   feeSats: 0,
   missingSats: null,
   errorKey: null,
+  actionError: null,
   topUpOpen: false,
 };
+const PIN_DUE_ACTION: LoanRepayActiveAction = { kind: 'due', messageId: null };
 
 /** Playwright-only repayment states; completed pins carry the amount and recipients sent. */
 const PINNED_RESULTS: Record<string, PinnedLoanRepay> = {
@@ -195,20 +306,33 @@ const PINNED_RESULTS: Record<string, PinnedLoanRepay> = {
   'repay-connecting': { ...PIN_BASE, phase: 'connecting', balanceSats: null },
   'repay-setup-failed': { ...PIN_BASE, phase: 'setupFailed', balanceSats: null },
   'repay-short': { ...PIN_BASE, phase: 'idle', balanceSats: 600 },
-  'repay-fee-gap': { ...PIN_BASE, phase: 'idle', balanceSats: 1_000, missingSats: 25 },
+  'repay-fee-gap': {
+    ...PIN_BASE,
+    phase: 'idle',
+    balanceSats: 1_000,
+    activeAction: PIN_DUE_ACTION,
+    missingSats: 25,
+  },
   'repay-fee-gap-topup': {
     ...PIN_BASE,
     phase: 'idle',
     balanceSats: 1_000,
+    activeAction: PIN_DUE_ACTION,
     missingSats: 25,
     topUpOpen: true,
   },
   'repay-topup': { ...PIN_BASE, phase: 'idle', balanceSats: 600, topUpOpen: true },
-  'repay-sending': { ...PIN_BASE, phase: 'sending', balanceSats: 21_000 },
+  'repay-sending': {
+    ...PIN_BASE,
+    phase: 'sending',
+    balanceSats: 21_000,
+    activeAction: PIN_DUE_ACTION,
+  },
   'repay-partial': {
     ...PIN_BASE,
     phase: 'idle',
     balanceSats: 21_000,
+    activeAction: PIN_DUE_ACTION,
     sentSats: 500,
     sentNames: ['Bruno'],
   },
@@ -216,6 +340,7 @@ const PINNED_RESULTS: Record<string, PinnedLoanRepay> = {
     ...PIN_BASE,
     phase: 'repaid',
     balanceSats: 21_000,
+    activeAction: PIN_DUE_ACTION,
     sentSats: 1_000,
     sentNames: ['Bruno', 'Carla', 'Diego'],
   },
@@ -223,35 +348,274 @@ const PINNED_RESULTS: Record<string, PinnedLoanRepay> = {
     ...PIN_BASE,
     phase: 'repaid',
     balanceSats: 21_000,
+    activeAction: PIN_DUE_ACTION,
     sentSats: 2_200,
     sentNames: ['Bruno', 'Carla', 'Diego', 'Elena', 'Farid'],
   },
-  'repay-unconfirmed': { ...PIN_BASE, phase: 'unconfirmed', balanceSats: 21_000 },
+  'repay-unconfirmed': {
+    ...PIN_BASE,
+    phase: 'unconfirmed',
+    balanceSats: 21_000,
+    activeAction: PIN_DUE_ACTION,
+  },
   'repay-failed': {
     ...PIN_BASE,
     phase: 'failed',
     balanceSats: 21_000,
+    activeAction: PIN_DUE_ACTION,
     errorKey: 'forum.payErrorRequest',
   },
   'repay-failed-cannot-receive': {
     ...PIN_BASE,
     phase: 'failed',
     balanceSats: 21_000,
+    activeAction: PIN_DUE_ACTION,
     errorKey: 'loans.errorCannotReceive',
+  },
+  'repay-pay-more-server-max': {
+    ...PIN_BASE,
+    phase: 'failed',
+    balanceSats: 21_000,
+    activeAction: { kind: 'prepay', messageId: 'loan-a' },
+    actionError: {
+      messageId: 'loan-a',
+      code: 'amount_too_high',
+      maxSats: 6_000,
+      maxAmount: null,
+    },
+  },
+  'repay-pay-more-server-invalid': {
+    ...PIN_BASE,
+    phase: 'failed',
+    balanceSats: 21_000,
+    activeAction: { kind: 'prepay', messageId: 'loan-a' },
+    actionError: {
+      messageId: 'loan-a',
+      code: 'invalid_amount',
+      maxSats: null,
+      maxAmount: null,
+    },
+  },
+  'repay-pay-more-error': {
+    ...PIN_BASE,
+    phase: 'failed',
+    balanceSats: 21_000,
+    activeAction: { kind: 'prepay', messageId: 'loan-a' },
+    actionError: {
+      messageId: 'loan-a',
+      code: 'payment_open',
+      maxSats: null,
+      maxAmount: null,
+    },
+  },
+  'repay-pay-more-rate-limit': {
+    ...PIN_BASE,
+    phase: 'failed',
+    balanceSats: 21_000,
+    activeAction: { kind: 'prepay', messageId: 'loan-a' },
+    actionError: {
+      messageId: 'loan-a',
+      code: 'rate_limited',
+      maxSats: null,
+      maxAmount: null,
+    },
+  },
+  'repay-pay-more-service-unavailable': {
+    ...PIN_BASE,
+    phase: 'failed',
+    balanceSats: 21_000,
+    activeAction: { kind: 'prepay', messageId: 'loan-a' },
+    actionError: {
+      messageId: 'loan-a',
+      code: 'service_unavailable',
+      maxSats: null,
+      maxAmount: null,
+    },
+  },
+  'repay-pay-more-missing-requirements': {
+    ...PIN_BASE,
+    phase: 'failed',
+    balanceSats: 21_000,
+    activeAction: { kind: 'prepay', messageId: 'loan-a' },
+    actionError: {
+      messageId: 'loan-a',
+      code: 'missing_requirements',
+      maxSats: null,
+      maxAmount: null,
+    },
+  },
+  'repay-pay-more-request-failure': {
+    ...PIN_BASE,
+    phase: 'failed',
+    balanceSats: 21_000,
+    activeAction: { kind: 'prepay', messageId: 'loan-a' },
+    actionError: {
+      messageId: 'loan-a',
+      code: 'request_failed',
+      maxSats: null,
+      maxAmount: null,
+    },
+  },
+  'repay-pay-more-wallet-failure': {
+    ...PIN_BASE,
+    phase: 'failed',
+    balanceSats: 21_000,
+    activeAction: { kind: 'prepay', messageId: 'loan-a' },
+    errorKey: 'forum.payErrorRequest',
+  },
+  'repay-pay-more-cannot-receive': {
+    ...PIN_BASE,
+    phase: 'failed',
+    balanceSats: 21_000,
+    activeAction: { kind: 'prepay', messageId: 'loan-a' },
+    errorKey: 'loans.errorCannotReceive',
+  },
+  'repay-pay-more-api-sunday': {
+    ...PIN_BASE,
+    phase: 'failed',
+    balanceSats: 21_000,
+    activeAction: { kind: 'prepay', messageId: 'loan-a' },
+    actionError: {
+      messageId: 'loan-a',
+      code: 'sunday_rest',
+      maxSats: null,
+      maxAmount: null,
+    },
+  },
+  'repay-pay-more-nothing-due': {
+    ...PIN_BASE,
+    phase: 'failed',
+    balanceSats: 21_000,
+    activeAction: { kind: 'prepay', messageId: 'loan-a' },
+    actionError: {
+      messageId: 'loan-a',
+      code: 'nothing_due',
+      maxSats: null,
+      maxAmount: null,
+    },
+  },
+  'repay-pay-more-sending': {
+    ...PIN_BASE,
+    phase: 'sending',
+    balanceSats: 21_000,
+    activeAction: { kind: 'prepay', messageId: 'loan-a' },
+  },
+  'repay-pay-more-waiting': {
+    ...PIN_BASE,
+    phase: 'waiting',
+    balanceSats: 21_000,
+    activeAction: { kind: 'prepay', messageId: 'loan-a' },
+    prepayWaiting: [
+      {
+        dayIndex: 12,
+        recipientAccountId: 'acc_carla',
+        name: 'Carla',
+        username: 'carla',
+        amountSats: 200,
+        amount: null,
+      },
+    ],
+    prepayMessageId: 'loan-a',
+  },
+  'repay-pay-more-unconfirmed': {
+    ...PIN_BASE,
+    phase: 'unconfirmed',
+    balanceSats: 21_000,
+    activeAction: { kind: 'prepay', messageId: 'loan-a' },
+  },
+  'repay-pay-more-success': {
+    ...PIN_BASE,
+    phase: 'repaid',
+    balanceSats: 21_000,
+    activeAction: { kind: 'prepay', messageId: 'loan-a' },
+    sentSats: 1_000,
+    sentNames: ['Bruno', 'Carla', 'Diego'],
+  },
+  'repay-pay-more-shortfall': {
+    ...PIN_BASE,
+    phase: 'idle',
+    balanceSats: 500,
+    activeAction: { kind: 'prepay', messageId: 'loan-a' },
+    missingSats: 500,
+    topUpOpen: true,
+  },
+  'repay-pay-more-shortfall-collapsed': {
+    ...PIN_BASE,
+    phase: 'idle',
+    balanceSats: 500,
+    activeAction: { kind: 'prepay', messageId: 'loan-a' },
+    missingSats: 500,
+    topUpOpen: false,
+  },
+  'repay-close-sending': {
+    ...PIN_BASE,
+    phase: 'sending',
+    balanceSats: 21_000,
+    activeAction: { kind: 'close', messageId: 'loan-a' },
+  },
+  'repay-close-error': {
+    ...PIN_BASE,
+    phase: 'failed',
+    balanceSats: 21_000,
+    activeAction: { kind: 'close', messageId: 'loan-a' },
+    actionError: {
+      messageId: 'loan-a',
+      code: 'request_failed',
+      maxSats: null,
+      maxAmount: null,
+    },
+  },
+  'repay-close-rate-limit': {
+    ...PIN_BASE,
+    phase: 'failed',
+    balanceSats: 21_000,
+    activeAction: { kind: 'close', messageId: 'loan-a' },
+    actionError: {
+      messageId: 'loan-a',
+      code: 'rate_limited',
+      maxSats: null,
+      maxAmount: null,
+    },
+  },
+  'repay-close-service-unavailable': {
+    ...PIN_BASE,
+    phase: 'failed',
+    balanceSats: 21_000,
+    activeAction: { kind: 'close', messageId: 'loan-a' },
+    actionError: {
+      messageId: 'loan-a',
+      code: 'service_unavailable',
+      maxSats: null,
+      maxAmount: null,
+    },
+  },
+  'repay-close-missing-requirements': {
+    ...PIN_BASE,
+    phase: 'failed',
+    balanceSats: 21_000,
+    activeAction: { kind: 'close', messageId: 'loan-a' },
+    actionError: {
+      messageId: 'loan-a',
+      code: 'missing_requirements',
+      maxSats: null,
+      maxAmount: null,
+    },
   },
 };
 
-/** Shares reserved from the start of their send until it is known they did not go out. */
+/** Shares reserved from the start of their send until failure or confirmed settlement. */
 const reservedShares = new Set<string>();
 
 /**
  * Runs the all-loans repayment flow and waits for api settlement. A share is
  * reserved from the moment its send starts; a send that did not go out
- * releases it. The named shares are taken from all due shares, or from the
+ * releases it. Confirmed settlement also releases every share whose loan's
+ * `repaidSats` reached the run's target, so a remaining part of that share can
+ * be paid later. Timed-out or otherwise unsettled sends stay reserved. The
+ * named shares are taken from all due shares, or from the
  * optional `onlyShares` keys when given; shares of that set another run
- * already holds are skipped. A reserved share is never prepared
- * or sent again in this app session, including when `/due` later returns a
- * new invoice for that share; when every named share is reserved the run
+ * already holds are skipped. While a share remains reserved, a new invoice
+ * for it is not prepared or sent; when every named share is reserved the run
  * ends unconfirmed. When `onlyShares` is given and none of those shares are
  * still due, the run reloads, then ends `unconfirmed` if one of the named
  * shares is held by another run, `repaid` if nothing is due any more, otherwise
@@ -286,14 +650,22 @@ export function useLoanRepay(options: {
   const storeBalance = useWalletStore((state) => state.balanceSats);
   const setupFailed = useWalletSetup().failed;
   const [livePhase, setLivePhase] = useState<LivePhase>('idle');
+  const [activeAction, setActiveAction] = useState<LoanRepayActiveAction | null>(null);
   const [sentSats, setSentSats] = useState(0);
+  const [sentAmounts, setSentAmounts] = useState<
+    { code: MyLoan['goalCurrency']; amount: string | null }[]
+  >([]);
   const [sentNames, setSentNames] = useState<string[]>([]);
+  const [prepayWaiting, setPrepayWaiting] = useState<RepaymentWaiting[]>([]);
+  const [prepayMessageId, setPrepayMessageId] = useState<string | null>(null);
   const [feeSats, setFeeSats] = useState(0);
   const [missingSats, setMissingSats] = useState<number | null>(null);
   const missingBalance = useRef<number | null | undefined>(undefined);
   const [errorKey, setErrorKey] = useState<ErrorKey | null>(null);
+  const [actionError, setActionError] = useState<LoanRepayActionError | null>(null);
   const [topUpOpen, setTopUpOpen] = useState(false);
   const generation = useRef(0);
+  const actionPending = useRef(false);
   const phaseRef = useRef<LoanRepayPhase>('connecting');
   const settlementInterval = useRef<ReturnType<typeof setInterval> | null>(null);
   const confirmationTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -301,9 +673,10 @@ export function useLoanRepay(options: {
   const pinName = visualPin();
   const pinnedResult = pinName === null ? undefined : PINNED_RESULTS[pinName];
   const pinned = pinnedResult !== undefined;
-  const usable = status !== 'disabled' && canUnlockWallet(account);
+  const behaviorWallet = pinName === 'repay-e2e-payment';
+  const usable = behaviorWallet || (status !== 'disabled' && canUnlockWallet(account));
   const setupDue = needsWalletSetup(account);
-  const balanceSats = status === 'ready' ? storeBalance : null;
+  const balanceSats = behaviorWallet ? 21_000 : status === 'ready' ? storeBalance : null;
 
   const clearSettlement = useCallback((): void => {
     if (settlementInterval.current !== null) {
@@ -317,16 +690,28 @@ export function useLoanRepay(options: {
     settlementReading.current = false;
   }, []);
 
+  const setPaymentPhase = useCallback((next: LivePhase): void => {
+    actionPending.current = ACTIVE_RUN_PHASES.has(next);
+    phaseRef.current = next;
+    setLivePhase(next);
+  }, []);
+
   useEffect(() => {
     generation.current += 1;
+    actionPending.current = false;
     clearSettlement();
     setLivePhase('idle');
+    setActiveAction(null);
     setSentSats(0);
+    setSentAmounts([]);
     setSentNames([]);
+    setPrepayWaiting([]);
+    setPrepayMessageId(null);
     setFeeSats(0);
     missingBalance.current = undefined;
     setMissingSats(null);
     setErrorKey(null);
+    setActionError(null);
     setTopUpOpen(false);
     return () => {
       generation.current += 1;
@@ -361,7 +746,9 @@ export function useLoanRepay(options: {
   }, [topUpOpen, pinned, status]);
 
   let phase: LoanRepayPhase;
-  if (!usable) {
+  if (behaviorWallet || actionPending.current) {
+    phase = livePhase;
+  } else if (!usable) {
     phase = 'unavailable';
   } else if (setupDue && setupFailed) {
     phase = 'setupFailed';
@@ -378,27 +765,42 @@ export function useLoanRepay(options: {
     }
   }, [pinned]);
 
-  const pay = useCallback(
-    (loans: readonly MyLoan[], onlyShares?: ReadonlySet<string>): void => {
+  const runPayment = useCallback(
+    (
+      loans: readonly MyLoan[],
+      onlyShares?: ReadonlySet<string>,
+      shareAmounts?: ReadonlyMap<string, string | null>,
+      prepayRequest?: { messageId: string; amountText: string },
+    ): void => {
       const allowed = new Set<LoanRepayPhase>(['idle', 'failed', 'repaid', 'unconfirmed']);
       const session = useAuthStore.getState().session;
-      if (pinned || !allowed.has(phaseRef.current) || session === null) {
+      if (pinned || actionPending.current || !allowed.has(phaseRef.current) || session === null) {
         return;
       }
 
       const run = ++generation.current;
+      const active = (): boolean => run === generation.current;
       clearSettlement();
-      phaseRef.current = 'preparing';
+      setPaymentPhase('preparing');
+      setActiveAction(
+        prepayRequest === undefined
+          ? { kind: 'due', messageId: null }
+          : { kind: 'prepay', messageId: prepayRequest.messageId },
+      );
       setSentSats(0);
+      setSentAmounts([]);
       setSentNames([]);
+      setPrepayWaiting([]);
+      setPrepayMessageId(null);
       setFeeSats(0);
       missingBalance.current = undefined;
       setMissingSats(null);
       setErrorKey(null);
-      setLivePhase('preparing');
-
-      const active = (): boolean => run === generation.current;
-      const failBeforeSend = (error: unknown): void => {
+      setActionError(null);
+      const failBeforeSend = (
+        error: unknown,
+        untypedRequestMessageId: string | null = null,
+      ): void => {
         if (!active()) {
           return;
         }
@@ -410,25 +812,56 @@ export function useLoanRepay(options: {
               : error instanceof Error && /too many (messages|payments)/i.test(error.message)
                 ? 'forum.payErrorRateLimit'
                 : 'forum.payErrorRequest';
+        const typedActionError =
+          prepayRequest === undefined ? null : actionErrorOf(error, prepayRequest.messageId);
         setErrorKey(key);
-        setLivePhase('failed');
+        setActionError(
+          typedActionError ??
+            (untypedRequestMessageId !== null && key === 'forum.payErrorRequest'
+              ? {
+                  messageId: untypedRequestMessageId,
+                  code: 'request_failed',
+                  maxSats: null,
+                  maxAmount: null,
+                }
+              : null),
+        );
+        setPaymentPhase('failed');
       };
 
       void (async (): Promise<void> => {
+        const currencyByMessage = new Map(loans.map((loan) => [loan.messageId, loan.goalCurrency]));
         const perLoan: Array<{ messageId: string; bills: readonly RepaymentBill[] }> = [];
         try {
-          for (const loan of loans) {
-            if (loan.due.payableSats <= 0) {
-              continue;
-            }
-            const due = await postRepaymentDue(session, loan.messageId);
+          if (prepayRequest !== undefined) {
+            const prepay = await prepayLoan(
+              session,
+              prepayRequest.messageId,
+              prepayRequest.amountText,
+            );
             if (!active()) {
               return;
             }
-            perLoan.push({ messageId: loan.messageId, bills: due.bills });
+            if (!prepayResponseMatches(prepay, loans[0]!, prepayRequest.amountText)) {
+              throw new Error('Inconsistent prepay response');
+            }
+            setPrepayWaiting(prepay.waiting);
+            setPrepayMessageId(prepayRequest.messageId);
+            perLoan.push({ messageId: prepayRequest.messageId, bills: prepay.bills });
+          } else {
+            for (const loan of loans) {
+              if (loan.due.payableSats <= 0) {
+                continue;
+              }
+              const due = await postRepaymentDue(session, loan.messageId);
+              if (!active()) {
+                return;
+              }
+              perLoan.push({ messageId: loan.messageId, bills: due.bills });
+            }
           }
         } catch (error: unknown) {
-          failBeforeSend(error);
+          failBeforeSend(error, prepayRequest?.messageId ?? null);
           return;
         }
 
@@ -463,15 +896,15 @@ export function useLoanRepay(options: {
             return;
           }
           if (!namedMissing && skipped) {
-            setLivePhase('unconfirmed');
+            setPaymentPhase('unconfirmed');
             return;
           }
           if (ordered.length === 0) {
             setTopUpOpen(false);
-            setLivePhase('repaid');
+            setPaymentPhase('repaid');
             return;
           }
-          setLivePhase('idle');
+          setPaymentPhase('idle');
           return;
         }
 
@@ -544,7 +977,9 @@ export function useLoanRepay(options: {
           prepared.push({ bill, feeSats: result.feeSats, send: result.send });
         }
 
-        const currentBalance = useWalletStore.getState().balanceSats ?? 0;
+        const currentBalance = behaviorWallet
+          ? 21_000
+          : (useWalletStore.getState().balanceSats ?? 0);
         const knownTotal = prepared.reduce(
           (sum, item) => sum + item.bill.amountSats + item.feeSats,
           0,
@@ -557,17 +992,19 @@ export function useLoanRepay(options: {
         if (kept.length === 0 || insufficient || knownTotal > currentBalance) {
           missingBalance.current = useWalletStore.getState().balanceSats;
           setMissingSats(Math.max(1, allTotal - currentBalance));
-          setLivePhase('idle');
+          setPaymentPhase('idle');
           return;
         }
 
         setTopUpOpen(false);
-        setLivePhase('sending');
+        setPaymentPhase('sending');
         const sent: SendRun = {
           sentSats: 0,
+          sentAmounts: [],
           feeSats: 0,
           names: [],
           seenNames: new Set<string>(),
+          shares: [],
           targets: new Map<string, SettlementTarget>(),
           failed: false,
           latePending: false,
@@ -578,16 +1015,24 @@ export function useLoanRepay(options: {
 
         const publishSent = (): void => {
           setSentSats(sent.sentSats);
+          setSentAmounts([...sent.sentAmounts]);
           setFeeSats(sent.feeSats);
           setSentNames([...sent.names]);
         };
         const countSent = (item: PreparedBill): void => {
           sent.sentSats += item.bill.amountSats;
+          const amount = item.bill.amount ?? shareAmounts?.get(shareKey(item.bill)) ?? null;
+          sent.sentAmounts.push({
+            // Every bill comes from a loan in `loans`, which supplied its currency above.
+            code: currencyByMessage.get(item.bill.messageId)!,
+            amount,
+          });
           sent.feeSats += item.feeSats;
           if (!sent.seenNames.has(item.bill.name)) {
             sent.seenNames.add(item.bill.name);
             sent.names.push(item.bill.name);
           }
+          sent.shares.push({ messageId: item.bill.messageId, key: shareKey(item.bill) });
           const target = sent.targets.get(item.bill.messageId);
           if (target === undefined) {
             sent.targets.set(item.bill.messageId, {
@@ -599,21 +1044,32 @@ export function useLoanRepay(options: {
           }
           publishSent();
         };
-        const settled = (fresh: MyLoans): boolean =>
-          [...sent.targets].every(([messageId, target]) => {
-            const loan = fresh.loans.find((row) => row.messageId === messageId);
-            return loan === undefined || loan.repaidSats >= target.before + target.sent;
-          });
+        const settled = (fresh: MyLoans): boolean => {
+          const settledMessages = new Set(
+            [...sent.targets]
+              .filter(([messageId, target]) => {
+                const loan = fresh.loans.find((row) => row.messageId === messageId);
+                return loan === undefined || loan.repaidSats >= target.before + target.sent;
+              })
+              .map(([messageId]) => messageId),
+          );
+          for (const share of sent.shares) {
+            if (settledMessages.has(share.messageId)) {
+              reservedShares.delete(share.key);
+            }
+          }
+          return settledMessages.size === sent.targets.size;
+        };
 
         const startSettlement = (): void => {
           const remaining = WALLET_PAY_CONFIRM_WAIT_MS - (Date.now() - sent.lastSendAt);
           if (remaining <= 0) {
             sent.timedOut = true;
             clearSettlement();
-            setLivePhase('unconfirmed');
+            setPaymentPhase('unconfirmed');
             return;
           }
-          setLivePhase('waiting');
+          setPaymentPhase('waiting');
           if (settlementInterval.current === null) {
             settlementInterval.current = setInterval(() => {
               if (
@@ -635,7 +1091,7 @@ export function useLoanRepay(options: {
                     settled(fresh)
                   ) {
                     clearSettlement();
-                    setLivePhase(sent.failed ? 'failed' : 'repaid');
+                    setPaymentPhase(sent.failed ? 'failed' : 'repaid');
                   }
                 })
                 .finally(() => {
@@ -655,7 +1111,7 @@ export function useLoanRepay(options: {
                 clearInterval(settlementInterval.current);
                 settlementInterval.current = null;
               }
-              setLivePhase('unconfirmed');
+              setPaymentPhase('unconfirmed');
             }, remaining);
           }
         };
@@ -668,10 +1124,10 @@ export function useLoanRepay(options: {
             startSettlement();
           } else if (sent.failed) {
             clearSettlement();
-            setLivePhase('failed');
+            setPaymentPhase('failed');
           } else if (sent.skippedAtSend) {
             clearSettlement();
-            setLivePhase('unconfirmed');
+            setPaymentPhase('unconfirmed');
           }
         };
 
@@ -748,23 +1204,102 @@ export function useLoanRepay(options: {
         finishSending();
       })();
     },
-    [clearSettlement, options, pinned],
+    [behaviorWallet, clearSettlement, options, pinned, setPaymentPhase],
+  );
+
+  const pay = useCallback(
+    (
+      loans: readonly MyLoan[],
+      onlyShares?: ReadonlySet<string>,
+      shareAmounts?: ReadonlyMap<string, string | null>,
+    ): void => {
+      runPayment(loans, onlyShares, shareAmounts);
+    },
+    [runPayment],
+  );
+
+  const prepay = useCallback(
+    (loan: MyLoan, amountText: string): void => {
+      runPayment([loan], undefined, undefined, { messageId: loan.messageId, amountText });
+    },
+    [runPayment],
+  );
+
+  const closeCollecting = useCallback(
+    (loan: MyLoan): void => {
+      const session = useAuthStore.getState().session;
+      if (
+        pinned ||
+        session === null ||
+        loan.fundedAt !== null ||
+        (loan.closedAt !== null && loan.closedAt !== undefined) ||
+        actionPending.current
+      ) {
+        return;
+      }
+      const run = ++generation.current;
+      clearSettlement();
+      setPaymentPhase('preparing');
+      setActiveAction({ kind: 'close', messageId: loan.messageId });
+      setErrorKey(null);
+      setActionError(null);
+      void (async (): Promise<void> => {
+        try {
+          await closeLoan(session, loan.messageId);
+          if (run !== generation.current) {
+            return;
+          }
+          const fresh = await options.reload();
+          if (run !== generation.current) {
+            return;
+          }
+          if (fresh === null) {
+            throw new Error('reload');
+          }
+          setActiveAction(null);
+          setPaymentPhase('idle');
+        } catch (error: unknown) {
+          if (run !== generation.current) {
+            return;
+          }
+          const typed = actionErrorOf(error, loan.messageId) ?? {
+            messageId: loan.messageId,
+            code: 'request_failed' as const,
+            maxSats: null,
+            maxAmount: null,
+          };
+          setActionError(typed);
+          setErrorKey(
+            typed?.code === 'rate_limited' ? 'forum.payErrorRateLimit' : 'forum.payErrorRequest',
+          );
+          setPaymentPhase('failed');
+        }
+      })();
+    },
+    [clearSettlement, options, pinned, setPaymentPhase],
   );
 
   if (pinnedResult !== undefined) {
-    return { ...pinnedResult, openTopUp, pay, pinned: true };
+    return { ...pinnedResult, openTopUp, pay, prepay, closeCollecting, pinned: true };
   }
   return {
     phase,
+    activeAction,
     balanceSats,
     sentSats,
+    sentAmounts,
     sentNames,
+    prepayWaiting,
+    prepayMessageId,
     feeSats,
     missingSats,
     errorKey: phase === 'failed' ? errorKey : null,
+    actionError,
     topUpOpen,
     openTopUp,
     pay,
+    prepay,
+    closeCollecting,
     pinned: false,
   };
 }

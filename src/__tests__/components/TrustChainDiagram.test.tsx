@@ -255,6 +255,37 @@ describe('TrustChainDiagram', () => {
     expect(screen.queryByText('Verified')).toBeNull();
   });
 
+  it('shows the Software Developer label for a software developer node', () => {
+    renderWithLocale(
+      <TrustChainDiagram
+        chain={{
+          nodes: [
+            { id: 'f', name: 'Cyrill', role: 'founder' },
+            { id: 's', name: 'Sam', role: 'software_developer' },
+          ],
+          edges: [{ from: 'f', to: 's', kind: 'moderator_appoint' }],
+        }}
+      />,
+    );
+    expect(screen.getByText('Software Developer')).toBeTruthy();
+    expect(screen.queryByText('Verified')).toBeNull();
+  });
+
+  it('shows the Fond label for a fond node', () => {
+    renderWithLocale(
+      <TrustChainDiagram
+        chain={{
+          nodes: [
+            { id: 'f', name: 'Cyrill', role: 'founder' },
+            { id: 'fond', name: 'Fiona', role: 'fond' },
+          ],
+          edges: [{ from: 'f', to: 'fond', kind: 'moderator_appoint' }],
+        }}
+      />,
+    );
+    expect(screen.getByText('Fond')).toBeTruthy();
+  });
+
   it('renders a zero-length self-edge without throwing', () => {
     const hypot = vi.spyOn(Math, 'hypot').mockReturnValue(0);
     try {

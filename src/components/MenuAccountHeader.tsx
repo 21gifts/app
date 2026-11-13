@@ -12,7 +12,7 @@ import { useSpotRate } from '@/hooks/useSpotRate';
 import { useWallet } from '@/hooks/useWallet';
 import { fetchProfilePhoto } from '@/lib/api';
 import { loadSession } from '@/lib/session-storage';
-import { summarizeLoans } from '@/lib/loan-repay';
+import { definedDueLabel, summarizeLoans } from '@/lib/loan-repay';
 import { formatBitcoin, formatFiatDisplay, satsToFiatAmount } from '@/lib/stats-money';
 import { useAuthStore } from '@/stores/auth-store';
 
@@ -206,7 +206,8 @@ export function MenuAccountHeader({
     );
   }
 
-  const loanSummary = loans === null ? null : summarizeLoans(loans);
+  const loanSummary = loans === null ? null : summarizeLoans(loans, numberFormat);
+  const definedDue = loans === null ? null : definedDueLabel(loans.loans, 'payable', numberFormat);
 
   return (
     <div className={`flex flex-col gap-3 rounded-xl bg-app-card-muted p-3${tight ? ' mt-2' : ''}`}>
@@ -276,8 +277,14 @@ export function MenuAccountHeader({
                 loanSummary.behindDays > 0 ? 'text-app-danger' : 'text-app-fg'
               }`}
             >
-              {formatBitcoin(loanSummary.payableSats, numberFormat)}
-              {preferredFiatSuffix(loanSummary.payableSats, rateDay, fiat, numberFormat)}
+              {definedDue === null ? (
+                <>
+                  {formatBitcoin(loanSummary.payableSats, numberFormat)}
+                  {preferredFiatSuffix(loanSummary.payableSats, rateDay, fiat, numberFormat)}
+                </>
+              ) : (
+                `${definedDue} · ${formatBitcoin(loanSummary.payableSats, numberFormat)}`
+              )}
             </p>
           </div>
           <ButtonLink href="/loans/repay" size="sm" onClick={onNavigate}>

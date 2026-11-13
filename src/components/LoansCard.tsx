@@ -11,6 +11,7 @@ import { preferredFiatSuffix } from '@/components/PreferredFiatSuffix';
 import { ButtonLink } from '@/components/ui';
 import { useMyLoans } from '@/hooks/useMyLoans';
 import { useSpotRate } from '@/hooks/useSpotRate';
+import type { MyLoan } from '@/lib/api';
 import { forumGoalPercent } from '@/lib/forum-goal';
 import { definedDueLabel, summarizeLoans } from '@/lib/loan-repay';
 import { formatBitcoin, formatFiatDisplay, satsToFiatAmount } from '@/lib/stats-money';
@@ -29,9 +30,9 @@ function localDay(date: Date): string {
 }
 
 /**
- * Compact combined loan status shown on the welcome and wallet screens. Shares
- * waiting for a lender's wallet are a muted line of their own, never part of
- * the amount to send.
+ * Compact loan status shown on the welcome and wallet screens. Each loan keeps
+ * its own fiat-defined goal bar and label. Shares waiting for a lender's wallet
+ * are a muted line of their own, never part of the amount to send.
  *
  * @param props - Card placement.
  * @returns The loan card, or `null` while unavailable or when there are no loans.
@@ -47,7 +48,8 @@ export function LoansCard({ place }: LoansCardProps): ReactElement | null {
   if (loans === null || loans.loans.length === 0) {
     return null;
   }
-  const summary = summarizeLoans(loans);
+  const summary = summarizeLoans(loans, numberFormat);
+  const definedPayable = definedDueLabel(loans.loans, 'payable', numberFormat);
   const definedWaiting = definedDueLabel(loans.loans, 'waiting', numberFormat);
   const single = summary.count === 1;
   const title = single ? t('welcome.loanTitle') : t('welcome.loansTitle', { count: summary.count });
@@ -73,7 +75,10 @@ export function LoansCard({ place }: LoansCardProps): ReactElement | null {
     }
     const tomorrow = new Date();
     tomorrow.setDate(tomorrow.getDate() + 1);
-    const amount = money(summary.next.sats);
+    const amount =
+      summary.next.amount === null
+        ? money(summary.next.sats)
+        : `${summary.next.amount} · ${formatBitcoin(summary.next.sats, numberFormat)}`;
     if (summary.next.dueOn === localDay(tomorrow)) {
       return t('loans.nextTomorrow', { amount });
     }
@@ -84,6 +89,23 @@ export function LoansCard({ place }: LoansCardProps): ReactElement | null {
     }).format(new Date(`${summary.next.dueOn}T12:00:00`));
     return t('loans.nextOn', { date, amount });
   };
+  const renderGoalBar = (loan: MyLoan): ReactElement => (
+    <ForumGoalBar
+      sats={loan.sats}
+      goalSats={loan.goalSats}
+      goalCurrency={loan.goalCurrency}
+      goalAmount={loan.goalAmount}
+      goalAmountUsd={loan.goalAmountUsd}
+      goalAmountChf={loan.goalAmountChf}
+      goalAmountEur={loan.goalAmountEur}
+      goalAmountPhp={loan.goalAmountPhp}
+      amountUsd={loan.amountUsd}
+      amountChf={loan.amountChf}
+      amountEur={loan.amountEur}
+      amountPhp={loan.amountPhp}
+      rateDay={rateDay}
+    />
+  );
 
   return (
     <section
@@ -97,23 +119,16 @@ export function LoansCard({ place }: LoansCardProps): ReactElement | null {
         <p className="mt-1 text-sm text-app-muted">{status}</p>
       </div>
       {single && loans.loans[0] !== undefined ? (
-        <ForumGoalBar
-          sats={loans.loans[0].sats}
-          goalSats={loans.loans[0].goalSats}
-          goalCurrency={loans.loans[0].goalCurrency}
-          goalAmount={loans.loans[0].goalAmount}
-          goalAmountUsd={loans.loans[0].goalAmountUsd}
-          goalAmountChf={loans.loans[0].goalAmountChf}
-          goalAmountEur={loans.loans[0].goalAmountEur}
-          goalAmountPhp={loans.loans[0].goalAmountPhp}
-          amountUsd={loans.loans[0].amountUsd}
-          amountChf={loans.loans[0].amountChf}
-          amountEur={loans.loans[0].amountEur}
-          amountPhp={loans.loans[0].amountPhp}
-          rateDay={rateDay}
-        />
+        renderGoalBar(loans.loans[0])
       ) : (
-        <ForumGoalBar sats={summary.sats} goalSats={summary.goalSats} rateDay={rateDay} />
+        <div className="mt-2 flex flex-col gap-3">
+          {loans.loans.map((loan) => (
+            <div key={loan.messageId} className="min-w-0">
+              <p className="mb-1 truncate text-xs text-app-muted">{loan.text}</p>
+              {renderGoalBar(loan)}
+            </div>
+          ))}
+        </div>
       )}
       {summary.fundedCount > 0 ? (
         <div className="mt-3 rounded-xl bg-app-card px-3 py-2">
@@ -141,8 +156,14 @@ export function LoansCard({ place }: LoansCardProps): ReactElement | null {
                     summary.behindDays > 0 ? 'text-app-danger' : 'text-app-fg'
                   }`}
                 >
-                  {formatBitcoin(summary.payableSats, numberFormat)}
-                  {preferredFiatSuffix(summary.payableSats, rateDay, fiat, numberFormat)}
+                  {definedPayable === null ? (
+                    <>
+                      {formatBitcoin(summary.payableSats, numberFormat)}
+                      {preferredFiatSuffix(summary.payableSats, rateDay, fiat, numberFormat)}
+                    </>
+                  ) : (
+                    `${definedPayable} · ${formatBitcoin(summary.payableSats, numberFormat)}`
+                  )}
                 </p>
               </div>
               <ButtonLink href="/loans/repay" size="sm">

@@ -20,7 +20,7 @@ export async function GET(request: Request, context: RepaymentRouteContext): Pro
 /**
  * App Router POST for `/messages/:id/repayment`.
  *
- * @param request - Incoming request (Bearer session, no body).
+ * @param request - Incoming request (Bearer session, optional JSON `{ amount }`).
  * @param context - Dynamic route params (`id` = credit note).
  * @returns The proxied upstream response.
  */

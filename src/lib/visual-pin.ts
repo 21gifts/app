@@ -3,7 +3,8 @@ import { getE2eNow } from '@/lib/config';
 /**
  * Name of the `?visual=` screenshot pin, honoured only in a Playwright build
  * (`getE2eNow()` set). The wallet balance, panel, payment, send, pay slot,
- * setup note, login gate, heart-paid, and heart-needs-balance pins are read through this one check.
+ * setup note, login gate, heart-paid, heart-needs-balance, and refreshed-closed-heart pins are
+ * read through this one check.
  *
  * @returns The pin name, or `null` (always `null` in a deployed build and during SSR).
  */

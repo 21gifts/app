@@ -531,6 +531,42 @@ const en = {
   'loans.plan': '{total} · {days} days · {perDay} per day',
   'loans.repaidOf': 'Repaid {repaid} of {total}',
   'loans.dayOf': 'Day {day} of {days}',
+  'loans.payMoreTitle': 'Pay more',
+  'loans.payMoreAmount': 'Amount ({unit})',
+  'loans.payMoreSats': '₿',
+  'loans.payMoreMax': 'Max',
+  'loans.payMorePay': 'Pay this amount',
+  'loans.payMoreSending': 'Paying more…',
+  'loans.payMoreInvalidBitcoin': 'Enter a whole ₿ amount greater than zero.',
+  'loans.payMoreInvalidFiat': 'Enter an amount greater than zero with at most two decimals.',
+  'loans.payMoreAboveMax': 'Enter at most {amount}.',
+  'loans.payMoreNoRate': 'No {code} exchange rate is available now, so paying more is disabled.',
+  'loans.payMoreNoMaximum':
+    'No {code} repayment maximum is available now, so paying more is disabled.',
+  'loans.payMoreCollectingNotice': 'The first payment ends collecting for this loan.',
+  'loans.payMoreConfirmTitle': 'Pay and end collecting?',
+  'loans.payMoreConfirmBody':
+    'This first payment ends collecting permanently. To collect more money later, you will need a new loan.',
+  'loans.payMoreConfirmAction': 'Pay {amount} and end collecting',
+  'loans.payMoreMaxChanged':
+    'The available maximum changed to {amount}. The amount was adjusted; review it and pay again.',
+  'loans.payMoreInvalid': 'Enter a valid amount and try again.',
+  'loans.payMoreNothingDue': 'There is nothing left to repay.',
+  'loans.payMoreSunday': 'Repayments rest on Sundays. Try again tomorrow.',
+  'loans.payMorePaymentOpen': 'An earlier payment for this share is still open. Try again later.',
+  'loans.payMoreRateLimited': 'Too many payment requests. Try again later.',
+  'loans.payMoreUnavailable': 'Repayment is temporarily unavailable. Try again later.',
+  'loans.payMoreRequirements': 'Complete your account requirements before paying.',
+  'loans.payMoreRequestError': 'Could not start this repayment. Please try again.',
+  'loans.endCollecting': 'End collecting',
+  'loans.endCollectingClosing': 'Ending collecting…',
+  'loans.endCollectingTitle': 'End collecting?',
+  'loans.endCollectingBody':
+    'This is final. To collect more money later, you will need to create a new loan.',
+  'loans.endCollectingConfirm': 'End collecting permanently',
+  'loans.confirmCancel': 'Cancel',
+  'loans.confirmClose': 'Close',
+  'forum.payErrorCreditClosed': 'This loan is no longer collecting and cannot receive more money.',
   'forum.payAmountLabel': 'Amount',
   'forum.payAmountPlaceholder': '21',
   'forum.payContinue': 'Continue',
@@ -1169,6 +1205,16 @@ const en = {
   'view.activate': 'Activate',
   'view.alreadyClaimed': 'This profile already has a passkey. Log in instead.',
   'view.claimError': 'Could not set up a passkey. Please try again.',
+  'fond.received': 'Received',
+  'fond.paidOut': 'Paid out',
+  'fond.fees': 'Fees',
+  'fond.balance': 'Balance',
+  'fond.balanceAsOf': 'as of {date}',
+  'fond.balanceNotReported': 'not reported yet',
+  'fond.payoutsPaid':
+    '{count, plural, one {# grant payout paid} other {# grant payouts paid}} ({usd})',
+  'fond.missing': 'This Fond could not be found.',
+  'fond.error': 'Could not load the Fond. Please try again.',
   'forum.laws1': '21.gifts is a donation platform: gifts are free, and nobody pays for a promise.',
   'forum.laws2': 'Donors are rare — no begging, no drama, no pressure.',
   'forum.rulesLink': 'Living room rules',
@@ -1176,14 +1222,17 @@ const en = {
   'forum.lawsDismiss': 'Dismiss',
   'forum.role.founder': 'Founder',
   'forum.role.moderator': 'Moderator',
+  'forum.role.fond': 'Fond',
+  'forum.role.softwareDeveloper': 'Software Developer',
   'forum.role.initiator': 'Initiator',
   'forum.role.verified': 'Verified',
   'forum.role.founderHint': 'This person founded 21.gifts.',
   'forum.role.moderatorHint': 'This person helps keep the living room in order.',
+  'forum.role.fondHint': 'This account pays the daily gifts from the 21.gifts fund.',
+  'forum.role.softwareDeveloperHint': 'This person builds 21.gifts and moderates the living room.',
   'forum.role.initiatorHint': 'This person was named an initiator.',
   'forum.role.verifiedHint':
     'A moderator has met this person in real life and confirmed they are real.',
-  'forum.staff.softwareDeveloper': 'Software Developer',
   'forum.shopTag': '#Shop',
   'forum.via.nostr': 'External',
   'forum.via.nostrHint':
@@ -1539,6 +1588,21 @@ const en = {
   'moderate.handbook.funding.ruleCap': 'New members are capped at 1 USD per day.',
   'moderate.handbook.funding.principlesLead': 'The 3 principles of 21.gifts:',
   'funding.heading': '21 gifts grant',
+  'funding.payoutToday.heading': "Today's payout",
+  'funding.payoutToday.paid': 'Payout made today.',
+  'funding.payoutToday.welcome': 'Your welcome gift was paid today.',
+  'funding.payoutToday.due': "All conditions are met. Today's payout is on its way.",
+  'funding.payoutToday.paused': 'All conditions are met, but payouts are paused right now.',
+  'funding.payoutToday.verify': 'A moderator must verify you in person first.',
+  'funding.payoutToday.admission': 'You must be admitted to the grant program.',
+  'funding.payoutToday.admissionPending':
+    'You must be admitted to the grant program. Your application is being reviewed.',
+  'funding.payoutToday.wallet': 'Set up your wallet to receive payouts.',
+  'funding.payoutToday.recoveryShare': 'Secure your account to receive payouts.',
+  'funding.payoutToday.shopPayment':
+    'You must have made at least one purchase in a 21.gifts shop today or yesterday.',
+  'funding.payoutToday.mediaPost': 'You must post at least one note with a photo today.',
+  'funding.payoutToday.unavailable': "Today's payout status is not available.",
   'funding.goals.link': 'Goals',
   'funding.goals.heading': 'Goals',
   'funding.goals.lead': 'Goal reached: 10 active shops. The grant program is open again.',
@@ -1654,6 +1718,9 @@ const en = {
     'Verified means a moderator met the person in real life and confirmed they are real. It is not a wallet proof.',
   'trustChain.explainModerator':
     'To become a moderator, an existing moderator proposes the person and a different moderator confirms — or a founder appoints them directly.',
+  'trustChain.explainFond': 'Fond: pays the daily gifts from the 21.gifts fund.',
+  'trustChain.explainSoftwareDeveloper':
+    'A software developer builds 21.gifts and is in the moderators’ group, with every moderator permission. They cannot edit the daily payout roster.',
   'trustChain.explainInitiator': 'An initiator is named directly. There is no proposal step.',
   'trustChain.explainFounder': 'A founder started 21.gifts and is the first link of the chain.',
   'staff.functions': 'Moderator functions',
@@ -2308,6 +2375,48 @@ const de = {
   'loans.plan': '{total} · {days} Tage · {perDay} pro Tag',
   'loans.repaidOf': '{repaid} von {total} zurückgezahlt',
   'loans.dayOf': 'Tag {day} von {days}',
+  'loans.payMoreTitle': 'Mehr zurückzahlen',
+  'loans.payMoreAmount': 'Betrag ({unit})',
+  'loans.payMoreSats': '₿',
+  'loans.payMoreMax': 'Max',
+  'loans.payMorePay': 'Diesen Betrag zahlen',
+  'loans.payMoreSending': 'Mehr wird zurückgezahlt…',
+  'loans.payMoreInvalidBitcoin': 'Geben Sie einen ganzzahligen ₿-Betrag größer als null ein.',
+  'loans.payMoreInvalidFiat':
+    'Geben Sie einen Betrag größer als null mit höchstens zwei Dezimalstellen ein.',
+  'loans.payMoreAboveMax': 'Geben Sie höchstens {amount} ein.',
+  'loans.payMoreNoRate':
+    'Der {code}-Wechselkurs ist derzeit nicht verfügbar. Deshalb ist eine zusätzliche Rückzahlung deaktiviert.',
+  'loans.payMoreNoMaximum':
+    'Der Höchstbetrag für eine {code}-Rückzahlung ist derzeit nicht verfügbar. Deshalb ist eine zusätzliche Rückzahlung deaktiviert.',
+  'loans.payMoreCollectingNotice': 'Die erste Zahlung beendet das Sammeln für diesen Kredit.',
+  'loans.payMoreConfirmTitle': 'Zahlen und das Sammeln beenden?',
+  'loans.payMoreConfirmBody':
+    'Diese erste Zahlung beendet das Sammeln endgültig. Um später mehr Geld zu sammeln, benötigen Sie einen neuen Kredit.',
+  'loans.payMoreConfirmAction': '{amount} zahlen und Sammeln beenden',
+  'loans.payMoreMaxChanged':
+    'Der verfügbare Höchstbetrag ist jetzt {amount}. Der Betrag wurde angepasst; prüfen Sie ihn und zahlen Sie erneut.',
+  'loans.payMoreInvalid': 'Geben Sie einen gültigen Betrag ein und versuchen Sie es erneut.',
+  'loans.payMoreNothingDue': 'Es ist nichts mehr zurückzuzahlen.',
+  'loans.payMoreSunday': 'Sonntags ruhen die Rückzahlungen. Versuchen Sie es morgen erneut.',
+  'loans.payMorePaymentOpen':
+    'Eine frühere Zahlung für diesen Anteil ist noch offen. Versuchen Sie es später erneut.',
+  'loans.payMoreRateLimited': 'Zu viele Zahlungsanfragen. Versuchen Sie es später erneut.',
+  'loans.payMoreUnavailable':
+    'Die Rückzahlung ist vorübergehend nicht verfügbar. Versuchen Sie es später erneut.',
+  'loans.payMoreRequirements': 'Vervollständigen Sie Ihre Kontoanforderungen, bevor Sie zahlen.',
+  'loans.payMoreRequestError':
+    'Diese Rückzahlung konnte nicht gestartet werden. Bitte versuchen Sie es erneut.',
+  'loans.endCollecting': 'Sammeln beenden',
+  'loans.endCollectingClosing': 'Das Sammeln wird beendet…',
+  'loans.endCollectingTitle': 'Sammeln beenden?',
+  'loans.endCollectingBody':
+    'Das ist endgültig. Um später mehr Geld zu sammeln, müssen Sie einen neuen Kredit erstellen.',
+  'loans.endCollectingConfirm': 'Sammeln endgültig beenden',
+  'loans.confirmCancel': 'Abbrechen',
+  'loans.confirmClose': 'Schließen',
+  'forum.payErrorCreditClosed':
+    'Dieser Kredit sammelt nicht mehr und kann kein weiteres Geld erhalten.',
   'forum.payAmountLabel': 'Betrag',
   'forum.payAmountPlaceholder': '21',
   'forum.payContinue': 'Weiter',
@@ -2981,6 +3090,16 @@ const de = {
   'view.activate': 'Aktivieren',
   'view.alreadyClaimed': 'Dieses Profil hat bereits einen Passkey. Melden Sie sich stattdessen an.',
   'view.claimError': 'Passkey konnte nicht eingerichtet werden. Bitte versuchen Sie es erneut.',
+  'fond.received': 'Eingenommen',
+  'fond.paidOut': 'Ausgezahlt',
+  'fond.fees': 'Gebühren',
+  'fond.balance': 'Kontostand',
+  'fond.balanceAsOf': 'Stand {date}',
+  'fond.balanceNotReported': 'noch nicht gemeldet',
+  'fond.payoutsPaid':
+    '{count, plural, one {# Grant-Auszahlung} other {# Grant-Auszahlungen}} ausgezahlt ({usd})',
+  'fond.missing': 'Dieser Fond konnte nicht gefunden werden.',
+  'fond.error': 'Fond konnte nicht geladen werden. Bitte versuchen Sie es erneut.',
   'forum.laws1':
     '21.gifts ist eine Spendenplattform: Geschenke sind frei, und niemand zahlt für ein Versprechen.',
   'forum.laws2': 'Spender sind rar — kein Betteln, kein Drama, kein Druck.',
@@ -2989,14 +3108,18 @@ const de = {
   'forum.lawsDismiss': 'Schließen',
   'forum.role.founder': 'Gründer',
   'forum.role.moderator': 'Moderator',
+  'forum.role.fond': 'Fond',
+  'forum.role.softwareDeveloper': 'Software-Entwickler',
   'forum.role.initiator': 'Initiator',
   'forum.role.verified': 'Verifiziert',
   'forum.role.founderHint': 'Diese Person hat 21.gifts gegründet.',
   'forum.role.moderatorHint': 'Diese Person hilft, das Wohnzimmer in Ordnung zu halten.',
+  'forum.role.fondHint': 'Dieses Konto zahlt die täglichen Geschenke aus dem 21.gifts-Fonds.',
+  'forum.role.softwareDeveloperHint':
+    'Diese Person entwickelt 21.gifts und moderiert das Wohnzimmer.',
   'forum.role.initiatorHint': 'Diese Person wurde als Initiator benannt.',
   'forum.role.verifiedHint':
     'Ein Moderator hat diese Person persönlich getroffen und bestätigt, dass sie echt ist.',
-  'forum.staff.softwareDeveloper': 'Software-Entwickler',
   'forum.shopTag': '#Shop',
   'forum.via.nostr': 'Extern',
   'forum.via.nostrHint':
@@ -3366,6 +3489,24 @@ const de = {
   'moderate.handbook.funding.ruleCap': 'Neue Mitglieder sind auf 1 USD pro Tag begrenzt.',
   'moderate.handbook.funding.principlesLead': 'Die 3 Prinzipien von 21.gifts:',
   'funding.heading': '21-Förderprogramm',
+  'funding.payoutToday.heading': 'Heutige Auszahlung',
+  'funding.payoutToday.paid': 'Auszahlung heute erfolgt.',
+  'funding.payoutToday.welcome': 'Ihr Willkommensgeschenk wurde heute ausgezahlt.',
+  'funding.payoutToday.due': 'Alle Bedingungen erfüllt. Die Auszahlung für heute ist unterwegs.',
+  'funding.payoutToday.paused':
+    'Alle Bedingungen erfüllt, aber die Auszahlungen sind gerade pausiert.',
+  'funding.payoutToday.verify':
+    'Eine Moderatorin oder ein Moderator muss Sie zuerst persönlich verifizieren.',
+  'funding.payoutToday.admission': 'Sie müssen zum Förderprogramm zugelassen werden.',
+  'funding.payoutToday.admissionPending':
+    'Sie müssen zum Förderprogramm zugelassen werden. Ihre Bewerbung wird geprüft.',
+  'funding.payoutToday.wallet': 'Richten Sie Ihre Wallet ein, um Auszahlungen zu erhalten.',
+  'funding.payoutToday.recoveryShare': 'Sichern Sie Ihr Konto ab, um Auszahlungen zu erhalten.',
+  'funding.payoutToday.shopPayment':
+    'Sie müssen heute oder gestern mindestens einen Kauf in einem 21.gifts-Shop getätigt haben.',
+  'funding.payoutToday.mediaPost':
+    'Sie müssen heute mindestens einen Beitrag mit Foto veröffentlicht haben.',
+  'funding.payoutToday.unavailable': 'Der Status der heutigen Auszahlung ist nicht verfügbar.',
   'funding.goals.link': 'Ziele',
   'funding.goals.heading': 'Ziele',
   'funding.goals.lead': 'Ziel erreicht: 10 aktive Shops. Das Förderprogramm ist wieder offen.',
@@ -3493,6 +3634,9 @@ const de = {
     'Verifiziert bedeutet, dass eine Moderatorin oder ein Moderator die Person im echten Leben getroffen und bestätigt hat, dass sie echt ist. Das ist kein Wallet-Nachweis.',
   'trustChain.explainModerator':
     'Um Moderatorin oder Moderator zu werden, schlägt eine bestehende Moderatorin oder ein bestehender Moderator die Person vor, und eine andere Moderatorin oder ein anderer Moderator bestätigt — oder eine Gründerperson ernennt sie direkt.',
+  'trustChain.explainFond': 'Fond: Zahlt die täglichen Geschenke aus dem 21.gifts-Fonds.',
+  'trustChain.explainSoftwareDeveloper':
+    'Eine Software-Entwicklerin oder ein Software-Entwickler baut 21.gifts und gehört zur Moderatorengruppe mit allen Moderationsrechten. Die tägliche Auszahlungsliste darf sie oder er nicht bearbeiten.',
   'trustChain.explainInitiator':
     'Ein Initiator wird direkt benannt. Es gibt keinen Vorschlagsschritt.',
   'trustChain.explainFounder':
@@ -4141,6 +4285,46 @@ const es = {
   'loans.plan': '{total} · {days} días · {perDay} al día',
   'loans.repaidOf': 'Devuelto {repaid} de {total}',
   'loans.dayOf': 'Día {day} de {days}',
+  'loans.payMoreTitle': 'Pagar más',
+  'loans.payMoreAmount': 'Importe ({unit})',
+  'loans.payMoreSats': '₿',
+  'loans.payMoreMax': 'Máx.',
+  'loans.payMorePay': 'Pagar este importe',
+  'loans.payMoreSending': 'Pagando más…',
+  'loans.payMoreInvalidBitcoin': 'Introduce un importe entero en ₿ mayor que cero.',
+  'loans.payMoreInvalidFiat': 'Introduce un importe mayor que cero con un máximo de dos decimales.',
+  'loans.payMoreAboveMax': 'Introduce como máximo {amount}.',
+  'loans.payMoreNoRate':
+    'Ahora no hay tipo de cambio de {code}, por lo que pagar más está desactivado.',
+  'loans.payMoreNoMaximum':
+    'Ahora no hay un máximo disponible para devolver en {code}, por lo que pagar más está desactivado.',
+  'loans.payMoreCollectingNotice': 'El primer pago finaliza la recaudación de este préstamo.',
+  'loans.payMoreConfirmTitle': '¿Pagar y finalizar la recaudación?',
+  'loans.payMoreConfirmBody':
+    'Este primer pago finaliza la recaudación de forma permanente. Para recaudar más dinero después, necesitarás un préstamo nuevo.',
+  'loans.payMoreConfirmAction': 'Pagar {amount} y finalizar la recaudación',
+  'loans.payMoreMaxChanged':
+    'El máximo disponible ha cambiado a {amount}. Se ajustó el importe; revísalo y vuelve a pagar.',
+  'loans.payMoreInvalid': 'Introduce un importe válido e inténtalo de nuevo.',
+  'loans.payMoreNothingDue': 'No queda nada por devolver.',
+  'loans.payMoreSunday': 'Los domingos no hay devoluciones. Inténtalo mañana.',
+  'loans.payMorePaymentOpen':
+    'Un pago anterior de esta parte sigue abierto. Inténtalo de nuevo más tarde.',
+  'loans.payMoreRateLimited': 'Demasiadas solicitudes de pago. Inténtalo de nuevo más tarde.',
+  'loans.payMoreUnavailable':
+    'La devolución no está disponible temporalmente. Inténtalo de nuevo más tarde.',
+  'loans.payMoreRequirements': 'Completa los requisitos de tu cuenta antes de pagar.',
+  'loans.payMoreRequestError': 'No se pudo iniciar esta devolución. Inténtalo de nuevo.',
+  'loans.endCollecting': 'Finalizar la recaudación',
+  'loans.endCollectingClosing': 'Finalizando la recaudación…',
+  'loans.endCollectingTitle': '¿Finalizar la recaudación?',
+  'loans.endCollectingBody':
+    'Esto es definitivo. Para recaudar más dinero después, tendrás que crear un préstamo nuevo.',
+  'loans.endCollectingConfirm': 'Finalizar la recaudación definitivamente',
+  'loans.confirmCancel': 'Cancelar',
+  'loans.confirmClose': 'Cerrar',
+  'forum.payErrorCreditClosed':
+    'Este préstamo ya no está recaudando y no puede recibir más dinero.',
   'forum.payAmountLabel': 'Importe',
   'forum.payAmountPlaceholder': '21',
   'forum.payContinue': 'Continuar',
@@ -4799,6 +4983,16 @@ const es = {
   'view.activate': 'Activar',
   'view.alreadyClaimed': 'Este perfil ya tiene una passkey. Inicia sesión en su lugar.',
   'view.claimError': 'No se pudo configurar la passkey. Inténtalo de nuevo.',
+  'fond.received': 'Recibido',
+  'fond.paidOut': 'Pagado',
+  'fond.fees': 'Comisiones',
+  'fond.balance': 'Saldo',
+  'fond.balanceAsOf': 'Datos del {date}',
+  'fond.balanceNotReported': 'aún sin datos',
+  'fond.payoutsPaid':
+    '{count, plural, one {# pago de beca realizado} other {# pagos de beca realizados}} ({usd})',
+  'fond.missing': 'No se pudo encontrar este Fondo.',
+  'fond.error': 'No se pudo cargar el Fondo. Inténtalo de nuevo.',
   'forum.laws1':
     '21.gifts es una plataforma de donaciones: los regalos son libres y nadie paga por una promesa.',
   'forum.laws2': 'Los donantes escasean — sin mendigar, sin drama, sin presión.',
@@ -4807,14 +5001,17 @@ const es = {
   'forum.lawsDismiss': 'Cerrar',
   'forum.role.founder': 'Fundador',
   'forum.role.moderator': 'Moderador',
+  'forum.role.fond': 'Fondo',
+  'forum.role.softwareDeveloper': 'Desarrollador de software',
   'forum.role.initiator': 'Iniciador',
   'forum.role.verified': 'Verificado',
   'forum.role.founderHint': 'Esta persona fundó 21.gifts.',
   'forum.role.moderatorHint': 'Esta persona ayuda a mantener el salón en orden.',
+  'forum.role.fondHint': 'Esta cuenta paga los regalos diarios del fondo de 21.gifts.',
+  'forum.role.softwareDeveloperHint': 'Esta persona desarrolla 21.gifts y modera el salón.',
   'forum.role.initiatorHint': 'Esta persona fue nombrada iniciadora.',
   'forum.role.verifiedHint':
     'Un moderador ha conocido a esta persona en la vida real y ha confirmado que es real.',
-  'forum.staff.softwareDeveloper': 'Desarrollador de software',
   'forum.shopTag': '#Shop',
   'forum.via.nostr': 'Externo',
   'forum.via.nostrHint':
@@ -5171,6 +5368,22 @@ const es = {
   'moderate.handbook.funding.ruleCap': 'Los miembros nuevos tienen un tope de 1 USD al día.',
   'moderate.handbook.funding.principlesLead': 'Los 3 principios de 21.gifts:',
   'funding.heading': 'Beca 21 gifts',
+  'funding.payoutToday.heading': 'Pago de hoy',
+  'funding.payoutToday.paid': 'El pago de hoy ya se realizó.',
+  'funding.payoutToday.welcome': 'Tu regalo de bienvenida se pagó hoy.',
+  'funding.payoutToday.due': 'Se cumplen todas las condiciones. El pago de hoy está en camino.',
+  'funding.payoutToday.paused':
+    'Se cumplen todas las condiciones, pero los pagos están pausados por ahora.',
+  'funding.payoutToday.verify': 'Primero, una persona moderadora debe verificarte en persona.',
+  'funding.payoutToday.admission': 'Debes ser admitida o admitido en el programa de becas.',
+  'funding.payoutToday.admissionPending':
+    'Debes ser admitida o admitido en el programa de becas. Tu solicitud está en revisión.',
+  'funding.payoutToday.wallet': 'Configura tu wallet para recibir pagos.',
+  'funding.payoutToday.recoveryShare': 'Protege tu cuenta para recibir pagos.',
+  'funding.payoutToday.shopPayment':
+    'Debes haber hecho al menos una compra en una tienda 21.gifts hoy o ayer.',
+  'funding.payoutToday.mediaPost': 'Debes publicar al menos una nota con una foto hoy.',
+  'funding.payoutToday.unavailable': 'El estado del pago de hoy no está disponible.',
   'funding.goals.link': 'Objetivos',
   'funding.goals.heading': 'Objetivos',
   'funding.goals.lead':
@@ -5293,6 +5506,9 @@ const es = {
     'Verificado significa que una persona moderadora conoció a esta persona en la vida real y confirmó que es real. No es una prueba de monedero.',
   'trustChain.explainModerator':
     'Para ser moderadora o moderador, una persona moderadora existente propone a la persona y otra distinta confirma — o una persona fundadora la nombra directamente.',
+  'trustChain.explainFond': 'Fondo: Paga los regalos diarios del fondo de 21.gifts.',
+  'trustChain.explainSoftwareDeveloper':
+    'Una persona desarrolladora de software construye 21.gifts y está en el grupo de moderación, con todos los permisos de moderación. No puede editar la lista diaria de pagos.',
   'trustChain.explainInitiator':
     'Un iniciador se nombra directamente. No hay un paso de propuesta.',
   'trustChain.explainFounder':
@@ -5943,6 +6159,47 @@ const fil = {
   'loans.plan': '{total} · {days} araw · {perDay} bawat araw',
   'loans.repaidOf': 'Nabayaran ang {repaid} sa {total}',
   'loans.dayOf': 'Araw {day} sa {days}',
+  'loans.payMoreTitle': 'Magbayad pa',
+  'loans.payMoreAmount': 'Halaga ({unit})',
+  'loans.payMoreSats': '₿',
+  'loans.payMoreMax': 'Max',
+  'loans.payMorePay': 'Bayaran ang halagang ito',
+  'loans.payMoreSending': 'Nagbabayad pa…',
+  'loans.payMoreInvalidBitcoin': 'Maglagay ng buong halagang ₿ na higit sa zero.',
+  'loans.payMoreInvalidFiat':
+    'Maglagay ng halagang higit sa zero na may hanggang dalawang decimal.',
+  'loans.payMoreAboveMax': 'Maglagay ng hindi hihigit sa {amount}.',
+  'loans.payMoreNoRate':
+    'Walang {code} exchange rate ngayon, kaya naka-disable ang dagdag na pagbabayad.',
+  'loans.payMoreNoMaximum':
+    'Walang available na maximum para sa {code} repayment ngayon, kaya naka-disable ang dagdag na pagbabayad.',
+  'loans.payMoreCollectingNotice':
+    'Tatapusin ng unang bayad ang pangongolekta para sa utang na ito.',
+  'loans.payMoreConfirmTitle': 'Magbayad at tapusin ang pangongolekta?',
+  'loans.payMoreConfirmBody':
+    'Permanenteng tatapusin ng unang bayad na ito ang pangongolekta. Kailangan ng bagong utang para mangolekta pa ng pera sa hinaharap.',
+  'loans.payMoreConfirmAction': 'Bayaran ang {amount} at tapusin ang pangongolekta',
+  'loans.payMoreMaxChanged':
+    'Nagbago sa {amount} ang available na maximum. Inayos ang halaga; suriin ito at magbayad muli.',
+  'loans.payMoreInvalid': 'Maglagay ng wastong halaga at subukan muli.',
+  'loans.payMoreNothingDue': 'Wala nang natitirang babayaran.',
+  'loans.payMoreSunday': 'Walang pagbabayad tuwing Linggo. Subukan muli bukas.',
+  'loans.payMorePaymentOpen':
+    'Bukas pa ang naunang bayad para sa bahaging ito. Subukan muli mamaya.',
+  'loans.payMoreRateLimited': 'Masyadong maraming payment request. Subukan muli mamaya.',
+  'loans.payMoreUnavailable': 'Pansamantalang hindi available ang pagbabayad. Subukan muli mamaya.',
+  'loans.payMoreRequirements': 'Kumpletuhin ang mga kailangan sa account bago magbayad.',
+  'loans.payMoreRequestError': 'Hindi masimulan ang pagbabayad na ito. Pakisubukan muli.',
+  'loans.endCollecting': 'Tapusin ang pangongolekta',
+  'loans.endCollectingClosing': 'Tinatapos ang pangongolekta…',
+  'loans.endCollectingTitle': 'Tapusin ang pangongolekta?',
+  'loans.endCollectingBody':
+    'Pinal na ito. Kailangan mong gumawa ng bagong utang para mangolekta pa ng pera sa hinaharap.',
+  'loans.endCollectingConfirm': 'Permanenteng tapusin ang pangongolekta',
+  'loans.confirmCancel': 'Kanselahin',
+  'loans.confirmClose': 'Isara',
+  'forum.payErrorCreditClosed':
+    'Hindi na nangongolekta ang utang na ito at hindi na ito makakatanggap ng pera.',
   'forum.payAmountLabel': 'Halaga',
   'forum.payAmountPlaceholder': '21',
   'forum.payContinue': 'Magpatuloy',
@@ -6602,6 +6859,16 @@ const fil = {
   'view.activate': 'I-activate',
   'view.alreadyClaimed': 'May passkey na ang profile na ito. Mag-log in na lang.',
   'view.claimError': 'Hindi ma-set up ang passkey. Subukan ulit.',
+  'fond.received': 'Natanggap',
+  'fond.paidOut': 'Naibayad',
+  'fond.fees': 'Mga bayad',
+  'fond.balance': 'Balanse',
+  'fond.balanceAsOf': 'Noong {date}',
+  'fond.balanceNotReported': 'wala pang ulat',
+  'fond.payoutsPaid':
+    '{count, plural, one {# grant payout na bayad} other {# grant payouts na bayad}} ({usd})',
+  'fond.missing': 'Hindi mahanap ang Fond na ito.',
+  'fond.error': 'Hindi ma-load ang Fond. Subukan ulit.',
   'forum.laws1':
     'Donation platform ang 21.gifts: libre ang mga regalo, at walang nagbabayad para sa pangako.',
   'forum.laws2': 'Bihira ang mga donor — walang panghihingi, walang drama, walang pressure.',
@@ -6610,14 +6877,19 @@ const fil = {
   'forum.lawsDismiss': 'Isara',
   'forum.role.founder': 'Tagapagtatag',
   'forum.role.moderator': 'Moderator',
+  'forum.role.fond': 'Fond',
+  'forum.role.softwareDeveloper': 'Developer ng software',
   'forum.role.initiator': 'Initiator',
   'forum.role.verified': 'Verified',
   'forum.role.founderHint': 'Ang taong ito ang nagtatag ng 21.gifts.',
   'forum.role.moderatorHint': 'Tumutulong ang taong ito na panatilihing maayos ang living room.',
+  'forum.role.fondHint':
+    'Binabayaran ng account na ito ang mga araw-araw na regalo mula sa pondo ng 21.gifts.',
+  'forum.role.softwareDeveloperHint':
+    'Ang taong ito ang gumagawa ng 21.gifts at nagmo-moderate ng living room.',
   'forum.role.initiatorHint': 'Ang taong ito ay pinangalanang Initiator.',
   'forum.role.verifiedHint':
     'Personal na nakilala ng isang moderator ang taong ito at kinumpirmang totoo siya.',
-  'forum.staff.softwareDeveloper': 'Developer ng software',
   'forum.shopTag': '#Shop',
   'forum.via.nostr': 'Panlabas',
   'forum.via.nostrHint':
@@ -6979,6 +7251,24 @@ const fil = {
   'moderate.handbook.funding.ruleCap': 'Ang mga bagong miyembro ay naka-cap sa 1 USD bawat araw.',
   'moderate.handbook.funding.principlesLead': 'Ang 3 prinsipyo ng 21.gifts:',
   'funding.heading': '21 gifts grant',
+  'funding.payoutToday.heading': 'Payout ngayong araw',
+  'funding.payoutToday.paid': 'Nagawa na ang payout ngayong araw.',
+  'funding.payoutToday.welcome': 'Naibigay ngayong araw ang welcome gift mo.',
+  'funding.payoutToday.due':
+    'Kumpleto na ang lahat ng kondisyon. Papunta na ang payout ngayong araw.',
+  'funding.payoutToday.paused':
+    'Kumpleto na ang lahat ng kondisyon, pero pansamantalang naka-pause ang mga payout.',
+  'funding.payoutToday.verify': 'Kailangan ka munang personal na i-verify ng isang moderator.',
+  'funding.payoutToday.admission': 'Kailangan kang ma-admit sa grant program.',
+  'funding.payoutToday.admissionPending':
+    'Kailangan kang ma-admit sa grant program. Sinusuri ang iyong aplikasyon.',
+  'funding.payoutToday.wallet': 'I-set up ang wallet mo para makatanggap ng mga payout.',
+  'funding.payoutToday.recoveryShare': 'I-secure ang account mo para makatanggap ng mga payout.',
+  'funding.payoutToday.shopPayment':
+    'Kailangan na nakabili ka nang kahit isang beses sa isang 21.gifts shop ngayong araw o kahapon.',
+  'funding.payoutToday.mediaPost':
+    'Kailangan kang mag-post ng kahit isang nota na may larawan ngayong araw.',
+  'funding.payoutToday.unavailable': 'Hindi available ang status ng payout ngayong araw.',
   'funding.goals.link': 'Mga layunin',
   'funding.goals.heading': 'Mga layunin',
   'funding.goals.lead':
@@ -7100,6 +7390,10 @@ const fil = {
     'Ang Verified ay nangangahulugang isang moderator ang nakilala ang tao sa totoo at kinumpirmang totoo siya. Hindi ito patunay ng wallet.',
   'trustChain.explainModerator':
     'Para maging moderator, nagmumungkahi ang isang kasalukuyang moderator at ibang moderator ang kumukumpirma — o diretsong itinatalaga sila ng founder.',
+  'trustChain.explainFond':
+    'Fond: Nagbabayad ng mga araw-araw na regalo mula sa pondo ng 21.gifts.',
+  'trustChain.explainSoftwareDeveloper':
+    'Ang developer ng software ay gumagawa ng 21.gifts at kabilang sa grupo ng mga moderator, kasama ang lahat ng pahintulot ng moderator. Hindi niya maaaring i-edit ang pang-araw-araw na listahan ng bayad.',
   'trustChain.explainInitiator':
     'Ang Initiator ay direktang pinangalanan. Walang hakbang ng panukala.',
   'trustChain.explainFounder':

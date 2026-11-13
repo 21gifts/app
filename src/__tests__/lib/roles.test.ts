@@ -7,18 +7,27 @@ import {
   isReplyPaymentExempt,
   roleAtLeast,
   roleRank,
-  verifiedChipHiddenByStaffTag,
   type Role,
 } from '@/lib/roles';
 
 describe('roleRank', () => {
-  it('ranks basis through founder as 0 through 3', () => {
+  it('ranks basis through founder as 0 through 6', () => {
     expect(roleRank('basis')).toBe(0);
     expect(roleRank('verified')).toBe(1);
     expect(roleRank('moderator')).toBe(2);
-    expect(roleRank('initiator')).toBe(2);
-    expect(roleRank('founder')).toBe(3);
-    expect(ROLE_ORDER).toEqual(['basis', 'verified', 'moderator', 'initiator', 'founder']);
+    expect(roleRank('fond')).toBe(3);
+    expect(roleRank('software_developer')).toBe(4);
+    expect(roleRank('initiator')).toBe(5);
+    expect(roleRank('founder')).toBe(6);
+    expect(ROLE_ORDER).toEqual([
+      'basis',
+      'verified',
+      'moderator',
+      'fond',
+      'software_developer',
+      'initiator',
+      'founder',
+    ]);
   });
 });
 
@@ -27,26 +36,50 @@ describe('roleAtLeast', () => {
     ['basis', 'basis', true],
     ['basis', 'verified', false],
     ['basis', 'moderator', false],
+    ['basis', 'fond', false],
+    ['basis', 'software_developer', false],
     ['basis', 'initiator', false],
     ['basis', 'founder', false],
     ['verified', 'basis', true],
     ['verified', 'verified', true],
     ['verified', 'moderator', false],
+    ['verified', 'fond', false],
+    ['verified', 'software_developer', false],
     ['verified', 'initiator', false],
     ['verified', 'founder', false],
     ['moderator', 'basis', true],
     ['moderator', 'verified', true],
     ['moderator', 'moderator', true],
-    ['moderator', 'initiator', true],
+    ['moderator', 'fond', false],
+    ['moderator', 'software_developer', false],
+    ['moderator', 'initiator', false],
     ['moderator', 'founder', false],
+    ['fond', 'basis', true],
+    ['fond', 'verified', true],
+    ['fond', 'moderator', true],
+    ['fond', 'fond', true],
+    ['fond', 'software_developer', false],
+    ['fond', 'initiator', false],
+    ['fond', 'founder', false],
+    ['software_developer', 'basis', true],
+    ['software_developer', 'verified', true],
+    ['software_developer', 'moderator', true],
+    ['software_developer', 'fond', true],
+    ['software_developer', 'software_developer', true],
+    ['software_developer', 'initiator', false],
+    ['software_developer', 'founder', false],
     ['initiator', 'basis', true],
     ['initiator', 'verified', true],
     ['initiator', 'moderator', true],
+    ['initiator', 'fond', true],
+    ['initiator', 'software_developer', true],
     ['initiator', 'initiator', true],
     ['initiator', 'founder', false],
     ['founder', 'basis', true],
     ['founder', 'verified', true],
     ['founder', 'moderator', true],
+    ['founder', 'fond', true],
+    ['founder', 'software_developer', true],
     ['founder', 'initiator', true],
     ['founder', 'founder', true],
   ] as const)('roleAtLeast(%s, %s) is %s', (role, min, expected) => {
@@ -62,9 +95,11 @@ describe('roleAtLeast', () => {
 });
 
 describe('canEditDailyPayoutRoster', () => {
-  it('is true only for initiator and founder', () => {
+  it('is true only for initiator and founder, not fond or software developer', () => {
     expect(canEditDailyPayoutRoster('initiator')).toBe(true);
     expect(canEditDailyPayoutRoster('founder')).toBe(true);
+    expect(canEditDailyPayoutRoster('software_developer')).toBe(false);
+    expect(canEditDailyPayoutRoster('fond')).toBe(false);
     expect(canEditDailyPayoutRoster('moderator')).toBe(false);
     expect(canEditDailyPayoutRoster('verified')).toBe(false);
     expect(canEditDailyPayoutRoster('basis')).toBe(false);
@@ -116,7 +151,7 @@ describe('isReplyPaymentExempt', () => {
     expect(isReplyPaymentExempt(null, undefined)).toBe(false);
   });
 
-  it.each(['verified', 'moderator', 'initiator', 'founder'] as const)(
+  it.each(['verified', 'moderator', 'fond', 'software_developer', 'initiator', 'founder'] as const)(
     'is true for a %s account regardless of parent author',
     (role) => {
       expect(isReplyPaymentExempt(account(role), undefined)).toBe(true);
@@ -132,29 +167,5 @@ describe('isReplyPaymentExempt', () => {
   it('is false for a basis account that is not the parent author', () => {
     expect(isReplyPaymentExempt(account('basis'), 'other')).toBe(false);
     expect(isReplyPaymentExempt(account('basis'), undefined)).toBe(false);
-  });
-});
-
-describe('verifiedChipHiddenByStaffTag', () => {
-  it('is true for verified with the software_developer staff tag', () => {
-    expect(verifiedChipHiddenByStaffTag('verified', 'software_developer')).toBe(true);
-  });
-
-  it.each([undefined, null, ''] as const)(
-    'is false for verified when the staff tag is %j',
-    (staffTag) => {
-      expect(verifiedChipHiddenByStaffTag('verified', staffTag)).toBe(false);
-    },
-  );
-
-  it.each(['basis', 'moderator', 'initiator', 'founder'] as const)(
-    'is false for %s with the software_developer staff tag',
-    (role) => {
-      expect(verifiedChipHiddenByStaffTag(role, 'software_developer')).toBe(false);
-    },
-  );
-
-  it('is false for moderator when the staff tag is omitted', () => {
-    expect(verifiedChipHiddenByStaffTag('moderator')).toBe(false);
   });
 });
