@@ -18,7 +18,7 @@ import {
   type RepaymentWaiting,
 } from '@/lib/api';
 import { creditSmallestUnits } from '@/lib/credit-plan';
-import { parseLoanAmount } from '@/lib/loan-repay';
+import { isCollecting, parseLoanAmount } from '@/lib/loan-repay';
 import { MissingRequirementsError } from '@/lib/missing-requirements';
 import { visualPin } from '@/lib/visual-pin';
 import { reportPaymentFailure } from '@/lib/wallet/payment-failure';
@@ -1246,13 +1246,7 @@ export function useLoanRepay(options: {
   const closeCollecting = useCallback(
     (loan: MyLoan): void => {
       const session = useAuthStore.getState().session;
-      if (
-        pinned ||
-        session === null ||
-        loan.fundedAt !== null ||
-        (loan.closedAt !== null && loan.closedAt !== undefined) ||
-        actionPending.current
-      ) {
+      if (pinned || session === null || !isCollecting(loan) || actionPending.current) {
         return;
       }
       const run = ++generation.current;

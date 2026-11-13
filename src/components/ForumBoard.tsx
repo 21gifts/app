@@ -102,6 +102,7 @@ import { forumVideoSrc, type ForumVideoPayload } from '@/lib/forum-video';
 import { shortResourceUrl } from '@/lib/short-link';
 import { formatForumTime } from '@/lib/forum-time';
 import type { HeartTipView } from '@/lib/heart-tip';
+import { isCollecting } from '@/lib/loan-repay';
 import { ForumRoleHint, ForumRoleTag, forumTaggedRole } from '@/components/ForumRoleTag';
 import { authorCannotReceive, isOwnNote } from '@/lib/roles';
 import { useFiatPreference } from '@/components/FiatPreferenceProvider';
@@ -1580,6 +1581,12 @@ export function ForumBoard({
                   full: message.sats >= message.goalSats,
                 }
               : null;
+          const loanCollecting =
+            loanOfCard !== null &&
+            isCollecting({
+              fundedAt: loanOfCard.full ? 'funded' : null,
+              ...(message.goalClosedAt === undefined ? {} : { closedAt: message.goalClosedAt }),
+            });
           const loanClosed = message.goalRepayable === true && message.goalClosedAt !== undefined;
           const replyPayLocked =
             (payInvoice !== null && payMessageId === message.id && payHost !== 'composer') ||
@@ -1951,11 +1958,7 @@ export function ForumBoard({
                       className="text-xs font-medium text-app-fg underline"
                       onClick={stopCardToggle}
                     >
-                      {t(
-                        message.sats < message.goalSats && message.goalClosedAt === undefined
-                          ? 'forum.repayCollectingOpen'
-                          : 'forum.repayOpen',
-                      )}
+                      {t(loanCollecting ? 'forum.repayCollectingOpen' : 'forum.repayOpen')}
                     </Link>
                   ) : null}
                   {message.parentId !== undefined &&

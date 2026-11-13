@@ -177,13 +177,19 @@ describe('free loan amount helpers', () => {
     });
   });
 
-  it('collects only before funding and before an explicit close', () => {
+  it('treats an omitted closedAt like null while the loan is unfunded', () => {
     expect(isCollecting(loan({ fundedAt: null, closedAt: null }))).toBe(true);
     const withoutClosedAt = loan({ fundedAt: null });
     delete withoutClosedAt.closedAt;
     expect(isCollecting(withoutClosedAt)).toBe(true);
-    expect(isCollecting(loan({ fundedAt: 'funded', closedAt: null }))).toBe(false);
+  });
+
+  it('does not collect an explicitly closed unfunded loan', () => {
     expect(isCollecting(loan({ fundedAt: null, closedAt: 'closed' }))).toBe(false);
+  });
+
+  it('does not collect a funded loan', () => {
+    expect(isCollecting(loan({ fundedAt: 'funded', closedAt: null }))).toBe(false);
   });
 });
 

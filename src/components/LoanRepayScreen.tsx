@@ -25,6 +25,7 @@ import {
   definedFiatSum,
   dueShares,
   fittingPrefix,
+  isCollecting,
   summarizeLoans,
   validatedRepaymentPayment,
   type DueShare,
@@ -910,7 +911,7 @@ export function LoanRepayScreen(): ReactElement {
                         perDay: planPerDay,
                       })}
                 </p>
-                {loan.fundedAt === null ? (
+                {isCollecting(loan) ? (
                   <p className="mt-2 text-sm text-app-muted">{t('welcome.loanCollecting')}</p>
                 ) : (
                   <>

@@ -133,8 +133,8 @@ export function loanMaxInput(loan: MyLoan): string | null {
  * @param loan - Loan returned by `GET /me/loans`.
  * @returns True only before both funding and an explicit close.
  */
-export function isCollecting(loan: MyLoan): boolean {
-  return loan.fundedAt === null && (loan.closedAt === null || loan.closedAt === undefined);
+export function isCollecting(loan: Pick<MyLoan, 'fundedAt' | 'closedAt'>): boolean {
+  return loan.fundedAt === null && (loan.closedAt ?? null) === null;
 }
 
 /** Combined state of all of the member's loans, for the loans card, the Menu row and the screen. */

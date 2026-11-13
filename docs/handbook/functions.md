@@ -7620,8 +7620,8 @@ The class exists so the composer can tell a refused free first post from any oth
 
 - **Purpose:** Identifies asks that are still accepting contributions.
 - **Inputs:** One `MyLoan`.
-- **Returns / side effects:** Returns true exactly when `fundedAt === null && closedAt === null`; a manually closed but unfunded loan remains repayable and is not collecting. It is pure.
-- **Used by:** The repayment screen's first-payment notice and end-collecting controls.
+- **Returns / side effects:** Returns true exactly when `fundedAt` is null and `closedAt` is null or omitted; a manually closed but unfunded loan remains repayable and is not collecting. It is pure.
+- **Used by:** `LoansCard`, `LoanRepayScreen`, `ForumBoard`, `LoanPayMore`, and `useLoanRepay`.
 
 ## Function: summarizeLoans
 
