@@ -70,6 +70,11 @@ function shareKey(share: Pick<DueShare, 'messageId' | 'dayIndex' | 'accountId'>)
 
 /** POST /messages/:id/repayment/due returns at most 60 bills per call. */
 const DUE_BILLS_PER_REQUEST = 60;
+type TopUpOwner = 'due' | `prepay:${string}`;
+
+function prepayTopUpOwner(messageId: string): TopUpOwner {
+  return `prepay:${messageId}`;
+}
 
 /**
  * All-loans repayment screen: live due totals, recipients, one-tap wallet payment,
@@ -105,6 +110,7 @@ export function LoanRepayScreen(): ReactElement {
   const [sendingAmounts, setSendingAmounts] = useState<
     { code: MyLoan['goalCurrency']; amount: string | null }[]
   >([]);
+  const [topUpOwner, setTopUpOwner] = useState<TopUpOwner | null>(null);
   const whoId = useId();
 
   const reloadAfterPayment = useCallback(async (): Promise<MyLoans | null> => {
@@ -337,7 +343,12 @@ export function LoanRepayScreen(): ReactElement {
   };
 
   const dueRun = repay.activeAction?.kind === 'due';
-  const dueOwnsTopUp = repay.activeAction === null || dueRun;
+  const activeTopUpOwner =
+    topUpOwner ??
+    (repay.activeAction?.kind === 'prepay'
+      ? prepayTopUpOwner(repay.activeAction.messageId)
+      : 'due');
+  const dueOwnsTopUp = activeTopUpOwner === 'due';
   const partial =
     dueRun &&
     repay.sentSats > 0 &&
@@ -502,7 +513,10 @@ export function LoanRepayScreen(): ReactElement {
               variant="primary"
               size="lg"
               disabled={otherActionBusy}
-              onClick={repay.openTopUp}
+              onClick={() => {
+                setTopUpOwner('due');
+                repay.openTopUp();
+              }}
             >
               {t('loans.topUp')}
             </Button>
@@ -915,10 +929,15 @@ export function LoanRepayScreen(): ReactElement {
                   sundayRest={loans.sundayRest}
                   rateDay={rateDay}
                   showWalletStatus={payable === 0}
-                  topUpOpen={repay.topUpOpen}
+                  topUpOpen={
+                    repay.topUpOpen && activeTopUpOwner === prepayTopUpOwner(loan.messageId)
+                  }
                   username={account?.username ?? null}
                   formatSats={holding}
-                  onOpenTopUp={repay.openTopUp}
+                  onOpenTopUp={() => {
+                    setTopUpOwner(prepayTopUpOwner(loan.messageId));
+                    repay.openTopUp();
+                  }}
                   onPay={(item, amountText) => {
                     setPaidLoans(loans.loans);
                     repay.prepay(item, amountText);

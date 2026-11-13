@@ -892,6 +892,38 @@ describe('LoanRepayScreen', () => {
     expect(screen.getByText(/Still missing ₿500 · \$0.50/)).toBeTruthy();
   });
 
+  it('transfers an open pay-more top-up to due after the draft is edited', () => {
+    const data = {
+      sundayRest: false,
+      loans: [loan({ due: { ...loan().due, payableSats: 3_000 } })],
+    };
+    const state = repay({ balanceSats: 500 });
+    const view = show(data, state);
+    const input = screen.getByLabelText('Amount (₿)');
+    fireEvent.change(input, { target: { value: '1000' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Pay this amount' }));
+
+    const shortfallState = repay({
+      activeAction: { kind: 'prepay', messageId: 'loan-1' },
+      balanceSats: 500,
+      missingSats: 500,
+    });
+    vi.mocked(useLoanRepay).mockReturnValue(shortfallState);
+    view.rerender(<LoanRepayScreen />);
+    fireEvent.click(screen.getAllByRole('button', { name: 'Top up your wallet' })[1]!);
+
+    vi.mocked(useLoanRepay).mockReturnValue({ ...shortfallState, topUpOpen: true });
+    view.rerender(<LoanRepayScreen />);
+    expect(screen.getByTestId('own-address').textContent).toBe('ada:true');
+
+    fireEvent.change(input, { target: { value: '400' } });
+    expect(screen.queryByTestId('own-address')).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Top up your wallet' }));
+
+    expect(screen.getByTestId('own-address').textContent).toBe('ada:true');
+    expect(shortfallState.openTopUp).toHaveBeenCalledTimes(2);
+  });
+
   it('names a waiting fiat share by its stored figure', () => {
     vi.mocked(getRepayment).mockResolvedValue(null);
     show({
