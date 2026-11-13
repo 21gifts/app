@@ -40,28 +40,23 @@ function mergeOwnerFields(current: Account, owner: Account): Account {
 
 /**
  * Refreshes a sparse signed-in account from `GET /me` without blocking its
- * caller. A session change, an invalidated caller, or a newer applied answer
- * drops the answer. Every applied answer merges only owner-only viewer and
- * payout fields into the account currently in the store. A missing local
+ * caller. A session change, a missing stored account, or a newer applied
+ * answer drops the answer. Every applied answer merges only owner-only viewer
+ * and payout fields into the account currently in the store. A missing local
  * funding object takes the answer's whole funding object; when both exist,
  * only `payoutToday` and `shopPaymentDue` are copied; a null or missing answer
  * funding object leaves the local one unchanged. All locally writable fields
  * therefore survive requests that overlap local changes.
  *
  * @param sessionToken - The session whose owner account should be loaded.
- * @param isCurrent - Optional component/flow lifetime check.
  */
-export function refreshOwnerAccount(
-  sessionToken: string,
-  isCurrent: () => boolean = () => true,
-): void {
+export function refreshOwnerAccount(sessionToken: string): void {
   const refresh = ++latestRefresh;
   void fetchMe(sessionToken).then(
     (owner) => {
       const auth = useAuthStore.getState();
       if (
         owner === null ||
-        !isCurrent() ||
         auth.session !== sessionToken ||
         refresh < lastAppliedRefresh ||
         auth.account === null

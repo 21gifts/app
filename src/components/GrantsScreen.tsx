@@ -45,11 +45,7 @@ export function GrantsScreen(): ReactElement | null {
     if (session === null) {
       return;
     }
-    let mounted = true;
-    refreshOwnerAccount(session, () => mounted);
-    return () => {
-      mounted = false;
-    };
+    refreshOwnerAccount(session);
   }, [session]);
 
   useEffect(() => {

@@ -238,7 +238,7 @@ describe('GrantsScreen', () => {
     });
   });
 
-  it('drops a grants refresh that answers after unmount', async () => {
+  it('applies owner fields after unmount while keeping the local name', async () => {
     let resolveMe!: (next: Account | null) => void;
     meMock.mockReturnValueOnce(
       new Promise<Account | null>((resolve) => {
@@ -250,10 +250,29 @@ describe('GrantsScreen', () => {
       expect(meMock).toHaveBeenCalledWith('sess');
     });
     rendered.unmount();
-    await act(async () => {
-      resolveMe({ ...account, name: 'Late owner answer' });
+    act(() => {
+      useAuthStore.getState().setAccount({ ...account, name: 'Local name' });
     });
-    expect(useAuthStore.getState().account).toBe(account);
+    await act(async () => {
+      resolveMe({
+        ...account,
+        name: 'Late owner answer',
+        walletViewerPublicKey: `02${'c'.repeat(64)}`,
+        funding: {
+          ...account.funding!,
+          payoutToday: { state: 'paid', reason: null },
+          shopPaymentDue: true,
+        },
+      });
+    });
+    expect(useAuthStore.getState().account).toMatchObject({
+      name: 'Local name',
+      walletViewerPublicKey: `02${'c'.repeat(64)}`,
+      funding: {
+        payoutToday: { state: 'paid', reason: null },
+        shopPaymentDue: true,
+      },
+    });
   });
 
   it.each([

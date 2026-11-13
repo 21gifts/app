@@ -108,23 +108,6 @@ it('applies an older answer while a newer refresh that later returns null is pen
   expect(useAuthStore.getState().account?.walletViewerPublicKey).toBe(`02${'c'.repeat(64)}`);
 });
 
-it('applies an older answer when a newer caller later ignores its answer', async () => {
-  const first = deferred<Account | null>();
-  const second = deferred<Account | null>();
-  let secondCurrent = true;
-  vi.mocked(fetchMe).mockReturnValueOnce(first.promise).mockReturnValueOnce(second.promise);
-
-  refreshOwnerAccount('sess');
-  refreshOwnerAccount('sess', () => secondCurrent);
-  first.resolve({ ...account, walletViewerPublicKey: `02${'c'.repeat(64)}` });
-  await settleAnswers();
-  secondCurrent = false;
-  second.resolve({ ...account, walletViewerPublicKey: `03${'b'.repeat(64)}` });
-  await settleAnswers();
-
-  expect(useAuthStore.getState().account?.walletViewerPublicKey).toBe(`02${'c'.repeat(64)}`);
-});
-
 it('keeps stored funding and copies only its owner-only fields when both accounts have it', async () => {
   const owner = deferred<Account | null>();
   vi.mocked(fetchMe).mockReturnValueOnce(owner.promise);
