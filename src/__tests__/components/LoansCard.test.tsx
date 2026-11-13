@@ -278,6 +278,29 @@ describe('LoansCard', () => {
     ).toBeTruthy();
   });
 
+  it('keeps the develop nothing-due texts for two fully priced funded loans', () => {
+    show({
+      sundayRest: false,
+      loans: [
+        phpLoan({
+          next: { dueOn: '2026-11-16', sats: 3_857, amount: '199.99' },
+        }),
+        phpLoan({
+          messageId: 'loan-b',
+          text: 'Small loan for school books for my daughter.',
+          next: null,
+        }),
+      ],
+    });
+
+    const nothingDue = screen.getByText('Nothing due today');
+    expect(nothingDue.closest('p')?.querySelector('svg')).toBeTruthy();
+    expect(screen.getByText("Next: Monday, November 16, ₱199.99 · ₿3'857")).toBeTruthy();
+    expect(screen.queryByText('Nothing to send now')).toBeNull();
+    expect(screen.queryByText(/waiting for/)).toBeNull();
+    expect(screen.queryByText(/₿0/)).toBeNull();
+  });
+
   it('keeps a bitcoin and a PHP loan as separate bars', () => {
     show({
       sundayRest: false,
@@ -752,7 +775,7 @@ describe('LoansCard', () => {
     ).toBeTruthy();
   });
 
-  it('shows priced waiting sats even when the summary has no waiting people', () => {
+  it('omits priced waiting sats when no lender is waiting', () => {
     show({
       sundayRest: false,
       loans: [
@@ -780,9 +803,7 @@ describe('LoansCard', () => {
     });
     expect(screen.getByText('Due today')).toBeTruthy();
     expect(screen.getByText("₱30.00 · ₿1'000")).toBeTruthy();
-    expect(
-      screen.getByText('₱11.20 · ₿200 is waiting for 0 lenders to set up their wallets'),
-    ).toBeTruthy();
+    expect(screen.queryByText(/waiting for/)).toBeNull();
   });
 
   it('uses the singular waiting sentence and omits a missing next line', () => {
@@ -807,6 +828,8 @@ describe('LoansCard', () => {
     expect(
       screen.getByText('₿200 · $0.20 is waiting for a lender to set up their wallet'),
     ).toBeTruthy();
+    expect(screen.getByText('Nothing to send now')).toBeTruthy();
+    expect(screen.queryByText('Nothing due today')).toBeNull();
     expect(screen.queryByText(/^Next:/)).toBeNull();
   });
 });

@@ -1753,20 +1753,24 @@ describe('LoanRepayScreen', () => {
     expect(screen.getByText(/waits for 2 lenders/)).toBeTruthy();
   });
 
-  it('shows priced waiting sats even when the summary has no waiting people', () => {
+  it('ignores priced waiting sats when no lender is waiting', () => {
     show({
       sundayRest: false,
       loans: [
         loan({
           due: {
             ...loan().due,
+            payableSats: 0,
+            payablePeople: 0,
             waitingSats: 200,
             waitingPeople: 0,
           },
         }),
       ],
     });
-    expect(screen.getByText(/₿200 · \$0\.20 waits for 0 lenders/)).toBeTruthy();
+    expect(screen.getByText('Nothing due today')).toBeTruthy();
+    expect(screen.queryByText('Nothing to send now')).toBeNull();
+    expect(screen.queryByText(/waits for 0 lenders/)).toBeNull();
   });
 
   it.each([
@@ -1975,6 +1979,41 @@ describe('LoanRepayScreen', () => {
     expect(await screen.findByText(/Next: tomorrow, ₱2\.00 · ₿40 to 1 person/)).toBeTruthy();
     expect(screen.getByText(/Next: tomorrow, ₱3\.00 to 1 person/)).toBeTruthy();
     expect(screen.queryByText(/null/)).toBeNull();
+  });
+
+  it('omits a same-day zero-sat loan from the unpriced next summary', async () => {
+    vi.mocked(getRepayment).mockImplementation((id) =>
+      Promise.resolve(
+        ledger({
+          repayments: [
+            {
+              ...ledger().repayments[1]!,
+              accountId: id === 'php-next-unpriced' ? 'giver-1' : 'giver-2',
+            },
+          ],
+        }),
+      ),
+    );
+    const clearDue = { ...loan().due, payableSats: 0, payablePeople: 0 };
+    show({
+      sundayRest: false,
+      loans: [
+        loan({
+          messageId: 'php-next-unpriced',
+          goalCurrency: 'PHP',
+          due: clearDue,
+          next: { dueOn: '2026-10-11', amount: '3.00', sats: null },
+        }),
+        loan({
+          messageId: 'php-next-zero',
+          goalCurrency: 'PHP',
+          due: clearDue,
+          next: { dueOn: '2026-10-11', amount: '0.00', sats: 0 },
+        }),
+      ],
+    });
+    expect(await screen.findByText(/Next: tomorrow, ₱3\.00 to 1 person/)).toBeTruthy();
+    expect(screen.queryByText(/₿0/)).toBeNull();
   });
 
   it('shows tomorrow and later next lines for several recipients', async () => {

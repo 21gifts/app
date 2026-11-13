@@ -54,7 +54,6 @@ export function LoansCard({ place }: LoansCardProps): ReactElement | null {
   const definedWaiting = definedDueLabel(loans.loans, 'waiting', numberFormat);
   const unpricedPayable = unpricedDueLabels(loans.loans, 'payable', numberFormat);
   const unpricedWaiting = unpricedDueLabels(loans.loans, 'waiting', numberFormat);
-  const hasWaiting = summary.waitingPeople > 0 || summary.waitingSats !== null;
   const single = summary.count === 1;
   const title = single ? t('welcome.loanTitle') : t('welcome.loansTitle', { count: summary.count });
   const status = single
@@ -84,22 +83,29 @@ export function LoansCard({ place }: LoansCardProps): ReactElement | null {
     return defined === null ? money(sats) : `${defined} · ${formatBitcoin(sats, numberFormat)}`;
   };
   const waitingAmounts: { amount: string; count: number; key: string }[] = [];
-  const pricedWaiting = definedWithBitcoin(definedWaiting, summary.waitingSats);
+  const pricedWaitingPeople = loans.loans.reduce(
+    (sum, loan) =>
+      sum +
+      (loan.due.waitingSats !== null && loan.due.waitingSats > 0 ? loan.due.waitingPeople : 0),
+    0,
+  );
+  const pricedWaiting =
+    summary.waitingSats !== null && summary.waitingSats > 0 && pricedWaitingPeople > 0
+      ? definedWithBitcoin(definedWaiting, summary.waitingSats)
+      : null;
   if (pricedWaiting !== null) {
     waitingAmounts.push({
       amount: pricedWaiting,
-      count: loans.loans.reduce(
-        (sum, loan) =>
-          sum +
-          (loan.due.waitingSats !== null && loan.due.waitingSats > 0 ? loan.due.waitingPeople : 0),
-        0,
-      ),
+      count: pricedWaitingPeople,
       key: 'priced',
     });
   }
   unpricedWaiting.forEach(({ loanIndex, label, people }) => {
     waitingAmounts.push({ amount: label, count: people, key: `unpriced-${loanIndex}` });
   });
+  const hasWaiting =
+    pricedWaiting !== null ||
+    loans.loans.some((loan) => loan.due.waitingSats === null && loan.due.waitingPeople > 0);
   const nextLines = (): string[] => {
     if (summary.next === null) {
       return [];
