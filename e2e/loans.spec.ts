@@ -60,6 +60,10 @@ test('Function: LoanPayMore — Max fills the exact limit and above-max input is
   await seedLoan(page);
   let prepayRequests = 0;
   await page.route('**/messages/loan-a/repayment', async (route) => {
+    if (route.request().method() !== 'POST') {
+      await route.fallback();
+      return;
+    }
     prepayRequests += 1;
     await route.fulfill({ status: 500, contentType: 'application/json', body: '{}' });
   });
@@ -93,6 +97,10 @@ test('a successful prepay prepares a bill, pays it from the wallet, and reloads'
     });
   });
   await page.route('**/messages/loan-a/repayment', async (route) => {
+    if (route.request().method() !== 'POST') {
+      await route.fallback();
+      return;
+    }
     prepayBody = route.request().postDataJSON();
     await route.fulfill({
       status: 200,
@@ -156,6 +164,10 @@ test('a collecting loan confirms and completes its first payment, ending collect
     });
   });
   await page.route('**/messages/loan-collecting/repayment', async (route) => {
+    if (route.request().method() !== 'POST') {
+      await route.fallback();
+      return;
+    }
     prepayRequests += 1;
     collectingPrepayBody = route.request().postDataJSON();
     closed = true;

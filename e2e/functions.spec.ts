@@ -16345,6 +16345,10 @@ test('Function: LoanRepaymentError — a max refusal updates the running repayme
   await fulfillMyLoans(page, myLoans([loanA]));
   await fulfillLedger(page, loanA.messageId, ledgerA);
   await page.route('**/messages/loan-a/repayment', async (route) => {
+    if (route.request().method() !== 'POST') {
+      await route.fallback();
+      return;
+    }
     await route.fulfill({
       status: 400,
       contentType: 'application/json',
@@ -16360,7 +16364,8 @@ test('Function: LoanRepaymentError — a max refusal updates the running repayme
   await input.fill('7000');
   await page.getByRole('button', { name: 'Pay this amount' }).click();
   await expect(input).toHaveValue('6000');
-  await expect(page.getByRole('alert')).toContainText("maximum changed to ₿6'000");
+  const payMore = page.getByRole('heading', { name: 'Pay more' }).locator('..');
+  await expect(payMore.getByRole('alert')).toContainText("maximum changed to ₿6'000");
 });
 
 test('Function: CreditClosedError — a closed loan invoice shows the localized refusal', async ({
