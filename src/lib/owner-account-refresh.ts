@@ -2,23 +2,15 @@ import { fetchMe } from '@/lib/api';
 import type { Account } from '@/lib/api-types';
 import { useAuthStore } from '@/stores/auth-store';
 
-/** The newest owner refresh started in this tab. */
+/** Sequence number of the newest owner refresh started in this tab. */
 let latestRefresh = 0;
 
-/** The newest owner refresh whose answer was stored in this tab. */
+/** Sequence number of the newest owner refresh answer stored in this tab. */
 let lastAppliedRefresh = 0;
-
-type RefreshRound = {
-  sessionToken: string;
-  isCurrent: () => boolean;
-};
-
-/** Owner refreshes whose answers have not settled yet. */
-const pendingRefreshes = new Map<number, RefreshRound>();
 
 /**
  * Copies fields that only the owner `GET /me` response supplies onto an
- * account that was changed locally while the request was in flight.
+ * account currently stored when the answer arrives.
  *
  * @param current - The newest locally stored account.
  * @param owner - The owner account returned by `GET /me`.
@@ -30,26 +22,31 @@ function mergeOwnerFields(current: Account, owner: Account): Account {
     walletViewerPublicKey: owner.walletViewerPublicKey,
     grantPayoutToday: owner.grantPayoutToday,
   };
-  if (current.funding === null || current.funding === undefined) {
+  if (owner.funding === null || owner.funding === undefined) {
     return merged;
+  }
+  if (current.funding === null || current.funding === undefined) {
+    return { ...merged, funding: owner.funding };
   }
   return {
     ...merged,
     funding: {
       ...current.funding,
-      payoutToday: owner.funding?.payoutToday,
-      shopPaymentDue: owner.funding?.shopPaymentDue,
+      payoutToday: owner.funding.payoutToday,
+      shopPaymentDue: owner.funding.shopPaymentDue,
     },
   };
 }
 
 /**
  * Refreshes a sparse signed-in account from `GET /me` without blocking its
- * caller. A session change, an invalidated caller, a newer applied answer, or
- * a newer overlapping refresh whose caller is still current drops the answer.
- * Local account changes made after the request started keep every locally
- * writable field and receive only owner-only viewer and payout fields from
- * the answer.
+ * caller. A session change, an invalidated caller, or a newer applied answer
+ * drops the answer. Every applied answer merges only owner-only viewer and
+ * payout fields into the account currently in the store. A missing local
+ * funding object takes the answer's whole funding object; when both exist,
+ * only `payoutToday` and `shopPaymentDue` are copied; a null or missing answer
+ * funding object leaves the local one unchanged. All locally writable fields
+ * therefore survive requests that overlap local changes.
  *
  * @param sessionToken - The session whose owner account should be loaded.
  * @param isCurrent - Optional component/flow lifetime check.
@@ -58,37 +55,22 @@ export function refreshOwnerAccount(
   sessionToken: string,
   isCurrent: () => boolean = () => true,
 ): void {
-  const accountAtStart = useAuthStore.getState().account;
   const refresh = ++latestRefresh;
-  pendingRefreshes.set(refresh, { sessionToken, isCurrent });
   void fetchMe(sessionToken).then(
     (owner) => {
-      pendingRefreshes.delete(refresh);
       const auth = useAuthStore.getState();
       if (
         owner === null ||
         !isCurrent() ||
         auth.session !== sessionToken ||
         refresh < lastAppliedRefresh ||
-        [...pendingRefreshes.entries()].some(
-          ([candidate, round]) =>
-            candidate > refresh && round.sessionToken === auth.session && round.isCurrent(),
-        )
+        auth.account === null
       ) {
         return;
       }
-      if (auth.account === accountAtStart) {
-        lastAppliedRefresh = refresh;
-        auth.setAccount(owner);
-        return;
-      }
-      if (auth.account !== null) {
-        lastAppliedRefresh = refresh;
-        auth.setAccount(mergeOwnerFields(auth.account, owner));
-      }
+      lastAppliedRefresh = refresh;
+      auth.setAccount(mergeOwnerFields(auth.account, owner));
     },
-    () => {
-      pendingRefreshes.delete(refresh);
-    },
+    () => undefined,
   );
 }

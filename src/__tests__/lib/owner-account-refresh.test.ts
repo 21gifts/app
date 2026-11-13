@@ -35,145 +35,236 @@ beforeEach(() => {
   useAuthStore.setState({ session: 'sess', account });
 });
 
-it('does not let an older overlapping owner refresh win', async () => {
-  let resolveFirst!: (next: Account | null) => void;
-  let resolveSecond!: (next: Account | null) => void;
-  vi.mocked(fetchMe)
-    .mockReturnValueOnce(
-      new Promise<Account | null>((resolve) => {
-        resolveFirst = resolve;
-      }),
-    )
-    .mockReturnValueOnce(
-      new Promise<Account | null>((resolve) => {
-        resolveSecond = resolve;
-      }),
-    );
+interface Deferred<T> {
+  promise: Promise<T>;
+  resolve(value: T): void;
+  reject(error: unknown): void;
+}
+
+function deferred<T>(): Deferred<T> {
+  let resolve!: (value: T) => void;
+  let reject!: (error: unknown) => void;
+  const promise = new Promise<T>((resolvePromise, rejectPromise) => {
+    resolve = resolvePromise;
+    reject = rejectPromise;
+  });
+  return { promise, resolve, reject };
+}
+
+async function settleAnswers(): Promise<void> {
+  await Promise.resolve();
+  await Promise.resolve();
+}
+
+it('never lets an older answer overwrite a newer applied answer', async () => {
+  const first = deferred<Account | null>();
+  const second = deferred<Account | null>();
+  vi.mocked(fetchMe).mockReturnValueOnce(first.promise).mockReturnValueOnce(second.promise);
 
   refreshOwnerAccount('sess');
   refreshOwnerAccount('sess');
-  resolveSecond({ ...account, walletViewerPublicKey: `03${'b'.repeat(64)}` });
-  await Promise.resolve();
-  await Promise.resolve();
-  resolveFirst({ ...account, walletViewerPublicKey: `02${'c'.repeat(64)}` });
-  await Promise.resolve();
-  await Promise.resolve();
+  second.resolve({
+    ...account,
+    name: 'Stale server name',
+    walletViewerPublicKey: `03${'b'.repeat(64)}`,
+  });
+  await settleAnswers();
+  first.resolve({ ...account, walletViewerPublicKey: `02${'c'.repeat(64)}` });
+  await settleAnswers();
 
-  expect(useAuthStore.getState().account?.walletViewerPublicKey).toBe(`03${'b'.repeat(64)}`);
+  expect(useAuthStore.getState().account).toMatchObject({
+    name: 'Ada',
+    walletViewerPublicKey: `03${'b'.repeat(64)}`,
+  });
 });
 
-it('does not apply an older answer while a newer refresh is still current', async () => {
-  let resolveFirst!: (next: Account | null) => void;
-  let resolveSecond!: (next: Account | null) => void;
-  vi.mocked(fetchMe)
-    .mockReturnValueOnce(
-      new Promise<Account | null>((resolve) => {
-        resolveFirst = resolve;
-      }),
-    )
-    .mockReturnValueOnce(
-      new Promise<Account | null>((resolve) => {
-        resolveSecond = resolve;
-      }),
-    );
+it('applies an older answer while a newer refresh that later fails is pending', async () => {
+  const first = deferred<Account | null>();
+  const second = deferred<Account | null>();
+  vi.mocked(fetchMe).mockReturnValueOnce(first.promise).mockReturnValueOnce(second.promise);
 
   refreshOwnerAccount('sess');
   refreshOwnerAccount('sess');
-  resolveFirst({ ...account, walletViewerPublicKey: `02${'c'.repeat(64)}` });
-  await Promise.resolve();
-  await Promise.resolve();
+  first.resolve({ ...account, walletViewerPublicKey: `02${'c'.repeat(64)}` });
+  await settleAnswers();
+  second.reject(new Error('newer refresh failed'));
+  await settleAnswers();
 
-  expect(useAuthStore.getState().account?.walletViewerPublicKey).toBeUndefined();
-
-  resolveSecond({ ...account, walletViewerPublicKey: `03${'b'.repeat(64)}` });
-  await Promise.resolve();
-  await Promise.resolve();
-  expect(useAuthStore.getState().account?.walletViewerPublicKey).toBe(`03${'b'.repeat(64)}`);
+  expect(useAuthStore.getState().account?.walletViewerPublicKey).toBe(`02${'c'.repeat(64)}`);
 });
 
-it('applies an older current answer when the newer refresh is no longer current', async () => {
-  let resolveFirst!: (next: Account | null) => void;
-  let resolveSecond!: (next: Account | null) => void;
+it('applies an older answer while a newer refresh that later returns null is pending', async () => {
+  const first = deferred<Account | null>();
+  const second = deferred<Account | null>();
+  vi.mocked(fetchMe).mockReturnValueOnce(first.promise).mockReturnValueOnce(second.promise);
+
+  refreshOwnerAccount('sess');
+  refreshOwnerAccount('sess');
+  first.resolve({ ...account, walletViewerPublicKey: `02${'c'.repeat(64)}` });
+  await settleAnswers();
+  second.resolve(null);
+  await settleAnswers();
+
+  expect(useAuthStore.getState().account?.walletViewerPublicKey).toBe(`02${'c'.repeat(64)}`);
+});
+
+it('applies an older answer when a newer caller later ignores its answer', async () => {
+  const first = deferred<Account | null>();
+  const second = deferred<Account | null>();
   let secondCurrent = true;
-  vi.mocked(fetchMe)
-    .mockReturnValueOnce(
-      new Promise<Account | null>((resolve) => {
-        resolveFirst = resolve;
-      }),
-    )
-    .mockReturnValueOnce(
-      new Promise<Account | null>((resolve) => {
-        resolveSecond = resolve;
-      }),
-    );
+  vi.mocked(fetchMe).mockReturnValueOnce(first.promise).mockReturnValueOnce(second.promise);
 
   refreshOwnerAccount('sess');
   refreshOwnerAccount('sess', () => secondCurrent);
+  first.resolve({ ...account, walletViewerPublicKey: `02${'c'.repeat(64)}` });
+  await settleAnswers();
   secondCurrent = false;
-  resolveFirst({ ...account, walletViewerPublicKey: `02${'c'.repeat(64)}` });
-  await Promise.resolve();
-  await Promise.resolve();
+  second.resolve({ ...account, walletViewerPublicKey: `03${'b'.repeat(64)}` });
+  await settleAnswers();
 
   expect(useAuthStore.getState().account?.walletViewerPublicKey).toBe(`02${'c'.repeat(64)}`);
-
-  resolveSecond({ ...account, walletViewerPublicKey: `03${'b'.repeat(64)}` });
-  await Promise.resolve();
-  await Promise.resolve();
 });
 
-it('does not let a newer refresh for another session suppress the current answer', async () => {
-  let resolveCurrent!: (next: Account | null) => void;
-  let resolveOther!: (next: Account | null) => void;
-  vi.mocked(fetchMe)
-    .mockReturnValueOnce(
-      new Promise<Account | null>((resolve) => {
-        resolveCurrent = resolve;
-      }),
-    )
-    .mockReturnValueOnce(
-      new Promise<Account | null>((resolve) => {
-        resolveOther = resolve;
-      }),
-    );
+it('keeps stored funding and copies only its owner-only fields when both accounts have it', async () => {
+  const owner = deferred<Account | null>();
+  vi.mocked(fetchMe).mockReturnValueOnce(owner.promise);
 
   refreshOwnerAccount('sess');
-  refreshOwnerAccount('other-session');
-  resolveCurrent({ ...account, walletViewerPublicKey: `02${'c'.repeat(64)}` });
-  await Promise.resolve();
-  await Promise.resolve();
+  useAuthStore.getState().setAccount({
+    ...account,
+    name: 'Grace',
+    setup: 'rules',
+    funding: {
+      status: 'trial',
+      trialUtcDate: '2026-11-13',
+      admittedAt: null,
+      reviewedByName: 'Lin',
+      dailyPayoutStoppedNotice: true,
+    },
+  });
+  owner.resolve({
+    ...account,
+    name: 'Stale server name',
+    setup: null,
+    walletViewerPublicKey: `02${'c'.repeat(64)}`,
+    grantPayoutToday: { state: 'due', reason: null },
+    funding: {
+      status: 'none',
+      trialUtcDate: null,
+      admittedAt: null,
+      reviewedByName: null,
+      dailyPayoutStoppedNotice: false,
+      payoutToday: { state: 'paid', reason: null },
+      shopPaymentDue: true,
+    },
+  });
+  await settleAnswers();
 
-  expect(useAuthStore.getState().account?.walletViewerPublicKey).toBe(`02${'c'.repeat(64)}`);
+  expect(useAuthStore.getState().account).toMatchObject({
+    name: 'Grace',
+    setup: 'rules',
+    walletViewerPublicKey: `02${'c'.repeat(64)}`,
+    grantPayoutToday: { state: 'due', reason: null },
+    funding: {
+      status: 'trial',
+      trialUtcDate: '2026-11-13',
+      admittedAt: null,
+      reviewedByName: 'Lin',
+      dailyPayoutStoppedNotice: true,
+      payoutToday: { state: 'paid', reason: null },
+      shopPaymentDue: true,
+    },
+  });
+});
 
-  resolveOther({ ...account, walletViewerPublicKey: `03${'b'.repeat(64)}` });
-  await Promise.resolve();
-  await Promise.resolve();
+it('drops an answer after the session changes', async () => {
+  const owner = deferred<Account | null>();
+  vi.mocked(fetchMe).mockReturnValueOnce(owner.promise);
+
+  refreshOwnerAccount('sess');
+  useAuthStore.setState({ session: 'next-session', account: { ...account, name: 'Grace' } });
+  owner.resolve({ ...account, walletViewerPublicKey: `02${'c'.repeat(64)}` });
+  await settleAnswers();
+
+  expect(useAuthStore.getState().account?.name).toBe('Grace');
+  expect(useAuthStore.getState().account?.walletViewerPublicKey).toBeUndefined();
 });
 
 it.each([null, undefined])(
-  'keeps a locally removed funding object while merging owner fields (%s)',
+  "takes the answer's whole funding object when stored funding is %s",
   async (funding) => {
-    let resolveOwner!: (next: Account | null) => void;
-    vi.mocked(fetchMe).mockReturnValueOnce(
-      new Promise<Account | null>((resolve) => {
-        resolveOwner = resolve;
-      }),
-    );
+    const owner = deferred<Account | null>();
+    vi.mocked(fetchMe).mockReturnValueOnce(owner.promise);
 
     refreshOwnerAccount('sess');
     useAuthStore.getState().setAccount({ ...account, name: 'Grace', funding });
-    resolveOwner({
+    owner.resolve({
       ...account,
       walletViewerPublicKey: `02${'c'.repeat(64)}`,
       grantPayoutToday: { state: 'paid', reason: null },
+      funding: {
+        status: 'admitted',
+        trialUtcDate: null,
+        admittedAt: 1_700_000_002,
+        reviewedByName: 'Lin',
+        dailyPayoutStoppedNotice: true,
+        payoutToday: { state: 'paid', reason: null },
+        shopPaymentDue: false,
+      },
     });
-    await Promise.resolve();
-    await Promise.resolve();
+    await settleAnswers();
 
     expect(useAuthStore.getState().account).toMatchObject({
       name: 'Grace',
-      funding,
       walletViewerPublicKey: `02${'c'.repeat(64)}`,
       grantPayoutToday: { state: 'paid', reason: null },
+      funding: {
+        status: 'admitted',
+        trialUtcDate: null,
+        admittedAt: 1_700_000_002,
+        reviewedByName: 'Lin',
+        dailyPayoutStoppedNotice: true,
+        payoutToday: { state: 'paid', reason: null },
+        shopPaymentDue: false,
+      },
     });
   },
 );
+
+it("leaves stored funding unchanged when the answer's funding is null", async () => {
+  const owner = deferred<Account | null>();
+  vi.mocked(fetchMe).mockReturnValueOnce(owner.promise);
+
+  refreshOwnerAccount('sess');
+  useAuthStore.getState().setAccount({
+    ...account,
+    funding: {
+      status: 'trial',
+      trialUtcDate: '2026-11-13',
+      admittedAt: null,
+      reviewedByName: 'Lin',
+      dailyPayoutStoppedNotice: true,
+      payoutToday: { state: 'due', reason: null },
+      shopPaymentDue: false,
+    },
+  });
+  owner.resolve({
+    ...account,
+    walletViewerPublicKey: `02${'c'.repeat(64)}`,
+    funding: null,
+  });
+  await settleAnswers();
+
+  expect(useAuthStore.getState().account).toMatchObject({
+    walletViewerPublicKey: `02${'c'.repeat(64)}`,
+    funding: {
+      status: 'trial',
+      trialUtcDate: '2026-11-13',
+      admittedAt: null,
+      reviewedByName: 'Lin',
+      dailyPayoutStoppedNotice: true,
+      payoutToday: { state: 'due', reason: null },
+      shopPaymentDue: false,
+    },
+  });
+});

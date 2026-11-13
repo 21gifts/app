@@ -120,13 +120,13 @@ let openInProgress: { run: number; startedAt: number } | null = null;
 /** A compressed secp256k1 public key in lower-case hex. */
 const VIEWER_PUBLIC_KEY = /^[0-9a-f]{66}$/;
 
-/** Settings work already started for one SDK connection. */
+/** Serialized settings work for one SDK connection. */
 interface WalletSettingsRun {
   connection: WalletConnection;
-  viewerPublicKeys: Set<string>;
+  chain: Promise<void>;
 }
 
-/** Settings work already started for the current SDK connection. */
+/** Serialized settings work for the current SDK connection. */
 let walletSettingsRun: WalletSettingsRun | null = null;
 
 /** Fixed step names safe to attach to a wallet-settings error report. */
@@ -156,19 +156,16 @@ function reportWalletSettingsFailure(stage: WalletSettingsStage, failed: unknown
 
 /**
  * Keeps one new SDK connection private and grants the configured platform
- * viewer when `/me` supplied a valid key. Each setting changes only in the
- * safe direction: private mode is never disabled and a viewer is never unset
- * or replaced from an invalid value. A viewer key that arrives after connect
- * runs only the viewer part. Failures for one key are retried only by the next
- * wallet connection.
+ * viewer when the account currently in the store supplies a valid key. Each
+ * setting changes only in the safe direction: private mode is never disabled
+ * and a viewer is never unset or replaced from an invalid value. The current
+ * account key is read immediately before the viewer comparison and update.
  *
  * @param conn - Current wallet handle.
- * @param viewerPublicKey - Viewer key from the signed-in owner's `/me` body.
  * @param configurePrivateMode - Whether this run also enforces private mode.
  */
 async function configureWalletSettings(
   conn: WalletConnection,
-  viewerPublicKey: string | null | undefined,
   configurePrivateMode: boolean,
 ): Promise<void> {
   let settings: Awaited<ReturnType<WalletConnection['getUserSettings']>>;
@@ -187,6 +184,7 @@ async function configureWalletSettings(
       firstFailure = { stage: 'private_mode', error };
     }
   }
+  const viewerPublicKey = useAuthStore.getState().account?.walletViewerPublicKey;
   if (
     typeof viewerPublicKey === 'string' &&
     VIEWER_PUBLIC_KEY.test(viewerPublicKey) &&
@@ -206,28 +204,11 @@ async function configureWalletSettings(
 }
 
 /**
- * Starts only settings work not yet attempted for this connection. Work is
- * marked before it starts, so account updates cannot start the same key twice.
+ * Queues settings work after every earlier run for this connection. Each run
+ * reads the current account key and SDK setting only when its turn starts.
  */
-function configureWalletSettingsOnce(
-  run: WalletSettingsRun,
-  viewerPublicKey: string | null | undefined,
-  configurePrivateMode: boolean,
-): void {
-  const privateMode = configurePrivateMode;
-  const viewer =
-    typeof viewerPublicKey === 'string' && VIEWER_PUBLIC_KEY.test(viewerPublicKey)
-      ? viewerPublicKey
-      : null;
-  const viewerToConfigure =
-    viewer !== null && !run.viewerPublicKeys.has(viewer) ? viewer : undefined;
-  if (!privateMode && viewerToConfigure === undefined) {
-    return;
-  }
-  if (viewerToConfigure !== undefined) {
-    run.viewerPublicKeys.add(viewerToConfigure);
-  }
-  void configureWalletSettings(run.connection, viewerToConfigure, privateMode);
+function configureWalletSettingsOnce(run: WalletSettingsRun, configurePrivateMode: boolean): void {
+  run.chain = run.chain.then(() => configureWalletSettings(run.connection, configurePrivateMode));
 }
 
 useAuthStore.subscribe((state, previous) => {
@@ -236,7 +217,7 @@ useAuthStore.subscribe((state, previous) => {
   if (viewerPublicKey === previous.account?.walletViewerPublicKey || run === null) {
     return;
   }
-  configureWalletSettingsOnce(run, viewerPublicKey, false);
+  configureWalletSettingsOnce(run, false);
 });
 
 /**
@@ -903,11 +884,10 @@ async function openWallet(loadSdk: WalletSdkLoader, quiet: boolean): Promise<voi
       connection = next;
       const settingsRun: WalletSettingsRun = {
         connection: next,
-        viewerPublicKeys: new Set(),
+        chain: Promise.resolve(),
       };
       walletSettingsRun = settingsRun;
-      const viewerPublicKey = useAuthStore.getState().account?.walletViewerPublicKey;
-      configureWalletSettingsOnce(settingsRun, viewerPublicKey, true);
+      configureWalletSettingsOnce(settingsRun, true);
       await next.addEventListener((event) => {
         if (run === runCounter && connection === next) {
           onWalletEvent(event, mnemonic);

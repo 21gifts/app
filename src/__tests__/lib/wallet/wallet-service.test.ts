@@ -279,14 +279,21 @@ describe('connectWallet', () => {
     expect(connection.getUserSettings).toHaveBeenCalledTimes(1);
   });
 
-  it("grants the viewer once when login's /me refresh supplies its key after connect", async () => {
+  it("grants the current viewer when login's /me refresh changes A to B and back to A", async () => {
     useAuthStore.setState({ session: 'sess', account: {} as Account });
     rememberSessionPhrase(MNEMONIC);
+    let sdkViewerPublicKey = IDENTITY;
+    const updateUserSettings = vi.fn<WalletConnection['updateUserSettings']>(async (update) => {
+      if (update.sparkMasterIdentityPublicKey !== undefined) {
+        sdkViewerPublicKey = update.sparkMasterIdentityPublicKey.publicKey;
+      }
+    });
     const { loadSdk, connection } = createFakeSdk({
       getUserSettings: async () => ({
         sparkPrivateModeEnabled: true,
-        sparkMasterIdentityPublicKey: IDENTITY,
+        sparkMasterIdentityPublicKey: sdkViewerPublicKey,
       }),
+      updateUserSettings,
     });
     await connectWallet(loadSdk);
     await vi.waitFor(() => {
@@ -314,9 +321,80 @@ describe('connectWallet', () => {
       expect(connection.updateUserSettings).toHaveBeenCalledTimes(2);
     });
     useAuthStore.getState().setAccount({ walletViewerPublicKey: viewerPublicKey } as Account);
+    await vi.waitFor(() => {
+      expect(connection.updateUserSettings).toHaveBeenCalledTimes(3);
+    });
+    expect(connection.getUserSettings).toHaveBeenCalledTimes(4);
+    expect(connection.updateUserSettings.mock.calls).toEqual([
+      [
+        {
+          sparkMasterIdentityPublicKey: { type: 'set', publicKey: viewerPublicKey },
+        },
+      ],
+      [
+        {
+          sparkMasterIdentityPublicKey: { type: 'set', publicKey: nextViewerPublicKey },
+        },
+      ],
+      [
+        {
+          sparkMasterIdentityPublicKey: { type: 'set', publicKey: viewerPublicKey },
+        },
+      ],
+    ]);
+  });
+
+  it('serializes A to B while the A viewer update is still running', async () => {
+    const viewerA = `03${'b'.repeat(64)}`;
+    const viewerB = `02${'c'.repeat(64)}`;
+    useAuthStore.setState({
+      session: 'sess',
+      account: { walletViewerPublicKey: viewerA } as Account,
+    });
+    rememberSessionPhrase(MNEMONIC);
+    let sdkViewerPublicKey = IDENTITY;
+    let releaseViewerA!: () => void;
+    const viewerAUpdate = new Promise<void>((resolve) => {
+      releaseViewerA = resolve;
+    });
+    const updateUserSettings = vi.fn<WalletConnection['updateUserSettings']>(async (update) => {
+      const viewer = update.sparkMasterIdentityPublicKey;
+      if (viewer === undefined) {
+        return;
+      }
+      if (viewer.publicKey === viewerA) {
+        await viewerAUpdate;
+      }
+      sdkViewerPublicKey = viewer.publicKey;
+    });
+    const { loadSdk, connection } = createFakeSdk({
+      getUserSettings: async () => ({
+        sparkPrivateModeEnabled: true,
+        sparkMasterIdentityPublicKey: sdkViewerPublicKey,
+      }),
+      updateUserSettings,
+    });
+
+    await connectWallet(loadSdk);
+    await vi.waitFor(() => {
+      expect(connection.updateUserSettings).toHaveBeenCalledWith({
+        sparkMasterIdentityPublicKey: { type: 'set', publicKey: viewerA },
+      });
+    });
+    useAuthStore.getState().setAccount({ walletViewerPublicKey: viewerB } as Account);
     await Promise.resolve();
-    expect(connection.getUserSettings).toHaveBeenCalledTimes(3);
-    expect(connection.updateUserSettings).toHaveBeenCalledTimes(2);
+
+    expect(connection.getUserSettings).toHaveBeenCalledTimes(1);
+    expect(connection.updateUserSettings).toHaveBeenCalledTimes(1);
+
+    releaseViewerA();
+    await vi.waitFor(() => {
+      expect(connection.updateUserSettings).toHaveBeenLastCalledWith({
+        sparkMasterIdentityPublicKey: { type: 'set', publicKey: viewerB },
+      });
+    });
+    expect(connection.getUserSettings).toHaveBeenCalledTimes(2);
+    expect(sdkViewerPublicKey).toBe(viewerB);
   });
 
   it.each([null, undefined, '', '02ABCDEF', `02${'a'.repeat(63)}`, `02${'g'.repeat(64)}`])(
