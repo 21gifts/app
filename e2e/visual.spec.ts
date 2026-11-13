@@ -27608,6 +27608,7 @@ test.describe('profile activity chart variants', () => {
     await page.getByRole('button', { name: 'Write your About me' }).click();
     await page.getByRole('button', { name: 'Save About me' }).click();
     await expect(page.getByText('Could not save. Please try again.')).toBeVisible();
+    await topAtRest(page.getByRole('textbox', { name: 'About me' }));
     await shotScreen(page, 'state-members-about-save-error');
   });
 
