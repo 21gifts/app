@@ -257,6 +257,7 @@ interface SendRun {
   feeSats: number;
   names: string[];
   seenNames: Set<string>;
+  shares: { messageId: string; key: string }[];
   targets: Map<string, SettlementTarget>;
   failed: boolean;
   latePending: boolean;
@@ -600,17 +601,19 @@ const PINNED_RESULTS: Record<string, PinnedLoanRepay> = {
   },
 };
 
-/** Shares reserved from the start of their send until it is known they did not go out. */
+/** Shares reserved from the start of their send until failure or confirmed settlement. */
 const reservedShares = new Set<string>();
 
 /**
  * Runs the all-loans repayment flow and waits for api settlement. A share is
  * reserved from the moment its send starts; a send that did not go out
- * releases it. The named shares are taken from all due shares, or from the
+ * releases it. Confirmed settlement also releases every share whose loan's
+ * `repaidSats` reached the run's target, so a remaining part of that share can
+ * be paid later. Timed-out or otherwise unsettled sends stay reserved. The
+ * named shares are taken from all due shares, or from the
  * optional `onlyShares` keys when given; shares of that set another run
- * already holds are skipped. A reserved share is never prepared
- * or sent again in this app session, including when `/due` later returns a
- * new invoice for that share; when every named share is reserved the run
+ * already holds are skipped. While a share remains reserved, a new invoice
+ * for it is not prepared or sent; when every named share is reserved the run
  * ends unconfirmed. When `onlyShares` is given and none of those shares are
  * still due, the run reloads, then ends `unconfirmed` if one of the named
  * shares is held by another run, `repaid` if nothing is due any more, otherwise
@@ -735,7 +738,7 @@ export function useLoanRepay(options: {
   }, [topUpOpen, pinned, status]);
 
   let phase: LoanRepayPhase;
-  if (behaviorWallet) {
+  if (behaviorWallet || actionPending.current) {
     phase = livePhase;
   } else if (!usable) {
     phase = 'unavailable';
@@ -995,6 +998,7 @@ export function useLoanRepay(options: {
           feeSats: 0,
           names: [],
           seenNames: new Set<string>(),
+          shares: [],
           targets: new Map<string, SettlementTarget>(),
           failed: false,
           latePending: false,
@@ -1022,6 +1026,7 @@ export function useLoanRepay(options: {
             sent.seenNames.add(item.bill.name);
             sent.names.push(item.bill.name);
           }
+          sent.shares.push({ messageId: item.bill.messageId, key: shareKey(item.bill) });
           const target = sent.targets.get(item.bill.messageId);
           if (target === undefined) {
             sent.targets.set(item.bill.messageId, {
@@ -1033,11 +1038,22 @@ export function useLoanRepay(options: {
           }
           publishSent();
         };
-        const settled = (fresh: MyLoans): boolean =>
-          [...sent.targets].every(([messageId, target]) => {
-            const loan = fresh.loans.find((row) => row.messageId === messageId);
-            return loan === undefined || loan.repaidSats >= target.before + target.sent;
-          });
+        const settled = (fresh: MyLoans): boolean => {
+          const settledMessages = new Set(
+            [...sent.targets]
+              .filter(([messageId, target]) => {
+                const loan = fresh.loans.find((row) => row.messageId === messageId);
+                return loan === undefined || loan.repaidSats >= target.before + target.sent;
+              })
+              .map(([messageId]) => messageId),
+          );
+          for (const share of sent.shares) {
+            if (settledMessages.has(share.messageId)) {
+              reservedShares.delete(share.key);
+            }
+          }
+          return settledMessages.size === sent.targets.size;
+        };
 
         const startSettlement = (): void => {
           const remaining = WALLET_PAY_CONFIRM_WAIT_MS - (Date.now() - sent.lastSendAt);

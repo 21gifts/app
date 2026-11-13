@@ -1127,6 +1127,9 @@ describe('LoanPayMore', () => {
       }),
     );
     expect(screen.getByRole('status').textContent).toBe('Ending collecting…');
+    expect(
+      (screen.getByRole('button', { name: 'End collecting' }) as HTMLButtonElement).disabled,
+    ).toBe(true);
 
     view.rerender(
       payMoreState(collecting, view.onPay, view.onCloseCollecting, {
