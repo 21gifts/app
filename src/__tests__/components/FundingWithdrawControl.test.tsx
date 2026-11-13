@@ -10,10 +10,16 @@ vi.mock('@/lib/api', () => ({
   postFundingWithdraw: vi.fn(),
 }));
 
+vi.mock('@/lib/owner-account-refresh', () => ({
+  refreshOwnerAccount: vi.fn(),
+}));
+
 import { fetchMe, postFundingWithdraw } from '@/lib/api';
+import { refreshOwnerAccount } from '@/lib/owner-account-refresh';
 
 const withdrawMock = vi.mocked(postFundingWithdraw);
 const meMock = vi.mocked(fetchMe);
+const refreshMock = vi.mocked(refreshOwnerAccount);
 
 const admitted: OwnerFunding = {
   status: 'admitted',
@@ -61,6 +67,7 @@ function openLeave(): void {
 beforeEach(() => {
   withdrawMock.mockReset();
   meMock.mockReset();
+  refreshMock.mockReset();
   useAuthStore.setState({ session: 'sess', account });
 });
 
@@ -103,7 +110,7 @@ describe('FundingWithdrawControl', () => {
     expect(withdrawMock).not.toHaveBeenCalled();
   });
 
-  it('stores the answered funding and closes the question on success', async () => {
+  it("stores the answered funding, reloads today's payout, and closes the question on success", async () => {
     withdrawMock.mockResolvedValue(none);
     openLeave();
     fireEvent.click(screen.getByRole('button', { name: 'Leave the grant' }));
@@ -111,6 +118,8 @@ describe('FundingWithdrawControl', () => {
     await waitFor(() => {
       expect(useAuthStore.getState().account?.funding).toEqual(none);
     });
+    expect(refreshMock).toHaveBeenCalledTimes(1);
+    expect(refreshMock).toHaveBeenCalledWith('sess');
     expect(screen.queryByRole('group', { name: LEAVE_TITLE })).toBeNull();
   });
 
@@ -229,6 +238,7 @@ describe('FundingWithdrawControl', () => {
     );
     const confirm = screen.getByRole('button', { name: 'Leave the grant' });
     expect(confirm.hasAttribute('disabled')).toBe(false);
+    expect(refreshMock).not.toHaveBeenCalled();
     withdrawMock.mockResolvedValueOnce(none);
     fireEvent.click(confirm);
     await waitFor(() => {
@@ -273,6 +283,7 @@ describe('FundingWithdrawControl', () => {
       );
     });
     expect(useAuthStore.getState().account?.funding).toEqual(admitted);
+    expect(refreshMock).not.toHaveBeenCalled();
   });
 
   it('drops a failure that arrives after the session changed', async () => {
@@ -302,5 +313,6 @@ describe('FundingWithdrawControl', () => {
       expect(withdrawMock).toHaveBeenCalled();
     });
     expect(useAuthStore.getState().account).toBeNull();
+    expect(refreshMock).not.toHaveBeenCalled();
   });
 });

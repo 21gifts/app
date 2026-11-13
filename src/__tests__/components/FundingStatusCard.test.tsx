@@ -305,8 +305,12 @@ describe('FundingStatusCard', () => {
     await waitFor(() => {
       expect(screen.getByRole('link', { name: 'Apply for the 21 gifts grant' })).toBeTruthy();
     });
-    expect(fetchMock).toHaveBeenCalledTimes(1);
+    // The withdraw answer, then the owner refresh that loads today's payout reason.
+    await waitFor(() => {
+      expect(fetchMock).toHaveBeenCalledTimes(2);
+    });
     expect(fetchMock.mock.calls[0]?.[0]).toBe('/funding/withdraw');
+    expect(fetchMock.mock.calls[1]?.[0]).toBe('/me');
     expect(screen.queryByRole('button', { name: 'Leave the grant' })).toBeNull();
   });
 });

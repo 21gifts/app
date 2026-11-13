@@ -41,6 +41,7 @@ async function seedAdaSession(
   role: 'basis' | 'moderator' | 'founder' | 'verified' = 'basis',
   funding: unknown = undefined,
 ): Promise<void> {
+  const fundingNow = (): unknown => (typeof funding === 'function' ? funding() : funding);
   await page.addInitScript(() => {
     localStorage.setItem('21gifts.session', 'sess-e2e');
   });
@@ -64,8 +65,8 @@ async function seedAdaSession(
         setup: null,
         missing: [],
         funding:
-          funding !== undefined
-            ? funding
+          fundingNow() !== undefined
+            ? fundingNow()
             : role === 'basis'
               ? null
               : {
@@ -621,11 +622,15 @@ async function stubWithdraw(
   return { count: () => count };
 }
 
-test('Function: FundingWithdrawControl — Leave the grant asks first, then shows the apply card and the free place', async ({
+test("Function: FundingWithdrawControl — Leave the grant asks first, then shows the apply card, the free place, and today's payout again", async ({
   page,
 }) => {
-  await seedAdaSession(page, 'verified', ADMITTED);
   let withdrawn = false;
+  await seedAdaSession(page, 'verified', () =>
+    withdrawn
+      ? { ...NO_GRANT, payoutToday: { state: 'blocked', reason: 'admission' } }
+      : { ...ADMITTED, payoutToday: { state: 'paid', reason: null } },
+  );
   await stubPlaces(page, () => (withdrawn ? 1 : 0));
   const withdraw = await stubWithdraw(page, 200);
   page.on('request', (req) => {
@@ -635,7 +640,9 @@ test('Function: FundingWithdrawControl — Leave the grant asks first, then show
   });
   await page.goto('/grants');
   const panel = page.getByRole('group', { name: 'Grant places' });
+  const payout = page.getByRole('group', { name: "Today's payout" });
   await expect(panel.getByText('0 of 10 places are free.')).toBeVisible();
+  await expect(payout.getByText('Payout made today.')).toBeVisible();
   await page.getByRole('button', { name: 'Leave the grant' }).click();
   const question = page.getByRole('group', { name: 'Leave the grant?' });
   await expect(
@@ -647,6 +654,9 @@ test('Function: FundingWithdrawControl — Leave the grant asks first, then show
   await question.getByRole('button', { name: 'Leave the grant' }).click();
   await expect(page.getByRole('link', { name: 'Apply for the 21 gifts grant' })).toBeVisible();
   await expect(panel.getByText('1 of 10 places is free.')).toBeVisible();
+  await expect(
+    payout.getByRole('link', { name: 'You must be admitted to the grant program.' }),
+  ).toHaveAttribute('href', '/grants/apply');
   await expect(page.getByRole('button', { name: 'Leave the grant' })).toHaveCount(0);
   expect(withdraw.count()).toBe(1);
 });

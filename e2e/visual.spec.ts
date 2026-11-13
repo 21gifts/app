@@ -28348,7 +28348,10 @@ test.describe('profile funding states', () => {
     await shotScreen(page, 'state-profile-funding-program-open', false);
   });
 
-  /** Opens the withdraw question of a grant card in `status` and answers POST /funding/withdraw with `answer`. */
+  /**
+   * Opens the withdraw question of a grant card in `status`, with the same today's payout
+   * line as that idle funding state, and answers POST /funding/withdraw with `answer`.
+   */
   async function openWithdraw(
     page: Page,
     status: 'pending' | 'trial' | 'admitted',
@@ -28360,6 +28363,12 @@ test.describe('profile funding states', () => {
         trialUtcDate: status === 'trial' ? '2026-09-20' : null,
         admittedAt: status === 'admitted' ? Date.parse('2026-08-28T12:00:00.000Z') : null,
         reviewedByName: status === 'admitted' ? 'Ada' : null,
+        payoutToday:
+          status === 'pending'
+            ? { state: 'blocked', reason: 'admission' }
+            : status === 'trial'
+              ? { state: 'due', reason: 'payments_paused' }
+              : { state: 'blocked', reason: 'wallet' },
       },
     });
     await page.route(/\/funding\/withdraw$/, async (route) => {

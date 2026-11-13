@@ -4,6 +4,7 @@ import { useRef, useState, type ReactElement } from 'react';
 import { InlineConfirm } from '@/components/InlineConfirm';
 import { useTranslations } from '@/components/LocaleProvider';
 import { fetchMe, postFundingWithdraw } from '@/lib/api';
+import { refreshOwnerAccount } from '@/lib/owner-account-refresh';
 import { useAuthStore } from '@/stores/auth-store';
 
 /** Props for {@link FundingWithdrawControl}. */
@@ -23,7 +24,9 @@ export interface FundingWithdrawControlProps {
  * runs, both actions are disabled and the confirm action spins; a second tap
  * sends no second request. On success the account's funding is replaced by the
  * answer (status `none`), so the card shows the apply state again and every
- * reader of `account.funding` follows at once. On 409 the account is loaded
+ * reader of `account.funding` follows at once. The answer carries no
+ * `payoutToday`, so {@link refreshOwnerAccount} then loads today's payout
+ * reason from `GET /me` without blocking the card. On 409 the account is loaded
  * again ({@link fetchMe}) and the current state is shown without an error. On
  * 401 the session is cleared, as when `/me` answers 401. Any other failure
  * shows the inline error and keeps the question open for another try or
@@ -56,6 +59,7 @@ export function FundingWithdrawControl({ status }: FundingWithdrawControlProps):
         return;
       }
       current.setAccount({ ...current.account, funding });
+      refreshOwnerAccount(session);
       setConfirming(false);
     } catch (err) {
       if (useAuthStore.getState().session !== session) {
