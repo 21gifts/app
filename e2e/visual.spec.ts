@@ -43227,7 +43227,8 @@ test.describe('stats variant baselines', () => {
     await fulfillSpot(page);
     await page.goto('/stats/wallet');
     await expect(page.getByText("$1'875.09", { exact: true })).toBeVisible();
-    await page.getByLabel('Day').selectOption('2026-11-10');
+    await page.getByRole('combobox', { name: 'Day' }).click();
+    await page.getByRole('option', { name: '2026-11-10', exact: true }).click();
     await expect(page.getByText('Balance at start of day').first()).toBeVisible();
     await shotScreen(page, 'state-stats-wallet-day');
   });

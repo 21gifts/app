@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, type ReactElement } from 'react';
+import { FilterMenu } from '@/app/(marketing)/FilterMenu';
 import { useFiatPreference } from '@/components/FiatPreferenceProvider';
 import { useNumberFormat } from '@/components/NumberFormatProvider';
 import { formatCount, OverTimeChart } from '@/components/StatsDashboard';
@@ -1365,25 +1366,19 @@ export function WalletUsageDashboard({
       <section className="space-y-6">
         <h2 className="text-lg font-semibold">Where the money comes from and where it goes</h2>
         <div className="flex flex-wrap items-end gap-4">
-          <div className="w-full min-w-0 sm:max-w-xs">
-            <label htmlFor="wallet-usage-day" className="block text-sm text-paper/60">
-              Day
-            </label>
-            <select
-              id="wallet-usage-day"
-              value={dayKey}
-              onChange={(event) => {
-                setDayKey(event.target.value);
+          <div className="w-full min-w-0 text-ink scheme-light [--color-app-border:#e5e5e5] [--color-app-border-strong:#d4d4d4] [--color-app-btn:#171717] [--color-app-btn-fg:#ffffff] [--color-app-btn-hover:#404040] [--color-app-card:#ffffff] [--color-app-card-muted:#fafafa] [--color-app-danger:#b91c1c] [--color-app-fg:#171717] [--color-app-focus:#171717] [--color-app-hover:#fafafa] [--color-app-muted:#525252] sm:w-auto">
+            <FilterMenu
+              label="Day"
+              allLabel="All days"
+              value={dayKey === 'all' ? '' : dayKey}
+              options={[
+                { value: '', label: 'All days', swatch: null },
+                ...orderedDays.map((day) => ({ value: day.day, label: day.day, swatch: null })),
+              ]}
+              onChange={(next) => {
+                setDayKey(next === '' ? 'all' : next);
               }}
-              className="mt-1 min-h-11 w-full rounded-2xl border border-paper/20 bg-ink px-4 text-paper"
-            >
-              <option value="all">All days</option>
-              {orderedDays.map((day) => (
-                <option key={day.day} value={day.day}>
-                  {day.day}
-                </option>
-              ))}
-            </select>
+            />
           </div>
           <SegmentedControl
             value={metric}

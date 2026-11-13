@@ -109,7 +109,8 @@ test('Function: OverTimeChart — wallets per day draws the balance line', async
 test('selecting one usage day keeps the all-days flow table', async ({ page }) => {
   await page.goto('/stats/wallet');
   await expect(page.getByText('Balance at start of day')).toHaveCount(0);
-  await page.getByLabel('Day').selectOption('2026-11-10');
+  await page.getByRole('combobox', { name: 'Day' }).click();
+  await page.getByRole('option', { name: '2026-11-10', exact: true }).click();
   await expect(page.getByText('Balance at start of day')).toBeVisible();
   await expect(page.getByRole('table')).toContainText("₿471'705");
 });

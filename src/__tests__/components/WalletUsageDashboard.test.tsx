@@ -66,6 +66,11 @@ function usageDay(
   };
 }
 
+function chooseDay(name: string): void {
+  fireEvent.click(screen.getByRole('combobox', { name: 'Day' }));
+  fireEvent.click(screen.getByRole('option', { name }));
+}
+
 function flow(
   day: string,
   from: WalletParty,
@@ -329,7 +334,14 @@ describe('WalletUsageDashboard', () => {
       screen.getByRole('img', { name: 'Member wallets' }).querySelector('[data-flow="Fees"]'),
     ).toBeTruthy();
 
-    fireEvent.change(screen.getByLabelText('Day'), { target: { value: '2026-11-10' } });
+    const dayMenu = screen.getByRole('combobox', { name: 'Day' });
+    expect(dayMenu.getAttribute('data-value')).toBe('');
+    expect(dayMenu.parentElement?.parentElement?.className).toContain('scheme-light');
+    expect(dayMenu.parentElement?.parentElement?.className).toContain('text-ink');
+    chooseDay('2026-11-10');
+    expect(screen.getByRole('combobox', { name: 'Day' }).getAttribute('data-value')).toBe(
+      '2026-11-10',
+    );
     const fundDay = screen.getByRole('img', { name: 'Tondo fund' });
     expect(fundDay.querySelector('[data-flow="Deposits from outside"]')).toBeNull();
     expect(fundDay.querySelector('[data-flow="Balance at start of day"]')).toBeTruthy();
@@ -337,6 +349,13 @@ describe('WalletUsageDashboard', () => {
       screen
         .getByRole('img', { name: 'Member wallets' })
         .querySelector('[data-flow="Forum gifts from members"]'),
+    ).toBeNull();
+    chooseDay('All days');
+    expect(screen.getByRole('combobox', { name: 'Day' }).getAttribute('data-value')).toBe('');
+    expect(
+      screen
+        .getByRole('img', { name: 'Tondo fund' })
+        .querySelector('[data-flow="Balance at start of day"]'),
     ).toBeNull();
     expect(screen.getByRole('table').textContent).toContain("\u20bf1'000");
 
@@ -654,12 +673,13 @@ describe('WalletUsageDashboard', () => {
       null,
       false,
     );
-    const select = screen.getByLabelText('Day');
-    expect([...select.querySelectorAll('option')].map((option) => option.textContent)).toEqual([
+    fireEvent.click(screen.getByRole('combobox', { name: 'Day' }));
+    expect(screen.getAllByRole('option').map((option) => option.textContent)).toEqual([
       'All days',
       '2026-11-09',
       '2026-11-10',
     ]);
+    fireEvent.click(screen.getByRole('option', { name: 'All days' }));
     const label = screen.getByText('Tondo fund balance');
     const tile = label.parentElement;
     if (tile === null) {
