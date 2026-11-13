@@ -7104,7 +7104,7 @@ const fil = {
   'funding.payoutToday.shopPayment':
     'Kailangan ay nakabili ka nang kahit isang beses sa isang 21.gifts shop ngayong araw o kahapon.',
   'funding.payoutToday.mediaPost':
-    'Kailangan kang mag-post ng kahit isang note na may larawan ngayong araw.',
+    'Kailangan kang mag-post ng kahit isang nota na may larawan ngayong araw.',
   'funding.payoutToday.unavailable': 'Hindi available ang status ng payout ngayong araw.',
   'funding.goals.link': 'Mga layunin',
   'funding.goals.heading': 'Mga layunin',

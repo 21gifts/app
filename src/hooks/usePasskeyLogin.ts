@@ -797,7 +797,7 @@ export function usePasskeyLogin(): UsePasskeyLogin {
         sessionToken: session.token,
       });
       setAuth(session.token, session.account);
-      refreshOwnerAccount(session.token, () => runId === runIdRef.current);
+      refreshOwnerAccount(session.token);
       logInteraction('signup_completed');
       choiceOfferedRef.current = false;
       unknownOfferedRef.current = false;
@@ -922,7 +922,7 @@ export function usePasskeyLogin(): UsePasskeyLogin {
         sessionToken: session.token,
       });
       setAuth(session.token, session.account);
-      refreshOwnerAccount(session.token, () => runId === runIdRef.current);
+      refreshOwnerAccount(session.token);
       logInteraction('login');
       choiceOfferedRef.current = false;
       unknownOfferedRef.current = false;

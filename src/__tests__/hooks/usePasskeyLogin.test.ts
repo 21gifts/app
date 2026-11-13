@@ -1,5 +1,7 @@
-import { act, cleanup, renderHook, waitFor } from '@testing-library/react';
+import { act, cleanup, fireEvent, renderHook, screen, waitFor } from '@testing-library/react';
+import { createElement } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { LoginCard } from '@/components/LoginCard';
 import {
   mnemonicFromPrfFirst,
   obtainPrfFirst,
@@ -30,6 +32,7 @@ import { useAuthStore } from '@/stores/auth-store';
 import { logInteraction } from '@/lib/interaction-log';
 import { traceWallet } from '@/lib/sentry';
 import type { Account } from '@/lib/api-types';
+import { renderWithLocale } from '@/__tests__/render-with-locale';
 
 vi.mock('@/lib/api', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@/lib/api')>();
@@ -1483,6 +1486,63 @@ describe('usePasskeyLogin', () => {
     });
     expect(fetchMe).toHaveBeenCalledWith('tok');
     expect(rememberSessionPhrase).not.toHaveBeenCalled();
+    vi.unstubAllGlobals();
+  });
+
+  it('keeps the owner refresh after cancel ends the completed passkey run', async () => {
+    let resolveMe!: (next: Account | null) => void;
+    vi.mocked(fetchMe).mockReturnValueOnce(
+      new Promise<Account | null>((resolve) => {
+        resolveMe = resolve;
+      }),
+    );
+    const cred = { id: 'cred', type: 'public-key' };
+    vi.stubGlobal('navigator', {
+      ...navigator,
+      credentials: { create: vi.fn(), get: vi.fn().mockResolvedValue(cred) },
+    });
+    const { result } = renderHook(() => usePasskeyLogin());
+    await act(async () => {
+      result.current.authenticate();
+    });
+
+    act(() => {
+      result.current.cancel();
+    });
+    const viewerPublicKey = `03${'c'.repeat(64)}`;
+    await act(async () => {
+      resolveMe({ ...account, walletViewerPublicKey: viewerPublicKey });
+    });
+
+    expect(useAuthStore.getState().account?.walletViewerPublicKey).toBe(viewerPublicKey);
+    vi.unstubAllGlobals();
+  });
+
+  it('keeps the owner refresh after LoginCard unmounts', async () => {
+    let resolveMe!: (next: Account | null) => void;
+    vi.mocked(fetchMe).mockReturnValueOnce(
+      new Promise<Account | null>((resolve) => {
+        resolveMe = resolve;
+      }),
+    );
+    const cred = { id: 'cred', type: 'public-key' };
+    vi.stubGlobal('navigator', {
+      ...navigator,
+      credentials: { create: vi.fn(), get: vi.fn().mockResolvedValue(cred) },
+    });
+    const view = renderWithLocale(createElement(LoginCard));
+    fireEvent.click(screen.getByRole('button', { name: 'Log in' }));
+    await waitFor(() => {
+      expect(fetchMe).toHaveBeenCalledWith('tok');
+    });
+
+    view.unmount();
+    const viewerPublicKey = `02${'d'.repeat(64)}`;
+    await act(async () => {
+      resolveMe({ ...account, walletViewerPublicKey: viewerPublicKey });
+    });
+
+    expect(useAuthStore.getState().account?.walletViewerPublicKey).toBe(viewerPublicKey);
     vi.unstubAllGlobals();
   });
 
