@@ -72,7 +72,6 @@ async function stubPayoutGoal(page: import('@playwright/test').Page): Promise<vo
         firstPaidAt: '2026-08-22T00:00:00.000Z',
         lastPaidAt: '2026-09-20T00:00:00.000Z',
         spendOverTime,
-        byRecipient: [],
         byMonth: [],
         fx: {
           quote: 'BTC-USD',
@@ -270,7 +269,6 @@ test('Function: fetchWalletStats — public stats show the wallet totals and cha
         firstPaidAt: null,
         lastPaidAt: null,
         spendOverTime: [],
-        byRecipient: [],
         byMonth: [],
         fx: {
           quote: 'BTC-USD',
@@ -347,7 +345,6 @@ test('Function: StatsLoader — a failed wallet fetch keeps the public gift stat
         firstPaidAt: '2026-06-01T00:00:00.000Z',
         lastPaidAt: '2026-06-01T00:00:00.000Z',
         spendOverTime: [],
-        byRecipient: [],
         byMonth: [],
         fx: {
           quote: 'BTC-USD',

@@ -16,7 +16,6 @@ const EMPTY: GiftStats = {
   firstPaidAt: null,
   lastPaidAt: null,
   spendOverTime: [],
-  byRecipient: [],
   byMonth: [],
   fx: {
     quote: 'BTC-USD',

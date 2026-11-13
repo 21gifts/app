@@ -32,7 +32,6 @@ const WALLET_RATE_DAY_STATS = {
       cumulativePhp: '5600000.00',
     },
   ],
-  byRecipient: [],
   byMonth: [],
   fx: {
     quote: 'BTC-USD',

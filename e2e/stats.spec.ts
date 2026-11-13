@@ -77,28 +77,6 @@ const FIXTURE = {
       cumulativePhp: '80.00',
     },
   ],
-  byRecipient: [
-    {
-      recipient: 'alice',
-      giftCount: 2,
-      sats: 1000,
-      btc: '0.00001000',
-      usd: '0.95',
-      chf: '0.80',
-      eur: '0.86',
-      php: '53.00',
-    },
-    {
-      recipient: 'bob',
-      giftCount: 1,
-      sats: 500,
-      btc: '0.00000500',
-      usd: '0.48',
-      chf: '0.40',
-      eur: '0.44',
-      php: '27.00',
-    },
-  ],
   byMonth: [
     {
       month: '2026-06',
@@ -136,7 +114,6 @@ const EMPTY = {
   firstPaidAt: null,
   lastPaidAt: null,
   spendOverTime: [],
-  byRecipient: [],
   byMonth: [],
   fx: FX_USD,
 };

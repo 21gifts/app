@@ -503,80 +503,12 @@ function WalletsSummary({
 }
 
 /**
- * Horizontal bar chart of spend by recipient.
- *
- * Bars are sized by the active scale (sats or fiat cents). Labels show ₿ and the selected fiat.
- *
- * @param rows - Recipient totals.
- * @param scale - Whether bar widths use sats or fiat cents.
- * @param fiat - Selected fiat for labels and fiat-scale sizing.
- * @returns Bar list.
- */
-function ByPersonChart(
-  rows: GiftStats['byRecipient'],
-  scale: BarScale,
-  fiat: FiatCode,
-  numberFormat: NumberFormatStyle,
-): ReactElement {
-  const width = 800;
-  const rowH = 40;
-  const padL = 8;
-  const padR = 8;
-  const labelW = 160;
-  const valueW = 220;
-  const barMax = width - padL - padR - labelW - valueW;
-  const height = Math.max(rows.length, 1) * rowH;
-  const max = Math.max(...rows.map((r) => scaleValue(scale, r.sats, amountOf(r, fiat))), 1);
-  return (
-    <svg
-      viewBox={`0 0 ${width} ${height}`}
-      className="h-auto w-full"
-      role="img"
-      aria-label={scale === 'btc' ? 'Spend by person in ₿' : `Spend by person in ${fiat}`}
-    >
-      {rows.map((row, i) => {
-        const y = i * rowH;
-        const value = scaleValue(scale, row.sats, amountOf(row, fiat));
-        const barW = value === 0 ? 0 : Math.max(2, (value / max) * barMax);
-        return (
-          <g key={row.recipient}>
-            <text x={padL} y={y + 22} className="fill-paper/90" fontSize="14">
-              {row.recipient}
-            </text>
-            {barW > 0 ? (
-              <rect
-                x={padL + labelW}
-                y={y + 12}
-                width={barW}
-                height={12}
-                rx={6}
-                className="fill-accent"
-              />
-            ) : null}
-            <text
-              x={width - padR}
-              y={y + 22}
-              textAnchor="end"
-              className="fill-paper/60"
-              fontSize="14"
-            >
-              {formatBitcoin(row.sats, numberFormat)} ·{' '}
-              {formatFiatDisplay(amountOf(row, fiat), fiat, numberFormat)}
-            </text>
-          </g>
-        );
-      })}
-    </svg>
-  );
-}
-
-/**
  * Vertical bar chart of spend by month.
  *
- * Bars are sized by the active scale (sats or fiat cents). Labels above each bar show ₿ and the selected fiat.
+ * Bars are sized by the active scale (sats or fiat cents). Each label shows only that unit.
  *
  * @param rows - Monthly totals.
- * @param scale - Whether bar heights use sats or fiat cents.
+ * @param scale - Whether bar heights and labels use sats or the selected fiat.
  * @param fiat - Selected fiat for labels and fiat-scale sizing.
  * @returns SVG figure.
  */
@@ -620,12 +552,16 @@ function ByMonthChart(
         const x = padL + i * barW + barW * 0.15;
         const w = barW * 0.7;
         const axisY = padT + innerH;
-        const value = scaleValue(scale, row.sats, amountOf(row, fiat));
+        const fiatAmount = amountOf(row, fiat);
+        const value = scaleValue(scale, row.sats, fiatAmount);
         const barTop = yAt(value);
         const h = axisY - barTop;
         const displayH = value > 0 ? Math.max(h, 1) : 0;
-        const usdY = Math.min(barTop - 6, axisY - 22);
-        const btcY = usdY - 14;
+        const labelY = Math.min(barTop - 6, axisY - 22);
+        const label =
+          scale === 'btc'
+            ? formatBitcoin(row.sats, numberFormat)
+            : formatFiatDisplay(fiatAmount, fiat, numberFormat);
         return (
           <g key={row.month}>
             {displayH > 0 ? (
@@ -639,21 +575,12 @@ function ByMonthChart(
             ) : null}
             <text
               x={x + w / 2}
-              y={btcY}
+              y={labelY}
               textAnchor="middle"
               className="fill-paper/70"
               fontSize="11"
             >
-              {formatBitcoin(row.sats, numberFormat)}
-            </text>
-            <text
-              x={x + w / 2}
-              y={usdY}
-              textAnchor="middle"
-              className="fill-paper/70"
-              fontSize="11"
-            >
-              {formatFiatDisplay(amountOf(row, fiat), fiat, numberFormat)}
+              {label}
             </text>
             <text
               x={x + w / 2}
@@ -675,7 +602,7 @@ function ByMonthChart(
  * Non-empty charts branch with independent ₿/fiat scale state per diagram.
  *
  * Over time shows one cumulative series; days with spend link to `/stats/{day}`
- * on the chart. Person and month bars rescale; their labels stay both units.
+ * on the chart. Month bars rescale with the selected unit, and each label shows only that unit.
  *
  * @param stats - Loaded gift stats with at least one gift.
  * @param fiat - Selected fiat for the second scale cell, footnote, and labels.
@@ -691,7 +618,6 @@ function StatsCharts({
   numberFormat: NumberFormatStyle;
 }): ReactElement {
   const [overTimeScale, setOverTimeScale] = useState<BarScale>('btc');
-  const [personScale, setPersonScale] = useState<BarScale>('btc');
   const [monthScale, setMonthScale] = useState<BarScale>('btc');
   const scaleOptions = [
     { value: 'btc' as const, label: '₿' },
@@ -739,22 +665,6 @@ function StatsCharts({
       </section>
       <section>
         <div className="flex items-center justify-between gap-3">
-          <h2 className="text-sm font-medium tracking-widest text-accent uppercase">By person</h2>
-          <SegmentedControl
-            value={personScale}
-            options={scaleOptions}
-            onChange={setPersonScale}
-            ariaLabel="By person bar scale"
-            tone="gift"
-            shell="dark"
-          />
-        </div>
-        <div className="mt-6">
-          {ByPersonChart(stats.byRecipient, personScale, fiat, numberFormat)}
-        </div>
-      </section>
-      <section>
-        <div className="flex items-center justify-between gap-3">
           <h2 className="text-sm font-medium tracking-widest text-accent uppercase">By month</h2>
           <SegmentedControl
             value={monthScale}
@@ -772,7 +682,9 @@ function StatsCharts({
 }
 
 /**
- * Gift statistics dashboard: KPI cards and diagrams (₿ plus one selected fiat).
+ * Gift statistics dashboard: KPI cards and diagrams.
+ *
+ * KPI tiles show ₿ plus one selected fiat. **By month** labels show only the unit selected on that chart.
  *
  * FiatPicker (CHF | EUR | USD | PHP) sits above the KPI cards only when
  * hydration is ready AND session is null. Signed-in visitors display and

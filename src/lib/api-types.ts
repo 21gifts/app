@@ -389,20 +389,6 @@ export const spendDaySchema = z.object({
 });
 
 /**
- * Per-recipient totals from `GET /gifts/stats`.
- */
-export const recipientSpendSchema = z.object({
-  recipient: z.string(),
-  giftCount: z.number().int().nonnegative(),
-  sats: z.number().int().nonnegative(),
-  btc: btcAmountStringSchema,
-  usd: usdAmountStringSchema,
-  chf: fiatAmountSchema,
-  eur: fiatAmountSchema,
-  php: fiatAmountSchema,
-});
-
-/**
  * Per-month totals from `GET /gifts/stats`.
  */
 export const monthSpendSchema = z.object({
@@ -431,7 +417,6 @@ export const giftStatsSchema = z.object({
   firstPaidAt: z.string().nullable(),
   lastPaidAt: z.string().nullable(),
   spendOverTime: z.array(spendDaySchema),
-  byRecipient: z.array(recipientSpendSchema),
   byMonth: z.array(monthSpendSchema),
   fx: giftStatsFxSchema,
 });
