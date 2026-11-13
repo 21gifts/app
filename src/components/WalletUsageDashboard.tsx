@@ -1239,7 +1239,9 @@ function fiatLine(
  * and fund tiles, the purpose, forum and payment-size tooltips, the all-flows
  * sats and fee cells, and every ribbon tooltip show the preferred fiat beside
  * the bitcoin figure when a spot exists, and bitcoin alone when it does not.
- * Active-wallet bars use the first row of each UTC day.
+ * Active-wallet bars use the first row of each UTC day. Below 520 px each
+ * flow diagram is the stacked lists. Below the sm breakpoint, All flows is
+ * one stacked entry per flow instead of the six-column table.
  *
  * @param props - Usage, wallet stats, and the loader flags.
  * @returns The page body.
@@ -1422,46 +1424,70 @@ export function WalletUsageDashboard({
         </div>
         <div className="space-y-3">
           <h3 className="text-lg font-semibold">All flows</h3>
-          <table className="w-full table-fixed text-xs">
+          <div data-testid="all-flows-stack" className="space-y-3 sm:hidden">
+            {tableRows.map((row) => {
+              const key = `${row.from}|${row.to}|${row.purpose}`;
+              const fromLabel = PARTY_LABEL[row.from];
+              const toLabel = PARTY_LABEL[row.to];
+              const purposeLabel = PURPOSE_LABEL[row.purpose];
+              const parties = `${fromLabel} → ${toLabel} · ${purposeLabel}`;
+              const countText = formatCount(row.count, numberFormat);
+              const satsText = bitcoinWithFiat(row.sats, rateDay, fiat, numberFormat);
+              const feeText = bitcoinWithFiat(row.feeSats, rateDay, fiat, numberFormat);
+              const figures = `${countText} payments · ${satsText} · fee ${feeText}`;
+              return (
+                <div key={key} data-flow-row={key} className="space-y-1 text-sm">
+                  <p data-flow-line="parties">{parties}</p>
+                  <p data-flow-line="figures" className="break-words tabular-nums">
+                    {figures}
+                  </p>
+                </div>
+              );
+            })}
+          </div>
+          <table className="hidden w-full table-fixed text-xs sm:table">
             <thead>
               <tr>
-                <th scope="col" className="break-words px-1 py-1 text-left font-medium">
+                <th scope="col" className="px-1 py-1 text-left font-medium">
                   From
                 </th>
-                <th scope="col" className="break-words px-1 py-1 text-left font-medium">
+                <th scope="col" className="px-1 py-1 text-left font-medium">
                   To
                 </th>
-                <th scope="col" className="break-words px-1 py-1 text-left font-medium">
+                <th scope="col" className="px-1 py-1 text-left font-medium">
                   Purpose
                 </th>
-                <th scope="col" className="break-words px-1 py-1 text-left font-medium">
+                <th scope="col" className="px-1 py-1 text-left font-medium">
                   Payments
                 </th>
-                <th scope="col" className="break-words px-1 py-1 text-left font-medium">
+                <th scope="col" className="px-1 py-1 text-left font-medium">
                   Sats
                 </th>
-                <th scope="col" className="break-words px-1 py-1 text-left font-medium">
+                <th scope="col" className="px-1 py-1 text-left font-medium">
                   Fee
                 </th>
               </tr>
             </thead>
             <tbody>
-              {tableRows.map((row) => (
-                <tr key={`${row.from}|${row.to}|${row.purpose}`}>
-                  <td className="break-words px-1 py-1 align-top">{PARTY_LABEL[row.from]}</td>
-                  <td className="break-words px-1 py-1 align-top">{PARTY_LABEL[row.to]}</td>
-                  <td className="break-words px-1 py-1 align-top">{PURPOSE_LABEL[row.purpose]}</td>
-                  <td className="break-words px-1 py-1 align-top tabular-nums">
-                    {formatCount(row.count, numberFormat)}
-                  </td>
-                  <td className="break-words px-1 py-1 align-top tabular-nums">
-                    {bitcoinWithFiat(row.sats, rateDay, fiat, numberFormat)}
-                  </td>
-                  <td className="break-words px-1 py-1 align-top tabular-nums">
-                    {bitcoinWithFiat(row.feeSats, rateDay, fiat, numberFormat)}
-                  </td>
-                </tr>
-              ))}
+              {tableRows.map((row) => {
+                const key = `${row.from}|${row.to}|${row.purpose}`;
+                return (
+                  <tr key={key} data-flow-row={key}>
+                    <td className="px-1 py-1 align-top">{PARTY_LABEL[row.from]}</td>
+                    <td className="px-1 py-1 align-top">{PARTY_LABEL[row.to]}</td>
+                    <td className="px-1 py-1 align-top">{PURPOSE_LABEL[row.purpose]}</td>
+                    <td className="break-words px-1 py-1 align-top tabular-nums">
+                      {formatCount(row.count, numberFormat)}
+                    </td>
+                    <td className="break-words px-1 py-1 align-top tabular-nums">
+                      {bitcoinWithFiat(row.sats, rateDay, fiat, numberFormat)}
+                    </td>
+                    <td className="break-words px-1 py-1 align-top tabular-nums">
+                      {bitcoinWithFiat(row.feeSats, rateDay, fiat, numberFormat)}
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>

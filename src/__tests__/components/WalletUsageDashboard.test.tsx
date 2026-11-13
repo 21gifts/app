@@ -751,4 +751,91 @@ describe('WalletUsageDashboard', () => {
     expect(screen.getByText('Loading…')).toBeTruthy();
     expect(useSpotRate).toHaveBeenCalledWith(false);
   });
+
+  it('stacks the same all-flows rows below sm and keeps the table from sm up', () => {
+    show(BASE, WALLETS, null, false);
+    const table = screen.getByRole('table');
+    expect(table.className).toContain('hidden');
+    expect(table.className).toContain('sm:table');
+    expect(table.className).not.toContain('overflow-x');
+    const headers = [...table.querySelectorAll('th')];
+    expect(headers.map((header) => header.textContent)).toEqual([
+      'From',
+      'To',
+      'Purpose',
+      'Payments',
+      'Sats',
+      'Fee',
+    ]);
+    for (const header of headers) {
+      expect(header.className).not.toContain('break-words');
+    }
+    const tableRows = [...table.querySelectorAll('tbody tr')];
+    const stack = screen.getByTestId('all-flows-stack');
+    expect(stack.className).toContain('sm:hidden');
+    expect(stack.className).not.toContain('overflow-x');
+    const stacked = [...stack.querySelectorAll('[data-flow-row]')];
+    expect(stacked).toHaveLength(tableRows.length);
+    expect(stacked.length).toBeGreaterThan(0);
+    expect(stacked.map((entry) => entry.getAttribute('data-flow-row'))).toEqual([
+      'outside|fund|deposit',
+      'outside|members|deposit',
+      'members|fund|fund_deposit',
+      'members|members|shop_purchase',
+      'members|members|forum_gift',
+      'fund|members|fund_payout',
+      'members|outside|withdrawal',
+    ]);
+    stacked.forEach((entry, index) => {
+      const row = tableRows[index];
+      if (row === undefined) {
+        throw new Error('missing table row');
+      }
+      expect(entry.getAttribute('data-flow-row')).toBe(row.getAttribute('data-flow-row'));
+      if (!(entry instanceof HTMLElement)) {
+        throw new Error('missing stacked entry');
+      }
+      expect(entry.className).toContain('text-sm');
+      const parties = entry.querySelector('[data-flow-line="parties"]');
+      const figures = entry.querySelector('[data-flow-line="figures"]');
+      if (!(parties instanceof HTMLElement) || !(figures instanceof HTMLElement)) {
+        throw new Error('missing stacked lines');
+      }
+      expect(parties.className).not.toContain('break-words');
+      expect(figures.className).toContain('break-words');
+      const cells = [...row.querySelectorAll('td')];
+      const from = cells[0]?.textContent?.trim();
+      const to = cells[1]?.textContent?.trim();
+      const purpose = cells[2]?.textContent?.trim();
+      const payments = cells[3]?.textContent?.trim();
+      const sats = cells[4]?.textContent?.trim();
+      const fee = cells[5]?.textContent?.trim();
+      if (
+        from === undefined ||
+        to === undefined ||
+        purpose === undefined ||
+        payments === undefined ||
+        sats === undefined ||
+        fee === undefined ||
+        from === null ||
+        to === null ||
+        purpose === null ||
+        payments === null ||
+        sats === null ||
+        fee === null
+      ) {
+        throw new Error('missing table cell');
+      }
+      expect(parties.textContent?.trim()).toBe(`${from} → ${to} · ${purpose}`);
+      expect(figures.textContent?.trim()).toBe(`${payments} payments · ${sats} · fee ${fee}`);
+      for (const [cellIndex, cell] of cells.entries()) {
+        if (cellIndex < 3) {
+          expect(cell.className).not.toContain('break-words');
+        } else {
+          expect(cell.className).toContain('break-words');
+        }
+      }
+    });
+    expect(stack.textContent).not.toContain('Other');
+  });
 });

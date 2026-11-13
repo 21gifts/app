@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, type ReactElement } from 'react';
+import { useLayoutEffect, useState, type ReactElement } from 'react';
 import type { WalletParty, WalletPurpose, WalletUsageFlow } from '@/lib/api-types';
 import {
   formatBitcoin,
@@ -73,6 +73,8 @@ const MIN_SLOT = 36;
 const VIEW_W = 760;
 const LABEL_W = 250;
 const CENTER_W = 120;
+/** Containers narrower than this draw lists instead of the SVG. */
+const NARROW_BELOW = 520;
 
 /**
  * Running balance of one account from the release day.
@@ -563,20 +565,178 @@ function selectionEmpty(
 }
 
 /**
- * SVG flow diagram for one account.
+ * Bar colour for one narrow-list row.
  *
- * Three columns: where the money came from, the account, and where it went.
- * Incoming and outgoing nodes are grouped by party and purpose, and every
- * label names that party. On member wallets, "Shop sales to members" is only
- * a shop purchase from members. Both columns share one scale, so one payment
- * has the same ribbon width on each side. Count mode uses the larger column
- * total and omits fees and balances. Amount mode keeps the two sat totals
- * equal: a positive start balance sits at the bottom of the left column, a
- * negative start balance sits at the bottom of the right column with its
- * absolute value, a positive end balance sits at the bottom of the right
- * column, and a negative end balance sits at the bottom of the left column
- * with its absolute value. A usable `spot` puts the preferred fiat beside
- * every ribbon amount. Without one, the tooltip shows bitcoin alone.
+ * Purpose rows use the same swatch as the charts. Balance and fees stay muted.
+ *
+ * @param node - Ribbon the row draws.
+ * @returns A theme background class.
+ */
+function listBarClass(node: RibbonNode): string {
+  if (node.kind === 'balance') {
+    return 'bg-paper/25';
+  }
+  if (node.kind === 'fee') {
+    return 'bg-paper/40';
+  }
+  return PURPOSE_SWATCH_CLASS[node.purpose];
+}
+
+/**
+ * Selected-metric figure for one narrow-list row.
+ *
+ * Count mode is the payment count. Amount mode is the bitcoin figure, with
+ * the preferred fiat beside it when `spot` can price it.
+ *
+ * @param node - Ribbon the row draws.
+ * @param metric - Amount or count.
+ * @param style - Grouping style.
+ * @param spot - Spot and preferred fiat, or omitted.
+ * @returns The figure shown beside the label.
+ */
+function listRowValue(
+  node: RibbonNode,
+  metric: WalletFlowMetric,
+  style: NumberFormatStyle,
+  spot: FlowSpot | undefined,
+): string {
+  if (metric === 'count') {
+    return formatCount(node.metric, style);
+  }
+  return ribbonAmount(node, style, spot);
+}
+
+/**
+ * Shared-scale total shown on the account node.
+ *
+ * The scale is the larger column total, the same denominator as the bars.
+ * Count mode formats that count. Amount mode formats it as bitcoin, with the
+ * preferred fiat beside it when `spot` can price it.
+ *
+ * @param metric - Amount or count.
+ * @param scaleTotal - Shared denominator for both columns.
+ * @param style - Grouping style.
+ * @param spot - Spot and preferred fiat, or omitted.
+ * @returns The figure under the account name.
+ */
+function listScaleValue(
+  metric: WalletFlowMetric,
+  scaleTotal: number,
+  style: NumberFormatStyle,
+  spot: FlowSpot | undefined,
+): string {
+  if (metric === 'count') {
+    return formatCount(scaleTotal, style);
+  }
+  const bitcoin = formatBitcoin(scaleTotal, style);
+  const priced = spotFiat(scaleTotal, spot, style);
+  if (priced === null) {
+    return bitcoin;
+  }
+  return `${bitcoin} · ${priced}`;
+}
+
+/**
+ * One side of the narrow flow list, in the same order as the wide column.
+ *
+ * @param props - Heading, ribbons, shared scale, and the status callback.
+ * @returns The heading and one row per ribbon.
+ */
+function FlowList({
+  heading,
+  nodes,
+  thicknesses,
+  budget,
+  side,
+  metric,
+  numberFormat,
+  spot,
+  onTip,
+}: {
+  heading: string;
+  nodes: readonly RibbonNode[];
+  thicknesses: readonly number[];
+  budget: number;
+  side: 'from' | 'to';
+  metric: WalletFlowMetric;
+  numberFormat: NumberFormatStyle;
+  spot: FlowSpot | undefined;
+  onTip: (text: string | null) => void;
+}): ReactElement {
+  const rows: ReactElement[] = [];
+  for (let position = 0; position < nodes.length; position += 1) {
+    const node = nodes[position];
+    const thickness = thicknesses[position];
+    /* v8 ignore next 3 -- position stays inside both arrays */
+    if (node === undefined || thickness === undefined) {
+      continue;
+    }
+    const text = ribbonTip(node, numberFormat, spot);
+    const barWidth = `${(thickness / budget) * 100}%`;
+    rows.push(
+      <li key={`${side}-${node.key}`}>
+        <div
+          className="text-sm text-paper"
+          data-flow={node.label}
+          data-side={side}
+          tabIndex={0}
+          onMouseEnter={() => {
+            onTip(text);
+          }}
+          onMouseLeave={() => {
+            onTip(null);
+          }}
+          onFocus={() => {
+            onTip(text);
+          }}
+          onBlur={() => {
+            onTip(null);
+          }}
+        >
+          <span className="flex items-baseline justify-between gap-3">
+            <span className="min-w-0">{node.label}</span>
+            <span className="shrink-0 tabular-nums">
+              {listRowValue(node, metric, numberFormat, spot)}
+            </span>
+          </span>
+          <span className="mt-1 block h-2 overflow-hidden rounded-full bg-paper/10">
+            <span
+              className={`block h-full rounded-full ${listBarClass(node)}`}
+              style={{ width: barWidth }}
+              data-metric={node.metric}
+            />
+          </span>
+        </div>
+      </li>,
+    );
+  }
+  return (
+    <div>
+      <p className="text-sm text-paper/60">{heading}</p>
+      <ul className="mt-2 space-y-3">{rows}</ul>
+    </div>
+  );
+}
+
+/**
+ * Flow diagram for one account.
+ *
+ * At 520 px and wider, three SVG columns: where the money came from, the
+ * account, and where it went. Below that, the same nodes are a Where from
+ * list, the account with the shared-scale total, and a Where to list, in
+ * body text with a bar per row. The first render uses the SVG until the
+ * container width is known. Incoming and outgoing nodes are grouped by party
+ * and purpose, and every label names that party. On member wallets, "Shop
+ * sales to members" is only a shop purchase from members. Both columns share
+ * one scale, so one payment has the same ribbon width on each side. Count
+ * mode uses the larger column total and omits fees and balances. Amount mode
+ * keeps the two sat totals equal: a positive start balance sits at the bottom
+ * of the left column, a negative start balance sits at the bottom of the
+ * right column with its absolute value, a positive end balance sits at the
+ * bottom of the right column, and a negative end balance sits at the bottom
+ * of the left column with its absolute value. A usable `spot` puts the
+ * preferred fiat beside every ribbon amount. Without one, the tooltip shows
+ * bitcoin alone.
  *
  * @param props - Account, flows for the selected span, balances, metric, and
  *   optional spot.
@@ -602,6 +762,32 @@ export function WalletFlowDiagram({
   spot?: FlowSpot;
 }): ReactElement {
   const [tip, setTip] = useState<string | null>(null);
+  const [host, setHost] = useState<HTMLDivElement | null>(null);
+  const [width, setWidth] = useState<number | null>(null);
+  useLayoutEffect(() => {
+    if (host === null) {
+      return;
+    }
+    if (typeof ResizeObserver !== 'function') {
+      return;
+    }
+    const observer = new ResizeObserver((entries) => {
+      const entry = entries[0];
+      if (entry === undefined) {
+        return;
+      }
+      const next = entry.contentRect.width;
+      if (next > 0) {
+        setWidth(next);
+      } else {
+        setWidth(null);
+      }
+    });
+    observer.observe(host);
+    return () => {
+      observer.disconnect();
+    };
+  }, [host]);
   const incoming = new Map<string, FlowGroup>();
   const outgoing = new Map<string, FlowGroup>();
   let feeSats = 0;
@@ -779,41 +965,79 @@ export function WalletFlowDiagram({
     rightStack += thickness;
   }
 
+  const showTip = (text: string | null): void => {
+    setTip(text);
+  };
+  const narrow = width !== null && width < NARROW_BELOW;
   return (
-    <div>
-      <svg
-        viewBox={`0 0 ${VIEW_W} ${height}`}
-        className="h-auto w-full"
-        role="img"
-        aria-label={accountLabel}
-        overflow="hidden"
-      >
-        <text x={8} y={14} className="fill-paper/60" fontSize="11">
-          Where from
-        </text>
-        <text x={VIEW_W - 8} y={14} textAnchor="end" className="fill-paper/60" fontSize="11">
-          Where to
-        </text>
-        {ribbons}
-        <rect
-          x={centerLeft}
-          y={accountTop}
-          width={CENTER_W}
-          height={budget}
-          rx={12}
-          className="fill-paper/10"
-        />
-        <text
-          x={VIEW_W / 2}
-          y={accountTop + budget / 2}
-          textAnchor="middle"
-          dominantBaseline="middle"
-          className="fill-paper"
-          fontSize="12"
+    <div ref={setHost}>
+      {narrow ? (
+        <div className="space-y-4" role="img" aria-label={accountLabel} data-layout="compact">
+          <FlowList
+            heading="Where from"
+            nodes={leftVisual}
+            thicknesses={leftThickness}
+            budget={budget}
+            side="from"
+            metric={metric}
+            numberFormat={numberFormat}
+            spot={spot}
+            onTip={showTip}
+          />
+          <div className="rounded-xl bg-paper/10 px-3 py-3 text-center text-sm text-paper">
+            <p className="font-medium">{accountLabel}</p>
+            <p className="tabular-nums" data-scale-total={`${scaleTotal}`}>
+              {listScaleValue(metric, scaleTotal, numberFormat, spot)}
+            </p>
+          </div>
+          <FlowList
+            heading="Where to"
+            nodes={rightVisual}
+            thicknesses={rightThickness}
+            budget={budget}
+            side="to"
+            metric={metric}
+            numberFormat={numberFormat}
+            spot={spot}
+            onTip={showTip}
+          />
+        </div>
+      ) : (
+        <svg
+          viewBox={`0 0 ${VIEW_W} ${height}`}
+          className="h-auto w-full"
+          role="img"
+          aria-label={accountLabel}
+          data-layout="sankey"
+          overflow="hidden"
         >
-          {accountLabel}
-        </text>
-      </svg>
+          <text x={8} y={14} className="fill-paper/60" fontSize="11">
+            Where from
+          </text>
+          <text x={VIEW_W - 8} y={14} textAnchor="end" className="fill-paper/60" fontSize="11">
+            Where to
+          </text>
+          {ribbons}
+          <rect
+            x={centerLeft}
+            y={accountTop}
+            width={CENTER_W}
+            height={budget}
+            rx={12}
+            className="fill-paper/10"
+          />
+          <text
+            x={VIEW_W / 2}
+            y={accountTop + budget / 2}
+            textAnchor="middle"
+            dominantBaseline="middle"
+            className="fill-paper"
+            fontSize="12"
+          >
+            {accountLabel}
+          </text>
+        </svg>
+      )}
       <p role="status" className="mt-2 min-h-6 text-sm text-paper/80">
         {tip === null ? '' : tip}
       </p>

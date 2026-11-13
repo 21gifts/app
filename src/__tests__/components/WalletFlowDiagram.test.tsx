@@ -1,5 +1,5 @@
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
-import { afterEach, describe, expect, it } from 'vitest';
+import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { accountBalances, WalletFlowDiagram } from '@/components/WalletFlowDiagram';
 import type { WalletParty, WalletPurpose, WalletUsageFlow } from '@/lib/api-types';
 
@@ -234,6 +234,114 @@ function memberFlows(): WalletUsageFlow[] {
   rows.push(flow('2026-11-09', 'outside', 'members', 'deposit', 1, 15, 50));
   return rows;
 }
+
+/** Reports a container width. `emitOnObserve` false leaves the first render wide. */
+class WidthObserver {
+  static latest: WidthObserver | null = null;
+  static emitOnObserve = true;
+  static initial = 800;
+  readonly disconnect = vi.fn();
+
+  constructor(readonly onResize: ResizeObserverCallback) {
+    WidthObserver.latest = this;
+  }
+
+  observe(): void {
+    if (WidthObserver.emitOnObserve) {
+      this.send(WidthObserver.initial);
+    }
+  }
+
+  send(width: number): void {
+    this.onResize(
+      [{ contentRect: { width } } as ResizeObserverEntry],
+      this as unknown as ResizeObserver,
+    );
+  }
+
+  sendEmpty(): void {
+    this.onResize([], this as unknown as ResizeObserver);
+  }
+}
+
+/**
+ * Installs {@link WidthObserver} and restores the previous constructor.
+ *
+ * @param initial - Width reported from `observe`, when emitting is on.
+ * @param emitOnObserve - Whether `observe` reports `initial` immediately.
+ * @returns Restores the previous `ResizeObserver`.
+ */
+function installWidthObserver(initial: number, emitOnObserve: boolean): () => void {
+  WidthObserver.latest = null;
+  WidthObserver.initial = initial;
+  WidthObserver.emitOnObserve = emitOnObserve;
+  const previous = globalThis.ResizeObserver;
+  globalThis.ResizeObserver = WidthObserver as unknown as typeof ResizeObserver;
+  return () => {
+    if (previous === undefined) {
+      Reflect.deleteProperty(globalThis, 'ResizeObserver');
+    } else {
+      globalThis.ResizeObserver = previous;
+    }
+  };
+}
+
+function latestObserver(): WidthObserver {
+  const observer = WidthObserver.latest;
+  if (observer === null) {
+    throw new Error('missing observer');
+  }
+  return observer;
+}
+
+function barPercent(root: Element, label: string): number {
+  const bar = requireFlow(root, label).querySelector('[data-metric]');
+  if (!(bar instanceof HTMLElement)) {
+    throw new Error(`missing bar ${label}`);
+  }
+  const match = /^([\d.]+)%$/.exec(bar.style.width);
+  if (match === null || match[1] === undefined) {
+    throw new Error(`missing width ${label}`);
+  }
+  return Number(match[1]);
+}
+
+function columnPercent(root: Element, side: 'from' | 'to'): number {
+  const nodes = root.querySelectorAll(`[data-side="${side}"]`);
+  let total = 0;
+  for (const node of nodes) {
+    const label = node.getAttribute('data-flow');
+    if (label === null) {
+      throw new Error('missing flow');
+    }
+    total += barPercent(root, label);
+  }
+  return total;
+}
+
+function lastFlow(root: Element, side: 'from' | 'to'): string {
+  const nodes = root.querySelectorAll(`[data-side="${side}"]`);
+  const last = nodes.item(nodes.length - 1);
+  if (last === null) {
+    throw new Error(`missing ${side}`);
+  }
+  const label = last.getAttribute('data-flow');
+  if (label === null) {
+    throw new Error(`missing ${side} label`);
+  }
+  return label;
+}
+
+const PRICED_SPOT = {
+  rateDay: {
+    sats: 100_000_000,
+    usd: '100000.00',
+    chf: '80000.00',
+    eur: '90000.00',
+    php: '5600000.00',
+  },
+  fiat: 'USD' as const,
+};
 
 describe('accountBalances', () => {
   it('returns nothing when there is no day', () => {
@@ -701,5 +809,253 @@ describe('WalletFlowDiagram', () => {
     fireEvent.mouseEnter(requireFlow(diagram, 'Balance at end of day'));
     expect(status?.textContent).toBe('Balance at end of day: \u20bf10');
     expect(status?.textContent).not.toContain('$');
+  });
+
+  it('keeps the sankey at 520 px and uses lists below that', () => {
+    const restore = installWidthObserver(800, true);
+    try {
+      render(
+        <WalletFlowDiagram
+          account="members"
+          accountLabel="Member wallets"
+          flows={[flow('2026-11-09', 'outside', 'members', 'deposit', 1, 10, 0)]}
+          startSats={0}
+          endSats={0}
+          metric="amount"
+          numberFormat="ch"
+        />,
+      );
+      const wide = screen.getByRole('img', { name: 'Member wallets' });
+      expect(wide.getAttribute('data-layout')).toBe('sankey');
+      expect(wide.querySelector('text')?.getAttribute('y')).toBe('14');
+      act(() => {
+        latestObserver().send(520);
+      });
+      expect(screen.getByRole('img', { name: 'Member wallets' }).getAttribute('data-layout')).toBe(
+        'sankey',
+      );
+      act(() => {
+        latestObserver().send(519);
+      });
+      const narrow = screen.getByRole('img', { name: 'Member wallets' });
+      expect(narrow.getAttribute('data-layout')).toBe('compact');
+      expect(narrow.querySelector('svg')).toBeNull();
+      expect(narrow.textContent).toContain('Where from');
+      expect(narrow.textContent).toContain('Where to');
+    } finally {
+      restore();
+    }
+  });
+
+  it('draws narrow rows on one scale, with balances last and the same status line', () => {
+    const restore = installWidthObserver(360, true);
+    try {
+      render(
+        <>
+          <WalletFlowDiagram
+            account="members"
+            accountLabel="Member wallets"
+            flows={[
+              flow('2026-11-09', 'outside', 'members', 'deposit', 2, 100, 0),
+              flow('2026-11-09', 'members', 'outside', 'withdrawal', 1, 40, 7),
+            ]}
+            startSats={50}
+            endSats={10}
+            metric="amount"
+            numberFormat="ch"
+            spot={PRICED_SPOT}
+          />
+          <WalletFlowDiagram
+            account="fund"
+            accountLabel="Tondo fund"
+            flows={[flow('2026-11-09', 'outside', 'fund', 'deposit', 1, 80, 0)]}
+            startSats={0}
+            endSats={20}
+            metric="amount"
+            numberFormat="ch"
+            spot={{ rateDay: null, fiat: 'USD' }}
+          />
+        </>,
+      );
+      const diagram = screen.getByRole('img', { name: 'Member wallets' });
+      expect(diagram.getAttribute('data-layout')).toBe('compact');
+      const text = diagram.textContent;
+      if (text === null) {
+        throw new Error('missing diagram text');
+      }
+      const whereFrom = text.indexOf('Where from');
+      const depositAt = text.indexOf('Deposits from outside');
+      const accountAt = text.indexOf('Member wallets');
+      const whereTo = text.indexOf('Where to');
+      const withdrawalAt = text.indexOf('Withdrawals to outside');
+      expect(whereFrom).toBeGreaterThanOrEqual(0);
+      expect(whereFrom).toBeLessThan(depositAt);
+      expect(depositAt).toBeLessThan(accountAt);
+      expect(accountAt).toBeLessThan(whereTo);
+      expect(whereTo).toBeLessThan(withdrawalAt);
+      expect(lastFlow(diagram, 'from')).toBe('Balance at start of day');
+      expect(lastFlow(diagram, 'to')).toBe('Balance at end of day');
+      const deposit = requireFlow(diagram, 'Deposits from outside');
+      if (!(deposit instanceof HTMLElement)) {
+        throw new Error('missing deposit row');
+      }
+      expect(deposit.className).toContain('text-sm');
+      expect(deposit.className).not.toContain('break-words');
+      expect(deposit.textContent).toContain('\u20bf100 · $0.10');
+      expect(requireFlow(diagram, 'Fees').textContent).toContain('\u20bf7 · $0.01');
+      expect(requireFlow(diagram, 'Balance at start of day').textContent).toContain(
+        '\u20bf50 · $0.05',
+      );
+      const depositBar = deposit.querySelector('[data-metric]');
+      const feeBar = requireFlow(diagram, 'Fees').querySelector('[data-metric]');
+      const balanceBar = requireFlow(diagram, 'Balance at start of day').querySelector(
+        '[data-metric]',
+      );
+      if (
+        !(depositBar instanceof HTMLElement) ||
+        !(feeBar instanceof HTMLElement) ||
+        !(balanceBar instanceof HTMLElement)
+      ) {
+        throw new Error('missing bar');
+      }
+      expect(depositBar.className).toContain('bg-emerald-400');
+      expect(feeBar.className).toContain('bg-paper/40');
+      expect(balanceBar.className).toContain('bg-paper/25');
+      const depositWidth = barPercent(diagram, 'Deposits from outside');
+      const openingWidth = barPercent(diagram, 'Balance at start of day');
+      expect(depositWidth / openingWidth).toBeCloseTo(2);
+      const total = diagram.querySelector('[data-scale-total]');
+      expect(total?.getAttribute('data-scale-total')).toBe('150');
+      expect(total?.textContent).toBe('\u20bf150 · $0.15');
+      const frame = diagram.parentElement;
+      if (frame === null) {
+        throw new Error('missing diagram frame');
+      }
+      const status = frame.querySelector('[role="status"]');
+      fireEvent.mouseEnter(deposit);
+      expect(status?.textContent).toBe('Deposits from outside: 2 payments · \u20bf100 · $0.10');
+      fireEvent.mouseLeave(deposit);
+      expect(status?.textContent).toBe('');
+      fireEvent.focus(deposit);
+      expect(status?.textContent).toBe('Deposits from outside: 2 payments · \u20bf100 · $0.10');
+      fireEvent.blur(deposit);
+      expect(status?.textContent).toBe('');
+      fireEvent.mouseEnter(requireFlow(diagram, 'Withdrawals to outside'));
+      expect(status?.textContent).toBe('Withdrawals to outside: 1 payments · \u20bf40 · $0.04');
+
+      const fund = screen.getByRole('img', { name: 'Tondo fund' });
+      expect(fund.getAttribute('data-layout')).toBe('compact');
+      expect(fund.textContent).not.toContain('$');
+      expect(fund.querySelector('[data-scale-total]')?.textContent).toBe('\u20bf80');
+      expect(requireFlow(fund, 'Deposits from outside').textContent).toContain('\u20bf80');
+    } finally {
+      restore();
+    }
+  });
+
+  it('uses the shared count scale and omits balances when the container is narrow', () => {
+    const restore = installWidthObserver(360, true);
+    try {
+      render(
+        <WalletFlowDiagram
+          account="members"
+          accountLabel="Member wallets"
+          flows={[
+            flow('2026-11-09', 'outside', 'members', 'deposit', 10, 1, 0),
+            flow('2026-11-09', 'members', 'members', 'forum_gift', 4, 1, 0),
+            flow('2026-11-09', 'members', 'outside', 'withdrawal', 2, 1, 0),
+          ]}
+          startSats={80}
+          endSats={20}
+          metric="count"
+          numberFormat="ch"
+        />,
+      );
+      const diagram = screen.getByRole('img', { name: 'Member wallets' });
+      expect(diagram.getAttribute('data-layout')).toBe('compact');
+      expect(diagram.querySelector('[data-flow="Fees"]')).toBeNull();
+      expect(diagram.querySelector('[data-flow="Balance at start of day"]')).toBeNull();
+      expect(requireFlow(diagram, 'Deposits from outside').textContent).toContain('10');
+      expect(barPercent(diagram, 'Forum gifts from members')).toBeCloseTo(
+        barPercent(diagram, 'Forum gifts to members'),
+      );
+      expect(columnPercent(diagram, 'from')).toBeCloseTo(100);
+      expect(columnPercent(diagram, 'to')).toBeLessThan(columnPercent(diagram, 'from'));
+      const total = diagram.querySelector('[data-scale-total]');
+      expect(total?.getAttribute('data-scale-total')).toBe('14');
+      expect(total?.textContent).toBe('14');
+    } finally {
+      restore();
+    }
+  });
+
+  it('ignores an empty resize and a zero width, then disconnects', () => {
+    const restore = installWidthObserver(0, false);
+    try {
+      const view = render(
+        <WalletFlowDiagram
+          account="members"
+          accountLabel="Member wallets"
+          flows={[flow('2026-11-09', 'outside', 'members', 'deposit', 1, 10, 0)]}
+          startSats={0}
+          endSats={0}
+          metric="amount"
+          numberFormat="ch"
+        />,
+      );
+      expect(screen.getByRole('img', { name: 'Member wallets' }).getAttribute('data-layout')).toBe(
+        'sankey',
+      );
+      const observer = latestObserver();
+      act(() => {
+        observer.sendEmpty();
+      });
+      expect(screen.getByRole('img', { name: 'Member wallets' }).getAttribute('data-layout')).toBe(
+        'sankey',
+      );
+      act(() => {
+        observer.send(0);
+      });
+      expect(screen.getByRole('img', { name: 'Member wallets' }).getAttribute('data-layout')).toBe(
+        'sankey',
+      );
+      act(() => {
+        observer.send(400);
+      });
+      expect(screen.getByRole('img', { name: 'Member wallets' }).getAttribute('data-layout')).toBe(
+        'compact',
+      );
+      view.unmount();
+      expect(observer.disconnect).toHaveBeenCalled();
+    } finally {
+      restore();
+    }
+  });
+
+  it('stays on the sankey when the browser has no ResizeObserver', () => {
+    const previous = globalThis.ResizeObserver;
+    Reflect.deleteProperty(globalThis, 'ResizeObserver');
+    try {
+      render(
+        <WalletFlowDiagram
+          account="members"
+          accountLabel="Member wallets"
+          flows={[flow('2026-11-09', 'outside', 'members', 'deposit', 1, 10, 0)]}
+          startSats={0}
+          endSats={0}
+          metric="amount"
+          numberFormat="ch"
+        />,
+      );
+      const diagram = screen.getByRole('img', { name: 'Member wallets' });
+      expect(diagram.getAttribute('data-layout')).toBe('sankey');
+      expect(diagram.querySelector('[data-flow="Deposits from outside"]')).toBeTruthy();
+    } finally {
+      if (previous === undefined) {
+        Reflect.deleteProperty(globalThis, 'ResizeObserver');
+      } else {
+        globalThis.ResizeObserver = previous;
+      }
+    }
   });
 });
