@@ -243,6 +243,7 @@ function PublicThreadCard({
           amountEur={note.amountEur}
           amountPhp={note.amountPhp}
           goalRepayable={note.goalRepayable}
+          goalClosedAt={note.goalClosedAt}
           goalTermDays={note.goalTermDays}
           messageId={note.id}
         />

@@ -23,6 +23,9 @@ export const loanA: MyLoan = {
   amountPhp: null,
   termDays: 30,
   fundedAt,
+  closedAt: fundedAt,
+  maxSats: 19_000,
+  maxAmount: null,
   daysDue: 12,
   daysPaid: 11,
   repaidSats: 11_000,
@@ -59,6 +62,9 @@ export const loanB: MyLoan = {
   amountPhp: '300.00',
   termDays: 10,
   fundedAt,
+  closedAt: fundedAt,
+  maxSats: 7_200,
+  maxAmount: '180.00',
   daysDue: 5,
   daysPaid: 4,
   repaidSats: 4_800,
@@ -95,6 +101,9 @@ export const loanPhpFunded: MyLoan = {
   amountPhp: '10000.98',
   termDays: 50,
   fundedAt: '2026-10-10T10:00:00.000Z',
+  closedAt: '2026-10-10T10:00:00.000Z',
+  maxSats: 192_814,
+  maxAmount: '10000.00',
   daysDue: 0,
   daysPaid: 0,
   repaidSats: 0,
@@ -131,6 +140,9 @@ export const loanPhpCollecting: MyLoan = {
   amountPhp: '480.28',
   termDays: 100,
   fundedAt: null,
+  closedAt: null,
+  maxSats: 9_283,
+  maxAmount: '480.28',
   daysDue: 0,
   daysPaid: 0,
   repaidSats: 0,
@@ -151,6 +163,60 @@ export const loanPhpCollecting: MyLoan = {
 /** Both loans of the reported production case, in their `/me/loans` order. */
 export const productionPhpLoans: readonly MyLoan[] = [loanPhpFunded, loanPhpCollecting];
 
+/** A still-collecting BTC loan whose first free repayment will close collecting. */
+export const loanCollecting: MyLoan = {
+  ...loanA,
+  messageId: 'loan-collecting',
+  text: 'Collecting for tools while repaying everyone who already helped.',
+  sats: 8_000,
+  fundedAt: null,
+  closedAt: null,
+  maxSats: 8_000,
+  maxAmount: null,
+  daysDue: 0,
+  daysPaid: 0,
+  repaidSats: 0,
+  due: {
+    payableSats: 0,
+    payablePeople: 0,
+    waitingSats: 0,
+    waitingPeople: 0,
+    behindDays: 0,
+    payableAmount: null,
+    waitingAmount: null,
+    lastPayment: false,
+  },
+  next: null,
+};
+
+/** A manually closed, partially repaid BTC loan. */
+export const loanClosedPartial: MyLoan = {
+  ...loanA,
+  messageId: 'loan-closed-partial',
+  text: 'Closed early after enough was collected for replacement parts.',
+  sats: 8_000,
+  fundedAt: null,
+  closedAt: '2026-10-03T10:00:00.000Z',
+  maxSats: 7_900,
+  maxAmount: null,
+  termDays: 16,
+  daysDue: 1,
+  daysPaid: 0,
+  repaidSats: 100,
+  totalSats: 8_000,
+  due: {
+    payableSats: 400,
+    payablePeople: 1,
+    waitingSats: 0,
+    waitingPeople: 0,
+    behindDays: 0,
+    payableAmount: null,
+    waitingAmount: null,
+    lastPayment: false,
+  },
+  next: { dueOn: '2026-10-08', sats: 400, amount: null },
+};
+
 type LedgerRow = RepaymentLedger['repayments'][number];
 
 function btcRow(
@@ -169,6 +235,8 @@ function btcRow(
     username: name.toLowerCase(),
     amount: null,
     sats,
+    paidSats: status === 'paid' ? sats : 0,
+    paidAmount: null,
     dueSats: status === 'due' ? sats : null,
     status,
     via: 'lightning',
@@ -187,6 +255,7 @@ function btcDayRows(dayIndex: number, dueOn: string, status: LedgerRow['status']
 export const ledgerA: RepaymentLedger = {
   currency: 'BTC',
   fundedAt,
+  closedAt: fundedAt,
   termDays: 30,
   daysDue: 12,
   daysPaid: 11,
@@ -237,6 +306,7 @@ export const ledgerA: RepaymentLedger = {
 export const ledgerB: RepaymentLedger = {
   currency: 'PHP',
   fundedAt,
+  closedAt: fundedAt,
   termDays: 10,
   daysDue: 5,
   daysPaid: 4,
@@ -267,14 +337,73 @@ export const ledgerB: RepaymentLedger = {
       {
         ...btcRow(dayIndex, dueOn, 'acc_elena', 'Elena', 720, status),
         amount: '18.00',
+        paidAmount: status === 'paid' ? '18.00' : '0.00',
       },
       {
         ...btcRow(dayIndex, dueOn, 'acc_farid', 'Farid', 480, status),
         amount: '12.00',
+        paidAmount: status === 'paid' ? '12.00' : '0.00',
       },
     ];
   }).flat(),
   next: { dayIndex: 5, sats: 720, recipientAccountId: 'acc_elena' },
+};
+
+/** Ledger for {@link loanClosedPartial}, including a partially paid due line. */
+export const ledgerClosedPartial: RepaymentLedger = {
+  currency: 'BTC',
+  fundedAt: null,
+  closedAt: loanClosedPartial.closedAt ?? null,
+  termDays: 16,
+  daysDue: 1,
+  daysPaid: 0,
+  unassignedSats: 0,
+  givers: [
+    {
+      accountId: 'acc_bruno',
+      name: 'Bruno',
+      username: 'bruno',
+      givenSats: 8_000,
+      givenAmount: null,
+      canReceive: true,
+    },
+  ],
+  repayments: [
+    {
+      dayIndex: 0,
+      dueOn: '2026-10-07',
+      accountId: 'acc_bruno',
+      name: 'Bruno',
+      username: 'bruno',
+      amount: null,
+      sats: 500,
+      paidSats: 100,
+      paidAmount: null,
+      dueSats: 400,
+      status: 'due',
+      via: 'lightning',
+    },
+  ],
+  next: { dayIndex: 0, sats: 400, recipientAccountId: 'acc_bruno' },
+};
+
+/** Fiat counterpart of {@link ledgerClosedPartial}, with stored paid and remaining amounts. */
+export const ledgerClosedPartialFiat: RepaymentLedger = {
+  ...ledgerClosedPartial,
+  currency: 'PHP',
+  givers: [
+    {
+      ...ledgerClosedPartial.givers[0]!,
+      givenAmount: '200.00',
+    },
+  ],
+  repayments: [
+    {
+      ...ledgerClosedPartial.repayments[0]!,
+      amount: '12.50',
+      paidAmount: '2.50',
+    },
+  ],
 };
 
 /** POST repayment body for the payable shares of {@link loanA}. */

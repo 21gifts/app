@@ -1223,9 +1223,10 @@ The same when the background wallet setup gave up (pin `?visual=balance-setup-fa
 ## Screen: /loans/repay
 
 - **URL:** `/loans/repay` — the signed-in member's one repayment screen for every loan still collecting or being repaid. It uses the ordinary top-left history arrow and **Menu**; there is no second Back control.
-- **What the user sees:** The due box comes first. It says **Due today**, **Due today · last payment**, **You're N days behind** in the danger colour, or **Still due today** after a partial send. The large amount is bitcoin, with the current spot on the muted line under it, when a payable loan is in bitcoin or its stored amount is missing or invalid. That muted line is absent only when the spot is not loaded. When all payable loans were asked in one fiat currency, the large line is that currency alone (for example **₱30.00**). When they were asked in more than one fiat currency, the large line pairs the stored per-currency figures with the total payable bitcoin (for example **₱30.00 + $3.00 · ₿1'000**). The one-currency box is the debt in that currency, so no bitcoin amount and no second fiat line sit under it. Then comes **to N people**, with **· N loans** when more than one loan is payable. A muted box explains any amount waiting for lenders without wallets; that amount is never part of the amount to send. When every due share waits, the due box says **Nothing to send now** with no amount, no **to N people**, and no **Send**. **Who gets paid** is closed initially; opened, it lists each lender and amount, groups rows by loan when there is more than one, and shows a share the api marks waiting as a muted row with **Waiting for {name} to set up their wallet**, never in the danger colour. **You're N days behind** follows the api's `behindDays`, which never counts a waiting share. While the repayment list of a funded loan with something due (payable or waiting) is still loading, the open list shows a muted **Loading who gets paid…** status with a spinner for that loan; after a failed `GET /messages/:id/repayment` it shows a red **Could not load who gets paid for this loan.** at once, without waiting for the other loans' lists. A collecting loan, or a loan with nothing due, shows neither line. The send-now link stays hidden until every list has loaded. While the wallet connects, the pay area says **Checking your wallet…**; if background setup has exhausted its retries, **Your wallet could not be set up yet.** appears with **Try again**. When the wallet is ready and has enough, **From your wallet · ₿balance · fiat** follows, then **Send**. For a bitcoin debt, Send repeats that large bitcoin amount with its spot. For a debt defined in one fiat currency, Send shows that currency together with the bitcoin being paid now (for example **Send ₱30.00 · ₿1'200**); several fiat currencies are joined with `+` before the same bitcoin (for example **Send ₱30.00 + $3.00 · ₿1'000**). One tap requests every loan's currently due bills, pays them oldest-first from the in-app wallet, and waits for settlement without a confirmation step. The progress line names the stored amount(s) of the shares being sent, joined per currency with `+` when needed, or bitcoin with the current spot when an amount is missing. A partial send's **Sent** line uses the same rule for the shares that actually went out. A successful ordinary repayment says **Repaid** with the stored fiat amount(s) of the shares that actually went out and their bitcoin (currencies joined with `+`, in first-seen order), falling back to bitcoin with the current spot when any amount is missing, and, only for a nonzero wallet fee, **Fee ₿X · fiat**, then names the next payment; a last payment uses the green **That was your last payment** message, or names the completed loan when other loans remain. An unconfirmed send stays neutral and a failed request is red; when the api answers `cannot_receive` the red line is **A lender's wallet can't receive yet.** When the balance is short, a bordered box says **Not enough in your wallet** and **Your wallet has ₿A · fiat. Still missing ₿B · fiat.**, then **Top up your wallet**. Opening it reveals **To add Bitcoin, send it to your address:**, the member's own address, its Open CryptoPay QR, an icon-only **Copy**, and **Waiting for your top-up…**. A separate link offers **send now** with the fitting shares' stored fiat amount(s) and bitcoin (or bitcoin with the current spot when an amount is missing) when every loan's repayment list has loaded and the oldest complete share or shares fit, and it pays exactly the shares it names; after a run reports a shortfall, the link stays hidden until the wallet balance changes. If some lenders cannot receive, the available shares can still be sent and a notice says what waits; if all are unavailable, **Today's payment waits until they do** and there is no Send control. Sunday shows **No repayments on Sundays** and no Send control. Beneath the due box, **Your loan** or **Your loans** lists every loan from top to bottom: its text; total, term, and per-day amount in the loan's own currency (the last day too, when that currency's split has a remainder; a fiat loan does not add bitcoin to this description); **Repaid** from the paid `amount` strings of that loan's ledger when it is a fiat loan, those paid rows exist, and their `sats` total equals `repaidSats`, otherwise the bitcoin already sent with its fiat, **of** the loan total in the loan's currency, with **Day n of N** and a green bar; and **Repayment list**. A collecting loan instead says **Not fully funded yet.** The empty state says **You have no loan to repay.** A failed loan read says **Could not load your loans.** with **Try again**.
-- **Actions:** Open or close **Who gets paid**; tap **Send** once to pay all currently payable shares; when short, open **Top up your wallet**, copy the own address, or send now exactly the shares the link names; open a loan's **Repayment list**; retry a failed load; use the single top-left arrow to return to the previous in-app view, or `/welcome` when this tab has none; open **Menu**.
-- **Calls:** `LoanRepayPage`, `AppShell`, `WalletChromeLeft`, `SignedInChrome`, `OnboardingGate`, `LoanRepayScreen`, `useMyLoans`, `useLoanRepay`, `useSpotRate`, `getRepayment`, `postRepaymentDue`, `summarizeLoans`, `dueShares`, `fittingPrefix`, `formatDefinedGoalAmount`, `creditSmallestUnits`, `splitCreditPlan`, `payFromWallet`, `WalletOwnAddress`, `WalletSetupNote`, `GET /me/loans`, `GET /messages/:id/repayment`, and `POST /messages/:id/repayment/due`.
+- **What the user sees:** The due box comes first and keeps all existing due, recipient, wallet, top-up, waiting, Sunday, success, and error states. Beneath it, **Your loan** or **Your loans** lists the plan, progress and **Repayment list**. Every loan then shows **Pay more** with the shared `AmountEntry` as a fixed loan-unit field with no switch: sats for a BTC loan or the loan currency for a fiat loan, plus the live other-unit counter, exact **Max**, and **Pay this amount**. BTC figures in validation, server-limit, confirmation, waiting, and shortfall copy carry the preferred-fiat spot whenever it is available. Fiat confirmations and waiting rows keep the trimmed typed or returned decimal verbatim with only its currency prefix beside bitcoin. Validation sits directly under the field while typing; malformed, zero, over-maximum, and rate-less amounts are disabled. A collecting loan says its first payment ends collecting, confirms that permanent consequence before paying, and also offers a final **End collecting** dialog; both dialogs say a new loan is needed to collect more. A closed loan still shows **Pay more** but no collecting controls. Maximum api refusals replace the draft with the returned limit; open earlier payments, Sunday rest, throttling, unavailable service, missing requirements, and request failures have clear inline messages. A BTC loan without an api maximum says that its repayment maximum is unavailable, not that a BTC exchange rate is missing. The empty state says **You have no loan to repay.** A failed read says **Could not load your loans.** with **Try again**.
+- **Actions:** Open or close **Who gets paid**; tap **Send** once to pay all currently payable shares; when short, open **Top up your wallet**, copy the own address, or send now exactly the shares the link names. Per loan, enter a free amount, choose exact **Max**, and use **Pay this amount**; a collecting loan confirms that its first payment ends collecting and independently confirms **End collecting** as final. Open **Repayment list**, retry a failed load, use the single top-left arrow, or open **Menu**.
+- **Correctness details:** A fiat loan needs both a positive `maxAmount` and a positive `maxSats` availability signal before Max or payment is enabled; a BTC maximum must likewise be positive. Zero maxima are unavailable and show the existing maximum-unavailable feedback instead of filling the field with zero. The body sent to prepay remains in the loan currency: whole sats for BTC, the trimmed loan-currency decimal for fiat. Validation compares bigint sats/cents; fiat input is limited only by `maxAmount` cents, while `maxSats` supplies availability and the bitcoin displayed beside that exact amount. Max preserves the api's exact maximum pair even when the current spot differs. If a collecting-loan pay dialog becomes invalid or payment becomes unavailable while open, its pay action disables and never changes into **End collecting permanently**. Both collecting confirmations move focus into the dialog, trap Tab and Shift+Tab, close on Escape, make the page controls behind them inert, and restore focus to their opener. The hook's active kind and message id keep prepay/close sending, failure, waiting, and shortfall inside only the matching `LoanPayMore`; the due box uses those states only for a due run. Waiting recipients and typed action errors likewise apply only to their matching loan. A final prepayment remembers the loan list before starting, so an empty refreshed list renders repayment success rather than the ordinary no-loan state.
+- **Calls:** `LoanRepayPage`, `LoanRepayScreen`, `LoanPayMore`, `useMyLoans`, `useLoanRepay`, `useSpotRate`, `getRepayment`, `postRepaymentDue`, `prepayLoan`, `closeLoan`, `checkLoanAmount`, `loanMaxInput`, `isCollecting`, `payFromWallet`, `WalletOwnAddress`, `WalletSetupNote`, `GET /me/loans`, `GET /messages/:id/repayment`, and the no-body/free-amount `repayment`, `due`, and `close` POST routes.
 
 ### Variant: default
 
@@ -1553,9 +1554,225 @@ The same state with **Who gets paid** open. The list shows Bruno **₿500 · $0.
 
 ### Variant: collecting
 
-With Loan A still collecting, there is no due box. **Your loan** shows the sewing-machine text, **₿30'000 · $30.00 · 30 days · ₿1'000 · $1.00 per day**, **Not fully funded yet.**, and **Repayment list**; this screen does not show a funding bar.
+With Loan A still collecting, there is no due box. **Your loan** shows the sewing-machine text, **₿30'000 · $30.00 · 30 days · ₿1'000 · $1.00 per day**, **Not fully funded yet.**, and **Repayment list**; this screen does not show a funding bar. It also shows **Pay more**, a fixed ₿ field with its live USD counter, **Max**, the notice that the first payment ends collecting, **Pay this amount**, and **End collecting**.
 
 ![21.gifts loans repay collecting](images/loans-repay-collecting.png)
+
+### Variant: collecting-connecting
+
+With Loan A still collecting and no due box, the Pay-more-only wallet feedback shows a spinner and **Checking your wallet…** below AmountEntry. The fixed ₿ field, **Max**, the collecting notice, **Pay this amount**, and **End collecting** remain visible.
+
+![21.gifts loans repay collecting wallet connecting](images/loans-repay-collecting-connecting.png)
+
+### Variant: collecting-setup-failed
+
+With Loan A still collecting and no due box, the Pay-more-only wallet feedback shows **Your wallet could not be set up yet.** and **Try again** below AmountEntry. The collecting notice and **End collecting** remain visible while payment is disabled.
+
+![21.gifts loans repay collecting wallet setup failed](images/loans-repay-collecting-setup-failed.png)
+
+### Variant: collecting-unavailable
+
+With Loan A still collecting and no due box, the Pay-more-only wallet feedback says **Your wallet is not available here. Open this page in the 21.gifts app to pay.** The fixed ₿ field and collecting controls remain visible while **Pay this amount** is disabled.
+
+![21.gifts loans repay collecting wallet unavailable](images/loans-repay-collecting-unavailable.png)
+
+### Variant: pay-more-max
+
+Loan A after **Max**: AmountEntry stays in the loan's fixed ₿ unit, contains the exact current maximum **19000**, shows the live **$19.00** counter, and enables **Pay this amount**. The ordinary due-payment controls remain unchanged above it.
+
+![21.gifts loans repay pay more maximum](images/loans-repay-pay-more-max.png)
+
+### Variant: pay-more-fiat
+
+The PHP loan with **5.00** typed in its fixed loan-currency AmountEntry. The field label is **Amount (PHP)**, there is no unit switch, and the live counter directly under the field shows the bitcoin it buys. Max and **Pay this amount** remain beside and below the shared control.
+
+![21.gifts loans repay pay more fiat](images/loans-repay-pay-more-fiat.png)
+
+### Variant: pay-more-above-max
+
+Loan A while **19001** is entered: the field is invalid, its live counter remains under the AmountEntry, **Enter at most ₿19'000 · $19.00.** sits directly below it, and **Pay this amount** is disabled.
+
+![21.gifts loans repay pay more above maximum](images/loans-repay-pay-more-above-max.png)
+
+### Variant: pay-more-invalid
+
+Loan A with malformed sats input **12.5**. The standard AmountEntry marks the field invalid, shows **Enter a whole ₿ amount greater than zero.** directly below it, and disables **Pay this amount**. The same registered invalid state and currency-specific error appear when an edited amount is cleared; an untouched empty field stays quiet.
+
+![21.gifts loans repay malformed pay more amount](images/loans-repay-pay-more-invalid.png)
+
+### Variant: pay-more-no-rate
+
+A PHP loan without a current conversion rate. AmountEntry stays in the fixed PHP loan unit without a switch and shows **No exchange rate yet**. **Pay more** also explains **No PHP exchange rate is available now, so paying more is disabled.** Both **Max** and **Pay this amount** are disabled.
+
+![21.gifts loans repay pay more without rate](images/loans-repay-pay-more-no-rate.png)
+
+### Variant: pay-more-no-maximum
+
+A BTC loan without a currently available repayment maximum. AmountEntry stays in the fixed ₿ loan unit and **Pay more** explains **No BTC repayment maximum is available now, so paying more is disabled.** It does not report a missing exchange rate. Both **Max** and **Pay this amount** are disabled.
+
+![21.gifts loans repay pay more without maximum](images/loans-repay-pay-more-no-maximum.png)
+
+### Variant: pay-more-fiat-no-maximum
+
+A PHP loan whose response still has `maxSats` but has no usable `maxAmount`. AmountEntry stays in the fixed PHP loan unit and **Pay more** explains **No PHP repayment maximum is available now, so paying more is disabled.** It does not report a missing exchange rate. Both **Max** and **Pay this amount** are disabled.
+
+![21.gifts fiat loan repay pay more without maximum](images/loans-repay-pay-more-fiat-no-maximum.png)
+
+### Variant: pay-more-server-max
+
+The api lowered the available maximum to **₿6'000 · $6.00**. AmountEntry is reset to **6000** in its fixed ₿ unit, keeps the live **$6.00** counter, and the red line explains that the amount was adjusted and must be reviewed before paying again.
+
+![21.gifts loans repay adjusted server maximum](images/loans-repay-pay-more-server-max.png)
+
+### Variant: pay-more-server-invalid
+
+The free-payment api answered `invalid_amount`. The empty AmountEntry is marked invalid and shows the field-level **Enter a whole ₿ amount greater than zero.** feedback instead of the generic payment-error line.
+
+![21.gifts loans repay server invalid amount](images/loans-repay-pay-more-server-invalid.png)
+
+### Variant: pay-more-error
+
+The free-payment request was refused because an earlier payment is still open. The red api error is visible while AmountEntry's fixed-unit field, live counter, and controls remain available for a later retry.
+
+![21.gifts loans repay pay more api error](images/loans-repay-pay-more-error.png)
+
+### Variant: pay-more-rate-limit
+
+The free-payment api answered HTTP 429. The red line **Too many payment requests. Try again later.** appears below AmountEntry while its fixed-unit field, live counter, Max, and **Pay this amount** remain available for a later retry.
+
+![21.gifts loans repay pay more rate limit](images/loans-repay-pay-more-rate-limit.png)
+
+### Variant: pay-more-service-unavailable
+
+The free-payment api answered HTTP 503. The red line **Repayment is temporarily unavailable. Try again later.** appears below AmountEntry while its fixed-unit field, live counter, and controls remain available.
+
+![21.gifts loans repay pay more service unavailable](images/loans-repay-pay-more-service-unavailable.png)
+
+### Variant: pay-more-missing-requirements
+
+The free-payment api answered `missing_requirements`. The red line **Complete your account requirements before paying.** appears below AmountEntry while its fixed-unit field, live counter, and controls remain available.
+
+![21.gifts loans repay pay more missing requirements](images/loans-repay-pay-more-missing-requirements.png)
+
+### Variant: pay-more-request-failure
+
+The free-payment request failed before wallet work began. The typed generic refusal shows **Could not start this repayment. Please try again.** below AmountEntry while its fixed-unit field, live counter, and controls remain available.
+
+![21.gifts loans repay pay more request failure](images/loans-repay-pay-more-request-failure.png)
+
+### Variant: pay-more-wallet-failure
+
+The free-payment request succeeded but its wallet work failed. The red line **Could not start the Bitcoin payment** appears below AmountEntry while its fixed-unit field, live counter, and controls remain available.
+
+![21.gifts loans repay pay more wallet failure](images/loans-repay-pay-more-wallet-failure.png)
+
+### Variant: pay-more-cannot-receive
+
+The free-payment outcome is `cannot_receive`. The red line **A lender's wallet can't receive yet.** appears below AmountEntry while its fixed-unit field, live counter, and controls remain available.
+
+![21.gifts loans repay pay more lender cannot receive](images/loans-repay-pay-more-cannot-receive.png)
+
+### Variant: pay-more-api-sunday
+
+The free-payment api refused the request with `SUNDAY_REST`. The red line **Repayments rest on Sundays. Try again tomorrow.** appears below AmountEntry; this is the api outcome, separate from the ordinary muted Sunday state supplied with the loans list.
+
+![21.gifts loans repay pay more api Sunday refusal](images/loans-repay-pay-more-api-sunday.png)
+
+### Variant: pay-more-nothing-due
+
+The typed `nothing_due` refusal shows the short red line **There is nothing left to repay.** below AmountEntry while its fixed-unit field, live counterpart, and controls remain visible.
+
+![21.gifts loans repay pay more nothing due](images/loans-repay-pay-more-nothing-due.png)
+
+### Variant: pay-more-sending
+
+The free payment is being sent through the wallet. **Paying more…** and its spinner replace the pay button; AmountEntry's fixed-unit field and Max are disabled during the send, while its live counter remains visible.
+
+![21.gifts loans repay pay more sending](images/loans-repay-pay-more-sending.png)
+
+### Variant: pay-more-waiting
+
+The free payment is waiting after its payable bills were sent. A muted **Waiting for Carla to set up their wallet** line keeps the returned waiting share and **₿200 · $0.20** visible beside the matching loan's active wallet status; the due box keeps its own state.
+
+![21.gifts loans repay pay more waiting recipient](images/loans-repay-pay-more-waiting.png)
+
+### Variant: pay-more-unconfirmed
+
+The matching free payment was sent but is not confirmed. **This payment is not confirmed yet. Check your balance again later.** appears in Pay more while the fixed-unit amount field and Max remain visible.
+
+![21.gifts loans repay pay more unconfirmed](images/loans-repay-pay-more-unconfirmed.png)
+
+### Variant: pay-more-success
+
+After a successful free payment, the loan progress is updated to **Repaid ₿12'000 · $12.00 of ₿30'000 · $30.00** and its green bar advances. The submitted fixed-unit AmountEntry field is cleared; Max and **Pay this amount** are ready for another payment.
+
+![21.gifts loans repay pay more success](images/loans-repay-pay-more-success.png)
+
+### Variant: pay-more-shortfall
+
+The wallet is **₿500 · $0.50** short for the free payment and the matching Pay-more top-up block is already open. It shows the balance and missing amount with preferred fiat, Ada's address, exactly one Open CryptoPay QR, and **Waiting for your top-up…**; the due box keeps its own Send state.
+
+![21.gifts loans repay pay more shortfall](images/loans-repay-pay-more-shortfall.png)
+
+### Variant: pay-more-shortfall-collapsed
+
+The same free-payment shortfall before the top-up block is opened. The matching Pay-more block shows the balance, missing amount, and **Top up your wallet**; it has no address, QR, or waiting line yet, and the due box keeps its own Send state.
+
+![21.gifts loans repay pay more shortfall collapsed](images/loans-repay-pay-more-shortfall-collapsed.png)
+
+### Variant: pay-more-shortfall-copied
+
+The opened free-payment shortfall after Ada's address is copied. Its address control reads **Copied**, the Open CryptoPay QR remains visible exactly once, and **Waiting for your top-up…** stays below it; the due box keeps its own Send state.
+
+![21.gifts loans repay pay more shortfall copied](images/loans-repay-pay-more-shortfall-copied.png)
+
+### Variant: collecting-pay-confirm
+
+A still-collecting loan after Max and **Pay this amount**: behind the modal, AmountEntry keeps its fixed ₿ unit and live counter. The modal **Pay and end collecting?** explains that this first payment ends collecting permanently and that more collecting needs a new loan. The actions are **Pay ₿18'000 · $18.00 and end collecting**, **Cancel**, and icon-only **Close**.
+
+![21.gifts loans repay first payment confirmation](images/loans-repay-collecting-pay-confirm.png)
+
+### Variant: collecting-close-confirm
+
+A still-collecting loan after **End collecting**: the modal **End collecting?** says this is final and a new loan is needed for more money, with **End collecting permanently**, **Cancel**, and icon-only **Close**.
+
+![21.gifts loans repay end collecting confirmation](images/loans-repay-collecting-close-confirm.png)
+
+### Variant: close-sending
+
+A still-collecting loan while its permanent close request is being sent. The fixed-unit AmountEntry field, **Max**, **Pay this amount**, and **End collecting** are disabled; a spinner and **Ending collecting…** sit below the close action, with no confirmation dialog.
+
+![21.gifts loans repay ending collecting](images/loans-repay-close-sending.png)
+
+### Variant: close-error
+
+A still-collecting loan after its permanent close request failed. The red close-specific alert **Could not start this repayment. Please try again.** sits below **End collecting**; AmountEntry and both actions are available again, with no confirmation dialog.
+
+![21.gifts loans repay end collecting error](images/loans-repay-close-error.png)
+
+### Variant: close-rate-limit
+
+A still-collecting loan after its permanent close request was rate limited with HTTP 429. The red alert **Too many payment requests. Try again later.** sits below **End collecting**; AmountEntry and both actions are available again.
+
+![21.gifts loans repay end collecting rate limit](images/loans-repay-close-rate-limit.png)
+
+### Variant: close-service-unavailable
+
+A still-collecting loan after its permanent close request received HTTP 503. The red alert **Repayment is temporarily unavailable. Try again later.** sits below **End collecting**; AmountEntry and both actions are available again.
+
+![21.gifts loans repay end collecting service unavailable](images/loans-repay-close-service-unavailable.png)
+
+### Variant: close-missing-requirements
+
+A still-collecting loan after its permanent close request received `missing_requirements`. The red alert **Complete your account requirements before paying.** sits below **End collecting**; AmountEntry and both actions are available again.
+
+![21.gifts loans repay end collecting missing requirements](images/loans-repay-close-missing-requirements.png)
+
+### Variant: closed-loan
+
+A manually closed loan after collecting ended without a payment. Its ordinary fixed-unit **Pay more** AmountEntry, **Max**, and **Pay this amount** remain, while the collecting notice and **End collecting** action are absent.
+
+![21.gifts loans repay closed loan](images/loans-repay-closed-loan.png)
 
 ### Variant: none
 
@@ -3567,6 +3784,30 @@ The same loan after **₿210** and `Count me in!` were posted. The pay sheet sli
 
 ![21.gifts welcome loan pay](images/welcome-loan-pay.png)
 
+### Variant: loan-heart-closed
+
+Maria's collecting loan is still shown from the open list response, but the heart invoice answers `credit_closed`. The heart rolls back and a red line under it says **This loan is no longer collecting and cannot receive more money.** This is the heart-specific refusal state, separate from an author wallet that cannot receive.
+
+![21.gifts welcome closed loan heart refusal](images/welcome-loan-heart-closed.png)
+
+### Variant: loan-heart-refreshed-closed
+
+After that refused heart, an authoritative refresh marks Maria's below-goal loan closed. The red **This loan is no longer collecting and cannot receive more money.** alert remains, while the heart and **Lend** controls have disappeared.
+
+![21.gifts welcome refreshed closed loan heart refusal](images/welcome-loan-heart-refreshed-closed.png)
+
+### Variant: loan-pay-closed
+
+The same stale-open loan after **Lend**, **₿210**, and `Count me in!` are submitted and the contribution invoice answers `credit_closed`. No pay sheet opens; the reaction's amount form stays on the card and shows the red line **This loan is no longer collecting and cannot receive more money.**
+
+![21.gifts welcome closed loan payment refusal](images/welcome-loan-pay-closed.png)
+
+### Variant: loan-initial-closed
+
+Maria's below-goal loan is authoritative as soon as it loads (`goalClosedAt` is present at **₿10'500 · $10.50 of ₿21'000 · $21.00**). The initial card has no **Lend**, heart, amount entry, or pay sheet.
+
+![21.gifts welcome initially closed loan](images/welcome-loan-initial-closed.png)
+
 ### Variant: loan-pay-full
 
 Maria's loan once it is full (`sats` equals `goalSats`): there is no **Lend**, so the money reaction is opened with **React** and keeps the label **Amount**. After **₿210** is posted the pay sheet reads **Send to Maria**, **₿210** large with **$0.21** under it, and the full-width wallet button **Send ₿210 · $0.21**. Behind it, at the top of the disabled reaction form, the note says **This loan is already fully funded. What you send now is a gift to Maria.**
@@ -4240,6 +4481,8 @@ Same signed-in German note after opening `?visual=heart-needs-balance` (a ready 
 ### Variant: heart-cannot-receive
 
 Signed-in note by another member after opening `?visual=heart-cannot-receive` (Playwright builds only) and clicking Send ₿1. The api refused the heart because the author cannot receive (`cannot_receive`), so the tap is rolled back and the catalog line **The author's wallet cannot receive this Bitcoin payment** shows under the heart, in the place of the balance-required line.
+
+A heart invoice refused with `credit_closed` uses that same inline alert position and the localized **This loan is no longer collecting and cannot receive more money.** copy instead of the generic payment error.
 
 ![21.gifts welcome heart cannot receive](images/welcome-heart-cannot-receive.png)
 
@@ -7123,6 +7366,30 @@ Signed-in Ada on Carol's profile; posts pressed; Carol's collecting loan has `au
 The same loan after **₿210** and `Count me in!` were posted. The pay sheet slides up over the dimmed profile: **Lend to Carol**, **₿210** large with **$0.21** under it, and the full-width wallet button **Lend ₿210 · $0.21** (the in-app wallet confirm view). The muted note **You are lending to Carol. Once the loan is fully funded, you get it back in 30 daily payments.** stays at the top of the disabled reaction form behind the sheet, scrolled to the top of the window.
 
 ![21.gifts member posts loan pay](images/members-posts-open-loan-pay.png)
+
+### Variant: posts-open-loan-heart-closed
+
+Ada is on Carol's posts list while Carol's loan still looks open, but the heart invoice answers `credit_closed`. The heart rolls back and the profile card shows the red line **This loan is no longer collecting and cannot receive more money.**
+
+![21.gifts member posts closed loan heart refusal](images/members-posts-open-loan-heart-closed.png)
+
+### Variant: posts-open-loan-heart-refreshed-closed
+
+After that refused heart, Carol's refreshed post authoritatively closes the below-goal loan. The red **This loan is no longer collecting and cannot receive more money.** alert remains on the profile card, while the heart and **Lend** controls have disappeared.
+
+![21.gifts member posts refreshed closed loan heart refusal](images/members-posts-open-loan-heart-refreshed-closed.png)
+
+### Variant: posts-open-loan-pay-closed
+
+The same profile loan after **Lend**, **₿210**, and `Count me in!` are submitted and the contribution invoice answers `credit_closed`. The amount form stays open without a pay sheet and shows **This loan is no longer collecting and cannot receive more money.** in red.
+
+![21.gifts member posts closed loan payment refusal](images/members-posts-open-loan-pay-closed.png)
+
+### Variant: posts-open-loan-initial-closed
+
+Ada sees Carol's posts list with a below-goal loan that arrives with authoritative `goalClosedAt`: **₿10'500 · $10.50 of ₿21'000 · $21.00**. The initial profile card has no **Lend**, heart, amount entry, or pay sheet.
+
+![21.gifts member posts initially closed loan](images/members-posts-open-loan-initial-closed.png)
 
 ### Variant: posts-open-loan-pay-full
 
@@ -10095,6 +10362,30 @@ Signed-in permalink of Maria's loan that still collects (`sats: 10500` of `goalS
 
 ![21.gifts public message loan pay](images/messages-id-loan-pay.png)
 
+### Variant: loan-heart-closed
+
+The signed-in permalink still has an open copy of Maria's loan, but the heart invoice answers `credit_closed`. The heart rolls back and the permalink shows the red line **This loan is no longer collecting and cannot receive more money.** under it.
+
+![21.gifts public message closed loan heart refusal](images/messages-id-loan-heart-closed.png)
+
+### Variant: loan-heart-refreshed-closed
+
+After that refused heart, the permalink refreshes to Maria's authoritatively closed below-goal loan. The red **This loan is no longer collecting and cannot receive more money.** alert remains, while the heart and **Lend** controls have disappeared.
+
+![21.gifts public message refreshed closed loan heart refusal](images/messages-id-loan-heart-refreshed-closed.png)
+
+### Variant: loan-pay-closed
+
+The same permalink after **Lend**, **₿210**, and `Count me in!` are submitted and the contribution invoice answers `credit_closed`. No pay sheet opens; the reaction amount form remains visible with the red line **This loan is no longer collecting and cannot receive more money.**
+
+![21.gifts public message closed loan payment refusal](images/messages-id-loan-pay-closed.png)
+
+### Variant: loan-initial-closed
+
+The signed-in permalink loads Maria's below-goal loan with authoritative `goalClosedAt`, at **₿10'500 · $10.50 of ₿21'000 · $21.00**. The already-open note has no **Lend**, heart, amount entry, or pay sheet.
+
+![21.gifts public message initially closed loan](images/messages-id-loan-initial-closed.png)
+
 ### Variant: loan-pay-full
 
 Signed-in permalink of Maria's loan once it is full (`sats` equals `goalSats`): the loan block reads **Fully funded** and offers no **Lend**, and the open card's amount field keeps the label **Amount**. After **₿210** is posted, the pay sheet reads **Send to Maria**, **₿210** large with **$0.21** under it, and the full-width wallet button **Send ₿210 · $0.21**. Behind it, at the top of the disabled reaction form, the note says **This loan is already fully funded. What you send now is a gift to Maria.**
@@ -10525,7 +10816,7 @@ Unsigned permalink of Cyrill's reply **You got it right.** The parent **Hello fr
 
 ## Screen: /messages/[id]/repayment-list
 
-- **Purpose:** The repayment list for one credit note: who gave, the chart, and the plan. A fully given plan of more than 7 dated days is grouped by calendar month and lists only the days that differ from that month's usual amount; the pictured 2-day state still lists each day. The day rows render only here. The note, the forum, and a profile show a link instead of those rows. Nothing renders until the public ledger loads. A failed read stays blank. Chrome is PublicMessageChrome. There is no second back control.
+- **Purpose:** The repayment list for one credit note: who gave, the chart, and the plan. Partial rows use their remaining `dueSats` and stored `amount - paidAmount`; when positive `paidSats` have no usable `paidAmount`, the row, chart, split, and still-owed total fall back to the remaining bitcoin and current spot instead of showing the original fiat. A fully given plan of more than 7 dated days is grouped by calendar month and lists only the days that differ from that month's usual amount; the pictured 2-day state still lists each day. The day rows render only here. The note, the forum, and a profile show a link instead of those rows. Nothing renders until the public ledger loads. A failed read stays blank. Chrome is PublicMessageChrome. There is no second back control.
 - **Inputs:** Dynamic route `id`. Loads `GET /messages/:id/repayment` through `getRepayment`. No session is required to view. Chrome follows the hydrated session.
 - **Actions:** The top-left arrow is the existing ProfileChromeLeft control (previous in-app view, or `/welcome` when this tab has none). No other control. Names are text.
 - **Used by:** Route `/messages/[id]/repayment-list` (`RepaymentListPage`). The **Repayment list** link on a collapsed `ForumGoalBar` and on `CreditLedger` summary.
@@ -10542,6 +10833,24 @@ Unsigned. **Given** lists Bea @bea at ₿20 and Cara @cara at ₿1. **Paid back*
 Same loaded list as the default, with the **Menu** control. **Given** lists Bea @bea at ₿20 and Cara @cara at ₿1. **Paid back** shows the chart from 1 Nov 2026 to 2 Nov 2026, then **Each share is one bitcoin payment to that person.** **First repayment day: November 1, 2026.**, then 1 Nov 2026 with Bea's ₿10 **Due**, and 2 Nov 2026 with Bea's ₿10 and Cara's ₿1 **Scheduled**. This page has no **Repayment list** link.
 
 ![21.gifts repayment list signed in](images/messages-id-repayment-list-signed-in.png)
+
+### Variant: partial-btc
+
+Unsigned manually closed BTC credit with one partly repaid due share. Bruno originally owed ₿500 and already received ₿100, so the day row, **Still owed**, split, and chart show the remaining **₿400** with current spot, never the original ₿500. The row remains **Due**.
+
+![21.gifts repayment list partial bitcoin](images/messages-id-repayment-list-partial-btc.png)
+
+### Variant: partial-fiat
+
+Unsigned PHP credit with one partly repaid due share. The stored original is ₱12.50 and the stored paid amount is ₱2.50, so the day row, **Still owed**, split, and chart show the exact remaining **₱10.00**, never ₱12.50. The bitcoin remainder is ₿400 and the row remains **Due**.
+
+![21.gifts repayment list partial fiat](images/messages-id-repayment-list-partial-fiat.png)
+
+### Variant: partial-fiat-fallback
+
+The same partial PHP credit without a usable stored `paidAmount`. Because ₿100 was already paid, the remaining row, **Still owed**, split, and chart fall back to **₿400 · $0.40** at the current spot. They do not show the original ₱12.50 as still owed.
+
+![21.gifts repayment list partial fiat fallback](images/messages-id-repayment-list-partial-fiat-fallback.png)
 
 ### Variant: loading
 

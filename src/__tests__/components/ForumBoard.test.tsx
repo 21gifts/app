@@ -10777,6 +10777,86 @@ describe('ForumBoard loan block', () => {
     expect(screen.getByLabelText('Amount to lend')).toBe(amountField());
   });
 
+  it('hides every contribution entry point on an unexpanded closed loan card', () => {
+    const onPayOpen = vi.fn();
+    const onHeartTip = vi.fn();
+    renderWithLocale(
+      board({
+        messages: [{ ...LOAN, goalClosedAt: '2026-10-03T10:00:00.000Z' }],
+        onPayOpen,
+        onHeartTip,
+      }),
+    );
+    expect(screen.getByRole('region', { name: 'Loan request' })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Lend' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Send ₿1' })).toBeNull();
+    expect(screen.queryByLabelText('Amount to lend')).toBeNull();
+    expect(onPayOpen).not.toHaveBeenCalled();
+    expect(onHeartTip).not.toHaveBeenCalled();
+  });
+
+  it('cancels and hides a contribution sheet when its loan is already closed', () => {
+    const onPayCancel = vi.fn();
+    renderWithLocale(
+      board({
+        messages: [{ ...LOAN, goalClosedAt: '2026-10-03T10:00:00.000Z' }],
+        expandedId: 'loan1',
+        replies: [],
+        payMessageId: 'loan1',
+        payHost: 'card',
+        payDraft: '210',
+        payInvoice: { messageId: 'loan1', pr: 'lnbc1', amountSats: 210 },
+        replyPayPreview: 'Count me in!',
+        onPayCancel,
+      }),
+    );
+    expect(onPayCancel).toHaveBeenCalledTimes(1);
+    expect(screen.queryByRole('button', { name: 'Continue' })).toBeNull();
+    expect(screen.queryByLabelText('Amount to lend')).toBeNull();
+    expect(document.querySelector('[data-loan-notice]')).toBeNull();
+  });
+
+  it('posts a free text reaction after an expanded loan refreshes to closed', () => {
+    const freeReaction = vi.fn();
+    const paidReply = vi.fn();
+
+    function RefreshingLoan({ closed }: { closed: boolean }): ReactElement {
+      const [amount, setAmount] = useState('');
+      return board({
+        messages: [
+          {
+            ...LOAN,
+            ...(closed ? { goalClosedAt: '2026-10-03T10:00:00.000Z' } : {}),
+          },
+        ],
+        expandedId: 'loan1',
+        replies: [],
+        replyDraft: 'Count me in!',
+        replyAmountDraft: amount,
+        onReplyAmountDraftChange: setAmount,
+        onReplyPost: () => {
+          if (amount === '') {
+            freeReaction();
+          } else {
+            paidReply();
+          }
+        },
+      });
+    }
+
+    const view = renderWithLocale(<RefreshingLoan closed={false} />);
+    const amount = screen.getByLabelText('Amount to lend') as HTMLInputElement;
+    fireEvent.change(amount, { target: { value: '210' } });
+    expect(amount.value).toBe('210');
+    view.rerender(<RefreshingLoan closed />);
+    expect(screen.queryByLabelText('Amount to lend')).toBeNull();
+    const reactionForm = screen.getByLabelText('Your reaction').closest('form');
+    expect(reactionForm).not.toBeNull();
+    fireEvent.click(within(reactionForm as HTMLFormElement).getByRole('button', { name: 'Post' }));
+    expect(freeReaction).toHaveBeenCalledTimes(1);
+    expect(paidReply).not.toHaveBeenCalled();
+  });
+
   it('focuses the amount field of an open card and reveals its form in the scrollport', () => {
     const onToggleExpand = vi.fn();
     renderWithLocale(
@@ -11237,6 +11317,77 @@ describe('ForumBoard author who cannot receive', () => {
     expect(screen.getByRole('alert').textContent).toBe(
       "The author's wallet cannot receive this Bitcoin payment",
     );
+  });
+
+  it('shows the localized closed-loan line after a refused heart', () => {
+    renderWithLocale(
+      board({
+        messages: [{ ...SAMPLE, accountId: 'acc-bob' }],
+        onHeartTip: () => undefined,
+        heartTipViews: {
+          m1: { pressed: false, plusOne: false, needsBalance: false, creditClosed: true },
+        },
+      }),
+      'de',
+    );
+    expect(screen.getByRole('alert').textContent).toBe(
+      'Dieser Kredit sammelt nicht mehr und kann kein weiteres Geld erhalten.',
+    );
+  });
+
+  it('keeps a refused-heart alert after a refresh closes the stale-open loan', () => {
+    const loan: ForumMessage = {
+      ...NOTE,
+      id: 'loan1',
+      sats: 10_500,
+      goalSats: 21_000,
+      goalRepayable: true,
+      goalTermDays: 30,
+    };
+    const props: Partial<ForumBoardProps> = {
+      messages: [loan],
+      onHeartTip: () => undefined,
+    };
+    const view = renderWithLocale(board(props));
+    expect(screen.queryByRole('alert')).toBeNull();
+    expect(screen.getByRole('button', { name: 'Send ₿1' })).toBeTruthy();
+
+    const refused = {
+      ...props,
+      heartTipViews: {
+        loan1: { pressed: false, plusOne: false, needsBalance: false, creditClosed: true },
+      },
+    };
+    view.rerender(
+      <LocaleProvider locale="en" messages={getCatalog('en')}>
+        <ThemeProvider>{board(refused)}</ThemeProvider>
+      </LocaleProvider>,
+    );
+    expect(screen.getByRole('alert').textContent).toBe(
+      'This loan is no longer collecting and cannot receive more money.',
+    );
+    expect(screen.getByRole('button', { name: 'Send ₿1' })).toBeTruthy();
+
+    view.rerender(
+      <LocaleProvider locale="en" messages={getCatalog('en')}>
+        <ThemeProvider>
+          {board({
+            ...refused,
+            messages: [
+              {
+                ...loan,
+                goalClosedAt: '2026-10-03T10:00:00.000Z',
+              },
+            ],
+          })}
+        </ThemeProvider>
+      </LocaleProvider>,
+    );
+    expect(screen.getByRole('alert').textContent).toBe(
+      'This loan is no longer collecting and cannot receive more money.',
+    );
+    expect(screen.queryByRole('button', { name: 'Send ₿1' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Lend' })).toBeNull();
   });
 
   it('cancels an open gift sheet when a refresh says the reply author cannot receive', () => {

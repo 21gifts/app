@@ -1,7 +1,141 @@
-import type { MyLoan, MyLoans, RepaymentLedger } from '@/lib/api';
+import type { MyLoan, MyLoans, RepaymentLedger, RepaymentLine } from '@/lib/api';
 import { creditSmallestUnits } from '@/lib/credit-plan';
 import { formatDefinedGoalAmount } from '@/lib/forum-goal';
 import type { NumberFormatStyle } from '@/lib/number-format';
+
+/** Parsed positive loan amount in the loan currency's smallest input unit. */
+export interface ParsedLoanAmount {
+  /** Whole sats for BTC or whole cents for fiat. */
+  units: bigint;
+  /** Trimmed user input, preserving a fiat comma or dot. */
+  text: string;
+}
+
+/** Result of validating a free repayment amount against the api-provided maximum. */
+export type LoanAmountCheck =
+  | { ok: true; text: string }
+  | {
+      ok: false;
+      reason: 'empty' | 'invalid' | 'above_max' | 'no_max';
+      max: string | null;
+    };
+
+function fiatUnits(input: string): bigint | null {
+  const match = /^(\d+)(?:[.,](\d{1,2}))?$/.exec(input);
+  if (match === null) {
+    return null;
+  }
+  const whole = match[1]!;
+  const fraction = (match[2] ?? '').padEnd(2, '0');
+  return BigInt(whole) * 100n + BigInt(fraction);
+}
+
+/**
+ * Parses a positive free repayment amount without floating-point arithmetic.
+ *
+ * @param input - User input; surrounding whitespace is ignored.
+ * @param currency - BTC accepts whole sats, fiat accepts comma or dot and at most two decimals.
+ * @returns Whole sats/cents plus the trimmed text, or null for empty, zero, negative, or malformed input.
+ */
+export function parseLoanAmount(
+  input: string,
+  currency: MyLoan['goalCurrency'],
+): ParsedLoanAmount | null {
+  const text = input.trim();
+  if (text === '') {
+    return null;
+  }
+  const units = currency === 'BTC' ? (/^\d+$/.test(text) ? BigInt(text) : null) : fiatUnits(text);
+  return units === null || units <= 0n ? null : { units, text };
+}
+
+/**
+ * Reads the api-provided maximum in the loan currency's smallest input unit.
+ *
+ * @param loan - Loan returned by `GET /me/loans`.
+ * @returns Positive whole sats for BTC, positive whole cents for fiat, or null when a maximum or
+ *   fiat rate is unavailable, zero, or malformed.
+ */
+export function loanMaxUnits(loan: MyLoan): bigint | null {
+  if (loan.goalCurrency === 'BTC') {
+    return loan.maxSats === null || loan.maxSats === undefined || loan.maxSats <= 0
+      ? null
+      : BigInt(loan.maxSats);
+  }
+  if (
+    loan.maxSats === null ||
+    loan.maxSats === undefined ||
+    loan.maxSats <= 0 ||
+    loan.maxAmount === null ||
+    loan.maxAmount === undefined
+  ) {
+    return null;
+  }
+  const units = fiatUnits(loan.maxAmount.trim());
+  return units === null || units <= 0n ? null : units;
+}
+
+/**
+ * Validates a free repayment input and compares it with the api maximum.
+ *
+ * @param input - User-entered loan-currency amount.
+ * @param loan - Loan that supplies the currency and current maximum.
+ * @returns Normalized success text or a reason with the available maximum input string.
+ */
+export function checkLoanAmount(input: string, loan: MyLoan): LoanAmountCheck {
+  const max = loanMaxInput(loan);
+  if (input.trim() === '') {
+    return { ok: false, reason: 'empty', max };
+  }
+  const parsed = parseLoanAmount(input, loan.goalCurrency);
+  if (parsed === null) {
+    return { ok: false, reason: 'invalid', max };
+  }
+  const maxUnits = loanMaxUnits(loan);
+  if (maxUnits === null) {
+    return { ok: false, reason: 'no_max', max: null };
+  }
+  if (parsed.units > maxUnits) {
+    return { ok: false, reason: 'above_max', max };
+  }
+  return { ok: true, text: parsed.text };
+}
+
+/**
+ * Supplies the exact value the free-repayment Max button puts in its input.
+ *
+ * @param loan - Loan returned by `GET /me/loans`.
+ * @returns Positive integer max sats for BTC, the api's positive fiat max string while its rate is
+ *   available, or null.
+ */
+export function loanMaxInput(loan: MyLoan): string | null {
+  if (loan.goalCurrency === 'BTC') {
+    return loan.maxSats === null || loan.maxSats === undefined || loan.maxSats <= 0
+      ? null
+      : String(loan.maxSats);
+  }
+  if (
+    loan.maxSats === null ||
+    loan.maxSats === undefined ||
+    loan.maxSats <= 0 ||
+    loan.maxAmount === null ||
+    loan.maxAmount === undefined
+  ) {
+    return null;
+  }
+  const units = fiatUnits(loan.maxAmount.trim());
+  return units === null || units <= 0n ? null : loan.maxAmount;
+}
+
+/**
+ * Identifies a loan whose ask is still accepting contributions.
+ *
+ * @param loan - Loan returned by `GET /me/loans`.
+ * @returns True only before both funding and an explicit close.
+ */
+export function isCollecting(loan: MyLoan): boolean {
+  return loan.fundedAt === null && (loan.closedAt === null || loan.closedAt === undefined);
+}
 
 /** Combined state of all of the member's loans, for the loans card, the Menu row and the screen. */
 export interface LoansSummary {
@@ -192,15 +326,84 @@ export interface DueShare {
   dueOn: string | null;
   accountId: string;
   name: string;
-  /** row.sats when not null, else row.dueSats; null when neither is known. */
+  /** Remaining row.dueSats, or sats less paidSats for an older api; null if invalid. */
   sats: number | null;
-  /** row.amount when the ledger is in the loan's goal currency; otherwise null. */
+  /** Remaining row.amount after paidAmount when the ledger uses the loan currency. */
   amount: string | null;
   /**
    * row.waiting: the giver cannot receive yet, so the share is not sent now. Without it
    * (older api), the giver's givers[].canReceive is false (a giver not listed can receive).
    */
   waiting: boolean;
+}
+
+/** Validated partial payment of one repayment row, in whole sats and cents. */
+export interface ValidatedRepaymentPayment {
+  /** Paid sats, or null when positive paid sats cannot be bounded by the original sats. */
+  sats: bigint | null;
+  /** Paid cents, or null when the stored fiat relationship is missing or invalid. */
+  amount: bigint | null;
+  /** Whether the api supplied a non-null stored paid fiat amount. */
+  hasAmount: boolean;
+}
+
+/**
+ * Validates the partial-payment fields of one repayment row.
+ *
+ * Missing paid fields mean zero only while no positive satoshi payment needs a
+ * matching fiat amount. A positive fiat payment requires matching positive
+ * valid sats. A malformed or overpaid fiat amount stays independent from valid
+ * sats, so callers can fall back to bitcoin. Invalid paid sats also invalidate
+ * the fiat side, because the row's payment is then unknown.
+ *
+ * @param row - Repayment row with its original and partial-payment values.
+ * @returns Validated whole sats/cents; null marks an unavailable relationship.
+ */
+export function validatedRepaymentPayment(
+  row: Pick<RepaymentLine, 'sats' | 'paidSats' | 'amount' | 'paidAmount'>,
+): ValidatedRepaymentPayment {
+  const paidSats = row.paidSats ?? 0;
+  const satsValid =
+    Number.isSafeInteger(paidSats) &&
+    paidSats >= 0 &&
+    (paidSats === 0 ||
+      (row.sats !== null && Number.isSafeInteger(row.sats) && row.sats >= paidSats));
+  const sats = satsValid ? BigInt(paidSats) : null;
+  const totalAmount = row.amount === null ? null : fiatUnits(row.amount.trim());
+  const hasAmount = row.paidAmount !== null && row.paidAmount !== undefined;
+  const paidAmount = !hasAmount ? (sats === 0n ? 0n : null) : fiatUnits(row.paidAmount!.trim());
+  const amount =
+    sats === null ||
+    totalAmount === null ||
+    paidAmount === null ||
+    paidAmount > totalAmount ||
+    (paidAmount > 0n && sats === 0n)
+      ? null
+      : paidAmount;
+  return { sats, amount, hasAmount };
+}
+
+/**
+ * Returns the remaining bitcoin amount for one repayment line.
+ *
+ * `dueSats` is authoritative when present. Older api bodies omit it, so a
+ * partial row falls back to its original sats less the paid sats. An invalid
+ * relationship never becomes a negative or otherwise invented remainder.
+ *
+ * @param row - Repayment line with original, paid, and optional due sats.
+ * @returns Remaining whole sats, or null when the relationship is unknown or invalid.
+ */
+export function remainingRepaymentSats(
+  row: Pick<RepaymentLine, 'sats' | 'paidSats' | 'dueSats'>,
+): number | null {
+  const payment = validatedRepaymentPayment({ ...row, amount: null, paidAmount: null });
+  if (payment.sats === null) {
+    return null;
+  }
+  if (row.dueSats !== null && row.dueSats !== undefined) {
+    return row.dueSats;
+  }
+  return row.sats === null ? null : Number(BigInt(row.sats) - payment.sats);
 }
 
 /**
@@ -227,6 +430,7 @@ export function dueShares(
       if (row.status !== 'due') {
         return;
       }
+      const payment = validatedRepaymentPayment(row);
       rows.push({
         messageId: loan.messageId,
         loanIndex,
@@ -234,8 +438,18 @@ export function dueShares(
         dueOn: row.dueOn,
         accountId: row.accountId,
         name: row.name,
-        sats: row.sats ?? row.dueSats,
-        amount: ledger.currency === loan.goalCurrency ? row.amount : null,
+        sats: remainingRepaymentSats(row),
+        amount:
+          ledger.currency !== loan.goalCurrency ||
+          loan.goalCurrency === 'BTC' ||
+          row.amount === null
+            ? null
+            : (() => {
+                const total = creditSmallestUnits(row.amount, false);
+                return total === null || payment.amount === null
+                  ? null
+                  : centsString(total - payment.amount);
+              })(),
         waiting: row.waiting ?? canReceive.get(row.accountId) === false,
         rowIndex,
       });
@@ -248,7 +462,17 @@ export function dueShares(
         left.loanIndex - right.loanIndex ||
         left.rowIndex - right.rowIndex,
     )
-    .map(({ rowIndex: _rowIndex, ...row }) => row);
+    .map((row) => ({
+      messageId: row.messageId,
+      loanIndex: row.loanIndex,
+      dayIndex: row.dayIndex,
+      dueOn: row.dueOn,
+      accountId: row.accountId,
+      name: row.name,
+      sats: row.sats,
+      amount: row.amount,
+      waiting: row.waiting,
+    }));
 }
 
 /**

@@ -125,6 +125,7 @@ function fiatSuffixMarkup(text: string): ReactElement {
  * @param preview - Wizard unsent preview. A bitcoin preview uses the same spot
  *   suffix as a posted bitcoin ask.
  * @param goalRepayable - Credit ask. The loan tag sits beside the author, not in this bar.
+ * @param goalClosedAt - ISO time the posted credit stopped collecting, when closed.
  * @param goalTermDays - Repayment days. With `goalRepayable`, also shows the daily plan.
  * @param messageId - Posted credit id. Omitted in the wizard, so the ledger stays off.
  * @param ledgerCollapsed - Feed lists show a repayment-list link and skip the ledger fetch. The note page leaves this false.
@@ -148,6 +149,7 @@ export function ForumGoalBar({
   amountPhp,
   preview = false,
   goalRepayable,
+  goalClosedAt,
   goalTermDays,
   messageId,
   ledgerCollapsed = false,
@@ -169,6 +171,7 @@ export function ForumGoalBar({
   amountPhp?: string | null | undefined;
   preview?: boolean | undefined;
   goalRepayable?: true | undefined;
+  goalClosedAt?: string | undefined;
   goalTermDays?: number | undefined;
   /** Set on a posted credit so the public ledger can load. Omitted in the wizard. */
   messageId?: string | undefined;
@@ -302,6 +305,7 @@ export function ForumGoalBar({
           percent={percent}
           funded={Number.isFinite(sats) && sats >= goalSats}
           ledger={loaded !== null && loaded.messageId === messageId ? loaded.ledger : null}
+          goalClosedAt={goalClosedAt}
           ledgerLink={ledgerCollapsed}
           onLend={onLend}
           lendBlocked={lendBlocked}

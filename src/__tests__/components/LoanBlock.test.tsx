@@ -48,6 +48,7 @@ function ledgerOf(
   return {
     currency,
     fundedAt: '2026-09-26T12:00:00.000Z',
+    closedAt: '2026-09-26T12:00:00.000Z',
     termDays: repayments.length,
     daysDue: 0,
     daysPaid: 0,
@@ -126,6 +127,29 @@ describe('LoanBlock', () => {
     expect(onCard).not.toHaveBeenCalled();
   });
 
+  it('hides Lend when a loaded below-goal loan is closed', () => {
+    block({
+      ledger: { ...ledgerOf([]), fundedAt: null, closedAt: '2026-10-01T12:00:00.000Z' },
+      ledgerLink: false,
+      onLend: vi.fn(),
+      lendBlocked: true,
+    });
+    expect(section().getAttribute('data-loan-block')).toBe('collecting');
+    expect(screen.queryByRole('button', { name: 'Lend' })).toBeNull();
+  });
+
+  it('hides Lend from the first render when the message says the below-goal loan is closed', () => {
+    block({
+      goalClosedAt: '2026-10-01T12:00:00.000Z',
+      ledger: null,
+      ledgerLink: false,
+      onLend: vi.fn(),
+      lendBlocked: true,
+    });
+    expect(section().getAttribute('data-loan-block')).toBe('collecting');
+    expect(screen.queryByRole('button', { name: 'Lend' })).toBeNull();
+  });
+
   it('stops a Repayment list click from toggling the card', () => {
     block();
     const click = new MouseEvent('click', { bubbles: true, cancelable: true });
@@ -159,6 +183,52 @@ describe('LoanBlock', () => {
     expect(document.querySelector('rect.fill-app-accent')).toBeNull();
   });
 
+  it('includes a partial row in bitcoin and fiat paid-back progress', () => {
+    block({
+      percent: 100,
+      funded: true,
+      ledger: ledgerOf([
+        { ...line(0, 'due', 50), paidSats: 20, dueSats: 30 },
+        line(1, 'scheduled', 50),
+      ]),
+    });
+    expect(screen.getByRole('img', { name: '20% paid back' })).toBeTruthy();
+    cleanup();
+
+    block({
+      percent: 100,
+      funded: true,
+      ledger: ledgerOf(
+        [
+          { ...line(0, 'due', 40), amount: '4.00', paidSats: 10, paidAmount: '1.00' },
+          { ...line(1, 'scheduled', 60), amount: '6.00', paidSats: 0, paidAmount: '0.00' },
+        ],
+        'PHP',
+      ),
+    });
+    expect(screen.getByRole('img', { name: '10% paid back' })).toBeTruthy();
+  });
+
+  it('ignores positive partial fiat progress without positive paid sats', () => {
+    block({
+      percent: 100,
+      funded: true,
+      ledger: ledgerOf([{ ...line(0, 'due', 40), amount: '4.00', paidAmount: '1.00' }], 'PHP'),
+    });
+    expect(screen.getByRole('img', { name: '0% paid back' })).toBeTruthy();
+    cleanup();
+
+    block({
+      percent: 100,
+      funded: true,
+      ledger: ledgerOf(
+        [{ ...line(0, 'due', 40), amount: '4.00', paidSats: 0, paidAmount: '1.00' }],
+        'PHP',
+      ),
+    });
+    expect(screen.getByRole('img', { name: '0% paid back' })).toBeTruthy();
+  });
+
   it('counts a fiat ledger in cents and skips rows without an amount', () => {
     const paid = { ...line(0, 'paid', null), amount: '1.00' };
     const open = { ...line(1, 'due', null), amount: '9.00' };
@@ -166,6 +236,48 @@ describe('LoanBlock', () => {
     const broken = { ...line(3, 'scheduled', null), amount: 'x' };
     block({ percent: 100, funded: true, ledger: ledgerOf([paid, open, empty, broken], 'USD') });
     expect(screen.getByRole('img', { name: '10% paid back' })).toBeTruthy();
+  });
+
+  it('treats a malformed partial fiat payment as unpaid', () => {
+    block({
+      percent: 100,
+      funded: true,
+      ledger: ledgerOf(
+        [
+          { ...line(0, 'due', null), amount: '4.00', paidAmount: 'not-an-amount' },
+          { ...line(1, 'scheduled', null), amount: '6.00' },
+        ],
+        'PHP',
+      ),
+    });
+    expect(screen.getByRole('img', { name: '0% paid back' })).toBeTruthy();
+  });
+
+  it('treats bitcoin and fiat overpayments as unpaid', () => {
+    block({
+      percent: 100,
+      funded: true,
+      ledger: ledgerOf([{ ...line(0, 'due', 50), paidSats: 51, dueSats: 0 }]),
+    });
+    expect(screen.getByRole('img', { name: '0% paid back' })).toBeTruthy();
+    cleanup();
+
+    block({
+      percent: 100,
+      funded: true,
+      ledger: ledgerOf(
+        [
+          {
+            ...line(0, 'due', 40),
+            amount: '4.00',
+            paidSats: 10,
+            paidAmount: '4.01',
+          },
+        ],
+        'PHP',
+      ),
+    });
+    expect(screen.getByRole('img', { name: '0% paid back' })).toBeTruthy();
   });
 
   it('shows 0% paid back when the ledger has no amounts yet', () => {

@@ -19,6 +19,7 @@ import {
 } from '@/lib/wallet/wallet-sdk';
 import { useAuthStore } from '@/stores/auth-store';
 import { useWalletStore } from '@/stores/wallet-store';
+import { visualPin } from '@/lib/visual-pin';
 
 /**
  * Loads a {@link WalletSdk}. Injected in tests; defaults to {@link loadWalletSdk}.
@@ -1533,6 +1534,26 @@ function payRoute(
  * @returns Confirmation with `send`, or why the payment cannot be made.
  */
 export async function payFromWallet(request: WalletPayRequest): Promise<WalletPayResult> {
+  if (visualPin() === 'repay-e2e-payment' && request.type === 'input') {
+    const amount = /(\d+)$/.exec(request.input)?.[1];
+    if (amount !== undefined) {
+      const amountSats = Number(amount);
+      return {
+        kind: 'confirm',
+        amountSats,
+        feeSats: 0,
+        method: 'spark',
+        send: async () => {
+          await fetch('/e2e/wallet-send', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ input: request.input, amountSats }),
+          });
+          return { kind: 'paid' };
+        },
+      };
+    }
+  }
   const requestMethod = methodOf(request);
   const requestSats = request.amountSats ?? null;
   const prepareFailure = (

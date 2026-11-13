@@ -1272,6 +1272,22 @@ describe('forumMessageSchema', () => {
     expect(forumMessageSchema.parse({ ...base, goalRepayable: true }).goalRepayable).toBe(true);
   });
 
+  it('keeps an optional ISO goalClosedAt and omits it on an open or older credit', () => {
+    const open = forumMessageSchema.parse({ ...base, goalRepayable: true });
+    expect(open.goalClosedAt).toBeUndefined();
+    expect(Object.prototype.hasOwnProperty.call(open, 'goalClosedAt')).toBe(false);
+    expect(
+      forumMessageSchema.parse({
+        ...base,
+        goalRepayable: true,
+        goalClosedAt: '2026-10-03T10:00:00.000Z',
+      }).goalClosedAt,
+    ).toBe('2026-10-03T10:00:00.000Z');
+    expect(() =>
+      forumMessageSchema.parse({ ...base, goalRepayable: true, goalClosedAt: 'closed' }),
+    ).toThrow();
+  });
+
   it('rejects goalRepayable false', () => {
     expect(() => forumMessageSchema.parse({ ...base, goalRepayable: false })).toThrow();
   });

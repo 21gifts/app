@@ -149,6 +149,13 @@ describe('ForumPaySheet', () => {
     expect(screen.queryByText('Enter a whole number greater than zero')).toBeNull();
   });
 
+  it('shows the closed-credit invoice refusal clearly', () => {
+    sheet('creditClosed', false);
+    expect(screen.getByRole('alert').textContent).toBe(
+      'This loan is no longer collecting and cannot receive more money.',
+    );
+  });
+
   it('does not submit while busy or while the rate is still loading', () => {
     const busy = sheet(null, false, { payBusy: true });
     const busyButton = screen.getByRole('button', { name: 'Continue' }) as HTMLButtonElement;
