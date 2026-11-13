@@ -35,6 +35,7 @@ import {
   moderatorProposalsResponseSchema,
   ownerFundingSchema,
   fundingApplyResponseSchema,
+  fundingWithdrawResponseSchema,
   fundingApplicationSchema,
   fundingApplicationsResponseSchema,
   fundingPayoutDaysResponseSchema,
@@ -471,6 +472,31 @@ describe('fundingApplyResponseSchema', () => {
       reviewedByName: null,
     };
     expect(fundingApplyResponseSchema.parse({ funding })).toEqual({ funding });
+  });
+});
+
+describe('fundingWithdrawResponseSchema', () => {
+  it('unwraps the funding with status none', () => {
+    const funding = {
+      status: 'none' as const,
+      trialUtcDate: null,
+      admittedAt: null,
+      reviewedByName: null,
+    };
+    expect(fundingWithdrawResponseSchema.parse({ funding })).toEqual({ funding });
+  });
+
+  it('rejects a status outside the owner funding enum', () => {
+    expect(() =>
+      fundingWithdrawResponseSchema.parse({
+        funding: {
+          status: 'withdrawn',
+          trialUtcDate: null,
+          admittedAt: null,
+          reviewedByName: null,
+        },
+      }),
+    ).toThrow();
   });
 });
 

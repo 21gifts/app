@@ -50,6 +50,7 @@ import {
   fetchFundingPayoutDays,
   postFundingAdmit,
   postFundingApply,
+  postFundingWithdraw,
   postFundingReject,
   fetchMessagePhoto,
   fetchMessages,
@@ -7101,6 +7102,55 @@ describe('postFundingApply', () => {
   it('throws visitor copy when the body fails validation', async () => {
     stubFetch({ ok: true, status: 200, body: { funding: { status: 'nope' } } });
     await expect(postFundingApply('sess')).rejects.toThrow(loadError);
+  });
+});
+
+describe('postFundingWithdraw', () => {
+  const funding = {
+    status: 'none' as const,
+    trialUtcDate: null,
+    admittedAt: null,
+    reviewedByName: null,
+  };
+  const failed = 'Could not withdraw. Please try again.';
+
+  it('posts with the Bearer session and no body, and returns funding', async () => {
+    const fetchMock = stubFetch({ ok: true, status: 200, body: { funding } });
+    await expect(postFundingWithdraw('sess')).resolves.toEqual(funding);
+    expect(fetchMock).toHaveBeenCalledWith('/funding/withdraw', {
+      method: 'POST',
+      headers: { Authorization: 'Bearer sess' },
+    });
+  });
+
+  it('throws Unauthorized on 401', async () => {
+    stubFetch({ ok: false, status: 401, body: { error: 'Unauthorized' } });
+    await expect(postFundingWithdraw('sess')).rejects.toThrow('Unauthorized');
+  });
+
+  it('throws Conflict on 409', async () => {
+    stubFetch({ ok: false, status: 409, body: { error: 'Conflict' } });
+    await expect(postFundingWithdraw('sess')).rejects.toThrow('Conflict');
+  });
+
+  it.each([403, 404, 503])('throws visitor copy on %i', async (status) => {
+    stubFetch({ ok: false, status, body: {} });
+    await expect(postFundingWithdraw('sess')).rejects.toThrow(failed);
+  });
+
+  it('throws visitor copy when fetch itself fails', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new TypeError('Failed to fetch')));
+    await expect(postFundingWithdraw('sess')).rejects.toThrow(failed);
+  });
+
+  it('throws visitor copy when the body fails validation', async () => {
+    stubFetch({ ok: true, status: 200, body: { funding: { status: 'withdrawn' } } });
+    await expect(postFundingWithdraw('sess')).rejects.toThrow(failed);
+  });
+
+  it('throws visitor copy when something other than an Error is thrown', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue('offline'));
+    await expect(postFundingWithdraw('sess')).rejects.toThrow(failed);
   });
 });
 

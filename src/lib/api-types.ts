@@ -1764,6 +1764,15 @@ export const fundingApplyResponseSchema = z.object({
 });
 
 /**
+ * Runtime schema for `POST /funding/withdraw` success `{ funding }`. After a
+ * withdrawal the owner status is `none`; the enum stays the one of
+ * {@link ownerFundingSchema}.
+ */
+export const fundingWithdrawResponseSchema = z.object({
+  funding: ownerFundingSchema,
+});
+
+/**
  * Runtime schema for one open grant application from `GET /funding/applications`.
  */
 export const fundingApplicationSchema = z.object({

@@ -6192,6 +6192,48 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/grants:withdraw-confirm",
+    "label": "/grants withdraw-confirm",
+    "visual": "state-grants-withdraw-confirm",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/grants:withdraw-confirm-trial",
+    "label": "/grants withdraw-confirm-trial",
+    "visual": "state-grants-withdraw-confirm-trial",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/grants:withdraw-confirm-pending",
+    "label": "/grants withdraw-confirm-pending",
+    "visual": "state-grants-withdraw-confirm-pending",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/grants:withdraw-busy",
+    "label": "/grants withdraw-busy",
+    "visual": "state-grants-withdraw-busy",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/grants:withdraw-error",
+    "label": "/grants withdraw-error",
+    "visual": "state-grants-withdraw-error",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/grants:withdraw-busy-pending",
+    "label": "/grants withdraw-busy-pending",
+    "visual": "state-grants-withdraw-busy-pending",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/grants:withdraw-error-pending",
+    "label": "/grants withdraw-error-pending",
+    "visual": "state-grants-withdraw-error-pending",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/grants:open-applications",
     "label": "/grants open-applications",
     "visual": "state-grants-open-applications",

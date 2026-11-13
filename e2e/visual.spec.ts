@@ -28288,6 +28288,7 @@ test.describe('profile funding states', () => {
     await expect(
       page.getByText('Your application is open. A moderator will review your posts.'),
     ).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Withdraw my application' })).toBeVisible();
     await shotScreen(page, 'state-profile-funding-pending');
   });
 
@@ -28305,6 +28306,7 @@ test.describe('profile funding states', () => {
     await expect(
       page.getByText('You are on a one-day trial. Review repeats tomorrow.'),
     ).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Leave the grant' })).toBeVisible();
     await shotScreen(page, 'state-profile-funding-trial');
   });
 
@@ -28321,6 +28323,7 @@ test.describe('profile funding states', () => {
     await page.goto('/grants');
     await expect(page.getByText('You are admitted to daily 21.gifts grant payouts.')).toBeVisible();
     await expect(page.getByText(/Takes part in the 21.gifts funding program since/)).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Leave the grant' })).toBeVisible();
     await shotScreen(page, 'state-profile-funding-admitted');
   });
 
@@ -28343,6 +28346,119 @@ test.describe('profile funding states', () => {
     await expect(revealed).toBeVisible();
     await revealed.scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-profile-funding-program-open', false);
+  });
+
+  /**
+   * Opens the withdraw question of a grant card in `status`, with the same today's payout
+   * line as that idle funding state, and answers POST /funding/withdraw with `answer`.
+   */
+  async function openWithdraw(
+    page: Page,
+    status: 'pending' | 'trial' | 'admitted',
+    answer: 'never' | 'unavailable' = 'never',
+  ): Promise<void> {
+    await seedFundingProfile(page, {
+      funding: {
+        status,
+        trialUtcDate: status === 'trial' ? '2026-09-20' : null,
+        admittedAt: status === 'admitted' ? Date.parse('2026-08-28T12:00:00.000Z') : null,
+        reviewedByName: status === 'admitted' ? 'Ada' : null,
+        payoutToday:
+          status === 'pending'
+            ? { state: 'blocked', reason: 'admission' }
+            : status === 'trial'
+              ? { state: 'due', reason: 'payments_paused' }
+              : { state: 'blocked', reason: 'wallet' },
+      },
+    });
+    await page.route(/\/funding\/withdraw$/, async (route) => {
+      if (answer === 'never') {
+        return;
+      }
+      await route.fulfill({
+        status: 503,
+        contentType: 'application/json',
+        body: JSON.stringify({ error: 'Funding is unavailable' }),
+      });
+    });
+    await page.goto('/grants');
+    const action = status === 'pending' ? 'Withdraw my application' : 'Leave the grant';
+    await page.getByRole('button', { name: action }).click();
+  }
+
+  test('state /grants withdraw-confirm', async ({ page }) => {
+    await openWithdraw(page, 'admitted');
+    const question = page.getByRole('group', { name: 'Leave the grant?' });
+    await expect(
+      question.getByText(
+        'Your daily payout stops today. Your place becomes free for someone else. You can apply again later, but a place is not guaranteed.',
+      ),
+    ).toBeVisible();
+    await question.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-grants-withdraw-confirm');
+  });
+
+  test('state /grants withdraw-confirm-trial', async ({ page }) => {
+    await openWithdraw(page, 'trial');
+    await expect(
+      page.getByText('You are on a one-day trial. Review repeats tomorrow.'),
+    ).toBeVisible();
+    await expect(page.getByRole('group', { name: 'Leave the grant?' })).toBeVisible();
+    await shotScreen(page, 'state-grants-withdraw-confirm-trial');
+  });
+
+  test('state /grants withdraw-confirm-pending', async ({ page }) => {
+    await openWithdraw(page, 'pending');
+    await expect(
+      page
+        .getByRole('group', { name: 'Withdraw your application?' })
+        .getByText('A moderator will no longer review it. You can apply again later.'),
+    ).toBeVisible();
+    await shotScreen(page, 'state-grants-withdraw-confirm-pending');
+  });
+
+  test('state /grants withdraw-busy', async ({ page }) => {
+    await openWithdraw(page, 'admitted', 'never');
+    const question = page.getByRole('group', { name: 'Leave the grant?' });
+    const confirm = question.getByRole('button', { name: 'Leave the grant' });
+    await confirm.click();
+    await expect(confirm).toBeDisabled();
+    await expect(question.getByRole('button', { name: 'Cancel' })).toBeDisabled();
+    await question.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-grants-withdraw-busy');
+  });
+
+  test('state /grants withdraw-error', async ({ page }) => {
+    await openWithdraw(page, 'admitted', 'unavailable');
+    const question = page.getByRole('group', { name: 'Leave the grant?' });
+    await question.getByRole('button', { name: 'Leave the grant' }).click();
+    await expect(question.getByRole('alert')).toHaveText(
+      'Could not leave the grant. Please try again.',
+    );
+    await expect(question.getByRole('button', { name: 'Leave the grant' })).toBeEnabled();
+    await question.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-grants-withdraw-error');
+  });
+
+  test('state /grants withdraw-busy-pending', async ({ page }) => {
+    await openWithdraw(page, 'pending', 'never');
+    const question = page.getByRole('group', { name: 'Withdraw your application?' });
+    const confirm = question.getByRole('button', { name: 'Withdraw my application' });
+    await confirm.click();
+    await expect(confirm).toBeDisabled();
+    await expect(question.getByRole('button', { name: 'Cancel' })).toBeDisabled();
+    await shotScreen(page, 'state-grants-withdraw-busy-pending');
+  });
+
+  test('state /grants withdraw-error-pending', async ({ page }) => {
+    await openWithdraw(page, 'pending', 'unavailable');
+    const question = page.getByRole('group', { name: 'Withdraw your application?' });
+    await question.getByRole('button', { name: 'Withdraw my application' }).click();
+    await expect(question.getByRole('alert')).toHaveText(
+      'Could not withdraw your application. Please try again.',
+    );
+    await expect(question.getByRole('button', { name: 'Withdraw my application' })).toBeEnabled();
+    await shotScreen(page, 'state-grants-withdraw-error-pending');
   });
 
   test('state /grants open-applications', async ({ page }) => {

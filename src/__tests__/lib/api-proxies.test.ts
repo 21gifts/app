@@ -129,6 +129,7 @@ import {
   proxyFundingApplicationsGet,
   proxyFundingPayoutDaysGet,
   proxyFundingApplyPost,
+  proxyFundingWithdrawPost,
   proxyFundingRejectPost,
   proxyFundingTrialPost,
   proxyViewAboutPhotoGet,
@@ -1440,6 +1441,21 @@ describe('api proxy wrappers', () => {
     );
     expect((fetchMock.mock.calls[0]?.[1] as RequestInit).method).toBe('POST');
     expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/funding/apply');
+  });
+
+  it('proxyFundingWithdrawPost hits POST /funding/withdraw with the Bearer session', async () => {
+    const fetchMock = stubApi();
+    await proxyFundingWithdrawPost(
+      new Request('http://localhost/funding/withdraw', {
+        method: 'POST',
+        headers: { Authorization: 'Bearer sess' },
+      }),
+    );
+    expect((fetchMock.mock.calls[0]?.[1] as RequestInit).method).toBe('POST');
+    expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/funding/withdraw');
+    expect(
+      new Headers((fetchMock.mock.calls[0]?.[1] as RequestInit).headers).get('authorization'),
+    ).toBe('Bearer sess');
   });
 
   it('proxyFundingPayoutDaysGet hits GET /funding/payout-days', async () => {
