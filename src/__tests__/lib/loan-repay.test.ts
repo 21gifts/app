@@ -456,6 +456,24 @@ describe('dueShares', () => {
     ).toEqual({ sats: 100n, amount: null, hasAmount: false });
   });
 
+  it('rejects a positive paid fiat amount when paid sats are missing or zero', () => {
+    expect(
+      validatedRepaymentPayment({
+        sats: 500,
+        amount: '1.00',
+        paidAmount: '0.50',
+      }),
+    ).toEqual({ sats: 0n, amount: null, hasAmount: true });
+    expect(
+      validatedRepaymentPayment({
+        sats: 500,
+        paidSats: 0,
+        amount: '1.00',
+        paidAmount: '0.50',
+      }),
+    ).toEqual({ sats: 0n, amount: null, hasAmount: true });
+  });
+
   it.each([
     ['fractional paid sats', 500, 0.5],
     ['negative paid sats', 500, -1],

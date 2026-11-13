@@ -351,9 +351,10 @@ export interface ValidatedRepaymentPayment {
  * Validates the partial-payment fields of one repayment row.
  *
  * Missing paid fields mean zero only while no positive satoshi payment needs a
- * matching fiat amount. A malformed or overpaid fiat amount stays independent
- * from valid sats, so callers can fall back to bitcoin. Invalid paid sats also
- * invalidate the fiat side, because the row's payment is then unknown.
+ * matching fiat amount. A positive fiat payment requires matching positive
+ * valid sats. A malformed or overpaid fiat amount stays independent from valid
+ * sats, so callers can fall back to bitcoin. Invalid paid sats also invalidate
+ * the fiat side, because the row's payment is then unknown.
  *
  * @param row - Repayment row with its original and partial-payment values.
  * @returns Validated whole sats/cents; null marks an unavailable relationship.
@@ -372,7 +373,11 @@ export function validatedRepaymentPayment(
   const hasAmount = row.paidAmount !== null && row.paidAmount !== undefined;
   const paidAmount = !hasAmount ? (sats === 0n ? 0n : null) : fiatUnits(row.paidAmount!.trim());
   const amount =
-    sats === null || totalAmount === null || paidAmount === null || paidAmount > totalAmount
+    sats === null ||
+    totalAmount === null ||
+    paidAmount === null ||
+    paidAmount > totalAmount ||
+    (paidAmount > 0n && sats === 0n)
       ? null
       : paidAmount;
   return { sats, amount, hasAmount };

@@ -200,13 +200,33 @@ describe('LoanBlock', () => {
       funded: true,
       ledger: ledgerOf(
         [
-          { ...line(0, 'due', null), amount: '4.00', paidAmount: '1.00' },
-          { ...line(1, 'scheduled', null), amount: '6.00', paidAmount: '0.00' },
+          { ...line(0, 'due', 40), amount: '4.00', paidSats: 10, paidAmount: '1.00' },
+          { ...line(1, 'scheduled', 60), amount: '6.00', paidSats: 0, paidAmount: '0.00' },
         ],
         'PHP',
       ),
     });
     expect(screen.getByRole('img', { name: '10% paid back' })).toBeTruthy();
+  });
+
+  it('ignores positive partial fiat progress without positive paid sats', () => {
+    block({
+      percent: 100,
+      funded: true,
+      ledger: ledgerOf([{ ...line(0, 'due', 40), amount: '4.00', paidAmount: '1.00' }], 'PHP'),
+    });
+    expect(screen.getByRole('img', { name: '0% paid back' })).toBeTruthy();
+    cleanup();
+
+    block({
+      percent: 100,
+      funded: true,
+      ledger: ledgerOf(
+        [{ ...line(0, 'due', 40), amount: '4.00', paidSats: 0, paidAmount: '1.00' }],
+        'PHP',
+      ),
+    });
+    expect(screen.getByRole('img', { name: '0% paid back' })).toBeTruthy();
   });
 
   it('counts a fiat ledger in cents and skips rows without an amount', () => {

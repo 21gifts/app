@@ -335,6 +335,30 @@ describe('CreditLedger', () => {
     expect(screen.queryByText('₱0.00')).toBeNull();
   });
 
+  it('falls back to remaining bitcoin when paid fiat has no paid sats', async () => {
+    const partial = ledgerClosedPartialFiat.repayments[0]!;
+    ledger({
+      ...ledgerClosedPartialFiat,
+      repayments: [
+        {
+          ...partial,
+          paidSats: 0,
+          paidAmount: '2.50',
+          dueSats: 500,
+        },
+      ],
+    });
+    renderWithLocale(<CreditLedger messageId="partial-fiat-without-sats" list="page" />);
+
+    const names = await screen.findAllByText('Bruno @bruno');
+    const dueRow = names
+      .map((name) => name.closest('li'))
+      .find((row) => row?.textContent?.includes('Due'));
+    expect(dueRow).toBeTruthy();
+    expect(dueRow?.textContent).toContain('₿500');
+    expect(dueRow?.textContent).not.toContain('₱10.00');
+  });
+
   it('marks a due line that waits for the giver wallet in muted type', async () => {
     ledger({
       ...btc,
