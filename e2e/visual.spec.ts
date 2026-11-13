@@ -265,6 +265,27 @@ async function restUnfocused(page: Page): Promise<void> {
 }
 
 /**
+ * Returns the app scrollport containing `node` to a fixed origin after an interaction focused or
+ * revealed a control. Blurring first prevents `AppHeightSync` from revealing the control again
+ * after the scroll has been reset.
+ *
+ * @param node - A node in the app scrollport to reset.
+ */
+async function topAtRest(node: Locator): Promise<void> {
+  const page = node.page();
+  await restUnfocused(page);
+  await node.evaluate((element) => {
+    const port = element.closest('[data-scrollport]');
+    if (port instanceof HTMLElement) {
+      port.scrollTop = 0;
+      port.scrollLeft = 0;
+    }
+    window.scrollTo(0, 0);
+  });
+  await restUnfocused(page);
+}
+
+/**
  * Centres a node in the window once the page rests with no field in focus ({@link restUnfocused}).
  * A picked file input or a typed field otherwise keeps the focus and is revealed again on a
  * viewport resize, so the node would come to rest wherever that reveal left the scrollport.
@@ -276,6 +297,8 @@ async function centreAtRest(node: Locator): Promise<void> {
   await node.evaluate((element) => {
     element.scrollIntoView({ block: 'center', inline: 'nearest' });
   });
+  // Scrolling can fold the footer on its own timer. Let that second layout settle as well.
+  await restUnfocused(node.page());
   await expect(node).toBeInViewport();
 }
 
@@ -7645,7 +7668,9 @@ test.describe('loans repay screens', () => {
       text: 'Pay more',
     });
     await page.getByRole('button', { name: 'Max' }).click();
-    await expect(page.getByLabel('Amount (₿)')).toHaveValue('19000');
+    const amount = page.getByLabel('Amount (₿)');
+    await expect(amount).toHaveValue('19000');
+    await topAtRest(amount);
     await shotScreen(page, 'state-loans-repay-pay-more-max');
   });
 
@@ -27529,11 +27554,13 @@ test.describe('profile activity chart variants', () => {
     await stubProfileStats(page, EMPTY_ACTIVITY);
     await openOwnerMembers(page);
     await page.getByRole('button', { name: 'Write your About me' }).click();
-    await expect(page.getByRole('textbox', { name: 'About me' })).toBeVisible();
+    const about = page.getByRole('textbox', { name: 'About me' });
+    await expect(about).toBeVisible();
     await expect(page.getByRole('button', { name: 'Save About me' })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Add a profile photo' })).toHaveCount(1);
     await expect(page.getByRole('button', { name: 'Add a wide image' })).toHaveCount(1);
     await expect(page.getByRole('button', { name: 'Add a photo' })).toHaveCount(1);
+    await topAtRest(about);
     await shotScreen(page, 'state-members-about-editing');
   });
 
