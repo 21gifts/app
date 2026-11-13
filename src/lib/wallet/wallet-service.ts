@@ -213,15 +213,22 @@ function reportWalletSettingsFailure(stage: WalletSettingsStage, failed: unknown
 }
 
 /**
- * Keeps one new SDK connection private and grants the configured platform
- * viewer when the account currently in the store supplies a valid key. Each
- * setting changes only in the safe direction: private mode is never disabled
- * and a viewer is never unset or replaced from an invalid value. The current
- * account key is read immediately before the viewer comparison and update.
+ * Configures one settings run. A new-connection run and the silent repair
+ * enable private mode only when it is off; a later viewer-key-change run
+ * writes only the viewer key. Each setting changes only in the safe direction:
+ * private mode is never disabled and a viewer is never unset or replaced from
+ * an invalid value. The current account key is read immediately before the
+ * viewer comparison and update.
+ *
+ * A failed operation is reported only when it failed while this run still
+ * owned the current connection and this is not the silent repair. A failure
+ * from a replaced connection is not reported. A failure recorded before a
+ * later call in the same run is abandoned is still reported. The silent
+ * repair reports neither its read nor its update.
  *
  * @param conn - Current wallet handle.
  * @param configurePrivateMode - Whether this run also enforces private mode.
- * @param reportFailures - Whether failures from this run are reported.
+ * @param reportFailures - Whether eligible failures from this run are reported.
  */
 async function configureWalletSettings(
   conn: WalletConnection,
