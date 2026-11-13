@@ -1133,7 +1133,9 @@ const server = http.createServer(async (req, res) => {
       filtered = living.filter((message) => message.sats === 0);
     } else if (mode === 'active') {
       filtered = living.filter(
-        (message) => message.sats > 0 || roleAtLeast(message.role, 'moderator'),
+        (message) =>
+          message.sats > 0 ||
+          (message.goalSats === undefined && roleAtLeast(message.role, 'moderator')),
       );
     } else if (mode === 'popular') {
       filtered = living.filter((message) => message.sats > 0);
@@ -4210,7 +4212,7 @@ const server = http.createServer(async (req, res) => {
       json(res, 401, { error: 'Unauthorized' });
       return;
     }
-    if (account.role !== 'initiator' && account.role !== 'founder') {
+    if (!roleAtLeast(account.role, 'initiator')) {
       json(res, 403, { error: 'Forbidden' });
       return;
     }
