@@ -94,6 +94,83 @@ afterEach(() => {
   vi.useRealTimers();
 });
 
+describe('walletReportSettled', () => {
+  it('resolves without listing or posting when no report is running', async () => {
+    await expect(mod.walletReportSettled()).resolves.toBeUndefined();
+    expect(mocks.listWalletReportPayments).not.toHaveBeenCalled();
+    expect(mocks.postWalletReport).not.toHaveBeenCalled();
+  });
+
+  it('waits for the running report without requesting another', async () => {
+    let release: () => void = () => undefined;
+    mocks.listWalletReportPayments.mockImplementationOnce(
+      () =>
+        new Promise<WalletReportPayment[]>((resolve) => {
+          release = () => resolve([]);
+        }),
+    );
+    const report = mod.reportWallet();
+    let settled = false;
+    const waiting = mod.walletReportSettled().then(() => {
+      settled = true;
+    });
+    await Promise.resolve();
+    expect(settled).toBe(false);
+    expect(mocks.listWalletReportPayments).toHaveBeenCalledTimes(1);
+    release();
+    await report;
+    await waiting;
+    expect(settled).toBe(true);
+    expect(mocks.listWalletReportPayments).toHaveBeenCalledTimes(1);
+  });
+
+  it('resolves even if the running report rejects unexpectedly', async () => {
+    listing([payment('a', { status: 'pending' })]);
+    await mod.reportWallet();
+    listing([payment('a')]);
+    mocks.logInteraction.mockImplementationOnce(() => {
+      throw new Error('unexpected');
+    });
+    const report = mod.reportWallet();
+    const waiting = mod.walletReportSettled();
+    await expect(report).rejects.toThrow('unexpected');
+    await expect(waiting).resolves.toBeUndefined();
+  });
+
+  it('waits for a report requested while the first report is running', async () => {
+    let releaseFirst: () => void = () => undefined;
+    let releaseSecond: () => void = () => undefined;
+    mocks.listWalletReportPayments
+      .mockImplementationOnce(
+        () =>
+          new Promise<WalletReportPayment[]>((resolve) => {
+            releaseFirst = () => resolve([]);
+          }),
+      )
+      .mockImplementationOnce(
+        () =>
+          new Promise<WalletReportPayment[]>((resolve) => {
+            releaseSecond = () => resolve([]);
+          }),
+      );
+    const report = mod.reportWallet();
+    const waiting = mod.walletReportSettled();
+    mod.reportWallet();
+    let settled = false;
+    void waiting.then(() => {
+      settled = true;
+    });
+    releaseFirst();
+    await vi.waitFor(() => expect(mocks.listWalletReportPayments).toHaveBeenCalledTimes(2));
+    expect(settled).toBe(false);
+    releaseSecond();
+    await report;
+    await waiting;
+    expect(settled).toBe(true);
+    expect(mocks.listWalletReportPayments).toHaveBeenCalledTimes(2);
+  });
+});
+
 describe('reportWallet', () => {
   it('sends nothing without a session or a ready wallet', async () => {
     stores.auth.setState({ session: null });

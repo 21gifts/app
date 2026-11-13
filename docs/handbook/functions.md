@@ -5537,7 +5537,7 @@ The `/me/wallet/counterparties` route re-exports `proxyMeWalletCounterpartiesPos
 
 ## Function: usePaymentCounterparty
 
-- **Purpose:** Resolve the counterparty of every completed payment by id and direction, even without an invoice or hash. Cache matches for the mounted screen and its session by id and direction; after a miss, a wallet sync waits for `reportWallet` before looking up the payment again. A match stops retries, and no retry occurs without a sync while the payment remains eligible.
+- **Purpose:** Resolve the counterparty of every completed payment by id and direction, even without an invoice or hash. The first lookup waits for a running wallet report without requesting another. Cache matches for the mounted screen and its session by id and direction; after a miss, a wallet sync waits for `reportWallet` before looking up the payment again. A match stops retries, and no retry occurs without a sync while the payment remains eligible.
 - **Inputs:** One wallet payment.
 - **Returns:** Its counterparty or null. `?visual=received-from-member` and `?visual=sent-to-member` return fixtures without a request. `?visual=received-member-unknown` and `?visual=sent-member-unknown` return null without a request.
 - **Used by:** `WalletPaymentDetails`.
@@ -5828,6 +5828,13 @@ The `/me/wallet/counterparties` route re-exports `proxyMeWalletCounterpartiesPos
 - **Inputs:** None. Reads the session from `useAuthStore` and the status, balance, and identity key from `useWalletStore`.
 - **Returns / side effects:** A promise that never rejects. Without a session or a `ready` wallet nothing is sent. It lists every payment with `listWalletReportPayments` in pages of `WALLET_REPORT_PAGE_SIZE` (200) and posts them in requests of at most 200 with `postWalletReport`. The acknowledged ids and their statuses live in tab memory only (no storage of any kind), keyed to the wallet identity: another wallet starts over, and a new tab sends the history again (the api treats repeats as the same payment). A payment that moved onto the next page while the pages were read is kept once. A failed list or post, or one that has not answered after `WALLET_REPORT_STEP_TIMEOUT_MS` (30 s), stops the report; the next one sends the rest. A report with no unacknowledged payment and the same balance as the last one waits `WALLET_REPORT_QUIET_MS` (60 s) after it. A call while a report runs adds one report after it. After the first listing in a tab, a received payment that is newly completed is recorded once as `payment_received_seen` with its id and amount. The body holds only the fields of `WalletReportPayment`: never the recovery phrase, a private key, PRF output, or a preimage.
 - **Used by:** `WalletSync`.
+
+## Function: walletReportSettled
+
+- **Purpose:** Wait for the running wallet report and any report requested while it runs, without requesting another report.
+- **Inputs:** None.
+- **Returns:** A promise that resolves when the report settles, or immediately when none is running; it never rejects.
+- **Used by:** `usePaymentCounterparty`.
 
 ## Function: InteractionLog
 

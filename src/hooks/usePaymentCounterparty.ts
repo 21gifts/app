@@ -11,12 +11,13 @@ import {
   RECEIVED_FROM_MEMBER_SENDER,
   SENT_TO_MEMBER_COUNTERPARTY,
 } from '@/lib/wallet/payment-fixtures';
-import { reportWallet } from '@/lib/wallet/wallet-report';
+import { reportWallet, walletReportSettled } from '@/lib/wallet/wallet-report';
 import type { WalletPayment } from '@/lib/wallet/wallet-sdk';
 import { useWalletStore } from '@/stores/wallet-store';
 
 /**
  * Resolve the counterparty of a completed payment in the active session.
+ * Wait for a running report before the first lookup without requesting one.
  * Cache matches; after a wallet sync, wait for its report and retry a miss.
  * In a Playwright build, `?visual=received-from-member` and
  * `?visual=sent-to-member` return their fixtures without a request, and
@@ -63,8 +64,10 @@ export function usePaymentCounterparty(payment: WalletPayment): PaymentCounterpa
     const lookup = async (): Promise<void> => {
       if (synced) {
         await reportWallet();
-        if (!active) return;
+      } else {
+        await walletReportSettled();
       }
+      if (!active) return;
       previousSyncCount.current = syncCount;
       const rows = await fetchPaymentCounterparties(session, [{ id: payment.id, direction }]);
       if (!active) return;

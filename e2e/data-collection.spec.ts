@@ -393,6 +393,39 @@ test.describe('POST /me/wallet/counterparties', () => {
     );
   });
 
+  test('Function: walletReportSettled — allows a lookup without a wallet report', async ({
+    page,
+  }) => {
+    await stubHeartLookupWallet(page);
+    const reports: string[] = [];
+    page.on('request', (request) => {
+      if (request.url().endsWith('/me/wallet/report')) reports.push(request.url());
+    });
+    await page.route('**/me/wallet/counterparties', async (route) => {
+      const body = route.request().postDataJSON() as {
+        payments: { id: string; direction: string }[];
+      };
+      expect(body.payments).toEqual([
+        { id: '6a6c3f1f-5841-415b-b8a6-f21d3e513bae', direction: 'in' },
+      ]);
+      await route.fulfill({
+        json: {
+          counterparties: body.payments.map(({ id }) => ({
+            id,
+            accountId: 'acc_e2e',
+            username: 'alice',
+          })),
+        },
+      });
+    });
+    await page.goto('/wallet/payment?id=6a6c3f1f-5841-415b-b8a6-f21d3e513bae&visual=history-rows');
+    await expect(page.getByRole('link', { name: 'alice@21.gifts' })).toHaveAttribute(
+      'href',
+      '/members/acc_e2e',
+    );
+    expect(reports).toEqual([]);
+  });
+
   test('Function: usePaymentCounterparty — shows no sender for an unmatched incoming payment', async ({
     page,
   }) => {
