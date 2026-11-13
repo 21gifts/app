@@ -675,6 +675,26 @@ describe('LoansCard', () => {
     );
   });
 
+  it('omits the waiting line for a funded loan without waiting shares', () => {
+    show({
+      sundayRest: false,
+      loans: [
+        loan({
+          due: {
+            ...loan().due,
+            payableSats: 0,
+            payablePeople: 0,
+            waitingSats: null,
+            waitingPeople: 0,
+          },
+        }),
+      ],
+    });
+
+    expect(screen.getByText('Nothing due today')).toBeTruthy();
+    expect(screen.queryByText(/waiting for/)).toBeNull();
+  });
+
   it('uses the long local date and tells both places about waiting lenders', () => {
     const data: MyLoans = {
       sundayRest: false,

@@ -145,7 +145,7 @@ interface LoansSummaryCommon {
   fundedCount: number;
   /** Mirrors `sundayRest`. */
   sundayRest: boolean;
-  /** Sum of positive known due.waitingSats, or null when none are positive. */
+  /** Sum of due.waitingSats, excluding unpriced loans; null when only unpriced sats are active. */
   waitingSats: number | null;
   /** Sum of due.waitingPeople. */
   waitingPeople: number;
@@ -156,10 +156,10 @@ interface LoansSummaryCommon {
   /** True when an active payable loan has due.lastPayment. */
   lastPayment: boolean;
   /**
-   * Earliest next.dueOn among loans whose next is non-null. `sats` is the positive known sum for
-   * that day, or null when none are positive. `amount` contains only the stored fiat amounts of
-   * those positive-priced loans. Loans without a positive known sat amount stay in separate
-   * fiat-only `unpriced` entries.
+   * Earliest next.dueOn among loans whose next is non-null. Without an unpriced next part, its
+   * display matches the original combined summary. When a next part is unpriced, `sats` and
+   * `amount` contain only positive priced loans and each unpriced loan stays in its own fiat-only
+   * entry.
    */
   next: {
     dueOn: string;
@@ -187,8 +187,10 @@ export type LoansSummary = LoansSummaryCommon &
  */
 export function summarizeLoans(data: MyLoans, style: NumberFormatStyle): LoansSummary {
   let fundedCount = 0;
-  let payableSats: number | null = null;
-  let waitingSats: number | null = null;
+  let payableSats = 0;
+  let waitingSats = 0;
+  let hasUnpricedPayable = false;
+  let hasUnpricedWaiting = false;
   let waitingPeople = 0;
   let behindDays = 0;
   let payableLoans = 0;
@@ -202,11 +204,15 @@ export function summarizeLoans(data: MyLoans, style: NumberFormatStyle): LoansSu
     if (loan.fundedAt !== null) {
       fundedCount += 1;
     }
-    if (loan.due.payableSats !== null && loan.due.payableSats > 0) {
-      payableSats = (payableSats ?? 0) + loan.due.payableSats;
+    if (loan.due.payableSats === null) {
+      hasUnpricedPayable = true;
+    } else {
+      payableSats += loan.due.payableSats;
     }
-    if (loan.due.waitingSats !== null && loan.due.waitingSats > 0) {
-      waitingSats = (waitingSats ?? 0) + loan.due.waitingSats;
+    if (loan.due.waitingSats === null) {
+      hasUnpricedWaiting = true;
+    } else {
+      waitingSats += loan.due.waitingSats;
     }
     waitingPeople += loan.due.waitingPeople;
     behindDays = Math.max(behindDays, loan.due.behindDays);
@@ -217,24 +223,26 @@ export function summarizeLoans(data: MyLoans, style: NumberFormatStyle): LoansSu
     if (loan.next !== null) {
       if (nextDueOn === null || loan.next.dueOn < nextDueOn) {
         nextDueOn = loan.next.dueOn;
-        nextSats = loan.next.sats !== null && loan.next.sats > 0 ? loan.next.sats : null;
-      } else if (loan.next.dueOn === nextDueOn) {
-        if (loan.next.sats !== null && loan.next.sats > 0) {
-          nextSats = (nextSats ?? 0) + loan.next.sats;
-        }
       }
     }
   }
 
+  const summarizedPayableSats: number | null =
+    hasUnpricedPayable && payableSats === 0 ? null : payableSats;
+  const summarizedWaitingSats: number | null =
+    hasUnpricedWaiting && waitingSats === 0 ? null : waitingSats;
+
   let nextAmount: string | null = null;
   const nextUnpriced: { loanIndex: number; amount: string }[] = [];
   if (nextDueOn !== null) {
+    const hasUnpricedNext = data.loans.some(
+      (loan) => loan.next !== null && loan.next.dueOn === nextDueOn && loan.next.sats === null,
+    );
     const amounts: { code: MyLoan['goalCurrency']; amount: string | null }[] = [];
+    nextSats = hasUnpricedNext ? null : 0;
     data.loans.forEach((loan, loanIndex) => {
       if (loan.next !== null && loan.next.dueOn === nextDueOn) {
-        if (loan.next.sats !== null && loan.next.sats > 0) {
-          amounts.push({ code: loan.goalCurrency, amount: loan.next.amount });
-        } else {
+        if (loan.next.sats === null) {
           const amount = definedFiatAmounts(
             [{ code: loan.goalCurrency, amount: loan.next.amount }],
             style,
@@ -242,6 +250,9 @@ export function summarizeLoans(data: MyLoans, style: NumberFormatStyle): LoansSu
           if (amount !== null) {
             nextUnpriced.push({ loanIndex, amount });
           }
+        } else if (!hasUnpricedNext || loan.next.sats > 0) {
+          nextSats = (nextSats ?? 0) + loan.next.sats;
+          amounts.push({ code: loan.goalCurrency, amount: loan.next.amount });
         }
       }
     });
@@ -259,19 +270,19 @@ export function summarizeLoans(data: MyLoans, style: NumberFormatStyle): LoansSu
           !data.sundayRest &&
           payableLoans === 0 &&
           waitingPeople === 0 &&
-          waitingSats === null
+          (summarizedWaitingSats === null || summarizedWaitingSats === 0)
         ? 'success'
         : 'neutral';
-  const payable = !data.sundayRest && payableSats !== null && payableSats > 0;
+  const payable = !data.sundayRest && summarizedPayableSats !== null && summarizedPayableSats > 0;
   const payableState = payable
-    ? { payable: true as const, payableSats: payableSats as number }
-    : { payable: false as const, payableSats };
+    ? { payable: true as const, payableSats: summarizedPayableSats as number }
+    : { payable: false as const, payableSats: summarizedPayableSats };
   return {
     count: data.loans.length,
     fundedCount,
     sundayRest: data.sundayRest,
     ...payableState,
-    waitingSats,
+    waitingSats: summarizedWaitingSats,
     waitingPeople,
     behindDays,
     payableLoans,

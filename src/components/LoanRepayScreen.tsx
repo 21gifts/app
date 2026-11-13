@@ -249,7 +249,7 @@ export function LoanRepayScreen(): ReactElement {
   const payable = summary.payableSats;
   const waiting = summary.waitingSats;
   const hasPayable = summary.payableLoans > 0;
-  const hasWaiting = summary.waitingPeople > 0 || waiting !== null;
+  const hasWaiting = summary.waitingPeople > 0 || (waiting !== null && waiting > 0);
   const payablePeople = ledgersMissing
     ? loans.loans.reduce((sum, loan) => sum + loan.due.payablePeople, 0)
     : new Set(shares.filter((share) => !share.waiting).map((share) => share.accountId)).size;
@@ -289,14 +289,15 @@ export function LoanRepayScreen(): ReactElement {
         : next.amount === null
           ? money(next.sats)
           : `${next.amount} · ${bitcoinText(next.sats)}`;
-    const pricedIndexes = loans.loans.flatMap((loan, loanIndex) =>
-      loan.next !== null &&
-      loan.next.dueOn === next.dueOn &&
-      loan.next.sats !== null &&
-      loan.next.sats > 0
-        ? [loanIndex]
-        : [],
+    const hasUnpricedNext = loans.loans.some(
+      (loan) => loan.next !== null && loan.next.dueOn === next.dueOn && loan.next.sats === null,
     );
+    const pricedIndexes = loans.loans.flatMap((loan, loanIndex) => {
+      if (loan.next === null || loan.next.dueOn !== next.dueOn || loan.next.sats === null) {
+        return [];
+      }
+      return !hasUnpricedNext || loan.next.sats > 0 ? [loanIndex] : [];
+    });
     const parts = [
       ...(pricedAmount === null
         ? []
@@ -334,6 +335,12 @@ export function LoanRepayScreen(): ReactElement {
   const definedWaiting = definedDueLabel(loans.loans, 'waiting', numberFormat);
   const unpricedPayable = unpricedDueLabels(loans.loans, 'payable', numberFormat);
   const unpricedWaiting = unpricedDueLabels(loans.loans, 'waiting', numberFormat);
+  const hasUnpricedPayable = loans.loans.some(
+    (loan) => loan.due.payableSats === null && loan.due.payablePeople > 0,
+  );
+  const hasUnpricedWaiting = loans.loans.some(
+    (loan) => loan.due.waitingSats === null && loan.due.waitingPeople > 0,
+  );
   const pricedWaitingPeople = loans.loans.reduce(
     (sum, loan) =>
       sum +
@@ -341,7 +348,7 @@ export function LoanRepayScreen(): ReactElement {
     0,
   );
   const pricedWaitingLabel: string | null =
-    waiting === null
+    waiting === null || waiting <= 0
       ? null
       : definedWaiting === null
         ? money(waiting)
@@ -364,12 +371,24 @@ export function LoanRepayScreen(): ReactElement {
   ];
   const partialWaitingNotice = (label: string, people: number): string =>
     t(people === 1 ? 'loans.waitsOne' : 'loans.waitsMany', { amount: label, count: people });
+  const pricedWaitingNoticePeople = hasUnpricedWaiting
+    ? pricedWaitingPeople
+    : summary.waitingPeople;
+  const payableCurrencies = new Set(
+    loans.loans
+      .filter((loan) => loan.due.payableSats !== null && loan.due.payableSats > 0)
+      .map((loan) => loan.goalCurrency),
+  );
+  const singlePayableFiat =
+    !hasUnpricedPayable && payableCurrencies.size === 1 && !payableCurrencies.has('BTC');
   const bigAmount: string | null =
     payable === null
       ? null
       : definedPayableLabel === null
         ? formatBitcoin(payable, numberFormat)
-        : `${definedPayableLabel} · ${bitcoinText(payable)}`;
+        : singlePayableFiat
+          ? definedPayableLabel
+          : `${definedPayableLabel} · ${bitcoinText(payable)}`;
   const smallAmount = payable === null || definedPayableLabel !== null ? null : fiatOnly(payable);
 
   const rowAmount = (share: DueShare): string => {
@@ -723,11 +742,15 @@ export function LoanRepayScreen(): ReactElement {
       {pricedWaitingLabel === null ? null : (
         <p className="mt-3 rounded-xl bg-app-card px-3 py-2 text-sm text-app-muted">
           {payable !== null && payable > 0
-            ? partialWaitingNotice(pricedWaitingLabel, pricedWaitingPeople)
-            : t(pricedWaitingPeople === 1 ? 'loans.waitsAllOne' : 'loans.waitsAllMany')}
+            ? partialWaitingNotice(pricedWaitingLabel, pricedWaitingNoticePeople)
+            : t(pricedWaitingNoticePeople === 1 ? 'loans.waitsAllOne' : 'loans.waitsAllMany')}
         </p>
       )}
-      {unpricedWaiting.length === 0 ? null : (
+      {pricedWaitingLabel === null && unpricedWaiting.length === 1 ? (
+        <p className="mt-3 rounded-xl bg-app-card px-3 py-2 text-sm text-app-muted">
+          {partialWaitingNotice(unpricedWaiting[0]!.label, unpricedWaiting[0]!.people)}
+        </p>
+      ) : unpricedWaiting.length === 0 ? null : (
         <div className="mt-3 flex flex-col gap-1 rounded-xl bg-app-card px-3 py-2 text-sm">
           {unpricedWaiting.map(({ loanIndex, label, people }) => (
             <p key={loanIndex} className="tabular-nums lining-nums text-app-muted">

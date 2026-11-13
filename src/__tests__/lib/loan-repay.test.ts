@@ -267,7 +267,11 @@ describe('summarizeLoans', () => {
       },
       next: null,
     });
-    expect(summarizeLoans({ sundayRest: false, loans: [clear] }, 'ch').tone).toBe('success');
+    expect(summarizeLoans({ sundayRest: false, loans: [clear] }, 'ch')).toMatchObject({
+      tone: 'success',
+      payableSats: 0,
+      waitingSats: 0,
+    });
     expect(summarizeLoans({ sundayRest: true, loans: [clear] }, 'ch')).toMatchObject({
       tone: 'neutral',
       payable: false,
@@ -375,7 +379,7 @@ describe('summarizeLoans', () => {
     });
   });
 
-  it('keeps a known-zero next amount fiat-only instead of showing bitcoin zero', () => {
+  it('keeps the original combined next amount when every next sat figure is known', () => {
     expect(
       summarizeLoans(
         {
@@ -391,9 +395,34 @@ describe('summarizeLoans', () => {
       ).next,
     ).toEqual({
       dueOn: '2026-10-11',
+      sats: 0,
+      amount: '₱3.00',
+      unpriced: [],
+    });
+  });
+
+  it('omits bitcoin zero beside an unpriced next amount', () => {
+    const dueOn = '2026-10-11';
+    expect(
+      summarizeLoans(
+        {
+          sundayRest: false,
+          loans: [
+            loan({ goalCurrency: 'PHP', next: { dueOn, sats: 0, amount: '2.00' } }),
+            loan({
+              messageId: 'unpriced',
+              goalCurrency: 'PHP',
+              next: { dueOn, sats: null, amount: '3.00' },
+            }),
+          ],
+        },
+        'ch',
+      ).next,
+    ).toEqual({
+      dueOn,
       sats: null,
       amount: null,
-      unpriced: [{ loanIndex: 0, amount: '₱3.00' }],
+      unpriced: [{ loanIndex: 1, amount: '₱3.00' }],
     });
   });
 
