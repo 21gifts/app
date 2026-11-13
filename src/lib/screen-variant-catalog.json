@@ -978,6 +978,18 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/wallet:loans-collecting",
+    "label": "/wallet loans-collecting",
+    "visual": "state-wallet-loans-collecting",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/wallet:loans-collecting-open",
+    "label": "/wallet loans-collecting-open",
+    "visual": "state-wallet-loans-collecting-open",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/wallet:loans-multi",
     "label": "/wallet loans-multi",
     "visual": "state-wallet-loans-multi",
@@ -3339,6 +3351,12 @@
     "id": "/welcome:repay-today",
     "label": "/welcome repay-today",
     "visual": "state-welcome-repay-today",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:repay-collecting",
+    "label": "/welcome repay-collecting",
+    "visual": "state-welcome-repay-collecting",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {

@@ -25,6 +25,7 @@ import {
   ledgerWith,
   loanA,
   loanB,
+  loanCollecting,
   productionPhpLoans,
   loanWith,
   myLoans,
@@ -3921,6 +3922,29 @@ test.describe('screen baselines', () => {
     await shotScreen(page, 'state-wallet-loans-open');
   });
 
+  test('state /wallet loans-collecting', async ({ page }) => {
+    await seedLoanMember(page);
+    await seedLoanData(page, [loanCollecting], {});
+    await page.goto('/wallet?visual=balance-ready');
+    const card = page.getByRole('region', { name: 'Your loan' });
+    await expect(card).toContainText('Not fully funded yet.');
+    await expect(card.getByRole('link', { name: 'Pay early or end collecting' })).toHaveAttribute(
+      'href',
+      '/loans/repay',
+    );
+    await shotScreen(page, 'state-wallet-loans-collecting');
+  });
+
+  test('state /wallet loans-collecting-open', async ({ page }) => {
+    await seedLoanMember(page);
+    await seedLoanData(page, [loanCollecting], {});
+    await page.goto('/wallet?visual=balance-ready');
+    await page.getByRole('button', { name: 'Show loan' }).click();
+    await expect(page.getByRole('link', { name: loanCollecting.text })).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Pay early or end collecting' })).toBeVisible();
+    await shotScreen(page, 'state-wallet-loans-collecting-open');
+  });
+
   test('state /wallet loans-multi', async ({ page }) => {
     await seedLoanMember(page);
     await seedLoanData(page, productionPhpLoans, {});
@@ -7665,12 +7689,43 @@ test.describe('loans repay screens', () => {
   });
 
   test('state /loans/repay pay-more-no-rate', async ({ page }) => {
+    const noRateLoan = loanWith(repaidLoanB, {
+      totalSats: null,
+      maxSats: null,
+      maxAmount: null,
+      due: {
+        payableSats: null,
+        payablePeople: 1,
+        waitingSats: null,
+        waitingPeople: 1,
+        waitingShares: 1,
+        payableAmount: '18.00',
+        waitingAmount: '12.00',
+      },
+      next: { dueOn: '2026-10-08', sats: null, amount: '30.00' },
+    });
+    const noRateLedger = ledgerWith(ledgerB, {
+      givers: ledgerB.givers.map((giver) => ({
+        ...giver,
+        canReceive: giver.accountId !== 'acc_farid',
+      })),
+      waitingShares: 1,
+      repayments: ledgerB.repayments.map((row) => ({
+        ...row,
+        waiting: row.status === 'due' && row.accountId === 'acc_farid',
+      })),
+    });
     await loanShot(page, {
-      loans: [{ ...repaidLoanB, maxSats: null, maxAmount: null }],
+      loans: [noRateLoan],
+      ledgers: { 'loan-b': noRateLedger },
       visual: 'repay-ready',
       text: 'No PHP exchange rate is available now',
       spotRates: { USD: '100000.00' },
     });
+    await expect(page.getByText('₱18.00', { exact: true })).toBeVisible();
+    await expect(page.getByText(/₱12\.00 waits for a lender/)).toBeVisible();
+    await expect(page.getByText('Next: tomorrow, ₱30.00 to 2 people')).toBeVisible();
+    await expect(page.getByRole('button', { name: /^Send / })).toHaveCount(0);
     await expect(page.getByLabel('Amount (PHP)')).toBeVisible();
     await expect(page.getByRole('group', { name: 'Bitcoin or fiat' })).toHaveCount(0);
     await expect(page.getByText('No exchange rate yet')).toBeVisible();
@@ -30054,6 +30109,46 @@ test.describe('welcome forum variants', () => {
     await shotScreen(page, 'state-welcome-repay-today');
   });
 
+  test('state /welcome repay-collecting', async ({ page }) => {
+    await page.route(/\/messages\/[^/]+\/repayment$/, async (route) => {
+      await route.fulfill({ status: 404, contentType: 'application/json', body: '{}' });
+    });
+    await seedAda(page);
+    await fulfillRateDay(page);
+    await page.clock.install({ time: LOAN_CLOCK });
+    await page.route(/\/messages(?:\?|$)/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [
+            {
+              id: 'm-goal-credit',
+              accountId: 'acc_e2e',
+              name: 'Ada',
+              text: 'Need help with a train ticket',
+              createdAt: '2026-08-28T12:00:00.000Z',
+              sats: 10500,
+              goalSats: 21000,
+              goalRepayable: true,
+              goalTermDays: 30,
+              payable: true,
+              hasPhoto: false,
+              role: 'basis',
+            },
+          ],
+        }),
+      });
+    });
+    await page.goto('/welcome');
+    await chooseForumView(page, 'All');
+    await expect(page.getByRole('link', { name: 'Pay early or end collecting' })).toHaveAttribute(
+      'href',
+      '/loans/repay',
+    );
+    await shotScreen(page, 'state-welcome-repay-collecting');
+  });
+
   /** Signed-in Ada and Maria's loan that still collects (or is full), with an empty thread. */
   async function seedLoanCard(
     page: Page,
@@ -30278,6 +30373,10 @@ test.describe('welcome forum variants', () => {
     await expect(page.getByRole('region', { name: 'Your loan' })).toContainText(
       'Not fully funded yet.',
     );
+    await expect(page.getByRole('link', { name: 'Pay early or end collecting' })).toHaveAttribute(
+      'href',
+      '/loans/repay',
+    );
     await shotScreen(page, 'state-welcome-loans-collecting');
   });
 
@@ -30301,6 +30400,10 @@ test.describe('welcome forum variants', () => {
     await openWelcomeLoans(page, myLoans([collecting]));
     await expect(page.getByRole('region', { name: 'Your loan' })).toContainText(
       'Not fully funded yet.',
+    );
+    await expect(page.getByRole('link', { name: 'Pay early or end collecting' })).toHaveAttribute(
+      'href',
+      '/loans/repay',
     );
     await page.getByRole('button', { name: 'Show loan' }).click();
     await expect(page.getByRole('link', { name: loanA.text })).toBeVisible();

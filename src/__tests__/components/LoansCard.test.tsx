@@ -180,7 +180,9 @@ describe('LoansCard', () => {
         goalAmount: '30000',
       }),
     );
-    expect(screen.queryByRole('link')).toBeNull();
+    expect(
+      screen.getByRole('link', { name: 'Pay early or end collecting' }).getAttribute('href'),
+    ).toBe('/loans/repay');
     const toggle = screen.getByRole('button', { name: 'Show loan' });
     expect(toggle.getAttribute('aria-expanded')).toBe('false');
     expect(toggle.className).toContain('mt-3');
@@ -304,6 +306,12 @@ describe('LoansCard', () => {
     expect(screen.getByRole('link', { name: 'A sewing machine for my work' })).toBeTruthy();
   });
 
+  it('keeps a collecting-only entry off the card on Sunday', () => {
+    show({ sundayRest: true, loans: [loan({ fundedAt: null })] });
+    expect(screen.getByText('No repayments on Sundays')).toBeTruthy();
+    expect(screen.queryByRole('link', { name: 'Pay early or end collecting' })).toBeNull();
+  });
+
   it('shows an ordinary due-today row with the funded status', () => {
     show({ sundayRest: false, loans: [loan()] });
     expect(screen.getByText('Fully funded.')).toBeTruthy();
@@ -326,6 +334,34 @@ describe('LoansCard', () => {
     });
     expect(screen.getByText("₱9'999.99 · ₿192'833")).toBeTruthy();
     expect(screen.queryByText(PRODUCTION_SPOT)).toBeNull();
+  });
+
+  it('shows stored fiat due and waiting amounts without unavailable sat figures', () => {
+    show({
+      sundayRest: false,
+      loans: [
+        phpLoan({
+          totalSats: null,
+          maxSats: null,
+          due: {
+            ...loan().due,
+            payableSats: null,
+            payablePeople: 1,
+            payableAmount: '30.00',
+            waitingSats: null,
+            waitingPeople: 1,
+            waitingAmount: '15.00',
+          },
+          next: { dueOn: '2026-10-11', sats: null, amount: '30.00' },
+        }),
+      ],
+    });
+
+    expect(screen.getByText('₱30.00')).toBeTruthy();
+    expect(screen.getByText('₱15.00 is waiting for a lender to set up their wallet')).toBeTruthy();
+    expect(screen.queryByText(/^Next:/)).toBeNull();
+    expect(screen.queryByRole('link', { name: 'Send' })).toBeNull();
+    expect(screen.getByRole('link', { name: 'Repayment details' })).toBeTruthy();
   });
 
   it('shows every payable fiat currency with its own sum', () => {

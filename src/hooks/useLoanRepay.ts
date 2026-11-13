@@ -103,7 +103,7 @@ export interface LoanRepayResult {
   /** Opens the top-up block (the screen's "Top up your wallet"); starts the balance poll. */
   openTopUp: () => void;
   /**
-   * One tap: pays every payable bill of `loans` (all loans with due.payableSats \> 0).
+   * One tap: pays every bill of loans with a known positive `due.payableSats`.
    * `onlyShares` (optional): pay only the bills whose share key
    * (`messageId:dayIndex:recipientAccountId`) is in the set (the "send ₿C now"
    * link passes the named shares). The named shares are taken from all due shares;
@@ -183,8 +183,8 @@ function actionErrorOf(error: unknown, messageId: string): LoanRepayActionError 
 function prepayResponseMatches(prepay: LoanPrepay, loan: MyLoan, amountText: string): boolean {
   const rows = [...prepay.bills, ...prepay.waiting];
   const responseSats = BigInt(prepay.amountSats);
-  const distributedSats = rows.reduce((sum, row) => sum + BigInt(row.amountSats), 0n);
-  if (distributedSats !== responseSats) {
+  const billedSats = prepay.bills.reduce((sum, row) => sum + BigInt(row.amountSats), 0n);
+  if (billedSats !== responseSats) {
     return false;
   }
   const requested = parseLoanAmount(amountText, loan.goalCurrency);
@@ -192,7 +192,8 @@ function prepayResponseMatches(prepay: LoanPrepay, loan: MyLoan, amountText: str
     return false;
   }
   if (loan.goalCurrency === 'BTC') {
-    return requested.units === responseSats;
+    const allocatedSats = rows.reduce((sum, row) => sum + BigInt(row.amountSats), 0n);
+    return requested.units === allocatedSats;
   }
   let distributedCents = 0n;
   for (const row of rows) {
@@ -850,7 +851,7 @@ export function useLoanRepay(options: {
             perLoan.push({ messageId: prepayRequest.messageId, bills: prepay.bills });
           } else {
             for (const loan of loans) {
-              if (loan.due.payableSats <= 0) {
+              if (loan.due.payableSats === null || loan.due.payableSats <= 0) {
                 continue;
               }
               const due = await postRepaymentDue(session, loan.messageId);

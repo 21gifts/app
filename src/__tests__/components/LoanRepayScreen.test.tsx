@@ -291,6 +291,51 @@ describe('LoanRepayScreen', () => {
     expect(screen.queryByText(/\$1\.00/)).toBeNull();
   });
 
+  it('renders a fiat loan whose unpaid sat figures are null from its stored amounts', async () => {
+    const noRate = loan({
+      goalCurrency: 'PHP',
+      goalAmount: '300.00',
+      totalSats: null,
+      maxSats: null,
+      maxAmount: '180.00',
+      due: {
+        ...loan().due,
+        payableSats: null,
+        payablePeople: 1,
+        payableAmount: '30.00',
+        waitingSats: null,
+        waitingPeople: 1,
+        waitingAmount: '15.00',
+      },
+      next: { dueOn: '2026-10-11', sats: null, amount: '30.00' },
+    });
+    vi.mocked(getRepayment).mockResolvedValue(
+      ledger({
+        currency: 'PHP',
+        repayments: [
+          { ...ledger().repayments[0]!, amount: '10.00', dueSats: null },
+          { ...ledger().repayments[1]!, amount: '10.00', dueSats: null },
+        ],
+      }),
+    );
+
+    show({ sundayRest: false, loans: [noRate] });
+
+    expect(screen.getByText('₱30.00')).toBeTruthy();
+    expect(screen.getByText(/₱15\.00 waits for a lender/)).toBeTruthy();
+    expect(await screen.findByText(/Next: tomorrow, ₱30\.00 to 1 person/)).toBeTruthy();
+    expect(screen.queryByRole('button', { name: /^Send / })).toBeNull();
+    expect(screen.getByText('₱300.00 · 30 days · ₱10.00 per day')).toBeTruthy();
+    expect(screen.getByText(/No PHP exchange rate is available now/)).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Max' })).toHaveProperty('disabled', true);
+    expect(screen.getByRole('button', { name: 'Pay this amount' })).toHaveProperty(
+      'disabled',
+      true,
+    );
+    await waitFor(() => expect(getRepayment).toHaveBeenCalledWith('loan-1'));
+    expect(screen.queryByRole('img', { name: /Repaid/ })).toBeNull();
+  });
+
   it('omits the secondary member-fiat line when the loan uses that fiat', async () => {
     const usdLoan = loan({
       goalCurrency: 'USD',
@@ -812,6 +857,64 @@ describe('LoanRepayScreen', () => {
     show({ sundayRest: false, loans: [loan()] });
     fireEvent.click(screen.getByRole('button', { name: 'Who gets paid' }));
     const alert = await screen.findByRole('alert');
+    expect(alert.textContent).toBe('Could not load who gets paid for this loan.');
+    expect(alert.className).toContain('text-app-danger');
+  });
+
+  it('shows an error line for an unpriced fiat payable share without a repayment list', async () => {
+    vi.mocked(getRepayment).mockResolvedValue(null);
+    show({
+      sundayRest: false,
+      loans: [
+        loan({
+          goalCurrency: 'PHP',
+          goalAmount: '900.00',
+          due: {
+            ...loan().due,
+            payableSats: null,
+            payablePeople: 1,
+            payableAmount: '30.00',
+            waitingSats: null,
+            waitingPeople: 0,
+            waitingAmount: null,
+          },
+        }),
+      ],
+    });
+    const whoButton = screen.getByRole('button', { name: 'Who gets paid' });
+    fireEvent.click(whoButton);
+    const whoList = document.getElementById(whoButton.getAttribute('aria-controls')!);
+    expect(whoList).not.toBeNull();
+    const alert = await within(whoList!).findByRole('alert');
+    expect(alert.textContent).toBe('Could not load who gets paid for this loan.');
+    expect(alert.className).toContain('text-app-danger');
+  });
+
+  it('shows an error line for an unpriced fiat waiting share without a repayment list', async () => {
+    vi.mocked(getRepayment).mockResolvedValue(null);
+    show({
+      sundayRest: false,
+      loans: [
+        loan({
+          goalCurrency: 'PHP',
+          goalAmount: '900.00',
+          due: {
+            ...loan().due,
+            payableSats: null,
+            payablePeople: 0,
+            payableAmount: null,
+            waitingSats: null,
+            waitingPeople: 1,
+            waitingAmount: '15.00',
+          },
+        }),
+      ],
+    });
+    const whoButton = screen.getByRole('button', { name: 'Who gets paid' });
+    fireEvent.click(whoButton);
+    const whoList = document.getElementById(whoButton.getAttribute('aria-controls')!);
+    expect(whoList).not.toBeNull();
+    const alert = await within(whoList!).findByRole('alert');
     expect(alert.textContent).toBe('Could not load who gets paid for this loan.');
     expect(alert.className).toContain('text-app-danger');
   });
@@ -1582,7 +1685,7 @@ describe('LoanRepayScreen', () => {
     expect(screen.getByText("Next: tomorrow, ₱30.00 + $1.00 · ₿2'000")).toBeTruthy();
   });
 
-  it('counts next recipients only for loans included in the next summary', async () => {
+  it('counts next recipients from priced and unpriced loans in the next summary', async () => {
     let resolveFirst: (value: RepaymentLedger | null) => void = () => undefined;
     let resolveSecond: (value: RepaymentLedger | null) => void = () => undefined;
     vi.mocked(getRepayment).mockImplementation(
@@ -1627,8 +1730,7 @@ describe('LoanRepayScreen', () => {
       );
       await Promise.resolve();
     });
-    expect(screen.getByText('Next: tomorrow, ₱2.00 · ₿40 to 1 person')).toBeTruthy();
-    expect(screen.queryByText('Next: tomorrow, ₱2.00 · ₿40 to 2 people')).toBeNull();
+    expect(screen.getByText('Next: tomorrow, ₱5.00 to 2 people')).toBeTruthy();
   });
 
   it('shows tomorrow and later next lines for several recipients', async () => {

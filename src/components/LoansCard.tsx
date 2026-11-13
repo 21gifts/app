@@ -51,6 +51,8 @@ export function LoansCard({ place }: LoansCardProps): ReactElement | null {
   const summary = summarizeLoans(loans, numberFormat);
   const definedPayable = definedDueLabel(loans.loans, 'payable', numberFormat);
   const definedWaiting = definedDueLabel(loans.loans, 'waiting', numberFormat);
+  const hasWaiting =
+    summary.waitingSats === null ? summary.waitingPeople > 0 : summary.waitingSats > 0;
   const single = summary.count === 1;
   const title = single ? t('welcome.loanTitle') : t('welcome.loansTitle', { count: summary.count });
   const status = single
@@ -69,16 +71,20 @@ export function LoansCard({ place }: LoansCardProps): ReactElement | null {
       ? bitcoin
       : `${bitcoin} · ${formatFiatDisplay(amount, fiat, numberFormat)}`;
   };
+  const definedWithBitcoin = (defined: string | null, sats: number | null): string => {
+    if (sats === null) {
+      // The api leaves only the priced sat field null; the stored fiat amount remains present.
+      return defined as string;
+    }
+    return defined === null ? money(sats) : `${defined} · ${formatBitcoin(sats, numberFormat)}`;
+  };
   const nextLine = (): string | null => {
     if (summary.next === null) {
       return null;
     }
     const tomorrow = new Date();
     tomorrow.setDate(tomorrow.getDate() + 1);
-    const amount =
-      summary.next.amount === null
-        ? money(summary.next.sats)
-        : `${summary.next.amount} · ${formatBitcoin(summary.next.sats, numberFormat)}`;
+    const amount = definedWithBitcoin(summary.next.amount, summary.next.sats);
     if (summary.next.dueOn === localDay(tomorrow)) {
       return t('loans.nextTomorrow', { amount });
     }
@@ -134,7 +140,7 @@ export function LoansCard({ place }: LoansCardProps): ReactElement | null {
         <div className="mt-3 rounded-xl bg-app-card px-3 py-2">
           {summary.sundayRest ? (
             <p className="font-semibold text-app-fg">{t('loans.sundayRest')}</p>
-          ) : summary.payableSats > 0 ? (
+          ) : summary.payableLoans > 0 ? (
             <div className="flex items-center justify-between gap-3">
               <div className="min-w-0">
                 <p
@@ -156,7 +162,9 @@ export function LoansCard({ place }: LoansCardProps): ReactElement | null {
                     summary.behindDays > 0 ? 'text-app-danger' : 'text-app-fg'
                   }`}
                 >
-                  {definedPayable === null ? (
+                  {summary.payableSats === null ? (
+                    (definedPayable as string)
+                  ) : definedPayable === null ? (
                     <>
                       {formatBitcoin(summary.payableSats, numberFormat)}
                       {preferredFiatSuffix(summary.payableSats, rateDay, fiat, numberFormat)}
@@ -166,22 +174,30 @@ export function LoansCard({ place }: LoansCardProps): ReactElement | null {
                   )}
                 </p>
               </div>
-              <ButtonLink href="/loans/repay" size="sm">
-                {t('wallet.payFromWallet')}
-              </ButtonLink>
+              {summary.payableSats === null ? (
+                <Link
+                  href="/loans/repay"
+                  aria-label={t('loans.details')}
+                  className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg text-app-muted transition hover:bg-app-hover hover:text-app-fg"
+                >
+                  <ChevronRight aria-hidden="true" className="h-5 w-5" />
+                </Link>
+              ) : (
+                <ButtonLink href="/loans/repay" size="sm">
+                  {t('wallet.payFromWallet')}
+                </ButtonLink>
+              )}
             </div>
           ) : (
             <div className="flex items-center justify-between gap-3">
               <div className="min-w-0">
                 <p
                   className={`flex items-center gap-1 text-sm font-medium ${
-                    summary.waitingSats === 0 ? 'text-app-success' : 'text-app-muted'
+                    !hasWaiting ? 'text-app-success' : 'text-app-muted'
                   }`}
                 >
-                  {summary.waitingSats === 0 ? (
-                    <Check aria-hidden="true" className="h-4 w-4 shrink-0" />
-                  ) : null}
-                  {t(summary.waitingSats === 0 ? 'loans.nothingDue' : 'loans.nothingToSend')}
+                  {!hasWaiting ? <Check aria-hidden="true" className="h-4 w-4 shrink-0" /> : null}
+                  {t(!hasWaiting ? 'loans.nothingDue' : 'loans.nothingToSend')}
                 </p>
                 {nextLine() === null ? null : (
                   <p className="text-xs tabular-nums lining-nums text-app-muted">{nextLine()}</p>
@@ -196,19 +212,28 @@ export function LoansCard({ place }: LoansCardProps): ReactElement | null {
               </Link>
             </div>
           )}
-          {summary.waitingSats > 0 ? (
+          {hasWaiting ? (
             <p className="mt-1 text-xs tabular-nums lining-nums text-app-muted">
               {t(summary.waitingPeople === 1 ? 'loans.waitingOne' : 'loans.waitingMany', {
-                amount:
-                  definedWaiting === null
-                    ? money(summary.waitingSats)
-                    : `${definedWaiting} · ${formatBitcoin(summary.waitingSats, numberFormat)}`,
+                amount: definedWithBitcoin(definedWaiting, summary.waitingSats),
                 count: summary.waitingPeople,
               })}
             </p>
           ) : null}
         </div>
-      ) : null}
+      ) : summary.sundayRest ? (
+        <div className="mt-3 rounded-xl bg-app-card px-3 py-2">
+          <p className="font-semibold text-app-fg">{t('loans.sundayRest')}</p>
+        </div>
+      ) : (
+        <Link
+          href="/loans/repay"
+          className="mt-3 flex min-h-11 items-center justify-between gap-3 rounded-xl bg-app-card px-3 py-2 text-sm font-medium text-app-fg"
+        >
+          {t('loans.collectingOpen')}
+          <ChevronRight aria-hidden="true" className="h-5 w-5 shrink-0 text-app-muted" />
+        </Link>
+      )}
       <button
         type="button"
         aria-expanded={open}

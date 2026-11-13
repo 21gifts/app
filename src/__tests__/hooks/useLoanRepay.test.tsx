@@ -378,12 +378,17 @@ describe('useLoanRepay preparation', () => {
     expect(result.current).toMatchObject({ phase: 'idle', errorKey: null });
   });
 
-  it('skips loans without payable sats and treats no bills as freshly repaid', async () => {
+  it('skips zero and unpriced payable sats and treats no bills as freshly repaid', async () => {
     const reload = vi.fn(async (): Promise<MyLoans> => body([]));
     vi.mocked(postRepaymentDue).mockResolvedValue({ bills: [], waiting: [] });
     const { result } = renderHook(() => useLoanRepay({ reload }));
+    const unpriced = {
+      ...loan('unpriced'),
+      goalCurrency: 'PHP' as const,
+      due: { ...loan('unpriced').due, payableSats: null, payablePeople: 1 },
+    };
     act(() => result.current.openTopUp());
-    act(() => result.current.pay([loan('skip', 0), loan()]));
+    act(() => result.current.pay([loan('skip', 0), unpriced, loan()]));
     await waitFor(() => expect(result.current.phase).toBe('repaid'));
     expect(postRepaymentDue).toHaveBeenCalledTimes(1);
     expect(postRepaymentDue).toHaveBeenCalledWith('token', 'm1');
@@ -2207,7 +2212,7 @@ describe('useLoanRepay free repayment and collecting actions', () => {
       act(() => setWallet('ready'));
       await act(async () => {
         resolvePrepay({
-          amountSats: 500,
+          amountSats: 0,
           amount: null,
           bills: [],
           waiting: [
@@ -2340,7 +2345,7 @@ describe('useLoanRepay free repayment and collecting actions', () => {
   it('keeps waiting recipients returned by prepay in the hook result', async () => {
     const row = bill('Ahead', 500, 8, undefined, '5.00');
     vi.mocked(prepayLoan).mockResolvedValue({
-      amountSats: 700,
+      amountSats: 500,
       amount: '7.00',
       bills: [row],
       waiting: [
@@ -2373,6 +2378,38 @@ describe('useLoanRepay free repayment and collecting actions', () => {
     expect(result.current.prepayMessageId).toBe('prepay-waiting');
   });
 
+  it('keeps an all-waiting prepay as nothing payable now instead of failing', async () => {
+    vi.mocked(prepayLoan).mockResolvedValue({
+      amountSats: 0,
+      amount: null,
+      bills: [],
+      waiting: [
+        {
+          dayIndex: 8,
+          recipientAccountId: 'acc_waiting',
+          name: 'Carla',
+          username: 'carla',
+          amountSats: 500,
+          amount: null,
+        },
+      ],
+    });
+    const current = loan('prepay-all-waiting', 0, 100);
+    const reload = vi.fn(async () => body([current]));
+    const { result } = renderHook(() => useLoanRepay({ reload }));
+
+    act(() => result.current.prepay(current, '500'));
+    await waitFor(() => expect(result.current.phase).toBe('repaid'));
+
+    expect(result.current.errorKey).toBeNull();
+    expect(result.current.prepayWaiting).toEqual([
+      expect.objectContaining({ name: 'Carla', amountSats: 500 }),
+    ]);
+    expect(result.current.prepayMessageId).toBe('prepay-all-waiting');
+    expect(payFromWallet).not.toHaveBeenCalled();
+    expect(reload).toHaveBeenCalledTimes(1);
+  });
+
   it('accepts a comma-decimal fiat request when the prepay response matches', async () => {
     const row = bill('Comma', 1_250, 8, undefined, '12.50');
     vi.mocked(prepayLoan).mockResolvedValue({
@@ -2400,7 +2437,7 @@ describe('useLoanRepay free repayment and collecting actions', () => {
     expect(payFromWallet).toHaveBeenCalledWith({ type: 'input', input: invoiceOf(row) });
   });
 
-  it('rejects a successful prepay body whose bills and waiting sats exceed its total', async () => {
+  it('rejects a successful prepay body whose bills exceed its billed total', async () => {
     vi.mocked(prepayLoan).mockResolvedValue({
       amountSats: 100,
       amount: null,
@@ -2463,7 +2500,7 @@ describe('useLoanRepay free repayment and collecting actions', () => {
       const amountText = invalid === 'request' ? 'not an amount' : '7.00';
       const billAmount = invalid === 'missing' ? null : invalid === 'malformed' ? 'bad' : '5.00';
       vi.mocked(prepayLoan).mockResolvedValue({
-        amountSats: 700,
+        amountSats: 500,
         amount: '7.00',
         bills: [bill('Ahead', 500, 8, undefined, billAmount)],
         waiting: [

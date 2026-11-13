@@ -1216,6 +1216,20 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/wallet',
+    id: 'loans-collecting',
+    image: 'wallet-loans-collecting.png',
+    visual: 'state-wallet-loans-collecting',
+    needle: 'state /wallet loans-collecting',
+  },
+  {
+    route: '/wallet',
+    id: 'loans-collecting-open',
+    image: 'wallet-loans-collecting-open.png',
+    visual: 'state-wallet-loans-collecting-open',
+    needle: 'state /wallet loans-collecting-open',
+  },
+  {
+    route: '/wallet',
     id: 'loans-multi',
     image: 'wallet-loans-multi.png',
     visual: 'state-wallet-loans-multi',
@@ -3973,6 +3987,13 @@ export const SCREEN_VARIANTS = [
     image: 'welcome-repay-today.png',
     visual: 'state-welcome-repay-today',
     needle: 'state /welcome repay-today',
+  },
+  {
+    route: '/welcome',
+    id: 'repay-collecting',
+    image: 'welcome-repay-collecting.png',
+    visual: 'state-welcome-repay-collecting',
+    needle: 'state /welcome repay-collecting',
   },
   {
     route: '/welcome',

@@ -470,6 +470,18 @@ The same ready wallet and loan amounts after **Show loan** is pressed. The discl
 
 ![21.gifts wallet loans open](images/wallet-loans-open.png)
 
+### Variant: loans-collecting
+
+Ready wallet with a single loan that is still collecting. The neutral **Your loan** card says **Not fully funded yet.**, shows its **27%** funding bar, and has a clear **Pay early or end collecting** row linking to `/loans/repay`. There is no due row; **Show loan** is closed.
+
+![21.gifts wallet collecting loan](images/wallet-loans-collecting.png)
+
+### Variant: loans-collecting-open
+
+The same collecting loan after **Show loan** is pressed. **Pay early or end collecting** remains visible, the linked credit-note text is in the open list, and the toggle says **Hide loan**.
+
+![21.gifts wallet collecting loan open](images/wallet-loans-collecting-open.png)
+
 ### Variant: loans-multi
 
 Ready wallet with **Balance ₿21'000 · $21.00** and the reported production case: **Your loans (2)** and **1 of 2 fully funded.**, with no combined bar. Each loan has its own muted, non-linked, truncated text above its own `ForumGoalBar`: the funded delivery-bike loan keeps **₱10'000.00** as its goal and receives **₱10'000.98** as its frozen collected figure; the collecting school-books loan keeps **₱15'000.00** as its goal and receives **₱480.28** as its frozen collected figure. Neither bar nor the card shows the spot for the summed goal sats (**₱27'051.19**). The card shows **Nothing due today**, **Next: Monday, November 16, ₱199.99 · ₿3'857**, and no Send. **Show loans** is closed.
@@ -1602,7 +1614,7 @@ Loan A with malformed sats input **12.5**. The standard AmountEntry marks the fi
 
 ### Variant: pay-more-no-rate
 
-A PHP loan without a current conversion rate. AmountEntry stays in the fixed PHP loan unit without a switch and shows **No exchange rate yet**. **Pay more** also explains **No PHP exchange rate is available now, so paying more is disabled.** Both **Max** and **Pay this amount** are disabled.
+A PHP loan without a current conversion rate, so `totalSats`, both due sat totals, `next.sats`, and `maxSats` are null. The screen still shows the stored fiat figures: **₱18.00** due, **₱12.00** waiting, and **Next: tomorrow, ₱30.00 to 2 people**, without inventing sat figures or offering **Send**. AmountEntry stays in the fixed PHP loan unit without a switch and shows **No exchange rate yet**. **Pay more** also explains **No PHP exchange rate is available now, so paying more is disabled.** Both **Max** and **Pay this amount** are disabled.
 
 ![21.gifts loans repay pay more without rate](images/loans-repay-pay-more-no-rate.png)
 
@@ -3044,13 +3056,13 @@ Gift icon with an integrated Bitcoin symbol, **Welcome, Ada**, without the livin
 
 ### Variant: loans-collecting
 
-Under **Welcome, Ada**, a neutral **Your loan** card shows **Not fully funded yet.** and one `ForumGoalBar`: **Ask ₿30'000 · $30.00** and **60%**. There is no due row. **Show loan** is closed.
+Under **Welcome, Ada**, a neutral **Your loan** card shows **Not fully funded yet.** and one `ForumGoalBar`: **Ask ₿30'000 · $30.00** and **60%**. The clear **Pay early or end collecting** row links to `/loans/repay`; there is no due row. **Show loan** is closed.
 
 ![21.gifts welcome collecting loan](images/welcome-loans-collecting.png)
 
 ### Variant: loans-collecting-open
 
-The collecting card after **Show loan** is pressed. It keeps **Not fully funded yet.** and **Ask ₿30'000 · $30.00** with **60%**, then shows the linked loan text **I need a small loan to buy a second-hand sewing machine for my repair stall.** with **60%**; the toggle now says **Hide loan**. There is no due row.
+The collecting card after **Show loan** is pressed. It keeps **Not fully funded yet.**, **Ask ₿30'000 · $30.00** with **60%**, and **Pay early or end collecting**, then shows the linked loan text **I need a small loan to buy a second-hand sewing machine for my repair stall.** with **60%**; the toggle now says **Hide loan**. There is no due row.
 
 ![21.gifts welcome collecting loan open](images/welcome-loans-collecting-open.png)
 
@@ -3765,6 +3777,12 @@ On **All**: a top-level Ada note with `sats: 10500` and `goalSats: 21000`, after
 On **All**: Ada's own filled credit (`accountId` matches the signed-in account, `sats` equals `goalSats`). The loan block reads **Fully funded** under a full orange bar at **100%**; the feed does not read the repayment ledger, so it does not say how much is paid back. There is no **Lend** on a full loan or on her own note. **Repay your loan** is a link to `/loans/repay`. **Repayment list** is also a link. The day list is not on this card.
 
 ![21.gifts welcome repay today](images/welcome-repay-today.png)
+
+### Variant: repay-collecting
+
+On **All**: Ada's own credit is still collecting at **50%**. There is no **Lend** on her own note. **Pay early or end collecting** is a clear link to `/loans/repay`, where paying ends collecting after confirmation; **Repayment list** remains a link.
+
+![21.gifts welcome repay collecting](images/welcome-repay-collecting.png)
 
 ### Variant: loan-lend
 

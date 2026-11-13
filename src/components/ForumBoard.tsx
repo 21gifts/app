@@ -336,7 +336,7 @@ export interface ForumBoardProps {
    * the viewer's own notes hides the reply amount field and the gift button.
    */
   viewerAccountId?: string | null;
-  /** Shows **Repay your loan** (a link to `/loans/repay`) on the viewer's own funded credit. */
+  /** Shows a repayment link on the viewer's own live credit, with collecting-specific copy. */
   repayLink?: boolean;
   /** Updates the pay amount draft. */
   onPayDraftChange: (value: string) => void;
@@ -1945,14 +1945,17 @@ export function ForumBoard({
                   message.parentId === undefined &&
                   message.goalRepayable === true &&
                   typeof message.goalSats === 'number' &&
-                  message.sats >= message.goalSats &&
                   message.deletedAt === undefined ? (
                     <Link
                       href="/loans/repay"
                       className="text-xs font-medium text-app-fg underline"
                       onClick={stopCardToggle}
                     >
-                      {t('forum.repayOpen')}
+                      {t(
+                        message.sats < message.goalSats && message.goalClosedAt === undefined
+                          ? 'forum.repayCollectingOpen'
+                          : 'forum.repayOpen',
+                      )}
                     </Link>
                   ) : null}
                   {message.parentId !== undefined &&

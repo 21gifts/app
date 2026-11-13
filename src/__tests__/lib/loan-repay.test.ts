@@ -215,7 +215,11 @@ describe('summarizeLoans', () => {
             messageId: 'm3',
             next: { dueOn: '2026-10-11', sats: 60, amount: null },
           }),
-          loan({ messageId: 'm4', next: { dueOn: '2026-10-10', sats: null, amount: '2.00' } }),
+          loan({
+            messageId: 'm4',
+            goalCurrency: 'PHP',
+            next: { dueOn: '2026-10-10', sats: null, amount: '2.00' },
+          }),
           loan({ messageId: 'm5', next: null }),
         ],
       },
@@ -231,7 +235,7 @@ describe('summarizeLoans', () => {
       behindDays: 2,
       payableLoans: 4,
       lastPayment: true,
-      next: { dueOn: '2026-10-11', sats: 100, amount: null },
+      next: { dueOn: '2026-10-10', sats: null, amount: '₱2.00' },
       tone: 'danger',
       payable: true,
     });
@@ -294,7 +298,7 @@ describe('summarizeLoans', () => {
     ).toEqual({ dueOn: '2026-10-11', sats: 100, amount: '₱400.47' });
   });
 
-  it('uses only loans with sats for the same-day next amount', () => {
+  it('keeps the stored next amount when one same-day fiat loan has no rate', () => {
     const dueOn = '2026-10-11';
     expect(
       summarizeLoans(
@@ -307,11 +311,64 @@ describe('summarizeLoans', () => {
               goalCurrency: 'PHP',
               next: { dueOn, sats: null, amount: '3.00' },
             }),
+            loan({
+              messageId: 'm3',
+              goalCurrency: 'PHP',
+              next: { dueOn, sats: 80, amount: '4.00' },
+            }),
           ],
         },
         'ch',
       ).next,
-    ).toEqual({ dueOn, sats: 40, amount: '₱2.00' });
+    ).toEqual({ dueOn, sats: null, amount: '₱9.00' });
+  });
+
+  it('keeps nullable due sats unavailable while retaining people and stored fiat', () => {
+    const summary = summarizeLoans(
+      {
+        sundayRest: false,
+        loans: [
+          loan({
+            goalCurrency: 'PHP',
+            totalSats: null,
+            maxSats: null,
+            due: {
+              payableSats: null,
+              payablePeople: 1,
+              waitingSats: null,
+              waitingPeople: 1,
+              behindDays: 0,
+              payableAmount: '30.00',
+              waitingAmount: '15.00',
+              lastPayment: false,
+            },
+          }),
+          loan({
+            messageId: 'm2',
+            goalCurrency: 'PHP',
+            due: {
+              payableSats: 10,
+              payablePeople: 1,
+              waitingSats: 5,
+              waitingPeople: 1,
+              behindDays: 0,
+              payableAmount: '1.00',
+              waitingAmount: '0.50',
+              lastPayment: false,
+            },
+          }),
+        ],
+      },
+      'ch',
+    );
+    expect(summary).toMatchObject({
+      payableSats: null,
+      waitingSats: null,
+      payableLoans: 2,
+      waitingPeople: 2,
+      payable: false,
+      tone: 'neutral',
+    });
   });
 
   it('sums mixed same-day currencies in first-seen order and leaves undefined parts null', () => {
