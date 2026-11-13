@@ -11,8 +11,8 @@ export const DFX_API_ORIGIN = 'https://api.dfx.swiss';
 export const DFX_APP_ORIGIN = 'https://app.dfx.swiss';
 
 /**
- * Wallet name sent with the sign-in. DFX records it on the session. An
- * unknown name does not fail the sign-in; DFX falls back to its own default.
+ * Wallet name sent with the sign-in. DFX files a new account under it. An
+ * unknown name does not fail the sign-in; DFX then uses its own default.
  */
 export const DFX_WALLET_NAME = '21gifts';
 
