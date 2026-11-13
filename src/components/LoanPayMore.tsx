@@ -156,14 +156,17 @@ export function LoanPayMore({
   const { numberFormat } = useNumberFormat();
   const amountId = `${useId()}-loan-pay-more`;
   const [amount, setAmount] = useState('');
+  const [amountEdited, setAmountEdited] = useState(false);
   const [exactLoanAmount, setExactLoanAmount] = useState<string | null>(null);
   const [exactLoanSats, setExactLoanSats] = useState<number | null>(null);
+  const [attemptedAmount, setAttemptedAmount] = useState<string | null>(null);
   const [pendingAction, setPendingAction] = useState<PendingAction>(null);
   const [confirming, setConfirming] = useState<'pay' | 'close' | null>(null);
   const [serverError, setServerError] = useState<string | null>(null);
   const [serverAmountInvalid, setServerAmountInvalid] = useState(false);
   const [serverMaximum, setServerMaximum] = useState<ServerMaximum | null>(null);
   const processedActionError = useRef<string | null>(null);
+  const draftEditedSinceAttempt = useRef(false);
   const confirmDialog = useRef<HTMLDivElement>(null);
   const collecting = isCollecting(loan);
   const entryFiat: FiatCode = loan.goalCurrency === 'BTC' ? fiat : loan.goalCurrency;
@@ -200,7 +203,7 @@ export function LoanPayMore({
   const maxInput = maxDraft(effectiveLoan);
 
   let inputError: string | null = null;
-  if (amount.trim() !== '' && !check.ok) {
+  if (!check.ok && amountEdited) {
     if (check.reason === 'above_max' && check.max !== null) {
       inputError = t('loans.payMoreAboveMax', {
         amount: displayLoanAmount(
@@ -211,7 +214,7 @@ export function LoanPayMore({
           formatSats,
         ),
       });
-    } else if (check.reason === 'invalid') {
+    } else {
       inputError = t(
         amountUnit === 'btc' ? 'loans.payMoreInvalidBitcoin' : 'loans.payMoreInvalidFiat',
       );
@@ -230,7 +233,20 @@ export function LoanPayMore({
   useEffect(() => {
     setServerMaximum(null);
     setServerAmountInvalid(false);
+    setExactLoanAmount(null);
+    setExactLoanSats(null);
   }, [loan.maxAmount, loan.maxSats, loan.messageId]);
+
+  useEffect(() => {
+    if (missingSats === null) {
+      setAttemptedAmount(null);
+      return;
+    }
+    // A remounted or visually pinned shortfall has no local submit event to capture its draft.
+    if (!draftEditedSinceAttempt.current) {
+      setAttemptedAmount((current) => current ?? amount.trim());
+    }
+  }, [amount, missingSats]);
 
   useEffect(() => {
     if (actionError === null) {
@@ -295,8 +311,11 @@ export function LoanPayMore({
   useEffect(() => {
     if (shownPendingAction === 'pay' && matchingAction === 'prepay' && phase === 'repaid') {
       setAmount('');
+      setAmountEdited(false);
       setExactLoanAmount(null);
       setExactLoanSats(null);
+      setAttemptedAmount(null);
+      draftEditedSinceAttempt.current = true;
       setPendingAction(null);
       setServerError(null);
       setServerAmountInvalid(false);
@@ -318,6 +337,8 @@ export function LoanPayMore({
   const submitPay = (amountText: string): void => {
     setConfirming(null);
     setPendingAction('pay');
+    setAttemptedAmount(amountText);
+    draftEditedSinceAttempt.current = false;
     setServerError(null);
     onPay(loan, amountText);
   };
@@ -331,6 +352,8 @@ export function LoanPayMore({
     showShortfall &&
     matchingAction === 'prepay' &&
     shownPendingAction === 'pay' &&
+    attemptedAmount !== null &&
+    amount.trim() === attemptedAmount &&
     missingSats !== null &&
     missingSats > 0
       ? missingSats
@@ -407,8 +430,11 @@ export function LoanPayMore({
           {...(fieldError === null ? {} : { error: fieldError })}
           onValueChange={(value) => {
             setAmount(value);
+            setAmountEdited(true);
             setExactLoanAmount(null);
             setExactLoanSats(null);
+            setAttemptedAmount(null);
+            draftEditedSinceAttempt.current = true;
             setServerError(null);
             setServerAmountInvalid(false);
             setPendingAction(null);
@@ -421,8 +447,11 @@ export function LoanPayMore({
           onClick={() => {
             if (maxInput !== null && apiMax !== null) {
               setAmount(maxInput);
+              setAmountEdited(true);
               setExactLoanAmount(apiMax.input);
               setExactLoanSats(apiMax.sats);
+              setAttemptedAmount(null);
+              draftEditedSinceAttempt.current = true;
               setServerError(null);
               setServerAmountInvalid(false);
               setPendingAction(null);

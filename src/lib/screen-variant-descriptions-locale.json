@@ -1055,9 +1055,9 @@
     "fil": "Utang A na may 19001 sa field: nananatili ang live counter sa ilalim ng AmountEntry, nasa ibaba ang agarang error na Maglagay ng hindi hihigit sa ₿19'000 · $19.00. at hindi aktibo ang Bayaran ang halagang ito."
   },
   "/loans/repay:pay-more-invalid": {
-    "de": "Kredit A mit dem fehlerhaften Sats-Wert 12.5. AmountEntry markiert das Feld ungültig, zeigt Geben Sie einen ganzzahligen ₿-Betrag größer als null ein. direkt darunter und deaktiviert Betrag zahlen.",
-    "es": "Préstamo A con el valor de sats no válido 12.5. AmountEntry marca el campo como no válido, muestra Introduce un importe entero en ₿ mayor que cero. justo debajo y desactiva Pagar este importe.",
-    "fil": "Utang A na may maling sats value na 12.5. Minamarkahan ng AmountEntry na invalid ang field, ipinapakita sa ilalim ang Maglagay ng buong halagang ₿ na higit sa zero., at hindi aktibo ang Bayaran ang halagang ito."
+    "de": "Kredit A mit dem fehlerhaften Sats-Wert 12.5. AmountEntry markiert das Feld ungültig, zeigt Geben Sie einen ganzzahligen ₿-Betrag größer als null ein. direkt darunter und deaktiviert Betrag zahlen. Derselbe registrierte ungültige Zustand und der währungsspezifische Fehler erscheinen, wenn ein bearbeiteter Betrag geleert wird; ein unberührtes leeres Feld bleibt still.",
+    "es": "Préstamo A con el valor de sats no válido 12.5. AmountEntry marca el campo como no válido, muestra Introduce un importe entero en ₿ mayor que cero. justo debajo y desactiva Pagar este importe. El mismo estado no válido registrado y el error específico de la moneda aparecen cuando se borra un importe editado; un campo vacío sin tocar permanece silencioso.",
+    "fil": "Utang A na may maling sats value na 12.5. Minamarkahan ng AmountEntry na invalid ang field, ipinapakita sa ilalim ang Maglagay ng buong halagang ₿ na higit sa zero., at hindi aktibo ang Bayaran ang halagang ito. Lumalabas din ang parehong nakarehistrong invalid na state at currency-specific na error kapag binura ang na-edit na halaga; tahimik ang hindi pa nagalaw na empty field."
   },
   "/loans/repay:pay-more-no-rate": {
     "de": "Ein PHP-Kredit ohne aktuellen Kurs. AmountEntry bleibt ohne Schalter in der festen PHP-Krediteinheit und zeigt Noch kein Wechselkurs. Mehr zurückzahlen erklärt zusätzlich den fehlenden PHP-Kurs; Maximum und Betrag zahlen sind deaktiviert.",

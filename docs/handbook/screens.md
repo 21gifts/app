@@ -1596,7 +1596,7 @@ Loan A while **19001** is entered: the field is invalid, its live counter remain
 
 ### Variant: pay-more-invalid
 
-Loan A with malformed sats input **12.5**. The standard AmountEntry marks the field invalid, shows **Enter a whole ₿ amount greater than zero.** directly below it, and disables **Pay this amount**.
+Loan A with malformed sats input **12.5**. The standard AmountEntry marks the field invalid, shows **Enter a whole ₿ amount greater than zero.** directly below it, and disables **Pay this amount**. The same registered invalid state and currency-specific error appear when an edited amount is cleared; an untouched empty field stays quiet.
 
 ![21.gifts loans repay malformed pay more amount](images/loans-repay-pay-more-invalid.png)
 

@@ -205,6 +205,37 @@ describe('LoanPayMore', () => {
     expect(onPay).not.toHaveBeenCalled();
   });
 
+  it('shows the currency-specific field error when an edited amount is cleared', () => {
+    show();
+    const input = screen.getByLabelText('Amount (₿)') as HTMLInputElement;
+    expect(input.getAttribute('aria-invalid')).toBeNull();
+
+    fireEvent.change(input, { target: { value: '1000' } });
+    fireEvent.change(input, { target: { value: '' } });
+
+    expect(input.getAttribute('aria-invalid')).toBe('true');
+    expect(input.getAttribute('aria-describedby')).toBe(`${input.id}-error`);
+    expect(screen.getByRole('alert').textContent).toBe('Enter a whole ₿ amount greater than zero.');
+
+    cleanup();
+    show(
+      loan({
+        goalCurrency: 'PHP',
+        goalAmount: '480.28',
+        maxSats: 9_283,
+        maxAmount: '480.28',
+      }),
+    );
+    const fiatInput = screen.getByLabelText('Amount (PHP)') as HTMLInputElement;
+    fireEvent.change(fiatInput, { target: { value: '12.30' } });
+    fireEvent.change(fiatInput, { target: { value: '' } });
+    expect(fiatInput.getAttribute('aria-invalid')).toBe('true');
+    expect(fiatInput.getAttribute('aria-describedby')).toBe(`${fiatInput.id}-error`);
+    expect(screen.getByRole('alert').textContent).toBe(
+      'Enter an amount greater than zero with at most two decimals.',
+    );
+  });
+
   it('keeps a server invalid amount on the field and blocks retry until the draft changes', () => {
     const item = loan();
     const view = show(item);
@@ -464,6 +495,29 @@ describe('LoanPayMore', () => {
     fireEvent.click(pay);
     fireEvent.click(screen.getByRole('button', { name: 'Pay ₱480.28 · ₿10 and end collecting' }));
     expect(onPay).toHaveBeenCalledWith(expect.anything(), '480.28');
+  });
+
+  it('drops an exact Max pair when refreshed loan sats change without a fiat change', () => {
+    const php = loan({
+      goalCurrency: 'PHP',
+      goalAmount: '480.28',
+      fundedAt: null,
+      closedAt: null,
+      maxSats: 10,
+      maxAmount: '480.28',
+    });
+    const view = show(php);
+    fireEvent.click(screen.getByRole('button', { name: 'Max' }));
+    expect(screen.getByText('₿10')).toBeTruthy();
+
+    view.rerender(payMoreState({ ...php, maxSats: 20 }, view.onPay, view.onCloseCollecting));
+
+    expect(screen.queryByText('₿10')).toBeNull();
+    expect(screen.getByText("₿8'576")).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Pay this amount' }));
+    expect(
+      screen.getByRole('button', { name: "Pay ₱480.28 · ₿8'576 and end collecting" }),
+    ).toBeTruthy();
   });
 
   it('explains a missing conversion rate for a fiat-loan draft', () => {
@@ -933,6 +987,27 @@ describe('LoanPayMore', () => {
       />,
     );
     expect(screen.getByRole('status').textContent).toBe('Waiting for your top-up…');
+  });
+
+  it('hides a wallet shortfall when the attempted draft is edited to fit the balance', () => {
+    const item = loan();
+    const view = show(item);
+    const input = screen.getByLabelText('Amount (₿)') as HTMLInputElement;
+    fireEvent.change(input, { target: { value: '1000' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Pay this amount' }));
+    view.rerender(
+      payMoreState(item, view.onPay, view.onCloseCollecting, {
+        activeAction: { kind: 'prepay', messageId: 'loan-1' },
+        balanceSats: 500,
+        missingSats: 500,
+      }),
+    );
+    expect(screen.getByText('Your wallet has ₿500. Still missing ₿500.')).toBeTruthy();
+
+    fireEvent.change(input, { target: { value: '400' } });
+
+    expect(screen.queryByText('Your wallet has ₿500. Still missing ₿500.')).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Top up your wallet' })).toBeNull();
   });
 
   it('shows pinned sending, unconfirmed, and address-backed shortfall states', async () => {
