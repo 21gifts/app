@@ -397,6 +397,143 @@ describe('connectWallet', () => {
     expect(sdkViewerPublicKey).toBe(viewerB);
   });
 
+  it('stops after a stale private-mode update rejects', async () => {
+    const viewerPublicKey = `03${'b'.repeat(64)}`;
+    useAuthStore.setState({
+      session: 'sess',
+      account: { walletViewerPublicKey: viewerPublicKey } as Account,
+    });
+    rememberSessionPhrase(MNEMONIC);
+    let rejectPrivateMode!: (error: Error) => void;
+    const privateModeUpdate = new Promise<void>((_resolve, reject) => {
+      rejectPrivateMode = reject;
+    });
+    const stale = createFakeSdk({
+      getUserSettings: async () => ({
+        sparkPrivateModeEnabled: false,
+        sparkMasterIdentityPublicKey: IDENTITY,
+      }),
+      updateUserSettings: () => privateModeUpdate,
+    });
+    await connectWallet(stale.loadSdk);
+    await vi.waitFor(() => {
+      expect(stale.connection.updateUserSettings).toHaveBeenCalledWith({
+        sparkPrivateModeEnabled: true,
+      });
+    });
+
+    const current = createFakeSdk({
+      getUserSettings: async () => ({
+        sparkPrivateModeEnabled: true,
+        sparkMasterIdentityPublicKey: viewerPublicKey,
+      }),
+    });
+    await connectWallet(current.loadSdk);
+    rejectPrivateMode(new Error('stale private-mode update failed'));
+
+    await vi.waitFor(() => {
+      expect(current.connection.getUserSettings).toHaveBeenCalledTimes(1);
+    });
+    expect(stale.connection.updateUserSettings).toHaveBeenCalledTimes(1);
+    expect(current.connection.updateUserSettings).not.toHaveBeenCalled();
+    expect(captureMessage).not.toHaveBeenCalled();
+  });
+
+  it('stops after a stale viewer update rejects and skips its queued settings run', async () => {
+    const viewerA = `03${'b'.repeat(64)}`;
+    const viewerB = `02${'c'.repeat(64)}`;
+    useAuthStore.setState({
+      session: 'sess',
+      account: { walletViewerPublicKey: viewerA } as Account,
+    });
+    rememberSessionPhrase(MNEMONIC);
+    let rejectViewer!: (error: Error) => void;
+    const viewerUpdate = new Promise<void>((_resolve, reject) => {
+      rejectViewer = reject;
+    });
+    const stale = createFakeSdk({
+      getUserSettings: async () => ({
+        sparkPrivateModeEnabled: true,
+        sparkMasterIdentityPublicKey: IDENTITY,
+      }),
+      updateUserSettings: () => viewerUpdate,
+    });
+    await connectWallet(stale.loadSdk);
+    await vi.waitFor(() => {
+      expect(stale.connection.updateUserSettings).toHaveBeenCalledTimes(1);
+    });
+    useAuthStore.getState().setAccount({ walletViewerPublicKey: viewerB } as Account);
+
+    const current = createFakeSdk({
+      getUserSettings: async () => ({
+        sparkPrivateModeEnabled: true,
+        sparkMasterIdentityPublicKey: viewerB,
+      }),
+    });
+    await connectWallet(current.loadSdk);
+    rejectViewer(new Error('stale viewer update failed'));
+
+    await vi.waitFor(() => {
+      expect(current.connection.getUserSettings).toHaveBeenCalledTimes(1);
+    });
+    expect(stale.connection.getUserSettings).toHaveBeenCalledTimes(1);
+    expect(stale.connection.updateUserSettings).toHaveBeenCalledTimes(1);
+    expect(current.connection.updateUserSettings).not.toHaveBeenCalled();
+    expect(captureMessage).not.toHaveBeenCalled();
+  });
+
+  it('skips a stale settings run and gives the replacement connection the current viewer', async () => {
+    const viewerA = `03${'b'.repeat(64)}`;
+    const viewerB = `02${'c'.repeat(64)}`;
+    useAuthStore.setState({
+      session: 'sess',
+      account: { walletViewerPublicKey: viewerA } as Account,
+    });
+    rememberSessionPhrase(MNEMONIC);
+    let rejectStaleSettings!: (error: Error) => void;
+    const staleSettings = new Promise<{
+      sparkPrivateModeEnabled: boolean;
+      sparkMasterIdentityPublicKey: string | null;
+    }>((_resolve, reject) => {
+      rejectStaleSettings = reject;
+    });
+    const stale = createFakeSdk({ getUserSettings: () => staleSettings });
+    await connectWallet(stale.loadSdk);
+    await vi.waitFor(() => {
+      expect(stale.connection.getUserSettings).toHaveBeenCalledTimes(1);
+    });
+
+    let currentSdkViewer = IDENTITY;
+    const current = createFakeSdk({
+      getUserSettings: async () => ({
+        sparkPrivateModeEnabled: true,
+        sparkMasterIdentityPublicKey: currentSdkViewer,
+      }),
+      updateUserSettings: async (update) => {
+        if (update.sparkMasterIdentityPublicKey !== undefined) {
+          currentSdkViewer = update.sparkMasterIdentityPublicKey.publicKey;
+        }
+      },
+    });
+    await connectWallet(current.loadSdk);
+    useAuthStore.getState().setAccount({ walletViewerPublicKey: viewerB } as Account);
+    await Promise.resolve();
+
+    expect(stale.connection.updateUserSettings).not.toHaveBeenCalled();
+    expect(current.connection.getUserSettings).not.toHaveBeenCalled();
+    rejectStaleSettings(new Error('stale settings failed'));
+
+    await vi.waitFor(() => {
+      expect(current.connection.updateUserSettings).toHaveBeenCalledWith({
+        sparkMasterIdentityPublicKey: { type: 'set', publicKey: viewerB },
+      });
+    });
+    expect(stale.connection.updateUserSettings).not.toHaveBeenCalled();
+    expect(current.connection.updateUserSettings).toHaveBeenCalledTimes(1);
+    expect(currentSdkViewer).toBe(viewerB);
+    expect(captureMessage).not.toHaveBeenCalled();
+  });
+
   it.each([null, undefined, '', '02ABCDEF', `02${'a'.repeat(63)}`, `02${'g'.repeat(64)}`])(
     'never changes or unsets the viewer for invalid /me value %s',
     async (walletViewerPublicKey) => {

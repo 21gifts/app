@@ -120,14 +120,8 @@ let openInProgress: { run: number; startedAt: number } | null = null;
 /** A compressed secp256k1 public key in lower-case hex. */
 const VIEWER_PUBLIC_KEY = /^[0-9a-f]{66}$/;
 
-/** Serialized settings work for one SDK connection. */
-interface WalletSettingsRun {
-  connection: WalletConnection;
-  chain: Promise<void>;
-}
-
-/** Serialized settings work for the current SDK connection. */
-let walletSettingsRun: WalletSettingsRun | null = null;
+/** Serialized settings work across every SDK connection. */
+let walletSettingsChain: Promise<void> = Promise.resolve();
 
 /** Fixed step names safe to attach to a wallet-settings error report. */
 type WalletSettingsStage = 'read' | 'private_mode' | 'viewer';
@@ -168,13 +162,28 @@ async function configureWalletSettings(
   conn: WalletConnection,
   configurePrivateMode: boolean,
 ): Promise<void> {
-  let settings: Awaited<ReturnType<WalletConnection['getUserSettings']>>;
-  try {
-    settings = await conn.getUserSettings();
-  } catch (error: unknown) {
-    reportWalletSettingsFailure('read', error);
+  if (connection !== conn) {
     return;
   }
+  let readResult:
+    | {
+        ok: true;
+        settings: Awaited<ReturnType<WalletConnection['getUserSettings']>>;
+      }
+    | { ok: false; error: unknown };
+  try {
+    readResult = { ok: true, settings: await conn.getUserSettings() };
+  } catch (error: unknown) {
+    readResult = { ok: false, error };
+  }
+  if (connection !== conn) {
+    return;
+  }
+  if (!readResult.ok) {
+    reportWalletSettingsFailure('read', readResult.error);
+    return;
+  }
+  const { settings } = readResult;
 
   let firstFailure: { stage: WalletSettingsStage; error: unknown } | null = null;
   if (configurePrivateMode && !settings.sparkPrivateModeEnabled) {
@@ -182,6 +191,9 @@ async function configureWalletSettings(
       await conn.updateUserSettings({ sparkPrivateModeEnabled: true });
     } catch (error: unknown) {
       firstFailure = { stage: 'private_mode', error };
+    }
+    if (connection !== conn) {
+      return;
     }
   }
   const viewerPublicKey = useAuthStore.getState().account?.walletViewerPublicKey;
@@ -197,6 +209,9 @@ async function configureWalletSettings(
     } catch (error: unknown) {
       firstFailure ??= { stage: 'viewer', error };
     }
+    if (connection !== conn) {
+      return;
+    }
   }
   if (firstFailure !== null) {
     reportWalletSettingsFailure(firstFailure.stage, firstFailure.error);
@@ -204,20 +219,23 @@ async function configureWalletSettings(
 }
 
 /**
- * Queues settings work after every earlier run for this connection. Each run
- * reads the current account key and SDK setting only when its turn starts.
+ * Queues settings work after every earlier run, including runs for replaced
+ * connections. Each run reads the current account key and SDK setting only
+ * when its turn starts.
  */
-function configureWalletSettingsOnce(run: WalletSettingsRun, configurePrivateMode: boolean): void {
-  run.chain = run.chain.then(() => configureWalletSettings(run.connection, configurePrivateMode));
+function configureWalletSettingsOnce(conn: WalletConnection, configurePrivateMode: boolean): void {
+  walletSettingsChain = walletSettingsChain.then(() =>
+    configureWalletSettings(conn, configurePrivateMode),
+  );
 }
 
 useAuthStore.subscribe((state, previous) => {
   const viewerPublicKey = state.account?.walletViewerPublicKey;
-  const run = walletSettingsRun;
-  if (viewerPublicKey === previous.account?.walletViewerPublicKey || run === null) {
+  const conn = connection;
+  if (viewerPublicKey === previous.account?.walletViewerPublicKey || conn === null) {
     return;
   }
-  configureWalletSettingsOnce(run, false);
+  configureWalletSettingsOnce(conn, false);
 });
 
 /**
@@ -492,7 +510,6 @@ function markReady(balanceSats: number, identityPubkey: string): void {
 async function dropConnection(): Promise<void> {
   const current = connection;
   connection = null;
-  walletSettingsRun = null;
   knownPaymentIds = null;
   heldPayments = [];
   // A read of the dropped connection may never answer; announcements of the next one do not wait for it.
@@ -882,12 +899,7 @@ async function openWallet(loadSdk: WalletSdkLoader, quiet: boolean): Promise<voi
         return;
       }
       connection = next;
-      const settingsRun: WalletSettingsRun = {
-        connection: next,
-        chain: Promise.resolve(),
-      };
-      walletSettingsRun = settingsRun;
-      configureWalletSettingsOnce(settingsRun, true);
+      configureWalletSettingsOnce(next, true);
       await next.addEventListener((event) => {
         if (run === runCounter && connection === next) {
           onWalletEvent(event, mnemonic);
