@@ -28431,6 +28431,27 @@ test.describe('profile funding states', () => {
     await shotScreen(page, 'state-grants-withdraw-error');
   });
 
+  test('state /grants withdraw-busy-pending', async ({ page }) => {
+    await openWithdraw(page, 'pending', 'never');
+    const question = page.getByRole('group', { name: 'Withdraw your application?' });
+    const confirm = question.getByRole('button', { name: 'Withdraw my application' });
+    await confirm.click();
+    await expect(confirm).toBeDisabled();
+    await expect(question.getByRole('button', { name: 'Cancel' })).toBeDisabled();
+    await shotScreen(page, 'state-grants-withdraw-busy-pending');
+  });
+
+  test('state /grants withdraw-error-pending', async ({ page }) => {
+    await openWithdraw(page, 'pending', 'unavailable');
+    const question = page.getByRole('group', { name: 'Withdraw your application?' });
+    await question.getByRole('button', { name: 'Withdraw my application' }).click();
+    await expect(question.getByRole('alert')).toHaveText(
+      'Could not withdraw your application. Please try again.',
+    );
+    await expect(question.getByRole('button', { name: 'Withdraw my application' })).toBeEnabled();
+    await shotScreen(page, 'state-grants-withdraw-error-pending');
+  });
+
   test('state /grants open-applications', async ({ page }) => {
     await seedFundingProfile(page, {
       role: 'moderator',

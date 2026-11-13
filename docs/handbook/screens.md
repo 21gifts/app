@@ -8799,15 +8799,27 @@ Owner with an open application after **Withdraw my application**. Under **Your a
 
 ### Variant: withdraw-busy
 
-Admitted owner after the confirm action of **Leave the grant?**, while `POST /funding/withdraw` has not answered. The confirm action shows a spinner, and both actions are disabled; another tap sends nothing. Needle `state-grants-withdraw-busy`.
+Admitted owner after the confirm action of **Leave the grant?**, while `POST /funding/withdraw` has not answered. The confirm action shows a spinner, and both actions are disabled; another tap sends nothing. A trial owner sees the same question and spinner under the trial status text. Needle `state-grants-withdraw-busy`.
 
 ![21.gifts grants leaving the grant](images/grants-withdraw-busy.png)
 
 ### Variant: withdraw-error
 
-Admitted owner after the confirm action of **Leave the grant?** when `POST /funding/withdraw` failed (403, 404 while the api does not have the endpoint, 503, or no connection). The question stays open with **Could not leave the grant. Please try again.** under it, and both actions are enabled again for another try or **Cancel**. A pending owner reads **Could not withdraw your application. Please try again.** in the same place. Needle `state-grants-withdraw-error`.
+Admitted owner after the confirm action of **Leave the grant?** when `POST /funding/withdraw` failed (403, 404 while the api does not have the endpoint, 503, or no connection). The question stays open with **Could not leave the grant. Please try again.** under it, and both actions are enabled again for another try or **Cancel**. A trial owner sees the same question and error under the trial status text. Needle `state-grants-withdraw-error`.
 
 ![21.gifts grants leave the grant error](images/grants-withdraw-error.png)
+
+### Variant: withdraw-busy-pending
+
+Owner with an open application after the confirm action of **Withdraw your application?**, while `POST /funding/withdraw` has not answered. The confirm action (**Withdraw my application**) shows a spinner, and both actions are disabled; another tap sends nothing. Needle `state-grants-withdraw-busy-pending`.
+
+![21.gifts grants withdrawing the application](images/grants-withdraw-busy-pending.png)
+
+### Variant: withdraw-error-pending
+
+Owner with an open application after the confirm action of **Withdraw your application?** when `POST /funding/withdraw` failed. The question stays open with **Could not withdraw your application. Please try again.** under it, and both actions are enabled again for another try or **Cancel**. Needle `state-grants-withdraw-error-pending`.
+
+![21.gifts grants withdraw application error](images/grants-withdraw-error-pending.png)
 
 ### Variant: open-applications
 

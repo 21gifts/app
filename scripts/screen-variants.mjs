@@ -7336,6 +7336,20 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/grants',
+    id: 'withdraw-busy-pending',
+    image: 'grants-withdraw-busy-pending.png',
+    visual: 'state-grants-withdraw-busy-pending',
+    needle: 'state-grants-withdraw-busy-pending',
+  },
+  {
+    route: '/grants',
+    id: 'withdraw-error-pending',
+    image: 'grants-withdraw-error-pending.png',
+    visual: 'state-grants-withdraw-error-pending',
+    needle: 'state-grants-withdraw-error-pending',
+  },
+  {
+    route: '/grants',
     id: 'open-applications',
     image: 'grants-open-applications.png',
     visual: 'state-grants-open-applications',
