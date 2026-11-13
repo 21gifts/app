@@ -910,6 +910,16 @@ export async function proxyFundingApplyPost(request: Request): Promise<Response>
 }
 
 /**
+ * Proxies POST /funding/withdraw to the 21.gifts api.
+ *
+ * @param request - Incoming App Router request (Bearer session, no body).
+ * @returns The upstream response.
+ */
+export async function proxyFundingWithdrawPost(request: Request): Promise<Response> {
+  return proxyApiRequest(request, '/funding/withdraw');
+}
+
+/**
  * Proxies GET /funding/applications to the 21.gifts api (staff Bearer).
  *
  * @param request - Incoming App Router request (Bearer session).

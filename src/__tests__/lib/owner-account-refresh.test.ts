@@ -1,7 +1,7 @@
 import { beforeEach, expect, it, vi } from 'vitest';
 import { fetchMe } from '@/lib/api';
 import type { Account } from '@/lib/api-types';
-import { refreshOwnerAccount } from '@/lib/owner-account-refresh';
+import { discardOwnerRefreshes, refreshOwnerAccount } from '@/lib/owner-account-refresh';
 import { useAuthStore } from '@/stores/auth-store';
 
 vi.mock('@/lib/api', () => ({ fetchMe: vi.fn() }));
@@ -249,5 +249,65 @@ it("leaves stored funding unchanged when the answer's funding is null", async ()
       payoutToday: { state: 'due', reason: null },
       shopPaymentDue: false,
     },
+  });
+});
+
+it('drops an answer that was in flight when the caller stored a newer payout itself', async () => {
+  const stale = deferred<Account | null>();
+  const fresh = deferred<Account | null>();
+  vi.mocked(fetchMe).mockReturnValueOnce(stale.promise).mockReturnValueOnce(fresh.promise);
+  useAuthStore.setState({
+    account: {
+      ...account,
+      funding: {
+        status: 'admitted',
+        trialUtcDate: null,
+        admittedAt: 1_700_000_000_000,
+        reviewedByName: 'Ada',
+        payoutToday: { state: 'paid', reason: null },
+      },
+    },
+  });
+
+  refreshOwnerAccount('sess');
+  const current = useAuthStore.getState().account as Account;
+  useAuthStore.getState().setAccount({
+    ...current,
+    funding: { status: 'none', trialUtcDate: null, admittedAt: null, reviewedByName: null },
+  });
+  discardOwnerRefreshes();
+  stale.resolve({
+    ...account,
+    funding: {
+      status: 'admitted',
+      trialUtcDate: null,
+      admittedAt: 1_700_000_000_000,
+      reviewedByName: 'Ada',
+      payoutToday: { state: 'paid', reason: null },
+    },
+  });
+  await settleAnswers();
+  expect(useAuthStore.getState().account?.funding).toEqual({
+    status: 'none',
+    trialUtcDate: null,
+    admittedAt: null,
+    reviewedByName: null,
+  });
+
+  refreshOwnerAccount('sess');
+  fresh.resolve({
+    ...account,
+    funding: {
+      status: 'none',
+      trialUtcDate: null,
+      admittedAt: null,
+      reviewedByName: null,
+      payoutToday: { state: 'blocked', reason: 'admission' },
+    },
+  });
+  await settleAnswers();
+  expect(useAuthStore.getState().account?.funding).toMatchObject({
+    status: 'none',
+    payoutToday: { state: 'blocked', reason: 'admission' },
   });
 });

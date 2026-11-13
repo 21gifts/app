@@ -36,6 +36,7 @@ import {
   messageInvoiceSchema,
   moderatorProposalsResponseSchema,
   fundingApplyResponseSchema,
+  fundingWithdrawResponseSchema,
   fundingApplicationDetailSchema,
   fundingApplicationsResponseSchema,
   fundingPayoutDaysResponseSchema,
@@ -1709,6 +1710,7 @@ export async function fetchTrustProposals(sessionToken: string): Promise<Moderat
 }
 
 const FUNDING_APPLY_ERROR = 'Could not submit your application. Please try again.';
+const FUNDING_WITHDRAW_ERROR = 'Could not withdraw. Please try again.';
 const FUNDING_APPLICATIONS_LOAD_ERROR = 'Could not load grant applications. Please try again.';
 const FUNDING_APPLICATION_LOAD_ERROR = 'Could not load this application. Please try again.';
 const FUNDING_PAYOUT_DAYS_LOAD_ERROR = 'Could not load the payout table. Please try again.';
@@ -1830,6 +1832,45 @@ export async function postFundingApply(sessionToken: string): Promise<OwnerFundi
       throw err;
     }
     throw new Error(FUNDING_APPLY_ERROR);
+  }
+}
+
+/**
+ * Withdraws the signed-in member's own grant: an open application, a trial,
+ * or an admitted place. The place becomes free for someone else.
+ *
+ * Hits same-origin `POST /funding/withdraw` (Bearer, no body).
+ *
+ * @param sessionToken - A bearer token from a completed challenge.
+ * @returns The updated {@link OwnerFunding} object (status `none`).
+ * @throws Error `Unauthorized` on 401, so the caller signs the member out.
+ * @throws Error `Conflict` on 409 (nothing to withdraw, or a staff decision at
+ * the same moment), so the caller reloads the account.
+ * @throws Error with visitor-facing copy on 403, 404 (an api without the
+ * endpoint), 503, any other non-2xx, a network failure, or a body that fails
+ * {@link fundingWithdrawResponseSchema}.
+ */
+export async function postFundingWithdraw(sessionToken: string): Promise<OwnerFunding> {
+  try {
+    const response = await fetch('/funding/withdraw', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${sessionToken}` },
+    });
+    if (response.status === 401) {
+      throw new Error('Unauthorized');
+    }
+    if (response.status === 409) {
+      throw new Error('Conflict');
+    }
+    if (!response.ok) {
+      throw new Error(FUNDING_WITHDRAW_ERROR);
+    }
+    return fundingWithdrawResponseSchema.parse(await response.json()).funding;
+  } catch (err) {
+    if (err instanceof Error && (err.message === 'Unauthorized' || err.message === 'Conflict')) {
+      throw err;
+    }
+    throw new Error(FUNDING_WITHDRAW_ERROR);
   }
 }
 

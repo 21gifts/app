@@ -1655,6 +1655,17 @@ const en = {
   'funding.participatesSinceBy':
     'Takes part in the 21.gifts funding program since {date}, reviewed by {name}',
   'funding.applyError': 'Could not submit your application. Please try again.',
+  'funding.withdraw.application': 'Withdraw my application',
+  'funding.withdraw.leave': 'Leave the grant',
+  'funding.withdraw.applicationTitle': 'Withdraw your application?',
+  'funding.withdraw.applicationBody':
+    'A moderator will no longer review it. You can apply again later.',
+  'funding.withdraw.leaveTitle': 'Leave the grant?',
+  'funding.withdraw.leaveBody':
+    'Your daily payout stops today. Your place becomes free for someone else. You can apply again later, but a place is not guaranteed.',
+  'funding.withdraw.cancel': 'Cancel',
+  'funding.withdraw.applicationError': 'Could not withdraw your application. Please try again.',
+  'funding.withdraw.leaveError': 'Could not leave the grant. Please try again.',
   'funding.applications.heading': 'Open applications',
   'funding.applications.openCount':
     '{count, plural, one {Open application ({count})} other {Open applications ({count})}}',
@@ -3570,6 +3581,19 @@ const de = {
     'Nimmt seit {date} am 21.gifts Förderprogramm teil, geprüft von {name}',
   'funding.applyError':
     'Die Bewerbung konnte nicht gesendet werden. Bitte versuchen Sie es erneut.',
+  'funding.withdraw.application': 'Meine Bewerbung zurückziehen',
+  'funding.withdraw.leave': 'Förderprogramm verlassen',
+  'funding.withdraw.applicationTitle': 'Ihre Bewerbung zurückziehen?',
+  'funding.withdraw.applicationBody':
+    'Eine Moderatorin oder ein Moderator prüft sie dann nicht mehr. Sie können sich später erneut bewerben.',
+  'funding.withdraw.leaveTitle': 'Förderprogramm verlassen?',
+  'funding.withdraw.leaveBody':
+    'Ihre tägliche Auszahlung endet heute. Ihr Platz wird für eine andere Person frei. Sie können sich später erneut bewerben, aber ein Platz ist nicht garantiert.',
+  'funding.withdraw.cancel': 'Abbrechen',
+  'funding.withdraw.applicationError':
+    'Die Bewerbung konnte nicht zurückgezogen werden. Bitte versuchen Sie es erneut.',
+  'funding.withdraw.leaveError':
+    'Das Förderprogramm konnte nicht verlassen werden. Bitte versuchen Sie es erneut.',
   'funding.applications.heading': 'Offene Bewerbungen',
   'funding.applications.openCount':
     '{count, plural, one {Offene Bewerbung ({count})} other {Offene Bewerbungen ({count})}}',
@@ -5450,6 +5474,17 @@ const es = {
   'funding.participatesSinceBy':
     'Participa en el programa de apoyo de 21.gifts desde {date}, revisado por {name}',
   'funding.applyError': 'No se pudo enviar la solicitud. Inténtalo de nuevo.',
+  'funding.withdraw.application': 'Retirar mi solicitud',
+  'funding.withdraw.leave': 'Dejar la beca',
+  'funding.withdraw.applicationTitle': '¿Retirar tu solicitud?',
+  'funding.withdraw.applicationBody':
+    'Ninguna persona moderadora la revisará. Puedes volver a solicitar la beca más adelante.',
+  'funding.withdraw.leaveTitle': '¿Dejar la beca?',
+  'funding.withdraw.leaveBody':
+    'Tu pago diario se detiene hoy. Tu plaza queda libre para otra persona. Puedes volver a solicitar la beca más adelante, pero no se garantiza una plaza.',
+  'funding.withdraw.cancel': 'Cancelar',
+  'funding.withdraw.applicationError': 'No se pudo retirar la solicitud. Inténtalo de nuevo.',
+  'funding.withdraw.leaveError': 'No se pudo dejar la beca. Inténtalo de nuevo.',
   'funding.applications.heading': 'Solicitudes abiertas',
   'funding.applications.openCount':
     '{count, plural, one {Solicitud abierta ({count})} other {Solicitudes abiertas ({count})}}',
@@ -7340,6 +7375,17 @@ const fil = {
   'funding.participatesSinceBy':
     'Kasali sa programa ng tulong ng 21.gifts mula noong {date}, sinuri ni {name}',
   'funding.applyError': 'Hindi maipasa ang iyong aplikasyon. Subukan ulit.',
+  'funding.withdraw.application': 'Bawiin ang aking aplikasyon',
+  'funding.withdraw.leave': 'Umalis sa grant',
+  'funding.withdraw.applicationTitle': 'Bawiin ang iyong aplikasyon?',
+  'funding.withdraw.applicationBody':
+    'Hindi na ito susuriin ng isang moderator. Maaari kang mag-apply ulit sa ibang pagkakataon.',
+  'funding.withdraw.leaveTitle': 'Umalis sa grant?',
+  'funding.withdraw.leaveBody':
+    'Titigil ngayong araw ang iyong araw-araw na payout. Magiging bakante ang iyong puwesto para sa iba. Maaari kang mag-apply ulit sa ibang pagkakataon, pero hindi garantisado ang puwesto.',
+  'funding.withdraw.cancel': 'Kanselahin',
+  'funding.withdraw.applicationError': 'Hindi mabawi ang iyong aplikasyon. Subukan ulit.',
+  'funding.withdraw.leaveError': 'Hindi makaalis sa grant. Subukan ulit.',
   'funding.applications.heading': 'Mga bukas na aplikasyon',
   'funding.applications.openCount':
     '{count, plural, one {Bukas na aplikasyon ({count})} other {Mga bukas na aplikasyon ({count})}}',

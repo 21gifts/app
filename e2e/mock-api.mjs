@@ -1133,7 +1133,9 @@ const server = http.createServer(async (req, res) => {
       filtered = living.filter((message) => message.sats === 0);
     } else if (mode === 'active') {
       filtered = living.filter(
-        (message) => message.sats > 0 || roleAtLeast(message.role, 'moderator'),
+        (message) =>
+          message.sats > 0 ||
+          (message.goalSats === undefined && roleAtLeast(message.role, 'moderator')),
       );
     } else if (mode === 'popular') {
       filtered = living.filter((message) => message.sats > 0);
@@ -4177,6 +4179,23 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
+  if (method === 'POST' && pathName === '/funding/withdraw') {
+    const token = bearer(req);
+    const account = token === null ? undefined : byToken.get(token);
+    if (!account) {
+      json(res, 401, { error: 'Unauthorized' });
+      return;
+    }
+    if (account.role === 'basis') {
+      json(res, 403, { error: 'Forbidden' });
+      return;
+    }
+    json(res, 200, {
+      funding: { status: 'none', trialUtcDate: null, admittedAt: null, reviewedByName: null },
+    });
+    return;
+  }
+
   if (method === 'GET' && pathName === '/funding/payout-days') {
     const token = bearer(req);
     const account = token === null ? undefined : byToken.get(token);
@@ -4210,7 +4229,7 @@ const server = http.createServer(async (req, res) => {
       json(res, 401, { error: 'Unauthorized' });
       return;
     }
-    if (account.role !== 'initiator' && account.role !== 'founder') {
+    if (!roleAtLeast(account.role, 'initiator')) {
       json(res, 403, { error: 'Forbidden' });
       return;
     }
