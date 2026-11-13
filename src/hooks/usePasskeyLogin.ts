@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   AppOutdatedError,
+  fetchMe,
   finishPasskeyAuthentication,
   finishPasskeyRegistration,
   isUnknownCredentialError,
@@ -41,6 +42,19 @@ import {
   usernameProblem,
 } from '@/lib/profile-fields';
 import { useAuthStore } from '@/stores/auth-store';
+
+/** Refreshes the sparse passkey account from `GET /me` without delaying sign-in. */
+function refreshOwnerAccount(sessionToken: string): void {
+  void fetchMe(sessionToken).then(
+    (account) => {
+      const auth = useAuthStore.getState();
+      if (account !== null && auth.session === sessionToken) {
+        auth.setAccount(account);
+      }
+    },
+    () => undefined,
+  );
+}
 
 /**
  * Trim, lowercase, then the api username charset and length.
@@ -796,6 +810,7 @@ export function usePasskeyLogin(): UsePasskeyLogin {
         sessionToken: session.token,
       });
       setAuth(session.token, session.account);
+      refreshOwnerAccount(session.token);
       logInteraction('signup_completed');
       choiceOfferedRef.current = false;
       unknownOfferedRef.current = false;
@@ -920,6 +935,7 @@ export function usePasskeyLogin(): UsePasskeyLogin {
         sessionToken: session.token,
       });
       setAuth(session.token, session.account);
+      refreshOwnerAccount(session.token);
       logInteraction('login');
       choiceOfferedRef.current = false;
       unknownOfferedRef.current = false;

@@ -3411,19 +3411,21 @@ const de = {
   'funding.heading': '21-Förderprogramm',
   'funding.payoutToday.heading': 'Heutige Auszahlung',
   'funding.payoutToday.paid': 'Auszahlung heute erfolgt.',
-  'funding.payoutToday.welcome': 'Dein Willkommensgeschenk wurde heute ausgezahlt.',
+  'funding.payoutToday.welcome': 'Ihr Willkommensgeschenk wurde heute ausgezahlt.',
   'funding.payoutToday.due': 'Alle Bedingungen erfüllt. Die Auszahlung für heute ist unterwegs.',
   'funding.payoutToday.paused':
     'Alle Bedingungen erfüllt, aber die Auszahlungen sind gerade pausiert.',
-  'funding.payoutToday.verify': 'Ein Moderator muss dich zuerst persönlich verifizieren.',
-  'funding.payoutToday.admission': 'Du musst zum Grant-Programm zugelassen werden.',
+  'funding.payoutToday.verify':
+    'Eine Moderatorin oder ein Moderator muss Sie zuerst persönlich verifizieren.',
+  'funding.payoutToday.admission': 'Sie müssen zum Förderprogramm zugelassen werden.',
   'funding.payoutToday.admissionPending':
-    'Du musst zum Grant-Programm zugelassen werden. Dein Antrag wird geprüft.',
-  'funding.payoutToday.wallet': 'Richte deine Wallet ein, um Auszahlungen zu erhalten.',
-  'funding.payoutToday.recoveryShare': 'Sichere dein Konto ab, um Auszahlungen zu erhalten.',
+    'Sie müssen zum Förderprogramm zugelassen werden. Ihr Antrag wird geprüft.',
+  'funding.payoutToday.wallet': 'Richten Sie Ihre Wallet ein, um Auszahlungen zu erhalten.',
+  'funding.payoutToday.recoveryShare': 'Sichern Sie Ihr Konto ab, um Auszahlungen zu erhalten.',
   'funding.payoutToday.shopPayment':
-    'Du musst heute oder gestern mindestens einen Kauf in einem 21.gifts-Shop gemacht haben.',
-  'funding.payoutToday.mediaPost': 'Du musst heute mindestens einen Post mit Bild gemacht haben.',
+    'Sie müssen heute oder gestern mindestens einen Kauf in einem 21.gifts-Shop getätigt haben.',
+  'funding.payoutToday.mediaPost':
+    'Sie müssen heute mindestens einen Beitrag mit Foto veröffentlicht haben.',
   'funding.payoutToday.unavailable': 'Der Status der heutigen Auszahlung ist nicht verfügbar.',
   'funding.goals.link': 'Ziele',
   'funding.goals.heading': 'Ziele',
@@ -5252,9 +5254,9 @@ const es = {
   'funding.payoutToday.paused':
     'Se cumplen todas las condiciones, pero los pagos están pausados por ahora.',
   'funding.payoutToday.verify': 'Primero, una persona moderadora debe verificarte en persona.',
-  'funding.payoutToday.admission': 'Debes ser admitido en el programa de becas.',
+  'funding.payoutToday.admission': 'Debes ser admitida o admitido en el programa de becas.',
   'funding.payoutToday.admissionPending':
-    'Debes ser admitido en el programa de becas. Tu solicitud está en revisión.',
+    'Debes ser admitida o admitido en el programa de becas. Tu solicitud está en revisión.',
   'funding.payoutToday.wallet': 'Configura tu wallet para recibir pagos.',
   'funding.payoutToday.recoveryShare': 'Protege tu cuenta para recibir pagos.',
   'funding.payoutToday.shopPayment':

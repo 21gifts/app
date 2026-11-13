@@ -279,6 +279,46 @@ describe('connectWallet', () => {
     expect(connection.getUserSettings).toHaveBeenCalledTimes(1);
   });
 
+  it("grants the viewer once when login's /me refresh supplies its key after connect", async () => {
+    useAuthStore.setState({ session: 'sess', account: {} as Account });
+    rememberSessionPhrase(MNEMONIC);
+    const { loadSdk, connection } = createFakeSdk({
+      getUserSettings: async () => ({
+        sparkPrivateModeEnabled: true,
+        sparkMasterIdentityPublicKey: IDENTITY,
+      }),
+    });
+    await connectWallet(loadSdk);
+    await vi.waitFor(() => {
+      expect(connection.getUserSettings).toHaveBeenCalledTimes(1);
+    });
+
+    const viewerPublicKey = `03${'b'.repeat(64)}`;
+    useAuthStore.getState().setAccount({ walletViewerPublicKey: viewerPublicKey } as Account);
+    await vi.waitFor(() => {
+      expect(connection.updateUserSettings).toHaveBeenCalledWith({
+        sparkMasterIdentityPublicKey: { type: 'set', publicKey: viewerPublicKey },
+      });
+    });
+
+    useAuthStore.getState().setAccount({ walletViewerPublicKey: viewerPublicKey } as Account);
+    await Promise.resolve();
+    expect(connection.getUserSettings).toHaveBeenCalledTimes(2);
+    expect(connection.updateUserSettings).toHaveBeenCalledTimes(1);
+
+    const nextViewerPublicKey = `02${'c'.repeat(64)}`;
+    useAuthStore.getState().setAccount({
+      walletViewerPublicKey: nextViewerPublicKey,
+    } as Account);
+    await vi.waitFor(() => {
+      expect(connection.updateUserSettings).toHaveBeenCalledTimes(2);
+    });
+    useAuthStore.getState().setAccount({ walletViewerPublicKey: viewerPublicKey } as Account);
+    await Promise.resolve();
+    expect(connection.getUserSettings).toHaveBeenCalledTimes(3);
+    expect(connection.updateUserSettings).toHaveBeenCalledTimes(2);
+  });
+
   it.each([null, undefined, '', '02ABCDEF', `02${'a'.repeat(63)}`, `02${'g'.repeat(64)}`])(
     'never changes or unsets the viewer for invalid /me value %s',
     async (walletViewerPublicKey) => {

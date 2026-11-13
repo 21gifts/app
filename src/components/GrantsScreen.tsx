@@ -6,7 +6,7 @@ import { FundingStatusCard } from '@/components/FundingStatusCard';
 import { GrantPlacesPanel } from '@/components/GrantPlacesPanel';
 import { useTranslations } from '@/components/LocaleProvider';
 import { Button, ButtonLink, Card } from '@/components/ui';
-import { fetchFundingApplications } from '@/lib/api';
+import { fetchFundingApplications, fetchMe } from '@/lib/api';
 import { requestForumCompose } from '@/lib/forum-feed';
 import { canEditDailyPayoutRoster, roleAtLeast } from '@/lib/roles';
 import { useAuthStore } from '@/stores/auth-store';
@@ -39,6 +39,21 @@ export function GrantsScreen(): ReactElement | null {
   const [openCount, setOpenCount] = useState<number | null>(null);
   const [applicationsError, setApplicationsError] = useState(false);
   const [attempt, setAttempt] = useState(0);
+
+  useEffect(() => {
+    if (session === null) {
+      return;
+    }
+    void fetchMe(session).then(
+      (next) => {
+        const auth = useAuthStore.getState();
+        if (next !== null && auth.session === session) {
+          auth.setAccount(next);
+        }
+      },
+      () => undefined,
+    );
+  }, [session]);
 
   useEffect(() => {
     if (session === null || !staff) {

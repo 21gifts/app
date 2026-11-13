@@ -28,11 +28,13 @@ vi.mock('@/components/GrantPlacesPanel', () => ({
 
 vi.mock('@/lib/api', () => ({
   fetchFundingApplications: vi.fn(),
+  fetchMe: vi.fn(),
 }));
 
-import { fetchFundingApplications } from '@/lib/api';
+import { fetchFundingApplications, fetchMe } from '@/lib/api';
 
 const listMock = vi.mocked(fetchFundingApplications);
+const meMock = vi.mocked(fetchMe);
 
 const account: Account = {
   id: 'acc_1',
@@ -77,6 +79,7 @@ beforeEach(() => {
   consumePendingForumCompose();
   consumeSkipIntroduceOverlay();
   listMock.mockResolvedValue([]);
+  meMock.mockImplementation(() => new Promise<Account | null>(() => undefined));
   useAuthStore.setState({ session: 'sess', account });
 });
 
@@ -119,6 +122,72 @@ describe('GrantsScreen', () => {
     expect(screen.queryByText('No open applications.')).toBeNull();
     expect(screen.queryByText('Loading…')).toBeNull();
     expect(listMock).not.toHaveBeenCalled();
+  });
+
+  it("refreshes the sparse login account and shows today's payout from GET /me", async () => {
+    const refreshed = {
+      ...account,
+      funding: {
+        ...account.funding!,
+        payoutToday: { state: 'paid' as const, reason: null },
+      },
+    };
+    useAuthStore.setState({
+      session: 'login-session',
+      account: { ...account, funding: undefined },
+    });
+    meMock.mockResolvedValueOnce(refreshed);
+    renderWithLocale(<GrantsScreen />);
+    await waitFor(() => {
+      expect(screen.getByText('Payout made today.')).toBeTruthy();
+    });
+    expect(meMock).toHaveBeenCalledWith('login-session');
+    expect(useAuthStore.getState().account).toEqual(refreshed);
+  });
+
+  it('keeps the login account when GET /me returns no account or fails', async () => {
+    meMock.mockResolvedValueOnce(null).mockRejectedValueOnce(new Error('offline'));
+    const first = renderWithLocale(<GrantsScreen />);
+    await waitFor(() => {
+      expect(meMock).toHaveBeenCalledTimes(1);
+    });
+    expect(screen.getByText("Today's payout status is not available.")).toBeTruthy();
+    first.unmount();
+
+    renderWithLocale(<GrantsScreen />);
+    await waitFor(() => {
+      expect(meMock).toHaveBeenCalledTimes(2);
+    });
+    expect(screen.getByText("Today's payout status is not available.")).toBeTruthy();
+    expect(useAuthStore.getState().account).toEqual(account);
+  });
+
+  it('does not let a late grants refresh replace a newer session account', async () => {
+    let resolveMe!: (next: Account | null) => void;
+    meMock.mockReturnValueOnce(
+      new Promise<Account | null>((resolve) => {
+        resolveMe = resolve;
+      }),
+    );
+    renderWithLocale(<GrantsScreen />);
+    await waitFor(() => {
+      expect(meMock).toHaveBeenCalledWith('sess');
+    });
+
+    const newer = { ...account, id: 'acc_2', name: 'Grace' };
+    act(() => {
+      useAuthStore.getState().setAuth('new-session', newer);
+    });
+    await act(async () => {
+      resolveMe({
+        ...account,
+        funding: {
+          ...account.funding!,
+          payoutToday: { state: 'paid', reason: null },
+        },
+      });
+    });
+    expect(useAuthStore.getState()).toMatchObject({ session: 'new-session', account: newer });
   });
 
   it.each([

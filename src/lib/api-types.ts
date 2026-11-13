@@ -25,8 +25,8 @@ export const ownerFundingSchema = z.object({
   reviewedByName: z.string().nullable(),
   /** True when the owner should see the stopped-daily-payout notice. Optional so older payloads still parse. */
   dailyPayoutStoppedNotice: z.boolean().optional(),
-  /** Whether a qualifying shop purchase is still missing for today's payout. */
-  shopPaymentDue: z.boolean().optional(),
+  /** Whether a qualifying shop purchase is still missing, or `null` when the read failed. */
+  shopPaymentDue: z.boolean().nullable().optional(),
   /** Today's one payout state and, when present, its single reason. */
   payoutToday: z
     .object({
