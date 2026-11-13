@@ -24,9 +24,9 @@ export const DFX_SIGN_MESSAGE_PREFIX =
   'By_signing_this_message,_you_confirm_that_you_are_the_sole_owner_of_the_provided_Blockchain_address._Your_ID:_';
 
 /**
- * Limit of one `POST /v1/auth` (ms). Reaching it aborts the request and the
- * reading of its body, and the sign-in rejects with `dfx-login`. A failed
- * request still rejects with that fetch error.
+ * Limit of the entire sign-in (ms), from its start through wallet address,
+ * signature, request and response body. Reaching it rejects with `dfx-login`
+ * and aborts the request. A failed request still rejects with that fetch error.
  */
 export const DFX_LOGIN_TIMEOUT_MS = 15_000;
 
@@ -37,6 +37,7 @@ export const DFX_LOGIN_TIMEOUT_MS = 15_000;
  * with the wallet identity key, and exchanges the signature for a session
  * token. The token is placed only in the returned URL. It is not stored, and
  * the address, the text, the signature, the token, and the URL are not logged.
+ * The time limit starts immediately and covers every step.
  *
  * @param loadSdk - SDK loader forwarded to the wallet. Omit it to use the real SDK.
  * @returns Absolute Buy URL with `session`, `blockchain=Spark`, and `asset-out=BTC`.
@@ -46,20 +47,30 @@ export const DFX_LOGIN_TIMEOUT_MS = 15_000;
  *   failed request rejects with that fetch error.
  */
 export async function dfxLoginUrl(loadSdk?: WalletSdkLoader): Promise<string> {
-  const address =
-    loadSdk === undefined
-      ? await receiveWalletSparkAddress()
-      : await receiveWalletSparkAddress(loadSdk);
-  const message = DFX_SIGN_MESSAGE_PREFIX + address;
-  const signature =
-    loadSdk === undefined ? await signWithWallet(message) : await signWithWallet(message, loadSdk);
   // A timer, not `AbortSignal.timeout`, which older Safari versions do not have.
   const controller = new AbortController();
+  let onAbort!: () => void;
+  const aborted = new Promise<never>((_resolve, reject) => {
+    onAbort = (): void => reject(new Error('dfx-login'));
+    controller.signal.addEventListener('abort', onAbort);
+  });
   const timer = setTimeout(() => {
     controller.abort();
   }, DFX_LOGIN_TIMEOUT_MS);
   try {
-    const accessToken = await readDfxAccessToken(address, signature, controller.signal);
+    const address = await Promise.race([
+      loadSdk === undefined ? receiveWalletSparkAddress() : receiveWalletSparkAddress(loadSdk),
+      aborted,
+    ]);
+    const message = DFX_SIGN_MESSAGE_PREFIX + address;
+    const signature = await Promise.race([
+      loadSdk === undefined ? signWithWallet(message) : signWithWallet(message, loadSdk),
+      aborted,
+    ]);
+    const accessToken = await Promise.race([
+      readDfxAccessToken(address, signature, controller.signal),
+      aborted,
+    ]);
     const buy = new URL('/buy', DFX_APP_ORIGIN);
     buy.searchParams.set('session', accessToken);
     buy.searchParams.set('blockchain', 'Spark');
@@ -67,6 +78,7 @@ export async function dfxLoginUrl(loadSdk?: WalletSdkLoader): Promise<string> {
     return buy.toString();
   } finally {
     clearTimeout(timer);
+    controller.signal.removeEventListener('abort', onAbort);
   }
 }
 

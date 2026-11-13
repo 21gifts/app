@@ -338,6 +338,7 @@ function HeartAmountRow(): ReactElement {
  * pin forces the idle, busy, or error row. One press opens DFX in a new tab,
  * already signed in on Buy. The pin only changes what is drawn; a press still
  * runs the sign-in.
+ * Leaving the page during the wait closes the tab without navigating it.
  *
  * @returns The row, or `null` while the wallet is off and no pin is set.
  */
@@ -351,6 +352,13 @@ function DfxLoginRow(): ReactElement | null {
   const [busy, setBusy] = useState(false);
   const [failed, setFailed] = useState(false);
   const running = useRef(false);
+  const mounted = useRef(true);
+  useEffect(() => {
+    mounted.current = true;
+    return (): void => {
+      mounted.current = false;
+    };
+  }, []);
   if (status !== 'ready' && !pinned) {
     return null;
   }
@@ -373,11 +381,19 @@ function DfxLoginRow(): ReactElement | null {
     void (async (): Promise<void> => {
       try {
         const url = await dfxLoginUrl();
+        if (!mounted.current) {
+          if (!tab.closed) tab.close();
+          return;
+        }
         if (tab.closed) {
           return;
         }
         tab.location.href = url;
       } catch {
+        if (!mounted.current) {
+          if (!tab.closed) tab.close();
+          return;
+        }
         if (tab.closed) {
           return;
         }
@@ -385,7 +401,7 @@ function DfxLoginRow(): ReactElement | null {
         setFailed(true);
       } finally {
         running.current = false;
-        setBusy(false);
+        if (mounted.current) setBusy(false);
       }
     })();
   };

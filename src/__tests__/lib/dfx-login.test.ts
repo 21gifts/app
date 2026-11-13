@@ -244,6 +244,56 @@ describe('dfxLoginUrl', () => {
     expect(vi.getTimerCount()).toBe(0);
   });
 
+  it('times out while the address is pending without signing or posting', async () => {
+    vi.useFakeTimers();
+    let finish: (address: string) => void = () => undefined;
+    vi.mocked(receiveWalletSparkAddress).mockReturnValueOnce(
+      new Promise((resolve) => {
+        finish = resolve;
+      }),
+    );
+    const rejected = expect(dfxLoginUrl()).rejects.toThrow('dfx-login');
+    await vi.advanceTimersByTimeAsync(DFX_LOGIN_TIMEOUT_MS);
+    await rejected;
+    finish(ADDRESS);
+    await Promise.resolve();
+    expect(signWithWallet).not.toHaveBeenCalled();
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(vi.getTimerCount()).toBe(0);
+  });
+
+  it('times out while signing and never posts a late signature', async () => {
+    vi.useFakeTimers();
+    let finish: (signature: string) => void = () => undefined;
+    vi.mocked(signWithWallet).mockReturnValueOnce(
+      new Promise((resolve) => {
+        finish = resolve;
+      }),
+    );
+    const rejected = expect(dfxLoginUrl()).rejects.toThrow('dfx-login');
+    await vi.advanceTimersByTimeAsync(DFX_LOGIN_TIMEOUT_MS);
+    await rejected;
+    expectSigned();
+    expect(fetchMock).not.toHaveBeenCalled();
+    finish(SIGNATURE);
+    await Promise.resolve();
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(vi.getTimerCount()).toBe(0);
+  });
+
+  it('times out while the response body is pending', async () => {
+    vi.useFakeTimers();
+    fetchMock.mockResolvedValueOnce({
+      ok: true,
+      json: () => new Promise<unknown>(() => undefined),
+    });
+    const rejected = expect(dfxLoginUrl()).rejects.toThrow('dfx-login');
+    await vi.advanceTimersByTimeAsync(DFX_LOGIN_TIMEOUT_MS);
+    await rejected;
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(vi.getTimerCount()).toBe(0);
+  });
+
   it('leaves no timer after a non-2xx answer', async () => {
     vi.useFakeTimers();
     const failed = queueAuth({ accessToken: 'secret' }, false);

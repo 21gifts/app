@@ -332,6 +332,10 @@ test('settings hides Log in at DFX while the in-app wallet is off', async ({ pag
 });
 
 test('settings shows Log in at DFX from the idle pin without calling DFX', async ({ page }) => {
+  const urls: string[] = [];
+  page.on('request', (request) => {
+    urls.push(request.url());
+  });
   await signIn(page, 'cred-seed');
   await page.goto('/settings?visual=dfx-login');
   const wallet = page.getByRole('region', { name: 'Wallet' });
@@ -344,20 +348,30 @@ test('settings shows Log in at DFX from the idle pin without calling DFX', async
   ).toBeVisible();
   await expect(page.getByText('Opening DFX…')).toHaveCount(0);
   await expect(wallet.getByRole('alert')).toHaveCount(0);
+  expect(urls.some((url) => url.includes('api.dfx.swiss'))).toBe(false);
 });
 
 test('settings shows Log in at DFX busy from the pin without calling DFX', async ({ page }) => {
+  const urls: string[] = [];
+  page.on('request', (request) => {
+    urls.push(request.url());
+  });
   await signIn(page, 'cred-seed');
   await page.goto('/settings?visual=dfx-login-busy');
   const button = page.getByRole('button', { name: 'Log in at DFX' });
   await expect(button).toBeDisabled();
   await expect(page.getByText('Opening DFX…')).toBeVisible();
   await expect(page.getByRole('region', { name: 'Wallet' }).getByRole('alert')).toHaveCount(0);
+  expect(urls.some((url) => url.includes('api.dfx.swiss'))).toBe(false);
 });
 
 test('settings shows the Log in at DFX alert from the pin without calling DFX', async ({
   page,
 }) => {
+  const urls: string[] = [];
+  page.on('request', (request) => {
+    urls.push(request.url());
+  });
   await signIn(page, 'cred-seed');
   await page.goto('/settings?visual=dfx-login-error');
   await expect(page.getByRole('button', { name: 'Log in at DFX' })).toBeEnabled();
@@ -365,6 +379,7 @@ test('settings shows the Log in at DFX alert from the pin without calling DFX', 
     'DFX could not be opened. Try again. If no new tab opens, allow new tabs for this site.',
   );
   await expect(page.getByText('Opening DFX…')).toHaveCount(0);
+  expect(urls.some((url) => url.includes('api.dfx.swiss'))).toBe(false);
 });
 
 /**

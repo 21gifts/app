@@ -964,6 +964,45 @@ describe('SettingsScreen', () => {
     expect(screen.queryByText('Opening DFX…')).toBeNull();
   });
 
+  it.each([
+    ['resolve', false],
+    ['reject', false],
+    ['resolve', true],
+    ['reject', true],
+  ] as const)(
+    'does not navigate or warn after unmount on %s with closed=%s',
+    async (outcome, closed) => {
+      useWalletStore.getState().setReady(21, 'id');
+      const tab = fakeTab();
+      vi.stubGlobal(
+        'open',
+        vi.fn(() => tab as unknown as Window),
+      );
+      const error = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+      let finish: (url: string) => void = () => undefined;
+      let fail: (reason: Error) => void = () => undefined;
+      vi.mocked(dfxLoginUrl).mockReturnValueOnce(
+        new Promise((resolve, reject) => {
+          finish = resolve;
+          fail = reject;
+        }),
+      );
+      const view = renderWithLocale(<SettingsScreen />);
+      fireEvent.click(screen.getByRole('button', { name: 'Log in at DFX' }));
+      view.unmount();
+      tab.closed = closed;
+      await act(async () => {
+        if (outcome === 'resolve') finish(DFX_BUY);
+        else fail(new Error('dfx-login'));
+      });
+      expect(tab.close).toHaveBeenCalledTimes(closed ? 0 : 1);
+      expect(tab.href).toBe('');
+      expect(screen.queryByRole('alert')).toBeNull();
+      expect(error).not.toHaveBeenCalled();
+      error.mockRestore();
+    },
+  );
+
   it('still signs in when the idle pin showed the row and the wallet is off', async () => {
     vi.stubEnv('NEXT_PUBLIC_E2E_NOW', '2026-01-07T12:00:00.000Z');
     window.history.replaceState(null, '', '/settings?visual=dfx-login');
