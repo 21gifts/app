@@ -127,7 +127,9 @@ test('Function: GrantsScreen — moderator sees the applications link', async ({
   ).toHaveAttribute('href', '/grants/applications');
 });
 
-test("Function: GrantsScreen — today's payout shows one actionable reason", async ({ page }) => {
+test("Function: refreshOwnerAccount — today's payout shows one actionable reason", async ({
+  page,
+}) => {
   await seedAdaSession(page, 'verified', {
     status: 'none',
     trialUtcDate: null,

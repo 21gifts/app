@@ -188,7 +188,9 @@ export const accountSchema = z.object({
   funding: ownerFundingSchema.nullable().optional(),
   /**
    * Compatibility location for today's payout on basis accounts. Funding's
-   * `payoutToday` takes precedence when both are present.
+   * `payoutToday` is the only source whenever `funding` is an object, including
+   * when `payoutToday` is null; this field is read only when `funding` is null
+   * or absent.
    */
   grantPayoutToday: z
     .object({

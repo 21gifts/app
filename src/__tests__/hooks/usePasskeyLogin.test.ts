@@ -1284,6 +1284,70 @@ describe('usePasskeyLogin', () => {
     vi.unstubAllGlobals();
   });
 
+  it('keeps a name save while the registration owner refresh is slow', async () => {
+    let resolveMe!: (next: Account | null) => void;
+    vi.mocked(fetchMe).mockReturnValueOnce(
+      new Promise<Account | null>((resolve) => {
+        resolveMe = resolve;
+      }),
+    );
+    const cred = { id: 'cred', type: 'public-key' };
+    vi.stubGlobal('navigator', {
+      ...navigator,
+      credentials: { create: vi.fn().mockResolvedValue(cred), get: vi.fn() },
+    });
+    const { result } = renderHook(() => usePasskeyLogin());
+    await act(async () => {
+      result.current.register();
+      result.current.submitName('Ada');
+    });
+
+    const saved = {
+      ...account,
+      name: 'Ada Lovelace',
+      setup: 'username' as const,
+      funding: {
+        status: 'pending' as const,
+        trialUtcDate: null,
+        admittedAt: null,
+        reviewedByName: null,
+      },
+    };
+    act(() => {
+      useAuthStore.getState().setAccount(saved);
+    });
+    const viewerPublicKey = `03${'c'.repeat(64)}`;
+    await act(async () => {
+      resolveMe({
+        ...account,
+        name: null,
+        setup: 'name',
+        walletViewerPublicKey: viewerPublicKey,
+        grantPayoutToday: { state: 'paid', reason: 'welcome' },
+        funding: {
+          status: 'none',
+          trialUtcDate: null,
+          admittedAt: null,
+          reviewedByName: null,
+          payoutToday: { state: 'blocked', reason: 'admission' },
+          shopPaymentDue: false,
+        },
+      });
+    });
+
+    expect(useAuthStore.getState().account).toEqual({
+      ...saved,
+      walletViewerPublicKey: viewerPublicKey,
+      grantPayoutToday: { state: 'paid', reason: 'welcome' },
+      funding: {
+        ...saved.funding,
+        payoutToday: { state: 'blocked', reason: 'admission' },
+        shopPaymentDue: false,
+      },
+    });
+    vi.unstubAllGlobals();
+  });
+
   it('register(viewKey) forwards the viewKey to startPasskeyRegistration', async () => {
     const viewKey = 'b'.repeat(64);
     const cred = { id: 'cred', type: 'public-key' };

@@ -3419,7 +3419,7 @@ const de = {
     'Eine Moderatorin oder ein Moderator muss Sie zuerst persönlich verifizieren.',
   'funding.payoutToday.admission': 'Sie müssen zum Förderprogramm zugelassen werden.',
   'funding.payoutToday.admissionPending':
-    'Sie müssen zum Förderprogramm zugelassen werden. Ihr Antrag wird geprüft.',
+    'Sie müssen zum Förderprogramm zugelassen werden. Ihre Bewerbung wird geprüft.',
   'funding.payoutToday.wallet': 'Richten Sie Ihre Wallet ein, um Auszahlungen zu erhalten.',
   'funding.payoutToday.recoveryShare': 'Sichern Sie Ihr Konto ab, um Auszahlungen zu erhalten.',
   'funding.payoutToday.shopPayment':

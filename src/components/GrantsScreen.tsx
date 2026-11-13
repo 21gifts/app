@@ -6,8 +6,9 @@ import { FundingStatusCard } from '@/components/FundingStatusCard';
 import { GrantPlacesPanel } from '@/components/GrantPlacesPanel';
 import { useTranslations } from '@/components/LocaleProvider';
 import { Button, ButtonLink, Card } from '@/components/ui';
-import { fetchFundingApplications, fetchMe } from '@/lib/api';
+import { fetchFundingApplications } from '@/lib/api';
 import { requestForumCompose } from '@/lib/forum-feed';
+import { refreshOwnerAccount } from '@/lib/owner-account-refresh';
 import { canEditDailyPayoutRoster, roleAtLeast } from '@/lib/roles';
 import { useAuthStore } from '@/stores/auth-store';
 
@@ -44,15 +45,11 @@ export function GrantsScreen(): ReactElement | null {
     if (session === null) {
       return;
     }
-    void fetchMe(session).then(
-      (next) => {
-        const auth = useAuthStore.getState();
-        if (next !== null && auth.session === session) {
-          auth.setAccount(next);
-        }
-      },
-      () => undefined,
-    );
+    let mounted = true;
+    refreshOwnerAccount(session, () => mounted);
+    return () => {
+      mounted = false;
+    };
   }, [session]);
 
   useEffect(() => {
@@ -85,7 +82,10 @@ export function GrantsScreen(): ReactElement | null {
     return null;
   }
 
-  const payoutToday = account?.funding?.payoutToday ?? account?.grantPayoutToday ?? null;
+  const payoutToday =
+    account?.funding !== null && account?.funding !== undefined
+      ? (account.funding.payoutToday ?? null)
+      : (account?.grantPayoutToday ?? null);
   let payoutKey:
     | 'funding.payoutToday.paid'
     | 'funding.payoutToday.welcome'

@@ -3,7 +3,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   AppOutdatedError,
-  fetchMe,
   finishPasskeyAuthentication,
   finishPasskeyRegistration,
   isUnknownCredentialError,
@@ -36,25 +35,13 @@ import {
 } from '@/lib/webauthn-browser';
 import { reportDiagnostic, type DiagnosticReport } from '@/lib/diagnostics';
 import { logInteraction } from '@/lib/interaction-log';
+import { refreshOwnerAccount } from '@/lib/owner-account-refresh';
 import {
   USERNAME_FORMAT_MESSAGE,
   USERNAME_TAKEN_MESSAGE,
   usernameProblem,
 } from '@/lib/profile-fields';
 import { useAuthStore } from '@/stores/auth-store';
-
-/** Refreshes the sparse passkey account from `GET /me` without delaying sign-in. */
-function refreshOwnerAccount(sessionToken: string): void {
-  void fetchMe(sessionToken).then(
-    (account) => {
-      const auth = useAuthStore.getState();
-      if (account !== null && auth.session === sessionToken) {
-        auth.setAccount(account);
-      }
-    },
-    () => undefined,
-  );
-}
 
 /**
  * Trim, lowercase, then the api username charset and length.
@@ -810,7 +797,7 @@ export function usePasskeyLogin(): UsePasskeyLogin {
         sessionToken: session.token,
       });
       setAuth(session.token, session.account);
-      refreshOwnerAccount(session.token);
+      refreshOwnerAccount(session.token, () => runId === runIdRef.current);
       logInteraction('signup_completed');
       choiceOfferedRef.current = false;
       unknownOfferedRef.current = false;
@@ -935,7 +922,7 @@ export function usePasskeyLogin(): UsePasskeyLogin {
         sessionToken: session.token,
       });
       setAuth(session.token, session.account);
-      refreshOwnerAccount(session.token);
+      refreshOwnerAccount(session.token, () => runId === runIdRef.current);
       logInteraction('login');
       choiceOfferedRef.current = false;
       unknownOfferedRef.current = false;

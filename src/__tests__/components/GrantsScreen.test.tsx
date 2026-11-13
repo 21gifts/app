@@ -190,6 +190,72 @@ describe('GrantsScreen', () => {
     expect(useAuthStore.getState()).toMatchObject({ session: 'new-session', account: newer });
   });
 
+  it('keeps a new application while a slow grants refresh adds owner-only fields', async () => {
+    let resolveMe!: (next: Account | null) => void;
+    meMock.mockReturnValueOnce(
+      new Promise<Account | null>((resolve) => {
+        resolveMe = resolve;
+      }),
+    );
+    renderWithLocale(<GrantsScreen />);
+    await waitFor(() => {
+      expect(meMock).toHaveBeenCalledWith('sess');
+    });
+
+    const pending = {
+      ...account,
+      name: 'New local name',
+      funding: {
+        ...account.funding!,
+        status: 'pending' as const,
+      },
+    };
+    act(() => {
+      useAuthStore.getState().setAccount(pending);
+    });
+    await act(async () => {
+      resolveMe({
+        ...account,
+        name: 'Stale name',
+        funding: {
+          ...account.funding!,
+          status: 'none',
+          payoutToday: { state: 'blocked', reason: 'admission' },
+          shopPaymentDue: true,
+        },
+      });
+    });
+
+    expect(useAuthStore.getState().account).toEqual({
+      ...pending,
+      walletViewerPublicKey: undefined,
+      grantPayoutToday: undefined,
+      funding: {
+        ...pending.funding,
+        payoutToday: { state: 'blocked', reason: 'admission' },
+        shopPaymentDue: true,
+      },
+    });
+  });
+
+  it('drops a grants refresh that answers after unmount', async () => {
+    let resolveMe!: (next: Account | null) => void;
+    meMock.mockReturnValueOnce(
+      new Promise<Account | null>((resolve) => {
+        resolveMe = resolve;
+      }),
+    );
+    const rendered = renderWithLocale(<GrantsScreen />);
+    await waitFor(() => {
+      expect(meMock).toHaveBeenCalledWith('sess');
+    });
+    rendered.unmount();
+    await act(async () => {
+      resolveMe({ ...account, name: 'Late owner answer' });
+    });
+    expect(useAuthStore.getState().account).toBe(account);
+  });
+
   it.each([
     [{ state: 'paid', reason: null }, 'Payout made today.', null],
     [{ state: 'paid', reason: 'welcome' }, 'Your welcome gift was paid today.', null],
@@ -369,6 +435,23 @@ describe('GrantsScreen', () => {
     });
     renderWithLocale(<GrantsScreen />);
     expect(screen.getByText('Payout made today.')).toBeTruthy();
+    expect(screen.queryByText('Your welcome gift was paid today.')).toBeNull();
+  });
+
+  it('keeps a null funding payout unavailable instead of using the compatibility field', () => {
+    useAuthStore.setState({
+      session: 'sess',
+      account: {
+        ...account,
+        funding: {
+          ...account.funding!,
+          payoutToday: null,
+        },
+        grantPayoutToday: { state: 'paid', reason: 'welcome' },
+      },
+    });
+    renderWithLocale(<GrantsScreen />);
+    expect(screen.getByText("Today's payout status is not available.")).toBeTruthy();
     expect(screen.queryByText('Your welcome gift was paid today.')).toBeNull();
   });
 
