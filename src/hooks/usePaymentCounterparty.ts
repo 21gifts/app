@@ -11,14 +11,14 @@ import {
   RECEIVED_FROM_MEMBER_SENDER,
   SENT_TO_MEMBER_COUNTERPARTY,
 } from '@/lib/wallet/payment-fixtures';
-import { reportWallet, walletReportSettled } from '@/lib/wallet/wallet-report';
+import { walletReportSettled } from '@/lib/wallet/wallet-report';
 import type { WalletPayment } from '@/lib/wallet/wallet-sdk';
 import { useWalletStore } from '@/stores/wallet-store';
 
 /**
  * Resolve the counterparty of a completed payment in the active session.
- * Wait for a running report before the first lookup without requesting one.
- * Cache matches; after a wallet sync, wait for its report and retry a miss.
+ * Wait for a running report before each lookup without requesting one.
+ * Cache matches; after a wallet sync, retry a miss.
  * In a Playwright build, `?visual=received-from-member` and
  * `?visual=sent-to-member` return their fixtures without a request, and
  * `?visual=received-member-unknown` and `?visual=sent-member-unknown` return
@@ -30,7 +30,6 @@ import { useWalletStore } from '@/stores/wallet-store';
 export function usePaymentCounterparty(payment: WalletPayment): PaymentCounterparty | null {
   const session = useActiveSession();
   const syncCount = useWalletStore((state) => state.syncCount);
-  const previousSyncCount = useRef(syncCount);
   const pin = visualPin();
   const pinned =
     pin === 'received-from-member' ||
@@ -51,7 +50,6 @@ export function usePaymentCounterparty(payment: WalletPayment): PaymentCounterpa
   } | null>(null);
 
   useEffect(() => {
-    const synced = previousSyncCount.current !== syncCount;
     if (pinned) return;
     if (cache.current.session !== session) cache.current = { session, values: new Map() };
     if (session === null || !eligible) return;
@@ -62,13 +60,8 @@ export function usePaymentCounterparty(payment: WalletPayment): PaymentCounterpa
     }
     let active = true;
     const lookup = async (): Promise<void> => {
-      if (synced) {
-        await reportWallet();
-      } else {
-        await walletReportSettled();
-      }
+      await walletReportSettled();
       if (!active) return;
-      previousSyncCount.current = syncCount;
       const rows = await fetchPaymentCounterparties(session, [{ id: payment.id, direction }]);
       if (!active) return;
       const counterparty = rows.find((row) => row.id === payment.id) ?? null;

@@ -5537,7 +5537,7 @@ The `/me/wallet/counterparties` route re-exports `proxyMeWalletCounterpartiesPos
 
 ## Function: usePaymentCounterparty
 
-- **Purpose:** Resolve the counterparty of every completed payment by id and direction, even without an invoice or hash. The first lookup waits for a running wallet report without requesting another. Cache matches for the mounted screen and its session by id and direction; after a miss, a wallet sync waits for `reportWallet` before looking up the payment again. A match stops retries, and no retry occurs without a sync while the payment remains eligible.
+- **Purpose:** Resolve the counterparty of every completed payment by id and direction, even without an invoice or hash. Each lookup waits for a running wallet report without requesting another. Cache matches for the mounted screen and its session by id and direction; after a miss, retry on wallet sync. A match stops retries, and no retry occurs without a sync while the payment remains eligible.
 - **Inputs:** One wallet payment.
 - **Returns:** Its counterparty or null. `?visual=received-from-member` and `?visual=sent-to-member` return fixtures without a request. `?visual=received-member-unknown` and `?visual=sent-member-unknown` return null without a request.
 - **Used by:** `WalletPaymentDetails`.

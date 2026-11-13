@@ -125,11 +125,6 @@ describe('usePaymentCounterparty', () => {
   });
   it('waits for the report before retrying a miss on sync and stops after a match', async () => {
     let finishReport!: () => void;
-    vi.mocked(reportWallet).mockReturnValue(
-      new Promise<void>((resolve) => {
-        finishReport = resolve;
-      }),
-    );
     vi.mocked(fetchPaymentCounterparties)
       .mockResolvedValueOnce([])
       .mockResolvedValueOnce([RECEIVED_FROM_MEMBER_SENDER]);
@@ -141,8 +136,14 @@ describe('usePaymentCounterparty', () => {
     rerender();
     expect(fetchPaymentCounterparties).toHaveBeenCalledTimes(1);
     expect(reportWallet).not.toHaveBeenCalled();
+    vi.mocked(walletReportSettled).mockReturnValue(
+      new Promise<void>((resolve) => {
+        finishReport = resolve;
+      }),
+    );
     act(() => useWalletStore.setState({ syncCount: 1 }));
-    expect(reportWallet).toHaveBeenCalledTimes(1);
+    expect(walletReportSettled).toHaveBeenCalledTimes(2);
+    expect(reportWallet).not.toHaveBeenCalled();
     expect(fetchPaymentCounterparties).toHaveBeenCalledTimes(1);
     await act(async () => {
       finishReport();
@@ -151,11 +152,12 @@ describe('usePaymentCounterparty', () => {
     expect(fetchPaymentCounterparties).toHaveBeenCalledTimes(2);
     act(() => useWalletStore.setState({ syncCount: 2 }));
     expect(fetchPaymentCounterparties).toHaveBeenCalledTimes(2);
-    expect(reportWallet).toHaveBeenCalledTimes(1);
+    expect(walletReportSettled).toHaveBeenCalledTimes(2);
+    expect(reportWallet).not.toHaveBeenCalled();
   });
   it('waits for a sync during a pending payment before the first lookup', async () => {
     let finishReport!: () => void;
-    vi.mocked(reportWallet).mockReturnValue(
+    vi.mocked(walletReportSettled).mockReturnValue(
       new Promise<void>((resolve) => {
         finishReport = resolve;
       }),
@@ -167,9 +169,11 @@ describe('usePaymentCounterparty', () => {
     );
     act(() => useWalletStore.setState({ syncCount: 1 }));
     expect(reportWallet).not.toHaveBeenCalled();
+    expect(walletReportSettled).not.toHaveBeenCalled();
     expect(fetchPaymentCounterparties).not.toHaveBeenCalled();
     rerender({ completed: true });
-    expect(reportWallet).toHaveBeenCalledTimes(1);
+    expect(walletReportSettled).toHaveBeenCalledTimes(1);
+    expect(reportWallet).not.toHaveBeenCalled();
     expect(fetchPaymentCounterparties).not.toHaveBeenCalled();
     await act(async () => {
       finishReport();
@@ -177,24 +181,28 @@ describe('usePaymentCounterparty', () => {
     expect(fetchPaymentCounterparties).toHaveBeenCalledWith('session', [
       { id: payment.id, direction: 'in' },
     ]);
+    expect(reportWallet).not.toHaveBeenCalled();
   });
   it('does not fetch after a pending report is invalidated', async () => {
     let finishReport!: () => void;
-    vi.mocked(reportWallet).mockReturnValue(
-      new Promise<void>((resolve) => {
-        finishReport = resolve;
-      }),
-    );
     const hook = renderHook(() => usePaymentCounterparty(payment));
     await act(async () => {
       await Promise.resolve();
     });
+    vi.mocked(walletReportSettled).mockReturnValue(
+      new Promise<void>((resolve) => {
+        finishReport = resolve;
+      }),
+    );
     act(() => useWalletStore.setState({ syncCount: 1 }));
+    expect(walletReportSettled).toHaveBeenCalledTimes(2);
+    expect(reportWallet).not.toHaveBeenCalled();
     hook.unmount();
     await act(async () => {
       finishReport();
     });
     expect(fetchPaymentCounterparties).toHaveBeenCalledTimes(1);
+    expect(reportWallet).not.toHaveBeenCalled();
   });
   it('keeps the cached result when invoice and hash change', async () => {
     vi.mocked(fetchPaymentCounterparties).mockResolvedValue([RECEIVED_FROM_MEMBER_SENDER]);
