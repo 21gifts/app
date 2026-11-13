@@ -127,6 +127,27 @@ test('Function: GrantsScreen — moderator sees the applications link', async ({
   ).toHaveAttribute('href', '/grants/applications');
 });
 
+test("Function: refreshOwnerAccount — today's payout shows one actionable reason", async ({
+  page,
+}) => {
+  await seedAdaSession(page, 'verified', {
+    status: 'none',
+    trialUtcDate: null,
+    admittedAt: null,
+    reviewedByName: null,
+    shopPaymentDue: true,
+    payoutToday: { state: 'blocked', reason: 'shop_payment' },
+  });
+  await page.goto('/grants');
+  const payout = page.getByRole('group', { name: "Today's payout" });
+  await expect(payout.locator('p')).toHaveCount(1);
+  await expect(
+    payout.getByRole('link', {
+      name: 'You must have made at least one purchase in a 21.gifts shop today or yesterday.',
+    }),
+  ).toHaveAttribute('href', '/shops');
+});
+
 test('Function: GrantGoalsPage — signed-in goals page explains the shop target', async ({
   page,
 }) => {

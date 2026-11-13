@@ -1272,6 +1272,22 @@ describe('forumMessageSchema', () => {
     expect(forumMessageSchema.parse({ ...base, goalRepayable: true }).goalRepayable).toBe(true);
   });
 
+  it('keeps an optional ISO goalClosedAt and omits it on an open or older credit', () => {
+    const open = forumMessageSchema.parse({ ...base, goalRepayable: true });
+    expect(open.goalClosedAt).toBeUndefined();
+    expect(Object.prototype.hasOwnProperty.call(open, 'goalClosedAt')).toBe(false);
+    expect(
+      forumMessageSchema.parse({
+        ...base,
+        goalRepayable: true,
+        goalClosedAt: '2026-10-03T10:00:00.000Z',
+      }).goalClosedAt,
+    ).toBe('2026-10-03T10:00:00.000Z');
+    expect(() =>
+      forumMessageSchema.parse({ ...base, goalRepayable: true, goalClosedAt: 'closed' }),
+    ).toThrow();
+  });
+
   it('rejects goalRepayable false', () => {
     expect(() => forumMessageSchema.parse({ ...base, goalRepayable: false })).toThrow();
   });
@@ -1816,8 +1832,45 @@ describe('accountSchema', () => {
       trialUtcDate: null,
       admittedAt: null,
       reviewedByName: null,
+      shopPaymentDue: true,
+      payoutToday: { state: 'blocked' as const, reason: 'shop_payment' },
     };
     expect(accountSchema.parse({ ...account, funding }).funding).toEqual(funding);
+  });
+
+  it('accepts an unknown shop-payment requirement', () => {
+    const funding = {
+      status: 'none' as const,
+      trialUtcDate: null,
+      admittedAt: null,
+      reviewedByName: null,
+      shopPaymentDue: null,
+    };
+    expect(accountSchema.parse({ ...account, funding }).funding).toEqual(funding);
+  });
+
+  it('accepts the wallet viewer key and top-level basis payout compatibility field', () => {
+    const walletViewerPublicKey = `02${'a'.repeat(64)}`;
+    const grantPayoutToday = { state: 'due' as const, reason: null };
+    expect(
+      accountSchema.parse({ ...account, walletViewerPublicKey, grantPayoutToday }),
+    ).toMatchObject({ walletViewerPublicKey, grantPayoutToday });
+    expect(
+      accountSchema.parse({ ...account, walletViewerPublicKey: null }).walletViewerPublicKey,
+    ).toBeNull();
+    expect(
+      accountSchema.parse({
+        ...account,
+        funding: {
+          status: 'none',
+          trialUtcDate: null,
+          admittedAt: null,
+          reviewedByName: null,
+          payoutToday: null,
+        },
+        grantPayoutToday: null,
+      }),
+    ).toMatchObject({ funding: { payoutToday: null }, grantPayoutToday: null });
   });
 
   it('rejects a garbage funding status', () => {
@@ -2146,18 +2199,6 @@ describe('giftStatsSchema', () => {
         cumulativePhp: '0.50',
       },
     ],
-    byRecipient: [
-      {
-        recipient: 'alice',
-        giftCount: 1,
-        sats: 10,
-        btc: '0.00000010',
-        usd: '0.01',
-        chf: '0.01',
-        eur: '0.01',
-        php: '0.50',
-      },
-    ],
     byMonth: [
       {
         month: '2026-06',
@@ -2175,6 +2216,26 @@ describe('giftStatsSchema', () => {
 
   it('accepts a full stats payload', () => {
     expect(giftStatsSchema.parse(stats)).toEqual(stats);
+  });
+
+  it('drops byRecipient when an older api still sends it', () => {
+    const parsed = giftStatsSchema.parse({
+      ...stats,
+      byRecipient: [
+        {
+          recipient: 'alice',
+          giftCount: 1,
+          sats: 10,
+          btc: '0.00000010',
+          usd: '0.01',
+          chf: '0.01',
+          eur: '0.01',
+          php: '0.50',
+        },
+      ],
+    });
+    expect(parsed).toEqual(stats);
+    expect(Object.hasOwn(parsed, 'byRecipient')).toBe(false);
   });
 
   it('accepts a spendOverTime day without giftCount', () => {
@@ -2203,7 +2264,6 @@ describe('giftStatsSchema', () => {
       firstPaidAt: null,
       lastPaidAt: null,
       spendOverTime: [],
-      byRecipient: [],
       byMonth: [],
     };
     expect(giftStatsSchema.parse(empty)).toEqual(empty);

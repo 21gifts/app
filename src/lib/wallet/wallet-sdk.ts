@@ -487,6 +487,27 @@ export interface WalletConnection {
    */
   getInfo(options?: { ensureSynced?: boolean }): Promise<WalletInfo>;
   /**
+   * Reads the two SDK user settings that keep the wallet private while giving
+   * the platform's viewer identity read-only visibility.
+   *
+   * @returns The private-mode flag and current master viewer identity.
+   */
+  getUserSettings(): Promise<{
+    sparkPrivateModeEnabled: boolean;
+    sparkMasterIdentityPublicKey: string | null;
+  }>;
+  /**
+   * Enables Spark private mode and/or sets the platform viewer identity. This
+   * narrow surface deliberately cannot disable private mode or unset a viewer.
+   *
+   * @param settings - Safe settings changes supported by the app.
+   * @returns Resolves once the SDK stored the settings.
+   */
+  updateUserSettings(settings: {
+    sparkPrivateModeEnabled?: true;
+    sparkMasterIdentityPublicKey?: { type: 'set'; publicKey: string };
+  }): Promise<void>;
+  /**
    * Registers an event listener on the connection.
    *
    * @param onEvent - Callback invoked for each SDK event.
@@ -1044,6 +1065,22 @@ export async function loadWalletSdk(): Promise<WalletSdk> {
             balanceSats: info.balanceSats,
             identityPubkey: info.identityPubkey,
           };
+        },
+        async getUserSettings(): Promise<{
+          sparkPrivateModeEnabled: boolean;
+          sparkMasterIdentityPublicKey: string | null;
+        }> {
+          const settings = await handle.getUserSettings();
+          return {
+            sparkPrivateModeEnabled: settings.sparkPrivateModeEnabled,
+            sparkMasterIdentityPublicKey: settings.sparkMasterIdentityPublicKey ?? null,
+          };
+        },
+        async updateUserSettings(settings: {
+          sparkPrivateModeEnabled?: true;
+          sparkMasterIdentityPublicKey?: { type: 'set'; publicKey: string };
+        }): Promise<void> {
+          await handle.updateUserSettings(settings);
         },
         async addEventListener(onEvent: (event: WalletSdkEvent) => void): Promise<string> {
           return handle.addEventListener({

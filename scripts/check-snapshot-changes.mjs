@@ -14,7 +14,7 @@
  * The base is `SCREENSHOT_BASE` when set; in a GitHub pull request run it is
  * the base commit the checked-out merge was built on (its first parent,
  * fetched here), so a later push to the base branch changes nothing; locally
- * it is the merge base of `HEAD` with `origin/staging`. Without a base the check is skipped, except in a pull
+ * it is the merge base of `HEAD` with `origin/develop`. Without a base the check is skipped, except in a pull
  * request run, where a missing base fails.
  */
 import { execFileSync, spawn } from 'node:child_process';
@@ -73,7 +73,7 @@ function baseRevision(root) {
     }
   }
   try {
-    return { rev: git(root, ['merge-base', 'HEAD', 'origin/staging']), required: false };
+    return { rev: git(root, ['merge-base', 'HEAD', 'origin/develop']), required: false };
   } catch {
     return { rev: null, required: false };
   }
@@ -247,7 +247,7 @@ export async function needlessBaselineChanges(root) {
     if (base.required) {
       return ['Cannot read the base branch to compare changed baselines with'];
     }
-    console.warn('Baseline changes not compared: no origin/staging to compare with.');
+    console.warn('Baseline changes not compared: no origin/develop to compare with.');
     return [];
   }
   const changed = git(root, ['diff', '--name-status', '--no-renames', base.rev, '--', SNAP_DIR])

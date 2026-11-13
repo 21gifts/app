@@ -19,6 +19,7 @@ import {
 } from '@/lib/wallet/wallet-sdk';
 import { useAuthStore } from '@/stores/auth-store';
 import { useWalletStore } from '@/stores/wallet-store';
+import { visualPin } from '@/lib/visual-pin';
 
 /**
  * Loads a {@link WalletSdk}. Injected in tests; defaults to {@link loadWalletSdk}.
@@ -116,6 +117,198 @@ let openFailureReported = false;
  * never matches; ready clears it.
  */
 let openInProgress: { run: number; startedAt: number } | null = null;
+
+/** A compressed secp256k1 public key in lower-case hex. */
+const VIEWER_PUBLIC_KEY = /^[0-9a-f]{66}$/;
+
+/** Serialized settings work across every SDK connection. */
+let walletSettingsChain: Promise<void> = Promise.resolve();
+
+/** Fixed step names safe to attach to a wallet-settings error report. */
+type WalletSettingsStage = 'read' | 'private_mode' | 'viewer';
+
+/** Result of one settings SDK call, or an indication that its handle was dropped. */
+type WalletSettingsCallResult<T> =
+  | { current: true; ok: true; value: T }
+  | { current: true; ok: false; error: unknown }
+  | { current: false };
+
+/** Sentinel returned when it is time to check whether a settings handle was dropped. */
+const WALLET_SETTINGS_CONNECTION_CHECK = Symbol('wallet settings connection check');
+
+/**
+ * Waits for one settings SDK call only while its exact connection remains
+ * current. The periodic check bounds how long a call that never settles can
+ * hold the shared settings chain after the handle is dropped. Both outcomes
+ * of the SDK promise are handled at once, so a rejection after abandonment is
+ * swallowed. A successful abandoned call queues a silent full settings pass
+ * for the replacement connection, because the stale call may have changed
+ * shared wallet settings after that connection configured them.
+ *
+ * @param conn - Connection that owns the call.
+ * @param call - Settings SDK operation to start once.
+ * @returns The operation result, or `current: false` after the handle drops.
+ */
+async function callWalletSettings<T>(
+  conn: WalletConnection,
+  call: () => Promise<T>,
+): Promise<WalletSettingsCallResult<T>> {
+  if (connection !== conn) {
+    return { current: false };
+  }
+  let sdkCall: Promise<T>;
+  try {
+    sdkCall = call();
+  } catch (error: unknown) {
+    return { current: true, ok: false, error };
+  }
+  const settled: Promise<WalletSettingsCallResult<T>> = sdkCall.then(
+    (value) => ({ current: true, ok: true, value }),
+    (error: unknown) => ({ current: true, ok: false, error }),
+  );
+  while (connection === conn) {
+    let check!: ReturnType<typeof setTimeout>;
+    const result = await Promise.race([
+      settled,
+      new Promise<typeof WALLET_SETTINGS_CONNECTION_CHECK>((resolve) => {
+        check = setTimeout(
+          () => resolve(WALLET_SETTINGS_CONNECTION_CHECK),
+          WALLET_RETRY_DISCONNECT_WAIT_MS,
+        );
+      }),
+    ]);
+    clearTimeout(check);
+    if (result !== WALLET_SETTINGS_CONNECTION_CHECK) {
+      return result;
+    }
+  }
+  void settled.then((result) => {
+    const currentConnection = connection;
+    if (result.current && result.ok && currentConnection !== null && currentConnection !== conn) {
+      configureWalletSettingsOnce(currentConnection, true, false);
+    }
+  });
+  return { current: false };
+}
+
+/**
+ * Reports a settings failure without the viewer key, wallet identity, address,
+ * SDK error text, or thrown value.
+ *
+ * @param stage - Fixed settings operation that failed.
+ * @param failed - Rejection narrowed to the existing safe cause codes.
+ */
+function reportWalletSettingsFailure(stage: WalletSettingsStage, failed: unknown): void {
+  const { errorName, errorCode, causeKind } = errorCause(failed);
+  captureMessage('Wallet settings not updated', {
+    level: 'error',
+    fingerprint: ['wallet-settings-failed', stage],
+    tags: {
+      wallet_settings_stage: stage,
+      wallet_settings_error: errorName,
+      wallet_settings_error_code: errorCode ?? 'none',
+      wallet_settings_cause: causeKind,
+    },
+    extra: { stage, errorName, errorCode, causeKind },
+  });
+}
+
+/**
+ * Configures one settings run. A new-connection run and the silent repair
+ * enable private mode only when it is off; a later viewer-key-change run
+ * writes only the viewer key. Each setting changes only in the safe direction:
+ * private mode is never disabled and a viewer is never unset or replaced from
+ * an invalid value. The current account key is read immediately before the
+ * viewer comparison and update.
+ *
+ * A failed operation is reported only when that call failed while the run
+ * still owned the current connection and the run is not the silent repair.
+ * The failure of a call that was abandoned is not reported. A failure
+ * recorded before a later call in the same run is abandoned is still
+ * reported. The silent repair reports neither its read nor its update.
+ *
+ * @param conn - Current wallet handle.
+ * @param configurePrivateMode - Whether this run also enforces private mode.
+ * @param reportFailures - Whether eligible failures from this run are reported.
+ */
+async function configureWalletSettings(
+  conn: WalletConnection,
+  configurePrivateMode: boolean,
+  reportFailures: boolean,
+): Promise<void> {
+  const readResult = await callWalletSettings(conn, () => conn.getUserSettings());
+  if (!readResult.current || connection !== conn) {
+    return;
+  }
+  if (!readResult.ok) {
+    if (reportFailures) {
+      reportWalletSettingsFailure('read', readResult.error);
+    }
+    return;
+  }
+  const settings = readResult.value;
+
+  let firstFailure: { stage: WalletSettingsStage; error: unknown } | null = null;
+  if (configurePrivateMode && !settings.sparkPrivateModeEnabled) {
+    const privateModeResult = await callWalletSettings(conn, () =>
+      conn.updateUserSettings({ sparkPrivateModeEnabled: true }),
+    );
+    if (!privateModeResult.current || connection !== conn) {
+      return;
+    }
+    if (!privateModeResult.ok) {
+      firstFailure = { stage: 'private_mode', error: privateModeResult.error };
+    }
+  }
+  const viewerPublicKey = useAuthStore.getState().account?.walletViewerPublicKey;
+  if (
+    typeof viewerPublicKey === 'string' &&
+    VIEWER_PUBLIC_KEY.test(viewerPublicKey) &&
+    settings.sparkMasterIdentityPublicKey !== viewerPublicKey
+  ) {
+    const viewerResult = await callWalletSettings(conn, () =>
+      conn.updateUserSettings({
+        sparkMasterIdentityPublicKey: { type: 'set', publicKey: viewerPublicKey },
+      }),
+    );
+    if (!viewerResult.current || connection !== conn) {
+      if (reportFailures && firstFailure !== null) {
+        reportWalletSettingsFailure(firstFailure.stage, firstFailure.error);
+      }
+      return;
+    }
+    if (!viewerResult.ok) {
+      firstFailure ??= { stage: 'viewer', error: viewerResult.error };
+    }
+  }
+  if (reportFailures && firstFailure !== null) {
+    reportWalletSettingsFailure(firstFailure.stage, firstFailure.error);
+  }
+}
+
+/**
+ * Queues settings work after every earlier run, including runs for replaced
+ * connections. Each run reads the current account key and SDK setting only
+ * when its turn starts.
+ */
+function configureWalletSettingsOnce(
+  conn: WalletConnection,
+  configurePrivateMode: boolean,
+  reportFailures = true,
+): void {
+  walletSettingsChain = walletSettingsChain.then(() =>
+    configureWalletSettings(conn, configurePrivateMode, reportFailures),
+  );
+}
+
+useAuthStore.subscribe((state, previous) => {
+  const viewerPublicKey = state.account?.walletViewerPublicKey;
+  const conn = connection;
+  if (viewerPublicKey === previous.account?.walletViewerPublicKey || conn === null) {
+    return;
+  }
+  configureWalletSettingsOnce(conn, false);
+});
 
 /**
  * Balance reads (`getInfo`) of the current connection still running, so an
@@ -778,6 +971,7 @@ async function openWallet(loadSdk: WalletSdkLoader, quiet: boolean): Promise<voi
         return;
       }
       connection = next;
+      configureWalletSettingsOnce(next, true);
       await next.addEventListener((event) => {
         if (run === runCounter && connection === next) {
           onWalletEvent(event, mnemonic);
@@ -1363,6 +1557,26 @@ function payRoute(
  * @returns Confirmation with `send`, or why the payment cannot be made.
  */
 export async function payFromWallet(request: WalletPayRequest): Promise<WalletPayResult> {
+  if (visualPin() === 'repay-e2e-payment' && request.type === 'input') {
+    const amount = /(\d+)$/.exec(request.input)?.[1];
+    if (amount !== undefined) {
+      const amountSats = Number(amount);
+      return {
+        kind: 'confirm',
+        amountSats,
+        feeSats: 0,
+        method: 'spark',
+        send: async () => {
+          await fetch('/e2e/wallet-send', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ input: request.input, amountSats }),
+          });
+          return { kind: 'paid' };
+        },
+      };
+    }
+  }
   const requestMethod = methodOf(request);
   const requestSats = request.amountSats ?? null;
   const prepareFailure = (

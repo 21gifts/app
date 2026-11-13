@@ -103,6 +103,27 @@ test('Function: LoanBlock — a feed loan shows what is lent and reads no repaym
   expect(ledgerReads).toEqual([]);
 });
 
+test('a closed below-goal loan hides every contribution action on its initial card', async ({
+  page,
+}) => {
+  await signIn(page);
+  await fulfillSpot(page);
+  const ledgerReads: string[] = [];
+  page.on('request', (request) => {
+    if (/\/messages\/[^/]+\/repayment$/.test(new URL(request.url()).pathname)) {
+      ledgerReads.push(request.url());
+    }
+  });
+  await feedOf(page, [{ ...COLLECTING, goalClosedAt: '2026-10-03T10:00:00.000Z' }]);
+  await openAll(page);
+  const block = page.getByRole('region', { name: 'Loan request' });
+  await expect(block).toHaveAttribute('data-loan-block', 'collecting');
+  await expect(block.getByRole('button', { name: 'Lend' })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Send ₿1' })).toHaveCount(0);
+  await expect(page.getByLabel('Amount to lend')).toHaveCount(0);
+  expect(ledgerReads).toEqual([]);
+});
+
 test('Function: forumAskPercent — a fiat loan shows its own percent while its sats decide lending', async ({
   page,
 }) => {

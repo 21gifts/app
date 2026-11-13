@@ -534,15 +534,15 @@ app/
 
 ### Branches
 
-| Branch    | Purpose                            | Deploy target |
-| --------- | ---------------------------------- | ------------- |
-| `develop` | Default branch, active development | DEV           |
-| `staging` | Experimental testing               | staging       |
-| `main`    | Production releases                | PRD           |
+| Branch    | Purpose                                                          | Deploy target |
+| --------- | ---------------------------------------------------------------- | ------------- |
+| `develop` | Default branch, active development                               | DEV           |
+| `staging` | Experimental testing (branch currently absent, no pull requests) | staging       |
+| `main`    | Production releases                                              | PRD           |
 
-- Open feature work through a **feature branch and a pull request**. The pull request targets `staging` unless another base was explicitly requested. It must not target `main`. The GitHub default branch stays `develop`; that does not change the pull-request base.
+- Open feature work through a **feature branch and a pull request**. Feature pull requests target `develop`; they must not target `main` or `staging`.
 - `main` is protected. The only pull request that may target `main` is the automatic release (`Release: develop -> main`). Production still deploys when `main` itself is pushed.
-- **Hard requirement:** `staging` is the environment for experimental testing. It publishes `21gifts/app:staging`. A change that is good there is released to `develop` by a release pull request (`Release: staging -> develop`). That release is the explicit request to target `develop`. `main` receives changes only through `Release: develop -> main`. `staging` is never released directly to `main`. An open release pull request is left unchanged. The staging release is not opened when the three-dot diff against `develop` has no file changes.
+- **Hard requirement:** `staging` is the environment for experimental testing. It publishes `21gifts/app:staging`. No pull request targets `staging` at present. The product owner decides whether pull requests may target `staging` again and how experimental changes reach it; this section is updated before that changes. When the `staging` branch exists, its changes reach `develop` only through a release pull request (`Release: staging -> develop`); that release is the explicit request to target `develop`. `main` receives changes only through `Release: develop -> main`. `staging` is never released directly to `main`. An open release pull request is left unchanged. The staging release is not opened when the three-dot diff against `develop` has no file changes.
 - Never force-push, never amend published commits, except publishing a rebase of `staging` onto `develop` with `git push --force-with-lease` to `staging` only.
 
 ### Commit messages
@@ -755,11 +755,11 @@ A stack of labeled actions available to accounts at least moderator on a member 
 
 ### Amount entry (hard requirement)
 
-Every control where a person types an amount uses `AmountEntry`: the gift `SegmentedControl` (₿ and the member's fiat code) and the other unit directly under the field. Bitcoin entry shows the preferred fiat. Fiat entry shows the bitcoin equivalent. The last unit a signed-in member chooses is `account.amountUnit` (`btc` or `fiat`, default `btc`) and is the default on every amount field. A signed-out pay link still shows the switch, starts at ₿, and does not store the choice. The submitted amount is always whole sats. Fiat entry uses the current spot rate to turn the digits still being typed into sats. The currency that was typed is stored and shown as that exact figure, as [docs/fiat-amounts.md](docs/fiat-amounts.md) requires. While the preferred fiat has no rate, that fiat is disabled on the switch, ₿ stays, and the line under the field reads **No exchange rate yet**, so a fiat amount is only typed while it can be converted. The point of sale never answers a fiat amount with a whole-number error. A new amount field without the switch or the counter is an undeclared deviation. The daily payout roster on `/grants/payments/amounts` and the moderator roster on `/grants/payments/moderators` are not one of these fields: each amount is the USD figure spend stores and pays, so those inputs stay `Field` and the saved body stays `amountUsd`. Fiat mode is its own screenshot state. In the inbox composer the message and send stay on one row, under the photo icon row (camera and attach). The amount is the next row: the switch beside the input, the other unit under that input, and no visible label (the input keeps the accessible name).
+Every control where a person types an amount uses `AmountEntry`: the gift `SegmentedControl` (₿ and the member's fiat code) and the other unit directly under the field. Bitcoin entry shows the preferred fiat. Fiat entry shows the bitcoin equivalent. The last unit a signed-in member chooses is `account.amountUnit` (`btc` or `fiat`, default `btc`) and is the default on every amount field. A signed-out pay link still shows the switch, starts at ₿, and does not store the choice. The submitted amount is always whole sats. Fiat entry uses the current spot rate to turn the digits still being typed into sats. The currency that was typed is stored and shown as that exact figure, as [docs/fiat-amounts.md](docs/fiat-amounts.md) requires. While the preferred fiat has no rate, that fiat is disabled on the switch, ₿ stays, and the line under the field reads **No exchange rate yet**, so a fiat amount is only typed while it can be converted. The point of sale never answers a fiat amount with a whole-number error. A new amount field without the switch or the counter is an undeclared deviation. The daily payout roster on `/grants/payments/amounts` and the moderator roster on `/grants/payments/moderators` are not one of these fields: each amount is the USD figure spend stores and pays, so those inputs stay `Field` and the saved body stays `amountUsd`. A loan's **Pay more** field is another explicit exception: it stays in the loan unit — ₿ sats for a BTC loan or the loan currency for a fiat loan — without a unit switch. Its typed string is submitted unchanged and shown as that exact figure, with the bitcoin it buys beside it. Fiat mode is its own screenshot state. In the inbox composer the message and send stay on one row, under the photo icon row (camera and attach). The amount is the next row: the switch beside the input, the other unit under that input, and no visible label (the input keeps the accessible name).
 
 ### Shown amounts (hard requirement)
 
-Every place that shows a bitcoin amount also shows one fiat figure. A stored string for the visitor's currency, or the currency that was typed, is that figure and is shown as-is. When no fiat string was stored, the fiat beside the bitcoin is the current spot in the visitor's currency. Bitcoin stands alone only when that spot is not available yet. A repayment due box whose payable loans were all defined in one fiat currency shows that currency alone. **Send** on that box still shows the currency together with the bitcoin being paid. A shop payment opened for an amount typed in bitcoin shows only bitcoin, even when the spot is available. The minted fallback for that amount still shows the current spot beside the bitcoin, and that spot is not stored. A till charge on that pay link still shows the stored figure, or the current spot when none was stored.
+Every place that shows a bitcoin amount also shows one fiat figure. A stored string for the visitor's currency, or the currency that was typed, is that figure and is shown as-is. When no fiat string was stored, the fiat beside the bitcoin is the current spot in the visitor's currency. Bitcoin stands alone only when that spot is not available yet. A repayment due box whose payable loans were all defined in one fiat currency shows that currency alone. **Send** on that box still shows the currency together with the bitcoin being paid. A shop payment opened for an amount typed in bitcoin shows only bitcoin, even when the spot is available. The minted fallback for that amount still shows the current spot beside the bitcoin, and that spot is not stored. A till charge on that pay link still shows the stored figure, or the current spot when none was stored. The **By month** bars on `/stats` show only the unit selected on their ₿ | fiat control (user decision 2026-11-11).
 
 Signed in, the code is the currency stored for that person. `useFiatPreference` is that code: a profile choice they already stored wins. Signed out, there is no profile currency, so the code is the one implied by the UI language (`defaultFiatForLocale`: German CHF, English USD, Spanish EUR, Filipino PHP).
 
@@ -963,7 +963,7 @@ still passes, the pixels moved only by rendering noise, and the check fails
 and names the file to restore (`git checkout <base> -- <file>`). A baseline
 for a new screen or variant is not compared. In a pull request run the base
 is the base commit the CI merge was built on; locally it is the merge base
-with `origin/staging`, or `SCREENSHOT_BASE` when set. Regenerate with
+with `origin/develop`, or `SCREENSHOT_BASE` when set. Regenerate with
 `npm run e2e:update-snapshots`, which rewrites only shots that no longer
 match, never with `--update-snapshots=all` and never by copying every CI
 `-actual.png`.
@@ -1273,6 +1273,12 @@ only for a signed-in member and both through same-origin proxies:
 A payment that did not go out, and a wallet that did not open, are also sent
 to error reporting (`Payment failed`, one issue per stage and reason, and
 `Wallet did not open`, one per reason), errors-only like every other report.
+A failed read or safe update of the SDK user settings after a connection is
+sent as `Wallet settings not updated`, one issue per fixed stage (`read`,
+`private_mode`, or `viewer`). It carries only that stage and the same fixed
+error name, error code, and cause-kind classification used by wallet-open
+failures. It never carries the viewer key, wallet identity, address, SDK error
+text, or thrown value.
 A wallet that did not open is opened again automatically, in the same page:
 a failed download of the wallet code is downloaded again, and the download
 itself is not cut off by the connect deadline. Only the first

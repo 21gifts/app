@@ -79,6 +79,21 @@ Should not appear without a screen path.
       expect((description ?? '').trim().length).toBeGreaterThan(0);
     }
 
+    const variantsPath = path.join(process.cwd(), 'scripts', 'screen-variants.mjs');
+    const variantsSource = fs.readFileSync(variantsPath, 'utf8');
+    const registeredIds = [...variantsSource.matchAll(/route: '([^']+)',\n\s+id: '([^']+)',/g)]
+      .map((match) => {
+        const route = match[1];
+        const id = match[2];
+        return route === undefined || id === undefined ? null : `${route}:${id}`;
+      })
+      .filter((id): id is string => id !== null);
+    const catalogIds = new Set(catalog.map((row) => row.id));
+    expect(registeredIds.length).toBeGreaterThan(0);
+    for (const id of registeredIds) {
+      expect(catalogIds.has(id), `missing catalog row for ${id}`).toBe(true);
+    }
+
     expect(map.get('/welcome:pay-amount')).toMatch(/Amount CTA is Continue/);
     expect(map.get('/:mobile-nav')).toMatch(/hamburger|Menu button/i);
   });

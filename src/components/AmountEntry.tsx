@@ -35,10 +35,18 @@ export interface AmountEntryProps {
   onValueChange: (value: string) => void;
   /** Disables the input and refuses a unit change. */
   disabled?: boolean;
+  /** Keeps this field in one unit and omits the unit switch. */
+  fixedUnit?: AmountUnit;
   /** Native placeholder. */
   placeholder?: string;
   /** Extra classes on the outer wrapper. */
   className?: string;
+  /**
+   * Fiat code shown by the switch and used by the live counter. Omitted for
+   * the member's preferred fiat; fixed-currency loan inputs pass their loan
+   * currency so the typed figure stays in that currency.
+   */
+  fiatCode?: FiatCode;
   /**
    * When set, the field shows this many sats, is not editable, and the switch
    * is disabled. Used after an invoice is minted.
@@ -50,6 +58,8 @@ export interface AmountEntryProps {
    * stays in bitcoin.
    */
   rateDay: FiatRateDay | null;
+  /** Exact bitcoin counterpart for a fixed fiat draft supplied as a paired amount. */
+  counterSats?: number | null;
   /**
    * Unit the current `value` is written in, when that differs from the
    * account. The field keeps showing this unit until conversion succeeds.
@@ -149,13 +159,14 @@ function convertAmountDraft(
 
 /**
  * Bitcoin / fiat amount field with the gift switch and the other unit under it.
+ * A fixed-unit caller keeps the live counterpart but omits the switch.
  *
  * A signed-in unit is `account.amountUnit`; missing means bitcoin. Toggling
  * posts `/me/amount-unit` and writes the account back. With no session the
  * unit stays here, starts at bitcoin, and is not stored.
  *
  * @param props - Label, draft, rate, and optional locked sat amount.
- * @returns The labeled field, switch, and counter.
+ * @returns The labeled field, optional switch, and counter.
  */
 export function AmountEntry({
   id,
@@ -163,10 +174,13 @@ export function AmountEntry({
   value,
   onValueChange,
   disabled = false,
+  fixedUnit,
   placeholder,
   className,
+  fiatCode,
   lockedSats = null,
   rateDay,
+  counterSats = null,
   valueUnit,
   onUnitChange,
   layout = 'field',
@@ -176,6 +190,7 @@ export function AmountEntry({
 }: AmountEntryProps): ReactElement {
   const { t } = useTranslations();
   const { fiat } = useFiatPreference();
+  const entryFiat = fiatCode ?? fiat;
   const { numberFormat } = useNumberFormat();
   const decimal = separatorsFor(numberFormat).decimal;
   // A login still opening its wallet counts as signed out: the unit stays local.
@@ -184,15 +199,17 @@ export function AmountEntry({
   const [localUnit, setLocalUnit] = useState<AmountUnit>('btc');
   const rateRef = useRef(rateDay);
   rateRef.current = rateDay;
-  const fiatRef = useRef(fiat);
-  fiatRef.current = fiat;
+  const fiatRef = useRef(entryFiat);
+  fiatRef.current = entryFiat;
   const storedUnit: AmountUnit = account?.amountUnit ?? 'btc';
-  const fiatReady = fiatToSats(1, rateDay, fiat) !== null;
+  const fiatReady = fiatToSats(1, rateDay, entryFiat) !== null;
   const chosenUnit: AmountUnit = session === null ? localUnit : storedUnit;
-  const unit: AmountUnit = chosenUnit === 'fiat' && !fiatReady ? 'btc' : chosenUnit;
+  const unit: AmountUnit = fixedUnit ?? (chosenUnit === 'fiat' && !fiatReady ? 'btc' : chosenUnit);
   const locked = typeof lockedSats === 'number' && Number.isFinite(lockedSats);
-  const [shownUnit, setShownUnit] = useState<AmountUnit>(() =>
-    valueUnit === 'fiat' && !fiatReady && value.trim() === '' ? 'btc' : (valueUnit ?? unit),
+  const [shownUnit, setShownUnit] = useState<AmountUnit>(
+    () =>
+      fixedUnit ??
+      (valueUnit === 'fiat' && !fiatReady && value.trim() === '' ? 'btc' : (valueUnit ?? unit)),
   );
   const applied = useRef(shownUnit);
   const posting = useRef(false);
@@ -242,7 +259,7 @@ export function AmountEntry({
       return;
     }
     const from = applied.current;
-    const converted = draftForUnit(from, unit, value, rateDay, fiat);
+    const converted = draftForUnit(from, unit, value, rateDay, entryFiat);
     if (value.trim() !== '' && converted === '') {
       return;
     }
@@ -252,7 +269,7 @@ export function AmountEntry({
     if (converted !== value) {
       onValueChange(converted);
     }
-  }, [decimal, fiat, keypad, locked, onUnitChange, onValueChange, rateDay, unit, value]);
+  }, [decimal, entryFiat, keypad, locked, onUnitChange, onValueChange, rateDay, unit, value]);
 
   useEffect(() => {
     if (!keypad || disabled || locked) {
@@ -310,7 +327,7 @@ export function AmountEntry({
     }
     const previousDraft = value;
     const previousUnit = shownUnit;
-    const converted = draftForUnit(previousUnit, next, value, rateDay, fiat);
+    const converted = draftForUnit(previousUnit, next, value, rateDay, entryFiat);
     // A fiat draft that cannot be converted may still switch to bitcoin; it starts empty.
     if (value.trim() !== '' && converted === '' && next !== 'btc') {
       return;
@@ -356,38 +373,47 @@ export function AmountEntry({
   const entryUnit: AmountUnit = locked ? 'btc' : shownUnit;
   let counter: string | null = null;
   if (locked) {
-    const fiatAmount = satsToFiatAmount(lockedSats, rateDay, fiat);
+    const fiatAmount = satsToFiatAmount(lockedSats, rateDay, entryFiat);
     counter =
-      fiatAmount === null ? t('amount.noRate') : formatFiatDisplay(fiatAmount, fiat, numberFormat);
+      fiatAmount === null
+        ? t('amount.noRate')
+        : formatFiatDisplay(fiatAmount, entryFiat, numberFormat);
+  } else if (counterSats !== null) {
+    counter = formatBitcoin(counterSats, numberFormat);
   } else if (!fiatReady) {
     counter = t('amount.noRate');
   } else if (value.trim() !== '') {
-    const parsed = parseAmountDraft(entryUnit, value, rateDay, fiat);
+    const parsed = parseAmountDraft(entryUnit, value, rateDay, entryFiat);
     if (parsed.kind === 'sats') {
       counter =
         entryUnit === 'btc'
-          ? formatFiatDisplay(satsToFiatAmount(parsed.sats, rateDay, fiat), fiat, numberFormat)
+          ? formatFiatDisplay(
+              satsToFiatAmount(parsed.sats, rateDay, entryFiat),
+              entryFiat,
+              numberFormat,
+            )
           : formatBitcoin(parsed.sats, numberFormat);
     }
   }
   const extra = className === undefined || className === '' ? '' : ` ${className}`;
   const switchClass =
     `${layout === 'inline' ? 'shrink-0' : ''}${disabled || locked ? ' pointer-events-none opacity-50' : ''}`.trim();
-  const unitSwitch = (
-    <div className={switchClass === '' ? undefined : switchClass}>
-      <SegmentedControl
-        tone="gift"
-        shell="app"
-        value={entryUnit}
-        options={[
-          { value: 'btc', label: '\u20BF' },
-          { value: 'fiat', label: fiat, disabled: !fiatReady },
-        ]}
-        onChange={changeUnit}
-        ariaLabel={t('amount.unit')}
-      />
-    </div>
-  );
+  const unitSwitch =
+    fixedUnit === undefined ? (
+      <div className={switchClass === '' ? undefined : switchClass}>
+        <SegmentedControl
+          tone="gift"
+          shell="app"
+          value={entryUnit}
+          options={[
+            { value: 'btc', label: '\u20BF' },
+            { value: 'fiat', label: entryFiat, disabled: !fiatReady },
+          ]}
+          onChange={changeUnit}
+          ariaLabel={t('amount.unit')}
+        />
+      </div>
+    ) : null;
   const amountClass =
     layout === 'inline'
       ? 'h-12 min-w-0 flex-1 rounded-2xl border border-app-border-strong bg-app-card px-4 text-base tabular-nums lining-nums text-app-fg placeholder:text-app-subtle transition focus-visible:border-app-fg disabled:opacity-50'

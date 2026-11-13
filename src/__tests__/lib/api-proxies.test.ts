@@ -94,7 +94,9 @@ import {
   proxyMessagesPlacesGet,
   proxyWalletStatsGet,
   proxyMessagesInvoicePost,
+  proxyMessagesRepaymentClosePost,
   proxyMessagesRepaymentDuePost,
+  proxyMessagesRepaymentPost,
   proxyMessagesPhotoGet,
   proxyMessagesPhotoExtGet,
   proxyMessagesPost,
@@ -1271,6 +1273,31 @@ describe('api proxy wrappers', () => {
       'a/b',
     );
     expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/messages/a%2Fb/repayment/due');
+  });
+
+  it('proxyMessagesRepaymentClosePost hits POST /messages/:id/repayment/close', async () => {
+    const fetchMock = stubApi();
+    await proxyMessagesRepaymentClosePost(
+      new Request('http://localhost/messages/m1/repayment/close', { method: 'POST' }),
+      'a/b',
+    );
+    expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/messages/a%2Fb/repayment/close');
+  });
+
+  it('proxyMessagesRepaymentPost forwards a free-amount body to POST /messages/:id/repayment', async () => {
+    const fetchMock = stubApi();
+    await proxyMessagesRepaymentPost(
+      new Request('http://localhost/messages/m1/repayment', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: '{"amount":"21"}',
+      }),
+      'a/b',
+    );
+    expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/messages/a%2Fb/repayment');
+    expect(
+      new TextDecoder().decode((fetchMock.mock.calls[0]?.[1] as RequestInit).body as ArrayBuffer),
+    ).toBe('{"amount":"21"}');
   });
 
   it('proxyViewGet hits /view/:viewKey (encoded)', async () => {

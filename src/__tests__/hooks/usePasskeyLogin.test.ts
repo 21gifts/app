@@ -1,5 +1,7 @@
-import { act, cleanup, renderHook, waitFor } from '@testing-library/react';
+import { act, cleanup, fireEvent, renderHook, screen, waitFor } from '@testing-library/react';
+import { createElement } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { LoginCard } from '@/components/LoginCard';
 import {
   mnemonicFromPrfFirst,
   obtainPrfFirst,
@@ -14,6 +16,7 @@ import { usePasskeyLogin } from '@/hooks/usePasskeyLogin';
 import { settlePhraseDerivations } from '@/lib/wallet/wallet-phrase';
 import {
   AppOutdatedError,
+  fetchMe,
   finishPasskeyAuthentication,
   finishPasskeyRegistration,
   LoginsClosedError,
@@ -28,6 +31,8 @@ import { isInAppBrowser } from '@/lib/in-app-browser';
 import { useAuthStore } from '@/stores/auth-store';
 import { logInteraction } from '@/lib/interaction-log';
 import { traceWallet } from '@/lib/sentry';
+import type { Account } from '@/lib/api-types';
+import { renderWithLocale } from '@/__tests__/render-with-locale';
 
 vi.mock('@/lib/api', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@/lib/api')>();
@@ -37,6 +42,7 @@ vi.mock('@/lib/api', async (importOriginal) => {
     finishPasskeyRegistration: vi.fn(),
     startPasskeyAuthentication: vi.fn(),
     finishPasskeyAuthentication: vi.fn(),
+    fetchMe: vi.fn(),
   };
 });
 
@@ -155,6 +161,7 @@ beforeEach(() => {
   vi.mocked(finishPasskeyRegistration).mockReset().mockResolvedValue({ token: 'tok', account });
   vi.mocked(startPasskeyAuthentication).mockReset().mockResolvedValue(begin);
   vi.mocked(finishPasskeyAuthentication).mockReset().mockResolvedValue({ token: 'tok', account });
+  vi.mocked(fetchMe).mockReset().mockResolvedValue(account);
   vi.mocked(obtainPrfFirst).mockReset().mockResolvedValue(new Uint8Array(32).fill(7));
   vi.mocked(prfEvalFirstSalt).mockReset().mockResolvedValue(new Uint8Array(32).fill(1));
   vi.mocked(readPrfFirst).mockReset().mockReturnValue(undefined);
@@ -1268,6 +1275,7 @@ describe('usePasskeyLogin', () => {
     });
     expect(result.current.status).toBe('idle');
     expect(useAuthStore.getState().session).toBe('tok');
+    expect(fetchMe).toHaveBeenCalledWith('tok');
     expect(finishPasskeyRegistration).toHaveBeenCalled();
     expect(logInteraction).toHaveBeenCalledWith('signup_completed');
     expect(logInteraction).not.toHaveBeenCalledWith('login');
@@ -1276,6 +1284,70 @@ describe('usePasskeyLogin', () => {
       CredentialCreationOptions | undefined;
     expect(createArg?.publicKey?.extensions).toHaveProperty('prf.eval.first');
     expect(vi.mocked(startPasskeyRegistration).mock.calls[0]?.[0]).toBeUndefined();
+    vi.unstubAllGlobals();
+  });
+
+  it('keeps a name save while the registration owner refresh is slow', async () => {
+    let resolveMe!: (next: Account | null) => void;
+    vi.mocked(fetchMe).mockReturnValueOnce(
+      new Promise<Account | null>((resolve) => {
+        resolveMe = resolve;
+      }),
+    );
+    const cred = { id: 'cred', type: 'public-key' };
+    vi.stubGlobal('navigator', {
+      ...navigator,
+      credentials: { create: vi.fn().mockResolvedValue(cred), get: vi.fn() },
+    });
+    const { result } = renderHook(() => usePasskeyLogin());
+    await act(async () => {
+      result.current.register();
+      result.current.submitName('Ada');
+    });
+
+    const saved = {
+      ...account,
+      name: 'Ada Lovelace',
+      setup: 'username' as const,
+      funding: {
+        status: 'pending' as const,
+        trialUtcDate: null,
+        admittedAt: null,
+        reviewedByName: null,
+      },
+    };
+    act(() => {
+      useAuthStore.getState().setAccount(saved);
+    });
+    const viewerPublicKey = `03${'c'.repeat(64)}`;
+    await act(async () => {
+      resolveMe({
+        ...account,
+        name: null,
+        setup: 'name',
+        walletViewerPublicKey: viewerPublicKey,
+        grantPayoutToday: { state: 'paid', reason: 'welcome' },
+        funding: {
+          status: 'none',
+          trialUtcDate: null,
+          admittedAt: null,
+          reviewedByName: null,
+          payoutToday: { state: 'blocked', reason: 'admission' },
+          shopPaymentDue: false,
+        },
+      });
+    });
+
+    expect(useAuthStore.getState().account).toEqual({
+      ...saved,
+      walletViewerPublicKey: viewerPublicKey,
+      grantPayoutToday: { state: 'paid', reason: 'welcome' },
+      funding: {
+        ...saved.funding,
+        payoutToday: { state: 'blocked', reason: 'admission' },
+        shopPaymentDue: false,
+      },
+    });
     vi.unstubAllGlobals();
   });
 
@@ -1394,6 +1466,11 @@ describe('usePasskeyLogin', () => {
   });
 
   it('authenticates with a passkey', async () => {
+    const viewerPublicKey = `03${'b'.repeat(64)}`;
+    vi.mocked(fetchMe).mockResolvedValueOnce({
+      ...account,
+      walletViewerPublicKey: viewerPublicKey,
+    });
     const cred = { id: 'cred', type: 'public-key' };
     vi.stubGlobal('navigator', {
       ...navigator,
@@ -1404,7 +1481,118 @@ describe('usePasskeyLogin', () => {
       result.current.authenticate();
     });
     expect(useAuthStore.getState().account?.id).toBe('acc_1');
+    await waitFor(() => {
+      expect(useAuthStore.getState().account?.walletViewerPublicKey).toBe(viewerPublicKey);
+    });
+    expect(fetchMe).toHaveBeenCalledWith('tok');
     expect(rememberSessionPhrase).not.toHaveBeenCalled();
+    vi.unstubAllGlobals();
+  });
+
+  it('keeps the owner refresh after cancel ends the completed passkey run', async () => {
+    let resolveMe!: (next: Account | null) => void;
+    vi.mocked(fetchMe).mockReturnValueOnce(
+      new Promise<Account | null>((resolve) => {
+        resolveMe = resolve;
+      }),
+    );
+    const cred = { id: 'cred', type: 'public-key' };
+    vi.stubGlobal('navigator', {
+      ...navigator,
+      credentials: { create: vi.fn(), get: vi.fn().mockResolvedValue(cred) },
+    });
+    const { result } = renderHook(() => usePasskeyLogin());
+    await act(async () => {
+      result.current.authenticate();
+    });
+
+    act(() => {
+      result.current.cancel();
+    });
+    const viewerPublicKey = `03${'c'.repeat(64)}`;
+    await act(async () => {
+      resolveMe({ ...account, walletViewerPublicKey: viewerPublicKey });
+    });
+
+    expect(useAuthStore.getState().account?.walletViewerPublicKey).toBe(viewerPublicKey);
+    vi.unstubAllGlobals();
+  });
+
+  it('keeps the owner refresh after LoginCard unmounts', async () => {
+    let resolveMe!: (next: Account | null) => void;
+    vi.mocked(fetchMe).mockReturnValueOnce(
+      new Promise<Account | null>((resolve) => {
+        resolveMe = resolve;
+      }),
+    );
+    const cred = { id: 'cred', type: 'public-key' };
+    vi.stubGlobal('navigator', {
+      ...navigator,
+      credentials: { create: vi.fn(), get: vi.fn().mockResolvedValue(cred) },
+    });
+    const view = renderWithLocale(createElement(LoginCard));
+    fireEvent.click(screen.getByRole('button', { name: 'Log in' }));
+    await waitFor(() => {
+      expect(fetchMe).toHaveBeenCalledWith('tok');
+    });
+
+    view.unmount();
+    const viewerPublicKey = `02${'d'.repeat(64)}`;
+    await act(async () => {
+      resolveMe({ ...account, walletViewerPublicKey: viewerPublicKey });
+    });
+
+    expect(useAuthStore.getState().account?.walletViewerPublicKey).toBe(viewerPublicKey);
+    vi.unstubAllGlobals();
+  });
+
+  it('keeps the passkey account when GET /me has no account or fails', async () => {
+    vi.mocked(fetchMe).mockResolvedValueOnce(null).mockRejectedValueOnce(new Error('offline'));
+    const cred = { id: 'cred', type: 'public-key' };
+    vi.stubGlobal('navigator', {
+      ...navigator,
+      credentials: { create: vi.fn(), get: vi.fn().mockResolvedValue(cred) },
+    });
+    const { result } = renderHook(() => usePasskeyLogin());
+
+    await act(async () => {
+      result.current.authenticate();
+    });
+    expect(useAuthStore.getState()).toMatchObject({ session: 'tok', account });
+
+    await act(async () => {
+      result.current.authenticate();
+    });
+    expect(fetchMe).toHaveBeenCalledTimes(2);
+    expect(useAuthStore.getState()).toMatchObject({ session: 'tok', account });
+    vi.unstubAllGlobals();
+  });
+
+  it('does not let a late GET /me response replace a newer login', async () => {
+    let resolveMe!: (next: Account | null) => void;
+    vi.mocked(fetchMe).mockReturnValueOnce(
+      new Promise<Account | null>((resolve) => {
+        resolveMe = resolve;
+      }),
+    );
+    const cred = { id: 'cred', type: 'public-key' };
+    vi.stubGlobal('navigator', {
+      ...navigator,
+      credentials: { create: vi.fn(), get: vi.fn().mockResolvedValue(cred) },
+    });
+    const { result } = renderHook(() => usePasskeyLogin());
+    await act(async () => {
+      result.current.authenticate();
+    });
+
+    const newer = { ...account, id: 'acc_2', name: 'Grace' };
+    act(() => {
+      useAuthStore.getState().setAuth('new-token', newer);
+    });
+    await act(async () => {
+      resolveMe({ ...account, name: 'Late Ada' });
+    });
+    expect(useAuthStore.getState()).toMatchObject({ session: 'new-token', account: newer });
     vi.unstubAllGlobals();
   });
 

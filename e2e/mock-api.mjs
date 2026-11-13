@@ -17,7 +17,7 @@ const byToken = new Map();
 const byPasskey = new Map();
 /** @type {Map<string, object>} */
 const byPasskeyCredential = new Map();
-/** @type {Array<{ id: string, accountId?: string, name: string, text: string, createdAt: string, sats: number, payable: boolean, hasPhoto: boolean, role: string, deletedAt?: string, inReplyTo?: string, parent?: string }>} */
+/** @type {Array<{ id: string, accountId?: string, name: string, text: string, createdAt: string, sats: number, payable: boolean, hasPhoto: boolean, role: string, goalSats?: number, goalRepayable?: true, goalClosedAt?: string, deletedAt?: string, inReplyTo?: string, parent?: string }>} */
 const forumMessages = [];
 /** @type {Array<{ id: string, name: string, text: string, createdAt: string }>} */
 const contactMessages = [];
@@ -37,6 +37,80 @@ const walletReports = new Map();
 const interactionEvents = new Map();
 /** Share boxes: box id → `{ accountId, ciphertext, createdAt, updatedAt }` (`/me/held-shares`). */
 const heldShareBoxes = new Map();
+
+/**
+ * Fixed mock fiat rate for every fiat currency: 100,000 currency units per BTC.
+ * Therefore one cent is exactly 10 sats and conversion stays integer-only.
+ */
+const MOCK_FIAT_SATS_PER_CENT = 10n;
+
+/** Mutable, explicitly known repayment fixtures used by the loan endpoint tests. */
+const repaymentLoans = new Map([
+  [
+    'loan-a',
+    {
+      currency: 'BTC',
+      fundedAt: '2026-09-26T10:00:00.000Z',
+      closedAt: '2026-09-26T10:00:00.000Z',
+      collectedSats: 30_000,
+      collectedAmount: null,
+      maxSats: 19_000,
+      maxAmount: null,
+    },
+  ],
+  [
+    'loan-b',
+    {
+      currency: 'PHP',
+      fundedAt: '2026-09-26T10:00:00.000Z',
+      closedAt: '2026-09-26T10:00:00.000Z',
+      collectedSats: 300_000,
+      collectedAmount: '300.00',
+      maxSats: 180_000,
+      maxAmount: '180.00',
+    },
+  ],
+  [
+    'loan-collecting',
+    {
+      currency: 'BTC',
+      fundedAt: null,
+      closedAt: null,
+      collectedSats: 8_000,
+      collectedAmount: null,
+      maxSats: 8_000,
+      maxAmount: null,
+    },
+  ],
+  [
+    'loan-closed-partial',
+    {
+      currency: 'BTC',
+      fundedAt: null,
+      closedAt: '2026-10-03T10:00:00.000Z',
+      collectedSats: 8_000,
+      collectedAmount: null,
+      maxSats: 7_900,
+      maxAmount: null,
+    },
+  ],
+]);
+
+/** Keep a public credit fixture's authoritative close stamp in step with its repayment fixture. */
+function syncForumLoanClosedAt(messageId, closedAt) {
+  if (closedAt === null) return;
+  const message = forumMessages.find((row) => row.id === messageId && row.goalRepayable === true);
+  if (message !== undefined) {
+    message.goalClosedAt = closedAt;
+  }
+}
+
+/** @param {string} text @returns {bigint | null} positive decimal cents, without floats. */
+function mockFiatCents(text) {
+  const match = /^(\d+)(?:[.,](\d{1,2}))?$/.exec(text);
+  if (match === null) return null;
+  return BigInt(match[1]) * 100n + BigInt((match[2] ?? '').padEnd(2, '0') || '0');
+}
 
 /** Most boxes one account keeps, as the api allows. */
 const HELD_SHARES_MAX = 50;
@@ -1139,6 +1213,60 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
+  const repaymentReadMatch = pathName.match(/^\/messages\/([^/]+)\/repayment$/);
+  if (repaymentReadMatch && method === 'GET') {
+    const messageId = decodeURIComponent(repaymentReadMatch[1]);
+    const loan = repaymentLoans.get(messageId);
+    if (loan === undefined) {
+      json(res, 404, { error: 'Not found' });
+      return;
+    }
+    const partial = messageId === 'loan-closed-partial';
+    json(res, 200, {
+      currency: loan.currency,
+      fundedAt: loan.fundedAt,
+      closedAt: loan.closedAt,
+      termDays: partial ? 16 : 30,
+      daysDue: partial ? 1 : 0,
+      daysPaid: 0,
+      waitingShares: 0,
+      unassignedSats: 0,
+      givers: [
+        {
+          accountId: 'acc_repayment_fixture',
+          name: 'Repayment fixture',
+          username: null,
+          givenSats: loan.collectedSats,
+          givenAmount: loan.collectedAmount,
+          canReceive: true,
+        },
+      ],
+      repayments: partial
+        ? [
+            {
+              dayIndex: 0,
+              dueOn: '2026-10-07',
+              accountId: 'acc_repayment_fixture',
+              name: 'Repayment fixture',
+              username: null,
+              amount: null,
+              sats: 500,
+              paidSats: 100,
+              paidAmount: null,
+              dueSats: 400,
+              status: 'due',
+              waiting: false,
+              via: 'lightning',
+            },
+          ]
+        : [],
+      next: partial
+        ? { dayIndex: 0, sats: 400, recipientAccountId: 'acc_repayment_fixture' }
+        : null,
+    });
+    return;
+  }
+
   const repaymentDueMatch = pathName.match(/^\/messages\/([^/]+)\/repayment\/due$/);
   if (repaymentDueMatch && method === 'POST') {
     const token = bearer(req);
@@ -1147,7 +1275,39 @@ const server = http.createServer(async (req, res) => {
       json(res, 401, { error: 'Unauthorized' });
       return;
     }
+    const messageId = decodeURIComponent(repaymentDueMatch[1]);
+    if (!repaymentLoans.has(messageId)) {
+      json(res, 404, { error: 'Not found' });
+      return;
+    }
     json(res, 200, { bills: [], waiting: [] });
+    return;
+  }
+
+  const repaymentCloseMatch = pathName.match(/^\/messages\/([^/]+)\/repayment\/close$/);
+  if (repaymentCloseMatch && method === 'POST') {
+    const token = bearer(req);
+    const account = token === null ? undefined : byToken.get(token);
+    if (!account) {
+      json(res, 401, { error: 'Unauthorized' });
+      return;
+    }
+    const messageId = decodeURIComponent(repaymentCloseMatch[1]);
+    const loan = repaymentLoans.get(messageId);
+    if (loan === undefined) {
+      json(res, 404, { error: 'Not found' });
+      return;
+    }
+    if (loan.closedAt === null) {
+      loan.closedAt = new Date().toISOString();
+    }
+    syncForumLoanClosedAt(messageId, loan.closedAt);
+    json(res, 200, {
+      fundedAt: loan.fundedAt,
+      closedAt: loan.closedAt,
+      collectedSats: loan.collectedSats,
+      collectedAmount: loan.collectedAmount,
+    });
     return;
   }
 
@@ -1159,7 +1319,68 @@ const server = http.createServer(async (req, res) => {
       json(res, 401, { error: 'Unauthorized' });
       return;
     }
-    json(res, 200, { pr: 'lnbc1', amountSats: 21 });
+    if (rawBody === '') {
+      json(res, 200, { pr: 'lnbc1', amountSats: 21 });
+      return;
+    }
+    const messageId = decodeURIComponent(repaymentMatch[1]);
+    const loan = repaymentLoans.get(messageId);
+    if (loan === undefined) {
+      json(res, 404, { error: 'Not found' });
+      return;
+    }
+    let parsed;
+    try {
+      parsed = JSON.parse(rawBody);
+    } catch {
+      json(res, 400, { code: 'invalid_amount' });
+      return;
+    }
+    const amount = typeof parsed?.amount === 'string' ? parsed.amount.trim() : '';
+    const units =
+      loan.currency === 'BTC'
+        ? /^\d+$/.test(amount)
+          ? BigInt(amount)
+          : null
+        : mockFiatCents(amount);
+    const maxUnits =
+      loan.currency === 'BTC'
+        ? BigInt(loan.maxSats ?? 0)
+        : (mockFiatCents(loan.maxAmount ?? '') ?? 0n);
+    if (units === null || units <= 0n) {
+      json(res, 400, { code: 'invalid_amount' });
+      return;
+    }
+    if (units > maxUnits) {
+      json(res, 400, {
+        code: 'amount_too_high',
+        maxSats: loan.maxSats,
+        maxAmount: loan.maxAmount,
+      });
+      return;
+    }
+    if (loan.fundedAt === null && loan.closedAt === null) {
+      loan.closedAt = new Date().toISOString();
+    }
+    syncForumLoanClosedAt(messageId, loan.closedAt);
+    const amountSats = Number(loan.currency === 'BTC' ? units : units * MOCK_FIAT_SATS_PER_CENT);
+    json(res, 200, {
+      amountSats,
+      amount: loan.currency === 'BTC' ? null : amount.replace(',', '.'),
+      bills: [
+        {
+          dayIndex: 0,
+          recipientAccountId: 'acc_repayment_fixture',
+          name: 'Repayment fixture',
+          username: null,
+          amountSats,
+          amount: loan.currency === 'BTC' ? null : amount.replace(',', '.'),
+          pr: `lnbc${amountSats}nprepay`,
+          sparkInvoice: `spark-${messageId}-${amountSats}`,
+        },
+      ],
+      waiting: [],
+    });
     return;
   }
 
@@ -1176,6 +1397,10 @@ const server = http.createServer(async (req, res) => {
       (invoiceMatch[1] === COMPOSE_TARGET.id ? COMPOSE_TARGET : undefined);
     if (row === undefined) {
       json(res, 404, { error: 'Not found' });
+      return;
+    }
+    if (row.goalRepayable === true && typeof row.goalClosedAt === 'string') {
+      json(res, 409, { code: 'credit_closed' });
       return;
     }
     if (row.payable !== true) {
@@ -2754,7 +2979,6 @@ const server = http.createServer(async (req, res) => {
       firstPaidAt: null,
       lastPaidAt: null,
       spendOverTime: [],
-      byRecipient: [],
       byMonth: [],
       fx: {
         quote: 'BTC-USD',

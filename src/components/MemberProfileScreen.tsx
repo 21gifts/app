@@ -26,6 +26,7 @@ import { ShopStickerOverlay } from '@/components/ShopStickerOverlay';
 import { Button, Card } from '@/components/ui';
 import {
   CannotReceiveError,
+  CreditClosedError,
   fetchAboutMePhoto,
   fetchComposeTarget,
   fetchMemberPosts,
@@ -1121,6 +1122,12 @@ export function MemberProfileScreen({
       if (generation !== payPollGeneration.current) {
         return;
       }
+      if (err instanceof CreditClosedError) {
+        setPayMessageId(parentId);
+        setPayHost('card');
+        setPayError('creditClosed');
+        return;
+      }
       if (err instanceof WalletRequiredError) {
         setOverlayRequirement('wallet');
         return;
@@ -1295,6 +1302,10 @@ export function MemberProfileScreen({
           }
         } catch (err) {
           if (generation !== payPollGeneration.current) {
+            return null;
+          }
+          if (err instanceof CreditClosedError) {
+            setPayError('creditClosed');
             return null;
           }
           if (err instanceof MissingRequirementsError) {

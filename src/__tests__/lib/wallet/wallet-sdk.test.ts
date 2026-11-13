@@ -15,6 +15,8 @@ const mocks = vi.hoisted(() => {
   return {
     callOrder,
     getInfo: vi.fn(),
+    getUserSettings: vi.fn(),
+    updateUserSettings: vi.fn(),
     addEventListener: vi.fn(),
     registerLightningAddress: vi.fn(),
     listPayments: vi.fn(),
@@ -59,6 +61,12 @@ beforeEach(async () => {
     identityPubkey: IDENTITY,
     tokenBalances: new Map(),
   });
+  mocks.getUserSettings.mockReset().mockResolvedValue({
+    sparkPrivateModeEnabled: false,
+    sparkMasterIdentityPublicKey: undefined,
+    unrelated: 'not exposed',
+  });
+  mocks.updateUserSettings.mockReset().mockResolvedValue(undefined);
   mocks.addEventListener.mockReset().mockResolvedValue('listener-1');
   mocks.disconnect.mockReset().mockResolvedValue(undefined);
   mocks.registerLightningAddress.mockReset().mockResolvedValue({
@@ -69,6 +77,8 @@ beforeEach(async () => {
   mocks.checkLightningAddressAvailable.mockReset().mockResolvedValue(true);
   mocks.connect.mockReset().mockResolvedValue({
     getInfo: mocks.getInfo,
+    getUserSettings: mocks.getUserSettings,
+    updateUserSettings: mocks.updateUserSettings,
     addEventListener: mocks.addEventListener,
     registerLightningAddress: mocks.registerLightningAddress,
     listPayments: mocks.listPayments,
@@ -119,6 +129,37 @@ describe('loadWalletSdk', () => {
     await connection.getInfo({ ensureSynced: true });
     await connection.getInfo({ ensureSynced: false });
     expect(mocks.getInfo.mock.calls).toEqual([[{ ensureSynced: true }], [{}]]);
+  });
+
+  it('getUserSettings exposes only private mode and the viewer identity', async () => {
+    const sdk = await loadWalletSdk();
+    const connection = await sdk.connect(MNEMONIC, API_KEY, HOST);
+    await expect(connection.getUserSettings()).resolves.toEqual({
+      sparkPrivateModeEnabled: false,
+      sparkMasterIdentityPublicKey: null,
+    });
+    expect(mocks.getUserSettings).toHaveBeenCalledWith();
+    mocks.getUserSettings.mockResolvedValueOnce({
+      sparkPrivateModeEnabled: true,
+      sparkMasterIdentityPublicKey: IDENTITY,
+    });
+    await expect(connection.getUserSettings()).resolves.toEqual({
+      sparkPrivateModeEnabled: true,
+      sparkMasterIdentityPublicKey: IDENTITY,
+    });
+  });
+
+  it('updateUserSettings forwards safe private-mode and viewer changes', async () => {
+    const sdk = await loadWalletSdk();
+    const connection = await sdk.connect(MNEMONIC, API_KEY, HOST);
+    await connection.updateUserSettings({ sparkPrivateModeEnabled: true });
+    await connection.updateUserSettings({
+      sparkMasterIdentityPublicKey: { type: 'set', publicKey: IDENTITY },
+    });
+    expect(mocks.updateUserSettings.mock.calls).toEqual([
+      [{ sparkPrivateModeEnabled: true }],
+      [{ sparkMasterIdentityPublicKey: { type: 'set', publicKey: IDENTITY } }],
+    ]);
   });
 
   it('addEventListener forwards events and returns the SDK id', async () => {

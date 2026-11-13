@@ -25,6 +25,16 @@ export const ownerFundingSchema = z.object({
   reviewedByName: z.string().nullable(),
   /** True when the owner should see the stopped-daily-payout notice. Optional so older payloads still parse. */
   dailyPayoutStoppedNotice: z.boolean().optional(),
+  /** Whether a qualifying shop purchase is still missing, or `null` when the read failed. */
+  shopPaymentDue: z.boolean().nullable().optional(),
+  /** Today's one payout state and, when present, its single reason. */
+  payoutToday: z
+    .object({
+      state: z.enum(['paid', 'due', 'blocked']),
+      reason: z.string().nullable(),
+    })
+    .nullable()
+    .optional(),
 });
 
 /**
@@ -105,6 +115,11 @@ export const accountSchema = z.object({
    */
   sparkPubkey: z.string().nullable().optional(),
   /**
+   * Public identity key that 21.gifts' read-only Spark viewer uses. The wallet
+   * validates its exact 66-character lower-case hex shape before using it.
+   */
+  walletViewerPublicKey: z.string().nullable().optional(),
+  /**
    * True once the in-app wallet registered the account's address. The wallet
    * and the username are then fixed. Optional so older api bodies still
    * parse; the setup step only opens when this is strictly `false`.
@@ -171,6 +186,19 @@ export const accountSchema = z.object({
    * Missing or `undefined` is the same as `null` (no funding object).
    */
   funding: ownerFundingSchema.nullable().optional(),
+  /**
+   * Compatibility location for today's payout on basis accounts. Funding's
+   * `payoutToday` is the only source whenever `funding` is an object, including
+   * when `payoutToday` is null; this field is read only when `funding` is null
+   * or absent.
+   */
+  grantPayoutToday: z
+    .object({
+      state: z.enum(['paid', 'due', 'blocked']),
+      reason: z.string().nullable(),
+    })
+    .nullable()
+    .optional(),
 });
 
 /**
@@ -361,20 +389,6 @@ export const spendDaySchema = z.object({
 });
 
 /**
- * Per-recipient totals from `GET /gifts/stats`.
- */
-export const recipientSpendSchema = z.object({
-  recipient: z.string(),
-  giftCount: z.number().int().nonnegative(),
-  sats: z.number().int().nonnegative(),
-  btc: btcAmountStringSchema,
-  usd: usdAmountStringSchema,
-  chf: fiatAmountSchema,
-  eur: fiatAmountSchema,
-  php: fiatAmountSchema,
-});
-
-/**
  * Per-month totals from `GET /gifts/stats`.
  */
 export const monthSpendSchema = z.object({
@@ -403,7 +417,6 @@ export const giftStatsSchema = z.object({
   firstPaidAt: z.string().nullable(),
   lastPaidAt: z.string().nullable(),
   spendOverTime: z.array(spendDaySchema),
-  byRecipient: z.array(recipientSpendSchema),
   byMonth: z.array(monthSpendSchema),
   fx: giftStatsFxSchema,
 });
@@ -932,7 +945,9 @@ export type ForumPlaceRow = z.infer<typeof forumPlaceRowSchema>;
  * the typed amount string). Optional so an older payload still parses.
  * Absent `goalCurrency` with `goalSats` is a legacy Ask.
  * `goalRepayable` is `true` on a credit Ask; omitted on a donation and on
- * older payloads. `false` is not accepted.
+ * older payloads. `false` is not accepted. `goalClosedAt` is the ISO time a
+ * credit stopped collecting; it is omitted while the credit is open and on
+ * older payloads.
  * `goalAmountUsd` / `goalAmountChf` / `goalAmountEur` / `goalAmountPhp` are
  * frozen two-decimal snapshots of that goal, optional, each a string or null.
  * `amountUsd` / `amountChf` / `amountEur` / `amountPhp` are the fiat stored for
@@ -971,6 +986,7 @@ export const forumMessageSchema = z
     goalCurrency: z.enum(FORUM_GOAL_CURRENCIES).optional(),
     goalAmount: z.string().regex(FORUM_GOAL_AMOUNT_RE).optional(),
     goalRepayable: z.literal(true).optional(),
+    goalClosedAt: z.string().datetime({ offset: true }).optional(),
     goalTermDays: z.number().int().min(1).max(3650).optional(),
     goalAmountUsd: fiatAmountSchema.optional(),
     goalAmountChf: fiatAmountSchema.optional(),

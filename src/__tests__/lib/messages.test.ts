@@ -7,6 +7,12 @@ describe('getCatalog', () => {
     expect(getCatalog('en')['homeShops.otherShops']).toBe('Others');
   });
 
+  it('calls a Filipino forum note a nota in the daily payout instruction', () => {
+    expect(getCatalog('fil')['funding.payoutToday.mediaPost']).toBe(
+      'Kailangan kang mag-post ng kahit isang nota na may larawan ngayong araw.',
+    );
+  });
+
   it('keeps the same key set in every locale catalog', () => {
     const englishKeys = Object.keys(catalogs.en).sort();
     for (const locale of LOCALES) {

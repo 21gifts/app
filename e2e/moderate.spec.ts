@@ -331,7 +331,6 @@ async function stubModeratorGroupStipend(page: import('@playwright/test').Page):
             cumulativePhp: '280.00',
           },
         ],
-        byRecipient: [],
         byMonth: [],
         fx: {
           quote: 'BTC-USD',

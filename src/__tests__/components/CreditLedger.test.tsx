@@ -3,6 +3,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { CreditLedger } from '@/components/CreditLedger';
 import { ForumGoalBar } from '@/components/ForumGoalBar';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
+import { ledgerClosedPartial, ledgerClosedPartialFiat } from '../../../e2e/loan-fixtures';
 
 vi.mock('next/link', () => ({
   default: ({
@@ -25,13 +26,26 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 
-function ledger(body: unknown): void {
+function ledger(
+  body: unknown,
+  spotRates: Partial<Record<'USD' | 'CHF' | 'EUR' | 'PHP', string>> | null = null,
+): void {
   vi.stubGlobal(
     'fetch',
     vi.fn(async (input: RequestInfo) => {
       const url = String(input);
       if (url.includes('/gifts/stats')) {
         return new Response(JSON.stringify({ spendOverTime: [] }), { status: 200 });
+      }
+      if (url.includes('/fx/spot') && spotRates !== null) {
+        return new Response(
+          JSON.stringify({
+            asOf: '2026-11-01T00:00:00.000Z',
+            source: 'test',
+            rates: spotRates,
+          }),
+          { status: 200 },
+        );
       }
       return new Response(JSON.stringify(body), { status: 200 });
     }),
@@ -153,6 +167,196 @@ describe('CreditLedger', () => {
     expect(chart.querySelector('[data-testid="repayment-plan-debt"]')).toBeTruthy();
     expect(screen.getByText('Per day')).toBeTruthy();
     expect(screen.getByText('Still owed')).toBeTruthy();
+  });
+
+  it('shows partial rows, chart totals, and fiat figures from the remaining balance', async () => {
+    ledger({
+      ...ledgerClosedPartial,
+      repayments: [
+        ...ledgerClosedPartial.repayments,
+        {
+          ...ledgerClosedPartial.repayments[0]!,
+          dayIndex: 1,
+          dueOn: '2026-10-08',
+          sats: 40,
+          paidSats: 40,
+          dueSats: null,
+          status: 'paid' as const,
+        },
+      ],
+    });
+    renderWithLocale(<CreditLedger messageId="partial-btc" list="page" />);
+    await screen.findByText('Paid back');
+    expect(document.body.textContent).toContain('₿400');
+    expect(document.body.textContent).not.toContain('₿500');
+    expect(screen.getByText('₿40')).toBeTruthy();
+    expect(screen.getByRole('img').textContent).toContain('₿400');
+    cleanup();
+
+    ledger({
+      ...ledgerClosedPartialFiat,
+      repayments: [
+        ...ledgerClosedPartialFiat.repayments,
+        {
+          ...ledgerClosedPartialFiat.repayments[0]!,
+          dayIndex: 1,
+          dueOn: '2026-10-08',
+          amount: '1.00',
+          sats: 40,
+          paidSats: 40,
+          paidAmount: '1.00',
+          dueSats: null,
+          status: 'paid' as const,
+        },
+      ],
+    });
+    renderWithLocale(<CreditLedger messageId="partial-fiat" list="page" />);
+    await screen.findByText('Paid back');
+    expect(screen.getAllByText('₱10.00').length).toBeGreaterThan(0);
+    expect(screen.queryByText('₱12.50')).toBeNull();
+    expect(screen.getByText('₱1.00')).toBeTruthy();
+    expect(screen.queryByText('₱0.00')).toBeNull();
+    expect(screen.getByRole('img').textContent).toContain('₱10.00');
+  });
+
+  it('shows remaining sats for due and scheduled partial rows without dueSats', async () => {
+    const partial = {
+      ...btc.repayments[0]!,
+      sats: 500,
+      paidSats: 100,
+      paidAmount: null,
+      dueSats: null,
+    };
+    ledger({
+      ...btc,
+      repayments: [
+        partial,
+        {
+          ...partial,
+          dayIndex: 1,
+          dueOn: '2026-11-02',
+          status: 'scheduled' as const,
+        },
+      ],
+    });
+    renderWithLocale(<CreditLedger messageId="partial-without-due" list="page" />);
+    await screen.findByText('Paid back');
+    expect(screen.getAllByText('₿400').length).toBeGreaterThanOrEqual(2);
+    expect(screen.queryByText('₿500')).toBeNull();
+    expect(screen.getByRole('img').textContent).toContain('₿800');
+  });
+
+  it('shows no invented bitcoin remainder for an overpaid partial row', async () => {
+    ledger({
+      ...ledgerClosedPartial,
+      repayments: [
+        {
+          ...ledgerClosedPartial.repayments[0]!,
+          sats: 100,
+          paidSats: 101,
+          dueSats: 0,
+        },
+      ],
+    });
+    renderWithLocale(<CreditLedger messageId="partial-btc-overpaid" list="page" />);
+
+    const names = await screen.findAllByText('Bruno @bruno');
+    const dueRow = names
+      .map((name) => name.closest('li'))
+      .find((row) => row?.textContent?.includes('Due'));
+    expect(dueRow).toBeTruthy();
+    expect(dueRow?.textContent).not.toContain('₿');
+  });
+
+  it('falls back to remaining bitcoin when a partial fiat amount is missing or malformed', async () => {
+    const partial = ledgerClosedPartialFiat.repayments[0]!;
+    const omittedPaidAmount = {
+      ...partial,
+      accountId: 'acc_diego',
+      name: 'Diego',
+      username: 'diego',
+      amount: '2.50',
+      paidSats: 25,
+      dueSats: 100,
+    };
+    delete omittedPaidAmount.paidAmount;
+    ledger(
+      {
+        ...ledgerClosedPartialFiat,
+        repayments: [
+          { ...partial, paidAmount: null },
+          {
+            ...partial,
+            accountId: 'acc_cara',
+            name: 'Cara',
+            username: 'cara',
+            amount: '5.00',
+            paidSats: 0,
+            paidAmount: 'bad partial',
+            dueSats: 200,
+          },
+          omittedPaidAmount,
+        ],
+      },
+      { USD: '100000.00' },
+    );
+    renderWithLocale(<CreditLedger messageId="partial-fiat-fallback" list="page" />);
+    await screen.findByText('Cara @cara');
+    await waitFor(() => expect(document.body.textContent).toContain('$0.70'));
+    expect(document.body.textContent).toContain('₿400');
+    expect(document.body.textContent).toContain('₿200');
+    expect(document.body.textContent).toContain('₿100');
+    expect(document.body.textContent).not.toContain('₱12.50');
+    expect(document.body.textContent).not.toContain('₱5.00');
+    expect(document.body.textContent).not.toContain('₱2.50');
+    const chart = screen.getByRole('img');
+    expect(chart.textContent).toContain('₿700 · $0.70');
+    expect(chart.getAttribute('aria-label')).toContain('₿700 · $0.70');
+  });
+
+  it('falls back to remaining bitcoin when a partial fiat amount exceeds its total', async () => {
+    const partial = ledgerClosedPartialFiat.repayments[0]!;
+    ledger({
+      ...ledgerClosedPartialFiat,
+      repayments: [
+        {
+          ...partial,
+          amount: '1.00',
+          paidSats: 100,
+          paidAmount: '1.50',
+          dueSats: 400,
+        },
+      ],
+    });
+    renderWithLocale(<CreditLedger messageId="partial-fiat-overpaid" list="page" />);
+
+    expect((await screen.findAllByText('Bruno @bruno')).length).toBeGreaterThan(0);
+    expect(document.body.textContent).toContain('₿400');
+    expect(screen.queryByText('₱0.00')).toBeNull();
+  });
+
+  it('falls back to remaining bitcoin when paid fiat has no paid sats', async () => {
+    const partial = ledgerClosedPartialFiat.repayments[0]!;
+    ledger({
+      ...ledgerClosedPartialFiat,
+      repayments: [
+        {
+          ...partial,
+          paidSats: 0,
+          paidAmount: '2.50',
+          dueSats: 500,
+        },
+      ],
+    });
+    renderWithLocale(<CreditLedger messageId="partial-fiat-without-sats" list="page" />);
+
+    const names = await screen.findAllByText('Bruno @bruno');
+    const dueRow = names
+      .map((name) => name.closest('li'))
+      .find((row) => row?.textContent?.includes('Due'));
+    expect(dueRow).toBeTruthy();
+    expect(dueRow?.textContent).toContain('₿500');
+    expect(dueRow?.textContent).not.toContain('₱10.00');
   });
 
   it('marks a due line that waits for the giver wallet in muted type', async () => {
@@ -493,7 +697,7 @@ describe('CreditLedger', () => {
     expect(screen.queryByRole('img')).toBeNull();
   });
 
-  it('shows the spot beside the bitcoin chart total when no fiat was stored', async () => {
+  it('shows the spot beside the remaining chart total when a paid row has no paidSats', async () => {
     vi.stubGlobal(
       'fetch',
       vi.fn(async (input: RequestInfo) => {
@@ -513,9 +717,9 @@ describe('CreditLedger', () => {
     );
     renderWithLocale(<CreditLedger messageId="m1" />);
     const chart = await screen.findByRole('img', { name: /Nov 1/ });
-    expect(chart.textContent).toContain('₿21');
+    expect(chart.textContent).toContain('₿11');
     expect(chart.textContent).toContain('·');
-    expect(chart.textContent).toContain('$0.02');
+    expect(chart.textContent).toContain('$0.01');
   });
 
   it('keeps the feed ledger closed until the visitor asks', async () => {
@@ -578,7 +782,7 @@ describe('CreditLedger', () => {
     expect(screen.queryByText(/Sep 27/)).toBeNull();
   });
 
-  it('sums a fiat chart in the ask currency and ignores satoshis', async () => {
+  it('falls back to satoshis for a fiat chart without a stored paid amount', async () => {
     ledger({
       ...btc,
       currency: 'USD',
@@ -621,10 +825,44 @@ describe('CreditLedger', () => {
     renderWithLocale(<CreditLedger messageId="m1" />);
     const chart = await screen.findByRole('img', { name: /Day 1/ });
     const label = chart.getAttribute('aria-label') ?? '';
-    expect(label).toMatch(/\$1\.50 owed/);
-    expect(label).not.toMatch(/₿|\$5/);
+    expect(label).toMatch(/₿66 owed/);
+    expect(label).not.toMatch(/\$1\.50|\$5/);
     expect(label).toContain('2026');
     expect(label).not.toMatch(/\$5/);
+  });
+
+  it('keeps a due fiat remainder when only a paid row lacks an amount', async () => {
+    const partial = ledgerClosedPartialFiat.repayments[0]!;
+    ledger({
+      ...ledgerClosedPartialFiat,
+      repayments: [
+        {
+          ...partial,
+          amount: null,
+          paidSats: 500,
+          paidAmount: null,
+          dueSats: 0,
+          status: 'paid' as const,
+        },
+        {
+          ...partial,
+          dayIndex: 1,
+          dueOn: '2026-10-08',
+        },
+      ],
+    });
+    renderWithLocale(<CreditLedger messageId="paid-fiat-gap" list="page" />);
+
+    const names = await screen.findAllByText('Bruno @bruno');
+    const dueRow = names
+      .map((name) => name.closest('li'))
+      .find((row) => row?.textContent?.includes('Due'));
+    expect(dueRow).toBeTruthy();
+    expect(dueRow?.textContent).toContain('₱10.00');
+    expect(dueRow?.textContent).not.toContain('₿400');
+    const chart = screen.getByRole('img');
+    expect(chart.textContent).toContain('₱10.00');
+    expect(chart.getAttribute('aria-label')).toContain('₱10.00');
   });
 
   it('calls an open German plan a Darlehen', async () => {
@@ -641,7 +879,7 @@ describe('CreditLedger', () => {
       const onLedger = vi.fn();
       renderWithLocale(<CreditLedger messageId="m1" onLedger={onLedger} />);
       expect(await screen.findByText('Given')).toBeTruthy();
-      await waitFor(() => expect(onLedger).toHaveBeenCalled());
+      await vi.waitFor(() => expect(onLedger).toHaveBeenCalled());
       expect(
         onLedger.mock.calls
           .at(-1)?.[0]

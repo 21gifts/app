@@ -6,6 +6,7 @@ import { MOTION_SWAP_FADE_MS } from '@/lib/motion';
 import {
   agreeToRules,
   CannotReceiveError,
+  CreditClosedError,
   deleteMessage,
   fetchComposeTarget,
   NoteDeletedError,
@@ -77,6 +78,12 @@ vi.mock('@/lib/api', () => ({
     constructor() {
       super('cannot_receive');
       this.name = 'CannotReceiveError';
+    }
+  },
+  CreditClosedError: class CreditClosedError extends Error {
+    constructor() {
+      super('credit_closed');
+      this.name = 'CreditClosedError';
     }
   },
   WalletRequiredError: class WalletRequiredError extends Error {
@@ -494,6 +501,21 @@ describe('PublicMessageThread', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
     await waitFor(() => {
       expect(screen.getByRole('alert').textContent).toBe('This note was deleted.');
+    });
+  });
+
+  it('shows the closed-credit pay error when the invoice target stopped collecting', async () => {
+    vi.mocked(postMessageInvoice).mockRejectedValue(new CreditClosedError());
+    vi.mocked(fetchReplies).mockResolvedValue([payableNested]);
+    signIn();
+    renderThread();
+    await screen.findByPlaceholderText('Write a reaction');
+    await openNestedPaySheet();
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    await waitFor(() => {
+      expect(screen.getByRole('alert').textContent).toBe(
+        'This loan is no longer collecting and cannot receive more money.',
+      );
     });
   });
 
@@ -1011,6 +1033,18 @@ describe('PublicMessageThread', () => {
     });
   });
 
+  it('moves a compose-pay reply onto the card when the loan stopped collecting', async () => {
+    vi.mocked(postMessageInvoice).mockRejectedValue(new CreditClosedError());
+    signIn();
+    renderThread();
+    await screen.findByPlaceholderText('Write a reaction');
+    fireEvent.change(screen.getByLabelText('Your reaction'), { target: { value: 'thanks' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    expect((await screen.findByRole('alert')).textContent).toBe(
+      'This loan is no longer collecting and cannot receive more money.',
+    );
+  });
+
   it('keeps the generic request copy when the compose-target invoice is gone', async () => {
     vi.mocked(postMessageInvoice).mockRejectedValue(new NoteDeletedError());
     signIn();
@@ -1061,6 +1095,19 @@ describe('PublicMessageThread', () => {
     await waitFor(() => {
       expect(screen.getByRole('alert').textContent).toBe('This note was deleted.');
     });
+  });
+
+  it('moves an explicit paid reply onto the card when the loan stopped collecting', async () => {
+    vi.mocked(postMessageInvoice).mockRejectedValue(new CreditClosedError());
+    signIn();
+    renderThread();
+    await screen.findByPlaceholderText('Write a reaction');
+    fireEvent.change(screen.getByLabelText('Your reaction'), { target: { value: 'thanks' } });
+    fireEvent.change(replyAmountInput(), { target: { value: '5' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Post' }));
+    expect((await screen.findByRole('alert')).textContent).toBe(
+      'This loan is no longer collecting and cannot receive more money.',
+    );
   });
 
   it('maps a paid-reply invoice the author wallet cannot receive onto the author-wallet error', async () => {

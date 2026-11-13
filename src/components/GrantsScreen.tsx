@@ -1,11 +1,14 @@
 'use client';
 
+import Link from 'next/link';
 import { useEffect, useState, type ReactElement } from 'react';
 import { FundingStatusCard } from '@/components/FundingStatusCard';
 import { GrantPlacesPanel } from '@/components/GrantPlacesPanel';
 import { useTranslations } from '@/components/LocaleProvider';
 import { Button, ButtonLink, Card } from '@/components/ui';
 import { fetchFundingApplications } from '@/lib/api';
+import { requestForumCompose } from '@/lib/forum-feed';
+import { refreshOwnerAccount } from '@/lib/owner-account-refresh';
 import { canEditDailyPayoutRoster, roleAtLeast } from '@/lib/roles';
 import { useAuthStore } from '@/stores/auth-store';
 
@@ -39,6 +42,13 @@ export function GrantsScreen(): ReactElement | null {
   const [attempt, setAttempt] = useState(0);
 
   useEffect(() => {
+    if (session === null) {
+      return;
+    }
+    refreshOwnerAccount(session);
+  }, [session]);
+
+  useEffect(() => {
     if (session === null || !staff) {
       return;
     }
@@ -67,6 +77,76 @@ export function GrantsScreen(): ReactElement | null {
   if (session === null) {
     return null;
   }
+
+  const payoutToday =
+    account?.funding !== null && account?.funding !== undefined
+      ? (account.funding.payoutToday ?? null)
+      : (account?.grantPayoutToday ?? null);
+  let payoutKey:
+    | 'funding.payoutToday.paid'
+    | 'funding.payoutToday.welcome'
+    | 'funding.payoutToday.due'
+    | 'funding.payoutToday.paused'
+    | 'funding.payoutToday.verify'
+    | 'funding.payoutToday.admission'
+    | 'funding.payoutToday.admissionPending'
+    | 'funding.payoutToday.wallet'
+    | 'funding.payoutToday.recoveryShare'
+    | 'funding.payoutToday.shopPayment'
+    | 'funding.payoutToday.mediaPost'
+    | 'funding.payoutToday.unavailable' = 'funding.payoutToday.unavailable';
+  let payoutHref: string | null = null;
+  let opensComposer = false;
+  if (payoutToday?.state === 'paid' && payoutToday.reason === null) {
+    payoutKey = 'funding.payoutToday.paid';
+  } else if (payoutToday?.state === 'paid' && payoutToday.reason === 'welcome') {
+    payoutKey = 'funding.payoutToday.welcome';
+  } else if (payoutToday?.state === 'due' && payoutToday.reason === null) {
+    payoutKey = 'funding.payoutToday.due';
+  } else if (payoutToday?.state === 'due' && payoutToday.reason === 'payments_paused') {
+    payoutKey = 'funding.payoutToday.paused';
+  } else if (payoutToday?.state === 'blocked') {
+    if (payoutToday.reason === 'verify') {
+      payoutKey = 'funding.payoutToday.verify';
+      payoutHref = '/trust-chain';
+    } else if (payoutToday.reason === 'admission') {
+      if (account?.funding?.status === 'pending') {
+        payoutKey = 'funding.payoutToday.admissionPending';
+      } else {
+        payoutKey = 'funding.payoutToday.admission';
+        if (account?.funding?.status === 'none' || account?.funding?.status === 'rejected') {
+          payoutHref = '/grants/apply';
+        }
+      }
+    } else if (payoutToday.reason === 'wallet') {
+      payoutKey = 'funding.payoutToday.wallet';
+      payoutHref = '/wallet';
+    } else if (payoutToday.reason === 'recovery_share') {
+      payoutKey = 'funding.payoutToday.recoveryShare';
+      payoutHref = '/settings/social-recovery';
+    } else if (payoutToday.reason === 'shop_payment') {
+      payoutKey = 'funding.payoutToday.shopPayment';
+      payoutHref = '/shops';
+    } else if (payoutToday.reason === 'media_post') {
+      payoutKey = 'funding.payoutToday.mediaPost';
+      payoutHref = '/welcome';
+      opensComposer = true;
+    }
+  }
+
+  const payoutLine = t(payoutKey);
+  const payoutContent =
+    payoutHref === null ? (
+      payoutLine
+    ) : (
+      <Link
+        href={payoutHref}
+        className="text-app-fg underline underline-offset-2"
+        {...(opensComposer ? { onClick: requestForumCompose } : {})}
+      >
+        {payoutLine}
+      </Link>
+    );
 
   let queue: ReactElement | null = null;
   if (staff) {
@@ -105,6 +185,19 @@ export function GrantsScreen(): ReactElement | null {
   return (
     <Card surface={false}>
       <FundingStatusCard />
+      <div
+        role="group"
+        aria-labelledby="funding-payout-today-heading"
+        className="flex w-full flex-col gap-2 rounded-3xl border border-app-border-strong bg-app-card-muted p-4"
+      >
+        <h2
+          id="funding-payout-today-heading"
+          className="text-center text-base font-semibold text-app-fg"
+        >
+          {t('funding.payoutToday.heading')}
+        </h2>
+        <p className="text-center text-sm text-app-muted">{payoutContent}</p>
+      </div>
       <GrantPlacesPanel />
       {account !== null ? (
         <ButtonLink href="/grants/goals" variant="secondary" size="lg">
