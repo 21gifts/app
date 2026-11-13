@@ -187,39 +187,40 @@ test('Function: fetchFondPayments — the first page loads and another handle an
   await expect(page.getByRole('button', { name: 'Show more' })).toBeVisible();
 });
 
-test(
-  'Function: FondPaymentsError — a refused next page with 400 reloads the list from the first page',
-  async ({ page }) => {
-    let firstPageRequests = 0;
-    await fulfillSpot(page);
-    await page.route(`**/fonds/${FOND_USERNAME}/payments*`, async (route) => {
-      const before = new URL(route.request().url()).searchParams.get('before');
-      if (before !== null) {
-        await route.fulfill({
-          status: 400,
-          contentType: 'application/json',
-          body: JSON.stringify({ error: 'Invalid payment cursor' }),
-        });
-        return;
-      }
-      firstPageRequests += 1;
+test('Function: FondPaymentsError — a refused next page with 400 reloads the list from the first page', async ({
+  page,
+}) => {
+  let firstPageRequests = 0;
+  await fulfillSpot(page);
+  await page.route(`**/fonds/${FOND_USERNAME}/payments*`, async (route) => {
+    const before = new URL(route.request().url()).searchParams.get('before');
+    if (before !== null) {
       await route.fulfill({
-        status: 200,
+        status: 400,
         contentType: 'application/json',
-        body: JSON.stringify(PAYMENTS),
+        body: JSON.stringify({ error: 'Invalid payment cursor' }),
       });
+      return;
+    }
+    firstPageRequests += 1;
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(PAYMENTS),
     });
-    await page.goto(`/fonds/${FOND_USERNAME}`);
-    const payments = page.getByRole('region', { name: 'Payments' });
-    await expect(payments.getByRole('listitem')).toHaveCount(3);
-    await page.getByRole('button', { name: 'Show more' }).click();
-    await expect.poll(() => firstPageRequests).toBe(2);
-    await expect(payments.getByRole('listitem')).toHaveCount(3);
-    await expect(payments.getByRole('alert')).toHaveCount(0);
-  },
-);
+  });
+  await page.goto(`/fonds/${FOND_USERNAME}`);
+  const payments = page.getByRole('region', { name: 'Payments' });
+  await expect(payments.getByRole('listitem')).toHaveCount(3);
+  await page.getByRole('button', { name: 'Show more' }).click();
+  await expect.poll(() => firstPageRequests).toBe(2);
+  await expect(payments.getByRole('listitem')).toHaveCount(3);
+  await expect(payments.getByRole('alert')).toHaveCount(0);
+});
 
-test('Function: formatStoredFiat — a stored USD figure shows exactly as stored', async ({ page }) => {
+test('Function: formatStoredFiat — a stored USD figure shows exactly as stored', async ({
+  page,
+}) => {
   await fulfillSpot(page);
   await page.route(`**/fonds/${FOND_USERNAME}/payments`, async (route) => {
     await route.fulfill({
