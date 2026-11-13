@@ -6,6 +6,12 @@ import { Button } from '@/components/ui';
 import { fetchGrantPlaces } from '@/lib/api';
 import type { GrantPlaces } from '@/lib/api-types';
 
+/** Props for {@link GrantPlacesPanel}. */
+export interface GrantPlacesPanelProps {
+  /** Changing this value loads the places again (the owner's grant status on `/grants`). */
+  reloadKey?: string;
+}
+
 /**
  * Grant-places panel on the grant pages: how many places of the current
  * round are free, how many people moderators have admitted, that
@@ -16,10 +22,13 @@ import type { GrantPlaces } from '@/lib/api-types';
  * the same numbers. While loading it shows the shared loading sentence;
  * on failure an alert and a retry button. `data-grant-places` names the
  * state (`loading`, `error`, `ready`) so screenshot tests wait for the load.
+ * A new `reloadKey` loads the numbers again while the last ones stay on
+ * screen, so a place freed on this page shows without a page load.
  *
+ * @param props - Optional reload key.
  * @returns The places panel.
  */
-export function GrantPlacesPanel(): ReactElement {
+export function GrantPlacesPanel({ reloadKey = '' }: GrantPlacesPanelProps = {}): ReactElement {
   const { t } = useTranslations();
   const [places, setPlaces] = useState<GrantPlaces | null>(null);
   const [error, setError] = useState(false);
@@ -46,7 +55,7 @@ export function GrantPlacesPanel(): ReactElement {
     return () => {
       cancelled = true;
     };
-  }, [attempt]);
+  }, [attempt, reloadKey]);
 
   const shell =
     'flex w-full flex-col gap-2 rounded-3xl border border-app-border-strong bg-app-card-muted p-4';

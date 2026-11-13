@@ -8721,9 +8721,9 @@ The location editor is open. When POST /me/location answers 500, the form shows 
 
 ## Screen: /grants
 
-- **Purpose:** Signed-in grants page. `GrantsScreen` shows `FundingStatusCard`, a visible **Today's payout** panel with exactly one sentence from `funding.payoutToday` whenever `funding` is an object (an explicit null stays unavailable), or from `grantPayoutToday` only when `funding` is null or absent, then the public **Grant places** panel (`GrantPlacesPanel`: free places, admissions, that applications stay open, and the 20-shop goal that opens the next round). Missing/null or unknown payout data shows **Today's payout status is not available.** The only title is the page `h1` **21 gifts grant**. A signed-in account also sees a secondary large **Goals** link to `/grants/goals`, under the grant card and above the staff queue. A missing account shows no link. A viewer at least initiator (`canEditDailyPayoutRoster`), meaning initiator and founder, also sees three secondary large links, **Daily payment text** to `/grants/payments/comment`, **Daily payment amounts** to `/grants/payments/amounts`, and **Moderator payments** to `/grants/payments/moderators`. Those links do not load the roster. A moderator, a fond, or a software developer does not see them. An account at least moderator (`roleAtLeast(role, 'moderator')`), including a fond, a software developer, an initiator, and a founder, with at least one open application sees a secondary large **Open application (1)** link when the count is one and **Open applications (N)** otherwise (`funding.applications.openCount`) to `/grants/applications`. When none are open, the sentence **No open applications.** is plain text, not a link. While the count is loading, the sentence is **Loading…**. When the load fails, the error sentence and **Try again** are shown, not the applications link. The profile no longer shows this card.
+- **Purpose:** Signed-in grants page. `GrantsScreen` shows `FundingStatusCard`, a visible **Today's payout** panel with exactly one sentence from `funding.payoutToday` whenever `funding` is an object (an explicit null stays unavailable), or from `grantPayoutToday` only when `funding` is null or absent, then the public **Grant places** panel (`GrantPlacesPanel`: free places, admissions, that applications stay open, and the 20-shop goal that opens the next round). Missing/null or unknown payout data shows **Today's payout status is not available.** The only title is the page `h1` **21 gifts grant**. A signed-in account also sees a secondary large **Goals** link to `/grants/goals`, under the grant card and above the staff queue. A missing account shows no link. A viewer at least initiator (`canEditDailyPayoutRoster`), meaning initiator and founder, also sees three secondary large links, **Daily payment text** to `/grants/payments/comment`, **Daily payment amounts** to `/grants/payments/amounts`, and **Moderator payments** to `/grants/payments/moderators`. Those links do not load the roster. A moderator, a fond, or a software developer does not see them. An account at least moderator (`roleAtLeast(role, 'moderator')`), including a fond, a software developer, an initiator, and a founder, with at least one open application sees a secondary large **Open application (1)** link when the count is one and **Open applications (N)** otherwise (`funding.applications.openCount`) to `/grants/applications`. When none are open, the sentence **No open applications.** is plain text, not a link. While the count is loading, the sentence is **Loading…**. When the load fails, the error sentence and **Try again** are shown, not the applications link. The profile no longer shows this card. Under the pending, trial, or admitted status text, a small underlined text button (`FundingWithdrawControl`) offers the way out of the grant: **Withdraw my application** for pending, **Leave the grant** for trial and admitted. None and rejected do not show it. Pressing it opens a bordered question (`InlineConfirm`) in its place; nothing is sent before its confirm action. After `POST /funding/withdraw` answers, the card shows the status-none state with **Apply for the 21 gifts grant**, and the **Grant places** panel loads again, so a freed place shows without a page load.
 - **Inputs:** Session account via `OnboardingGate screen="profile"` / `useAuthStore`.
-- **Actions:** Read verification, grant status, and exactly one reason for today's payout. The payout sentence reuses the existing destination that fixes the step: Trust Chain, apply, wallet, Social Recovery, shops, or the forum composer; a pending application is information only. A basis account reads that it is not verified yet and does not open Apply. A verified account with status pending, trial, or admitted reads that copy. A verified account with status none or rejected reads the daily-gift sentence, opens About, or opens Apply. Every visitor reads the free grant places of the current round. Signed-in accounts open **Goals** (`/grants/goals`). A viewer at least initiator (initiator and founder) opens **Daily payment text**, **Daily payment amounts**, or **Moderator payments**. An account at least moderator, including a fond, a software developer, an initiator, and a founder, opens **Open application (1)** or **Open applications (N)** only when N is at least 1. **Try again** repeats the load after an error.
+- **Actions:** Read verification, grant status, and exactly one reason for today's payout. The payout sentence reuses the existing destination that fixes the step: Trust Chain, apply, wallet, Social Recovery, shops, or the forum composer; a pending application is information only. A basis account reads that it is not verified yet and does not open Apply. A verified account with status pending, trial, or admitted reads that copy, then opens **Withdraw my application** (pending) or **Leave the grant** (trial, admitted), reads the question and what it changes, and confirms with the same label or closes it with **Cancel**. While the request runs, both actions are disabled and the confirm action spins; a second tap sends nothing. A 409 loads the account again and shows its state without an error; a 401 signs out to the login card; any other failure shows the error inside the open question. A verified account with status none or rejected reads the daily-gift sentence, opens About, or opens Apply. Every visitor reads the free grant places of the current round. Signed-in accounts open **Goals** (`/grants/goals`). A viewer at least initiator (initiator and founder) opens **Daily payment text**, **Daily payment amounts**, or **Moderator payments**. An account at least moderator, including a fond, a software developer, an initiator, and a founder, opens **Open application (1)** or **Open applications (N)** only when N is at least 1. **Try again** repeats the load after an error.
 - **Used by:** Route `/grants` (`GrantsPage`).
 
 ### Variant: default
@@ -8758,26 +8758,56 @@ Basis owner. Grant section on `/grants`. Copy **You are not verified yet.** plus
 
 ### Variant: funding-pending
 
-Verified owner with `funding.status` **pending**. Copy **Your application is open. A moderator will review your posts.** **Today's payout** shows the one line **You must be admitted to the grant program. Your application is being reviewed.** without a link. The **Grant places** panel under the card reads **10 of 10 places are free.**
+Verified owner with `funding.status` **pending**. Copy **Your application is open. A moderator will review your posts.** Under it, the small underlined text button **Withdraw my application**. **Today's payout** shows the one line **You must be admitted to the grant program. Your application is being reviewed.** without a link. The **Grant places** panel under the card reads **10 of 10 places are free.**
 
 ![21.gifts profile funding pending](images/profile-funding-pending.png)
 
 ### Variant: funding-trial
 
-Verified owner with `funding.status` **trial**. Copy **You are on a one-day trial. Review repeats tomorrow.** **Today's payout** shows **All conditions are met, but payouts are paused right now.** The **Grant places** panel under the card reads **10 of 10 places are free.**
+Verified owner with `funding.status` **trial**. Copy **You are on a one-day trial. Review repeats tomorrow.** Under it, the small underlined text button **Leave the grant**. **Today's payout** shows **All conditions are met, but payouts are paused right now.** The **Grant places** panel under the card reads **10 of 10 places are free.**
 
 ![21.gifts profile funding trial](images/profile-funding-trial.png)
 
 ### Variant: funding-admitted
 
-Verified owner with `funding.status` **admitted**. Copy **You are admitted to daily 21.gifts grant payouts.** plus **Takes part in the 21.gifts funding program since {date}**. **Today's payout** links **Set up your wallet to receive payouts.** to `/wallet`. When `reviewedByName` is set, the participation sentence names the reviewer. Trial, pending, and rejected do not show a name. The funding-program icon on the public facts is closed here. The pressed result is **funding-program-open**. The **Grant places** panel under the card reads **10 of 10 places are free.**
+Verified owner with `funding.status` **admitted**. Copy **You are admitted to daily 21.gifts grant payouts.** plus **Takes part in the 21.gifts funding program since {date}**. Under it, the small underlined text button **Leave the grant**. **Today's payout** links **Set up your wallet to receive payouts.** to `/wallet`. When `reviewedByName` is set, the participation sentence names the reviewer. Trial, pending, and rejected do not show a name. The funding-program icon on the public facts is closed here. The pressed result is **funding-program-open**. The **Grant places** panel under the card reads **10 of 10 places are free.**
 ![21.gifts profile funding admitted](images/profile-funding-admitted.png)
 
 ### Variant: funding-program-open
 
-Admitted owner on `/grants`. The participation sentence **Takes part in the 21.gifts funding program since {date}** is visible on the grant card. **Today's payout** links **Secure your account to receive payouts.** to `/settings/social-recovery`. Viewport capture after scrolling the participation line into view. The **Grant places** panel under the card reads **10 of 10 places are free.**
+Admitted owner on `/grants`. The participation sentence **Takes part in the 21.gifts funding program since {date}** is visible on the grant card, with **Leave the grant** under it. **Today's payout** links **Secure your account to receive payouts.** to `/settings/social-recovery`. Viewport capture after scrolling the participation line into view. The **Grant places** panel under the card reads **10 of 10 places are free.**
 
 ![21.gifts profile funding program open](images/profile-funding-program-open.png)
+
+### Variant: withdraw-confirm
+
+Admitted owner after **Leave the grant**. In place of that button, the bordered question **Leave the grant?** with the muted line **Your daily payout stops today. Your place becomes free for someone else. You can apply again later, but a place is not guaranteed.**, then the confirm action (check icon, accessible name **Leave the grant**) and **Cancel** (X icon). Nothing has been sent yet. The **Grant places** panel under the card reads **10 of 10 places are free.** Needle `state-grants-withdraw-confirm`.
+
+![21.gifts grants leave the grant question](images/grants-withdraw-confirm.png)
+
+### Variant: withdraw-confirm-trial
+
+Owner on a one-day trial after **Leave the grant**. Under **You are on a one-day trial. Review repeats tomorrow.**, the same question **Leave the grant?** and muted line as for an admitted owner, with the confirm action **Leave the grant** and **Cancel**. Needle `state-grants-withdraw-confirm-trial`.
+
+![21.gifts grants leave the grant question on a trial](images/grants-withdraw-confirm-trial.png)
+
+### Variant: withdraw-confirm-pending
+
+Owner with an open application after **Withdraw my application**. Under **Your application is open. A moderator will review your posts.**, the bordered question **Withdraw your application?** with the muted line **A moderator will no longer review it. You can apply again later.**, then the confirm action (accessible name **Withdraw my application**) and **Cancel**. Needle `state-grants-withdraw-confirm-pending`.
+
+![21.gifts grants withdraw application question](images/grants-withdraw-confirm-pending.png)
+
+### Variant: withdraw-busy
+
+Admitted owner after the confirm action of **Leave the grant?**, while `POST /funding/withdraw` has not answered. The confirm action shows a spinner, and both actions are disabled; another tap sends nothing. Needle `state-grants-withdraw-busy`.
+
+![21.gifts grants leaving the grant](images/grants-withdraw-busy.png)
+
+### Variant: withdraw-error
+
+Admitted owner after the confirm action of **Leave the grant?** when `POST /funding/withdraw` failed (403, 404 while the api does not have the endpoint, 503, or no connection). The question stays open with **Could not leave the grant. Please try again.** under it, and both actions are enabled again for another try or **Cancel**. A pending owner reads **Could not withdraw your application. Please try again.** in the same place. Needle `state-grants-withdraw-error`.
+
+![21.gifts grants leave the grant error](images/grants-withdraw-error.png)
 
 ### Variant: open-applications
 

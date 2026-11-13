@@ -53,4 +53,38 @@ describe('InlineConfirm', () => {
       true,
     );
   });
+
+  it('shows no description by default', () => {
+    renderWithLocale(
+      <InlineConfirm
+        label="Delete this note?"
+        confirmLabel="Delete"
+        cancelLabel="Keep"
+        onConfirm={vi.fn()}
+        onCancel={vi.fn()}
+      />,
+    );
+    expect(
+      screen.getByRole('group', { name: 'Delete this note?' }).hasAttribute('aria-describedby'),
+    ).toBe(false);
+  });
+
+  it('shows the description under the question and links it to the group', () => {
+    renderWithLocale(
+      <InlineConfirm
+        label="Leave the grant?"
+        description="Your daily payout stops today."
+        confirmLabel="Leave the grant"
+        cancelLabel="Cancel"
+        onConfirm={vi.fn()}
+        onCancel={vi.fn()}
+      />,
+    );
+    const group = screen.getByRole('group', { name: 'Leave the grant?' });
+    const describedBy = group.getAttribute('aria-describedby');
+    expect(describedBy).not.toBeNull();
+    expect(document.getElementById(describedBy ?? '')?.textContent).toBe(
+      'Your daily payout stops today.',
+    );
+  });
 });

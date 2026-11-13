@@ -1044,6 +1044,13 @@
 - **Used by:** `postFundingApply`. `FundingApplyScreen` calls it after Yes on the truth question for a verified account with status `none` or `rejected`. A basis account does not call it.
 - **Auth:** Bearer session; the api requires a role other than `basis`.
 
+## Endpoint: POST /funding/withdraw
+
+- **Purpose:** Same-origin Bearer proxy of api `POST /funding/withdraw`. The caller withdraws their own grant: an open application, a one-day trial, or an admitted place. No body. 200 `{ funding }` with status `none`.
+- **Errors:** Upstream 401/403/409/503 unchanged (409: nothing to withdraw, or a staff decision at the same moment), 404 while the api does not have the endpoint yet, or 502 if the api is unreachable.
+- **Used by:** `postFundingWithdraw`. `FundingWithdrawControl` calls it after the member confirms **Withdraw my application** or **Leave the grant** on `/grants`.
+- **Auth:** Bearer session; the api refuses `basis` with 403.
+
 ## Endpoint: GET /funding/payout-days
 
 - **Purpose:** Same-origin Bearer proxy of api `GET /funding/payout-days` (seven-day grant payout matrix for moderators). Lives under `/funding/payout-days` because Next.js forbids a `route.ts` beside the HTML page at `/moderate/payouts`.
