@@ -690,6 +690,12 @@ export function useLoanRepay(options: {
     settlementReading.current = false;
   }, []);
 
+  const setPaymentPhase = useCallback((next: LivePhase): void => {
+    actionPending.current = ACTIVE_RUN_PHASES.has(next);
+    phaseRef.current = next;
+    setLivePhase(next);
+  }, []);
+
   useEffect(() => {
     generation.current += 1;
     actionPending.current = false;
@@ -774,11 +780,6 @@ export function useLoanRepay(options: {
 
       const run = ++generation.current;
       const active = (): boolean => run === generation.current;
-      const setPaymentPhase = (next: LivePhase): void => {
-        actionPending.current = ACTIVE_RUN_PHASES.has(next);
-        phaseRef.current = next;
-        setLivePhase(next);
-      };
       clearSettlement();
       setPaymentPhase('preparing');
       setActiveAction(
@@ -1203,7 +1204,7 @@ export function useLoanRepay(options: {
         finishSending();
       })();
     },
-    [behaviorWallet, clearSettlement, options, pinned],
+    [behaviorWallet, clearSettlement, options, pinned, setPaymentPhase],
   );
 
   const pay = useCallback(
@@ -1237,13 +1238,11 @@ export function useLoanRepay(options: {
         return;
       }
       const run = ++generation.current;
-      actionPending.current = true;
       clearSettlement();
-      phaseRef.current = 'preparing';
+      setPaymentPhase('preparing');
       setActiveAction({ kind: 'close', messageId: loan.messageId });
       setErrorKey(null);
       setActionError(null);
-      setLivePhase('preparing');
       void (async (): Promise<void> => {
         try {
           await closeLoan(session, loan.messageId);
@@ -1257,14 +1256,12 @@ export function useLoanRepay(options: {
           if (fresh === null) {
             throw new Error('reload');
           }
-          actionPending.current = false;
           setActiveAction(null);
-          setLivePhase('idle');
+          setPaymentPhase('idle');
         } catch (error: unknown) {
           if (run !== generation.current) {
             return;
           }
-          actionPending.current = false;
           const typed = actionErrorOf(error, loan.messageId) ?? {
             messageId: loan.messageId,
             code: 'request_failed' as const,
@@ -1275,11 +1272,11 @@ export function useLoanRepay(options: {
           setErrorKey(
             typed?.code === 'rate_limited' ? 'forum.payErrorRateLimit' : 'forum.payErrorRequest',
           );
-          setLivePhase('failed');
+          setPaymentPhase('failed');
         }
       })();
     },
-    [clearSettlement, options, pinned],
+    [clearSettlement, options, pinned, setPaymentPhase],
   );
 
   if (pinnedResult !== undefined) {

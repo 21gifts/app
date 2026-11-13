@@ -2514,8 +2514,9 @@ describe('useLoanRepay free repayment and collecting actions', () => {
     expect(payFromWallet).not.toHaveBeenCalled();
   });
 
-  it('closes a collecting loan and reloads without touching the wallet', async () => {
+  it('closes a collecting loan and accepts a due payment afterward', async () => {
     const collecting = loan('collecting', 0, 0);
+    const due = loan('due-after-close');
     collecting.fundedAt = null;
     delete collecting.closedAt;
     vi.mocked(closeLoan).mockResolvedValue({
@@ -2535,12 +2536,17 @@ describe('useLoanRepay free repayment and collecting actions', () => {
     await waitFor(() => expect(result.current.phase).toBe('idle'));
 
     expect(reload).toHaveBeenCalledTimes(1);
+    vi.mocked(postRepaymentDue).mockReturnValue(new Promise<never>(() => undefined));
+    act(() => result.current.pay([due]));
+    expect(postRepaymentDue).toHaveBeenCalledWith('token', 'due-after-close');
+    expect(result.current.phase).toBe('preparing');
     expect(prepayLoan).not.toHaveBeenCalled();
     expect(payFromWallet).not.toHaveBeenCalled();
   });
 
-  it('exposes a typed close refusal and ignores already closed loans', async () => {
+  it('exposes a typed close refusal, ignores closed loans, and accepts a due payment', async () => {
     const collecting = loan('collecting', 0, 0);
+    const due = loan('due-after-close-failure');
     collecting.fundedAt = null;
     collecting.closedAt = null;
     vi.mocked(closeLoan).mockRejectedValue(new LoanRepaymentError('service_unavailable', 503));
@@ -2555,6 +2561,11 @@ describe('useLoanRepay free repayment and collecting actions', () => {
     act(() => result.current.closeCollecting({ ...collecting, closedAt: 'closed' }));
     act(() => result.current.closeCollecting({ ...collecting, fundedAt: 'funded' }));
     expect(closeLoan).toHaveBeenCalledTimes(1);
+
+    vi.mocked(postRepaymentDue).mockReturnValue(new Promise<never>(() => undefined));
+    act(() => result.current.pay([due]));
+    expect(postRepaymentDue).toHaveBeenCalledWith('token', 'due-after-close-failure');
+    expect(result.current.phase).toBe('preparing');
   });
 
   it('exposes missing requirements and a rate limit from close', async () => {
