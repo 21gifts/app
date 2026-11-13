@@ -5833,7 +5833,7 @@ The `/me/wallet/counterparties` route re-exports `proxyMeWalletCounterpartiesPos
 
 - **Purpose:** Wait for the running wallet report and any report requested while it runs, without requesting another report.
 - **Inputs:** None.
-- **Returns:** A promise that resolves when the report settles, or immediately when none is running; it never rejects.
+- **Returns:** A promise that resolves when the report settles, or immediately when none is running.
 - **Used by:** `usePaymentCounterparty`.
 
 ## Function: InteractionLog

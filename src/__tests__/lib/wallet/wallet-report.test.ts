@@ -124,19 +124,6 @@ describe('walletReportSettled', () => {
     expect(mocks.listWalletReportPayments).toHaveBeenCalledTimes(1);
   });
 
-  it('resolves even if the running report rejects unexpectedly', async () => {
-    listing([payment('a', { status: 'pending' })]);
-    await mod.reportWallet();
-    listing([payment('a')]);
-    mocks.logInteraction.mockImplementationOnce(() => {
-      throw new Error('unexpected');
-    });
-    const report = mod.reportWallet();
-    const waiting = mod.walletReportSettled();
-    await expect(report).rejects.toThrow('unexpected');
-    await expect(waiting).resolves.toBeUndefined();
-  });
-
   it('waits for a report requested while the first report is running', async () => {
     let releaseFirst: () => void = () => undefined;
     let releaseSecond: () => void = () => undefined;

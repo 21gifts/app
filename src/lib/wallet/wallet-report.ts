@@ -43,10 +43,10 @@ let again = false;
  * Waits for the current report and any report already queued behind it, without
  * requesting another report.
  *
- * @returns A promise that resolves when the report settles, and never rejects.
+ * @returns A promise that resolves when the report finishes, or immediately if none is running.
  */
 export function walletReportSettled(): Promise<void> {
-  return running === null ? Promise.resolve() : running.catch(() => undefined);
+  return running ?? Promise.resolve();
 }
 
 /**
