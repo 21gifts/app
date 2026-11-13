@@ -12027,6 +12027,27 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/messages/[id]/repayment-list',
+    id: 'partial-btc',
+    image: 'messages-id-repayment-list-partial-btc.png',
+    visual: 'state-messages-id-repayment-list-partial-btc',
+    needle: 'state /messages/[id]/repayment-list partial-btc',
+  },
+  {
+    route: '/messages/[id]/repayment-list',
+    id: 'partial-fiat',
+    image: 'messages-id-repayment-list-partial-fiat.png',
+    visual: 'state-messages-id-repayment-list-partial-fiat',
+    needle: 'state /messages/[id]/repayment-list partial-fiat',
+  },
+  {
+    route: '/messages/[id]/repayment-list',
+    id: 'partial-fiat-fallback',
+    image: 'messages-id-repayment-list-partial-fiat-fallback.png',
+    visual: 'state-messages-id-repayment-list-partial-fiat-fallback',
+    needle: 'state /messages/[id]/repayment-list partial-fiat-fallback',
+  },
+  {
+    route: '/messages/[id]/repayment-list',
     id: 'loading',
     image: 'messages-id-repayment-list-loading.png',
     visual: 'state-messages-id-repayment-list-loading',

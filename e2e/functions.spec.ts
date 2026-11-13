@@ -5911,6 +5911,19 @@ test('Function: WalletPay — the forum pay sheet is wallet-only, with no invoic
   expect(await recordedWalletAssign(page)).toBeUndefined();
 });
 
+test('Function: keepTabInside — Tab past the last pay-sheet control wraps inside the dialog', async ({
+  page,
+  request,
+}) => {
+  await openPayInvoice(page, request);
+  const sheet = page.getByRole('dialog', { name: 'Send to Carol' });
+  const close = sheet.getByRole('button', { name: 'Close' });
+  await close.focus();
+  await expect(close).toBeFocused();
+  await page.keyboard.press('Tab');
+  await expect(close).toBeFocused();
+});
+
 test('Function: ForumPaySheet — the amount form keeps its controls clear of the Close hit area', async ({
   page,
   request,

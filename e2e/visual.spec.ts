@@ -20,6 +20,8 @@ import {
   fulfillMyLoans,
   ledgerA,
   ledgerB,
+  ledgerClosedPartial,
+  ledgerClosedPartialFiat,
   ledgerWith,
   loanA,
   loanB,
@@ -22043,6 +22045,64 @@ test.describe('onboarding screens', () => {
     await expect(page.getByText('Scheduled', { exact: true })).toHaveCount(2);
     await expect(page.getByRole('link', { name: 'Repayment list' })).toHaveCount(0);
     await shotScreen(page, 'screen-messages-id-repayment-list');
+  });
+
+  test('state /messages/[id]/repayment-list partial-btc', async ({ page }) => {
+    const id = '11111111-1111-4111-8111-111111111111';
+    await fulfillRateDay(page);
+    await page.route(`**/messages/${id}/repayment`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(ledgerClosedPartial),
+      });
+    });
+    await page.goto(`/messages/${id}/repayment-list`);
+    await expect(page.getByText('₿400').first()).toBeVisible();
+    await expect(page.getByText('₿500')).toHaveCount(0);
+    await expect(page.getByText('Due', { exact: true })).toHaveCount(1);
+    await shotScreen(page, 'state-messages-id-repayment-list-partial-btc');
+  });
+
+  test('state /messages/[id]/repayment-list partial-fiat', async ({ page }) => {
+    const id = '11111111-1111-4111-8111-111111111111';
+    await fulfillRateDay(page);
+    await page.route(`**/messages/${id}/repayment`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(ledgerClosedPartialFiat),
+      });
+    });
+    await page.goto(`/messages/${id}/repayment-list`);
+    await expect(page.getByText('₱10.00').first()).toBeVisible();
+    await expect(page.getByText('₱12.50')).toHaveCount(0);
+    await expect(page.getByText('Due', { exact: true })).toHaveCount(1);
+    await shotScreen(page, 'state-messages-id-repayment-list-partial-fiat');
+  });
+
+  test('state /messages/[id]/repayment-list partial-fiat-fallback', async ({ page }) => {
+    const id = '11111111-1111-4111-8111-111111111111';
+    const fallback = {
+      ...ledgerClosedPartialFiat,
+      repayments: ledgerClosedPartialFiat.repayments.map((row) => ({
+        ...row,
+        paidAmount: null,
+      })),
+    };
+    await fulfillRateDay(page);
+    await page.route(`**/messages/${id}/repayment`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(fallback),
+      });
+    });
+    await page.goto(`/messages/${id}/repayment-list`);
+    await expect(page.getByText('₿400').first()).toBeVisible();
+    await expect(page.getByText('$0.40').first()).toBeVisible();
+    await expect(page.getByText('₱12.50')).toHaveCount(0);
+    await shotScreen(page, 'state-messages-id-repayment-list-partial-fiat-fallback');
   });
 
   test('state /messages/[id]/repayment-list waiting', async ({ page }) => {

@@ -53,22 +53,26 @@ export function parseLoanAmount(
  * Reads the api-provided maximum in the loan currency's smallest input unit.
  *
  * @param loan - Loan returned by `GET /me/loans`.
- * @returns Whole sats for BTC, whole cents for fiat, or null when a maximum or
- *   fiat rate is unavailable or malformed.
+ * @returns Positive whole sats for BTC, positive whole cents for fiat, or null when a maximum or
+ *   fiat rate is unavailable, zero, or malformed.
  */
 export function loanMaxUnits(loan: MyLoan): bigint | null {
   if (loan.goalCurrency === 'BTC') {
-    return loan.maxSats === null || loan.maxSats === undefined ? null : BigInt(loan.maxSats);
+    return loan.maxSats === null || loan.maxSats === undefined || loan.maxSats <= 0
+      ? null
+      : BigInt(loan.maxSats);
   }
   if (
     loan.maxSats === null ||
     loan.maxSats === undefined ||
+    loan.maxSats <= 0 ||
     loan.maxAmount === null ||
     loan.maxAmount === undefined
   ) {
     return null;
   }
-  return fiatUnits(loan.maxAmount.trim());
+  const units = fiatUnits(loan.maxAmount.trim());
+  return units === null || units <= 0n ? null : units;
 }
 
 /**
@@ -101,14 +105,26 @@ export function checkLoanAmount(input: string, loan: MyLoan): LoanAmountCheck {
  * Supplies the exact value the free-repayment Max button puts in its input.
  *
  * @param loan - Loan returned by `GET /me/loans`.
- * @returns Integer max sats for BTC, the api's fiat max string while its rate
- *   is available, or null.
+ * @returns Positive integer max sats for BTC, the api's positive fiat max string while its rate is
+ *   available, or null.
  */
 export function loanMaxInput(loan: MyLoan): string | null {
   if (loan.goalCurrency === 'BTC') {
-    return loan.maxSats === null || loan.maxSats === undefined ? null : String(loan.maxSats);
+    return loan.maxSats === null || loan.maxSats === undefined || loan.maxSats <= 0
+      ? null
+      : String(loan.maxSats);
   }
-  return loan.maxSats === null || loan.maxSats === undefined ? null : (loan.maxAmount ?? null);
+  if (
+    loan.maxSats === null ||
+    loan.maxSats === undefined ||
+    loan.maxSats <= 0 ||
+    loan.maxAmount === null ||
+    loan.maxAmount === undefined
+  ) {
+    return null;
+  }
+  const units = fiatUnits(loan.maxAmount.trim());
+  return units === null || units <= 0n ? null : loan.maxAmount;
 }
 
 /**

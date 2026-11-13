@@ -499,6 +499,24 @@ describe('LoanPayMore', () => {
     expect(screen.queryByText(/No BTC exchange rate/)).toBeNull();
   });
 
+  it('treats zero BTC and fiat maxima as unavailable', () => {
+    show(loan({ maxSats: 0 }));
+    expect(screen.getByText(/No BTC repayment maximum is available now/)).toBeTruthy();
+    expect((screen.getByRole('button', { name: 'Max' }) as HTMLButtonElement).disabled).toBe(true);
+    cleanup();
+
+    show(
+      loan({
+        goalCurrency: 'PHP',
+        goalAmount: '480.28',
+        maxSats: 9_283,
+        maxAmount: '0.00',
+      }),
+    );
+    expect(screen.getByText(/No PHP repayment maximum is available now/)).toBeTruthy();
+    expect((screen.getByRole('button', { name: 'Max' }) as HTMLButtonElement).disabled).toBe(true);
+  });
+
   it('shows the exact fiat figure and its bitcoin in the collecting confirmation', () => {
     const collecting = loan({
       goalCurrency: 'PHP',
@@ -1086,6 +1104,42 @@ describe('LoanPayMore', () => {
     fireEvent.click(screen.getByRole('button', { name: 'End collecting' }));
     fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
     expect(screen.queryByRole('dialog')).toBeNull();
+  });
+
+  it('moves and traps focus, closes on Escape, makes the background inert, and restores focus', () => {
+    const collecting = loan({ fundedAt: null, closedAt: null, sats: 4_000, maxSats: 4_000 });
+    const shellBackground = document.createElement('div');
+    shellBackground.setAttribute('data-app-chrome', '');
+    document.body.append(shellBackground);
+    show(collecting);
+    const opener = screen.getByRole('button', { name: 'End collecting' });
+    opener.focus();
+    fireEvent.click(opener);
+
+    const dialog = screen.getByRole('dialog', { name: 'End collecting?' });
+    const close = within(dialog).getByRole('button', { name: 'Close' });
+    const cancel = within(dialog).getByRole('button', { name: 'Cancel' });
+    const background = screen.getByRole('heading', { name: 'Pay more' }).parentElement;
+    expect(document.activeElement).toBe(dialog);
+    expect(background?.hasAttribute('inert')).toBe(true);
+    expect(shellBackground.hasAttribute('inert')).toBe(true);
+
+    fireEvent.keyDown(window, { key: 'Enter' });
+    expect(screen.getByRole('dialog')).toBe(dialog);
+    fireEvent.keyDown(window, { key: 'Tab', shiftKey: true });
+    expect(document.activeElement).toBe(cancel);
+    fireEvent.keyDown(window, { key: 'Tab' });
+    expect(document.activeElement).toBe(close);
+    opener.focus();
+    fireEvent.keyDown(window, { key: 'Tab' });
+    expect(document.activeElement).toBe(close);
+
+    fireEvent.keyDown(window, { key: 'Escape' });
+    expect(screen.queryByRole('dialog')).toBeNull();
+    expect(background?.hasAttribute('inert')).toBe(false);
+    expect(shellBackground.hasAttribute('inert')).toBe(false);
+    expect(document.activeElement).toBe(opener);
+    shellBackground.remove();
   });
 
   it('keeps free repayment disabled on Sunday and while the wallet is unavailable', () => {

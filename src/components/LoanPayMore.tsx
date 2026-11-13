@@ -1,8 +1,9 @@
 'use client';
 
 import { Loader2, X } from 'lucide-react';
-import { useEffect, useId, useRef, useState, type ReactElement } from 'react';
+import { useEffect, useId, useLayoutEffect, useRef, useState, type ReactElement } from 'react';
 import { AmountEntry } from '@/components/AmountEntry';
+import { AppShellOverlay } from '@/components/AppShell';
 import { useFiatPreference } from '@/components/FiatPreferenceProvider';
 import { useTranslations } from '@/components/LocaleProvider';
 import { useNumberFormat } from '@/components/NumberFormatProvider';
@@ -24,6 +25,7 @@ import {
   loanMaxUnits,
   type LoanAmountCheck,
 } from '@/lib/loan-repay';
+import { keepTabInside } from '@/lib/modal-focus';
 import type { NumberFormatStyle } from '@/lib/number-format';
 import {
   fiatPrefix,
@@ -162,6 +164,7 @@ export function LoanPayMore({
   const [serverAmountInvalid, setServerAmountInvalid] = useState(false);
   const [serverMaximum, setServerMaximum] = useState<ServerMaximum | null>(null);
   const processedActionError = useRef<string | null>(null);
+  const confirmDialog = useRef<HTMLDivElement>(null);
   const collecting = isCollecting(loan);
   const entryFiat: FiatCode = loan.goalCurrency === 'BTC' ? fiat : loan.goalCurrency;
   const amountUnit: AmountUnit = loan.goalCurrency === 'BTC' ? 'btc' : 'fiat';
@@ -333,8 +336,59 @@ export function LoanPayMore({
       ? missingSats
       : null;
 
-  return (
-    <div className="mt-4 flex flex-col gap-3 border-t border-app-border pt-4">
+  // The confirmation is a real modal: move focus in, make the AppShell behind its portal inert,
+  // and restore focus to the control that opened it when it leaves.
+  useEffect(() => {
+    if (confirming === null) {
+      return;
+    }
+    const opener = document.activeElement as HTMLElement;
+    const dialog = confirmDialog.current as HTMLDivElement;
+    const background = Array.from(
+      document.querySelectorAll<HTMLElement>(
+        '[data-app-chrome], [data-menu-scrim-host], [data-app-body] > :not(:last-child)',
+      ),
+    );
+    const previous = background.map((element) => ({
+      element,
+      inert: element.hasAttribute('inert'),
+    }));
+    background.forEach((element) => {
+      element.setAttribute('inert', '');
+    });
+    dialog.focus({ preventScroll: true });
+    return () => {
+      previous.forEach(({ element, inert }) => {
+        element.toggleAttribute('inert', inert);
+      });
+      opener.focus({ preventScroll: true });
+    };
+  }, [confirming]);
+
+  // Capture keys before paint, matching PaySheet: Escape closes and Tab cannot reach the page.
+  useLayoutEffect(() => {
+    if (confirming === null) {
+      return;
+    }
+    const onKey = (event: KeyboardEvent): void => {
+      if (event.key === 'Tab') {
+        keepTabInside(event, confirmDialog.current as HTMLDivElement);
+        return;
+      }
+      if (event.key === 'Escape') {
+        setConfirming(null);
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [confirming]);
+
+  const controls = (
+    <div
+      data-loan-pay-more-background
+      inert={confirming !== null}
+      className="mt-4 flex flex-col gap-3 border-t border-app-border pt-4"
+    >
       <h3 className="text-sm font-semibold text-app-fg">{t('loans.payMoreTitle')}</h3>
       <div className="flex items-end gap-2">
         <AmountEntry
@@ -493,78 +547,95 @@ export function LoanPayMore({
           {actionErrorText}
         </p>
       )}
+    </div>
+  );
+
+  return (
+    <>
+      {controls}
       {confirming === null ? null : (
-        <div
-          role="dialog"
-          aria-modal="true"
-          aria-label={t(
-            confirming === 'pay' ? 'loans.payMoreConfirmTitle' : 'loans.endCollectingTitle',
-          )}
-          data-covers-chrome
-          className="fixed inset-0 z-50 flex items-center justify-center bg-app-overlay p-4"
-        >
-          <Card maxWidth="sm">
-            <div className="flex w-full items-start justify-between gap-3">
-              <h2 className="text-lg font-semibold tracking-tight text-app-fg">
-                {t(confirming === 'pay' ? 'loans.payMoreConfirmTitle' : 'loans.endCollectingTitle')}
-              </h2>
-              <IconButton
-                type="button"
-                variant="ghost"
-                size="md"
-                aria-label={t('loans.confirmClose')}
-                onClick={() => setConfirming(null)}
-              >
-                <X aria-hidden="true" className="h-4 w-4" />
-              </IconButton>
-            </div>
-            <p className="text-sm text-app-muted">
-              {t(confirming === 'pay' ? 'loans.payMoreConfirmBody' : 'loans.endCollectingBody')}
-            </p>
-            {confirming === 'pay' ? (
-              check.ok ? (
+        <AppShellOverlay>
+          <div
+            ref={confirmDialog}
+            role="dialog"
+            aria-modal="true"
+            aria-label={t(
+              confirming === 'pay' ? 'loans.payMoreConfirmTitle' : 'loans.endCollectingTitle',
+            )}
+            tabIndex={-1}
+            data-covers-chrome
+            className="fixed inset-0 z-50 flex items-center justify-center bg-app-overlay p-4 outline-none"
+          >
+            <Card maxWidth="sm">
+              <div className="flex w-full items-start justify-between gap-3">
+                <h2 className="text-lg font-semibold tracking-tight text-app-fg">
+                  {t(
+                    confirming === 'pay' ? 'loans.payMoreConfirmTitle' : 'loans.endCollectingTitle',
+                  )}
+                </h2>
+                <IconButton
+                  type="button"
+                  variant="ghost"
+                  size="md"
+                  aria-label={t('loans.confirmClose')}
+                  onClick={() => setConfirming(null)}
+                >
+                  <X aria-hidden="true" className="h-4 w-4" />
+                </IconButton>
+              </div>
+              <p className="text-sm text-app-muted">
+                {t(confirming === 'pay' ? 'loans.payMoreConfirmBody' : 'loans.endCollectingBody')}
+              </p>
+              {confirming === 'pay' ? (
+                check.ok ? (
+                  <Button
+                    type="button"
+                    size="lg"
+                    disabled={!paymentEnabled}
+                    onClick={paymentEnabled ? () => submitPay(check.text) : undefined}
+                  >
+                    {t('loans.payMoreConfirmAction', {
+                      amount: displayLoanAmount(
+                        check.text,
+                        // A successful check is created only from parsed sats above.
+                        exactLoanSats ?? (parsed as { kind: 'sats'; sats: number }).sats,
+                        loan,
+                        numberFormat,
+                        formatSats,
+                      ),
+                    })}
+                  </Button>
+                ) : (
+                  <Button type="button" size="lg" disabled>
+                    {t('loans.payMorePay')}
+                  </Button>
+                )
+              ) : (
                 <Button
                   type="button"
                   size="lg"
-                  disabled={!paymentEnabled}
-                  onClick={paymentEnabled ? () => submitPay(check.text) : undefined}
+                  onClick={() => {
+                    setConfirming(null);
+                    setPendingAction('close');
+                    setServerError(null);
+                    onCloseCollecting(loan);
+                  }}
                 >
-                  {t('loans.payMoreConfirmAction', {
-                    amount: displayLoanAmount(
-                      check.text,
-                      // A successful check is created only from parsed sats above.
-                      exactLoanSats ?? (parsed as { kind: 'sats'; sats: number }).sats,
-                      loan,
-                      numberFormat,
-                      formatSats,
-                    ),
-                  })}
+                  {t('loans.endCollectingConfirm')}
                 </Button>
-              ) : (
-                <Button type="button" size="lg" disabled>
-                  {t('loans.payMorePay')}
-                </Button>
-              )
-            ) : (
+              )}
               <Button
                 type="button"
                 size="lg"
-                onClick={() => {
-                  setConfirming(null);
-                  setPendingAction('close');
-                  setServerError(null);
-                  onCloseCollecting(loan);
-                }}
+                variant="secondary"
+                onClick={() => setConfirming(null)}
               >
-                {t('loans.endCollectingConfirm')}
+                {t('loans.confirmCancel')}
               </Button>
-            )}
-            <Button type="button" size="lg" variant="secondary" onClick={() => setConfirming(null)}>
-              {t('loans.confirmCancel')}
-            </Button>
-          </Card>
-        </div>
+            </Card>
+          </div>
+        </AppShellOverlay>
       )}
-    </div>
+    </>
   );
 }

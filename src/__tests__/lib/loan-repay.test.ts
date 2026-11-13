@@ -130,6 +130,12 @@ describe('free loan amount helpers', () => {
     expect(loanMaxInput(btc)).toBe('1234');
     expect(loanMaxUnits(fiat)).toBe(1_230n);
     expect(loanMaxInput(fiat)).toBe('12.30');
+    expect(loanMaxUnits({ ...btc, maxSats: 0 })).toBeNull();
+    expect(loanMaxInput({ ...btc, maxSats: 0 })).toBeNull();
+    expect(loanMaxUnits({ ...fiat, maxAmount: '0.00' })).toBeNull();
+    expect(loanMaxInput({ ...fiat, maxAmount: '0.00' })).toBeNull();
+    expect(loanMaxUnits({ ...fiat, maxSats: 0 })).toBeNull();
+    expect(loanMaxInput({ ...fiat, maxSats: 0 })).toBeNull();
     expect(loanMaxUnits({ ...fiat, maxSats: null })).toBeNull();
     expect(loanMaxInput({ ...fiat, maxSats: null })).toBeNull();
     const fiatWithoutRate = { ...fiat };
@@ -137,6 +143,7 @@ describe('free loan amount helpers', () => {
     expect(loanMaxUnits(fiatWithoutRate)).toBeNull();
     expect(loanMaxInput(fiatWithoutRate)).toBeNull();
     expect(loanMaxUnits({ ...fiat, maxAmount: 'bad' })).toBeNull();
+    expect(loanMaxInput({ ...fiat, maxAmount: 'bad' })).toBeNull();
     expect(loanMaxInput({ ...fiat, maxAmount: null })).toBeNull();
     expect(loanMaxUnits({ ...btc, maxSats: null })).toBeNull();
     const legacyBtc = { ...btc };
