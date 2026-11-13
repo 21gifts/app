@@ -266,6 +266,11 @@ export function LoanPayMore({
     setServerAmountInvalid(false);
     if (shownPendingAction === 'pay' && actionError.code === 'invalid_amount') {
       setServerError(null);
+      setAmount('');
+      setExactLoanAmount(null);
+      setExactLoanSats(null);
+      setAttemptedAmount(null);
+      draftEditedSinceAttempt.current = true;
       setServerAmountInvalid(true);
       return;
     }

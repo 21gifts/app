@@ -236,7 +236,7 @@ describe('LoanPayMore', () => {
     );
   });
 
-  it('keeps a server invalid amount on the field and blocks retry until the draft changes', () => {
+  it('clears a server-rejected draft and blocks retry until a new draft is entered', () => {
     const item = loan();
     const view = show(item);
     const input = screen.getByLabelText('Amount (₿)') as HTMLInputElement;
@@ -257,6 +257,7 @@ describe('LoanPayMore', () => {
     );
 
     const rejected = screen.getByLabelText('Amount (₿)') as HTMLInputElement;
+    expect(rejected.value).toBe('');
     expect(rejected.getAttribute('aria-invalid')).toBe('true');
     expect(rejected.getAttribute('aria-describedby')).toBe(`${rejected.id}-error`);
     expect(screen.getByRole('alert').textContent).toBe('Enter a whole ₿ amount greater than zero.');
@@ -270,6 +271,7 @@ describe('LoanPayMore', () => {
     fireEvent.change(rejected, { target: { value: '999' } });
     expect(rejected.getAttribute('aria-invalid')).toBeNull();
     expect(rejected.getAttribute('aria-describedby')).toBeNull();
+    expect(screen.queryByRole('alert')).toBeNull();
     expect(blocked.disabled).toBe(false);
 
     cleanup();
@@ -280,7 +282,9 @@ describe('LoanPayMore', () => {
       maxAmount: '480.28',
     });
     const fiatView = show(php);
-    fireEvent.change(screen.getByLabelText('Amount (PHP)'), { target: { value: '100.00' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Max' }));
+    expect((screen.getByLabelText('Amount (PHP)') as HTMLInputElement).value).toBe('480.28');
+    expect(screen.getByText("₿9'283")).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Pay this amount' }));
     fiatView.rerender(
       payMoreState(php, fiatView.onPay, fiatView.onCloseCollecting, {
@@ -293,6 +297,11 @@ describe('LoanPayMore', () => {
         },
       }),
     );
+    const rejectedFiat = screen.getByLabelText('Amount (PHP)') as HTMLInputElement;
+    expect(rejectedFiat.value).toBe('');
+    expect(rejectedFiat.getAttribute('aria-invalid')).toBe('true');
+    const staleCounter = screen.getByText("₿9'283");
+    expect(staleCounter.closest('[data-collapse]')?.hasAttribute('inert')).toBe(true);
     expect(screen.getByRole('alert').textContent).toBe(
       'Enter an amount greater than zero with at most two decimals.',
     );
