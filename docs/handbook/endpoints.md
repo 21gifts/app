@@ -809,7 +809,7 @@
 ## Endpoint: POST /messages/[id]/repayment/close
 
 - **Purpose:** Same-origin proxy of api `POST /messages/:id/repayment/close`. With no body, it permanently stops an ask from collecting and returns `{ fundedAt, closedAt, collectedSats, collectedAmount }`; repayment remains available.
-- **Errors:** Upstream 401/404/409 `missing_requirements`, or 502 if the api is unreachable.
+- **Errors:** Upstream 401, 404, 409 `missing_requirements`, 429, or 503; 502 if the api is unreachable.
 - **Used by:** `closeLoan` through `useLoanRepay.closeCollecting`, followed by `GET /me/loans`.
 - **Auth:** Bearer.
 

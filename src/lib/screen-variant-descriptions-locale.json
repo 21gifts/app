@@ -1074,10 +1074,45 @@
     "es": "Pagar más muestra el error rojo Un pago anterior de esta parte sigue abierto. Inténtalo de nuevo más tarde. El campo de unidad fija, contador en vivo y controles de AmountEntry permanecen visibles.",
     "fil": "Ipinapakita ng Magbayad pa ang pulang API error na Bukas pa ang naunang bayad para sa bahaging ito. Subukan muli mamaya. Nakikita pa rin ang fixed-unit AmountEntry field, live counter, at controls."
   },
+  "/loans/repay:pay-more-rate-limit": {
+    "de": "Die API der freien Rückzahlung antwortete mit HTTP 429. Unter AmountEntry steht rot Zu viele Zahlungsanfragen. Versuchen Sie es später erneut.; das feste Feld, der Live-Gegenwert, Maximum und Betrag zahlen bleiben für einen späteren Versuch verfügbar.",
+    "es": "La api del pago libre respondió con HTTP 429. Bajo AmountEntry aparece en rojo Demasiadas solicitudes de pago. Inténtalo de nuevo más tarde.; el campo de unidad fija, contador en vivo, Máximo y Pagar este importe siguen disponibles para otro intento.",
+    "fil": "Sumagot ng HTTP 429 ang API ng libreng repayment. Lumalabas sa pula sa ilalim ng AmountEntry ang Masyadong maraming payment request. Subukan muli mamaya.; available pa rin ang fixed-unit field, live counter, Max, at Bayaran ang halagang ito para sa susunod na pagsubok."
+  },
+  "/loans/repay:pay-more-service-unavailable": {
+    "de": "Die API der freien Rückzahlung antwortete mit HTTP 503. Unter AmountEntry steht rot Die Rückzahlung ist vorübergehend nicht verfügbar. Versuchen Sie es später erneut.; das feste Feld, der Live-Gegenwert und die Kontrollen bleiben verfügbar.",
+    "es": "La api del pago libre respondió con HTTP 503. Bajo AmountEntry aparece en rojo La devolución no está disponible temporalmente. Inténtalo de nuevo más tarde.; el campo de unidad fija, contador en vivo y controles siguen disponibles.",
+    "fil": "Sumagot ng HTTP 503 ang API ng libreng repayment. Lumalabas sa pula sa ilalim ng AmountEntry ang Pansamantalang hindi available ang pagbabayad. Subukan muli mamaya.; available pa rin ang fixed-unit field, live counter, at controls."
+  },
+  "/loans/repay:pay-more-missing-requirements": {
+    "de": "Die API der freien Rückzahlung antwortete mit missing_requirements. Unter AmountEntry steht rot Vervollständigen Sie Ihre Kontoanforderungen, bevor Sie zahlen.; das feste Feld, der Live-Gegenwert und die Kontrollen bleiben verfügbar.",
+    "es": "La api del pago libre respondió con missing_requirements. Bajo AmountEntry aparece en rojo Completa los requisitos de tu cuenta antes de pagar.; el campo de unidad fija, contador en vivo y controles siguen disponibles.",
+    "fil": "Sumagot ang API ng libreng repayment ng missing_requirements. Lumalabas sa pula sa ilalim ng AmountEntry ang Kumpletuhin ang mga kailangan sa account bago magbayad.; available pa rin ang fixed-unit field, live counter, at controls."
+  },
+  "/loans/repay:pay-more-request-failure": {
+    "de": "Die Anfrage der freien Rückzahlung schlug vor der Wallet-Arbeit fehl. Die typisierte allgemeine Ablehnung Diese Rückzahlung konnte nicht gestartet werden. Bitte versuchen Sie es erneut. steht unter AmountEntry; festes Feld, Live-Gegenwert und Kontrollen bleiben verfügbar.",
+    "es": "La solicitud del pago libre falló antes del trabajo de la wallet. El rechazo genérico tipado No se pudo iniciar esta devolución. Inténtalo de nuevo. aparece bajo AmountEntry; el campo de unidad fija, contador en vivo y controles siguen disponibles.",
+    "fil": "Nabigo ang request ng libreng repayment bago magsimula ang wallet work. Lumalabas sa ilalim ng AmountEntry ang typed generic refusal na Hindi masimulan ang pagbabayad na ito. Pakisubukan muli.; available pa rin ang fixed-unit field, live counter, at controls."
+  },
+  "/loans/repay:pay-more-wallet-failure": {
+    "de": "Die Anfrage der freien Rückzahlung war erfolgreich, aber die Wallet-Arbeit schlug fehl. Unter AmountEntry steht rot Die Bitcoin-Zahlung konnte nicht gestartet werden; festes Feld, Live-Gegenwert und Kontrollen bleiben verfügbar.",
+    "es": "La solicitud del pago libre fue correcta, pero falló el trabajo de la wallet. Bajo AmountEntry aparece en rojo No se pudo iniciar el pago de Bitcoin; el campo de unidad fija, contador en vivo y controles siguen disponibles.",
+    "fil": "Nagtagumpay ang request ng libreng repayment pero nabigo ang wallet work. Lumalabas sa pula sa ilalim ng AmountEntry ang Hindi masimulan ang Bitcoin payment; available pa rin ang fixed-unit field, live counter, at controls."
+  },
+  "/loans/repay:pay-more-cannot-receive": {
+    "de": "Das Ergebnis der freien Rückzahlung ist cannot_receive. Unter AmountEntry steht rot Die Wallet einer kreditgebenden Person kann noch nicht empfangen.; festes Feld, Live-Gegenwert und Kontrollen bleiben verfügbar.",
+    "es": "El resultado del pago libre es cannot_receive. Bajo AmountEntry aparece en rojo La wallet de un prestamista aún no puede recibir.; el campo de unidad fija, contador en vivo y controles siguen disponibles.",
+    "fil": "cannot_receive ang resulta ng libreng repayment. Lumalabas sa pula sa ilalim ng AmountEntry ang Hindi pa makatanggap ang wallet ng isang nagpautang.; available pa rin ang fixed-unit field, live counter, at controls."
+  },
+  "/loans/repay:pay-more-api-sunday": {
+    "de": "Die API lehnte die freie Rückzahlung mit SUNDAY_REST ab. Unter AmountEntry steht rot Sonntags ruhen die Rückzahlungen. Versuchen Sie es morgen erneut.; dies ist das API-Ergebnis und nicht der gewöhnliche gedämpfte Sonntagszustand aus der Kreditliste.",
+    "es": "La api rechazó el pago libre con SUNDAY_REST. Bajo AmountEntry aparece en rojo Los domingos no hay devoluciones. Inténtalo mañana.; es el resultado de la api, separado del estado dominical atenuado de la lista de préstamos.",
+    "fil": "Tinanggihan ng API ang libreng repayment gamit ang SUNDAY_REST. Lumalabas sa pula sa ilalim ng AmountEntry ang Walang pagbabayad tuwing Linggo. Subukan muli bukas.; API outcome ito at hiwalay sa karaniwang muted Sunday state mula sa loan list."
+  },
   "/loans/repay:pay-more-nothing-due": {
-    "de": "Die typisierte Ablehnung nothing_due zeigt unter AmountEntry die kurze rote Zeile „Es ist nichts mehr zurückzuzahlen.“; festes Feld, Live-Gegenwert und Kontrollen bleiben sichtbar. Dies ist der kompakte Vertreter für Ablehnungen mit demselben Kontrolllayout; pay-more-error vertritt die umgebrochenen Meldungen für payment_open, Ratenbegrenzung, Dienst-Nichtverfügbarkeit, fehlende Anforderungen und allgemeine Anfragefehler.",
-    "es": "El rechazo tipado nothing_due muestra bajo AmountEntry la línea roja breve «No queda nada por devolver.»; el campo de unidad fija, contador en vivo y controles siguen visibles. Es el representante compacto de los rechazos con la misma disposición de controles; pay-more-error representa los mensajes con salto de línea de payment_open, límite de solicitudes, servicio no disponible, requisitos pendientes y error genérico.",
-    "fil": "Ipinapakita ng typed na nothing_due refusal ang maikling pulang linyang Wala nang natitirang babayaran. sa ilalim ng AmountEntry; nakikita pa rin ang fixed-unit field, live counterpart, at controls. Ito ang compact representative ng mga refusal na pareho ang control layout; kinakatawan ng pay-more-error ang wrapped na payment_open, rate limit, service unavailable, missing requirements, at generic request failure."
+    "de": "Die typisierte Ablehnung nothing_due zeigt unter AmountEntry die kurze rote Zeile Es ist nichts mehr zurückzuzahlen.; festes Feld, Live-Gegenwert und Kontrollen bleiben sichtbar.",
+    "es": "El rechazo tipado nothing_due muestra bajo AmountEntry la línea roja breve No queda nada por devolver.; el campo de unidad fija, contador en vivo y controles siguen visibles.",
+    "fil": "Ipinapakita ng typed na nothing_due refusal ang maikling pulang linyang Wala nang natitirang babayaran. sa ilalim ng AmountEntry; nakikita pa rin ang fixed-unit field, live counterpart, at controls."
   },
   "/loans/repay:pay-more-sending": {
     "de": "Eine freie Rückzahlung wird gerade über die Wallet gesendet. Statt Betrag zahlen stehen ein Spinner und Mehr wird zurückgezahlt…; festes AmountEntry-Feld und Maximum sind deaktiviert, der Live-Gegenwert bleibt sichtbar.",
@@ -1133,6 +1168,21 @@
     "de": "Ein noch sammelnder Kredit, nachdem seine endgültige Schließanfrage fehlgeschlagen ist. Der rote schließspezifische Hinweis Diese Rückzahlung konnte nicht gestartet werden. Bitte versuchen Sie es erneut. steht unter Sammeln beenden; AmountEntry und beide Aktionen sind wieder verfügbar, ohne Bestätigungsdialog.",
     "es": "Un préstamo que aún recauda después de fallar la solicitud para cerrarlo definitivamente. El aviso rojo específico del cierre No se pudo iniciar esta devolución. Inténtalo de nuevo. aparece bajo Terminar la recaudación; AmountEntry y ambas acciones vuelven a estar disponibles, sin diálogo de confirmación.",
     "fil": "Loan na nangangalap pa matapos mabigo ang permanenteng close request. Nasa ilalim ng Tapusin ang pangangalap ang pulang close-specific alert na Hindi masimulan ang pagbabayad na ito. Pakisubukan muli. Available ulit ang AmountEntry at parehong action, na walang confirmation dialog."
+  },
+  "/loans/repay:close-rate-limit": {
+    "de": "Ein noch sammelnder Kredit, nachdem seine endgültige Schließanfrage mit HTTP 429 begrenzt wurde. Der rote Hinweis Zu viele Zahlungsanfragen. Versuchen Sie es später erneut. steht unter Sammeln beenden; AmountEntry und beide Aktionen sind wieder verfügbar.",
+    "es": "Un préstamo que aún recauda después de que su solicitud de cierre definitivo se limitara con HTTP 429. El aviso rojo Demasiadas solicitudes de pago. Inténtalo de nuevo más tarde. aparece bajo Terminar la recaudación; AmountEntry y ambas acciones vuelven a estar disponibles.",
+    "fil": "Loan na nangangalap pa matapos ma-rate-limit ng HTTP 429 ang permanenteng close request. Nasa ilalim ng Tapusin ang pangangalap ang pulang Masyadong maraming payment request. Subukan muli mamaya.; available ulit ang AmountEntry at parehong action."
+  },
+  "/loans/repay:close-service-unavailable": {
+    "de": "Ein noch sammelnder Kredit, nachdem seine endgültige Schließanfrage HTTP 503 erhielt. Der rote Hinweis Die Rückzahlung ist vorübergehend nicht verfügbar. Versuchen Sie es später erneut. steht unter Sammeln beenden; AmountEntry und beide Aktionen sind wieder verfügbar.",
+    "es": "Un préstamo que aún recauda después de que su solicitud de cierre definitivo recibiera HTTP 503. El aviso rojo La devolución no está disponible temporalmente. Inténtalo de nuevo más tarde. aparece bajo Terminar la recaudación; AmountEntry y ambas acciones vuelven a estar disponibles.",
+    "fil": "Loan na nangangalap pa matapos makatanggap ng HTTP 503 ang permanenteng close request. Nasa ilalim ng Tapusin ang pangangalap ang pulang Pansamantalang hindi available ang pagbabayad. Subukan muli mamaya.; available ulit ang AmountEntry at parehong action."
+  },
+  "/loans/repay:close-missing-requirements": {
+    "de": "Ein noch sammelnder Kredit, dessen endgültige Schließanfrage missing_requirements erhielt. Der rote Hinweis Vervollständigen Sie Ihre Kontoanforderungen, bevor Sie zahlen. steht unter Sammeln beenden; AmountEntry und beide Aktionen sind wieder verfügbar.",
+    "es": "Un préstamo que aún recauda cuya solicitud de cierre definitivo recibió missing_requirements. El aviso rojo Completa los requisitos de tu cuenta antes de pagar. aparece bajo Terminar la recaudación; AmountEntry y ambas acciones vuelven a estar disponibles.",
+    "fil": "Loan na nangangalap pa na nakatanggap ng missing_requirements sa permanenteng close request. Nasa ilalim ng Tapusin ang pangangalap ang pulang Kumpletuhin ang mga kailangan sa account bago magbayad.; available ulit ang AmountEntry at parehong action."
   },
   "/loans/repay:closed-loan": {
     "de": "Ein manuell geschlossener Kredit, nachdem das Sammeln ohne Zahlung beendet wurde. Das normale Mehr zurückzahlen mit festem AmountEntry-Feld, Maximum und Betrag zahlen bleibt; der Sammelhinweis und Sammeln beenden fehlen.",

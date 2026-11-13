@@ -1618,9 +1618,51 @@ The free-payment request was refused because an earlier payment is still open. T
 
 ![21.gifts loans repay pay more api error](images/loans-repay-pay-more-error.png)
 
+### Variant: pay-more-rate-limit
+
+The free-payment api answered HTTP 429. The red line **Too many payment requests. Try again later.** appears below AmountEntry while its fixed-unit field, live counter, Max, and **Pay this amount** remain available for a later retry.
+
+![21.gifts loans repay pay more rate limit](images/loans-repay-pay-more-rate-limit.png)
+
+### Variant: pay-more-service-unavailable
+
+The free-payment api answered HTTP 503. The red line **Repayment is temporarily unavailable. Try again later.** appears below AmountEntry while its fixed-unit field, live counter, and controls remain available.
+
+![21.gifts loans repay pay more service unavailable](images/loans-repay-pay-more-service-unavailable.png)
+
+### Variant: pay-more-missing-requirements
+
+The free-payment api answered `missing_requirements`. The red line **Complete your account requirements before paying.** appears below AmountEntry while its fixed-unit field, live counter, and controls remain available.
+
+![21.gifts loans repay pay more missing requirements](images/loans-repay-pay-more-missing-requirements.png)
+
+### Variant: pay-more-request-failure
+
+The free-payment request failed before wallet work began. The typed generic refusal shows **Could not start this repayment. Please try again.** below AmountEntry while its fixed-unit field, live counter, and controls remain available.
+
+![21.gifts loans repay pay more request failure](images/loans-repay-pay-more-request-failure.png)
+
+### Variant: pay-more-wallet-failure
+
+The free-payment request succeeded but its wallet work failed. The red line **Could not start the Bitcoin payment** appears below AmountEntry while its fixed-unit field, live counter, and controls remain available.
+
+![21.gifts loans repay pay more wallet failure](images/loans-repay-pay-more-wallet-failure.png)
+
+### Variant: pay-more-cannot-receive
+
+The free-payment outcome is `cannot_receive`. The red line **A lender's wallet can't receive yet.** appears below AmountEntry while its fixed-unit field, live counter, and controls remain available.
+
+![21.gifts loans repay pay more lender cannot receive](images/loans-repay-pay-more-cannot-receive.png)
+
+### Variant: pay-more-api-sunday
+
+The free-payment api refused the request with `SUNDAY_REST`. The red line **Repayments rest on Sundays. Try again tomorrow.** appears below AmountEntry; this is the api outcome, separate from the ordinary muted Sunday state supplied with the loans list.
+
+![21.gifts loans repay pay more api Sunday refusal](images/loans-repay-pay-more-api-sunday.png)
+
 ### Variant: pay-more-nothing-due
 
-The typed `nothing_due` refusal shows the short red line **There is nothing left to repay.** below AmountEntry while its fixed-unit field, live counterpart, and controls remain visible. This is the compact representative for refusal messages that keep this same control layout; the existing `pay-more-error` is the wrapped representative for `payment_open`, rate limiting, service unavailability, missing requirements, and generic request failure.
+The typed `nothing_due` refusal shows the short red line **There is nothing left to repay.** below AmountEntry while its fixed-unit field, live counterpart, and controls remain visible.
 
 ![21.gifts loans repay pay more nothing due](images/loans-repay-pay-more-nothing-due.png)
 
@@ -1689,6 +1731,24 @@ A still-collecting loan while its permanent close request is being sent. The fix
 A still-collecting loan after its permanent close request failed. The red close-specific alert **Could not start this repayment. Please try again.** sits below **End collecting**; AmountEntry and both actions are available again, with no confirmation dialog.
 
 ![21.gifts loans repay end collecting error](images/loans-repay-close-error.png)
+
+### Variant: close-rate-limit
+
+A still-collecting loan after its permanent close request was rate limited with HTTP 429. The red alert **Too many payment requests. Try again later.** sits below **End collecting**; AmountEntry and both actions are available again.
+
+![21.gifts loans repay end collecting rate limit](images/loans-repay-close-rate-limit.png)
+
+### Variant: close-service-unavailable
+
+A still-collecting loan after its permanent close request received HTTP 503. The red alert **Repayment is temporarily unavailable. Try again later.** sits below **End collecting**; AmountEntry and both actions are available again.
+
+![21.gifts loans repay end collecting service unavailable](images/loans-repay-close-service-unavailable.png)
+
+### Variant: close-missing-requirements
+
+A still-collecting loan after its permanent close request received `missing_requirements`. The red alert **Complete your account requirements before paying.** sits below **End collecting**; AmountEntry and both actions are available again.
+
+![21.gifts loans repay end collecting missing requirements](images/loans-repay-close-missing-requirements.png)
 
 ### Variant: closed-loan
 

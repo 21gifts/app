@@ -7723,6 +7723,69 @@ test.describe('loans repay screens', () => {
     await shotScreen(page, 'state-loans-repay-pay-more-error');
   });
 
+  test('state /loans/repay pay-more-rate-limit', async ({ page }) => {
+    await loanShot(page, {
+      loans: [paidLoan],
+      visual: 'repay-pay-more-rate-limit',
+      text: 'Too many payment requests. Try again later.',
+    });
+    await shotScreen(page, 'state-loans-repay-pay-more-rate-limit');
+  });
+
+  test('state /loans/repay pay-more-service-unavailable', async ({ page }) => {
+    await loanShot(page, {
+      loans: [paidLoan],
+      visual: 'repay-pay-more-service-unavailable',
+      text: 'Repayment is temporarily unavailable. Try again later.',
+    });
+    await shotScreen(page, 'state-loans-repay-pay-more-service-unavailable');
+  });
+
+  test('state /loans/repay pay-more-missing-requirements', async ({ page }) => {
+    await loanShot(page, {
+      loans: [paidLoan],
+      visual: 'repay-pay-more-missing-requirements',
+      text: 'Complete your account requirements before paying.',
+    });
+    await shotScreen(page, 'state-loans-repay-pay-more-missing-requirements');
+  });
+
+  test('state /loans/repay pay-more-request-failure', async ({ page }) => {
+    await loanShot(page, {
+      loans: [paidLoan],
+      visual: 'repay-pay-more-request-failure',
+      text: 'Could not start this repayment. Please try again.',
+    });
+    await shotScreen(page, 'state-loans-repay-pay-more-request-failure');
+  });
+
+  test('state /loans/repay pay-more-wallet-failure', async ({ page }) => {
+    await loanShot(page, {
+      loans: [paidLoan],
+      visual: 'repay-pay-more-wallet-failure',
+      text: 'Could not start the Bitcoin payment',
+    });
+    await shotScreen(page, 'state-loans-repay-pay-more-wallet-failure');
+  });
+
+  test('state /loans/repay pay-more-cannot-receive', async ({ page }) => {
+    await loanShot(page, {
+      loans: [paidLoan],
+      visual: 'repay-pay-more-cannot-receive',
+      text: "A lender's wallet can't receive yet.",
+    });
+    await shotScreen(page, 'state-loans-repay-pay-more-cannot-receive');
+  });
+
+  test('state /loans/repay pay-more-api-sunday', async ({ page }) => {
+    await loanShot(page, {
+      loans: [paidLoan],
+      visual: 'repay-pay-more-api-sunday',
+      text: 'Repayments rest on Sundays. Try again tomorrow.',
+    });
+    await shotScreen(page, 'state-loans-repay-pay-more-api-sunday');
+  });
+
   test('state /loans/repay pay-more-nothing-due', async ({ page }) => {
     await loanShot(page, {
       loans: [paidLoan],
@@ -7857,6 +7920,33 @@ test.describe('loans repay screens', () => {
         .filter({ hasText: 'Could not start this repayment. Please try again.' }),
     ).toBeVisible();
     await shotScreen(page, 'state-loans-repay-close-error');
+  });
+
+  test('state /loans/repay close-rate-limit', async ({ page }) => {
+    await loanShot(page, {
+      loans: [collectingLoan],
+      visual: 'repay-close-rate-limit',
+      text: 'Too many payment requests. Try again later.',
+    });
+    await shotScreen(page, 'state-loans-repay-close-rate-limit');
+  });
+
+  test('state /loans/repay close-service-unavailable', async ({ page }) => {
+    await loanShot(page, {
+      loans: [collectingLoan],
+      visual: 'repay-close-service-unavailable',
+      text: 'Repayment is temporarily unavailable. Try again later.',
+    });
+    await shotScreen(page, 'state-loans-repay-close-service-unavailable');
+  });
+
+  test('state /loans/repay close-missing-requirements', async ({ page }) => {
+    await loanShot(page, {
+      loans: [collectingLoan],
+      visual: 'repay-close-missing-requirements',
+      text: 'Complete your account requirements before paying.',
+    });
+    await shotScreen(page, 'state-loans-repay-close-missing-requirements');
   });
 
   test('state /loans/repay closed-loan', async ({ page }) => {

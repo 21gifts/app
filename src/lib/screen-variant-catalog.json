@@ -1674,6 +1674,48 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/loans/repay:pay-more-rate-limit",
+    "label": "/loans/repay pay-more-rate-limit",
+    "visual": "state-loans-repay-pay-more-rate-limit",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/loans/repay:pay-more-service-unavailable",
+    "label": "/loans/repay pay-more-service-unavailable",
+    "visual": "state-loans-repay-pay-more-service-unavailable",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/loans/repay:pay-more-missing-requirements",
+    "label": "/loans/repay pay-more-missing-requirements",
+    "visual": "state-loans-repay-pay-more-missing-requirements",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/loans/repay:pay-more-request-failure",
+    "label": "/loans/repay pay-more-request-failure",
+    "visual": "state-loans-repay-pay-more-request-failure",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/loans/repay:pay-more-wallet-failure",
+    "label": "/loans/repay pay-more-wallet-failure",
+    "visual": "state-loans-repay-pay-more-wallet-failure",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/loans/repay:pay-more-cannot-receive",
+    "label": "/loans/repay pay-more-cannot-receive",
+    "visual": "state-loans-repay-pay-more-cannot-receive",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/loans/repay:pay-more-api-sunday",
+    "label": "/loans/repay pay-more-api-sunday",
+    "visual": "state-loans-repay-pay-more-api-sunday",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/loans/repay:pay-more-nothing-due",
     "label": "/loans/repay pay-more-nothing-due",
     "visual": "state-loans-repay-pay-more-nothing-due",
@@ -1743,6 +1785,24 @@
     "id": "/loans/repay:close-error",
     "label": "/loans/repay close-error",
     "visual": "state-loans-repay-close-error",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/loans/repay:close-rate-limit",
+    "label": "/loans/repay close-rate-limit",
+    "visual": "state-loans-repay-close-rate-limit",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/loans/repay:close-service-unavailable",
+    "label": "/loans/repay close-service-unavailable",
+    "visual": "state-loans-repay-close-service-unavailable",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/loans/repay:close-missing-requirements",
+    "label": "/loans/repay close-missing-requirements",
+    "visual": "state-loans-repay-close-missing-requirements",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
