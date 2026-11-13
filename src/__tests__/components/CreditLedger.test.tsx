@@ -807,6 +807,40 @@ describe('CreditLedger', () => {
     expect(label).not.toMatch(/\$5/);
   });
 
+  it('keeps a due fiat remainder when only a paid row lacks an amount', async () => {
+    const partial = ledgerClosedPartialFiat.repayments[0]!;
+    ledger({
+      ...ledgerClosedPartialFiat,
+      repayments: [
+        {
+          ...partial,
+          amount: null,
+          paidSats: 500,
+          paidAmount: null,
+          dueSats: 0,
+          status: 'paid' as const,
+        },
+        {
+          ...partial,
+          dayIndex: 1,
+          dueOn: '2026-10-08',
+        },
+      ],
+    });
+    renderWithLocale(<CreditLedger messageId="paid-fiat-gap" list="page" />);
+
+    const names = await screen.findAllByText('Bruno @bruno');
+    const dueRow = names
+      .map((name) => name.closest('li'))
+      .find((row) => row?.textContent?.includes('Due'));
+    expect(dueRow).toBeTruthy();
+    expect(dueRow?.textContent).toContain('₱10.00');
+    expect(dueRow?.textContent).not.toContain('₿400');
+    const chart = screen.getByRole('img');
+    expect(chart.textContent).toContain('₱10.00');
+    expect(chart.getAttribute('aria-label')).toContain('₱10.00');
+  });
+
   it('calls an open German plan a Darlehen', async () => {
     ledger({ ...btc, fundedAt: null, startsOn: null });
     renderWithLocale(<CreditLedger messageId="m1" />, 'de');

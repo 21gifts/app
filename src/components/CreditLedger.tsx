@@ -112,7 +112,10 @@ export function CreditLedger({
   const ledger = withWaiting(current);
   const fiat = ledger.currency === 'BTC' ? null : (ledger.currency as FiatCode);
   const repaymentFiat =
-    fiat !== null && ledger.repayments.some((row) => row.amount === null && row.sats !== null)
+    fiat !== null &&
+    ledger.repayments.some(
+      (row) => row.status !== 'paid' && row.amount === null && row.sats !== null && row.sats > 0,
+    )
       ? null
       : fiat;
   const spot: SpotPair = { rateDay, visitorFiat };
