@@ -31,9 +31,10 @@ import {
  * link to the repayment list. `list="page"` omits that link. A short plan, or
  * one that is not fully given or is missing a date, lists each day. A fully
  * given plan with more than 7 dated days shows the month overview instead.
- * Still owed there counts only unpaid shares. Partial rows use `dueSats` (or
- * `sats - paidSats` when older api bodies omit it) and `amount - paidAmount`
- * in rows, charts, splits, and totals. When positive `paidSats` have no stored
+ * Still owed there counts only unpaid shares. Partial due and scheduled rows
+ * use `dueSats` (or `sats - paidSats` when older api bodies omit it) and
+ * `amount - paidAmount` in rows, charts, splits, and totals. Paid rows keep
+ * their original committed amounts. When positive `paidSats` have no stored
  * `paidAmount`, or a supplied value is malformed or exceeds the original
  * amount, the repayment plan falls back to those remaining sats and the
  * current spot instead of the original fiat. A month names one status only
@@ -691,6 +692,9 @@ function withWaiting(ledger: RepaymentLedger): RepaymentLedger {
 }
 
 function remainingLine(row: RepaymentLine): RepaymentLine {
+  if (row.status === 'paid') {
+    return row;
+  }
   let amount = row.amount;
   const payment = validatedRepaymentPayment(row);
   if (row.amount !== null && row.amount !== undefined) {
@@ -812,7 +816,12 @@ function RepaymentChart({
   if (groups.length === 0) {
     return null;
   }
-  const amounts = groups.map((group) => dayAmount(group.rows, fiat));
+  const amounts = groups.map((group) =>
+    dayAmount(
+      group.rows.filter((row) => row.status !== 'paid'),
+      fiat,
+    ),
+  );
   const total = amounts.reduce((sum, amount) => sum + amount, 0);
   if (total <= 0) {
     return null;

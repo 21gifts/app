@@ -793,21 +793,21 @@ export function LoanRepayScreen(): ReactElement {
               ledger.currency === loan.goalCurrency
             ) {
               const paid = ledger.repayments.flatMap((row) => {
+                if (row.status === 'paid') {
+                  return [{ sats: row.sats, amount: row.amount }];
+                }
                 const payment = validatedRepaymentPayment(row);
-                if (row.status !== 'paid' && payment.sats === 0n) {
+                if (payment.sats === 0n) {
                   return [];
                 }
-                const partial = payment.sats !== null && payment.sats > 0n;
                 return [
                   {
-                    sats: payment.sats === null ? null : partial ? Number(payment.sats) : row.sats,
+                    sats: payment.sats === null ? null : Number(payment.sats),
                     amount: payment.hasAmount
                       ? payment.amount === null
                         ? null
                         : centsString(payment.amount)
-                      : row.status === 'paid'
-                        ? row.amount
-                        : null,
+                      : null,
                   },
                 ];
               });

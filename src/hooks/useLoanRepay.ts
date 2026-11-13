@@ -185,13 +185,12 @@ function prepayResponseMatches(prepay: LoanPrepay, loan: MyLoan, amountText: str
   if (distributedSats !== responseSats) {
     return false;
   }
-  if (loan.goalCurrency === 'BTC') {
-    const requested = parseLoanAmount(amountText, 'BTC');
-    return requested !== null && requested.units === responseSats;
-  }
-  const requestedCents = creditSmallestUnits(amountText, false);
-  if (requestedCents === null) {
+  const requested = parseLoanAmount(amountText, loan.goalCurrency);
+  if (requested === null) {
     return false;
+  }
+  if (loan.goalCurrency === 'BTC') {
+    return requested.units === responseSats;
   }
   let distributedCents = 0n;
   for (const row of rows) {
@@ -204,7 +203,7 @@ function prepayResponseMatches(prepay: LoanPrepay, loan: MyLoan, amountText: str
     }
     distributedCents += cents;
   }
-  return distributedCents === requestedCents;
+  return distributedCents === requested.units;
 }
 
 /** Orders bills by repayment day, loan order, then api order. */

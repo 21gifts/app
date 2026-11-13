@@ -170,11 +170,26 @@ describe('CreditLedger', () => {
   });
 
   it('shows partial rows, chart totals, and fiat figures from the remaining balance', async () => {
-    ledger(ledgerClosedPartial);
+    ledger({
+      ...ledgerClosedPartial,
+      repayments: [
+        ...ledgerClosedPartial.repayments,
+        {
+          ...ledgerClosedPartial.repayments[0]!,
+          dayIndex: 1,
+          dueOn: '2026-10-08',
+          sats: 40,
+          paidSats: 40,
+          dueSats: null,
+          status: 'paid' as const,
+        },
+      ],
+    });
     renderWithLocale(<CreditLedger messageId="partial-btc" list="page" />);
     await screen.findByText('Paid back');
     expect(document.body.textContent).toContain('₿400');
     expect(document.body.textContent).not.toContain('₿500');
+    expect(screen.getByText('₿40')).toBeTruthy();
     expect(screen.getByRole('img').textContent).toContain('₿400');
     cleanup();
 
@@ -199,7 +214,8 @@ describe('CreditLedger', () => {
     await screen.findByText('Paid back');
     expect(screen.getAllByText('₱10.00').length).toBeGreaterThan(0);
     expect(screen.queryByText('₱12.50')).toBeNull();
-    expect(screen.getByText('₱0.00')).toBeTruthy();
+    expect(screen.getByText('₱1.00')).toBeTruthy();
+    expect(screen.queryByText('₱0.00')).toBeNull();
     expect(screen.getByRole('img').textContent).toContain('₱10.00');
   });
 
@@ -657,7 +673,7 @@ describe('CreditLedger', () => {
     expect(screen.queryByRole('img')).toBeNull();
   });
 
-  it('shows the spot beside the bitcoin chart total when no fiat was stored', async () => {
+  it('shows the spot beside the remaining chart total when a paid row has no paidSats', async () => {
     vi.stubGlobal(
       'fetch',
       vi.fn(async (input: RequestInfo) => {
@@ -677,9 +693,9 @@ describe('CreditLedger', () => {
     );
     renderWithLocale(<CreditLedger messageId="m1" />);
     const chart = await screen.findByRole('img', { name: /Nov 1/ });
-    expect(chart.textContent).toContain('₿21');
+    expect(chart.textContent).toContain('₿11');
     expect(chart.textContent).toContain('·');
-    expect(chart.textContent).toContain('$0.02');
+    expect(chart.textContent).toContain('$0.01');
   });
 
   it('keeps the feed ledger closed until the visitor asks', async () => {

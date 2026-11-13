@@ -2216,6 +2216,33 @@ describe('useLoanRepay free repayment and collecting actions', () => {
     expect(result.current.prepayMessageId).toBe('prepay-waiting');
   });
 
+  it('accepts a comma-decimal fiat request when the prepay response matches', async () => {
+    const row = bill('Comma', 1_250, 8, undefined, '12.50');
+    vi.mocked(prepayLoan).mockResolvedValue({
+      amountSats: 1_250,
+      amount: '12.50',
+      bills: [row],
+      waiting: [],
+    });
+    vi.mocked(payFromWallet).mockResolvedValue(confirmed(1_250));
+    const current: MyLoan = {
+      ...loan('prepay-comma', 0, 100),
+      goalCurrency: 'PHP',
+      goalAmount: '12.50',
+      maxSats: 1_250,
+      maxAmount: '12.50',
+    };
+    const { result } = renderHook(() =>
+      useLoanRepay({ reload: vi.fn(async () => body([current])) }),
+    );
+
+    act(() => result.current.prepay(current, '12,50'));
+    await waitFor(() => expect(result.current.sentSats).toBe(1_250));
+
+    expect(prepayLoan).toHaveBeenCalledWith('token', 'prepay-comma', '12,50');
+    expect(payFromWallet).toHaveBeenCalledWith({ type: 'input', input: invoiceOf(row) });
+  });
+
   it('rejects a successful prepay body whose bills and waiting sats exceed its total', async () => {
     vi.mocked(prepayLoan).mockResolvedValue({
       amountSats: 100,

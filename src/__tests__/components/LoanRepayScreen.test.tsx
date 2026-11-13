@@ -959,6 +959,8 @@ describe('LoanRepayScreen', () => {
             status: 'paid',
             amount: '59.99',
             sats: 5_999,
+            paidSats: 1_000,
+            paidAmount: '10.00',
             dueSats: null,
           },
         ],
