@@ -31,6 +31,7 @@ import {
   grantPlacesSchema,
   postStatsSchema,
   walletStatsSchema,
+  walletUsageSchema,
   accountActivitySchema,
   memberProfileSchema,
   messageInvoiceSchema,
@@ -81,6 +82,7 @@ import {
   type GrantPlaces,
   type PostStats,
   type WalletStats,
+  type WalletUsage,
   type AccountActivity,
   type LnurlInvoice,
   type LnurlPayRequest,
@@ -1536,6 +1538,27 @@ export async function fetchWalletStats(): Promise<WalletStats> {
     return walletStatsSchema.parse(await response.json());
   } catch {
     throw new Error('Could not load wallet stats. Please try again.');
+  }
+}
+
+/**
+ * Fetches aggregate wallet use since the production release.
+ *
+ * The payload has no person, account, or payment id.
+ *
+ * @returns The {@link WalletUsage} payload.
+ * @throws Error with visitor-facing copy when the api is unavailable or the
+ * body fails {@link walletUsageSchema}.
+ */
+export async function fetchWalletUsage(): Promise<WalletUsage> {
+  try {
+    const response = await fetch('/wallets/usage');
+    if (!response.ok) {
+      throw new Error('Could not load wallet usage. Please try again.');
+    }
+    return walletUsageSchema.parse(await response.json());
+  } catch {
+    throw new Error('Could not load wallet usage. Please try again.');
   }
 }
 

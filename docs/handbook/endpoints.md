@@ -191,7 +191,16 @@
 - **Inputs:** None.
 - **Outputs:** `{ walletCount, fundedWalletCount, totalSats, totalBtc, asOf, balanceOverTime }` from the api. `walletCount` counts wallets that ever reported a balance; `fundedWalletCount` counts those with a current balance above zero. Empty data is zeros, `asOf: null`, and `balanceOverTime: []`.
 - **Errors:** The proxy forwards the upstream status, including 503 `{ error: "Wallet stats are unavailable" }`, or answers 502 if the api is unreachable.
-- **Used by:** `fetchWalletStats` on `/stats`. A failed fetch omits the Wallets section without breaking the gift stats.
+- **Used by:** `fetchWalletStats` on `/stats` and on `/stats/wallet` (the wallets-per-day chart). A failed fetch omits the Wallets section on `/stats`, and on `/stats/wallet` only hides that chart.
+- **Auth:** Public.
+
+## Endpoint: GET /wallets/usage
+
+- **Purpose:** Same-origin proxy of api `GET /wallets/usage` (aggregate wallet payments since the production release: totals, days, flows, amount buckets, hours, forum, and shop charges). No person, account, or payment id is in the body.
+- **Inputs:** None.
+- **Outputs:** `WalletUsage`: `releasedAt`, `asOf`, `totals`, `days`, `flows`, `amountBuckets`, `hours` (24 UTC hours), `forum`, and `shopCharges`. The client schema strips unknown extra fields and rejects a missing required field.
+- **Errors:** The proxy forwards the upstream status, or answers 502 if the api is unreachable. The page shows one quiet line **Could not load wallet usage. Please try again.** and does not offer **Try again**.
+- **Used by:** `fetchWalletUsage` on `/stats/wallet`.
 - **Auth:** Public.
 
 ## Endpoint: GET /habits
@@ -212,7 +221,7 @@
 
 - **Purpose:** Same-origin proxy of api `GET /fx/spot`: the current price of 1 BTC in USD, CHF, EUR, and PHP with `asOf` and `source`. A code the api could not price is left out of `rates`. Without any quote the body is `{ "asOf": null, "source": null, "rates": {} }`; the route has no error status of its own.
 - **Errors:** The proxy forwards the upstream status, or 502 if this proxy cannot reach the api.
-- **Used by:** `fetchFxSpot` through `useSpotRate`, on every screen that enters or converts an amount live (the amount field, `/pos`, gift and reaction amounts, the wallet, the payment fiat suffixes, and the `/stats` wallet totals and point tooltips).
+- **Used by:** `fetchFxSpot` through `useSpotRate`, on every screen that enters or converts an amount live (the amount field, `/pos`, gift and reaction amounts, the wallet, the payment fiat suffixes, the `/stats` wallet totals and point tooltips, and the `/stats/wallet` volume and Tondo fund balance).
 - **Auth:** Public. No bearer.
 
 ## Endpoint: GET /shops/activity

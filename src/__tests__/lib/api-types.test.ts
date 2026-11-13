@@ -28,6 +28,7 @@ import {
   hiddenMessageSchema,
   giftStatsSchema,
   walletStatsSchema,
+  walletUsageSchema,
   shopActivitySchema,
   shopResponseSchema,
   memberProfileSchema,
@@ -2369,6 +2370,157 @@ describe('walletStatsSchema', () => {
       walletStatsSchema.parse(
         Object.fromEntries(Object.entries(stats).filter(([key]) => key !== 'balanceOverTime')),
       ),
+    ).toThrow();
+  });
+});
+
+describe('walletUsageSchema', () => {
+  const zero = { count: 0, sats: 0 };
+  const usage = {
+    releasedAt: '2026-11-09T11:17:00.000Z',
+    asOf: '2026-11-12T08:00:00.000Z' as string | null,
+    totals: {
+      paymentCount: 1,
+      volumeSats: 10,
+      feeSats: 0,
+      medianSats: 10,
+      averageSats: 2.5,
+      activeWalletCount: 1,
+      sendingWalletCount: 1,
+      topFiveSenderShare: 0.5,
+      heartCount: 0,
+      paidShopChargeCount: 0,
+    },
+    days: [
+      {
+        day: '2026-11-09',
+        purposes: {
+          deposit: zero,
+          withdrawal: zero,
+          shop_purchase: zero,
+          forum_gift: { count: 1, sats: 10 },
+          transfer: zero,
+          fund_deposit: zero,
+          fund_payout: zero,
+          other: zero,
+        },
+        activeWalletCount: 1,
+        sendingWalletCount: 1,
+        receivingWalletCount: 1,
+      },
+    ],
+    flows: [
+      {
+        day: '2026-11-09',
+        from: 'outside' as const,
+        to: 'members' as const,
+        purpose: 'deposit' as const,
+        count: 1,
+        sats: 10,
+        feeSats: 0,
+      },
+    ],
+    amountBuckets: [
+      { key: '1' as const, minSats: 1, maxSats: 1, count: 1, sats: 1 },
+      { key: '100k+' as const, minSats: 100000, maxSats: null, count: 0, sats: 0 },
+    ],
+    hours: Array.from({ length: 24 }, (_, hourUtc) => ({ hourUtc, count: hourUtc === 0 ? 1 : 0 })),
+    forum: [{ day: '2026-10-12', gifts: 0, hearts: 0, sats: 0 }],
+    shopCharges: [{ day: '2026-10-26', created: 0, paid: 0 }],
+  };
+
+  it('accepts the payload and strips unknown fields', () => {
+    expect(walletUsageSchema.parse(usage)).toEqual(usage);
+    expect(walletUsageSchema.parse({ ...usage, extra: true, asOf: null })).toEqual({
+      ...usage,
+      asOf: null,
+    });
+    expect(
+      walletUsageSchema.parse({
+        ...usage,
+        flows: [{ ...usage.flows[0], note: 'no person' }],
+      }),
+    ).toEqual(usage);
+  });
+
+  it('accepts a fractional average and a null top bucket', () => {
+    const parsed = walletUsageSchema.parse(usage);
+    expect(parsed.totals.averageSats).toBe(2.5);
+    expect(parsed.amountBuckets[1]?.maxSats).toBeNull();
+    expect(
+      walletUsageSchema.parse({
+        ...usage,
+        totals: { ...usage.totals, topFiveSenderShare: 0 },
+      }),
+    ).toBeTruthy();
+    expect(
+      walletUsageSchema.parse({
+        ...usage,
+        totals: { ...usage.totals, topFiveSenderShare: 1 },
+      }),
+    ).toBeTruthy();
+  });
+
+  it('rejects a missing field, a bad day, a bad party, and a bad share', () => {
+    expect(() =>
+      walletUsageSchema.parse(
+        Object.fromEntries(Object.entries(usage).filter(([key]) => key !== 'totals')),
+      ),
+    ).toThrow();
+    expect(() =>
+      walletUsageSchema.parse({
+        ...usage,
+        days: [{ ...usage.days[0], day: '2026-11-9' }],
+      }),
+    ).toThrow();
+    expect(() =>
+      walletUsageSchema.parse({
+        ...usage,
+        days: [
+          {
+            ...usage.days[0],
+            purposes: Object.fromEntries(
+              Object.entries(usage.days[0].purposes).filter(([key]) => key !== 'deposit'),
+            ),
+          },
+        ],
+      }),
+    ).toThrow();
+    expect(() =>
+      walletUsageSchema.parse({
+        ...usage,
+        flows: [{ ...usage.flows[0], from: 'person' }],
+      }),
+    ).toThrow();
+    expect(() =>
+      walletUsageSchema.parse({
+        ...usage,
+        totals: { ...usage.totals, topFiveSenderShare: -0.01 },
+      }),
+    ).toThrow();
+    expect(() =>
+      walletUsageSchema.parse({
+        ...usage,
+        totals: { ...usage.totals, topFiveSenderShare: 1.01 },
+      }),
+    ).toThrow();
+    expect(() =>
+      walletUsageSchema.parse({
+        ...usage,
+        totals: { ...usage.totals, medianSats: -1 },
+      }),
+    ).toThrow();
+    expect(() =>
+      walletUsageSchema.parse({
+        ...usage,
+        hours: usage.hours.slice(0, 23),
+      }),
+    ).toThrow();
+    expect(() =>
+      walletUsageSchema.parse({
+        ...usage,
+        amountBuckets: [{ ...usage.amountBuckets[0], maxSats: -1 }],
+      }),
     ).toThrow();
   });
 });

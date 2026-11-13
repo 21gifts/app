@@ -449,7 +449,7 @@ sideways.
 **Marketing** — `src/app/(marketing)/layout.tsx` + `/404` (`src/app/not-found.tsx`, which duplicates the shell because it sits outside the group).
 
 - Canvas: `flex h-[var(--app-height)] min-h-0 flex-col bg-ink text-paper [color-scheme:dark]`, with one `[data-scrollport]` (`bg-ink`) around header, page, and footer. The document does not scroll. The ink background stays on the scroller so light theme cannot show through.
-- No `ThemeSwitcher`. Cookie theme must not lighten `/`, `/about`, `/legal`, `/terms`, `/stats`, `/handbook`, `/404`.
+- No `ThemeSwitcher`. Cookie theme must not lighten `/`, `/about`, `/legal`, `/terms`, `/stats`, `/stats/wallet`, `/handbook`, `/404`.
 - Header + footer always mounted.
 
 **App** — every other `page.tsx`. Tokens only. `ThemeProvider` + `THEME_BOOTSTRAP_SCRIPT` in the root layout (`html.dark`, cookie `theme`). Every screen uses the one top-left arrow from `ProfileChromeLeft` (or the rules-setup portal of that same arrow). Unsigned app adds LanguageSwitcher. Signed-in adds `SignedInChrome`: the Menu. Setup name and username keep a non-link wordmark. ThemeSwitcher and LanguagePreferenceSwitcher are `/settings` Display rows, not chrome.
@@ -462,6 +462,7 @@ flowchart TB
     T["/terms"]
     A["/about"]
     S["/stats"]
+    SW["/stats/wallet"]
     SD["/stats/day"]
     H["/handbook/*"]
     F["/404"]
@@ -1209,9 +1210,15 @@ The activity help button sits with the view control while shops are loading or a
 
 ### `/stats`
 
-Header → `main max-w-[1100px] px-5 pt-16 pb-24` → display/h1 “Donations” (`text-4xl sm:text-6xl font-semibold leading-tight tracking-tight`) → body-lg subtitle → `StatsDashboard` (**Posts**, optional **Wallets**, KPI grid, then charts or empty). **Wallets** sits directly after **Posts** and before the gift tiles: two tiles in the same chrome (**In wallets** ₿ via `formatBitcoin(totalSats)` over the preferred-fiat spot from `satsToFiatAmount`/`formatFiatDisplay`, **Wallets with balance** via `formatCount(fundedWalletCount)`), the caption “Total of all 21.gifts wallets at the end of each UTC day, as reported by the wallets themselves. Fiat figures use today's spot, not the day's price.”, and the shared over-time chart of `balanceOverTime[].totalSats` with ₿ ticks and no `/stats/{day}` links. Each point tooltip carries the day, ₿, and the same spot fiat. **By month** labels show only the unit selected on that chart's ₿ | fiat control; a missing fiat amount is an em dash when fiat is selected. Stats body copy stays English. `SegmentedControl tone="gift" shell="dark"`. Numeric figures.
+Header → `main max-w-[1100px] px-5 pt-16 pb-24` → display/h1 “Donations” (`text-4xl sm:text-6xl font-semibold leading-tight tracking-tight`) → body-lg subtitle → `StatsDashboard` (**Posts**, optional **Wallets**, KPI grid, then charts or empty). **Wallets** sits directly after **Posts** and before the gift tiles: two tiles in the same chrome (**In wallets** ₿ via `formatBitcoin(totalSats)` over the preferred-fiat spot from `satsToFiatAmount`/`formatFiatDisplay`, **Wallets with balance** via `formatCount(fundedWalletCount)`), the caption “Total of all 21.gifts wallets at the end of each UTC day, as reported by the wallets themselves. Fiat figures use today's spot, not the day's price.”, the link **See how the wallet is used** (`text-accent underline underline-offset-2`, `next/link` to `/stats/wallet`, only while this section is shown), and the shared over-time chart of `balanceOverTime[].totalSats` with ₿ ticks and no `/stats/{day}` links. Each point tooltip carries the day, ₿, and the same spot fiat. **By month** labels show only the unit selected on that chart's ₿ | fiat control; a missing fiat amount is an em dash when fiat is selected. Stats body copy stays English. `SegmentedControl tone="gift" shell="dark"`. Numeric figures.
 
 Handbook states: loading, empty, error + **Try again**, populated charts, wallets, wallets-no-rate.
+
+### `/stats/wallet`
+
+Header → `main max-w-[1100px] px-5 pt-16 pb-24` → display/h1 “Wallet usage” (`text-4xl sm:text-6xl font-semibold leading-tight tracking-tight`) → `WalletUsageLoader` / `WalletUsageDashboard`. No static subtitle and no FiatPicker; the preferred fiat is the cookie (locale default when absent). Body copy stays English. Sections, in order: release and as-of line, one takeaway, six KPI tiles (**Payments**, **Volume** ₿ over fiat, **Wallets**, **Forum payments per day**, **Paid till charges**, **Tondo fund balance**), **Payments per day by purpose**, **Forum payments before and after the release**, **Shop till: charges created and paid**, **Payment sizes**, **Time of day (Manila, UTC+8)**, **Wallets per day** (omitted when `GET /wallets/stats` fails or the series from the release day is empty), **Where the money comes from and where it goes** (Day `<select id="wallet-usage-day">`, Amount/Count `SegmentedControl tone="gift" shell="dark"`, `WalletFlowDiagram` for the Tondo fund and for member wallets, table **All flows**), then a closed `<details>` **How these numbers are made**. A failed `GET /wallets/usage` is one quiet line and no **Try again**. Amounts use `formatBitcoin` plus `formatFiatDisplay` of `satsToFiatAmount` from `useSpotRate`; ₿ stands alone only when no spot is available. No person, account, or payment id. No second scroll container and no `position: fixed`.
+
+Handbook states: default (All days, Amount), day, count, error, loading, method (details open), no-rate, no-wallets.
 
 ### `/trust-chain`
 
