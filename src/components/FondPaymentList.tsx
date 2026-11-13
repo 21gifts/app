@@ -45,8 +45,7 @@ function appendPayments(current: FondPayment[], page: FondPayment[]): FondPaymen
  * shops. The Fond list is public, has no payment detail route, and names the
  * counterparty (or **Private**). It reuses the same row shell, direction
  * icons, `formatBitcoin` + `preferredFiatSuffix` amounts, and formatForumTime
- * as the wallet history. The fee is not shown because no fiat figure fixed
- * for that fee exists.
+ * as the wallet history. The rows carry no fee.
  *
  * @param props - The Fond handle from the validated summary.
  * @param props.username - Fond handle whose payments are listed.

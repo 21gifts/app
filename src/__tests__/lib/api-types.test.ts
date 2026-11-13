@@ -2703,7 +2703,6 @@ describe('fondPaymentSchema', () => {
     id: 'payment-1',
     direction: 'in' as const,
     amountSats: 1_000,
-    feeSats: 0,
     paidAt: '2026-11-11T13:31:01.000Z',
     storedFiat: null,
     counterparty: { accountId: 'acc-1', username: 'alice', name: 'Alice' },
@@ -2773,7 +2772,6 @@ describe('fondPaymentListSchema', () => {
     id: 'payment-1',
     direction: 'in' as const,
     amountSats: 1_000,
-    feeSats: 0,
     paidAt: '2026-11-11T13:31:01.000Z',
     storedFiat: null,
     counterparty: null,
@@ -2793,7 +2791,7 @@ describe('fondPaymentListSchema', () => {
   it('rejects an empty cursor and a malformed payment', () => {
     expect(() => fondPaymentListSchema.parse({ payments: [], next: '' })).toThrow();
     expect(() =>
-      fondPaymentListSchema.parse({ payments: [{ ...payment, feeSats: -1 }], next: null }),
+      fondPaymentListSchema.parse({ payments: [{ ...payment, amountSats: -1 }], next: null }),
     ).toThrow();
   });
 });

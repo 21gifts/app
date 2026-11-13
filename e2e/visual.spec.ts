@@ -47228,7 +47228,6 @@ test.describe('fonds screen', () => {
               id: '66666666-6666-4666-8666-666666666666',
               direction: 'in',
               amountSats: 1_000,
-              feeSats: 0,
               paidAt: '2026-11-08T08:00:00.000Z',
               storedFiat: null,
               counterparty: null,

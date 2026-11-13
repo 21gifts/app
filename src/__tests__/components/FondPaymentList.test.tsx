@@ -24,7 +24,6 @@ const PAYMENTS: FondPaymentPage = {
       id: 'payment-private',
       direction: 'in',
       amountSats: 21_000,
-      feeSats: 0,
       paidAt: '2026-11-11T13:31:01.000Z',
       storedFiat: null,
       counterparty: null,
@@ -33,7 +32,6 @@ const PAYMENTS: FondPaymentPage = {
       id: 'payment-member',
       direction: 'out',
       amountSats: 5_000,
-      feeSats: 21,
       paidAt: '2026-11-10T09:00:00.000Z',
       storedFiat: { currency: 'USD', amount: '3.00' },
       counterparty: { accountId: 'acc-alice', username: 'alice', name: 'Alice' },
@@ -42,7 +40,6 @@ const PAYMENTS: FondPaymentPage = {
       id: 'payment-handle',
       direction: 'in',
       amountSats: 1_000,
-      feeSats: 0,
       paidAt: '2026-11-09T09:00:00.000Z',
       storedFiat: null,
       counterparty: { accountId: 'acc-bob', username: 'bob', name: '' },
@@ -86,7 +83,7 @@ describe('FondPaymentList', () => {
     expect(screen.getAllByText(/2026/)).toHaveLength(3);
   });
 
-  it('shows stored fiat for the amount but no fee text or sats for a positive fee', async () => {
+  it('never shows a fee line', async () => {
     spot.value = { sats: 100_000_000, usd: '100000', chf: '80000', eur: null, php: null };
     vi.mocked(fetchFondPayments).mockResolvedValue({
       payments: [PAYMENTS.payments[1]!],
@@ -96,7 +93,6 @@ describe('FondPaymentList', () => {
     const row = await screen.findByRole('listitem');
     expect(row.textContent).toContain("−₿5'000 · $3.00");
     expect(row.textContent).not.toMatch(/Fee|Gebühr/);
-    expect(row.textContent).not.toContain('₿21');
   });
 
   it.each([
@@ -127,7 +123,7 @@ describe('FondPaymentList', () => {
   it('uses the spot for a row without stored fiat', async () => {
     spot.value = { sats: 100_000_000, usd: '100000', chf: null, eur: null, php: null };
     vi.mocked(fetchFondPayments).mockResolvedValue({
-      payments: [{ ...PAYMENTS.payments[0]!, feeSats: 21 }],
+      payments: [PAYMENTS.payments[0]!],
       next: null,
     });
     renderWithLocale(<FondPaymentList username="tondo-fond" />);

@@ -1975,17 +1975,16 @@ export type FondSummary = z.infer<typeof fondSummarySchema>;
  *
  * `counterparty` names the member behind an internal transfer when the api
  * knows them; `null` means the payer or recipient stays private. A known
- * member may have `username: null` when no handle is set. `feeSats` is the
- * completed payment's fee and `paidAt` is its ISO 8601 timestamp with an
- * offset. `storedFiat` is the USD figure frozen when a paid grant payout was
- * created, or `null` for a row without a stored figure. Each `amount` is the
- * stored string exactly as written: an integer or one to two fraction digits.
+ * member may have `username: null` when no handle is set. `paidAt` is its ISO
+ * 8601 timestamp with an offset. `storedFiat` is the USD figure frozen when a
+ * paid grant payout was created, or `null` for a row without a stored figure.
+ * Each `amount` is the stored string exactly as written: an integer or one to
+ * two fraction digits.
  */
 export const fondPaymentSchema = z.object({
   id: z.string().min(1),
   direction: z.enum(['in', 'out']),
   amountSats: z.number().int().nonnegative(),
-  feeSats: z.number().int().nonnegative(),
   paidAt: z.string().datetime({ offset: true }),
   storedFiat: z
     .object({
