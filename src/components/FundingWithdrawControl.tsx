@@ -4,7 +4,7 @@ import { useRef, useState, type ReactElement } from 'react';
 import { InlineConfirm } from '@/components/InlineConfirm';
 import { useTranslations } from '@/components/LocaleProvider';
 import { fetchMe, postFundingWithdraw } from '@/lib/api';
-import { refreshOwnerAccount } from '@/lib/owner-account-refresh';
+import { discardOwnerRefreshes, refreshOwnerAccount } from '@/lib/owner-account-refresh';
 import { useAuthStore } from '@/stores/auth-store';
 
 /** Props for {@link FundingWithdrawControl}. */
@@ -25,9 +25,11 @@ export interface FundingWithdrawControlProps {
  * sends no second request. On success the account's funding is replaced by the
  * answer (status `none`), so the card shows the apply state again and every
  * reader of `account.funding` follows at once. The answer carries no
- * `payoutToday`, so {@link refreshOwnerAccount} then loads today's payout
- * reason from `GET /me` without blocking the card. On 409 the account is loaded
- * again ({@link fetchMe}) and the current state is shown without an error. On
+ * `payoutToday`, so an owner refresh still in flight from opening `/grants` is
+ * dropped ({@link discardOwnerRefreshes}) and {@link refreshOwnerAccount} then
+ * loads today's payout reason from `GET /me` without blocking the card. On 409
+ * the account is loaded again ({@link fetchMe}), older owner refreshes are
+ * dropped the same way, and the current state is shown without an error. On
  * 401 the session is cleared, as when `/me` answers 401. Any other failure
  * shows the inline error and keeps the question open for another try or
  * **Cancel**.
@@ -59,6 +61,7 @@ export function FundingWithdrawControl({ status }: FundingWithdrawControlProps):
         return;
       }
       current.setAccount({ ...current.account, funding });
+      discardOwnerRefreshes();
       refreshOwnerAccount(session);
       setConfirming(false);
     } catch (err) {
@@ -121,7 +124,9 @@ export function FundingWithdrawControl({ status }: FundingWithdrawControlProps):
 }
 
 /**
- * Loads the account again after the api refused a withdrawal as outdated.
+ * Loads the account again after the api refused a withdrawal as outdated,
+ * then drops older owner refreshes so none of them copies an older payout onto
+ * it.
  *
  * @param session - The session the withdrawal was sent with.
  * @returns `true` when the current account (or the sign-out on 401) is in the
@@ -139,6 +144,7 @@ async function reloadAccount(session: string): Promise<boolean> {
       return true;
     }
     current.setAccount(account);
+    discardOwnerRefreshes();
     return true;
   } catch {
     return false;

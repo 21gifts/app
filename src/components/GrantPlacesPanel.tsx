@@ -23,7 +23,8 @@ export interface GrantPlacesPanelProps {
  * on failure an alert and a retry button. `data-grant-places` names the
  * state (`loading`, `error`, `ready`) so screenshot tests wait for the load.
  * A new `reloadKey` loads the numbers again while the last ones stay on
- * screen, so a place freed on this page shows without a page load.
+ * screen, so a place freed on this page shows without a page load; a failed
+ * reload shows the same alert and retry as a failed first load.
  *
  * @param props - Optional reload key.
  * @returns The places panel.

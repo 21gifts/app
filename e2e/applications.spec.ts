@@ -36,16 +36,24 @@ const DETAIL = {
   ],
 };
 
+/**
+ * Signs Ada in and answers every `GET /me`. `funding` may be a getter, read when
+ * the request arrives; `hold` may delay the answer of the n-th request (from 1).
+ */
 async function seedAdaSession(
   page: import('@playwright/test').Page,
   role: 'basis' | 'moderator' | 'founder' | 'verified' = 'basis',
   funding: unknown = undefined,
+  hold: (call: number) => Promise<void> = async () => undefined,
 ): Promise<void> {
-  const fundingNow = (): unknown => (typeof funding === 'function' ? funding() : funding);
+  let calls = 0;
   await page.addInitScript(() => {
     localStorage.setItem('21gifts.session', 'sess-e2e');
   });
   await page.route(/\/me$/, async (route) => {
+    calls += 1;
+    const fundingNow = typeof funding === 'function' ? funding() : funding;
+    await hold(calls);
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
@@ -65,8 +73,8 @@ async function seedAdaSession(
         setup: null,
         missing: [],
         funding:
-          fundingNow() !== undefined
-            ? fundingNow()
+          fundingNow !== undefined
+            ? fundingNow
             : role === 'basis'
               ? null
               : {
@@ -659,6 +667,54 @@ test("Function: FundingWithdrawControl — Leave the grant asks first, then show
   ).toHaveAttribute('href', '/grants/apply');
   await expect(page.getByRole('button', { name: 'Leave the grant' })).toHaveCount(0);
   expect(withdraw.count()).toBe(1);
+});
+
+test('Function: discardOwnerRefreshes — a GET /me sent when /grants opened does not bring back the old payout after a 409', async ({
+  page,
+}) => {
+  let conflicted = false;
+  let releaseMountRefresh: () => void = () => undefined;
+  const mountRefreshHeld = new Promise<void>((resolve) => {
+    releaseMountRefresh = resolve;
+  });
+  // Call 1 is the session hydrate, call 2 the owner refresh /grants starts on mount.
+  await seedAdaSession(
+    page,
+    'verified',
+    () =>
+      conflicted
+        ? { ...NO_GRANT, payoutToday: { state: 'blocked', reason: 'admission' } }
+        : { ...ADMITTED, payoutToday: { state: 'paid', reason: null } },
+    async (call) => {
+      if (call === 2) {
+        await mountRefreshHeld;
+      }
+    },
+  );
+  await stubWithdraw(page, 409);
+  page.on('request', (req) => {
+    if (req.method() === 'POST' && /\/funding\/withdraw$/.test(new URL(req.url()).pathname)) {
+      conflicted = true;
+    }
+  });
+  await page.goto('/grants');
+  const payout = page.getByRole('group', { name: "Today's payout" });
+  await expect(payout.getByText('Payout made today.')).toBeVisible();
+  await page.getByRole('button', { name: 'Leave the grant' }).click();
+  await page
+    .getByRole('group', { name: 'Leave the grant?' })
+    .getByRole('button', { name: 'Leave the grant' })
+    .click();
+  const admission = payout.getByRole('link', {
+    name: 'You must be admitted to the grant program.',
+  });
+  await expect(admission).toBeVisible();
+  const staleAnswer = page.waitForResponse((res) => new URL(res.url()).pathname === '/me');
+  releaseMountRefresh();
+  await staleAnswer;
+  await page.evaluate(() => new Promise((resolve) => setTimeout(resolve, 250)));
+  await expect(admission).toBeVisible();
+  await expect(payout.getByText('Payout made today.')).toHaveCount(0);
 });
 
 test('Function: FundingWithdrawControl — Cancel closes the question and sends nothing', async ({

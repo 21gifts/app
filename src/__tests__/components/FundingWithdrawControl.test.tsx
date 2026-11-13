@@ -11,15 +11,17 @@ vi.mock('@/lib/api', () => ({
 }));
 
 vi.mock('@/lib/owner-account-refresh', () => ({
+  discardOwnerRefreshes: vi.fn(),
   refreshOwnerAccount: vi.fn(),
 }));
 
 import { fetchMe, postFundingWithdraw } from '@/lib/api';
-import { refreshOwnerAccount } from '@/lib/owner-account-refresh';
+import { discardOwnerRefreshes, refreshOwnerAccount } from '@/lib/owner-account-refresh';
 
 const withdrawMock = vi.mocked(postFundingWithdraw);
 const meMock = vi.mocked(fetchMe);
 const refreshMock = vi.mocked(refreshOwnerAccount);
+const discardMock = vi.mocked(discardOwnerRefreshes);
 
 const admitted: OwnerFunding = {
   status: 'admitted',
@@ -68,6 +70,7 @@ beforeEach(() => {
   withdrawMock.mockReset();
   meMock.mockReset();
   refreshMock.mockReset();
+  discardMock.mockReset();
   useAuthStore.setState({ session: 'sess', account });
 });
 
@@ -120,6 +123,10 @@ describe('FundingWithdrawControl', () => {
     });
     expect(refreshMock).toHaveBeenCalledTimes(1);
     expect(refreshMock).toHaveBeenCalledWith('sess');
+    expect(discardMock).toHaveBeenCalledTimes(1);
+    expect(discardMock.mock.invocationCallOrder[0]).toBeLessThan(
+      refreshMock.mock.invocationCallOrder[0] as number,
+    );
     expect(screen.queryByRole('group', { name: LEAVE_TITLE })).toBeNull();
   });
 
@@ -175,6 +182,8 @@ describe('FundingWithdrawControl', () => {
       expect(useAuthStore.getState().account).toEqual(reloaded);
     });
     expect(meMock).toHaveBeenCalledWith('sess');
+    expect(discardMock).toHaveBeenCalledTimes(1);
+    expect(refreshMock).not.toHaveBeenCalled();
     expect(screen.queryByRole('alert')).toBeNull();
     expect(screen.queryByRole('group', { name: LEAVE_TITLE })).toBeNull();
   });
@@ -200,6 +209,7 @@ describe('FundingWithdrawControl', () => {
     );
     expect(screen.getByRole('group', { name: LEAVE_TITLE })).toBeTruthy();
     expect(useAuthStore.getState().account).toEqual(account);
+    expect(discardMock).not.toHaveBeenCalled();
   });
 
   it('keeps the newer session when another login replaced it during the reload', async () => {
@@ -239,6 +249,7 @@ describe('FundingWithdrawControl', () => {
     const confirm = screen.getByRole('button', { name: 'Leave the grant' });
     expect(confirm.hasAttribute('disabled')).toBe(false);
     expect(refreshMock).not.toHaveBeenCalled();
+    expect(discardMock).not.toHaveBeenCalled();
     withdrawMock.mockResolvedValueOnce(none);
     fireEvent.click(confirm);
     await waitFor(() => {
