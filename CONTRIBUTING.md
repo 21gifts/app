@@ -931,7 +931,7 @@ switch that makes a screen show fixture data or a forced state) is honoured
 **only in a Playwright build**: check `getE2eNow()` (`NEXT_PUBLIC_E2E_NOW`,
 unset in every deployed build) before reading the pin. `visualPin` does that
 for `useWallet` (including `?visual=balance-reopening`), `useWalletPay`, `useWalletSetup`, `useWalletSend`, `useWalletPanel`, `useWalletPayment`, `useRecoveryFlow`, `useSocialRecoverySetup`, `useRemainingBalance`, `useIncomingPayment`, `useLoanRepay`, the login card's
-wallet gate, `sendHeartTip`, `useHeartTip`, `useHeartContext`, `PosScreen`, `MoveFundsSheet`, `payment-display`, and `wallet-open`; `useWalletHistory`, `useWalletPhrase`, and
+wallet gate, `sendHeartTip`, `useHeartTip`, `useHeartContext`, `PosScreen`, `MoveFundsSheet`, the settings **Log in at DFX** row (`SettingsScreen`), `payment-display`, and `wallet-open`; `useWalletHistory`, `useWalletPhrase`, and
 `PasskeyRenewNotice` check `getE2eNow()` themselves. Inline scripts that run before
 React check for the `e2e-now` meta tag, which only a Playwright build renders.
 Do not add a second mechanism. A production build must ignore every pin, and a
