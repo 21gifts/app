@@ -2175,6 +2175,61 @@ describe('useLoanRepay fresh settlement baseline', () => {
 });
 
 describe('useLoanRepay free repayment and collecting actions', () => {
+  it.each(['connecting', 'disabled'] as const)(
+    'keeps a pending prepay active while the wallet becomes %s',
+    async (status) => {
+      let resolvePrepay!: (value: Awaited<ReturnType<typeof prepayLoan>>) => void;
+      vi.mocked(prepayLoan).mockReturnValue(
+        new Promise<Awaited<ReturnType<typeof prepayLoan>>>((resolve) => {
+          resolvePrepay = resolve;
+        }),
+      );
+      const collecting = { ...loan('pending-prepay', 0, 100), fundedAt: null, closedAt: null };
+      const reload = vi.fn(async () => body([collecting]));
+      const { result } = renderHook(() => useLoanRepay({ reload }));
+
+      act(() => result.current.prepay(collecting, '500'));
+      await waitFor(() => expect(prepayLoan).toHaveBeenCalledTimes(1));
+      act(() => setWallet(status, null));
+
+      expect(result.current).toMatchObject({
+        phase: 'preparing',
+        activeAction: { kind: 'prepay', messageId: 'pending-prepay' },
+        balanceSats: null,
+      });
+      act(() => {
+        result.current.closeCollecting(collecting);
+        result.current.prepay(collecting, '400');
+      });
+      expect(closeLoan).not.toHaveBeenCalled();
+      expect(prepayLoan).toHaveBeenCalledTimes(1);
+
+      act(() => setWallet('ready'));
+      await act(async () => {
+        resolvePrepay({
+          amountSats: 500,
+          amount: null,
+          bills: [],
+          waiting: [
+            {
+              dayIndex: 1,
+              recipientAccountId: 'waiting-wallet',
+              name: 'Carla',
+              username: 'carla',
+              amountSats: 500,
+              amount: null,
+            },
+          ],
+        });
+      });
+      await waitFor(() => expect(result.current.phase).toBe('repaid'));
+      expect(reload).toHaveBeenCalledTimes(1);
+      expect(result.current.prepayWaiting).toEqual([
+        expect.objectContaining({ recipientAccountId: 'waiting-wallet', amountSats: 500 }),
+      ]);
+    },
+  );
+
   it('scopes an untyped prepay request failure before wallet preparation', async () => {
     vi.mocked(prepayLoan).mockRejectedValue(new Error('network failure'));
     const current = loan('prepay-request-failure', 0, 100);

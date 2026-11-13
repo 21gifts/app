@@ -158,6 +158,8 @@ type LivePhase = 'idle' | 'preparing' | 'sending' | 'waiting' | 'repaid' | 'unco
 type ErrorKey = Exclude<LoanRepayResult['errorKey'], null>;
 type OrderedBill = RepaymentBill & { messageId: string };
 
+const ACTIVE_RUN_PHASES = new Set<LivePhase>(['preparing', 'sending', 'waiting']);
+
 function isLoanRepaymentError(error: unknown): error is LoanRepaymentError {
   return error instanceof LoanRepaymentError;
 }
@@ -766,13 +768,19 @@ export function useLoanRepay(options: {
     ): void => {
       const allowed = new Set<LoanRepayPhase>(['idle', 'failed', 'repaid', 'unconfirmed']);
       const session = useAuthStore.getState().session;
-      if (pinned || !allowed.has(phaseRef.current) || session === null) {
+      if (pinned || actionPending.current || !allowed.has(phaseRef.current) || session === null) {
         return;
       }
 
       const run = ++generation.current;
+      const active = (): boolean => run === generation.current;
+      const setPaymentPhase = (next: LivePhase): void => {
+        actionPending.current = ACTIVE_RUN_PHASES.has(next);
+        phaseRef.current = next;
+        setLivePhase(next);
+      };
       clearSettlement();
-      phaseRef.current = 'preparing';
+      setPaymentPhase('preparing');
       setActiveAction(
         prepayRequest === undefined
           ? { kind: 'due', messageId: null }
@@ -788,9 +796,6 @@ export function useLoanRepay(options: {
       setMissingSats(null);
       setErrorKey(null);
       setActionError(null);
-      setLivePhase('preparing');
-
-      const active = (): boolean => run === generation.current;
       const failBeforeSend = (
         error: unknown,
         untypedRequestMessageId: string | null = null,
@@ -820,7 +825,7 @@ export function useLoanRepay(options: {
                 }
               : null),
         );
-        setLivePhase('failed');
+        setPaymentPhase('failed');
       };
 
       void (async (): Promise<void> => {
@@ -890,15 +895,15 @@ export function useLoanRepay(options: {
             return;
           }
           if (!namedMissing && skipped) {
-            setLivePhase('unconfirmed');
+            setPaymentPhase('unconfirmed');
             return;
           }
           if (ordered.length === 0) {
             setTopUpOpen(false);
-            setLivePhase('repaid');
+            setPaymentPhase('repaid');
             return;
           }
-          setLivePhase('idle');
+          setPaymentPhase('idle');
           return;
         }
 
@@ -986,12 +991,12 @@ export function useLoanRepay(options: {
         if (kept.length === 0 || insufficient || knownTotal > currentBalance) {
           missingBalance.current = useWalletStore.getState().balanceSats;
           setMissingSats(Math.max(1, allTotal - currentBalance));
-          setLivePhase('idle');
+          setPaymentPhase('idle');
           return;
         }
 
         setTopUpOpen(false);
-        setLivePhase('sending');
+        setPaymentPhase('sending');
         const sent: SendRun = {
           sentSats: 0,
           sentAmounts: [],
@@ -1060,10 +1065,10 @@ export function useLoanRepay(options: {
           if (remaining <= 0) {
             sent.timedOut = true;
             clearSettlement();
-            setLivePhase('unconfirmed');
+            setPaymentPhase('unconfirmed');
             return;
           }
-          setLivePhase('waiting');
+          setPaymentPhase('waiting');
           if (settlementInterval.current === null) {
             settlementInterval.current = setInterval(() => {
               if (
@@ -1085,7 +1090,7 @@ export function useLoanRepay(options: {
                     settled(fresh)
                   ) {
                     clearSettlement();
-                    setLivePhase(sent.failed ? 'failed' : 'repaid');
+                    setPaymentPhase(sent.failed ? 'failed' : 'repaid');
                   }
                 })
                 .finally(() => {
@@ -1105,7 +1110,7 @@ export function useLoanRepay(options: {
                 clearInterval(settlementInterval.current);
                 settlementInterval.current = null;
               }
-              setLivePhase('unconfirmed');
+              setPaymentPhase('unconfirmed');
             }, remaining);
           }
         };
@@ -1118,10 +1123,10 @@ export function useLoanRepay(options: {
             startSettlement();
           } else if (sent.failed) {
             clearSettlement();
-            setLivePhase('failed');
+            setPaymentPhase('failed');
           } else if (sent.skippedAtSend) {
             clearSettlement();
-            setLivePhase('unconfirmed');
+            setPaymentPhase('unconfirmed');
           }
         };
 
@@ -1221,15 +1226,13 @@ export function useLoanRepay(options: {
 
   const closeCollecting = useCallback(
     (loan: MyLoan): void => {
-      const activeWalletRun = new Set<LoanRepayPhase>(['preparing', 'sending', 'waiting']);
       const session = useAuthStore.getState().session;
       if (
         pinned ||
         session === null ||
         loan.fundedAt !== null ||
         (loan.closedAt !== null && loan.closedAt !== undefined) ||
-        actionPending.current ||
-        activeWalletRun.has(phaseRef.current)
+        actionPending.current
       ) {
         return;
       }
