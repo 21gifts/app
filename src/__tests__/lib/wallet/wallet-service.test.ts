@@ -605,6 +605,56 @@ describe('connectWallet', () => {
     expect(captureMessage).not.toHaveBeenCalled();
   });
 
+  it('does not report a failed read from the repair after an abandoned stale viewer write succeeds', async () => {
+    vi.useFakeTimers();
+    const viewerA = `03${'b'.repeat(64)}`;
+    const viewerB = `02${'c'.repeat(64)}`;
+    useAuthStore.setState({
+      session: 'sess',
+      account: { walletViewerPublicKey: viewerA } as Account,
+    });
+    rememberSessionPhrase(MNEMONIC);
+    let releaseViewerA!: () => void;
+    const viewerAUpdate = new Promise<void>((resolve) => {
+      releaseViewerA = resolve;
+    });
+    const stale = createFakeSdk({
+      getUserSettings: async () => ({
+        sparkPrivateModeEnabled: true,
+        sparkMasterIdentityPublicKey: IDENTITY,
+      }),
+      updateUserSettings: () => viewerAUpdate,
+    });
+    await connectWallet(stale.loadSdk);
+    await vi.advanceTimersByTimeAsync(0);
+    expect(stale.connection.updateUserSettings).toHaveBeenCalledWith({
+      sparkMasterIdentityPublicKey: { type: 'set', publicKey: viewerA },
+    });
+
+    useAuthStore.getState().setAccount({ walletViewerPublicKey: viewerB } as Account);
+    let currentSettingsReads = 0;
+    const current = createFakeSdk({
+      getUserSettings: async () => {
+        currentSettingsReads += 1;
+        if (currentSettingsReads === 2) {
+          throw new Error('silent repair read failed');
+        }
+        return {
+          sparkPrivateModeEnabled: true,
+          sparkMasterIdentityPublicKey: viewerB,
+        };
+      },
+    });
+    await connectWallet(current.loadSdk);
+    await vi.advanceTimersByTimeAsync(WALLET_RETRY_DISCONNECT_WAIT_MS);
+
+    releaseViewerA();
+    await vi.advanceTimersByTimeAsync(0);
+
+    expect(current.connection.getUserSettings).toHaveBeenCalledTimes(2);
+    expect(captureMessage).not.toHaveBeenCalled();
+  });
+
   it('swallows a rejection after a stale settings call is abandoned', async () => {
     vi.useFakeTimers();
     useAuthStore.setState({ session: 'sess', account: {} as Account });
