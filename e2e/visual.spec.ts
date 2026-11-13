@@ -22918,6 +22918,11 @@ test.describe('onboarding screens', () => {
     const line = page.getByText('This loan is no longer collecting and cannot receive more money.');
     await expect(line).toBeVisible();
     await centreAtRest(line);
+    // The refusal arrives before the finite 700 ms heart/+1 press animation resets.
+    await expect(page.locator('.forum-heart-plus-one')).toHaveCount(0);
+    // Leave the clicked heart and drop its focus before capturing the neutral action row.
+    await page.mouse.move(0, 0);
+    await restUnfocused(page);
     await shotScreen(page, 'state-messages-id-loan-heart-closed');
   });
 
