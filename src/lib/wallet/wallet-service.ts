@@ -220,11 +220,11 @@ function reportWalletSettingsFailure(stage: WalletSettingsStage, failed: unknown
  * an invalid value. The current account key is read immediately before the
  * viewer comparison and update.
  *
- * A failed operation is reported only when it failed while this run still
- * owned the current connection and this is not the silent repair. A failure
- * from a replaced connection is not reported. A failure recorded before a
- * later call in the same run is abandoned is still reported. The silent
- * repair reports neither its read nor its update.
+ * A failed operation is reported only when that call failed while the run
+ * still owned the current connection and the run is not the silent repair.
+ * The failure of a call that was abandoned is not reported. A failure
+ * recorded before a later call in the same run is abandoned is still
+ * reported. The silent repair reports neither its read nor its update.
  *
  * @param conn - Current wallet handle.
  * @param configurePrivateMode - Whether this run also enforces private mode.
