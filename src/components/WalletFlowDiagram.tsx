@@ -476,9 +476,9 @@ function balanceNode(key: string, label: string, sats: number, metric: number): 
  * Opening and closing balance ribbons for amount mode.
  *
  * A positive start sits on the left and a positive end on the right. A
- * negative balance switches columns and uses its absolute value. A zero end
- * stays on the right with no width. Count mode draws none. Within one side
- * the earlier balance is listed first, so it sits above the later one.
+ * negative balance switches columns and uses its absolute value. A balance
+ * of exactly 0 adds no row. Count mode draws none. Within one side the
+ * earlier balance is listed first, so it sits above the later one.
  *
  * @param metric - Amount or count.
  * @param startSats - Balance at the start of the span.
@@ -504,8 +504,6 @@ function balanceRibbons(
     right.push(balanceNode('end', 'Balance at end of day', endSats, endSats));
   } else if (endSats < 0) {
     left.push(balanceNode('end', 'Balance below zero at end of day', endSats, -endSats));
-  } else {
-    right.push(balanceNode('end', 'Balance at end of day', 0, 0));
   }
   return { left, right };
 }
@@ -720,7 +718,8 @@ function FlowList({
  * of the left column, a negative start balance sits at the bottom of the
  * right column with its absolute value, a positive end balance sits at the
  * bottom of the right column, and a negative end balance sits at the bottom
- * of the left column with its absolute value. A usable `spot` puts the
+ * of the left column with its absolute value. A balance of exactly 0 adds
+ * no row in either layout. A usable `spot` puts the
  * preferred fiat beside every ribbon amount. Without one, the tooltip shows
  * bitcoin alone.
  *

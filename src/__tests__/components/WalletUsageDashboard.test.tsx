@@ -716,6 +716,99 @@ describe('WalletUsageDashboard', () => {
     expect(activeTitles.join('\n')).not.toContain('9 active');
   });
 
+  it('stacks purposes by payment count and keeps a purpose paid 0 sats', () => {
+    function purposeDay(
+      day: string,
+      deposit: { count: number; sats: number },
+      withdrawal: { count: number; sats: number },
+      forum: { count: number; sats: number },
+    ): WalletUsageDay {
+      return {
+        day,
+        purposes: {
+          deposit,
+          withdrawal,
+          shop_purchase: ZERO,
+          forum_gift: forum,
+          transfer: ZERO,
+          fund_deposit: ZERO,
+          fund_payout: ZERO,
+          other: ZERO,
+        },
+        activeWalletCount: 1,
+        sendingWalletCount: 1,
+        receivingWalletCount: 1,
+      };
+    }
+    show(
+      usageWith({
+        days: [
+          purposeDay('2026-11-10', { count: 1, sats: 500 }, { count: 4, sats: 0 }, ZERO),
+          purposeDay('2026-11-09', ZERO, { count: 2, sats: 0 }, { count: 0, sats: 900 }),
+        ],
+      }),
+      null,
+      null,
+      false,
+    );
+    const section = screen.getByRole('heading', {
+      name: 'Payments per day by purpose',
+    }).parentElement;
+    if (section === null) {
+      throw new Error('missing purpose section');
+    }
+    const legend = within(section).getByRole('list');
+    expect(
+      within(legend)
+        .getAllByRole('listitem')
+        .map((item) => {
+          const text = item.textContent;
+          if (text === null) {
+            throw new Error('missing legend label');
+          }
+          return text.trim();
+        }),
+    ).toEqual(['Deposit', 'Withdrawal']);
+    expect(purposeTitles()).toEqual([
+      '2026-11-09: Deposit: 0 / \u20bf0 · $0.00, Withdrawal: 2 / \u20bf0 · $0.00',
+      '2026-11-10: Deposit: 1 / \u20bf500 · $0.50, Withdrawal: 4 / \u20bf0 · $0.00',
+    ]);
+    const groups = [...screen.getByTestId('purpose-chart').querySelectorAll('g')];
+    const earlier = groups[0];
+    const later = groups[1];
+    if (earlier === undefined || later === undefined) {
+      throw new Error('missing purpose day');
+    }
+    const innerH = 240 - 16 - 36;
+    function segmentHeight(group: Element, fill: string): number | null {
+      const rect = [...group.querySelectorAll('rect')].find((node) => {
+        const paint = node.getAttribute('class');
+        return paint !== null && paint.includes(fill);
+      });
+      if (rect === undefined) {
+        return null;
+      }
+      const height = rect.getAttribute('height');
+      if (height === null) {
+        throw new Error(`missing height ${fill}`);
+      }
+      return Number(height);
+    }
+    expect(segmentHeight(earlier, 'fill-emerald-400')).toBeNull();
+    expect(segmentHeight(earlier, 'fill-accent')).toBeNull();
+    expect(segmentHeight(later, 'fill-accent')).toBeNull();
+    const withdrawalEarlier = segmentHeight(earlier, 'fill-rose-400');
+    const depositLater = segmentHeight(later, 'fill-emerald-400');
+    const withdrawalLater = segmentHeight(later, 'fill-rose-400');
+    if (withdrawalEarlier === null || depositLater === null || withdrawalLater === null) {
+      throw new Error('missing purpose segment');
+    }
+    expect(withdrawalEarlier).toBeCloseTo((2 / 5) * innerH, 5);
+    expect(depositLater).toBeCloseTo((1 / 5) * innerH, 5);
+    expect(withdrawalLater).toBeCloseTo((4 / 5) * innerH, 5);
+    expect(withdrawalLater).toBeGreaterThan(depositLater);
+  });
+
   it('shows the loading line only while usage is still missing', () => {
     show(null, null, null, true);
     expect(screen.getByText('Loading…')).toBeTruthy();

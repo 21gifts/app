@@ -546,7 +546,11 @@ function releaseLineX(days: readonly string[], release: string | null): number |
 }
 
 /**
- * Stacked payments per UTC day, one colour per purpose.
+ * Stacked payment counts per UTC day, one colour per purpose.
+ *
+ * A purpose appears when its count is above 0 on any day. That count sets
+ * the scale and each segment height. The tooltip keeps the count and the
+ * sats with the spot fiat.
  *
  * @param days - Usage days.
  * @param style - Grouping style for the tooltip.
@@ -568,23 +572,23 @@ function PurposeChart(
   const purposesUsed: WalletPurpose[] = [];
   for (const purpose of WALLET_PURPOSES) {
     for (const day of sorted) {
-      if (day.purposes[purpose].sats > 0) {
+      if (day.purposes[purpose].count > 0) {
         purposesUsed.push(purpose);
         break;
       }
     }
   }
-  let maxSats = 0;
+  let maxCount = 0;
   for (const day of sorted) {
     let total = 0;
     for (const purpose of purposesUsed) {
-      total += day.purposes[purpose].sats;
+      total += day.purposes[purpose].count;
     }
-    if (total > maxSats) {
-      maxSats = total;
+    if (total > maxCount) {
+      maxCount = total;
     }
   }
-  const scale = Math.max(maxSats, 1);
+  const scale = Math.max(maxCount, 1);
   const innerH = CHART_H - PAD_T - PAD_B;
   const innerW = CHART_W - PAD_L - PAD_R;
   const slot = innerW / sorted.length;
@@ -614,10 +618,10 @@ function PurposeChart(
             const cell = day.purposes[purpose];
             const priced = bitcoinWithFiat(cell.sats, rateDay, fiat, style);
             parts.push(`${PURPOSE_LABEL[purpose]}: ${formatCount(cell.count, style)} / ${priced}`);
-            if (cell.sats <= 0) {
+            if (cell.count <= 0) {
               continue;
             }
-            const barH = (cell.sats / scale) * innerH;
+            const barH = (cell.count / scale) * innerH;
             stacked += barH;
             rects.push(
               <rect

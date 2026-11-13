@@ -525,9 +525,9 @@ describe('WalletFlowDiagram', () => {
       const labelY = Number(labelYRaw);
       const thickness = accountBottom - accountTop;
       expect(startX).toBe(labelX);
-      expect(startY).toBe(labelY - thickness / 2);
+      expect(startY).toBeCloseTo(labelY - thickness / 2, 6);
       if (previousBottom !== null) {
-        expect(accountTop).toBe(previousBottom);
+        expect(accountTop).toBeCloseTo(previousBottom, 6);
       }
       previousBottom = accountBottom;
       thicknesses.push(thickness);
@@ -730,7 +730,66 @@ describe('WalletFlowDiagram', () => {
     expect(metricOf(diagram, 'Deposits from outside')).toBe('40');
     expect(metricOf(diagram, 'Transfers from the Tondo fund')).toBe('40');
     expect(metricOf(diagram, 'Withdrawals to outside')).toBe('80');
-    expect(requireFlow(diagram, 'Balance at end of day')).toBeTruthy();
+    expect(diagram.querySelector('[data-flow="Balance at start of day"]')).toBeNull();
+    expect(diagram.querySelector('[data-flow="Balance at end of day"]')).toBeNull();
+  });
+
+  it('omits a zero opening or closing balance in the sankey and the compact list', () => {
+    render(
+      <WalletFlowDiagram
+        account="fund"
+        accountLabel="Tondo fund"
+        flows={[flow('2026-11-09', 'outside', 'fund', 'deposit', 1, 25, 0)]}
+        startSats={25}
+        endSats={0}
+        metric="amount"
+        numberFormat="ch"
+      />,
+    );
+    const wide = screen.getByRole('img', { name: 'Tondo fund' });
+    expect(wide.getAttribute('data-layout')).toBe('sankey');
+    expect(metricOf(wide, 'Balance at start of day')).toBe('25');
+    expect(wide.querySelector('[data-flow="Balance at end of day"]')).toBeNull();
+    expect(wide.querySelector('[data-flow="Balance below zero at end of day"]')).toBeNull();
+    cleanup();
+
+    const restore = installWidthObserver(360, true);
+    try {
+      render(
+        <>
+          <WalletFlowDiagram
+            account="fund"
+            accountLabel="Tondo fund"
+            flows={[flow('2026-11-09', 'outside', 'fund', 'deposit', 1, 25, 0)]}
+            startSats={0}
+            endSats={0}
+            metric="amount"
+            numberFormat="ch"
+          />
+          <WalletFlowDiagram
+            account="members"
+            accountLabel="Member wallets"
+            flows={[flow('2026-11-09', 'members', 'outside', 'withdrawal', 1, 10, 0)]}
+            startSats={0}
+            endSats={15}
+            metric="amount"
+            numberFormat="ch"
+          />
+        </>,
+      );
+      const fund = screen.getByRole('img', { name: 'Tondo fund' });
+      expect(fund.getAttribute('data-layout')).toBe('compact');
+      expect(fund.querySelector('[data-flow="Balance at start of day"]')).toBeNull();
+      expect(fund.querySelector('[data-flow="Balance at end of day"]')).toBeNull();
+      expect(requireFlow(fund, 'Deposits from outside')).toBeTruthy();
+      const members = screen.getByRole('img', { name: 'Member wallets' });
+      expect(members.getAttribute('data-layout')).toBe('compact');
+      expect(members.querySelector('[data-flow="Balance at start of day"]')).toBeNull();
+      expect(metricOf(members, 'Balance at end of day')).toBe('15');
+      expect(lastFlow(members, 'to')).toBe('Balance at end of day');
+    } finally {
+      restore();
+    }
   });
 
   it('draws a member-to-member flow with the same ribbon thickness on both sides', () => {
@@ -752,7 +811,7 @@ describe('WalletFlowDiagram', () => {
     const diagram = screen.getByRole('img', { name: 'Member wallets' });
     const from = ribbonThickness(diagram, 'Forum gifts from members');
     const to = ribbonThickness(diagram, 'Forum gifts to members');
-    expect(from).toBe(to);
+    expect(from).toBeCloseTo(to, 6);
     expect(from).toBeGreaterThan(0);
     expect(metricOf(diagram, 'Forum gifts from members')).toBe('4');
     expect(metricOf(diagram, 'Forum gifts to members')).toBe('4');
@@ -779,8 +838,9 @@ describe('WalletFlowDiagram', () => {
     const diagram = screen.getByRole('img', { name: 'Member wallets' });
     expect(columnMetric(diagram, 'from')).toBe(200);
     expect(columnMetric(diagram, 'to')).toBe(200);
-    expect(ribbonThickness(diagram, 'Forum gifts from members')).toBe(
+    expect(ribbonThickness(diagram, 'Forum gifts from members')).toBeCloseTo(
       ribbonThickness(diagram, 'Forum gifts to members'),
+      6,
     );
     const below = requireFlow(diagram, 'Balance below zero at start of day');
     expect(below.getAttribute('data-side')).toBe('to');
