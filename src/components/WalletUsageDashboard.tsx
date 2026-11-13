@@ -1438,7 +1438,7 @@ export function WalletUsageDashboard({
               return (
                 <div key={key} data-flow-row={key} className="space-y-1 text-sm">
                   <p data-flow-line="parties">{parties}</p>
-                  <p data-flow-line="figures" className="break-words tabular-nums">
+                  <p data-flow-line="figures" className="tabular-nums">
                     {figures}
                   </p>
                 </div>

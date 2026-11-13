@@ -158,11 +158,9 @@ function incomingLabel(
     case 'forum_gift':
       return `Forum gifts from ${phraseParty(from)}`;
     case 'transfer':
-      return `Transfers from ${PARTY_LABEL[from]}`;
+      return `Transfers from ${phraseParty(from)}`;
     case 'fund_deposit':
-      return account === 'fund'
-        ? PARTY_LABEL[from]
-        : `Into the Tondo fund from ${PARTY_LABEL[from]}`;
+      return `Into the Tondo fund from ${phraseParty(from)}`;
     case 'fund_payout':
       return from === 'fund' ? 'Gifts from the Tondo fund' : `Gifts from ${phraseParty(from)}`;
     case 'other':
@@ -565,24 +563,6 @@ function selectionEmpty(
 }
 
 /**
- * Bar colour for one narrow-list row.
- *
- * Purpose rows use the same swatch as the charts. Balance and fees stay muted.
- *
- * @param node - Ribbon the row draws.
- * @returns A theme background class.
- */
-function listBarClass(node: RibbonNode): string {
-  if (node.kind === 'balance') {
-    return 'bg-paper/25';
-  }
-  if (node.kind === 'fee') {
-    return 'bg-paper/40';
-  }
-  return PURPOSE_SWATCH_CLASS[node.purpose];
-}
-
-/**
  * Selected-metric figure for one narrow-list row.
  *
  * Count mode is the payment count. Amount mode is the bitcoin figure, with
@@ -672,7 +652,6 @@ function FlowList({
       continue;
     }
     const text = ribbonTip(node, numberFormat, spot);
-    const barWidth = `${(thickness / budget) * 100}%`;
     rows.push(
       <li key={`${side}-${node.key}`}>
         <div
@@ -699,13 +678,20 @@ function FlowList({
               {listRowValue(node, metric, numberFormat, spot)}
             </span>
           </span>
-          <span className="mt-1 block h-2 overflow-hidden rounded-full bg-paper/10">
-            <span
-              className={`block h-full rounded-full ${listBarClass(node)}`}
-              style={{ width: barWidth }}
+          <svg
+            viewBox="0 0 100 8"
+            preserveAspectRatio="none"
+            className="mt-1 block h-2 w-full overflow-hidden rounded-full"
+            aria-hidden="true"
+          >
+            <rect width="100" height="8" className="fill-paper/10" />
+            <rect
+              width={(thickness / budget) * 100}
+              height="8"
+              className={ribbonClass(node)}
               data-metric={node.metric}
             />
-          </span>
+          </svg>
         </div>
       </li>,
     );

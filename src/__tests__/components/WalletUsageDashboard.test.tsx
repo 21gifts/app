@@ -802,7 +802,8 @@ describe('WalletUsageDashboard', () => {
         throw new Error('missing stacked lines');
       }
       expect(parties.className).not.toContain('break-words');
-      expect(figures.className).toContain('break-words');
+      expect(figures.className).not.toContain('break-words');
+      expect(figures.className).toContain('tabular-nums');
       const cells = [...row.querySelectorAll('td')];
       const from = cells[0]?.textContent?.trim();
       const to = cells[1]?.textContent?.trim();

@@ -163,13 +163,13 @@ const MEMBER_FROM = [
   'Forum gifts from members',
   'Forum gifts from the Tondo fund',
   'Forum gifts from 21.gifts',
-  'Transfers from Outside',
-  'Transfers from Members',
-  'Transfers from Tondo fund',
+  'Transfers from outside',
+  'Transfers from members',
+  'Transfers from the Tondo fund',
   'Transfers from 21.gifts',
-  'Into the Tondo fund from Outside',
-  'Into the Tondo fund from Members',
-  'Into the Tondo fund from Tondo fund',
+  'Into the Tondo fund from outside',
+  'Into the Tondo fund from members',
+  'Into the Tondo fund from the Tondo fund',
   'Into the Tondo fund from 21.gifts',
   'Gifts from the Tondo fund',
   'Gifts from outside',
@@ -296,14 +296,14 @@ function latestObserver(): WidthObserver {
 
 function barPercent(root: Element, label: string): number {
   const bar = requireFlow(root, label).querySelector('[data-metric]');
-  if (!(bar instanceof HTMLElement)) {
+  if (bar === null) {
     throw new Error(`missing bar ${label}`);
   }
-  const match = /^([\d.]+)%$/.exec(bar.style.width);
-  if (match === null || match[1] === undefined) {
+  const width = bar.getAttribute('width');
+  if (width === null) {
     throw new Error(`missing width ${label}`);
   }
-  return Number(match[1]);
+  return Number(width);
 }
 
 function columnPercent(root: Element, side: 'from' | 'to'): number {
@@ -420,10 +420,10 @@ describe('WalletFlowDiagram', () => {
       'Shop purchases from members',
       'Shop purchases from the Tondo fund',
       'Shop purchases from 21.gifts',
-      'Outside',
-      'Members',
-      'Tondo fund',
-      '21.gifts',
+      'Into the Tondo fund from outside',
+      'Into the Tondo fund from members',
+      'Into the Tondo fund from the Tondo fund',
+      'Into the Tondo fund from 21.gifts',
     ]) {
       expect(requireFlow(fund, label)).toBeTruthy();
     }
@@ -668,7 +668,7 @@ describe('WalletFlowDiagram', () => {
     const diagram = screen.getByRole('img', { name: 'Member wallets' });
     expect(diagram.querySelector('[data-flow="Other from outside"]')).toBeNull();
     expect(metricOf(diagram, 'Deposits from outside')).toBe('40');
-    expect(metricOf(diagram, 'Transfers from Tondo fund')).toBe('40');
+    expect(metricOf(diagram, 'Transfers from the Tondo fund')).toBe('40');
     expect(metricOf(diagram, 'Withdrawals to outside')).toBe('80');
     expect(requireFlow(diagram, 'Balance at end of day')).toBeTruthy();
   });
@@ -839,7 +839,7 @@ describe('WalletFlowDiagram', () => {
       });
       const narrow = screen.getByRole('img', { name: 'Member wallets' });
       expect(narrow.getAttribute('data-layout')).toBe('compact');
-      expect(narrow.querySelector('svg')).toBeNull();
+      expect(narrow.querySelector('svg[viewBox="0 0 100 8"]')).not.toBeNull();
       expect(narrow.textContent).toContain('Where from');
       expect(narrow.textContent).toContain('Where to');
     } finally {
@@ -911,16 +911,12 @@ describe('WalletFlowDiagram', () => {
       const balanceBar = requireFlow(diagram, 'Balance at start of day').querySelector(
         '[data-metric]',
       );
-      if (
-        !(depositBar instanceof HTMLElement) ||
-        !(feeBar instanceof HTMLElement) ||
-        !(balanceBar instanceof HTMLElement)
-      ) {
+      if (depositBar === null || feeBar === null || balanceBar === null) {
         throw new Error('missing bar');
       }
-      expect(depositBar.className).toContain('bg-emerald-400');
-      expect(feeBar.className).toContain('bg-paper/40');
-      expect(balanceBar.className).toContain('bg-paper/25');
+      expect(depositBar.getAttribute('class')).toContain('fill-emerald-400');
+      expect(feeBar.getAttribute('class')).toContain('fill-paper/40');
+      expect(balanceBar.getAttribute('class')).toContain('fill-paper/25');
       const depositWidth = barPercent(diagram, 'Deposits from outside');
       const openingWidth = barPercent(diagram, 'Balance at start of day');
       expect(depositWidth / openingWidth).toBeCloseTo(2);
