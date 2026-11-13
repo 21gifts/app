@@ -126,6 +126,62 @@ let walletSettingsChain: Promise<void> = Promise.resolve();
 /** Fixed step names safe to attach to a wallet-settings error report. */
 type WalletSettingsStage = 'read' | 'private_mode' | 'viewer';
 
+/** Result of one settings SDK call, or an indication that its handle was dropped. */
+type WalletSettingsCallResult<T> =
+  | { current: true; ok: true; value: T }
+  | { current: true; ok: false; error: unknown }
+  | { current: false };
+
+/** Sentinel returned when it is time to check whether a settings handle was dropped. */
+const WALLET_SETTINGS_CONNECTION_CHECK = Symbol('wallet settings connection check');
+
+/**
+ * Waits for one settings SDK call only while its exact connection remains
+ * current. The periodic check bounds how long a call that never settles can
+ * hold the shared settings chain after the handle is dropped. Both outcomes
+ * of the SDK promise are handled at once, so a rejection after abandonment is
+ * swallowed.
+ *
+ * @param conn - Connection that owns the call.
+ * @param call - Settings SDK operation to start once.
+ * @returns The operation result, or `current: false` after the handle drops.
+ */
+async function callWalletSettings<T>(
+  conn: WalletConnection,
+  call: () => Promise<T>,
+): Promise<WalletSettingsCallResult<T>> {
+  if (connection !== conn) {
+    return { current: false };
+  }
+  let sdkCall: Promise<T>;
+  try {
+    sdkCall = call();
+  } catch (error: unknown) {
+    return { current: true, ok: false, error };
+  }
+  const settled: Promise<WalletSettingsCallResult<T>> = sdkCall.then(
+    (value) => ({ current: true, ok: true, value }),
+    (error: unknown) => ({ current: true, ok: false, error }),
+  );
+  while (connection === conn) {
+    let check!: ReturnType<typeof setTimeout>;
+    const result = await Promise.race([
+      settled,
+      new Promise<typeof WALLET_SETTINGS_CONNECTION_CHECK>((resolve) => {
+        check = setTimeout(
+          () => resolve(WALLET_SETTINGS_CONNECTION_CHECK),
+          WALLET_RETRY_DISCONNECT_WAIT_MS,
+        );
+      }),
+    ]);
+    clearTimeout(check);
+    if (result !== WALLET_SETTINGS_CONNECTION_CHECK) {
+      return result;
+    }
+  }
+  return { current: false };
+}
+
 /**
  * Reports a settings failure without the viewer key, wallet identity, address,
  * SDK error text, or thrown value.
@@ -162,38 +218,26 @@ async function configureWalletSettings(
   conn: WalletConnection,
   configurePrivateMode: boolean,
 ): Promise<void> {
-  if (connection !== conn) {
-    return;
-  }
-  let readResult:
-    | {
-        ok: true;
-        settings: Awaited<ReturnType<WalletConnection['getUserSettings']>>;
-      }
-    | { ok: false; error: unknown };
-  try {
-    readResult = { ok: true, settings: await conn.getUserSettings() };
-  } catch (error: unknown) {
-    readResult = { ok: false, error };
-  }
-  if (connection !== conn) {
+  const readResult = await callWalletSettings(conn, () => conn.getUserSettings());
+  if (!readResult.current || connection !== conn) {
     return;
   }
   if (!readResult.ok) {
     reportWalletSettingsFailure('read', readResult.error);
     return;
   }
-  const { settings } = readResult;
+  const settings = readResult.value;
 
   let firstFailure: { stage: WalletSettingsStage; error: unknown } | null = null;
   if (configurePrivateMode && !settings.sparkPrivateModeEnabled) {
-    try {
-      await conn.updateUserSettings({ sparkPrivateModeEnabled: true });
-    } catch (error: unknown) {
-      firstFailure = { stage: 'private_mode', error };
-    }
-    if (connection !== conn) {
+    const privateModeResult = await callWalletSettings(conn, () =>
+      conn.updateUserSettings({ sparkPrivateModeEnabled: true }),
+    );
+    if (!privateModeResult.current || connection !== conn) {
       return;
+    }
+    if (!privateModeResult.ok) {
+      firstFailure = { stage: 'private_mode', error: privateModeResult.error };
     }
   }
   const viewerPublicKey = useAuthStore.getState().account?.walletViewerPublicKey;
@@ -202,15 +246,16 @@ async function configureWalletSettings(
     VIEWER_PUBLIC_KEY.test(viewerPublicKey) &&
     settings.sparkMasterIdentityPublicKey !== viewerPublicKey
   ) {
-    try {
-      await conn.updateUserSettings({
+    const viewerResult = await callWalletSettings(conn, () =>
+      conn.updateUserSettings({
         sparkMasterIdentityPublicKey: { type: 'set', publicKey: viewerPublicKey },
-      });
-    } catch (error: unknown) {
-      firstFailure ??= { stage: 'viewer', error };
-    }
-    if (connection !== conn) {
+      }),
+    );
+    if (!viewerResult.current || connection !== conn) {
       return;
+    }
+    if (!viewerResult.ok) {
+      firstFailure ??= { stage: 'viewer', error: viewerResult.error };
     }
   }
   if (firstFailure !== null) {

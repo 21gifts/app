@@ -482,7 +482,8 @@ describe('connectWallet', () => {
     expect(captureMessage).not.toHaveBeenCalled();
   });
 
-  it('skips a stale settings run and gives the replacement connection the current viewer', async () => {
+  it('does not let a pending stale settings read block the replacement viewer', async () => {
+    vi.useFakeTimers();
     const viewerA = `03${'b'.repeat(64)}`;
     const viewerB = `02${'c'.repeat(64)}`;
     useAuthStore.setState({
@@ -490,18 +491,14 @@ describe('connectWallet', () => {
       account: { walletViewerPublicKey: viewerA } as Account,
     });
     rememberSessionPhrase(MNEMONIC);
-    let rejectStaleSettings!: (error: Error) => void;
     const staleSettings = new Promise<{
       sparkPrivateModeEnabled: boolean;
       sparkMasterIdentityPublicKey: string | null;
-    }>((_resolve, reject) => {
-      rejectStaleSettings = reject;
-    });
+    }>(() => undefined);
     const stale = createFakeSdk({ getUserSettings: () => staleSettings });
     await connectWallet(stale.loadSdk);
-    await vi.waitFor(() => {
-      expect(stale.connection.getUserSettings).toHaveBeenCalledTimes(1);
-    });
+    await vi.advanceTimersByTimeAsync(0);
+    expect(stale.connection.getUserSettings).toHaveBeenCalledTimes(1);
 
     let currentSdkViewer = IDENTITY;
     const current = createFakeSdk({
@@ -521,16 +518,44 @@ describe('connectWallet', () => {
 
     expect(stale.connection.updateUserSettings).not.toHaveBeenCalled();
     expect(current.connection.getUserSettings).not.toHaveBeenCalled();
-    rejectStaleSettings(new Error('stale settings failed'));
+    await vi.advanceTimersByTimeAsync(WALLET_RETRY_DISCONNECT_WAIT_MS);
 
-    await vi.waitFor(() => {
-      expect(current.connection.updateUserSettings).toHaveBeenCalledWith({
-        sparkMasterIdentityPublicKey: { type: 'set', publicKey: viewerB },
-      });
-    });
+    expect(current.connection.updateUserSettings.mock.calls).toEqual([
+      [
+        {
+          sparkMasterIdentityPublicKey: { type: 'set', publicKey: viewerB },
+        },
+      ],
+    ]);
+    expect(current.connection.getUserSettings).toHaveBeenCalledTimes(2);
+    expect(stale.connection.getUserSettings).toHaveBeenCalledTimes(1);
     expect(stale.connection.updateUserSettings).not.toHaveBeenCalled();
-    expect(current.connection.updateUserSettings).toHaveBeenCalledTimes(1);
     expect(currentSdkViewer).toBe(viewerB);
+    expect(captureMessage).not.toHaveBeenCalled();
+  });
+
+  it('swallows a rejection after a stale settings call is abandoned', async () => {
+    vi.useFakeTimers();
+    useAuthStore.setState({ session: 'sess', account: {} as Account });
+    rememberSessionPhrase(MNEMONIC);
+    let rejectStaleSettings!: (error: Error) => void;
+    const staleSettings = new Promise<{
+      sparkPrivateModeEnabled: boolean;
+      sparkMasterIdentityPublicKey: string | null;
+    }>((_resolve, reject) => {
+      rejectStaleSettings = reject;
+    });
+    const stale = createFakeSdk({ getUserSettings: () => staleSettings });
+    await connectWallet(stale.loadSdk);
+    await vi.advanceTimersByTimeAsync(0);
+
+    const current = createFakeSdk();
+    await connectWallet(current.loadSdk);
+    await vi.advanceTimersByTimeAsync(WALLET_RETRY_DISCONNECT_WAIT_MS);
+    rejectStaleSettings(new Error('late stale settings failure'));
+    await Promise.resolve();
+
+    expect(current.connection.getUserSettings).toHaveBeenCalledTimes(1);
     expect(captureMessage).not.toHaveBeenCalled();
   });
 
