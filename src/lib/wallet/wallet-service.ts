@@ -140,7 +140,9 @@ const WALLET_SETTINGS_CONNECTION_CHECK = Symbol('wallet settings connection chec
  * current. The periodic check bounds how long a call that never settles can
  * hold the shared settings chain after the handle is dropped. Both outcomes
  * of the SDK promise are handled at once, so a rejection after abandonment is
- * swallowed.
+ * swallowed. A successful abandoned call queues a silent full settings pass
+ * for the replacement connection, because the stale call may have changed
+ * shared wallet settings after that connection configured them.
  *
  * @param conn - Connection that owns the call.
  * @param call - Settings SDK operation to start once.
@@ -179,6 +181,12 @@ async function callWalletSettings<T>(
       return result;
     }
   }
+  void settled.then((result) => {
+    const currentConnection = connection;
+    if (result.current && result.ok && currentConnection !== null && currentConnection !== conn) {
+      configureWalletSettingsOnce(currentConnection, true, false);
+    }
+  });
   return { current: false };
 }
 
@@ -213,17 +221,21 @@ function reportWalletSettingsFailure(stage: WalletSettingsStage, failed: unknown
  *
  * @param conn - Current wallet handle.
  * @param configurePrivateMode - Whether this run also enforces private mode.
+ * @param reportFailures - Whether failures from this run are reported.
  */
 async function configureWalletSettings(
   conn: WalletConnection,
   configurePrivateMode: boolean,
+  reportFailures: boolean,
 ): Promise<void> {
   const readResult = await callWalletSettings(conn, () => conn.getUserSettings());
   if (!readResult.current || connection !== conn) {
     return;
   }
   if (!readResult.ok) {
-    reportWalletSettingsFailure('read', readResult.error);
+    if (reportFailures) {
+      reportWalletSettingsFailure('read', readResult.error);
+    }
     return;
   }
   const settings = readResult.value;
@@ -252,13 +264,16 @@ async function configureWalletSettings(
       }),
     );
     if (!viewerResult.current || connection !== conn) {
+      if (reportFailures && firstFailure !== null) {
+        reportWalletSettingsFailure(firstFailure.stage, firstFailure.error);
+      }
       return;
     }
     if (!viewerResult.ok) {
       firstFailure ??= { stage: 'viewer', error: viewerResult.error };
     }
   }
-  if (firstFailure !== null) {
+  if (reportFailures && firstFailure !== null) {
     reportWalletSettingsFailure(firstFailure.stage, firstFailure.error);
   }
 }
@@ -268,9 +283,13 @@ async function configureWalletSettings(
  * connections. Each run reads the current account key and SDK setting only
  * when its turn starts.
  */
-function configureWalletSettingsOnce(conn: WalletConnection, configurePrivateMode: boolean): void {
+function configureWalletSettingsOnce(
+  conn: WalletConnection,
+  configurePrivateMode: boolean,
+  reportFailures = true,
+): void {
   walletSettingsChain = walletSettingsChain.then(() =>
-    configureWalletSettings(conn, configurePrivateMode),
+    configureWalletSettings(conn, configurePrivateMode, reportFailures),
   );
 }
 
