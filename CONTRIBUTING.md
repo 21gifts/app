@@ -414,7 +414,7 @@ app/
 │   │   ├── remaining-balance.ts # Open a previous wallet from its words and move its rest to the member's wallet
 │   │   ├── interaction-log.ts   # Signed-in interaction events: queue, cleaned props, POST /me/events batches
 │   │   ├── move-funds.ts        # Tab-scoped move-funds request (source receive | link) + MOVE_FUNDS_EVENT
-│   │   ├── dfx-login.ts         # Log in at DFX: sign DFX's sign-in text with the wallet, POST /v1/auth, Buy URL with the session
+│   │   ├── dfx-login.ts         # Log in at DFX: fetch and check DFX's sign-in text, sign it with the wallet, POST /v1/auth, Buy URL with the session
 │   │   ├── wallet/              # In-app Bitcoin wallet (SDK load, connect, phrase remember/unlock, pay, parse)
 │   │   │   ├── wallet-open.ts   # Login-to-open gate, hydration lock, and post-login wallet opening
 │   │   │   ├── wallet-sdk.ts    # Dynamic Breez SDK load + narrow WalletSdk surface

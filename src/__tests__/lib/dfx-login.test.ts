@@ -15,6 +15,7 @@ const SIGN_TEXT = SIGN_PREFIX + ADDRESS;
 const SIGNATURE = 'ab'.repeat(32);
 const TOKEN = 'header.payload.sig';
 const AUTH_URL = 'https://api.dfx.swiss/v1/auth';
+const MESSAGE_URL = `${AUTH_URL}/signMessage?address=${encodeURIComponent(ADDRESS)}`;
 const BUY_URL = `https://app.dfx.swiss/buy?session=${TOKEN}&blockchain=Spark&asset-out=BTC`;
 
 const fetchMock = vi.fn();
@@ -46,7 +47,7 @@ function fakeResponse(
 }
 
 /**
- * Queues the one session response.
+ * Queues the sign-in text and session responses.
  *
  * @param authBody - POST JSON.
  * @param authOk - Whether the POST is 2xx.
@@ -54,8 +55,18 @@ function fakeResponse(
  */
 function queueAuth(authBody: unknown, authOk = true): { wasRead: () => boolean } {
   const auth = fakeResponse(authBody, authOk);
+  queueMessage();
   fetchMock.mockResolvedValueOnce(auth.response);
   return { wasRead: auth.wasRead };
+}
+
+function queueMessage(
+  body: unknown = { message: SIGN_TEXT },
+  ok = true,
+): { wasRead: () => boolean } {
+  const message = fakeResponse(body, ok);
+  fetchMock.mockResolvedValueOnce(message.response);
+  return { wasRead: message.wasRead };
 }
 
 /**
@@ -103,15 +114,19 @@ function hangUntilAbort(_url: string, init?: RequestInit): Promise<Response> {
 }
 
 /**
- * Exactly one request, and it is the session POST. Its signal is still open.
+ * The sign-in GET precedes the session POST. Their shared signal is still open.
  *
  * @param signature - Signature hex placed in the body.
  */
 function expectOnePost(signature: string): void {
-  expect(fetchMock).toHaveBeenCalledTimes(1);
-  const init = fetchMock.mock.calls[0]?.[1] as RequestInit | undefined;
+  expect(fetchMock).toHaveBeenCalledTimes(2);
+  const init = fetchMock.mock.calls[1]?.[1] as RequestInit | undefined;
   expect(init?.signal).toBeInstanceOf(AbortSignal);
   expect(init?.signal?.aborted).toBe(false);
+  expect(fetchMock).toHaveBeenNthCalledWith(1, MESSAGE_URL, {
+    method: 'GET',
+    signal: init?.signal,
+  });
   expect(fetchMock).toHaveBeenCalledWith(AUTH_URL, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -134,7 +149,7 @@ afterEach(() => {
 });
 
 describe('dfxLoginUrl', () => {
-  it('signs the local text and returns the Buy URL', async () => {
+  it('fetches and signs the checked text before posting and returning the Buy URL', async () => {
     const consoleLog = vi.spyOn(console, 'log').mockImplementation(() => undefined);
     const consoleError = vi.spyOn(console, 'error').mockImplementation(() => undefined);
     queueAuth({ accessToken: TOKEN, blockchains: ['Spark'] });
@@ -142,6 +157,15 @@ describe('dfxLoginUrl', () => {
     expect(receiveWalletSparkAddress).toHaveBeenCalledWith();
     expectSigned();
     expectOnePost(SIGNATURE);
+    expect(vi.mocked(receiveWalletSparkAddress).mock.invocationCallOrder[0]).toBeLessThan(
+      fetchMock.mock.invocationCallOrder[0]!,
+    );
+    expect(fetchMock.mock.invocationCallOrder[0]).toBeLessThan(
+      vi.mocked(signWithWallet).mock.invocationCallOrder[0]!,
+    );
+    expect(vi.mocked(signWithWallet).mock.invocationCallOrder[0]).toBeLessThan(
+      fetchMock.mock.invocationCallOrder[1]!,
+    );
     expect(logInteraction).not.toHaveBeenCalled();
     expect(consoleLog).not.toHaveBeenCalled();
     expect(consoleError).not.toHaveBeenCalled();
@@ -149,7 +173,7 @@ describe('dfxLoginUrl', () => {
     consoleError.mockRestore();
   });
 
-  it('forwards an SDK loader and signs the same local text', async () => {
+  it('forwards an SDK loader and signs the checked text', async () => {
     const loadSdk = vi.fn();
     queueAuth({ accessToken: TOKEN });
     await expect(dfxLoginUrl(loadSdk)).resolves.toBe(BUY_URL);
@@ -184,9 +208,10 @@ describe('dfxLoginUrl', () => {
 
   it('does not post when signing fails', async () => {
     vi.mocked(signWithWallet).mockRejectedValue(new Error('wallet-connect'));
+    queueMessage();
     await expect(dfxLoginUrl()).rejects.toThrow('wallet-connect');
     expectSigned();
-    expect(fetchMock).not.toHaveBeenCalled();
+    expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 
   it('does not read the session body when the sign-in is not 2xx', async () => {
@@ -198,6 +223,7 @@ describe('dfxLoginUrl', () => {
   });
 
   it('rejects dfx-login when the session body is not JSON', async () => {
+    queueMessage();
     fetchMock.mockResolvedValueOnce(
       fakeResponse(() => {
         throw new SyntaxError('Unexpected token');
@@ -228,6 +254,7 @@ describe('dfxLoginUrl', () => {
 
   it('lets a sign-in request failure through after the text was signed', async () => {
     const failure = new Error('offline');
+    queueMessage();
     fetchMock.mockRejectedValueOnce(failure);
     await expect(dfxLoginUrl()).rejects.toBe(failure);
     expectSigned();
@@ -264,6 +291,7 @@ describe('dfxLoginUrl', () => {
 
   it('times out while signing and never posts a late signature', async () => {
     vi.useFakeTimers();
+    queueMessage();
     let finish: (signature: string) => void = () => undefined;
     vi.mocked(signWithWallet).mockReturnValueOnce(
       new Promise((resolve) => {
@@ -274,15 +302,16 @@ describe('dfxLoginUrl', () => {
     await vi.advanceTimersByTimeAsync(DFX_LOGIN_TIMEOUT_MS);
     await rejected;
     expectSigned();
-    expect(fetchMock).not.toHaveBeenCalled();
+    expect(fetchMock).toHaveBeenCalledTimes(1);
     finish(SIGNATURE);
     await Promise.resolve();
-    expect(fetchMock).not.toHaveBeenCalled();
+    expect(fetchMock).toHaveBeenCalledTimes(1);
     expect(vi.getTimerCount()).toBe(0);
   });
 
   it('times out while the response body is pending', async () => {
     vi.useFakeTimers();
+    queueMessage();
     fetchMock.mockResolvedValueOnce({
       ok: true,
       json: () => new Promise<unknown>(() => undefined),
@@ -290,7 +319,7 @@ describe('dfxLoginUrl', () => {
     const rejected = expect(dfxLoginUrl()).rejects.toThrow('dfx-login');
     await vi.advanceTimersByTimeAsync(DFX_LOGIN_TIMEOUT_MS);
     await rejected;
-    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
     expect(vi.getTimerCount()).toBe(0);
   });
 
@@ -308,6 +337,7 @@ describe('dfxLoginUrl', () => {
 
   it('rejects dfx-login when the sign-in has not answered at the time limit', async () => {
     vi.useFakeTimers();
+    queueMessage();
     fetchMock.mockImplementation(hangUntilAbort);
     let settled = false;
     const pending = dfxLoginUrl().then(
@@ -324,7 +354,7 @@ describe('dfxLoginUrl', () => {
     expect(settled).toBe(false);
     expect(DFX_LOGIN_TIMEOUT_MS).toBe(15_000);
     expectSigned();
-    const signal = (fetchMock.mock.calls[0]?.[1] as RequestInit | undefined)?.signal;
+    const signal = (fetchMock.mock.calls[1]?.[1] as RequestInit | undefined)?.signal;
     expect(signal).toBeInstanceOf(AbortSignal);
     expect(signal?.aborted).toBe(false);
     const rejected = expect(pending).rejects.toThrow('dfx-login');
@@ -332,6 +362,79 @@ describe('dfxLoginUrl', () => {
     await rejected;
     expect(settled).toBe(true);
     expect(signal?.aborted).toBe(true);
+    expect(vi.getTimerCount()).toBe(0);
+  });
+
+  it('encodes the wallet address in the GET before signing its exact returned text', async () => {
+    const address = 'spark+address/with=characters';
+    const message = SIGN_PREFIX + address;
+    vi.mocked(receiveWalletSparkAddress).mockResolvedValue(address);
+    queueMessage({ message });
+    fetchMock.mockResolvedValueOnce(fakeResponse({ accessToken: TOKEN }).response);
+    await expect(dfxLoginUrl()).resolves.toBe(BUY_URL);
+    expect(fetchMock.mock.calls[0]?.[0]).toBe(
+      `${AUTH_URL}/signMessage?address=${encodeURIComponent(address)}`,
+    );
+    expect(signWithWallet).toHaveBeenCalledWith(message);
+  });
+
+  it.each([
+    'other-prefix' + ADDRESS,
+    SIGN_PREFIX + 'another-address',
+    SIGN_TEXT + ' extra',
+    ' ' + SIGN_TEXT,
+  ])('rejects an unexpected sign-in text without signing or posting', async (message) => {
+    queueMessage({ message });
+    await expect(dfxLoginUrl()).rejects.toThrow('dfx-login');
+    expect(signWithWallet).not.toHaveBeenCalled();
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('rejects a non-2xx sign-in text response without reading it', async () => {
+    const failed = queueMessage({ message: SIGN_TEXT }, false);
+    await expect(dfxLoginUrl()).rejects.toThrow('dfx-login');
+    expect(failed.wasRead()).toBe(false);
+    expect(signWithWallet).not.toHaveBeenCalled();
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('rejects a sign-in text body that is not JSON', async () => {
+    queueMessage(() => {
+      throw new SyntaxError('Unexpected token');
+    });
+    await expect(dfxLoginUrl()).rejects.toThrow('dfx-login');
+    expect(signWithWallet).not.toHaveBeenCalled();
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it.each([{}, { message: '' }, { message: '   ' }, { message: 1 }])(
+    'rejects a missing, empty, or non-text sign-in message',
+    async (body) => {
+      queueMessage(body);
+      await expect(dfxLoginUrl()).rejects.toThrow('dfx-login');
+      expect(signWithWallet).not.toHaveBeenCalled();
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+    },
+  );
+
+  it('propagates a sign-in text request failure without signing or posting', async () => {
+    const failure = new Error('offline');
+    fetchMock.mockRejectedValueOnce(failure);
+    await expect(dfxLoginUrl()).rejects.toBe(failure);
+    expect(signWithWallet).not.toHaveBeenCalled();
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('aborts a pending sign-in text GET at the time limit', async () => {
+    vi.useFakeTimers();
+    fetchMock.mockImplementation(hangUntilAbort);
+    const rejected = expect(dfxLoginUrl()).rejects.toThrow('dfx-login');
+    await vi.advanceTimersByTimeAsync(DFX_LOGIN_TIMEOUT_MS);
+    await rejected;
+    const signal = (fetchMock.mock.calls[0]?.[1] as RequestInit | undefined)?.signal;
+    expect(signal?.aborted).toBe(true);
+    expect(signWithWallet).not.toHaveBeenCalled();
+    expect(fetchMock).toHaveBeenCalledTimes(1);
     expect(vi.getTimerCount()).toBe(0);
   });
 });
