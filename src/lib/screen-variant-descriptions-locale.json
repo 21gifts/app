@@ -5879,6 +5879,11 @@
     "es": "Día 2026-11-10, sigue en importe. El diagrama Tondo fund muestra Balance at start of day. All flows sigue cubriendo todos los días.",
     "fil": "Araw na 2026-11-10, halaga pa rin. Ipinapakita ng dayagram na Tondo fund ang Balance at start of day. Saklaw pa rin ng All flows ang bawat araw."
   },
+  "/stats/wallet:day-open": {
+    "de": "Die Liste Day ist geöffnet. Die Option 2026-11-10 ist sichtbar. All days, 2026-11-09, 2026-11-11 und 2026-11-12 stehen in der Liste. Amount bleibt gewählt. Das Menü sitzt auf einer Papierfläche.",
+    "es": "La lista Day está abierta. La opción 2026-11-10 es visible. All days, 2026-11-09, 2026-11-11 y 2026-11-12 están en la lista. Amount sigue seleccionado. El menú está sobre una superficie de papel.",
+    "fil": "Bukas ang listahan ng Day. Nakikita ang opsyong 2026-11-10. Nasa listahan ang All days, 2026-11-09, 2026-11-11, at 2026-11-12. Napili pa rin ang Amount. Nasa ibabaw na papel ang menu."
+  },
   "/stats/wallet:default": {
     "de": "Alle Tage, Betrag. Die Kacheln zeigen 661 Zahlungen, Volumen ₿1'875'089 über $1'875.09, 48 Wallets mit Guthaben und 33 sendende, Foren-Tempo 110 nach · 3 vor, 84 bezahlte Kassenbelastungen und den Saldo des Tondo-Fonds ₿425'057 über $425.06. Payments per day by purpose ist das gestapelte Diagramm. Beide Flussdiagramme und All flows sind sichtbar. How these numbers are made bleibt zu.",
     "es": "Todos los días, importe. Las fichas muestran 661 pagos, volumen ₿1'875'089 sobre $1'875.09, 48 wallets con saldo y 33 que envían, ritmo del foro 110 después · 3 antes, 84 cargos de caja pagados y el saldo del fondo Tondo ₿425'057 sobre $425.06. Payments per day by purpose es el gráfico apilado. Los dos diagramas de flujo y All flows están visibles. How these numbers are made sigue cerrado.",

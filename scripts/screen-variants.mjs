@@ -8260,6 +8260,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/stats/wallet',
+    id: 'day-open',
+    image: 'stats-wallet-day-open.png',
+    visual: 'state-stats-wallet-day-open',
+    needle: "getByRole('option', { name: '2026-11-10', exact: true })).toBeVisible()",
+  },
+  {
+    route: '/stats/wallet',
     id: 'count',
     image: 'stats-wallet-count.png',
     visual: 'state-stats-wallet-count',

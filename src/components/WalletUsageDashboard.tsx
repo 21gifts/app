@@ -1367,18 +1367,20 @@ export function WalletUsageDashboard({
         <h2 className="text-lg font-semibold">Where the money comes from and where it goes</h2>
         <div className="flex flex-wrap items-end gap-4">
           <div className="w-full min-w-0 text-ink scheme-light [--color-app-border:#e5e5e5] [--color-app-border-strong:#d4d4d4] [--color-app-btn:#171717] [--color-app-btn-fg:#ffffff] [--color-app-btn-hover:#404040] [--color-app-card:#ffffff] [--color-app-card-muted:#fafafa] [--color-app-danger:#b91c1c] [--color-app-fg:#171717] [--color-app-focus:#171717] [--color-app-hover:#fafafa] [--color-app-muted:#525252] sm:w-auto">
-            <FilterMenu
-              label="Day"
-              allLabel="All days"
-              value={dayKey === 'all' ? '' : dayKey}
-              options={[
-                { value: '', label: 'All days', swatch: null },
-                ...orderedDays.map((day) => ({ value: day.day, label: day.day, swatch: null })),
-              ]}
-              onChange={(next) => {
-                setDayKey(next === '' ? 'all' : next);
-              }}
-            />
+            <div className="rounded-2xl bg-paper px-5 py-3">
+              <FilterMenu
+                label="Day"
+                allLabel="All days"
+                value={dayKey === 'all' ? '' : dayKey}
+                options={[
+                  { value: '', label: 'All days', swatch: null },
+                  ...orderedDays.map((day) => ({ value: day.day, label: day.day, swatch: null })),
+                ]}
+                onChange={(next) => {
+                  setDayKey(next === '' ? 'all' : next);
+                }}
+              />
+            </div>
           </div>
           <SegmentedControl
             value={metric}

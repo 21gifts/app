@@ -336,12 +336,18 @@ describe('WalletUsageDashboard', () => {
 
     const dayMenu = screen.getByRole('combobox', { name: 'Day' });
     expect(dayMenu.getAttribute('data-value')).toBe('');
-    expect(dayMenu.parentElement?.parentElement?.className).toContain('scheme-light');
-    expect(dayMenu.parentElement?.parentElement?.className).toContain('text-ink');
+    const plate = dayMenu.parentElement?.parentElement;
+    expect(plate?.className).toContain('rounded-2xl');
+    expect(plate?.className).toContain('bg-paper');
+    expect(plate?.className).toContain('px-5');
+    expect(plate?.className).toContain('py-3');
+    const light = plate?.parentElement;
+    expect(light?.className).toContain('scheme-light');
+    expect(light?.className).toContain('text-ink');
     chooseDay('2026-11-10');
-    expect(screen.getByRole('combobox', { name: 'Day' }).getAttribute('data-value')).toBe(
-      '2026-11-10',
-    );
+    const chosenDay = screen.getByRole('combobox', { name: 'Day' });
+    expect(chosenDay.getAttribute('data-value')).toBe('2026-11-10');
+    expect(chosenDay.parentElement?.parentElement?.className).toContain('bg-paper');
     const fundDay = screen.getByRole('img', { name: 'Tondo fund' });
     expect(fundDay.querySelector('[data-flow="Deposits from outside"]')).toBeNull();
     expect(fundDay.querySelector('[data-flow="Balance at start of day"]')).toBeTruthy();

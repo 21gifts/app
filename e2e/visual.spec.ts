@@ -43233,6 +43233,23 @@ test.describe('stats variant baselines', () => {
     await shotScreen(page, 'state-stats-wallet-day');
   });
 
+  test('stats wallet day open', async ({ page }) => {
+    await stubWalletStats(page, WALLET_USAGE_SERIES);
+    await fulfillSpot(page);
+    await page.goto('/stats/wallet');
+    await expect(page.getByText("$1'875.09", { exact: true })).toBeVisible();
+    const day = page.getByRole('combobox', { name: 'Day' });
+    // The pill sits low on a long page. Centering it keeps the open list
+    // below the pill instead of pinning it to the window.
+    await day.evaluate((node) => {
+      node.scrollIntoView({ block: 'center', inline: 'nearest' });
+    });
+    await day.click();
+    await expect(page.getByRole('option', { name: '2026-11-10', exact: true })).toBeVisible();
+    await expect(page.getByRole('option', { name: 'All days', exact: true })).toBeVisible();
+    await shotScreen(page, 'state-stats-wallet-day-open');
+  });
+
   test('stats wallet count', async ({ page }) => {
     await stubWalletStats(page, WALLET_USAGE_SERIES);
     await fulfillSpot(page);

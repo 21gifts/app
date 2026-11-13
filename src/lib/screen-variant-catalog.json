@@ -7014,6 +7014,12 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/stats/wallet:day-open",
+    "label": "/stats/wallet day-open",
+    "visual": "state-stats-wallet-day-open",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/stats/wallet:count",
     "label": "/stats/wallet count",
     "visual": "state-stats-wallet-count",

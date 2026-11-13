@@ -115,6 +115,14 @@ test('selecting one usage day keeps the all-days flow table', async ({ page }) =
   await expect(page.getByRole('table')).toContainText("₿471'705");
 });
 
+test('the day list stays open', async ({ page }) => {
+  await page.goto('/stats/wallet');
+  await page.getByRole('combobox', { name: 'Day' }).click();
+  await expect(page.getByRole('option', { name: '2026-11-10', exact: true })).toBeVisible();
+  await expect(page.getByRole('option', { name: 'All days', exact: true })).toBeVisible();
+  await expect(page.getByRole('listbox', { name: 'Day' })).toBeVisible();
+});
+
 test('Count mode drops the balance ribbons', async ({ page }) => {
   await page.goto('/stats/wallet');
   await page
