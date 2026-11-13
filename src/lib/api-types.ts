@@ -25,6 +25,16 @@ export const ownerFundingSchema = z.object({
   reviewedByName: z.string().nullable(),
   /** True when the owner should see the stopped-daily-payout notice. Optional so older payloads still parse. */
   dailyPayoutStoppedNotice: z.boolean().optional(),
+  /** Whether a qualifying shop purchase is still missing, or `null` when the read failed. */
+  shopPaymentDue: z.boolean().nullable().optional(),
+  /** Today's one payout state and, when present, its single reason. */
+  payoutToday: z
+    .object({
+      state: z.enum(['paid', 'due', 'blocked']),
+      reason: z.string().nullable(),
+    })
+    .nullable()
+    .optional(),
 });
 
 /**
@@ -105,6 +115,11 @@ export const accountSchema = z.object({
    */
   sparkPubkey: z.string().nullable().optional(),
   /**
+   * Public identity key that 21.gifts' read-only Spark viewer uses. The wallet
+   * validates its exact 66-character lower-case hex shape before using it.
+   */
+  walletViewerPublicKey: z.string().nullable().optional(),
+  /**
    * True once the in-app wallet registered the account's address. The wallet
    * and the username are then fixed. Optional so older api bodies still
    * parse; the setup step only opens when this is strictly `false`.
@@ -171,6 +186,19 @@ export const accountSchema = z.object({
    * Missing or `undefined` is the same as `null` (no funding object).
    */
   funding: ownerFundingSchema.nullable().optional(),
+  /**
+   * Compatibility location for today's payout on basis accounts. Funding's
+   * `payoutToday` is the only source whenever `funding` is an object, including
+   * when `payoutToday` is null; this field is read only when `funding` is null
+   * or absent.
+   */
+  grantPayoutToday: z
+    .object({
+      state: z.enum(['paid', 'due', 'blocked']),
+      reason: z.string().nullable(),
+    })
+    .nullable()
+    .optional(),
 });
 
 /**

@@ -27573,6 +27573,7 @@ test.describe('profile funding states', () => {
     extras: {
       role?: 'basis' | 'verified' | 'moderator' | 'founder' | 'initiator';
       funding?: unknown;
+      grantPayoutToday?: unknown;
       username?: string;
     } = {},
   ): Promise<void> {
@@ -27595,6 +27596,9 @@ test.describe('profile funding states', () => {
           aboutMe: null,
           setup: null,
           missing: [],
+          ...(extras.grantPayoutToday === undefined
+            ? {}
+            : { grantPayoutToday: extras.grantPayoutToday }),
           funding:
             extras.funding === undefined && extras.role !== 'basis'
               ? {
@@ -27620,7 +27624,11 @@ test.describe('profile funding states', () => {
   }
 
   test('profile funding not-verified', async ({ page }) => {
-    await seedFundingProfile(page, { role: 'basis', funding: null });
+    await seedFundingProfile(page, {
+      role: 'basis',
+      funding: null,
+      grantPayoutToday: { state: 'blocked', reason: 'verify' },
+    });
     await page.goto('/grants');
     await expect(page.getByText('You are not verified yet.')).toBeVisible();
     await shotScreen(page, 'state-profile-funding-not-verified');
@@ -27642,7 +27650,15 @@ test.describe('profile funding states', () => {
   });
 
   test('state /grants places-full', async ({ page }) => {
-    await seedFundingProfile(page);
+    await seedFundingProfile(page, {
+      funding: {
+        status: 'none',
+        trialUtcDate: null,
+        admittedAt: null,
+        reviewedByName: null,
+        payoutToday: { state: 'paid', reason: null },
+      },
+    });
     await stubGrantPlaces(page, 'full');
     await page.goto('/grants');
     await expect(page.getByText('0 of 10 places are free.')).toBeVisible();
@@ -27653,7 +27669,15 @@ test.describe('profile funding states', () => {
   });
 
   test('state /grants places-error', async ({ page }) => {
-    await seedFundingProfile(page);
+    await seedFundingProfile(page, {
+      funding: {
+        status: 'none',
+        trialUtcDate: null,
+        admittedAt: null,
+        reviewedByName: null,
+        payoutToday: { state: 'paid', reason: 'welcome' },
+      },
+    });
     await stubGrantPlaces(page, 'error');
     await page.goto('/grants');
     await expect(
@@ -27664,7 +27688,15 @@ test.describe('profile funding states', () => {
   });
 
   test('state /grants places-loading', async ({ page }) => {
-    await seedFundingProfile(page);
+    await seedFundingProfile(page, {
+      funding: {
+        status: 'none',
+        trialUtcDate: null,
+        admittedAt: null,
+        reviewedByName: null,
+        payoutToday: { state: 'due', reason: null },
+      },
+    });
     await stubGrantPlaces(page, 'loading');
     await page.goto('/grants');
     await expect(page.locator('[data-grant-places="loading"]')).toBeVisible();
@@ -27679,6 +27711,7 @@ test.describe('profile funding states', () => {
         trialUtcDate: null,
         admittedAt: null,
         reviewedByName: null,
+        payoutToday: { state: 'blocked', reason: 'admission' },
       },
     });
     await page.goto('/grants');
@@ -27695,6 +27728,7 @@ test.describe('profile funding states', () => {
         trialUtcDate: '2026-09-20',
         admittedAt: null,
         reviewedByName: null,
+        payoutToday: { state: 'due', reason: 'payments_paused' },
       },
     });
     await page.goto('/grants');
@@ -27711,6 +27745,7 @@ test.describe('profile funding states', () => {
         trialUtcDate: null,
         admittedAt: Date.parse('2026-08-28T12:00:00.000Z'),
         reviewedByName: 'Ada',
+        payoutToday: { state: 'blocked', reason: 'wallet' },
       },
     });
     await page.goto('/grants');
@@ -27726,6 +27761,7 @@ test.describe('profile funding states', () => {
         trialUtcDate: null,
         admittedAt: Date.parse('2026-08-28T12:00:00.000Z'),
         reviewedByName: 'Ada',
+        payoutToday: { state: 'blocked', reason: 'recovery_share' },
       },
     });
     await page.goto('/grants');
@@ -27740,7 +27776,16 @@ test.describe('profile funding states', () => {
   });
 
   test('state /grants open-applications', async ({ page }) => {
-    await seedFundingProfile(page, { role: 'moderator' });
+    await seedFundingProfile(page, {
+      role: 'moderator',
+      funding: {
+        status: 'none',
+        trialUtcDate: null,
+        admittedAt: null,
+        reviewedByName: null,
+        payoutToday: { state: 'blocked', reason: 'shop_payment' },
+      },
+    });
     await page.route('**/funding/applications', async (route) => {
       if (/\/funding\/applications\/[^/]+$/.test(new URL(route.request().url()).pathname)) {
         await route.continue();
@@ -27816,7 +27861,16 @@ test.describe('profile funding states', () => {
   });
 
   test('state /grants no-applications', async ({ page }) => {
-    await seedFundingProfile(page, { role: 'moderator' });
+    await seedFundingProfile(page, {
+      role: 'moderator',
+      funding: {
+        status: 'none',
+        trialUtcDate: null,
+        admittedAt: null,
+        reviewedByName: null,
+        payoutToday: { state: 'blocked', reason: 'media_post' },
+      },
+    });
     await page.route('**/funding/applications', async (route) => {
       if (/\/funding\/applications\/[^/]+$/.test(new URL(route.request().url()).pathname)) {
         await route.continue();
@@ -27835,7 +27889,16 @@ test.describe('profile funding states', () => {
   });
 
   test('state /grants applications-loading', async ({ page }) => {
-    await seedFundingProfile(page, { role: 'moderator' });
+    await seedFundingProfile(page, {
+      role: 'moderator',
+      funding: {
+        status: 'none',
+        trialUtcDate: null,
+        admittedAt: null,
+        reviewedByName: null,
+        payoutToday: { state: 'blocked', reason: 'admission' },
+      },
+    });
     await page.route('**/funding/applications', async () => {
       /* hang */
     });
