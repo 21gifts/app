@@ -2111,6 +2111,44 @@ describe('useLoanRepay fresh settlement baseline', () => {
 });
 
 describe('useLoanRepay free repayment and collecting actions', () => {
+  it('scopes an untyped prepay request failure before wallet preparation', async () => {
+    vi.mocked(prepayLoan).mockRejectedValue(new Error('network failure'));
+    const current = loan('prepay-request-failure', 0, 100);
+    const { result } = renderHook(() =>
+      useLoanRepay({ reload: vi.fn(async () => body([current])) }),
+    );
+
+    act(() => result.current.prepay(current, '500'));
+    await waitFor(() => expect(result.current.phase).toBe('failed'));
+
+    expect(result.current.actionError).toEqual({
+      messageId: 'prepay-request-failure',
+      code: 'request_failed',
+      maxSats: null,
+      maxAmount: null,
+    });
+    expect(result.current.errorKey).toBe('forum.payErrorRequest');
+    expect(payFromWallet).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    [new WalletRequiredError(), 'wallet.payUnavailable'],
+    [new CannotReceiveError(), 'loans.errorCannotReceive'],
+  ] as const)('keeps the mapped prepay error for %s', async (error, errorKey) => {
+    vi.mocked(prepayLoan).mockRejectedValue(error);
+    const current = loan('prepay-mapped-failure', 0, 100);
+    const { result } = renderHook(() =>
+      useLoanRepay({ reload: vi.fn(async () => body([current])) }),
+    );
+
+    act(() => result.current.prepay(current, '500'));
+    await waitFor(() => expect(result.current.phase).toBe('failed'));
+
+    expect(result.current.actionError).toBeNull();
+    expect(result.current.errorKey).toBe(errorKey);
+    expect(payFromWallet).not.toHaveBeenCalled();
+  });
+
   it('drops a prepay response after the session changes', async () => {
     let resolvePrepay!: (value: Awaited<ReturnType<typeof prepayLoan>>) => void;
     vi.mocked(prepayLoan).mockReturnValue(

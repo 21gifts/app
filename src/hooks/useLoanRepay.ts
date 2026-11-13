@@ -788,7 +788,10 @@ export function useLoanRepay(options: {
       setLivePhase('preparing');
 
       const active = (): boolean => run === generation.current;
-      const failBeforeSend = (error: unknown): void => {
+      const failBeforeSend = (
+        error: unknown,
+        untypedRequestMessageId: string | null = null,
+      ): void => {
         if (!active()) {
           return;
         }
@@ -800,9 +803,19 @@ export function useLoanRepay(options: {
               : error instanceof Error && /too many (messages|payments)/i.test(error.message)
                 ? 'forum.payErrorRateLimit'
                 : 'forum.payErrorRequest';
+        const typedActionError =
+          prepayRequest === undefined ? null : actionErrorOf(error, prepayRequest.messageId);
         setErrorKey(key);
         setActionError(
-          prepayRequest === undefined ? null : actionErrorOf(error, prepayRequest.messageId),
+          typedActionError ??
+            (untypedRequestMessageId !== null && key === 'forum.payErrorRequest'
+              ? {
+                  messageId: untypedRequestMessageId,
+                  code: 'request_failed',
+                  maxSats: null,
+                  maxAmount: null,
+                }
+              : null),
         );
         setLivePhase('failed');
       };
@@ -839,7 +852,7 @@ export function useLoanRepay(options: {
             }
           }
         } catch (error: unknown) {
-          failBeforeSend(error);
+          failBeforeSend(error, prepayRequest?.messageId ?? null);
           return;
         }
 
