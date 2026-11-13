@@ -1959,6 +1959,27 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/loans/repay',
+    id: 'collecting-connecting',
+    image: 'loans-repay-collecting-connecting.png',
+    visual: 'state-loans-repay-collecting-connecting',
+    needle: 'state /loans/repay collecting-connecting',
+  },
+  {
+    route: '/loans/repay',
+    id: 'collecting-setup-failed',
+    image: 'loans-repay-collecting-setup-failed.png',
+    visual: 'state-loans-repay-collecting-setup-failed',
+    needle: 'state /loans/repay collecting-setup-failed',
+  },
+  {
+    route: '/loans/repay',
+    id: 'collecting-unavailable',
+    image: 'loans-repay-collecting-unavailable.png',
+    visual: 'state-loans-repay-collecting-unavailable',
+    needle: 'state /loans/repay collecting-unavailable',
+  },
+  {
+    route: '/loans/repay',
     id: 'pay-more-max',
     image: 'loans-repay-pay-more-max.png',
     visual: 'state-loans-repay-pay-more-max',

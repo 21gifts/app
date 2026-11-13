@@ -1886,16 +1886,21 @@ describe('LoanRepayScreen', () => {
       }),
     );
     view.rerender(<LoanRepayScreen />);
-    expect(screen.getByText('Repaid ₿500 · $0.50')).toBeTruthy();
+    expect(screen.getByText('That was your last payment')).toBeTruthy();
+    expect(screen.getByText(/Your loan is fully repaid/)).toBeTruthy();
     expect(screen.queryByText('You have no loan to repay.')).toBeNull();
   });
 
-  it('keeps a prepayment success when its target disappears but another loan remains', () => {
+  it('keeps a prepayment success tied to its target when another final loan remains', () => {
     const paidTarget = loan({
       maxSats: 500,
       due: { ...loan().due, payableSats: 0, payablePeople: 0 },
     });
-    const remaining = loan({ messageId: 'loan-2', text: 'A second loan' });
+    const remaining = loan({
+      messageId: 'loan-2',
+      text: 'A second loan',
+      due: { ...loan().due, lastPayment: true },
+    });
     const data = { sundayRest: false, loans: [paidTarget, remaining] };
     const reload = vi.fn().mockResolvedValue(data);
     const state = repay({ activeAction: null });
@@ -1946,6 +1951,10 @@ describe('LoanRepayScreen', () => {
     );
     view.rerender(<LoanRepayScreen />);
     expect(screen.getByText('Repaid ₿500 · $0.50')).toBeTruthy();
+    expect(
+      screen.getByText(/last payment for “A sewing machine for my repair stall”/),
+    ).toBeTruthy();
+    expect(screen.queryByText(/last payment for “A second loan”/)).toBeNull();
     expect(screen.getByText('A second loan')).toBeTruthy();
 
     vi.mocked(useLoanRepay).mockReturnValue(

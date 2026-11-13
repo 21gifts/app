@@ -7611,6 +7611,32 @@ test.describe('loans repay screens', () => {
     await shotScreen(page, 'state-loans-repay-collecting');
   });
 
+  test('state /loans/repay collecting-connecting', async ({ page }) => {
+    await loanShot(page, {
+      loans: [collectingLoan],
+      visual: 'repay-connecting',
+      text: 'Checking your wallet…',
+    });
+    await shotScreen(page, 'state-loans-repay-collecting-connecting');
+  });
+
+  test('state /loans/repay collecting-setup-failed', async ({ page }) => {
+    await loanShot(page, {
+      loans: [collectingLoan],
+      visual: 'repay-setup-failed',
+      text: 'Your wallet could not be set up yet.',
+    });
+    await shotScreen(page, 'state-loans-repay-collecting-setup-failed');
+  });
+
+  test('state /loans/repay collecting-unavailable', async ({ page }) => {
+    await loanShot(page, {
+      loans: [collectingLoan],
+      text: PAY_UNAVAILABLE,
+    });
+    await shotScreen(page, 'state-loans-repay-collecting-unavailable');
+  });
+
   test('state /loans/repay pay-more-max', async ({ page }) => {
     await loanShot(page, {
       loans: [loanA],

@@ -1024,6 +1024,21 @@
     "es": "Mientras el préstamo A aún recauda, no hay tarjeta de vencimiento. Tu préstamo muestra el texto de la máquina de coser, Aún no está totalmente financiado. y Lista de devolución. Debajo están Pagar más con un campo fijo en ₿, contador en vivo y Máximo, el aviso de que el primer pago termina la recaudación, Pagar este importe y Terminar la recaudación.",
     "fil": "Habang nangangalap pa ang utang A, walang due card. Ipinapakita ng Ang utang mo ang teksto ng makinang panahi, Hindi pa buo ang pondo., at Listahan ng ibabalik. Nasa ibaba ang Magbayad pa na may fixed na ₿ field, live counter, at Max, ang paalala na tatapusin ng unang bayad ang pangangalap, Bayaran ang halagang ito, at Tapusin ang pangangalap."
   },
+  "/loans/repay:collecting-connecting": {
+    "de": "Während Kredit A noch sammelt und keine Fälligkeitskarte vorhanden ist, zeigt nur Mehr zurückzahlen die Wallet-Rückmeldung mit Spinner und Ihre Wallet wird geprüft… unter AmountEntry. Das feste ₿-Feld, Maximum, der Sammelhinweis, Betrag zahlen und Sammeln beenden bleiben sichtbar.",
+    "es": "Mientras el préstamo A aún recauda y no hay tarjeta de vencimiento, solo Pagar más muestra el estado de la wallet con un indicador y Comprobando tu wallet… bajo AmountEntry. El campo fijo en ₿, Máximo, el aviso de recaudación, Pagar este importe y Terminar la recaudación siguen visibles.",
+    "fil": "Habang nangangalap pa ang utang A at walang due card, sa Magbayad pa lamang lumalabas ang wallet feedback na may spinner at Tinitingnan ang wallet mo… sa ilalim ng AmountEntry. Nakikita pa rin ang fixed na ₿ field, Max, collecting notice, Bayaran ang halagang ito, at Tapusin ang pangangalap."
+  },
+  "/loans/repay:collecting-setup-failed": {
+    "de": "Während Kredit A noch sammelt und keine Fälligkeitskarte vorhanden ist, zeigt nur Mehr zurückzahlen unter AmountEntry Ihre Wallet konnte noch nicht eingerichtet werden. und Erneut versuchen. Der Sammelhinweis und Sammeln beenden bleiben sichtbar, während die Zahlung deaktiviert ist.",
+    "es": "Mientras el préstamo A aún recauda y no hay tarjeta de vencimiento, solo Pagar más muestra Tu wallet aún no se ha podido configurar. y Reintentar bajo AmountEntry. El aviso de recaudación y Terminar la recaudación siguen visibles mientras el pago está desactivado.",
+    "fil": "Habang nangangalap pa ang utang A at walang due card, sa Magbayad pa lamang lumalabas ang Hindi pa ma-set up ang wallet mo. at Subukan muli sa ilalim ng AmountEntry. Nakikita pa rin ang collecting notice at Tapusin ang pangangalap habang hindi aktibo ang pagbabayad."
+  },
+  "/loans/repay:collecting-unavailable": {
+    "de": "Während Kredit A noch sammelt und keine Fälligkeitskarte vorhanden ist, meldet nur Mehr zurückzahlen: Ihre Wallet ist hier nicht verfügbar. Öffnen Sie diese Seite zum Bezahlen in der 21.gifts-App. Das feste ₿-Feld und die Sammelkontrollen bleiben sichtbar, während Betrag zahlen deaktiviert ist.",
+    "es": "Mientras el préstamo A aún recauda y no hay tarjeta de vencimiento, solo Pagar más indica Tu wallet no está disponible aquí. Abre esta página en la aplicación 21.gifts para pagar. El campo fijo en ₿ y los controles de recaudación siguen visibles mientras Pagar este importe está desactivado.",
+    "fil": "Habang nangangalap pa ang utang A at walang due card, sa Magbayad pa lamang nakasulat ang Hindi available dito ang wallet mo. Buksan ang pahinang ito sa 21.gifts app para magbayad. Nakikita pa rin ang fixed na ₿ field at collecting controls habang hindi aktibo ang Bayaran ang halagang ito."
+  },
   "/loans/repay:pay-more-max": {
     "de": "Kredit A nach Maximum: AmountEntry bleibt in der festen ₿-Krediteinheit, im Feld steht exakt 19000, der Live-Gegenwert ist $19.00 und Betrag zahlen ist aktiv. Die normalen Kontrollen für die heutige Fälligkeit bleiben darüber unverändert.",
     "es": "Préstamo A después de Máximo: AmountEntry permanece en la unidad fija ₿ del préstamo, el campo contiene exactamente 19000, el contador en vivo muestra $19.00 y Pagar este importe está activo. Los controles normales del pago vencido permanecen sin cambios arriba.",

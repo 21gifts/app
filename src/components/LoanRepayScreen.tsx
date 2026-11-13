@@ -349,7 +349,13 @@ export function LoanRepayScreen(): ReactElement {
     ((repay.pinned && repay.phase === 'repaid') ||
       (repay.phase === 'repaid' && repay.sentSats > 0 && payable === 0));
   const paidSource = paidLoans.length > 0 ? paidLoans : loans.loans;
-  const lastLoan = paidSource.find((loan) => loan.due.lastPayment);
+  const prepayTargetId =
+    repay.activeAction?.kind === 'prepay' ? repay.activeAction.messageId : null;
+  const lastLoan = dueRun
+    ? paidSource.find((loan) => loan.due.lastPayment)
+    : prepayTargetId !== null
+      ? paidLoans.find((loan) => loan.messageId === prepayTargetId)
+      : undefined;
   const sentAmount = fiatPayLabel(repay.sentAmounts, repay.sentSats);
   const successBox =
     showRepaid || repaidWithEmptyList || completedPrepayTargetMissing ? (

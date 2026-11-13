@@ -1614,6 +1614,24 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/loans/repay:collecting-connecting",
+    "label": "/loans/repay collecting-connecting",
+    "visual": "state-loans-repay-collecting-connecting",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/loans/repay:collecting-setup-failed",
+    "label": "/loans/repay collecting-setup-failed",
+    "visual": "state-loans-repay-collecting-setup-failed",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/loans/repay:collecting-unavailable",
+    "label": "/loans/repay collecting-unavailable",
+    "visual": "state-loans-repay-collecting-unavailable",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/loans/repay:pay-more-max",
     "label": "/loans/repay pay-more-max",
     "visual": "state-loans-repay-pay-more-max",
@@ -10299,6 +10317,24 @@
     "id": "/messages/[id]/repayment-list:signed-in",
     "label": "/messages/[id]/repayment-list signed-in",
     "visual": "state-messages-id-repayment-list-signed-in",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/messages/[id]/repayment-list:partial-btc",
+    "label": "/messages/[id]/repayment-list partial-btc",
+    "visual": "state-messages-id-repayment-list-partial-btc",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/messages/[id]/repayment-list:partial-fiat",
+    "label": "/messages/[id]/repayment-list partial-fiat",
+    "visual": "state-messages-id-repayment-list-partial-fiat",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/messages/[id]/repayment-list:partial-fiat-fallback",
+    "label": "/messages/[id]/repayment-list partial-fiat-fallback",
+    "visual": "state-messages-id-repayment-list-partial-fiat-fallback",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {

@@ -1558,6 +1558,24 @@ With Loan A still collecting, there is no due box. **Your loan** shows the sewin
 
 ![21.gifts loans repay collecting](images/loans-repay-collecting.png)
 
+### Variant: collecting-connecting
+
+With Loan A still collecting and no due box, the Pay-more-only wallet feedback shows a spinner and **Checking your wallet…** below AmountEntry. The fixed ₿ field, **Max**, the collecting notice, **Pay this amount**, and **End collecting** remain visible.
+
+![21.gifts loans repay collecting wallet connecting](images/loans-repay-collecting-connecting.png)
+
+### Variant: collecting-setup-failed
+
+With Loan A still collecting and no due box, the Pay-more-only wallet feedback shows **Your wallet could not be set up yet.** and **Try again** below AmountEntry. The collecting notice and **End collecting** remain visible while payment is disabled.
+
+![21.gifts loans repay collecting wallet setup failed](images/loans-repay-collecting-setup-failed.png)
+
+### Variant: collecting-unavailable
+
+With Loan A still collecting and no due box, the Pay-more-only wallet feedback says **Your wallet is not available here. Open this page in the 21.gifts app to pay.** The fixed ₿ field and collecting controls remain visible while **Pay this amount** is disabled.
+
+![21.gifts loans repay collecting wallet unavailable](images/loans-repay-collecting-unavailable.png)
+
 ### Variant: pay-more-max
 
 Loan A after **Max**: AmountEntry stays in the loan's fixed ₿ unit, contains the exact current maximum **19000**, shows the live **$19.00** counter, and enables **Pay this amount**. The ordinary due-payment controls remain unchanged above it.
