@@ -1248,3 +1248,11 @@
 - **Returns:** Upstream 200 with `Cache-Control: no-store`, or the route's own 404 `{ error: "Not found" }`.
 - **Errors:** Upstream 404 when the api runs without the Fond, 503 `{ error }` on failure, 502 when the api is unreachable or its 200 body is invalid, or the route's 404 for another handle.
 - **Used by:** `fetchFondSummary` through `FondSummaryLoader` on `/fonds/[username]`.
+
+## Endpoint: GET /fonds/[username]/payments
+
+- **Purpose:** Same-origin public proxy of api `GET /fond/payments` for the Fond page. It first reads the public summary and, only when the 200 summary body's `username` equals the path handle, forwards `before` to the api. The 200 body is `{ payments, next }`; each payment is `{ id, direction: "in" | "out", amountSats, paidAt, storedFiat: { currency: "USD", amount } | null, counterparty: { accountId, username, name } | null }`, newest first, one page at a time. `paidAt` is an ISO 8601 datetime with an offset. `storedFiat` is the frozen USD figure for a paid grant payout, a non-negative USD amount with at most two decimals, as stored. `counterparty` is named only for a direct member transfer (`category = member`); every other category is private and returns `null`. Rows carry no fee. A malformed summary is answered with 502.
+- **Auth:** Public, no session.
+- **Returns:** Upstream 200 with its `Cache-Control` and body, or the route's own 404 `{ error: "Not found" }` for another handle or the api's summary 404.
+- **Errors:** Upstream 400 `Invalid cursor` and 503 `{ error }` pass through; a summary 503 passes through; 502 when the api is unreachable or its summary body is invalid; the route's 404 for another handle.
+- **Used by:** `fetchFondPayments` through `FondPaymentList` on `/fonds/[username]`.

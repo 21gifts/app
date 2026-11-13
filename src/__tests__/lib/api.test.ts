@@ -70,6 +70,7 @@ import {
   fetchViewActivity,
   fetchViewForumList,
   fetchViewProfile,
+  fetchFondPayments,
   fetchFondSummary,
   fetchPreviousWallets,
   deletePreviousWallet,
@@ -331,6 +332,61 @@ describe('fetchFondSummary', () => {
   it('throws when the body fails validation', async () => {
     stubFetch({ ok: true, status: 200, body: { username: 'tondo-fond' } });
     await expect(fetchFondSummary('tondo-fond')).rejects.toThrow();
+  });
+});
+
+describe('fetchFondPayments', () => {
+  const page = {
+    payments: [
+      {
+        id: 'payment-1',
+        direction: 'in' as const,
+        amountSats: 1_000,
+        paidAt: '2026-11-11T13:31:01.000Z',
+        storedFiat: null,
+        counterparty: { accountId: 'acc-1', username: 'alice', name: 'Alice' },
+      },
+    ],
+    next: 'cursor-2',
+  };
+
+  it('returns the first page from the same-origin proxy path', async () => {
+    const fetchMock = stubFetch({ ok: true, status: 200, body: page });
+    await expect(fetchFondPayments('tondo-fond')).resolves.toEqual(page);
+    expect(fetchMock).toHaveBeenCalledWith('/fonds/tondo-fond/payments');
+  });
+
+  it('forwards the before cursor encoded in the query', async () => {
+    const fetchMock = stubFetch({ ok: true, status: 200, body: { ...page, next: null } });
+    await expect(fetchFondPayments('tondo-fond', 'a/b c')).resolves.toEqual({
+      ...page,
+      next: null,
+    });
+    expect(fetchMock).toHaveBeenCalledWith('/fonds/tondo-fond/payments?before=a%2Fb%20c');
+  });
+
+  it('treats an explicit null cursor like the first page', async () => {
+    const fetchMock = stubFetch({ ok: true, status: 200, body: { ...page, next: null } });
+    await fetchFondPayments('tondo-fond', null);
+    expect(fetchMock).toHaveBeenCalledWith('/fonds/tondo-fond/payments');
+  });
+
+  it('returns null on 404', async () => {
+    stubFetch({ ok: false, status: 404, body: { error: 'Not found' } });
+    await expect(fetchFondPayments('other-fond')).resolves.toBeNull();
+  });
+
+  it('throws on a non-404 non-ok response', async () => {
+    stubFetch({ ok: false, status: 503, body: { error: 'unavailable' } });
+    await expect(fetchFondPayments('tondo-fond')).rejects.toMatchObject({
+      message: 'Failed to fetch Fond payments: 503',
+      status: 503,
+    });
+  });
+
+  it('throws when the body fails validation', async () => {
+    stubFetch({ ok: true, status: 200, body: { payments: [], next: '' } });
+    await expect(fetchFondPayments('tondo-fond')).rejects.toThrow();
   });
 });
 

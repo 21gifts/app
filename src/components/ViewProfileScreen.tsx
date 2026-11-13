@@ -7,7 +7,7 @@ import { CannotReceiveLabel } from '@/components/CannotReceiveLabel';
 import { LoanBalanceChart } from '@/components/LoanBalanceChart';
 import { useTranslations } from '@/components/LocaleProvider';
 import { QrCode } from '@/components/QrCode';
-import { Card } from '@/components/ui';
+import { ButtonLink, Card } from '@/components/ui';
 import { fetchViewAboutMePhoto } from '@/lib/api';
 import type { AccountActivity, ViewProfile } from '@/lib/api-types';
 import { giftsLightningAddress, openCryptoPayQrValue } from '@/lib/gifts-address';
@@ -18,6 +18,8 @@ import { profileQrLogo } from '@/lib/profile-qr-logo';
  * edit or message actions; chart never replaced by `forum.loading`.
  * When the member cannot receive yet (`lightningAddressVerified` false), the
  * gifts block shows a "Can't receive yet" label instead of the address and QR.
+ * A profile with role `fond` and a username gets the full-width primary
+ * **Fond overview** link under the name row.
  *
  * @param props - Public profile, view key, gift and loan activity series, and
  *   optional `activityFailed` for both charts.
@@ -61,6 +63,7 @@ export function ViewProfileScreen({
 
   /* v8 ignore next -- SSR first paint: origin empty until client */
   const profileUrl = origin !== '' ? `${origin}/view/${viewKey}` : '';
+  const fondUsername = profile.role === 'fond' ? (profile.username ?? '').trim() : '';
 
   return (
     <Card surface={false}>
@@ -89,6 +92,11 @@ export function ViewProfileScreen({
           {profile.name ?? t('view.unnamed')}
         </p>
       </div>
+      {fondUsername !== '' ? (
+        <ButtonLink href={`/fonds/${fondUsername}`} size="lg">
+          {t('profile.fondOverview')}
+        </ButtonLink>
+      ) : null}
       <div className="flex w-full flex-col items-stretch gap-3 border-t border-app-border pt-6">
         <p className="text-center text-xs tracking-widest text-app-subtle uppercase">
           {t('location.heading')}

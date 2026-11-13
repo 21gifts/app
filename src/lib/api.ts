@@ -41,6 +41,7 @@ import {
   fundingPayoutDaysResponseSchema,
   fundingDecisionResultSchema,
   dailyRosterSchema,
+  fondPaymentListSchema,
   fondPayoutListSchema,
   fondSummarySchema,
   fondPayoutInvoiceSchema,
@@ -92,6 +93,7 @@ import {
   type FundingPayoutDays,
   type FundingDecisionResult,
   type DailyRoster,
+  type FondPaymentList,
   type FondPayout,
   type FondSummary,
   type FondPayoutInvoice,
@@ -235,6 +237,21 @@ export class AppOutdatedError extends Error {
   constructor() {
     super('app_outdated');
     this.name = 'AppOutdatedError';
+  }
+}
+
+/** Non-404 HTTP refusal while loading the public Fond payment list. */
+export class FondPaymentsError extends Error {
+  /** HTTP status returned by the same-origin proxy. */
+  public readonly status: number;
+
+  /**
+   * @param status - HTTP status returned by the same-origin proxy.
+   */
+  public constructor(status: number) {
+    super(`Failed to fetch Fond payments: ${status}`);
+    this.name = 'FondPaymentsError';
+    this.status = status;
   }
 }
 
@@ -825,7 +842,8 @@ export async function fetchViewAboutMePhoto(viewKey: string): Promise<Blob> {
  * @returns The {@link Account}, or `null` when the token is rejected (401) —
  * the caller treats that as "not logged in" and clears local state.
  * @throws {@link WrongAccountError} on 403 with the duplicate-account api string.
- * @throws Error on any other non-2xx status or a body that fails validation.
+ * @throws Error with the HTTP `status` on any other non-2xx answer, or a
+ * validation error when the success body is invalid.
  */
 export async function fetchMe(sessionToken: string): Promise<Account | null> {
   const response = await fetch('/me', {
@@ -2326,6 +2344,35 @@ export async function fetchFondSummary(username: string): Promise<FondSummary | 
     throw new Error(`Failed to fetch Fond summary: ${response.status}`);
   }
   return fondSummarySchema.parse(await response.json());
+}
+
+/**
+ * Fetches one page of the public Fond's completed payments, newest first.
+ *
+ * Reads the same-origin `GET /fonds/:username/payments` proxy. The proxy
+ * answers 404 when the api has no Fond or when the handle is not the Fond's
+ * own handle. `before` is the cursor from the previous page; omit it for the
+ * first page.
+ *
+ * @param username - Fond handle from the route (e.g. `tondo-fond`).
+ * @param before - Cursor for the following page, or `null` for the first page.
+ * @returns The {@link FondPaymentList}, or `null` when the Fond is unknown (404).
+ * @throws Error on any other non-2xx status or a body that fails validation.
+ */
+export async function fetchFondPayments(
+  username: string,
+  before?: string | null,
+): Promise<FondPaymentList | null> {
+  const query =
+    before === undefined || before === null ? '' : `?before=${encodeURIComponent(before)}`;
+  const response = await fetch(`/fonds/${encodeURIComponent(username)}/payments${query}`);
+  if (response.status === 404) {
+    return null;
+  }
+  if (!response.ok) {
+    throw new FondPaymentsError(response.status);
+  }
+  return fondPaymentListSchema.parse(await response.json());
 }
 
 /** One cursor-paginated page of the forum feed. */

@@ -75,6 +75,41 @@ describe('ViewProfileScreen', () => {
     expect(screen.queryByRole('img', { name: 'Given and received in ₿' })).toBeNull();
   });
 
+  it('shows the Fond overview link for a fond profile', () => {
+    renderWithLocale(
+      <ViewProfileScreen
+        profile={{ ...named, role: 'fond', username: 'tondo-fond' }}
+        viewKey={VIEW_KEY}
+        received={[]}
+        donated={[]}
+      />,
+    );
+    const link = screen.getByRole('link', { name: 'Fond overview' });
+    expect(link.getAttribute('href')).toBe('/fonds/tondo-fond');
+    expect(link.className).toContain('w-full');
+  });
+
+  it('hides the Fond overview link for another role or without a username', () => {
+    const view = renderWithLocale(
+      <ViewProfileScreen
+        profile={{ ...named, role: 'fond', username: null }}
+        viewKey={VIEW_KEY}
+        received={[]}
+        donated={[]}
+      />,
+    );
+    expect(screen.queryByRole('link', { name: 'Fond overview' })).toBeNull();
+    view.rerender(
+      <ViewProfileScreen
+        profile={{ ...named, role: 'verified', username: 'tondo-fond' }}
+        viewKey={VIEW_KEY}
+        received={[]}
+        donated={[]}
+      />,
+    );
+    expect(screen.queryByRole('link', { name: 'Fond overview' })).toBeNull();
+  });
+
   it('shows view.unnamed when name is null', () => {
     renderWithLocale(
       <ViewProfileScreen

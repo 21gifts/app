@@ -171,6 +171,56 @@ const FOND_SUMMARY = {
   payoutsPaidUsd: '3.00',
 };
 
+/** First public `GET /fond/payments` page, newest first. */
+const FOND_PAYMENTS = {
+  payments: [
+    {
+      id: '22222222-2222-4222-8222-222222222222',
+      direction: 'in',
+      amountSats: 21000,
+      paidAt: '2026-11-11T13:31:01.000Z',
+      storedFiat: null,
+      counterparty: null,
+    },
+    {
+      id: '33333333-3333-4333-8333-333333333333',
+      direction: 'in',
+      amountSats: 10000,
+      paidAt: '2026-11-10T09:15:00.000Z',
+      storedFiat: null,
+      counterparty: {
+        accountId: '44444444-4444-4444-8444-444444444444',
+        username: 'alice',
+        name: 'Alice',
+      },
+    },
+    {
+      id: '55555555-5555-4555-8555-555555555555',
+      direction: 'out',
+      amountSats: 5000,
+      paidAt: '2026-11-09T18:00:00.000Z',
+      storedFiat: { currency: 'USD', amount: '3.00' },
+      counterparty: null,
+    },
+  ],
+  next: 'fond-payments-next',
+};
+
+/** Second public `GET /fond/payments` page, reached with the first page's cursor. */
+const FOND_PAYMENTS_MORE = {
+  payments: [
+    {
+      id: '66666666-6666-4666-8666-666666666666',
+      direction: 'in',
+      amountSats: 1000,
+      paidAt: '2026-11-08T08:00:00.000Z',
+      storedFiat: null,
+      counterparty: null,
+    },
+  ],
+  next: null,
+};
+
 /**
  * Per-session Fond fixture state. Keeping it per bearer lets parallel tests
  * each invoice and settle their own fixture row.
@@ -4236,6 +4286,14 @@ const server = http.createServer(async (req, res) => {
 
   if (method === 'GET' && pathName === '/fond/summary') {
     json(res, 200, FOND_SUMMARY, { 'cache-control': 'no-store' });
+    return;
+  }
+
+  if (method === 'GET' && pathName === '/fond/payments') {
+    const before = url.searchParams.get('before');
+    json(res, 200, before === null ? FOND_PAYMENTS : FOND_PAYMENTS_MORE, {
+      'cache-control': 'no-store',
+    });
     return;
   }
 

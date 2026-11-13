@@ -2956,6 +2956,68 @@ test('Function: MemberProfileScreen — role pill is visible on the canned membe
   await expect(page.getByRole('button', { name: 'Verified' }).first()).toBeVisible();
 });
 
+test('Function: MemberProfileScreen — a fond member links to its Fond overview', async ({
+  page,
+}) => {
+  const memberId = '23232323-2323-4232-8232-232323232323';
+  await page.addInitScript(() => {
+    localStorage.setItem('21gifts.session', 'sess-e2e');
+  });
+  await page.route(/\/me$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        id: 'acc_e2e',
+        linkingKey: null,
+        role: 'basis',
+        name: 'Ada',
+        location: null,
+        lightningAddress: null,
+        lightningAddressVerified: false,
+        forumLawsDismissed: false,
+        createdAt: 1,
+        rulesAgreedAt: 1_700_000_001,
+        viewKey: 'a'.repeat(64),
+        aboutMe: null,
+        setup: null,
+        missing: [],
+      }),
+    });
+  });
+  await page.route(`**/forum/members/${memberId}`, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        id: memberId,
+        name: 'Tondo Fond',
+        location: 'Tondo',
+        role: 'fond',
+        username: 'tondo-fond',
+        lightningAddress: 'tondo-fond@21.gifts',
+        createdAt: '2026-01-15T12:00:00.000Z',
+        aboutMe: null,
+        profileMessage: null,
+        postCount: 0,
+        replyCount: 0,
+      }),
+    });
+  });
+  await page.route(`**/forum/members/${memberId}/activity`, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(EMPTY_ACTIVITY),
+    });
+  });
+  await page.goto(`/members/${memberId}`);
+  await expect(page.getByRole('link', { name: 'Fond overview' })).toHaveAttribute(
+    'href',
+    '/fonds/tondo-fond',
+  );
+});
+
 test('Function: MemberIdentityPills — the role pill sits beside the member name', async ({
   page,
   request,

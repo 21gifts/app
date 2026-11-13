@@ -122,6 +122,20 @@ describe('ViewProfileLoader', () => {
     expect(fetchProfile).toHaveBeenCalledWith(VIEW_KEY);
   });
 
+  it('links a fond view profile to its Fond overview', async () => {
+    fetchProfile.mockResolvedValue({ ...profile, role: 'fond', username: 'tondo-fond' });
+    renderWithLocale(<ViewProfileLoader viewKey={VIEW_KEY} />);
+    const link = await screen.findByRole('link', { name: 'Fond overview' });
+    expect(link.getAttribute('href')).toBe('/fonds/tondo-fond');
+  });
+
+  it('shows no Fond overview link on a non-fond view profile', async () => {
+    fetchProfile.mockResolvedValue({ ...profile, role: 'verified', username: 'tondo-fond' });
+    renderWithLocale(<ViewProfileLoader viewKey={VIEW_KEY} />);
+    expect(await screen.findByText('Ada')).toBeTruthy();
+    expect(screen.queryByRole('link', { name: 'Fond overview' })).toBeNull();
+  });
+
   it('shows an error and retries', async () => {
     fetchProfile.mockRejectedValueOnce(new Error('boom'));
     fetchProfile.mockResolvedValueOnce(profile);

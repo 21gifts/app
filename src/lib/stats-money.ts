@@ -71,6 +71,17 @@ export function fiatPrefix(code: FiatCode): string {
 }
 
 /**
+ * Prefixes a stored fiat decimal without parsing, padding, grouping, or rounding it.
+ *
+ * @param amount - Decimal string exactly as stored with the committed amount.
+ * @param code - Currency stored with that string.
+ * @returns The currency symbol or code followed by the unchanged stored string.
+ */
+export function formatStoredFiat(amount: string, code: FiatCode): string {
+  return `${fiatPrefix(code)}${amount}`;
+}
+
+/**
  * Formats an API fiat amount for stats display using the visitor grouping style.
  *
  * @param amount - Two-decimal string from the api, or `null` when unsummed.

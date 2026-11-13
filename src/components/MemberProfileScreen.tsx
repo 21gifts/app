@@ -23,7 +23,7 @@ import { useTranslations } from '@/components/LocaleProvider';
 import { QrCode } from '@/components/QrCode';
 import { RequirementsOverlay } from '@/components/RequirementsOverlay';
 import { ShopStickerOverlay } from '@/components/ShopStickerOverlay';
-import { Button, Card } from '@/components/ui';
+import { Button, ButtonLink, Card } from '@/components/ui';
 import {
   CannotReceiveError,
   CreditClosedError,
@@ -313,7 +313,9 @@ const IDLE_BOARD = {
  *   The api role pill and funding marks stay beside the name. Visitor images
  *   load only when `factsOnly` is false and the viewer is not the owner. A
  *   missing public photo or wide image draws nothing. `activityFailed`
- *   (default false) is passed to both charts as `failed`. `loadPublicList`
+ *   (default false) is passed to both charts as `failed`. `showFondOverview`
+ *   adds the full-width primary link to `/fonds/<username>` under the name row
+ *   when the shown account has role `fond` and a username. `loadPublicList`
  *   loads the four feeds without a session (the share link). `loadAboutPhoto`
  *   loads the About me photo on that link when the card has no profile-note id.
  *   `shareViewKey`, when set, is the route key the copy button writes, including
@@ -334,6 +336,7 @@ export function MemberProfileScreen({
   loadPublicList,
   loadAboutPhoto,
   shareViewKey,
+  showFondOverview = false,
 }: {
   profile: MemberProfile;
   received: AccountActivity['receivedOverTime'];
@@ -346,6 +349,7 @@ export function MemberProfileScreen({
   loadPublicList?: (kind: 'posts' | 'replies' | 'shops' | 'credits') => Promise<ForumMessage[]>;
   loadAboutPhoto?: () => Promise<Blob>;
   shareViewKey?: string;
+  showFondOverview?: boolean;
 }): ReactElement {
   const { t } = useTranslations();
   const router = useRouter();
@@ -1663,6 +1667,14 @@ export function MemberProfileScreen({
       : typeof profile.aboutMessageId === 'string' && profile.aboutMessageId !== ''
         ? profile.aboutMessageId
         : undefined;
+  const fondUsername =
+    showFondOverview && listedProfile.role === 'fond' ? (listedProfile.username ?? '').trim() : '';
+  const fondLink =
+    fondUsername === '' ? null : (
+      <ButtonLink href={`/fonds/${fondUsername}`} size="lg">
+        {t('profile.fondOverview')}
+      </ButtonLink>
+    );
 
   const giftsBlock = (
     <div className="flex w-full flex-col items-stretch gap-3 border-t border-app-border pt-6">
@@ -2023,6 +2035,7 @@ export function MemberProfileScreen({
               {(marks, hints) => (
                 <>
                   <NameForm variant="profile" besideName={marks} belowName={hints} />
+                  {fondLink}
                   <LocationForm />
                 </>
               )}
@@ -2045,6 +2058,7 @@ export function MemberProfileScreen({
                   </div>
                 )}
               </MemberIdentityPills>
+              {fondLink}
               <div className="flex w-full flex-col items-stretch gap-3 border-t border-app-border pt-6">
                 <p className="text-center text-xs tracking-widest text-app-subtle uppercase">
                   {t('location.heading')}

@@ -5,6 +5,7 @@ import {
   parseFiatCode,
   formatBitcoin,
   formatFiatDisplay,
+  formatStoredFiat,
   formatFiatTick,
   formatUsdDisplay,
   formatUsdTick,
@@ -69,6 +70,17 @@ describe('formatFiatDisplay', () => {
   it('renders null as an em dash', () => {
     expect(formatFiatDisplay(null, 'CHF')).toBe('—');
     expect(formatFiatDisplay(null, 'USD')).toBe('—');
+  });
+});
+
+describe('formatStoredFiat', () => {
+  it('adds the currency while preserving every stored decimal digit', () => {
+    expect(formatStoredFiat('1', 'USD')).toBe('$1');
+    expect(formatStoredFiat('2.5', 'USD')).toBe('$2.5');
+    expect(formatStoredFiat('3.00', 'USD')).toBe('$3.00');
+    expect(formatStoredFiat('3.00', 'CHF')).toBe('CHF 3.00');
+    expect(formatStoredFiat('3.00', 'EUR')).toBe('EUR 3.00');
+    expect(formatStoredFiat('3.00', 'PHP')).toBe('₱3.00');
   });
 });
 

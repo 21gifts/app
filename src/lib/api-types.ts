@@ -1969,3 +1969,50 @@ export const fondSummarySchema = z.object({
 
 /** Public Fond totals: received, paid out with fees, balance, and paid grant payouts. */
 export type FondSummary = z.infer<typeof fondSummarySchema>;
+
+/**
+ * Runtime schema for one entry of the public `GET /fond/payments` list.
+ *
+ * `counterparty` names the member only for a direct member transfer
+ * (`category = member`); every other category is private and uses `null`. A
+ * known member may have `username: null` when no handle is set. `paidAt` is
+ * its ISO 8601 timestamp with an offset. `storedFiat` is the USD figure frozen when a
+ * paid grant payout was created, or `null` for a row without a stored figure.
+ * Each `amount` is the stored string exactly as written: an integer or one to
+ * two fraction digits.
+ */
+export const fondPaymentSchema = z.object({
+  id: z.string().min(1),
+  direction: z.enum(['in', 'out']),
+  amountSats: z.number().int().nonnegative(),
+  paidAt: z.string().datetime({ offset: true }),
+  storedFiat: z
+    .object({
+      currency: z.literal('USD'),
+      amount: z.string().regex(/^(0|[1-9]\d*)(\.\d{1,2})?$/),
+    })
+    .nullable(),
+  counterparty: z
+    .object({
+      accountId: z.string().min(1),
+      username: z.string().min(1).nullable(),
+      name: z.string().nullable(),
+    })
+    .nullable(),
+});
+
+/** One completed public Fond payment, newest first. */
+export type FondPayment = z.infer<typeof fondPaymentSchema>;
+
+/**
+ * Runtime schema for the public `GET /fond/payments` body.
+ *
+ * `next` is the cursor for the following page, or `null` at the end.
+ */
+export const fondPaymentListSchema = z.object({
+  payments: z.array(fondPaymentSchema),
+  next: z.string().min(1).nullable(),
+});
+
+/** One cursor-paginated page of public Fond payments. */
+export type FondPaymentList = z.infer<typeof fondPaymentListSchema>;

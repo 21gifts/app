@@ -80,8 +80,18 @@ vi.mock('next/navigation', () => ({
 }));
 
 vi.mock('next/link', () => ({
-  default: ({ href, children }: { href: string; children: ReactNode }) => (
-    <a href={href}>{children}</a>
+  default: ({
+    href,
+    children,
+    ...rest
+  }: {
+    href: string;
+    children: ReactNode;
+    [key: string]: unknown;
+  }) => (
+    <a href={href} {...rest}>
+      {children}
+    </a>
   ),
 }));
 
@@ -785,6 +795,68 @@ describe('MemberProfileScreen', () => {
     expect(screen.getByRole('img', { name: 'Open CryptoPay QR code' })).toBeTruthy();
     expect(screen.getByText('No gifts yet.')).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Verified' })).toBeTruthy();
+  });
+
+  it('shows the Fond overview link for a fond profile when enabled', () => {
+    renderWithLocale(
+      <MemberProfileScreen
+        profile={{ ...profile, role: 'fond', username: 'tondo-fond' }}
+        received={[]}
+        donated={[]}
+        showFondOverview
+      />,
+    );
+    expect(screen.getByRole('button', { name: 'Fond' })).toBeTruthy();
+    const link = screen.getByRole('link', { name: 'Fond overview' });
+    expect(link.getAttribute('href')).toBe('/fonds/tondo-fond');
+    expect(link.className).toContain('w-full');
+    expect(link.className).toContain('bg-app-btn');
+  });
+
+  it('hides the Fond overview link for another role or without a username', () => {
+    const view = renderWithLocale(
+      <MemberProfileScreen
+        profile={{ ...profile, role: 'fond', username: null }}
+        received={[]}
+        donated={[]}
+        showFondOverview
+      />,
+    );
+    expect(screen.queryByRole('link', { name: 'Fond overview' })).toBeNull();
+    view.rerender(
+      <MemberProfileScreen
+        profile={{ ...profile, role: 'verified', username: 'tondo-fond' }}
+        received={[]}
+        donated={[]}
+        showFondOverview
+      />,
+    );
+    expect(screen.queryByRole('link', { name: 'Fond overview' })).toBeNull();
+    view.rerender(
+      <MemberProfileScreen
+        profile={{ ...profile, role: 'fond', username: 'tondo-fond' }}
+        received={[]}
+        donated={[]}
+      />,
+    );
+    expect(screen.queryByRole('link', { name: 'Fond overview' })).toBeNull();
+  });
+
+  it('shows the Fond overview link on the owner card when the owner is a fond', async () => {
+    useAuthStore.setState({
+      session: 'sess',
+      account: { ...account, id: profile.id, role: 'fond', name: 'Carol' },
+    });
+    renderWithLocale(
+      <MemberProfileScreen
+        profile={{ ...profile, role: 'fond', username: 'tondo-fond' }}
+        received={[]}
+        donated={[]}
+        showFondOverview
+      />,
+    );
+    const link = await screen.findByRole('link', { name: 'Fond overview' });
+    expect(link.getAttribute('href')).toBe('/fonds/tondo-fond');
   });
 
   it('shows the Open CryptoPay QR and Shop sticker on a smartphone user agent', () => {

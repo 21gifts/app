@@ -162,6 +162,7 @@ export function MemberProfileLoader({ accountId }: { accountId: string }): React
       owed={owed}
       credit={credit}
       activityFailed={activityFailed}
+      showFondOverview
     />
   );
 }

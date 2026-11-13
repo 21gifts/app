@@ -30,6 +30,7 @@ import {
   proxyMeHeldSharesGet,
   proxyFondPayoutInvoicePost,
   proxyFondPayoutsGet,
+  proxyFondPaymentsGet,
   proxyFondSummaryGet,
   proxyMePreviousWalletDelete,
   proxyMePreviousWalletsGet,
@@ -422,6 +423,18 @@ describe('api proxy wrappers', () => {
     await proxyFondSummaryGet(new Request('http://localhost/fonds/tondo-fond/summary'));
     const [url, init] = fetchMock.mock.calls[0] as [URL, RequestInit];
     expect(url.pathname).toBe('/fond/summary');
+    expect(init.method).toBe('GET');
+    expect(new Headers(init.headers).get('authorization')).toBeNull();
+  });
+
+  it('proxyFondPaymentsGet forwards GET /fond/payments and its before cursor', async () => {
+    const fetchMock = stubApi();
+    await proxyFondPaymentsGet(
+      new Request('http://localhost/fonds/tondo-fond/payments?before=cursor-2'),
+    );
+    const [url, init] = fetchMock.mock.calls[0] as [URL, RequestInit];
+    expect(url.pathname).toBe('/fond/payments');
+    expect(url.search).toBe('?before=cursor-2');
     expect(init.method).toBe('GET');
     expect(new Headers(init.headers).get('authorization')).toBeNull();
   });
