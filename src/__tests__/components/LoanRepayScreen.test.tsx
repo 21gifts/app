@@ -869,6 +869,29 @@ describe('LoanRepayScreen', () => {
     expect(screen.queryByRole('button', { name: /^Send ₿/ })).toBeNull();
   });
 
+  it('keeps due and pay-more shortfalls with their own flows', () => {
+    show(
+      {
+        sundayRest: false,
+        loans: [
+          loan({
+            due: {
+              ...loan().due,
+              payableSats: 3_000,
+            },
+          }),
+        ],
+      },
+      repay({
+        activeAction: { kind: 'prepay', messageId: 'loan-1' },
+        balanceSats: 500,
+        missingSats: 500,
+      }),
+    );
+    expect(screen.getByText(/Still missing ₿2'500 · \$2.50/)).toBeTruthy();
+    expect(screen.getByText(/Still missing ₿500 · \$0.50/)).toBeTruthy();
+  });
+
   it('names a waiting fiat share by its stored figure', () => {
     vi.mocked(getRepayment).mockResolvedValue(null);
     show({

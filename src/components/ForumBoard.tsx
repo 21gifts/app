@@ -1004,17 +1004,24 @@ export function ForumBoard({
   const scrollerRef = useRef<HTMLElement | null>(scroller);
   scrollerRef.current = scroller;
   const shownReplies = replies === null ? -1 : replies.length;
+  const loadedMessages = messages ?? [];
   // A gift sheet or gift invoice whose author a refresh now reports as unable to
   // receive, or whose loan is now closed, is cancelled. The posting fee
   // (`payHost` composer) pays 21.gifts, not the author, and stays.
   const payTargetBlocked =
     payMessageId !== null &&
     payHost !== 'composer' &&
-    [...(messages ?? []), ...(Array.isArray(replies) ? replies : [])].some(
+    [...loadedMessages, ...(Array.isArray(replies) ? replies : [])].some(
       (row) =>
         row.id === payMessageId &&
         (authorCannotReceive(row, viewerAccountId) ||
           (row.goalRepayable === true && row.goalClosedAt !== undefined)),
+    );
+  const expandedLoanClosed =
+    expandedId !== null &&
+    loadedMessages.some(
+      (row) =>
+        row.id === expandedId && row.goalRepayable === true && row.goalClosedAt !== undefined,
     );
   const onPayCancelRef = useRef(onPayCancel);
   onPayCancelRef.current = onPayCancel;
@@ -1023,6 +1030,13 @@ export function ForumBoard({
       onPayCancelRef.current();
     }
   }, [payTargetBlocked]);
+  // The amount field disappears with a closed loan; clear its controlled value before the
+  // remaining text form can be used.
+  useLayoutEffect(() => {
+    if (expandedLoanClosed && replyAmountDraft !== '' && onReplyAmountDraftChange !== undefined) {
+      onReplyAmountDraftChange('');
+    }
+  }, [expandedLoanClosed, onReplyAmountDraftChange, replyAmountDraft]);
   const scrollBeforeSheet = useRef<number | null>(null);
   const sheetWasOpen = useRef(false);
   // Where the page last came to rest: the reveal at the end of a move starts from here.

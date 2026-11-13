@@ -10816,6 +10816,47 @@ describe('ForumBoard loan block', () => {
     expect(document.querySelector('[data-loan-notice]')).toBeNull();
   });
 
+  it('posts a free text reaction after an expanded loan refreshes to closed', () => {
+    const freeReaction = vi.fn();
+    const paidReply = vi.fn();
+
+    function RefreshingLoan({ closed }: { closed: boolean }): ReactElement {
+      const [amount, setAmount] = useState('');
+      return board({
+        messages: [
+          {
+            ...LOAN,
+            ...(closed ? { goalClosedAt: '2026-10-03T10:00:00.000Z' } : {}),
+          },
+        ],
+        expandedId: 'loan1',
+        replies: [],
+        replyDraft: 'Count me in!',
+        replyAmountDraft: amount,
+        onReplyAmountDraftChange: setAmount,
+        onReplyPost: () => {
+          if (amount === '') {
+            freeReaction();
+          } else {
+            paidReply();
+          }
+        },
+      });
+    }
+
+    const view = renderWithLocale(<RefreshingLoan closed={false} />);
+    const amount = screen.getByLabelText('Amount to lend') as HTMLInputElement;
+    fireEvent.change(amount, { target: { value: '210' } });
+    expect(amount.value).toBe('210');
+    view.rerender(<RefreshingLoan closed />);
+    expect(screen.queryByLabelText('Amount to lend')).toBeNull();
+    const reactionForm = screen.getByLabelText('Your reaction').closest('form');
+    expect(reactionForm).not.toBeNull();
+    fireEvent.click(within(reactionForm as HTMLFormElement).getByRole('button', { name: 'Post' }));
+    expect(freeReaction).toHaveBeenCalledTimes(1);
+    expect(paidReply).not.toHaveBeenCalled();
+  });
+
   it('focuses the amount field of an open card and reveals its form in the scrollport', () => {
     const onToggleExpand = vi.fn();
     renderWithLocale(

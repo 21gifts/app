@@ -450,7 +450,9 @@ export function LoanRepayScreen(): ReactElement {
   const fittingNames = [...new Set(fitting.map((share) => share.name))].join(', ');
   const shareAmounts = new Map(shares.map((share) => [shareKey(share), share.amount] as const));
   const activeSendingAmounts = sendingAmounts.length === 0 ? fullSendAmounts : sendingAmounts;
-  const hasMissingSats = dueRun && repay.missingSats !== null && repay.missingSats > 0;
+  const dueMissingSats =
+    dueRun && repay.missingSats !== null && repay.missingSats > 0 ? repay.missingSats : null;
+  const hasMissingSats = dueMissingSats !== null;
   const otherActionBusy =
     repay.activeAction !== null &&
     repay.activeAction.kind !== 'due' &&
@@ -485,7 +487,7 @@ export function LoanRepayScreen(): ReactElement {
           <p className="mt-1 text-sm tabular-nums lining-nums text-app-muted">
             {t('loans.shortDetail', {
               balance: holding(balanceSats),
-              missing: holding(repay.missingSats ?? Math.max(0, payable - balanceSats)),
+              missing: holding(dueMissingSats ?? Math.max(0, payable - balanceSats)),
             })}
           </p>
           {!dueOwnsTopUp || !repay.topUpOpen ? (
