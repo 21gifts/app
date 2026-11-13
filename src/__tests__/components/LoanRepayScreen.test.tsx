@@ -49,6 +49,9 @@ function loan(overrides: Partial<MyLoan> = {}): MyLoan {
     amountPhp: '1680.00',
     termDays: 30,
     fundedAt: '2026-09-02T00:00:00.000Z',
+    closedAt: '2026-09-02T00:00:00.000Z',
+    maxSats: 19_000,
+    maxAmount: null,
     daysDue: 12,
     daysPaid: 11,
     repaidSats: 11_000,
@@ -120,16 +123,22 @@ function ledger(overrides: Partial<RepaymentLedger> = {}): RepaymentLedger {
 function repay(overrides: Partial<LoanRepayResult> = {}): LoanRepayResult {
   return {
     phase: 'idle',
+    activeAction: { kind: 'due', messageId: null },
     balanceSats: 21_000,
     sentSats: 0,
     sentAmounts: [],
     sentNames: [],
+    prepayWaiting: [],
+    prepayMessageId: null,
     feeSats: 0,
     missingSats: null,
     errorKey: null,
+    actionError: null,
     topUpOpen: false,
     openTopUp: vi.fn(),
     pay: vi.fn(),
+    prepay: vi.fn(),
+    closeCollecting: vi.fn(),
     pinned: false,
     ...overrides,
   };
@@ -204,11 +213,16 @@ describe('LoanRepayScreen', () => {
   });
 
   it('shows only the list for a collecting loan', () => {
-    show({ sundayRest: false, loans: [loan({ fundedAt: null, sats: 12_000 })] });
+    show({
+      sundayRest: false,
+      loans: [loan({ fundedAt: null, closedAt: null, sats: 12_000, maxSats: 12_000 })],
+    });
     expect(screen.getByText('Not fully funded yet.')).toBeTruthy();
     expect(screen.queryByText('Due today')).toBeNull();
     expect(screen.getByText("₿30'000 · $30.00 · 30 days · ₿1'000 · $1.00 per day")).toBeTruthy();
     expect(screen.queryByRole('img', { name: /Repaid/ })).toBeNull();
+    expect(screen.getByRole('heading', { name: 'Pay more' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'End collecting' })).toBeTruthy();
   });
 
   it('shows due recipients, old day labels, wallet balance, and sends once', async () => {
@@ -855,6 +869,61 @@ describe('LoanRepayScreen', () => {
     expect(screen.queryByRole('button', { name: /^Send ₿/ })).toBeNull();
   });
 
+  it('keeps due and pay-more shortfalls with their own flows', () => {
+    show(
+      {
+        sundayRest: false,
+        loans: [
+          loan({
+            due: {
+              ...loan().due,
+              payableSats: 3_000,
+            },
+          }),
+        ],
+      },
+      repay({
+        activeAction: { kind: 'prepay', messageId: 'loan-1' },
+        balanceSats: 500,
+        missingSats: 500,
+      }),
+    );
+    expect(screen.getByText(/Still missing ₿2'500 · \$2.50/)).toBeTruthy();
+    expect(screen.getByText(/Still missing ₿500 · \$0.50/)).toBeTruthy();
+  });
+
+  it('transfers an open pay-more top-up to due after the draft is edited', () => {
+    const data = {
+      sundayRest: false,
+      loans: [loan({ due: { ...loan().due, payableSats: 3_000 } })],
+    };
+    const state = repay({ balanceSats: 500 });
+    const view = show(data, state);
+    const input = screen.getByLabelText('Amount (₿)');
+    fireEvent.change(input, { target: { value: '1000' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Pay this amount' }));
+
+    const shortfallState = repay({
+      activeAction: { kind: 'prepay', messageId: 'loan-1' },
+      balanceSats: 500,
+      missingSats: 500,
+    });
+    vi.mocked(useLoanRepay).mockReturnValue(shortfallState);
+    view.rerender(<LoanRepayScreen />);
+    fireEvent.click(screen.getAllByRole('button', { name: 'Top up your wallet' })[1]!);
+
+    vi.mocked(useLoanRepay).mockReturnValue({ ...shortfallState, topUpOpen: true });
+    view.rerender(<LoanRepayScreen />);
+    expect(screen.getByTestId('own-address').textContent).toBe('ada:true');
+
+    fireEvent.change(input, { target: { value: '400' } });
+    expect(screen.queryByTestId('own-address')).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Top up your wallet' }));
+
+    expect(screen.getByTestId('own-address').textContent).toBe('ada:true');
+    expect(shortfallState.openTopUp).toHaveBeenCalledTimes(2);
+  });
+
   it('names a waiting fiat share by its stored figure', () => {
     vi.mocked(getRepayment).mockResolvedValue(null);
     show({
@@ -945,6 +1014,8 @@ describe('LoanRepayScreen', () => {
             status: 'paid',
             amount: '59.99',
             sats: 5_999,
+            paidSats: 1_000,
+            paidAmount: '10.00',
             dueSats: null,
           },
         ],
@@ -955,6 +1026,112 @@ describe('LoanRepayScreen', () => {
       loans: [loan({ goalCurrency: 'PHP', goalAmount: '900.00', repaidSats: 5_999 })],
     });
     expect(await screen.findByText("Repaid ₱59.99 · ₿5'999 of ₱900.00")).toBeTruthy();
+  });
+
+  it('includes stored partial payments from due and scheduled rows in Repaid', async () => {
+    vi.mocked(getRepayment).mockResolvedValue(
+      ledger({
+        currency: 'PHP',
+        repayments: [
+          {
+            ...ledger().repayments[0]!,
+            dayIndex: 0,
+            status: 'due',
+            amount: '30.00',
+            sats: 3_000,
+            paidSats: 1_000,
+            paidAmount: '10.00',
+            dueSats: 2_000,
+          },
+          {
+            ...ledger().repayments[0]!,
+            dayIndex: 1,
+            status: 'scheduled',
+            amount: '49.99',
+            sats: 4_999,
+            paidSats: 4_999,
+            paidAmount: '49.99',
+            dueSats: null,
+          },
+        ],
+      }),
+    );
+    show({
+      sundayRest: false,
+      loans: [loan({ goalCurrency: 'PHP', goalAmount: '900.00', repaidSats: 5_999 })],
+    });
+    expect(await screen.findByText("Repaid ₱59.99 · ₿5'999 of ₱900.00")).toBeTruthy();
+  });
+
+  it.each([
+    [
+      'satoshi',
+      {
+        sats: 5_000,
+        paidSats: 5_999,
+        amount: '59.99',
+        paidAmount: '59.99',
+      },
+    ],
+    [
+      'fiat',
+      {
+        sats: 5_999,
+        paidSats: 5_999,
+        amount: '50.00',
+        paidAmount: '59.99',
+      },
+    ],
+  ] as const)('falls back from an overpaid partial %s relationship', async (_kind, partial) => {
+    vi.mocked(getRepayment).mockResolvedValue(
+      ledger({
+        currency: 'PHP',
+        repayments: [
+          {
+            ...ledger().repayments[0]!,
+            dayIndex: 0,
+            status: 'due',
+            dueSats: 0,
+            ...partial,
+          },
+        ],
+      }),
+    );
+    show({
+      sundayRest: false,
+      loans: [loan({ goalCurrency: 'PHP', goalAmount: '900.00', repaidSats: 5_999 })],
+    });
+
+    expect(await screen.findByText("Repaid ₿5'999 · $6.00 of ₱900.00")).toBeTruthy();
+    expect(screen.queryByText(/Repaid ₱/)).toBeNull();
+  });
+
+  it('falls back when a partial unpaid-status row has no stored paid amount', async () => {
+    vi.mocked(getRepayment).mockResolvedValue(
+      ledger({
+        currency: 'PHP',
+        repayments: [
+          {
+            ...ledger().repayments[0]!,
+            dayIndex: 0,
+            status: 'due',
+            amount: '60.00',
+            sats: 6_000,
+            paidSats: 5_999,
+            paidAmount: null,
+            dueSats: 1,
+          },
+        ],
+      }),
+    );
+    show({
+      sundayRest: false,
+      loans: [loan({ goalCurrency: 'PHP', goalAmount: '900.00', repaidSats: 5_999 })],
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Who gets paid' }));
+    expect(await screen.findByText('Bruno')).toBeTruthy();
+    expect(screen.queryByText(/Repaid ₱/)).toBeNull();
+    expect(screen.getByText("Repaid ₿5'999 · $6.00 of ₱900.00")).toBeTruthy();
   });
 
   it('falls back to bitcoin and spot when a paid ledger row has no sats', async () => {
@@ -1259,6 +1436,17 @@ describe('LoanRepayScreen', () => {
     expect(screen.getByRole('status').textContent).toContain(text);
   });
 
+  it.each(['unconfirmed', 'failed'] as const)(
+    'keeps due controls idle during a %s pay-more run',
+    (phase) => {
+      show(
+        { sundayRest: false, loans: [loan()] },
+        repay({ phase, activeAction: { kind: 'prepay', messageId: 'loan-1' } }),
+      );
+      expect(screen.getByRole('button', { name: "Send ₿1'000 · $1.00" })).toBeTruthy();
+    },
+  );
+
   it('names the defined peso amount while that loan payment is sending', () => {
     const phpLoan = loan({
       goalCurrency: 'PHP',
@@ -1535,7 +1723,7 @@ describe('LoanRepayScreen', () => {
       { sundayRest: false, loans: [loan({ next: null })] },
       repay({ phase: 'repaid', sentSats: 0, pinned: true }),
     );
-    expect(screen.getByText('Repaid ₿0 · $0.00')).toBeTruthy();
+    expect(screen.getByText(/Repaid ₿0/)).toBeTruthy();
     expect(screen.queryByText(/^Fee/)).toBeNull();
     expect(screen.queryByText(/^Next:/)).toBeNull();
   });
@@ -1702,6 +1890,117 @@ describe('LoanRepayScreen', () => {
     expect(screen.getByText('That was your last payment')).toBeTruthy();
   });
 
+  it('keeps a final prepayment success when the refreshed loan list is empty', () => {
+    const finalLoan = loan({
+      maxSats: 500,
+      due: { ...loan().due, payableSats: 0, payablePeople: 0 },
+    });
+    const data = { sundayRest: false, loans: [finalLoan] };
+    const reload = vi.fn().mockResolvedValue(data);
+    const state = repay({ activeAction: null });
+    vi.mocked(useMyLoans).mockReturnValue({ loans: data, reload });
+    vi.mocked(useLoanRepay).mockReturnValue(state);
+    const view = renderWithLocale(<LoanRepayScreen />);
+    fireEvent.change(screen.getByLabelText('Amount (₿)'), { target: { value: '500' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Pay this amount' }));
+    expect(state.prepay).toHaveBeenCalledWith(finalLoan, '500');
+
+    vi.mocked(useMyLoans).mockReturnValue({
+      loans: { sundayRest: false, loans: [] },
+      reload,
+    });
+    vi.mocked(useLoanRepay).mockReturnValue(
+      repay({
+        phase: 'repaid',
+        activeAction: { kind: 'prepay', messageId: finalLoan.messageId },
+        sentSats: 500,
+        sentNames: ['Bruno'],
+      }),
+    );
+    view.rerender(<LoanRepayScreen />);
+    expect(screen.getByText('That was your last payment')).toBeTruthy();
+    expect(screen.getByText(/Your loan is fully repaid/)).toBeTruthy();
+    expect(screen.queryByText('You have no loan to repay.')).toBeNull();
+  });
+
+  it('keeps a prepayment success tied to its target when another final loan remains', () => {
+    const paidTarget = loan({
+      maxSats: 500,
+      due: { ...loan().due, payableSats: 0, payablePeople: 0 },
+    });
+    const remaining = loan({
+      messageId: 'loan-2',
+      text: 'A second loan',
+      due: { ...loan().due, lastPayment: true },
+    });
+    const data = { sundayRest: false, loans: [paidTarget, remaining] };
+    const reload = vi.fn().mockResolvedValue(data);
+    const state = repay({ activeAction: null });
+    vi.mocked(useMyLoans).mockReturnValue({ loans: data, reload });
+    vi.mocked(useLoanRepay).mockReturnValue(state);
+    const view = renderWithLocale(<LoanRepayScreen />);
+    const targetCard = screen.getByText(paidTarget.text).closest('article');
+    expect(targetCard).not.toBeNull();
+    fireEvent.change(within(targetCard as HTMLElement).getByLabelText('Amount (₿)'), {
+      target: { value: '500' },
+    });
+    fireEvent.click(
+      within(targetCard as HTMLElement).getByRole('button', { name: 'Pay this amount' }),
+    );
+
+    vi.mocked(useLoanRepay).mockReturnValue(
+      repay({
+        phase: 'repaid',
+        activeAction: { kind: 'prepay', messageId: paidTarget.messageId },
+        sentSats: 0,
+      }),
+    );
+    view.rerender(<LoanRepayScreen />);
+    expect(screen.queryByText('Repaid ₿500 · $0.50')).toBeNull();
+
+    vi.mocked(useLoanRepay).mockReturnValue(
+      repay({
+        phase: 'repaid',
+        activeAction: { kind: 'prepay', messageId: paidTarget.messageId },
+        sentSats: 500,
+        sentNames: ['Bruno'],
+      }),
+    );
+    view.rerender(<LoanRepayScreen />);
+    expect(screen.queryByText('Repaid ₿500 · $0.50')).toBeNull();
+
+    vi.mocked(useMyLoans).mockReturnValue({
+      loans: { sundayRest: false, loans: [remaining] },
+      reload,
+    });
+    vi.mocked(useLoanRepay).mockReturnValue(
+      repay({
+        phase: 'repaid',
+        activeAction: { kind: 'prepay', messageId: paidTarget.messageId },
+        sentSats: 500,
+        sentNames: ['Bruno'],
+      }),
+    );
+    view.rerender(<LoanRepayScreen />);
+    expect(screen.getByText('Repaid ₿500 · $0.50')).toBeTruthy();
+    expect(
+      screen.getByText(/last payment for “A sewing machine for my repair stall”/),
+    ).toBeTruthy();
+    expect(screen.queryByText(/last payment for “A second loan”/)).toBeNull();
+    expect(screen.getByText('A second loan')).toBeTruthy();
+
+    vi.mocked(useLoanRepay).mockReturnValue(
+      repay({
+        phase: 'repaid',
+        activeAction: { kind: 'prepay', messageId: paidTarget.messageId },
+        sentSats: 0,
+        pinned: true,
+      }),
+    );
+    view.rerender(<LoanRepayScreen />);
+    expect(screen.getByText('Repaid ₿0 · $0.00')).toBeTruthy();
+  });
+
   it('does not invent a completed payment for an empty list without remembered loans', () => {
     show({ sundayRest: false, loans: [] }, repay({ phase: 'repaid', sentSats: 1_000 }));
     expect(screen.getByText('You have no loan to repay.')).toBeTruthy();
@@ -1709,6 +2008,16 @@ describe('LoanRepayScreen', () => {
     cleanup();
     show({ sundayRest: false, loans: [] }, repay({ phase: 'repaid', sentSats: 0, pinned: false }));
     expect(screen.getByText('You have no loan to repay.')).toBeTruthy();
+    cleanup();
+    show(
+      { sundayRest: false, loans: [loan({ messageId: 'loan-2' })] },
+      repay({
+        phase: 'repaid',
+        activeAction: { kind: 'prepay', messageId: 'loan-1' },
+        sentSats: 500,
+      }),
+    );
+    expect(screen.queryByText('Repaid ₿500 · $0.50')).toBeNull();
   });
 
   it('shows several loan cards, grouping labels, counts, and fiat plans', async () => {
@@ -1749,6 +2058,71 @@ describe('LoanRepayScreen', () => {
     expect(
       within(list).getAllByRole('link', { name: 'Repayment list' })[0]?.getAttribute('href'),
     ).toBe('/messages/loan-1/repayment-list');
+  });
+
+  it('shows prepay waiting recipients only under the loan that made the request', () => {
+    const phpLoan = loan({
+      messageId: 'php-waiting',
+      goalCurrency: 'PHP',
+      goalAmount: '900.00',
+      maxAmount: '570.00',
+    });
+    const usdLoan = loan({
+      messageId: 'usd-other',
+      goalCurrency: 'USD',
+      goalAmount: '30.00',
+      maxAmount: '19.00',
+    });
+    show(
+      { sundayRest: false, loans: [phpLoan, usdLoan] },
+      repay({
+        phase: 'waiting',
+        activeAction: { kind: 'prepay', messageId: 'php-waiting' },
+        prepayMessageId: 'php-waiting',
+        prepayWaiting: [
+          {
+            dayIndex: 12,
+            recipientAccountId: 'giver-waiting',
+            name: 'Carla',
+            username: 'carla',
+            amountSats: 200,
+            amount: '2.50',
+          },
+        ],
+      }),
+    );
+
+    expect(screen.getAllByText('Waiting for Carla to set up their wallet')).toHaveLength(1);
+    expect(screen.getByText('₱2.50 · ₿200')).toBeTruthy();
+    expect(screen.queryByText('$2.50')).toBeNull();
+  });
+
+  it('keeps prepay sending and shortfall state out of the due box', () => {
+    const data = { sundayRest: false, loans: [loan()] };
+    const sending = show(
+      data,
+      repay({
+        phase: 'sending',
+        activeAction: { kind: 'prepay', messageId: 'loan-1' },
+      }),
+    );
+    expect(screen.getByText('Paying more…')).toBeTruthy();
+    expect(screen.queryByText(/Sending ₿/)).toBeNull();
+    sending.unmount();
+
+    show(
+      data,
+      repay({
+        phase: 'idle',
+        activeAction: { kind: 'prepay', messageId: 'loan-1' },
+        balanceSats: 21_000,
+        missingSats: 500,
+      }),
+    );
+    expect(screen.getAllByText('Not enough in your wallet')).toHaveLength(1);
+    expect((screen.getByRole('button', { name: /^Send ₿/ }) as HTMLButtonElement).disabled).toBe(
+      false,
+    );
   });
 
   it('handles zero totals and unusable backend plan values without inventing progress', () => {

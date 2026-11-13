@@ -11,6 +11,7 @@ import {
 import { RequirementsOverlay } from '@/components/RequirementsOverlay';
 import {
   CannotReceiveError,
+  CreditClosedError,
   fetchComposeTarget,
   fetchMessagePhoto,
   fetchPublicMessage,
@@ -699,6 +700,12 @@ export function PublicMessageThread(props: {
         return;
       }
       /* v8 ignore stop */
+      if (err instanceof CreditClosedError) {
+        setPayMessageId(parentId);
+        setPayHost('card');
+        setPayError('creditClosed');
+        return;
+      }
       if (err instanceof WalletRequiredError) {
         setOverlayRequirement('wallet');
         return;
@@ -788,6 +795,12 @@ export function PublicMessageThread(props: {
         return;
       }
       /* v8 ignore stop */
+      if (err instanceof CreditClosedError) {
+        setPayMessageId(parentId);
+        setPayHost('card');
+        setPayError('creditClosed');
+        return;
+      }
       if (err instanceof WalletRequiredError) {
         setOverlayRequirement('wallet');
         return;
@@ -917,6 +930,10 @@ export function PublicMessageThread(props: {
         } catch (err) {
           /* v8 ignore next 3 -- pay sheet closed while the invoice request failed */
           if (generation !== payPollGeneration.current) {
+            return null;
+          }
+          if (err instanceof CreditClosedError) {
+            setPayError('creditClosed');
             return null;
           }
           if (err instanceof MissingRequirementsError) {

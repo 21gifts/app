@@ -35,6 +35,7 @@ import {
 } from '@/lib/webauthn-browser';
 import { reportDiagnostic, type DiagnosticReport } from '@/lib/diagnostics';
 import { logInteraction } from '@/lib/interaction-log';
+import { refreshOwnerAccount } from '@/lib/owner-account-refresh';
 import {
   USERNAME_FORMAT_MESSAGE,
   USERNAME_TAKEN_MESSAGE,
@@ -796,6 +797,7 @@ export function usePasskeyLogin(): UsePasskeyLogin {
         sessionToken: session.token,
       });
       setAuth(session.token, session.account);
+      refreshOwnerAccount(session.token);
       logInteraction('signup_completed');
       choiceOfferedRef.current = false;
       unknownOfferedRef.current = false;
@@ -920,6 +922,7 @@ export function usePasskeyLogin(): UsePasskeyLogin {
         sessionToken: session.token,
       });
       setAuth(session.token, session.account);
+      refreshOwnerAccount(session.token);
       logInteraction('login');
       choiceOfferedRef.current = false;
       unknownOfferedRef.current = false;

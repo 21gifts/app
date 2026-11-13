@@ -3,7 +3,12 @@
 import { captureMessage } from '@sentry/nextjs';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useSpotRate } from '@/hooks/useSpotRate';
-import { CannotReceiveError, postMessageInvoice, WalletRequiredError } from '@/lib/api';
+import {
+  CannotReceiveError,
+  CreditClosedError,
+  postMessageInvoice,
+  WalletRequiredError,
+} from '@/lib/api';
 import { accountHeartSats } from '@/lib/api-types';
 import { shownFiatForSats, type FiatRateDay } from '@/lib/stats-money';
 import { logInteraction } from '@/lib/interaction-log';
@@ -37,11 +42,11 @@ const HEART_TIP_LOOKUP_LIMIT = 50;
 /**
  * Why a heart was not sent. `no_balance`, known from the wallet snapshot
  * before the tap, is shown to the member (the balance-required line) and is
- * not reported. `author_cannot_receive` (the api answered `cannot_receive`) is
- * reported and also shown, as the author-wallet line under the heart. Every
- * other reason is reported to error reporting, together with the message id,
- * and shows nothing. `insufficient_balance` is a balance the wallet found too
- * low only after the tap already showed the +1.
+ * not reported. `author_cannot_receive` (the api answered `cannot_receive`) and
+ * `credit_closed` are reported and also shown as clear lines under the heart.
+ * Every other reason is reported to error reporting, together with the message
+ * id, and shows nothing. `insufficient_balance` is a balance the wallet found
+ * too low only after the tap already showed the +1.
  */
 export type HeartTipFailure =
   | 'sunday'
@@ -49,6 +54,7 @@ export type HeartTipFailure =
   | 'insufficient_balance'
   | 'wallet_setup_due'
   | 'author_cannot_receive'
+  | 'credit_closed'
   | 'rate_limited'
   | 'heart_unavailable'
   | 'request_failed'
@@ -70,6 +76,8 @@ export type HeartTipView = {
    * the next tap clears it.
    */
   cannotReceive?: boolean;
+  /** True when the api says this loan no longer collects; the next tap clears it. */
+  creditClosed?: boolean;
   /**
    * Hearts this session that the server `heartCount` does not yet include.
    * Missing reads as 0 (`view?.extra ?? 0`). The hook always sets a number.
@@ -272,6 +280,9 @@ function mapInvoiceError(err: unknown): HeartTipFailure {
   }
   if (err instanceof CannotReceiveError) {
     return 'author_cannot_receive';
+  }
+  if (err instanceof CreditClosedError) {
+    return 'credit_closed';
   }
   if (isSundayRestError(err)) {
     return 'sunday';
@@ -803,8 +814,9 @@ export function endHeartPlusOne(
  * session's remaining extra after the rollback; `pressed` stays while it is
  * above 0 or the +1 still shows. A refusal because the author cannot receive
  * sets `cannotReceive`; any other outcome keeps a `cannotReceive` already on
- * the view, so a concurrent failure never clears the author-wallet line. Only
- * the next tap clears it.
+ * the view, so a concurrent failure never clears the author-wallet line. A
+ * closed-credit refusal does the same for the loan-no-longer-collecting line.
+ * Only the next tap clears either line.
  *
  * @param current - The heart's view before this result, if any.
  * @param extra - This session's extra for the note after the rollback.
@@ -820,12 +832,16 @@ export function heartFailureView(
   const cannotReceive =
     current?.cannotReceive === true ||
     (outcome.kind === 'failed' && outcome.reason === 'author_cannot_receive');
+  const creditClosed =
+    current?.creditClosed === true ||
+    (outcome.kind === 'failed' && outcome.reason === 'credit_closed');
   return {
     pressed: extra > 0 || plusOne,
     plusOne,
     needsBalance: current !== undefined && current.needsBalance,
     extra,
     ...(cannotReceive ? { cannotReceive: true } : {}),
+    ...(creditClosed ? { creditClosed: true } : {}),
   };
 }
 
@@ -836,10 +852,10 @@ export function heartFailureView(
  * background. After 700 ms only the +1 leaves; the fill and `extra` remain.
  * Session hearts not yet in the server `heartCount` are `extra`. A second tap
  * sends another heart and counts up; there is no undo. A heart that is not
- * sent rolls back that tap's `extra`; it is also reported, and a refusal
- * because the author cannot receive also shows the author-wallet line
- * (`cannotReceive` on the view, see {@link heartFailureView}) until the next
- * tap. The one exception
+ * sent rolls back that tap's `extra`; it is also reported. A refusal because
+ * the author cannot receive shows the author-wallet line (`cannotReceive`),
+ * while a closed loan shows the no-longer-collecting line (`creditClosed`),
+ * until the next tap (see {@link heartFailureView}). The one exception
  * is a wallet snapshot whose balance cannot cover the heart: then there is no
  * vibrate, no new fill, and no +1, only the balance-required line, and
  * nothing is sent. A signed-out or read-only tap does nothing.
@@ -893,6 +909,21 @@ export function useHeartTip(options: {
       lastAppliedRef,
       setHeartTipViews,
     );
+    if (visualPin() === 'heart-credit-closed-refreshed') {
+      setHeartTipViews((current) => {
+        const pinned = { ...current };
+        for (const messageId of Object.keys(heartCounts)) {
+          pinned[messageId] = {
+            pressed: false,
+            plusOne: false,
+            needsBalance: false,
+            extra: 0,
+            creditClosed: true,
+          };
+        }
+        return pinned;
+      });
+    }
   }, [heartCounts]);
 
   const onHeartTip = useCallback(

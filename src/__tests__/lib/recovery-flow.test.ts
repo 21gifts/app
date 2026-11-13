@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   AppOutdatedError,
+  fetchMe,
   finishPasskeyAuthentication,
   finishPasskeyRecovery,
   LoginsClosedError,
@@ -47,6 +48,7 @@ vi.mock('@/lib/api', async (importOriginal) => ({
   finishPasskeyRecovery: vi.fn(),
   startPasskeyAuthentication: vi.fn(),
   finishPasskeyAuthentication: vi.fn(),
+  fetchMe: vi.fn(),
 }));
 vi.mock('@/lib/passkey-renew', () => ({
   mergePrfExtension: vi.fn(async (options: PublicKeyCredentialCreationOptions) => ({
@@ -132,6 +134,11 @@ function connectionOf(balances: number[] = [0]): FakeConnection {
       reads += 1;
       return { balanceSats, identityPubkey: OLD_KEY };
     }),
+    getUserSettings: vi.fn(async () => ({
+      sparkPrivateModeEnabled: true,
+      sparkMasterIdentityPublicKey: null,
+    })),
+    updateUserSettings: vi.fn(async () => undefined),
     addEventListener: vi.fn(),
     registerAddress: vi.fn(),
     listPayments: vi.fn(),
@@ -251,6 +258,7 @@ beforeEach(async () => {
     options: { challenge: 'YXV0aA', rpId: 'app.test' },
   });
   vi.mocked(finishPasskeyAuthentication).mockResolvedValue({ token: 'sess-new', account: ACCOUNT });
+  vi.mocked(fetchMe).mockResolvedValue(ACCOUNT);
   vi.mocked(obtainPrfFirst).mockResolvedValue(PRF);
   vi.mocked(mnemonicFromPrfFirst).mockResolvedValue(NEW_WORDS);
   signals = [];
@@ -785,6 +793,24 @@ describe('transfer', () => {
     expect(view()).toEqual({ step: 'done', balanceMissing: false });
     await transfer();
     expect(finishPasskeyRecovery).toHaveBeenCalledTimes(1);
+  });
+
+  it('refreshes the recovery sign-in account with its wallet viewer key', async () => {
+    let resolveMe!: (next: Account | null) => void;
+    vi.mocked(fetchMe).mockReturnValueOnce(
+      new Promise<Account | null>((resolve) => {
+        resolveMe = resolve;
+      }),
+    );
+    await toTransfer();
+    await transfer();
+    expect(fetchMe).toHaveBeenCalledWith('sess-new');
+
+    const walletViewerPublicKey = `02${'d'.repeat(64)}`;
+    resolveMe({ ...ACCOUNT, walletViewerPublicKey });
+    await Promise.resolve();
+    await Promise.resolve();
+    expect(useAuthStore.getState().account?.walletViewerPublicKey).toBe(walletViewerPublicKey);
   });
 
   it('does nothing unless the transfer view is shown and idle', async () => {

@@ -34,6 +34,7 @@ import {
 } from '@/lib/stats-money';
 import {
   CannotReceiveError,
+  CreditClosedError,
   dismissForumLaws,
   fetchComposeTarget,
   fetchMessages,
@@ -2309,6 +2310,10 @@ export function ForumLoader({
           if (generation !== payPollGeneration.current) {
             return null;
           }
+          if (err instanceof CreditClosedError) {
+            setPayError('creditClosed');
+            return null;
+          }
           if (err instanceof MissingRequirementsError) {
             if (!isRetry && openOverlayForMissing(err.missing)) {
               pendingPostRef.current = () => continuePay(true).then(() => undefined);
@@ -2590,6 +2595,12 @@ export function ForumLoader({
       startPayPoll(parentId, baselineSats, false, null, false, true);
     } catch (err) {
       if (generation !== payPollGeneration.current) {
+        return;
+      }
+      if (err instanceof CreditClosedError) {
+        setPayMessageId(parentId);
+        setPayHost('card');
+        setPayError('creditClosed');
         return;
       }
       if (err instanceof WalletRequiredError) {

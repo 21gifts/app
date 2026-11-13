@@ -8,7 +8,17 @@ import { openCryptoPayQrValue } from '../src/lib/gifts-address';
 import { fulfillSpot, SPOT_RATES, spotRatesFromStats } from './fx-spot';
 import { motionSettled } from './motion';
 import { fulfillStablecoinUnavailable, stubShopPayment } from './shop-payment';
-import { definedFiatAmounts, definedFiatSum } from '../src/lib/loan-repay';
+import {
+  checkLoanAmount,
+  definedFiatAmounts,
+  definedFiatSum,
+  isCollecting,
+  loanMaxInput,
+  loanMaxUnits,
+  parseLoanAmount,
+  remainingRepaymentSats,
+  validatedRepaymentPayment,
+} from '../src/lib/loan-repay';
 import {
   buildShopStickerPdf,
   buildShopStickerSvg,
@@ -42,8 +52,10 @@ import {
   fulfillLedger,
   fulfillMyLoans,
   ledgerA,
+  ledgerB,
   loanA,
   loanB,
+  loanCollecting,
   loanWith,
   myLoans,
   productionPhpLoans,
@@ -203,28 +215,6 @@ const POPULATED_STATS = {
       cumulativePhp: '80.00',
     },
   ],
-  byRecipient: [
-    {
-      recipient: 'alice',
-      giftCount: 2,
-      sats: 1000,
-      btc: '0.00001000',
-      usd: '0.95',
-      chf: '0.80',
-      eur: '0.86',
-      php: '53.00',
-    },
-    {
-      recipient: 'bob',
-      giftCount: 1,
-      sats: 500,
-      btc: '0.00000500',
-      usd: '0.48',
-      chf: '0.40',
-      eur: '0.44',
-      php: '27.00',
-    },
-  ],
   byMonth: [
     {
       month: '2026-06',
@@ -262,7 +252,6 @@ const EMPTY_STATS = {
   firstPaidAt: null,
   lastPaidAt: null,
   spendOverTime: [],
-  byRecipient: [],
   byMonth: [],
   fx: FX_USD,
 };
@@ -5899,6 +5888,19 @@ test('Function: WalletPay — the forum pay sheet is wallet-only, with no invoic
   expect(await recordedWalletAssign(page)).toBeUndefined();
 });
 
+test('Function: keepTabInside — Tab past the last pay-sheet control wraps inside the dialog', async ({
+  page,
+  request,
+}) => {
+  await openPayInvoice(page, request);
+  const sheet = page.getByRole('dialog', { name: 'Send to Carol' });
+  const close = sheet.getByRole('button', { name: 'Close' });
+  await close.focus();
+  await expect(close).toBeFocused();
+  await page.keyboard.press('Tab');
+  await expect(close).toBeFocused();
+});
+
 test('Function: ForumPaySheet — the amount form keeps its controls clear of the Close hit area', async ({
   page,
   request,
@@ -6789,7 +6791,7 @@ test('Function: StatsLoader — a failed wallet fetch keeps the gift stats', asy
     await route.fulfill({ status: 503, contentType: 'application/json', body: '{}' });
   });
   await page.goto('/stats');
-  await expect(page.getByText('alice')).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Total spend over time' })).toBeVisible();
   await expect(page.getByRole('region', { name: 'Wallets' })).toHaveCount(0);
 });
 
@@ -6862,11 +6864,16 @@ test('Function: StatsDashboard — month USD scale makes the higher-USD month ta
     ],
   });
   await page.goto('/stats');
+  const btc = page.getByLabel('Spend by month in ₿');
+  await expect(btc).toContainText("₿1'000'000");
+  await expect(btc).not.toContainText('$50.00');
   await page
     .getByRole('group', { name: 'By month bar scale' })
     .getByRole('button', { name: 'USD' })
     .click();
   const svg = page.getByLabel('Spend by month in USD');
+  await expect(svg).toContainText('$900.00');
+  await expect(svg).not.toContainText('₿');
   const juneH = Number(await svg.locator('rect').nth(0).getAttribute('height'));
   const julyH = Number(await svg.locator('rect').nth(1).getAttribute('height'));
   expect(julyH).toBeGreaterThan(juneH);
@@ -16278,15 +16285,160 @@ test('Function: proxyMessagesRepaymentDuePost — POST /messages/[id]/repayment/
   expect(response.status()).toBe(401);
 });
 
+test('POST /messages/[id]/repayment/close without bearer is 401', async ({ request }) => {
+  const response = await request.post('/messages/[id]/repayment/close');
+  expect(response.status()).toBe(401);
+});
+
 test('Function: postRepaymentDue — POST /messages/[id]/repayment/due answers empty lists', async ({
   request,
 }) => {
   const token = await loginHttp(request);
-  const response = await request.post('/messages/[id]/repayment/due', {
+  const response = await request.post('/messages/loan-a/repayment/due', {
     headers: { authorization: `Bearer ${token}` },
   });
   expect(response.status()).toBe(200);
   expect(await response.json()).toEqual({ bills: [], waiting: [] });
+});
+
+test('Function: proxyMessagesRepaymentClosePost — POST /messages/[id]/repayment/close is forwarded', async ({
+  request,
+}) => {
+  const token = await loginHttp(request);
+  const response = await request.post('/messages/loan-a/repayment/close', {
+    headers: { authorization: `Bearer ${token}` },
+  });
+  expect(response.status()).toBe(200);
+});
+
+test('Function: closeLoan — closing returns the final collecting state', async ({ request }) => {
+  const token = await loginHttp(request);
+  const response = await request.post('/messages/loan-collecting/repayment/close', {
+    headers: { authorization: `Bearer ${token}` },
+  });
+  expect(await response.json()).toMatchObject({ fundedAt: null, collectedSats: 8_000 });
+});
+
+test('Function: LoanRepaymentError — a max refusal updates the running repayment form', async ({
+  page,
+}) => {
+  await seedAdaSession(page);
+  await stubGiftStats(page, AMOUNT_RATE_STATS);
+  await fulfillMyLoans(page, myLoans([loanA]));
+  await fulfillLedger(page, loanA.messageId, ledgerA);
+  await page.route('**/messages/loan-a/repayment', async (route) => {
+    if (route.request().method() !== 'POST') {
+      await route.fallback();
+      return;
+    }
+    await route.fulfill({
+      status: 400,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        code: 'amount_too_high',
+        maxSats: 6_000,
+        maxAmount: null,
+      }),
+    });
+  });
+  await page.goto('/loans/repay?visual=repay-e2e-payment');
+  const input = page.getByLabel('Amount (₿)');
+  await input.fill('7000');
+  await page.getByRole('button', { name: 'Pay this amount' }).click();
+  await expect(input).toHaveValue('6000');
+  const payMore = page.getByRole('heading', { name: 'Pay more' }).locator('..');
+  await expect(payMore.getByRole('alert')).toContainText("maximum changed to ₿6'000");
+});
+
+test('Function: CreditClosedError — a closed loan invoice shows the localized refusal', async ({
+  page,
+}) => {
+  await seedAdaSession(page);
+  await stubPayableNote(page);
+  await page.route('**/messages/r-pay/invoice', async (route) => {
+    await route.fulfill({
+      status: 409,
+      contentType: 'application/json',
+      body: JSON.stringify({ code: 'credit_closed' }),
+    });
+  });
+  await page.goto('/welcome');
+  await chooseForumView(page, 'All');
+  await page.getByRole('button', { name: 'Show reactions' }).click();
+  const replyCard = page.locator('[data-reply-id="r-pay"]');
+  await replyCard.getByRole('button', { name: 'Send Bitcoin' }).click();
+  await replyCard.getByLabel('Amount').fill('21');
+  await submitPayAmount(page);
+  await expect(
+    page.getByText('This loan is no longer collecting and cannot receive more money.'),
+  ).toBeVisible();
+});
+
+test('Function: proxyMessagesRepaymentPost — POST /messages/[id]/repayment forwards an amount body', async ({
+  request,
+}) => {
+  const token = await loginHttp(request);
+  const response = await request.post('/messages/loan-a/repayment', {
+    headers: { authorization: `Bearer ${token}` },
+    data: { amount: '21' },
+  });
+  expect(response.status()).toBe(200);
+});
+
+test('Function: prepayLoan — fiat prepay converts cents with the fixed mock rate', async ({
+  request,
+}) => {
+  const token = await loginHttp(request);
+  const response = await request.post('/messages/loan-b/repayment', {
+    headers: { authorization: `Bearer ${token}` },
+    data: { amount: '1.23' },
+  });
+  expect(response.status()).toBe(200);
+  expect(await response.json()).toMatchObject({
+    amount: '1.23',
+    amountSats: 1_230,
+    bills: [{ amount: '1.23', amountSats: 1_230 }],
+  });
+});
+
+test('repayment close and free-amount repayment return 404 for unknown loan ids', async ({
+  request,
+}) => {
+  const token = await loginHttp(request);
+  const headers = { authorization: `Bearer ${token}` };
+  expect((await request.post('/messages/unknown-loan/repayment/close', { headers })).status()).toBe(
+    404,
+  );
+  expect(
+    (
+      await request.post('/messages/unknown-loan/repayment', {
+        headers,
+        data: { amount: '1' },
+      })
+    ).status(),
+  ).toBe(404);
+});
+
+test('Function: prepayLoan — prepay returns due-shaped bills and enforces max', async ({
+  request,
+}) => {
+  const token = await loginHttp(request);
+  const headers = { authorization: `Bearer ${token}` };
+  const response = await request.post('/messages/loan-closed-partial/repayment', {
+    headers,
+    data: { amount: '500' },
+  });
+  expect(await response.json()).toMatchObject({
+    amountSats: 500,
+    bills: [{ amountSats: 500 }],
+    waiting: [],
+  });
+  const tooHigh = await request.post('/messages/loan-closed-partial/repayment', {
+    headers,
+    data: { amount: '7901' },
+  });
+  expect(tooHigh.status()).toBe(400);
+  expect(await tooHigh.json()).toMatchObject({ code: 'amount_too_high', maxSats: 7_900 });
 });
 
 async function openLoanUi(
@@ -16321,6 +16473,46 @@ test('Function: summarizeLoans — the production PHP pair keeps its next amount
   await expect(card).toContainText("Next: Monday, November 16, ₱199.99 · ₿3'857");
 });
 
+test('Function: parseLoanAmount — BTC sats and fiat cents stay integer based', async ({ page }) => {
+  expect(parseLoanAmount('1000', 'BTC')).toEqual({ units: 1_000n, text: '1000' });
+  expect(parseLoanAmount('10,50', 'CHF')).toEqual({ units: 1_050n, text: '10,50' });
+  await openLoanUi(page, '/loans/repay?visual=repay-ready', myLoans([loanA]), false);
+  await expect(page.getByText('Due today')).toBeVisible();
+});
+
+test('Function: loanMaxUnits — api maxima compare as sats or cents', async ({ page }) => {
+  expect(loanMaxUnits(loanA)).toBe(19_000n);
+  expect(loanMaxUnits(loanB)).toBe(18_000n);
+  await openLoanUi(page, '/loans/repay?visual=repay-ready', myLoans([loanB]), false);
+  await expect(page.getByText('₱30.00', { exact: true })).toBeVisible();
+});
+
+test('Function: checkLoanAmount — above-max input is rejected before a request', async ({
+  page,
+}) => {
+  expect(checkLoanAmount('19001', loanA)).toEqual({
+    ok: false,
+    reason: 'above_max',
+    max: '19000',
+  });
+  await openLoanUi(page, '/loans/repay?visual=repay-ready', myLoans([loanA]), false);
+  await expect(page.getByText('Due today')).toBeVisible();
+});
+
+test('Function: loanMaxInput — Max keeps the api input representation', async ({ page }) => {
+  expect(loanMaxInput(loanA)).toBe('19000');
+  expect(loanMaxInput(loanB)).toBe('180.00');
+  await openLoanUi(page, '/loans/repay?visual=repay-ready', myLoans([loanB]), false);
+  await expect(page.getByText('₱30.00', { exact: true })).toBeVisible();
+});
+
+test('Function: isCollecting — only an unfunded unclosed loan collects', async ({ page }) => {
+  expect(isCollecting(loanCollecting)).toBe(true);
+  expect(isCollecting(loanA)).toBe(false);
+  await openLoanUi(page, '/loans/repay?visual=repay-ready', myLoans([loanCollecting]), false);
+  await expect(page.getByText('Not fully funded yet.')).toBeVisible();
+});
+
 test('Function: definedFiatSum — stored PHP amounts add in their currency', async ({ page }) => {
   expect(definedFiatSum('PHP', ['199.99', '200.48'], 'ch')).toBe('₱400.47');
   expect(definedFiatSum('PHP', ['199.99', null], 'ch')).toBeNull();
@@ -16344,6 +16536,42 @@ test('Function: definedFiatAmounts — stored amounts add per currency', async (
   expect(definedFiatAmounts([{ code: 'BTC', amount: null }], 'ch')).toBeNull();
   await openLoanUi(page, '/loans/repay?visual=repay-ready', myLoans([loanB]), false);
   await expect(page.getByText('₱30.00', { exact: true })).toBeVisible();
+});
+
+test('Function: remainingRepaymentSats — partial rows keep only their unpaid sats', async ({
+  page,
+}) => {
+  expect(remainingRepaymentSats({ sats: 500, paidSats: 100, dueSats: null })).toBe(400);
+  expect(remainingRepaymentSats({ sats: 500, paidSats: 100, dueSats: 375 })).toBe(375);
+  await openLoanUi(page, '/loans/repay?visual=repay-ready');
+  await page.getByRole('button', { name: 'Who gets paid' }).click();
+  await expect(page.getByText('Bruno', { exact: true })).toBeVisible();
+});
+
+test('Function: validatedRepaymentPayment — invalid fiat falls back to bitcoin', async ({
+  page,
+}) => {
+  expect(
+    validatedRepaymentPayment({
+      sats: 720,
+      paidSats: 0,
+      amount: '18.00',
+      paidAmount: 'bad partial',
+    }),
+  ).toEqual({ sats: 0n, amount: null, hasAmount: true });
+  await fulfillLedger(page, 'loan-b', {
+    ...ledgerB,
+    repayments: ledgerB.repayments.map((row) =>
+      row.status === 'due' && row.accountId === 'acc_elena'
+        ? { ...row, paidAmount: 'bad partial' }
+        : row,
+    ),
+  });
+  await openLoanUi(page, '/loans/repay?visual=repay-ready', myLoans([loanB]), false);
+  await page.getByRole('button', { name: 'Who gets paid' }).click();
+  const elena = page.getByText('Elena', { exact: true }).locator('..').locator('..');
+  await expect(elena).toContainText('₿720');
+  await expect(elena).not.toContainText('₱18.00');
 });
 
 test('Function: dueShares — Who gets paid lists every due lender', async ({ page }) => {

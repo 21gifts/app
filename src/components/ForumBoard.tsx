@@ -545,9 +545,12 @@ function fallbackCopy(text: string): boolean {
  * heart handler. When the author cannot receive yet (`cannotReceive`), the
  * heart and its count show disabled instead, so nobody taps a heart that can
  * only fail; a tap still in its +1 window keeps its fill, +1, and count there.
- * An author-wallet line from an earlier refused heart (`view.cannotReceive`)
- * stays until the next tap: under a heart a refresh disables, and alone when a
- * refresh makes the note not payable. Click stops the card from expanding. The
+ * An author-wallet or loan-no-longer-collecting line from an earlier refused
+ * heart (`view.cannotReceive` / `view.creditClosed`) stays until the next tap:
+ * under a heart a refresh disables, and alone when a refresh makes the note not
+ * payable. When an authoritative loan close removes this control, ForumBoard
+ * retains the stored `creditClosed` line beside the remaining actions. Click
+ * stops the card from expanding. The
  * count sits immediately to the right of the icon; the fill remains after a
  * tap. Who does not see the heart does not see the count.
  *
@@ -591,8 +594,12 @@ function ForumHeartControl({
     heartViewerSats === null
       ? t('forum.heart')
       : t('forum.heartAmount', { amount: formatBitcoin(heartViewerSats, numberFormat) });
-  const authorWalletLine =
-    view?.cannotReceive === true ? (
+  const heartErrorLine =
+    view?.creditClosed === true ? (
+      <p role="alert" className="text-xs text-app-danger">
+        {t('forum.payErrorCreditClosed')}
+      </p>
+    ) : view?.cannotReceive === true ? (
       <p role="alert" className="text-xs text-app-danger">
         {t('forum.payErrorAuthorWallet')}
       </p>
@@ -600,7 +607,7 @@ function ForumHeartControl({
   if (!cannotReceive && !payable) {
     // No heart on a note that is not payable; a line from an earlier refused heart stays
     // (an older api sends `payable: false` without `authorCanReceive`).
-    return authorWalletLine;
+    return heartErrorLine;
   }
   const extra = view?.extra ?? 0;
   const plusOne = view !== undefined && view.plusOne;
@@ -657,7 +664,7 @@ function ForumHeartControl({
           {t('forum.heartNeedsBalance')}
         </p>
       ) : null}
-      {authorWalletLine}
+      {heartErrorLine}
     </>
   );
 }
@@ -997,14 +1004,24 @@ export function ForumBoard({
   const scrollerRef = useRef<HTMLElement | null>(scroller);
   scrollerRef.current = scroller;
   const shownReplies = replies === null ? -1 : replies.length;
+  const loadedMessages = messages ?? [];
   // A gift sheet or gift invoice whose author a refresh now reports as unable to
-  // receive is cancelled; the posting fee (`payHost` composer) pays 21.gifts, not
-  // the author, and stays.
+  // receive, or whose loan is now closed, is cancelled. The posting fee
+  // (`payHost` composer) pays 21.gifts, not the author, and stays.
   const payTargetBlocked =
     payMessageId !== null &&
     payHost !== 'composer' &&
-    [...(messages ?? []), ...(Array.isArray(replies) ? replies : [])].some(
-      (row) => row.id === payMessageId && authorCannotReceive(row, viewerAccountId),
+    [...loadedMessages, ...(Array.isArray(replies) ? replies : [])].some(
+      (row) =>
+        row.id === payMessageId &&
+        (authorCannotReceive(row, viewerAccountId) ||
+          (row.goalRepayable === true && row.goalClosedAt !== undefined)),
+    );
+  const expandedLoanClosed =
+    expandedId !== null &&
+    loadedMessages.some(
+      (row) =>
+        row.id === expandedId && row.goalRepayable === true && row.goalClosedAt !== undefined,
     );
   const onPayCancelRef = useRef(onPayCancel);
   onPayCancelRef.current = onPayCancel;
@@ -1013,6 +1030,13 @@ export function ForumBoard({
       onPayCancelRef.current();
     }
   }, [payTargetBlocked]);
+  // The amount field disappears with a closed loan; clear its controlled value before the
+  // remaining text form can be used.
+  useLayoutEffect(() => {
+    if (expandedLoanClosed && replyAmountDraft !== '' && onReplyAmountDraftChange !== undefined) {
+      onReplyAmountDraftChange('');
+    }
+  }, [expandedLoanClosed, onReplyAmountDraftChange, replyAmountDraft]);
   const scrollBeforeSheet = useRef<number | null>(null);
   const sheetWasOpen = useRef(false);
   // Where the page last came to rest: the reveal at the end of a move starts from here.
@@ -1544,24 +1568,6 @@ export function ForumBoard({
           const roleHintOpen = openRoleMessageId === message.id;
           const expanded = expandedId === message.id;
           const cannotReceive = authorCannotReceive(message, viewerAccountId);
-          const replyPayLocked =
-            (payInvoice !== null && payMessageId === message.id && payHost !== 'composer') ||
-            reactionHold.held === message.id;
-          const reactionPay =
-            replyPayPreview !== null &&
-            payInvoice !== null &&
-            !cannotReceive &&
-            payMessageId === message.id &&
-            payHost === 'card' &&
-            payInvoice.messageId === message.id
-              ? {
-                  amountSats: payInvoice.amountSats,
-                  pr: payInvoice.pr,
-                  sparkInvoice: payInvoice.sparkInvoice,
-                  ...(payInvoice.figure === undefined ? {} : { figure: payInvoice.figure }),
-                }
-              : null;
-          const reactionPayPage = reactionPay !== null;
           const loanOfCard: LoanPayTarget | null =
             message.parentId === undefined &&
             message.goalRepayable === true &&
@@ -1574,6 +1580,26 @@ export function ForumBoard({
                   full: message.sats >= message.goalSats,
                 }
               : null;
+          const loanClosed = message.goalRepayable === true && message.goalClosedAt !== undefined;
+          const replyPayLocked =
+            (payInvoice !== null && payMessageId === message.id && payHost !== 'composer') ||
+            reactionHold.held === message.id;
+          const reactionPay =
+            replyPayPreview !== null &&
+            payInvoice !== null &&
+            !cannotReceive &&
+            !loanClosed &&
+            payMessageId === message.id &&
+            payHost === 'card' &&
+            payInvoice.messageId === message.id
+              ? {
+                  amountSats: payInvoice.amountSats,
+                  pr: payInvoice.pr,
+                  sparkInvoice: payInvoice.sparkInvoice,
+                  ...(payInvoice.figure === undefined ? {} : { figure: payInvoice.figure }),
+                }
+              : null;
+          const reactionPayPage = reactionPay !== null;
           const copied = copiedId === message.id;
           const shopNote = message.parentId === undefined && isShopNote(message.text);
           const displayText = shopNote ? stripShopHashtag(message.text) : message.text;
@@ -1813,12 +1839,14 @@ export function ForumBoard({
                   amountEur={message.amountEur}
                   amountPhp={message.amountPhp}
                   goalRepayable={message.goalRepayable}
+                  goalClosedAt={message.goalClosedAt}
                   goalTermDays={message.goalTermDays}
                   messageId={message.id}
                   ledgerCollapsed={truncate}
                   onLend={
                     !readOnly &&
                     !sunday &&
+                    !loanClosed &&
                     message.payable &&
                     message.deletedAt === undefined &&
                     !isOwnNote(viewerAccountId, message.accountId)
@@ -1830,7 +1858,7 @@ export function ForumBoard({
                         }
                       : undefined
                   }
-                  lendBlocked={!readOnly && !sunday && cannotReceive}
+                  lendBlocked={!readOnly && !sunday && !loanClosed && cannotReceive}
                 />
               ) : null}
               <div className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-2">
@@ -1862,19 +1890,28 @@ export function ForumBoard({
                 <div className="ml-auto flex flex-wrap items-center gap-5">
                   <div id={`note-translate-${message.id}`} className="contents" />
                   {cannotReceive ? <CannotReceiveLabel /> : null}
-                  <ForumHeartControl
-                    messageId={message.id}
-                    accountId={message.accountId}
-                    deletedAt={message.deletedAt}
-                    payable={message.payable}
-                    cannotReceive={cannotReceive}
-                    heartViewerId={heartViewerId}
-                    heartViewerSats={heartViewerSats}
-                    heartCount={message.heartCount}
-                    hearted={message.hearted}
-                    view={heartTipViews === undefined ? undefined : heartTipViews[message.id]}
-                    onHeartTip={onHeartTip}
-                  />
+                  {loanClosed &&
+                  heartTipViews !== undefined &&
+                  heartTipViews[message.id]?.creditClosed === true ? (
+                    <p role="alert" className="text-xs text-app-danger">
+                      {t('forum.payErrorCreditClosed')}
+                    </p>
+                  ) : null}
+                  {loanClosed ? null : (
+                    <ForumHeartControl
+                      messageId={message.id}
+                      accountId={message.accountId}
+                      deletedAt={message.deletedAt}
+                      payable={message.payable}
+                      cannotReceive={cannotReceive}
+                      heartViewerId={heartViewerId}
+                      heartViewerSats={heartViewerSats}
+                      heartCount={message.heartCount}
+                      hearted={message.hearted}
+                      view={heartTipViews === undefined ? undefined : heartTipViews[message.id]}
+                      onHeartTip={onHeartTip}
+                    />
+                  )}
                   {/* Signed-out forum is readOnly and still shows React. The author feed sets both flags. */}
                   {message.parentId === undefined &&
                   message.deletedAt === undefined &&
@@ -2002,6 +2039,7 @@ export function ForumBoard({
                 show={
                   !reactionPayPage &&
                   !cannotReceive &&
+                  !loanClosed &&
                   payMessageId === message.id &&
                   payHost !== 'composer'
                 }
@@ -2348,12 +2386,13 @@ export function ForumBoard({
                             {/* How a loan comes back stays on the page; the sheet shows no notice.
                                 No lending to an author who cannot receive, so no promise either. */}
                             {loanOfCard !== null &&
+                            !loanClosed &&
                             !cannotReceive &&
                             !isOwnNote(viewerAccountId, message.accountId) ? (
                               <LoanPayNotice {...loanOfCard} />
                             ) : null}
                             {/* On your own note the reply is free: no amount to gift yourself. */}
-                            {isOwnNote(viewerAccountId, message.accountId) ? null : (
+                            {isOwnNote(viewerAccountId, message.accountId) || loanClosed ? null : (
                               <AmountEntry
                                 id="forum-reply-amount"
                                 layout="inline"
