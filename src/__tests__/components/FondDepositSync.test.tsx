@@ -267,10 +267,11 @@ describe('FondDepositSync', () => {
     render(<FondDepositSync />);
     await flush();
     expect(claimFondDeposits).toHaveBeenCalledTimes(1);
-    expect(vi.mocked(claimFondDeposits).mock.calls[0]?.[0]).toEqual({
+    expect(vi.mocked(claimFondDeposits).mock.calls[0]?.[0]).toMatchObject({
       listUnclaimedDeposits: listWalletUnclaimedDeposits,
       claimDeposit: claimWalletDeposit,
     });
+    expect(vi.mocked(claimFondDeposits).mock.calls[0]?.[0].isCancelled()).toBe(false);
     expect(onWalletDeposits).toHaveBeenCalledTimes(1);
     act(() => {
       for (const listener of depositListeners) {
@@ -316,6 +317,62 @@ describe('FondDepositSync', () => {
     expect(claimFondDeposits).toHaveBeenCalledTimes(2);
   });
 
+  it('cancels a running pass on sign-out and starts no other', async () => {
+    let finish: (value: number) => void = () => undefined;
+    vi.mocked(claimFondDeposits).mockReturnValueOnce(
+      new Promise((resolve) => {
+        finish = resolve;
+      }),
+    );
+    setState('fond', 'sess', 'ready');
+    render(<FondDepositSync />);
+    await flush();
+    const running = vi.mocked(claimFondDeposits).mock.calls[0]?.[0];
+    expect(running?.isCancelled()).toBe(false);
+    setState(null, null, 'locked');
+    await flush();
+    expect(running?.isCancelled()).toBe(true);
+    finish(0);
+    await flush();
+    expect(claimFondDeposits).toHaveBeenCalledTimes(1);
+  });
+
+  it('runs no pass for a deposit report that arrives after cleanup began', async () => {
+    setState('fond', 'sess', 'ready');
+    render(<FondDepositSync />);
+    await flush();
+    const listener = [...depositListeners][0];
+    setState(null, null, 'locked');
+    await flush();
+    listener?.();
+    await flush();
+    expect(claimFondDeposits).toHaveBeenCalledTimes(1);
+  });
+
+  it('drops a registration answer that arrives after the session changed', async () => {
+    let finishFirst: (value: 'registered') => void = () => undefined;
+    vi.mocked(registerFondDepositAddress)
+      .mockReturnValueOnce(
+        new Promise((resolve) => {
+          finishFirst = resolve;
+        }),
+      )
+      .mockResolvedValueOnce('registered');
+    setState('fond', 'sess', 'ready');
+    render(<FondDepositSync />);
+    await flush();
+    setState('fond', 'sess-2', 'ready');
+    await flush();
+    expect(claimFondDeposits).toHaveBeenCalledTimes(1);
+    finishFirst('registered');
+    await flush();
+    setState('fond', 'sess-2', 'locked');
+    setState('fond', 'sess-2', 'ready');
+    await flush();
+    expect(registerFondDepositAddress).toHaveBeenCalledTimes(2);
+    expect(claimFondDeposits).toHaveBeenCalledTimes(2);
+  });
+
   it('stops listening for deposit reports on sign-out', async () => {
     setState('fond', 'sess', 'ready');
     render(<FondDepositSync />);
@@ -341,7 +398,7 @@ describe('FondDepositSync', () => {
     expect(vi.mocked(registerFondDepositAddress).mock.calls[0]?.[0].receiveBitcoinAddress).toBe(
       fake.receiveBitcoinAddress,
     );
-    expect(vi.mocked(claimFondDeposits).mock.calls[0]?.[0]).toEqual({
+    expect(vi.mocked(claimFondDeposits).mock.calls[0]?.[0]).toMatchObject({
       listUnclaimedDeposits: fake.listUnclaimedDeposits,
       claimDeposit: fake.claimDeposit,
     });

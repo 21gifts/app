@@ -32,6 +32,7 @@ describe('claimFondDeposits', () => {
         deposit({ txid: 'large', amountSats: 1_000_000, vout: 3 }),
       ],
       claimDeposit,
+      isCancelled: () => false,
     });
     expect(claims).toBe(2);
     expect(claimDeposit.mock.calls).toEqual([
@@ -50,6 +51,7 @@ describe('claimFondDeposits', () => {
         deposit({ amountSats: 9 }),
       ],
       claimDeposit,
+      isCancelled: () => false,
     });
     expect(claims).toBe(0);
     expect(claimDeposit).not.toHaveBeenCalled();
@@ -60,6 +62,7 @@ describe('claimFondDeposits', () => {
     await claimFondDeposits({
       listUnclaimedDeposits: async () => [deposit({ maxClaimFeeSats: 99 })],
       claimDeposit,
+      isCancelled: () => false,
     });
     expect(claimDeposit).toHaveBeenCalledWith({ txid: 'ab'.repeat(32), vout: 1 }, 2_000);
   });
@@ -72,9 +75,24 @@ describe('claimFondDeposits', () => {
     const claims = await claimFondDeposits({
       listUnclaimedDeposits: async () => [deposit({ txid: 'a' }), deposit({ txid: 'b' })],
       claimDeposit,
+      isCancelled: () => false,
     });
     expect(claims).toBe(2);
     expect(claimDeposit).toHaveBeenCalledTimes(2);
+  });
+
+  it('stops before the next claim once cancelled', async () => {
+    let cancelled = false;
+    const claimDeposit = vi.fn(async () => {
+      cancelled = true;
+    });
+    const claims = await claimFondDeposits({
+      listUnclaimedDeposits: async () => [deposit({ txid: 'a' }), deposit({ txid: 'b' })],
+      claimDeposit,
+      isCancelled: () => cancelled,
+    });
+    expect(claims).toBe(1);
+    expect(claimDeposit).toHaveBeenCalledTimes(1);
   });
 
   it('passes a failed list on', async () => {
@@ -84,6 +102,7 @@ describe('claimFondDeposits', () => {
           throw new Error('sdk');
         },
         claimDeposit: vi.fn(),
+        isCancelled: () => false,
       }),
     ).rejects.toThrow('sdk');
   });

@@ -33,7 +33,9 @@ import { useWalletStore } from '@/stores/wallet-store';
  * wallet is the Fond's (any other account at rank `fond` or above gets 403 and
  * keeps the SDK default). A pass runs then and on every `newDeposits` or
  * `unclaimedDeposits` report of the wallet; a pass that is still running
- * absorbs the next report.
+ * absorbs the next report. Sign-out, a locked wallet, or another session
+ * cancels a running pass before its next claim, and a registration answer
+ * that arrives after the session changed is dropped.
  *
  * @returns `null` because the sync has no visual surface.
  */
@@ -72,6 +74,10 @@ export function FondDepositSync(): null {
           receiveBitcoinAddress: e2eWallet?.receiveBitcoinAddress ?? receiveWalletBitcoinAddress,
           putFondDepositAddress,
         });
+        const live = useAuthStore.getState();
+        if (`${live.session}:${live.account?.id}` !== runKey) {
+          return;
+        }
         if (outcome !== 'retry') {
           settledKey.current = runKey;
         }
@@ -97,13 +103,14 @@ export function FondDepositSync(): null {
       claimDeposit: e2eWallet?.claimDeposit ?? claimWalletDeposit,
     };
     let running = false;
+    let cancelled = false;
     const pass = async (): Promise<void> => {
-      if (running) {
+      if (running || cancelled) {
         return;
       }
       running = true;
       try {
-        await claimFondDeposits(wallet);
+        await claimFondDeposits({ ...wallet, isCancelled: () => cancelled });
       } catch {
         // The next deposit report runs another pass.
       } finally {
@@ -114,7 +121,10 @@ export function FondDepositSync(): null {
     const unsubscribe = onWalletDeposits(() => {
       void pass();
     });
-    return unsubscribe;
+    return () => {
+      cancelled = true;
+      unsubscribe();
+    };
   }, [active, session, accountId, registeredKey, e2eWallet]);
 
   return null;

@@ -32,16 +32,21 @@ function claimCeilingSats(amountSats: number): number {
  * example a matured deposit whose claim costs more than the ceiling) is left
  * for the next pass.
  *
- * @param wallet - The wallet's deposit list and claim.
+ * @param wallet - The wallet's deposit list and claim, and `isCancelled`, checked
+ *   before each claim (sign-out or another session ends the pass).
  * @returns How many claims were asked for.
  */
 export async function claimFondDeposits(wallet: {
   listUnclaimedDeposits: () => Promise<WalletDeposit[]>;
   claimDeposit: (deposit: { txid: string; vout: number }, maxFeeSats: number) => Promise<void>;
+  isCancelled: () => boolean;
 }): Promise<number> {
   const deposits = await wallet.listUnclaimedDeposits();
   let claims = 0;
   for (const deposit of deposits) {
+    if (wallet.isCancelled()) {
+      break;
+    }
     const ceiling = claimCeilingSats(deposit.amountSats);
     if (deposit.done || ceiling <= 0 || deposit.maxClaimFeeSats === ceiling) {
       continue;
