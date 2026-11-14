@@ -17,6 +17,7 @@ import {
   loanMaxUnits,
   parseLoanAmount,
   remainingRepaymentSats,
+  unpricedDueLabels,
   validatedRepaymentPayment,
 } from '../src/lib/loan-repay';
 import {
@@ -16592,6 +16593,21 @@ test('Function: definedDueLabel — a fiat waiting share keeps its stored figure
   await expect(
     page.getByText('₱12.00 · ₿480 is waiting for a lender to set up their wallet'),
   ).toBeVisible();
+});
+
+test('Function: unpricedDueLabels — a loan without sats stays on its own fiat line', async ({
+  page,
+}) => {
+  const unpriced = loanWith(loanB, {
+    totalSats: null,
+    maxSats: null,
+    due: { payableSats: null, payablePeople: 1, payableAmount: '15.00' },
+  });
+  expect(unpricedDueLabels([loanB, unpriced], 'payable', 'ch')).toEqual([
+    { loanIndex: 1, label: '₱15.00', people: 1 },
+  ]);
+  await openLoanUi(page, '/welcome', myLoans([unpriced]), false);
+  await expect(page.getByText('₱15.00', { exact: true })).toBeVisible();
 });
 
 test('Function: centsString — the fiat due amount is written with two decimals', async ({

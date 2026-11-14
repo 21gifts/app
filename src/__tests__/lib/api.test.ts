@@ -2684,6 +2684,32 @@ describe('getMyLoans', () => {
     await expect(getMyLoans('sess')).rejects.toThrow('Could not load your loans');
   });
 
+  it('accepts the nullable priced sat fields of a fiat loan without a rate', async () => {
+    const body = {
+      sundayRest: false,
+      loans: [
+        {
+          ...MY_LOAN,
+          goalCurrency: 'PHP',
+          goalAmount: '300.00',
+          totalSats: null,
+          maxSats: null,
+          maxAmount: '180.00',
+          due: {
+            ...MY_LOAN.due,
+            payableSats: null,
+            payableAmount: '30.00',
+            waitingSats: null,
+            waitingAmount: '15.00',
+          },
+          next: { dueOn: '2026-10-11', sats: null, amount: '30.00' },
+        },
+      ],
+    };
+    stubFetch({ ok: true, status: 200, body });
+    await expect(getMyLoans('sess')).resolves.toEqual(body);
+  });
+
   it('uses one stable error for non-ok, invalid, and rejected reads', async () => {
     stubFetch({ ok: false, status: 500, body: {} });
     await expect(getMyLoans('sess')).rejects.toThrow('Could not load your loans');
@@ -2948,8 +2974,15 @@ describe('prepayLoan', () => {
     await expect(prepayLoan('sess', 'm1', '1')).rejects.toMatchObject({
       code: 'request_failed',
     });
-    stubFetch({ ok: true, status: 200, body: { ...success, amountSats: 0 } });
+    stubFetch({ ok: true, status: 200, body: { ...success, amountSats: -1 } });
     await expect(prepayLoan('sess', 'm1', '1')).rejects.toThrow();
+  });
+
+  it('accepts zero billed sats when every allocated share is waiting', async () => {
+    const waiting = success.bills.map(({ pr: _pr, ...row }) => row);
+    const body = { amountSats: 0, amount: '12.50', bills: [], waiting };
+    stubFetch({ ok: true, status: 200, body });
+    await expect(prepayLoan('sess', 'm1', '12.50')).resolves.toEqual(body);
   });
 });
 

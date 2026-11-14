@@ -102,6 +102,7 @@ import { forumVideoSrc, type ForumVideoPayload } from '@/lib/forum-video';
 import { shortResourceUrl } from '@/lib/short-link';
 import { formatForumTime } from '@/lib/forum-time';
 import type { HeartTipView } from '@/lib/heart-tip';
+import { isCollecting } from '@/lib/loan-repay';
 import { ForumRoleHint, ForumRoleTag, forumTaggedRole } from '@/components/ForumRoleTag';
 import { authorCannotReceive, isOwnNote } from '@/lib/roles';
 import { useFiatPreference } from '@/components/FiatPreferenceProvider';
@@ -336,7 +337,7 @@ export interface ForumBoardProps {
    * the viewer's own notes hides the reply amount field and the gift button.
    */
   viewerAccountId?: string | null;
-  /** Shows **Repay your loan** (a link to `/loans/repay`) on the viewer's own funded credit. */
+  /** Shows a repayment link on the viewer's own live credit, with collecting-specific copy. */
   repayLink?: boolean;
   /** Updates the pay amount draft. */
   onPayDraftChange: (value: string) => void;
@@ -1580,6 +1581,12 @@ export function ForumBoard({
                   full: message.sats >= message.goalSats,
                 }
               : null;
+          const loanCollecting =
+            loanOfCard !== null &&
+            isCollecting({
+              fundedAt: loanOfCard.full ? 'funded' : null,
+              ...(message.goalClosedAt === undefined ? {} : { closedAt: message.goalClosedAt }),
+            });
           const loanClosed = message.goalRepayable === true && message.goalClosedAt !== undefined;
           const replyPayLocked =
             (payInvoice !== null && payMessageId === message.id && payHost !== 'composer') ||
@@ -1945,14 +1952,13 @@ export function ForumBoard({
                   message.parentId === undefined &&
                   message.goalRepayable === true &&
                   typeof message.goalSats === 'number' &&
-                  message.sats >= message.goalSats &&
                   message.deletedAt === undefined ? (
                     <Link
                       href="/loans/repay"
                       className="text-xs font-medium text-app-fg underline"
                       onClick={stopCardToggle}
                     >
-                      {t('forum.repayOpen')}
+                      {t(loanCollecting ? 'forum.repayCollectingOpen' : 'forum.repayOpen')}
                     </Link>
                   ) : null}
                   {message.parentId !== undefined &&

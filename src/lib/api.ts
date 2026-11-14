@@ -3432,11 +3432,14 @@ const myLoanSchema = z.object({
   daysDue: z.number().int().nonnegative(),
   daysPaid: z.number().int().nonnegative(),
   repaidSats: z.number().int().nonnegative(),
-  totalSats: z.number().int().nonnegative(),
+  /** Paid plus currently priced unpaid sats; null for a fiat loan without a rate. */
+  totalSats: z.number().int().nonnegative().nullable(),
   due: z.object({
-    payableSats: z.number().int().nonnegative(),
+    /** Currently payable sats; null for a fiat loan without a rate. */
+    payableSats: z.number().int().nonnegative().nullable(),
     payablePeople: z.number().int().nonnegative(),
-    waitingSats: z.number().int().nonnegative(),
+    /** Waiting sats; null for a fiat loan without a rate. */
+    waitingSats: z.number().int().nonnegative().nullable(),
     waitingPeople: z.number().int().nonnegative(),
     /** Optional until every deployed api counts the waiting shares. */
     waitingShares: z.number().int().nonnegative().optional(),
@@ -3524,7 +3527,8 @@ const repaymentCloseSchema = z.object({
 });
 
 const repaymentPrepaySchema = repaymentDueSchema.extend({
-  amountSats: z.number().int().positive(),
+  /** Sum of bills only; zero when every allocated share is waiting. */
+  amountSats: z.number().int().nonnegative(),
   amount: z.string().nullable(),
 });
 
