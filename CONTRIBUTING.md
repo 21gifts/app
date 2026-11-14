@@ -772,12 +772,16 @@ The in-app wallet is the only wallet. A member's only address is
 `<username>@<app host>`. No screen names, links to, or opens another wallet
 app on a member's behalf, and members cannot link an external address.
 
-One exception: the public Fond page `/fonds/[username]` also shows the Fond
-wallet's own on-chain deposit address (`FondDeposit`), as a `bitcoin:` QR and
-text, next to the Fond's `<username>@<app host>`. It is an address of the same
-in-app wallet, registered by the Fond's signed-in app and published by the
-api as `onchainAddress`; it is never an external address, and no member page
-shows one.
+One exception, on one screen only: the public Fond page `/fonds/[username]`
+may also show the on-chain deposit address of the in-app wallet of the one
+configured Fond account (`FondDeposit`), as a `bitcoin:` QR and text, next to
+the Fond's `<username>@<app host>`. The api publishes it as `onchainAddress`
+after the Fond's signed-in app registered it. No other screen shows it: not a
+profile, a member or public view, the wallet, Receive, the point of sale, or
+anywhere else. For every member, and for the Fond on every other screen, the
+only address stays `<username>@<app host>`. Nothing else in this section is
+relaxed: no screen names, links to, or opens another wallet app, and nobody can
+link an external address.
 
 A smartphone shows the same payment QR as a desktop for the profile,
 member, public view, and point of sale. The Shop sticker is
