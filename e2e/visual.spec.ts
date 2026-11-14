@@ -47470,7 +47470,80 @@ test.describe('fonds screen', () => {
     await expect(page.getByText('$210.00')).toBeVisible();
     await expect(page.getByText('$0.21')).toBeVisible();
     await expect(page.getByText('3 grant payouts paid (3.00 USD)')).toBeVisible();
+    await expect(page.getByText('tondo-fond@21.gifts')).toBeVisible();
     await shotScreen(page, 'screen-fonds-username');
+  });
+
+  test('state /fonds/[username] deposit-onchain', async ({ page }) => {
+    await fulfillSpot(page);
+    await page.goto('/fonds/tondo-fond');
+    await expect(page.getByRole('heading', { name: 'tondo-fond' })).toBeVisible();
+    await page
+      .getByRole('group', { name: 'Deposit method' })
+      .getByRole('button', { name: 'On-chain deposit' })
+      .click();
+    await expect(
+      page.getByText(
+        'On-chain deposits need confirmations on the Bitcoin network, usually 3, before they show in the balance.',
+      ),
+    ).toBeVisible();
+    await expect(page.getByRole('img', { name: 'Bitcoin address QR code' })).toBeVisible();
+    await shotScreen(page, 'state-fonds-deposit-onchain');
+  });
+
+  test('state /fonds/[username] deposit-lightning-only', async ({ page }) => {
+    await fulfillSpot(page);
+    await page.route('**/fonds/tondo-fond/summary', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          username: 'tondo-fond',
+          receivedSats: 210_000,
+          paidOutSats: 21_000,
+          feesSats: 210,
+          balanceSats: 189_000,
+          balanceSyncedAt: '2026-11-11T10:00:00.000Z',
+          payoutsPaid: 3,
+          payoutsPaidUsd: '3.00',
+        }),
+      });
+    });
+    await page.goto('/fonds/tondo-fond');
+    await expect(page.getByText('tondo-fond@21.gifts')).toBeVisible();
+    await expect(page.getByRole('group', { name: 'Deposit method' })).toHaveCount(0);
+    await shotScreen(page, 'state-fonds-deposit-lightning-only');
+  });
+
+  test('state /fonds/[username] deposit-lightning-copied', async ({ page, context }) => {
+    await context.grantPermissions(['clipboard-read', 'clipboard-write']);
+    await page.clock.install();
+    await fulfillSpot(page);
+    await page.goto('/fonds/tondo-fond');
+    await expect(page.getByText('tondo-fond@21.gifts')).toBeVisible();
+    const now = await page.evaluate(() => Date.now());
+    await page.clock.pauseAt(now + 1_000);
+    await page.getByRole('button', { name: 'Copy' }).click();
+    await expect(page.getByRole('button', { name: 'Copied' })).toBeVisible();
+    await shotScreen(page, 'state-fonds-deposit-lightning-copied');
+  });
+
+  test('state /fonds/[username] deposit-onchain-copied', async ({ page, context }) => {
+    await context.grantPermissions(['clipboard-read', 'clipboard-write']);
+    await page.clock.install();
+    await fulfillSpot(page);
+    await page.goto('/fonds/tondo-fond');
+    await expect(page.getByRole('heading', { name: 'tondo-fond' })).toBeVisible();
+    await page
+      .getByRole('group', { name: 'Deposit method' })
+      .getByRole('button', { name: 'On-chain deposit' })
+      .click();
+    await expect(page.getByRole('img', { name: 'Bitcoin address QR code' })).toBeVisible();
+    const now = await page.evaluate(() => Date.now());
+    await page.clock.pauseAt(now + 1_000);
+    await page.getByRole('button', { name: 'Copy' }).click();
+    await expect(page.getByRole('button', { name: 'Copied' })).toBeVisible();
+    await shotScreen(page, 'state-fonds-deposit-onchain-copied');
   });
 
   test('state /fonds/[username] role-hint', async ({ page }) => {
@@ -47481,6 +47554,7 @@ test.describe('fonds screen', () => {
     await expect(
       page.getByText('This account pays the daily gifts from the 21.gifts fund.'),
     ).toBeVisible();
+    await expect(page.getByText('tondo-fond@21.gifts')).toBeVisible();
     await shotScreen(page, 'state-fonds-role-hint');
   });
 
@@ -47504,6 +47578,7 @@ test.describe('fonds screen', () => {
     });
     await page.goto('/fonds/tondo-fond');
     await expect(page.getByText('not reported yet')).toBeVisible();
+    await expect(page.getByText('tondo-fond@21.gifts')).toBeVisible();
     await shotScreen(page, 'state-fonds-balance-null');
   });
 

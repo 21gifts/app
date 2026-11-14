@@ -169,6 +169,7 @@ app/
 │   │   │   ├── admit/route.ts                    # POST /funding/admit
 │   │   │   └── reject/route.ts                   # POST /funding/reject
 │   │   ├── fond/
+│   │   │   ├── deposit-address/route.ts  # PUT /fond/deposit-address (the Fond wallet's on-chain deposit address)
 │   │   │   └── payouts/
 │   │   │       ├── route.ts              # GET /fond/payouts (today's open Fond rows)
 │   │   │       └── [id]/invoice/route.ts # POST /fond/payouts/:id/invoice (Spark invoice or BOLT11)
@@ -292,6 +293,8 @@ app/
 │   │   ├── WalletSetupNote.tsx  # Inline wallet setup note on money screens (Try again)
 │   │   ├── WalletSync.tsx       # Root-mounted wallet phrase and background setup listeners + wallet data report triggers (renders nothing)
 │   │   ├── FondPayoutSync.tsx   # Root-mounted automatic Fond payout loop while the Fond wallet is ready (renders nothing)
+│   │   ├── FondDepositSync.tsx  # Root-mounted Fond deposit address registration and bounded deposit claims (renders nothing)
+│   │   ├── FondDeposit.tsx      # Public Fond page deposit block: Lightning / On-chain selector, address, QR, Copy
 │   │   ├── InteractionLog.tsx   # Root-mounted interaction log: screen views, flush timer (renders nothing)
 │   │   ├── WalletPay.tsx        # In-app wallet pay slot of the pay sheet (the only way to pay)
 │   │   ├── PaySheet.tsx         # Bottom sheet for the last tap of every in-app wallet payment (title, amount, pay slot, success step)
@@ -428,10 +431,12 @@ app/
 │   │   │   ├── payment-counterparty.ts # fetchPaymentCounterparties: payments → POST /me/wallet/counterparties
 │   │   │   ├── wallet-report.ts # reportWallet: balance + unacknowledged payments → POST /me/wallet/report
 │   │   │   ├── fond-payouts.ts  # runFondPayoutTick: list → invoice → pay sparkInvoice ?? bolt11 once
+│   │   │   ├── fond-deposits.ts # registerFondDepositAddress outcome; claimFondDeposits under a bounded fee
 │   │   │   ├── payment-failure.ts # reportPaymentFailure: payment_failed event + `Payment failed` error report
 │   │   │   ├── error-cause.ts   # errorCause, CAUSE_KINDS: name, code, and cause kind of a wallet that did not open
 │   │   │   └── lnurl-relay.ts   # lnurlRelayTarget: outside address or LNURL goes through the api
 │   │   ├── gifts-address.ts     # Public username@21.gifts display handle
+│   │   ├── bitcoin-address.ts   # isMainnetBitcoinAddress shape check before an address is shown or encoded
 │   │   ├── shop-sticker.ts      # Shop-sticker SVG/PDF/PNG/JPG from the member pay QR; ?lang=Kikamba (no PDF library)
 │   │   ├── shop-sticker-artwork.ts # Generated fixed sticker artwork (outlined paths); do not edit by hand
 │   │   ├── missing-requirements.ts # MissingRequirementsError + 409 body parse
@@ -513,6 +518,7 @@ app/
 │   ├── proposals.spec.ts        # /moderate/proposals staff confirm/reject queue
 │   ├── applications.spec.ts     # /grants grant card, queue, and review; old paths redirect
 │   ├── fond-payouts.spec.ts     # /fond/payouts proxies, client calls, invoice/settle tick loop
+│   ├── fond-deposits.spec.ts    # /fond/deposit-address proxy, client call, Fond address registration and claims
 │   ├── proxy.spec.ts            # Same-origin api proxy round-trips against the stub
 │   ├── view.spec.ts             # /view/[viewKey] public profile
 │   ├── mock-api.mjs             # Local 21.gifts api protocol stub for proxies

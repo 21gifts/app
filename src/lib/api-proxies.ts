@@ -424,6 +424,16 @@ export async function proxyFondPayoutInvoicePost(request: Request, id: string): 
 }
 
 /**
+ * Proxies PUT /fond/deposit-address to the 21.gifts api.
+ *
+ * @param request - Incoming App Router request (Bearer session + JSON `{ address }`).
+ * @returns The upstream response.
+ */
+export async function proxyFondDepositAddressPut(request: Request): Promise<Response> {
+  return proxyApiRequest(request, '/fond/deposit-address');
+}
+
+/**
  * Proxies POST /me/wallet/report (wallet data report) to the 21.gifts api.
  *
  * @param request - Incoming App Router request (Bearer session + JSON

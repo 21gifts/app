@@ -6,6 +6,7 @@ import { useTranslations } from '@/components/LocaleProvider';
 import { QrCode } from '@/components/QrCode';
 import { IconButton } from '@/components/ui';
 import { giftsLightningAddress, openCryptoPayQrValue } from '@/lib/gifts-address';
+import type { MessageKey } from '@/lib/messages';
 import { profileQrLogo } from '@/lib/profile-qr-logo';
 
 /** Props for {@link WalletOwnAddress}. */
@@ -14,17 +15,21 @@ export interface WalletOwnAddressProps {
   username: string;
   /** Whether to show the icon-only Copy / Copied control below the QR. */
   copy?: boolean;
+  /** Line above the address. Default `wallet.payAddFunds` (the member's own top-up). */
+  hint?: MessageKey;
 }
 
 /**
- * The member's own 21.gifts address and its Open CryptoPay QR.
+ * A 21.gifts address and its Open CryptoPay QR: the member's own for a top-up,
+ * or a public account's with another `hint`.
  *
- * @param props - Username and optional Copy control.
+ * @param props - Username, optional Copy control, and optional hint line.
  * @returns The address block, or `null` before the page host is known.
  */
 export function WalletOwnAddress({
   username,
   copy = false,
+  hint = 'wallet.payAddFunds',
 }: WalletOwnAddressProps): ReactElement | null {
   const { t } = useTranslations();
   const [host, setHost] = useState<string | null>(null);
@@ -61,7 +66,7 @@ export function WalletOwnAddress({
   };
   return (
     <>
-      <p className="text-center text-sm text-app-muted">{t('wallet.payAddFunds')}</p>
+      <p className="text-center text-sm text-app-muted">{t(hint)}</p>
       <p className="min-w-0 max-w-full truncate text-center font-mono text-sm text-app-fg">
         {address}
       </p>

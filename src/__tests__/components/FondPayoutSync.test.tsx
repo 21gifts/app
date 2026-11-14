@@ -139,6 +139,9 @@ describe('FondPayoutSync', () => {
     vi.mocked(fondE2eWallet).mockReturnValue({
       payFromWallet: E2E_PAY,
       listWalletPayments: E2E_LIST,
+      receiveBitcoinAddress: vi.fn(),
+      listUnclaimedDeposits: vi.fn(),
+      claimDeposit: vi.fn(),
     });
     setState('fond', 'sess', 'locked');
     render(<FondPayoutSync />);
@@ -153,6 +156,9 @@ describe('FondPayoutSync', () => {
     vi.mocked(fondE2eWallet).mockReturnValue({
       payFromWallet: E2E_PAY,
       listWalletPayments: E2E_LIST,
+      receiveBitcoinAddress: vi.fn(),
+      listUnclaimedDeposits: vi.fn(),
+      claimDeposit: vi.fn(),
     });
     setState('moderator', 'sess', 'locked');
     render(<FondPayoutSync />);

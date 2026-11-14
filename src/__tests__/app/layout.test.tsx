@@ -12,6 +12,7 @@ import { AccountPreferenceSync } from '@/components/AccountPreferenceSync';
 import { LocaleRouteSync } from '@/components/LocaleRouteSync';
 import { AppHeightSync } from '@/components/AppHeightSync';
 import { DiagnosticsListener } from '@/components/DiagnosticsListener';
+import { FondDepositSync } from '@/components/FondDepositSync';
 import { FondPayoutSync } from '@/components/FondPayoutSync';
 import { InteractionLog } from '@/components/InteractionLog';
 import { ScrollSurfaceGuard } from '@/components/ScrollSurfaceGuard';
@@ -293,22 +294,23 @@ describe('RootLayout', () => {
     expect((themeChildren[2] as ReactElement).type).toBe(PushOpenListener);
     expect((themeChildren[3] as ReactElement).type).toBe(WalletSync);
     expect((themeChildren[4] as ReactElement).type).toBe(FondPayoutSync);
-    expect((themeChildren[5] as ReactElement).type).toBe(InteractionLog);
-    const suspense = themeChildren[6] as ReactElement<{
+    expect((themeChildren[5] as ReactElement).type).toBe(FondDepositSync);
+    expect((themeChildren[6] as ReactElement).type).toBe(InteractionLog);
+    const suspense = themeChildren[7] as ReactElement<{
       fallback: null;
       children: ReactElement;
     }>;
     expect(suspense.type).toBe(Suspense);
     expect(suspense.props.fallback).toBe(null);
     expect(suspense.props.children.type).toBe(RememberWalletReturn);
-    const moveSuspense = themeChildren[7] as ReactElement<{
+    const moveSuspense = themeChildren[8] as ReactElement<{
       fallback: null;
       children: ReactElement;
     }>;
     expect(moveSuspense.type).toBe(Suspense);
     expect(moveSuspense.props.fallback).toBe(null);
     expect(moveSuspense.props.children.type).toBe(MoveFundsLink);
-    const viewHistory = themeChildren[8] as ReactElement<{ children: ReactNode }>;
+    const viewHistory = themeChildren[9] as ReactElement<{ children: ReactNode }>;
     expect(viewHistory.type).toBe(ViewHistoryRoot);
     expect(viewHistory.props.children).toBe('content');
   });

@@ -11288,16 +11288,40 @@ After a failed translation of that reaction. The feed shows `Could not translate
 ## Screen: /fonds/[username]
 
 - **URL:** `/fonds/<username>` — public Fond page (no auth gate), e.g. `/fonds/tondo-fond`.
-- **What the user sees:** Unsigned public chrome like `/view/[viewKey]`: one top-left back arrow (previous in-app view, or `/welcome` when this tab has none) beside the home wordmark, and the light language switcher top-right. The card shows the Fond handle as its heading with the existing **Fond** role pill (`ForumRoleTag`; pressing it reveals the Fond hint). Under it, three KPI tiles in the `StatsDashboard` card style: **Received** (`receivedSats`), **Paid out** (`paidOutSats`) with **Fees** (`feesSats`) as a secondary line, and **Balance** (`balanceSats`) with **as of <time>** from `balanceSyncedAt` (`formatForumTime`); a null balance shows an em dash and **not reported yet**. Under the tiles: **3 grant payouts paid (3.00 USD)** from `payoutsPaid` and the stored `payoutsPaidUsd`. Every bitcoin figure uses `formatBitcoin` with the visitor's preferred fiat under it from the current spot (`useFiatPreference` + `useSpotRate`, `formatFiatDisplay`), including the **Fees** line; the spot is read only, never stored.
-- **Inputs:** Dynamic route `username`. The same-origin proxy `GET /fonds/:username/summary` reads public api `GET /fond/summary`; the proxy answers 404 when the api has no Fond or when the body's `username` is not this handle, and passes a 503 `{ error }` through. Client fetch: `fetchFondSummary`.
-- **Actions:** The top-left arrow returns to the previous in-app view, or `/welcome` when this tab has none. Change language. Press the **Fond** pill for its hint. On a 503, **Try again** refetches. A 404 shows **This Fond could not be found.** There is no second back control and no write action.
+- **What the user sees:** Unsigned public chrome like `/view/[viewKey]`: one top-left back arrow (previous in-app view, or `/welcome` when this tab has none) beside the home wordmark, and the light language switcher top-right. The card shows the Fond handle as its heading with the existing **Fond** role pill (`ForumRoleTag`; pressing it reveals the Fond hint). Under it, three KPI tiles in the `StatsDashboard` card style: **Received** (`receivedSats`), **Paid out** (`paidOutSats`) with **Fees** (`feesSats`) as a secondary line, and **Balance** (`balanceSats`) with **as of <time>** from `balanceSyncedAt` (`formatForumTime`); a null balance shows an em dash and **not reported yet**. Under the tiles: the deposit block (`FondDeposit`), headed **Top up this Fond**: an **Instant payment** | **On-chain deposit** selector (the wallet's names for Lightning and on-chain; **Instant payment** pressed on every load), then for Instant payment the Fond's `username@21.gifts` address, its Open CryptoPay QR, and the icon-only **Copy** (`WalletOwnAddress`), and for On-chain deposit a QR of `bitcoin:<address>` (no amount), the address in mono type broken across lines, the icon-only **Copy** of the bare address, and **On-chain deposits need confirmations on the Bitcoin network, usually 3, before they show in the balance.** The address is the summary's `onchainAddress`; while it is null or not a plausible mainnet address the block is Instant payment alone, without the selector. Then **3 grant payouts paid (3.00 USD)** from `payoutsPaid` and the stored `payoutsPaidUsd`. Every bitcoin figure uses `formatBitcoin` with the visitor's preferred fiat under it from the current spot (`useFiatPreference` + `useSpotRate`, `formatFiatDisplay`), including the **Fees** line; the spot is read only, never stored.
+- **Inputs:** Dynamic route `username`. The same-origin proxy `GET /fonds/:username/summary` reads public api `GET /fond/summary` (including `onchainAddress`, null when absent); the proxy answers 404 when the api has no Fond or when the body's `username` is not this handle, and passes a 503 `{ error }` through. Client fetch: `fetchFondSummary`.
+- **Actions:** The top-left arrow returns to the previous in-app view, or `/welcome` when this tab has none. Change language. Press the **Fond** pill for its hint. Switch the deposit block between **Instant payment** and **On-chain deposit**, and copy the shown address. On a 503, **Try again** refetches. A 404 shows **This Fond could not be found.** There is no second back control and no write action.
 - **Used by:** Route `/fonds/[username]` (`FondPage` → `FondSummaryLoader`).
 
 ### Variant: default
 
-`/fonds/tondo-fond` with the api's totals and a spot of $100'000 per bitcoin. The heading reads **tondo-fond** with the **Fond** pill; **Received** ₿210'000 ($210.00), **Paid out** ₿21'000 ($21.00) with **Fees** ₿210 ($0.21), **Balance** ₿189'000 ($189.00) with the synced time, and **3 grant payouts paid (3.00 USD)** below the tiles.
+`/fonds/tondo-fond` with the api's totals and a spot of $100'000 per bitcoin. The heading reads **tondo-fond** with the **Fond** pill; **Received** ₿210'000 ($210.00), **Paid out** ₿21'000 ($21.00) with **Fees** ₿210 ($0.21), **Balance** ₿189'000 ($189.00) with the synced time, then **Top up this Fond** with **Instant payment** pressed: **tondo-fond@21.gifts**, its QR, and the copy icon; and **3 grant payouts paid (3.00 USD)** below it.
 
 ![21.gifts public Fond page](images/fonds-username.png)
+
+### Variant: deposit-onchain
+
+**On-chain deposit** is pressed in the deposit block. It shows **Scan the code or send to this Bitcoin address:**, the address `bc1p5cyxnuxmeuwuvkwfem96lqzszd02n6xdcjrs20cac6yqjjwudpxqkedrcr` in mono type over several lines, the QR of `bitcoin:bc1p5cyxnuxmeuwuvkwfem96lqzszd02n6xdcjrs20cac6yqjjwudpxqkedrcr`, the copy icon, and **On-chain deposits need confirmations on the Bitcoin network, usually 3, before they show in the balance.**
+
+![21.gifts public Fond page on-chain deposit](images/fonds-deposit-onchain.png)
+
+### Variant: deposit-lightning-only
+
+The summary has no `onchainAddress` (the api has none registered yet, or does not send it). The deposit block shows **Top up this Fond** and the Fond's 21.gifts address with its QR and copy icon, without the **Instant payment** | **On-chain deposit** selector.
+
+![21.gifts public Fond page Lightning deposit only](images/fonds-deposit-lightning-only.png)
+
+### Variant: deposit-lightning-copied
+
+With **Instant payment** pressed, the copy icon under the QR was pressed: `tondo-fond@21.gifts` is on the clipboard and the icon is a green check named **Copied** for two seconds.
+
+![21.gifts public Fond page Lightning address copied](images/fonds-deposit-lightning-copied.png)
+
+### Variant: deposit-onchain-copied
+
+With **On-chain deposit** pressed, the copy icon under the QR was pressed: the bare address `bc1p5cyxnuxmeuwuvkwfem96lqzszd02n6xdcjrs20cac6yqjjwudpxqkedrcr` is on the clipboard and the icon is a green check named **Copied** for two seconds.
+
+![21.gifts public Fond page on-chain address copied](images/fonds-deposit-onchain-copied.png)
 
 ### Variant: balance-null
 
