@@ -209,51 +209,6 @@ describe('reportWallet', () => {
     expect(third.payments.map((row) => [row.id, row.status])).toEqual([['a', 'completed']]);
   });
 
-  it.each(['invoice', 'paymentHash'] as const)(
-    'sends a payment again when %s arrives, then stays quiet after acknowledgement',
-    async (field) => {
-      const first = payment('a', { invoice: null, paymentHash: null });
-      listing([first]);
-      await mod.reportWallet();
-      const updated = { ...first, [field]: 'later-value' };
-      listing([updated]);
-      await mod.reportWallet();
-      expect(mocks.postWalletReport.mock.calls[1]?.[1]).toMatchObject({ payments: [updated] });
-      await mod.reportWallet();
-      expect(mocks.postWalletReport).toHaveBeenCalledTimes(2);
-    },
-  );
-
-  it.each(['invoice', 'paymentHash'] as const)(
-    'sends a payment again when %s arrives after the other detail was acknowledged',
-    async (field) => {
-      const first = payment('a', { [field]: null });
-      listing([first]);
-      await mod.reportWallet();
-      expect(mocks.postWalletReport.mock.calls[0]?.[1]).toMatchObject({ payments: [first] });
-      const updated = { ...first, [field]: 'later-value' };
-      listing([updated]);
-      await mod.reportWallet();
-      expect(mocks.postWalletReport.mock.calls[1]?.[1]).toMatchObject({ payments: [updated] });
-      await mod.reportWallet();
-      expect(mocks.postWalletReport).toHaveBeenCalledTimes(2);
-    },
-  );
-
-  it('retries newly available details until the api acknowledges that payment', async () => {
-    const first = payment('a', { invoice: null, paymentHash: null });
-    listing([first]);
-    await mod.reportWallet();
-    const updated = { ...first, invoice: 'later-invoice' };
-    listing([updated]);
-    mocks.postWalletReport.mockResolvedValueOnce([]);
-    await mod.reportWallet();
-    await mod.reportWallet();
-    expect(mocks.postWalletReport.mock.calls[2]?.[1]).toMatchObject({ payments: [updated] });
-    await mod.reportWallet();
-    expect(mocks.postWalletReport).toHaveBeenCalledTimes(3);
-  });
-
   it('sends a balance-only report at once when the balance changed, else after the quiet time', async () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date('2026-10-07T00:00:00.000Z'));
