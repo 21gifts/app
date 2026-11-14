@@ -4072,10 +4072,10 @@ The `/me/wallet/counterparties` route re-exports `proxyMeWalletCounterpartiesPos
 
 ## Function: PUT
 
-- **Purpose:** Shared App Router PUT export name. `/me/about` re-exports `proxyMeAboutPut`; `/me/wallet` re-exports `proxyMeWalletPut`; `/me/recovery-share` re-exports `proxyMeRecoverySharePut`; `/me/held-shares/[id]` calls `proxyMeHeldSharePut` with the async `id`.
-- **Inputs:** Incoming `Request` with Bearer session and JSON `{ text }` (`/me/about`), `{ sparkPubkey }` (`/me/wallet`), `{ sparkPubkey, share }` (`/me/recovery-share`), or `{ ciphertext }` with the async box `id` (`/me/held-shares/[id]`).
+- **Purpose:** Shared App Router PUT export name. `/me/about` re-exports `proxyMeAboutPut`; `/me/wallet` re-exports `proxyMeWalletPut`; `/me/recovery-share` re-exports `proxyMeRecoverySharePut`; `/me/held-shares/[id]` calls `proxyMeHeldSharePut` with the async `id`; `/fond/deposit-address` re-exports `proxyFondDepositAddressPut`.
+- **Inputs:** Incoming `Request` with Bearer session and JSON `{ text }` (`/me/about`), `{ sparkPubkey }` (`/me/wallet`), `{ sparkPubkey, share }` (`/me/recovery-share`), `{ ciphertext }` with the async box `id` (`/me/held-shares/[id]`), or `{ address }` (`/fond/deposit-address`, Bearer session of the Fond account).
 - **Returns / side effects:** Upstream api `Response`.
-- **Used by:** Same-origin About me save (`PUT /me/about` / `putAboutMe`), the wallet key claim (`PUT /me/wallet` / `putWallet`), the social recovery share upload (`PUT /me/recovery-share` / `putRecoveryShare`), and a held-share box (`PUT /me/held-shares/[id]` / `putHeldShareBox`).
+- **Used by:** Same-origin About me save (`PUT /me/about` / `putAboutMe`), the wallet key claim (`PUT /me/wallet` / `putWallet`), the social recovery share upload (`PUT /me/recovery-share` / `putRecoveryShare`), a held-share box (`PUT /me/held-shares/[id]` / `putHeldShareBox`), and the Fond wallet's deposit address (`PUT /fond/deposit-address` / `putFondDepositAddress` through `FondDepositSync`).
 
 ## Function: proxyApiRequest
 
