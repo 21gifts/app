@@ -379,7 +379,7 @@ describe('summarizeLoans', () => {
     });
   });
 
-  it('keeps the original combined next amount when every next sat figure is known', () => {
+  it('suppresses the paired next aggregate when no next sat figure is positive', () => {
     expect(
       summarizeLoans(
         {
@@ -395,8 +395,8 @@ describe('summarizeLoans', () => {
       ).next,
     ).toEqual({
       dueOn: '2026-10-11',
-      sats: 0,
-      amount: '₱3.00',
+      sats: null,
+      amount: null,
       unpriced: [],
     });
   });

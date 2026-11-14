@@ -1931,6 +1931,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/loans/repay',
+    id: 'partial-unpriced',
+    image: 'loans-repay-partial-unpriced.png',
+    visual: 'state-loans-repay-partial-unpriced',
+    needle: 'state /loans/repay partial-unpriced',
+  },
+  {
+    route: '/loans/repay',
     id: 'partial-who-open',
     image: 'loans-repay-partial-who-open.png',
     visual: 'state-loans-repay-partial-who-open',
@@ -4330,6 +4337,13 @@ export const SCREEN_VARIANTS = [
     image: 'welcome-menu-loan-due.png',
     visual: 'state-welcome-menu-loan-due',
     needle: 'state /welcome menu-loan-due',
+  },
+  {
+    route: '/welcome',
+    id: 'menu-loan-mixed-rate',
+    image: 'welcome-menu-loan-mixed-rate.png',
+    visual: 'state-welcome-menu-loan-mixed-rate',
+    needle: 'state /welcome menu-loan-mixed-rate',
   },
   {
     route: '/welcome',

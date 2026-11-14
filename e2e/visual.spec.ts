@@ -6945,6 +6945,29 @@ test.describe('loans repay screens', () => {
         : row,
     ),
   });
+  const partialUnpricedLoan = loanWith(loanB, {
+    totalSats: null,
+    maxSats: null,
+    maxAmount: null,
+    due: {
+      payableSats: null,
+      payablePeople: 1,
+      payableAmount: '15.00',
+      waitingSats: 0,
+      waitingPeople: 0,
+    },
+    next: null,
+  });
+  const partialUnpricedLedger = ledgerWith(ledgerB, {
+    repayments: ledgerB.repayments.map((row) => {
+      if (row.status !== 'due') {
+        return row;
+      }
+      return row.accountId === 'acc_elena'
+        ? { ...row, amount: '15.00', sats: null, dueSats: null }
+        : { ...row, status: 'paid' as const, dueSats: null };
+    }),
+  });
   const paidLedger = ledgerWith(ledgerA, {
     repayments: ledgerA.repayments.map((row) =>
       row.status === 'due' ? { ...row, status: 'paid' as const, dueSats: null } : row,
@@ -7574,6 +7597,18 @@ test.describe('loans repay screens', () => {
       text: 'Still due today',
     });
     await shotScreen(page, 'state-loans-repay-partial');
+  });
+
+  test('state /loans/repay partial-unpriced', async ({ page }) => {
+    await loanShot(page, {
+      loans: [partialUnpricedLoan],
+      ledgers: { 'loan-b': partialUnpricedLedger },
+      visual: 'repay-partial',
+      text: 'Still due today',
+    });
+    await expect(page.getByText('₱15.00', { exact: true })).toBeVisible();
+    await expect(page.getByRole('button', { name: /^Send / })).toHaveCount(0);
+    await shotScreen(page, 'state-loans-repay-partial-unpriced');
   });
 
   test('state /loans/repay partial-who-open', async ({ page }) => {
@@ -31185,6 +31220,17 @@ test.describe('welcome forum variants', () => {
     await expect(page.getByText('Loan repayment due today')).toBeVisible();
     await expect(page.getByRole('link', { name: 'Send' }).last()).toBeVisible();
     await shotScreen(page, 'state-welcome-menu-loan-due');
+  });
+
+  test('state /welcome menu-loan-mixed-rate', async ({ page }) => {
+    await openWelcomeLoans(page, myLoans(mixedPricedUnpricedLoans));
+    await page.getByRole('button', { name: 'Menu' }).click();
+    const menu = page.locator('#signed-in-menu');
+    await expect(menu.getByText('Loan repayment due today')).toBeVisible();
+    await expect(menu.getByText("₱30.00 · ₿1'000", { exact: true })).toBeVisible();
+    await expect(menu.getByText('₱15.00', { exact: true })).toBeVisible();
+    await expect(menu.getByRole('link', { name: 'Send' })).toBeVisible();
+    await shotScreen(page, 'state-welcome-menu-loan-mixed-rate');
   });
 
   test('state /welcome menu-loan-behind', async ({ page }) => {

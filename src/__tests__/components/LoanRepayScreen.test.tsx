@@ -2016,6 +2016,24 @@ describe('LoanRepayScreen', () => {
     expect(screen.queryByText(/₿0/)).toBeNull();
   });
 
+  it('omits the next aggregate when its only priced loan has zero sats', () => {
+    vi.mocked(getRepayment).mockResolvedValue(null);
+    const clearDue = { ...loan().due, payableSats: 0, payablePeople: 0 };
+    show({
+      sundayRest: false,
+      loans: [
+        loan({
+          goalCurrency: 'PHP',
+          due: clearDue,
+          next: { dueOn: '2026-10-11', amount: '3.00', sats: 0 },
+        }),
+      ],
+    });
+    expect(screen.getByText('Nothing due today')).toBeTruthy();
+    expect(screen.queryByText(/^Next:/)).toBeNull();
+    expect(screen.queryByText(/₿0/)).toBeNull();
+  });
+
   it('shows tomorrow and later next lines for several recipients', async () => {
     const clearDue = { ...loan().due, payableSats: 0, payablePeople: 0 };
     vi.mocked(getRepayment).mockResolvedValue(
@@ -2324,6 +2342,47 @@ describe('LoanRepayScreen', () => {
     vi.mocked(useLoanRepay).mockReturnValue(repay({ phase: 'repaid', sentSats: 0, pinned: true }));
     view.rerender(<LoanRepayScreen />);
     expect(screen.getByText('That was your last payment')).toBeTruthy();
+  });
+
+  it('keeps every current loan as context for a final due payment', () => {
+    const finalLoan = loan({ due: { ...loan().due, lastPayment: true } });
+    const zeroDueLoan = loan({
+      messageId: 'loan-2',
+      text: 'A second fully priced loan',
+      due: { ...loan().due, payableSats: 0, payablePeople: 0, lastPayment: false },
+    });
+    const data = { sundayRest: false, loans: [finalLoan, zeroDueLoan] };
+    const reload = vi.fn().mockResolvedValue(data);
+    const state = repay();
+    vi.mocked(useMyLoans).mockReturnValue({ loans: data, reload });
+    vi.mocked(useLoanRepay).mockReturnValue(state);
+    const view = renderWithLocale(<LoanRepayScreen />);
+
+    fireEvent.click(screen.getByRole('button', { name: /^Send ₿/ }));
+    expect(state.pay).toHaveBeenCalledWith([finalLoan], undefined, expect.any(Map));
+
+    vi.mocked(useMyLoans).mockReturnValue({
+      loans: {
+        sundayRest: false,
+        loans: [
+          loan({
+            due: {
+              ...finalLoan.due,
+              payableSats: 0,
+              payablePeople: 0,
+            },
+          }),
+          zeroDueLoan,
+        ],
+      },
+      reload,
+    });
+    vi.mocked(useLoanRepay).mockReturnValue(repay({ phase: 'repaid', sentSats: 1_000 }));
+    view.rerender(<LoanRepayScreen />);
+    expect(screen.queryByText('That was your last payment')).toBeNull();
+    expect(
+      screen.getByText(/last payment for “A sewing machine for my repair stall”/),
+    ).toBeTruthy();
   });
 
   it('keeps a final prepayment success when the refreshed loan list is empty', () => {

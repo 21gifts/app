@@ -235,11 +235,8 @@ export function summarizeLoans(data: MyLoans, style: NumberFormatStyle): LoansSu
   let nextAmount: string | null = null;
   const nextUnpriced: { loanIndex: number; amount: string }[] = [];
   if (nextDueOn !== null) {
-    const hasUnpricedNext = data.loans.some(
-      (loan) => loan.next !== null && loan.next.dueOn === nextDueOn && loan.next.sats === null,
-    );
     const amounts: { code: MyLoan['goalCurrency']; amount: string | null }[] = [];
-    nextSats = hasUnpricedNext ? null : 0;
+    nextSats = null;
     data.loans.forEach((loan, loanIndex) => {
       if (loan.next !== null && loan.next.dueOn === nextDueOn) {
         if (loan.next.sats === null) {
@@ -250,7 +247,7 @@ export function summarizeLoans(data: MyLoans, style: NumberFormatStyle): LoansSu
           if (amount !== null) {
             nextUnpriced.push({ loanIndex, amount });
           }
-        } else if (!hasUnpricedNext || loan.next.sats > 0) {
+        } else if (loan.next.sats > 0) {
           nextSats = (nextSats ?? 0) + loan.next.sats;
           amounts.push({ code: loan.goalCurrency, amount: loan.next.amount });
         }

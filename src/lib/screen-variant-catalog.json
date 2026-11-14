@@ -1590,6 +1590,12 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/loans/repay:partial-unpriced",
+    "label": "/loans/repay partial-unpriced",
+    "visual": "state-loans-repay-partial-unpriced",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/loans/repay:partial-who-open",
     "label": "/loans/repay partial-who-open",
     "visual": "state-loans-repay-partial-who-open",
@@ -3645,6 +3651,12 @@
     "id": "/welcome:menu-loan-due",
     "label": "/welcome menu-loan-due",
     "visual": "state-welcome-menu-loan-due",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:menu-loan-mixed-rate",
+    "label": "/welcome menu-loan-mixed-rate",
+    "visual": "state-welcome-menu-loan-mixed-rate",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {

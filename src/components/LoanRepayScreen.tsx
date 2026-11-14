@@ -288,14 +288,11 @@ export function LoanRepayScreen(): ReactElement {
         : next.amount === null
           ? money(next.sats)
           : `${next.amount} · ${bitcoinText(next.sats)}`;
-    const hasUnpricedNext = loans.loans.some(
-      (loan) => loan.next !== null && loan.next.dueOn === next.dueOn && loan.next.sats === null,
-    );
     const pricedIndexes = loans.loans.flatMap((loan, loanIndex) => {
       if (loan.next === null || loan.next.dueOn !== next.dueOn || loan.next.sats === null) {
         return [];
       }
-      return !hasUnpricedNext || loan.next.sats > 0 ? [loanIndex] : [];
+      return loan.next.sats > 0 ? [loanIndex] : [];
     });
     const parts = [
       ...(pricedAmount === null
@@ -551,7 +548,7 @@ export function LoanRepayScreen(): ReactElement {
     repay.activeAction.kind !== 'due' &&
     (repay.phase === 'preparing' || repay.phase === 'sending' || repay.phase === 'waiting');
   const rememberAndPay = (onlyShares?: ReadonlySet<string>): void => {
-    setPaidLoans(payableLoans);
+    setPaidLoans(loans.loans);
     setSendingSats(onlyShares === undefined ? fullSendSats : fittingSats);
     const amounts = onlyShares === undefined ? fullSendAmounts : fittingAmounts;
     setSendingAmounts(amounts);

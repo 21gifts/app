@@ -1434,13 +1434,13 @@ The waiting state with **Who gets paid** open: Bruno **₿500 · $0.50** and Car
 
 ### Variant: waiting-all
 
-All three lenders are unavailable. The box says **Nothing to send now** with no payable amount and no people count, followed by the muted priced waiting line **₿1'000 · $1.00 waits for 3 lenders who haven't set up their wallets yet.** There is no wallet balance line or Send control.
+All three lenders are unavailable. The box says **Nothing to send now** with no amount and no people count, followed by the muted note **Your lenders haven't set up their wallets yet. Today's payment waits until they do.** There is no wallet balance line or Send control.
 
 ![21.gifts loans repay all lenders waiting](images/loans-repay-waiting-all.png)
 
 ### Variant: waiting-all-who-open
 
-The all-lenders-waiting state with **Who gets paid** open. The box still says **Nothing to send now** with no payable amount; Bruno **₿500 · $0.50**, Carla **₿300 · $0.30**, and Diego **₿200 · $0.20** are muted rows, each with its own **Waiting for … to set up their wallet** line under the name (for example **Waiting for Bruno to set up their wallet**) and no warning icon. The priced waiting line **₿1'000 · $1.00 waits for 3 lenders who haven't set up their wallets yet.** remains visible, with no wallet balance line or Send control.
+The all-lenders-waiting state with **Who gets paid** open. The box still says **Nothing to send now** with no amount; Bruno **₿500 · $0.50**, Carla **₿300 · $0.30**, and Diego **₿200 · $0.20** are muted rows, each with its own **Waiting for … to set up their wallet** line under the name (for example **Waiting for Bruno to set up their wallet**) and no warning icon. **Your lenders haven't set up their wallets yet. Today's payment waits until they do.** remains visible, with no wallet balance line or Send control.
 
 ![21.gifts loans repay all waiting recipients](images/loans-repay-waiting-all-who-open.png)
 
@@ -1533,6 +1533,12 @@ The sending state with **Who gets paid** open. The due box keeps **₿1'000 · $
 Bruno's **₿500** share was sent and Carla plus Diego remain. The heading is **Still due today**, the amount is **₿500** with **$0.50** under it, and the box says **Sent ₿500 · $0.50 to Bruno** before **From your wallet · ₿21'000 · $21.00** and **Send ₿500 · $0.50**.
 
 ![21.gifts loans repay partial payment](images/loans-repay-partial.png)
+
+### Variant: partial-unpriced
+
+After a partial success, the only payable loan left is waiting for its PHP rate. The heading is **Still due today**, the remaining debt is the fiat-only **₱15.00**, and the box says **Sent ₿500 · $0.50 to Bruno**. There is no wallet balance line or Send control until the remaining amount can be priced in bitcoin.
+
+![21.gifts loans repay partial payment with unpriced debt](images/loans-repay-partial-unpriced.png)
 
 ### Variant: partial-who-open
 
@@ -3287,6 +3293,12 @@ The same two PHP loans after **Show loans** is pressed. Both text plus bar rows 
 Open **Menu** with Loan A payable. Under its first row, the account header shows **Loan repayment due today**, **₿1'000 · $1.00**, and **Send**. Send closes the Menu and opens `/loans/repay`.
 
 ![21.gifts welcome menu loan due](images/welcome-menu-loan-due.png)
+
+### Variant: menu-loan-mixed-rate
+
+Open **Menu** with two funded PHP loans: one priced and payable, the other payable but still waiting for its bitcoin rate. The account header shows **Loan repayment due today**, the paired line **₱30.00 · ₿1'000**, a separate fiat-only **₱15.00** line, and **Send** to `/loans/repay`.
+
+![21.gifts welcome menu mixed-rate loans](images/welcome-menu-loan-mixed-rate.png)
 
 ### Variant: menu-loan-behind
 
