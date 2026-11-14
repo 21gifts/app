@@ -21,46 +21,6 @@ export interface FondDepositProps {
 }
 
 /**
- * On-chain deposit target: BIP21 QR, the address in mono type, and Copy.
- *
- * @param props - The checked mainnet address.
- * @returns The on-chain block.
- */
-function OnchainDeposit({ address }: { address: string }): ReactElement {
-  const { t } = useTranslations();
-  const { copied, copy } = useCopied();
-  return (
-    <>
-      <p className="text-center text-sm text-app-muted">{t('fond.depositOnchainHint')}</p>
-      <p className="w-full max-w-[266px] break-all text-center font-mono text-sm text-app-fg">
-        {address}
-      </p>
-      <div className="w-full max-w-[266px] [&_svg]:h-auto [&_svg]:w-full">
-        <QrCode value={`bitcoin:${address}`} label={t('fond.depositOnchainQr')} />
-      </div>
-      <IconButton
-        type="button"
-        variant="ghost"
-        size="sm"
-        aria-label={copied ? t('wallet.copied') : t('wallet.copy')}
-        onClick={() => {
-          void copy(address);
-        }}
-      >
-        {copied ? (
-          <Check aria-hidden="true" className="h-3.5 w-3.5 text-app-success" />
-        ) : (
-          <Copy aria-hidden="true" className="h-3.5 w-3.5" />
-        )}
-      </IconButton>
-      <p className="max-w-sm text-center text-xs text-app-muted">
-        {t('fond.depositOnchainConfirmations')}
-      </p>
-    </>
-  );
-}
-
-/**
  * Deposit block of the public Fond page: **Instant payment** (Lightning: the
  * Fond's 21.gifts address through {@link WalletOwnAddress}) or **On-chain
  * deposit** (the Fond wallet's deposit address as a BIP21 QR). The labels are
@@ -76,6 +36,7 @@ function OnchainDeposit({ address }: { address: string }): ReactElement {
 export function FondDeposit({ username, onchainAddress }: FondDepositProps): ReactElement {
   const { t } = useTranslations();
   const [method, setMethod] = useState<FondDepositMethod>('lightning');
+  const { copied, copy } = useCopied();
   const onchain =
     onchainAddress !== null && isMainnetBitcoinAddress(onchainAddress) ? onchainAddress : null;
   return (
@@ -100,7 +61,33 @@ export function FondDeposit({ username, onchainAddress }: FondDepositProps): Rea
         />
       )}
       {onchain !== null && method === 'onchain' ? (
-        <OnchainDeposit address={onchain} />
+        <>
+          <p className="text-center text-sm text-app-muted">{t('fond.depositOnchainHint')}</p>
+          <p className="w-full max-w-[266px] break-all text-center font-mono text-sm text-app-fg">
+            {onchain}
+          </p>
+          <div className="w-full max-w-[266px] [&_svg]:h-auto [&_svg]:w-full">
+            <QrCode value={`bitcoin:${onchain}`} label={t('fond.depositOnchainQr')} />
+          </div>
+          <IconButton
+            type="button"
+            variant="ghost"
+            size="sm"
+            aria-label={copied ? t('wallet.copied') : t('wallet.copy')}
+            onClick={() => {
+              void copy(onchain);
+            }}
+          >
+            {copied ? (
+              <Check aria-hidden="true" className="h-3.5 w-3.5 text-app-success" />
+            ) : (
+              <Copy aria-hidden="true" className="h-3.5 w-3.5" />
+            )}
+          </IconButton>
+          <p className="max-w-sm text-center text-xs text-app-muted">
+            {t('fond.depositOnchainConfirmations')}
+          </p>
+        </>
       ) : (
         <WalletOwnAddress username={username} copy hint="fond.depositLightningHint" />
       )}
