@@ -23,12 +23,12 @@ describe('FondDeposit', () => {
     expect(screen.getByRole('heading', { name: 'Top up this Fond' })).toBeTruthy();
     const group = screen.getByRole('group', { name: 'Deposit method' });
     expect(group).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'Instant payment' }).getAttribute('aria-pressed')).toBe(
-      'true',
-    );
-    expect(screen.getByRole('button', { name: 'On-chain deposit' }).getAttribute('aria-pressed')).toBe(
-      'false',
-    );
+    expect(
+      screen.getByRole('button', { name: 'Instant payment' }).getAttribute('aria-pressed'),
+    ).toBe('true');
+    expect(
+      screen.getByRole('button', { name: 'On-chain deposit' }).getAttribute('aria-pressed'),
+    ).toBe('false');
     expect(await screen.findByText('tondo-fond@21.gifts')).toBeTruthy();
     expect(screen.getByText('Scan the code or send to this address:')).toBeTruthy();
     expect(screen.queryByText('To add Bitcoin, send it to your address:')).toBeNull();
@@ -39,9 +39,9 @@ describe('FondDeposit', () => {
   it('switches to On-chain: BIP21 QR without an amount, the address, and the confirmations line', async () => {
     renderWithLocale(<FondDeposit username="tondo-fond" onchainAddress={ADDRESS} />);
     fireEvent.click(screen.getByRole('button', { name: 'On-chain deposit' }));
-    expect(screen.getByRole('button', { name: 'On-chain deposit' }).getAttribute('aria-pressed')).toBe(
-      'true',
-    );
+    expect(
+      screen.getByRole('button', { name: 'On-chain deposit' }).getAttribute('aria-pressed'),
+    ).toBe('true');
     const qr = screen.getByRole('img', { name: 'Bitcoin address QR code' });
     expect(qr.getAttribute('data-value')).toBe(`bitcoin:${ADDRESS}`);
     expect(screen.getByText(ADDRESS).className).toContain('break-all');

@@ -103,7 +103,9 @@ test('Function: FondDeposit — Lightning on load, On-chain shows the BIP21 QR a
   expect(await page.evaluate(() => navigator.clipboard.readText())).toBe(ONCHAIN_ADDRESS);
   await page.reload();
   await expect(
-    page.getByRole('group', { name: 'Deposit method' }).getByRole('button', { name: 'Instant payment' }),
+    page
+      .getByRole('group', { name: 'Deposit method' })
+      .getByRole('button', { name: 'Instant payment' }),
   ).toHaveAttribute('aria-pressed', 'true');
 });
 
