@@ -36,6 +36,10 @@ const DETAIL = {
   ],
 };
 
+/**
+ * Signs Ada in and answers every `GET /me`. `funding` may be a getter, read when
+ * the request arrives.
+ */
 async function seedAdaSession(
   page: import('@playwright/test').Page,
   role: 'basis' | 'moderator' | 'founder' | 'verified' = 'basis',
@@ -45,6 +49,7 @@ async function seedAdaSession(
     localStorage.setItem('21gifts.session', 'sess-e2e');
   });
   await page.route(/\/me$/, async (route) => {
+    const fundingNow = typeof funding === 'function' ? funding() : funding;
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
@@ -64,8 +69,8 @@ async function seedAdaSession(
         setup: null,
         missing: [],
         funding:
-          funding !== undefined
-            ? funding
+          fundingNow !== undefined
+            ? fundingNow
             : role === 'basis'
               ? null
               : {
@@ -565,6 +570,253 @@ test('Function: postFundingApply — POST /funding/apply without bearer is 401',
   request,
 }) => {
   expect((await request.post('/funding/apply')).status()).toBe(401);
+});
+
+const ADMITTED = {
+  status: 'admitted',
+  trialUtcDate: null,
+  admittedAt: Date.parse('2026-08-28T12:00:00.000Z'),
+  reviewedByName: 'Rose',
+};
+
+const NO_GRANT = { status: 'none', trialUtcDate: null, admittedAt: null, reviewedByName: null };
+
+/** Answers `GET /funding/places` with `placesLeft` free places of 10. */
+async function stubPlaces(
+  page: import('@playwright/test').Page,
+  placesLeft: () => number,
+): Promise<void> {
+  await page.route('**/funding/places', async (route) => {
+    const left = placesLeft();
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        round: 1,
+        startsAt: '2026-10-16T00:00:00.000Z',
+        places: 10,
+        admitted: 10 - left,
+        placesLeft: left,
+        nextGoalShops: 20,
+      }),
+    });
+  });
+}
+
+/** Answers `POST /funding/withdraw` with `status` and counts the requests. */
+async function stubWithdraw(
+  page: import('@playwright/test').Page,
+  status: number,
+  hold: Promise<void> = Promise.resolve(),
+): Promise<{ count: () => number }> {
+  let count = 0;
+  await page.route(/\/funding\/withdraw$/, async (route) => {
+    count += 1;
+    await hold;
+    await route.fulfill({
+      status,
+      contentType: 'application/json',
+      body: JSON.stringify(
+        status === 200
+          ? { funding: NO_GRANT }
+          : { error: status === 409 ? 'Conflict' : status === 404 ? 'Not found' : 'Unauthorized' },
+      ),
+    });
+  });
+  return { count: () => count };
+}
+
+test("Function: FundingWithdrawControl — Leave the grant asks first, then shows the apply card, the free place, and today's payout again", async ({
+  page,
+}) => {
+  let withdrawn = false;
+  await seedAdaSession(page, 'verified', () =>
+    withdrawn
+      ? { ...NO_GRANT, payoutToday: { state: 'blocked', reason: 'admission' } }
+      : { ...ADMITTED, payoutToday: { state: 'paid', reason: null } },
+  );
+  await stubPlaces(page, () => (withdrawn ? 1 : 0));
+  const withdraw = await stubWithdraw(page, 200);
+  page.on('request', (req) => {
+    if (req.method() === 'POST' && /\/funding\/withdraw$/.test(new URL(req.url()).pathname)) {
+      withdrawn = true;
+    }
+  });
+  await page.goto('/grants');
+  const panel = page.getByRole('group', { name: 'Grant places' });
+  const payout = page.getByRole('group', { name: "Today's payout" });
+  await expect(panel.getByText('0 of 10 places are free.')).toBeVisible();
+  await expect(payout.getByText('Payout made today.')).toBeVisible();
+  await page.getByRole('button', { name: 'Leave the grant' }).click();
+  const question = page.getByRole('group', { name: 'Leave the grant?' });
+  await expect(
+    question.getByText(
+      'Your daily payout stops today. Your place becomes free for someone else. You can apply again later, but a place is not guaranteed.',
+    ),
+  ).toBeVisible();
+  expect(withdraw.count()).toBe(0);
+  await question.getByRole('button', { name: 'Leave the grant' }).click();
+  await expect(page.getByRole('link', { name: 'Apply for the 21 gifts grant' })).toBeVisible();
+  await expect(panel.getByText('1 of 10 places is free.')).toBeVisible();
+  await expect(
+    payout.getByRole('link', { name: 'You must be admitted to the grant program.' }),
+  ).toHaveAttribute('href', '/grants/apply');
+  await expect(page.getByRole('button', { name: 'Leave the grant' })).toHaveCount(0);
+  expect(withdraw.count()).toBe(1);
+});
+
+test('Function: discardOwnerRefreshes — after a 409 the payout line shows the reloaded reason, not the one from opening /grants', async ({
+  page,
+}) => {
+  let conflicted = false;
+  await seedAdaSession(page, 'verified', () =>
+    conflicted
+      ? { ...NO_GRANT, payoutToday: { state: 'blocked', reason: 'admission' } }
+      : { ...ADMITTED, payoutToday: { state: 'paid', reason: null } },
+  );
+  await stubWithdraw(page, 409);
+  page.on('request', (req) => {
+    if (req.method() === 'POST' && /\/funding\/withdraw$/.test(new URL(req.url()).pathname)) {
+      conflicted = true;
+    }
+  });
+  await page.goto('/grants');
+  const payout = page.getByRole('group', { name: "Today's payout" });
+  await expect(payout.getByText('Payout made today.')).toBeVisible();
+  await page.getByRole('button', { name: 'Leave the grant' }).click();
+  await page
+    .getByRole('group', { name: 'Leave the grant?' })
+    .getByRole('button', { name: 'Leave the grant' })
+    .click();
+  await expect(page.getByRole('link', { name: 'Apply for the 21 gifts grant' })).toBeVisible();
+  await expect(
+    payout.getByRole('link', { name: 'You must be admitted to the grant program.' }),
+  ).toHaveAttribute('href', '/grants/apply');
+  await expect(payout.getByText('Payout made today.')).toHaveCount(0);
+});
+
+test('Function: FundingWithdrawControl — Cancel closes the question and sends nothing', async ({
+  page,
+}) => {
+  await seedAdaSession(page, 'verified', { ...NO_GRANT, status: 'pending' });
+  const withdraw = await stubWithdraw(page, 200);
+  await page.goto('/grants');
+  await page.getByRole('button', { name: 'Withdraw my application' }).click();
+  const question = page.getByRole('group', { name: 'Withdraw your application?' });
+  await expect(
+    question.getByText('A moderator will no longer review it. You can apply again later.'),
+  ).toBeVisible();
+  await question.getByRole('button', { name: 'Cancel' }).click();
+  await expect(question).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Withdraw my application' })).toBeVisible();
+  expect(withdraw.count()).toBe(0);
+});
+
+test('Function: postFundingWithdraw — an api without the endpoint (404) keeps the question open with the error', async ({
+  page,
+}) => {
+  await seedAdaSession(page, 'verified', { ...ADMITTED, status: 'trial', admittedAt: null });
+  await stubWithdraw(page, 404);
+  await page.goto('/grants');
+  await page.getByRole('button', { name: 'Leave the grant' }).click();
+  const question = page.getByRole('group', { name: 'Leave the grant?' });
+  await question.getByRole('button', { name: 'Leave the grant' }).click();
+  await expect(question.getByRole('alert')).toHaveText(
+    'Could not leave the grant. Please try again.',
+  );
+  await expect(page).toHaveURL(/\/grants$/);
+  await expect(question.getByRole('button', { name: 'Cancel' })).toBeEnabled();
+});
+
+test('Function: postFundingWithdraw — 409 loads the account again and shows its state without an error', async ({
+  page,
+}) => {
+  await page.addInitScript(() => {
+    localStorage.setItem('21gifts.session', 'sess-e2e');
+  });
+  let conflicted = false;
+  let reloadsAfterConflict = 0;
+  await page.route(/\/me$/, async (route) => {
+    if (conflicted) {
+      reloadsAfterConflict += 1;
+    }
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        id: 'acc_e2e',
+        linkingKey: null,
+        role: 'verified',
+        name: 'Ada',
+        location: null,
+        lightningAddress: null,
+        lightningAddressVerified: false,
+        forumLawsDismissed: false,
+        createdAt: 1,
+        rulesAgreedAt: 1_700_000_001,
+        viewKey: 'a'.repeat(64),
+        aboutMe: null,
+        setup: null,
+        missing: [],
+        funding: conflicted ? NO_GRANT : { ...NO_GRANT, status: 'pending' },
+      }),
+    });
+  });
+  await stubWithdraw(page, 409);
+  page.on('request', (req) => {
+    if (req.method() === 'POST' && /\/funding\/withdraw$/.test(new URL(req.url()).pathname)) {
+      conflicted = true;
+    }
+  });
+  await page.goto('/grants');
+  await page.getByRole('button', { name: 'Withdraw my application' }).click();
+  await page
+    .getByRole('group', { name: 'Withdraw your application?' })
+    .getByRole('button', { name: 'Withdraw my application' })
+    .click();
+  await expect(page.getByRole('link', { name: 'Apply for the 21 gifts grant' })).toBeVisible();
+  await expect(page.getByText(/^Could not (withdraw|leave)/)).toHaveCount(0);
+  expect(reloadsAfterConflict).toBeGreaterThanOrEqual(1);
+});
+
+test('Function: postFundingWithdraw — a double tap sends one request while the confirm action is busy', async ({
+  page,
+}) => {
+  await seedAdaSession(page, 'verified', ADMITTED);
+  let release: () => void = () => undefined;
+  const hold = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  const withdraw = await stubWithdraw(page, 200, hold);
+  await page.goto('/grants');
+  await page.getByRole('button', { name: 'Leave the grant' }).click();
+  const confirm = page
+    .getByRole('group', { name: 'Leave the grant?' })
+    .getByRole('button', { name: 'Leave the grant' });
+  await confirm.dblclick();
+  await expect(confirm).toBeDisabled();
+  release();
+  await expect(page.getByRole('link', { name: 'Apply for the 21 gifts grant' })).toBeVisible();
+  expect(withdraw.count()).toBe(1);
+});
+
+test('Function: postFundingWithdraw — 401 signs the member out', async ({ page }) => {
+  await seedAdaSession(page, 'verified', ADMITTED);
+  await stubWithdraw(page, 401);
+  await page.goto('/grants');
+  await page.getByRole('button', { name: 'Leave the grant' }).click();
+  await page
+    .getByRole('group', { name: 'Leave the grant?' })
+    .getByRole('button', { name: 'Leave the grant' })
+    .click();
+  await expect(page.getByRole('button', { name: 'Log in', exact: true })).toBeVisible();
+  expect(await page.evaluate(() => localStorage.getItem('21gifts.session'))).toBeNull();
+});
+
+test('Function: proxyFundingWithdrawPost — POST /funding/withdraw without bearer is 401', async ({
+  request,
+}) => {
+  expect((await request.post('/funding/withdraw')).status()).toBe(401);
 });
 
 test('Function: proxyFundingApplicationsGet — GET /funding/applications without bearer is 401', async ({

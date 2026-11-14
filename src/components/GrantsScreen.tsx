@@ -14,7 +14,8 @@ import { useAuthStore } from '@/stores/auth-store';
 
 /**
  * Signed-in grants page: the owner grant card, the public grant places
- * ({@link GrantPlacesPanel}), the continuation-goals link,
+ * ({@link GrantPlacesPanel}, loaded again whenever the owner's grant status
+ * changes, so a place freed by leaving the grant shows at once), the continuation-goals link,
  * the daily-payment text and amounts links, plus the staff queue for moderators.
  *
  * Renders nothing without a session. A signed-in account sees a secondary link
@@ -198,7 +199,7 @@ export function GrantsScreen(): ReactElement | null {
         </h2>
         <p className="text-center text-sm text-app-muted">{payoutContent}</p>
       </div>
-      <GrantPlacesPanel />
+      <GrantPlacesPanel reloadKey={account?.funding?.status ?? 'none'} />
       {account !== null ? (
         <ButtonLink href="/grants/goals" variant="secondary" size="lg">
           {t('funding.goals.link')}

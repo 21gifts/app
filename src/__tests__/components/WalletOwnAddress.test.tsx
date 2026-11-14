@@ -55,6 +55,12 @@ describe('WalletOwnAddress', () => {
     expect(screen.queryByText('Copy')).toBeNull();
   });
 
+  it('shows another hint line in place of the own top-up line', async () => {
+    renderWithLocale(<WalletOwnAddress username="ada" hint="fond.depositLightningHint" />);
+    expect(await screen.findByText('Scan the code or send to this address:')).toBeTruthy();
+    expect(screen.queryByText('To add Bitcoin, send it to your address:')).toBeNull();
+  });
+
   it('renders nothing for a username that cannot produce an address', async () => {
     const { container } = renderWithLocale(<WalletOwnAddress username="  " copy />);
     await act(async () => undefined);

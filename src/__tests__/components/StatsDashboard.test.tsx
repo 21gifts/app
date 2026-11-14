@@ -224,6 +224,10 @@ describe('StatsDashboard', () => {
       'Total of all 21.gifts wallets at the end of each UTC day, as reported by the wallets ' +
         "themselves. Fiat figures use today's spot, not the day's price.",
     );
+    const usageLink = within(wallets).getByRole('link', { name: 'See how the wallet is used' });
+    expect(usageLink.getAttribute('href')).toBe('/stats/wallet');
+    expect(usageLink.className).toContain('text-accent');
+    expect(usageLink.className).toContain('underline');
     const chart = screen.getByLabelText('Wallet balance over time in ₿');
     expect(chart.getAttribute('role')).toBe('group');
     expect(within(chart).getByText('2026-11-09')).toBeTruthy();
@@ -274,6 +278,7 @@ describe('StatsDashboard', () => {
       />,
     );
     expect(screen.queryByRole('region', { name: 'Wallets' })).toBeNull();
+    expect(screen.queryByRole('link', { name: 'See how the wallet is used' })).toBeNull();
     expect(useSpotRate).toHaveBeenCalledWith(false);
     expect(useSpotRate).not.toHaveBeenCalledWith(true);
   });
@@ -332,6 +337,7 @@ describe('StatsDashboard', () => {
       <StatsDashboard stats={EMPTY} error={null} loading={false} onRetry={() => undefined} />,
     );
     expect(screen.queryByRole('region', { name: 'Wallets' })).toBeNull();
+    expect(screen.queryByRole('link', { name: 'See how the wallet is used' })).toBeNull();
     view.unmount();
     renderWithLocale(
       <StatsDashboard
@@ -343,6 +349,7 @@ describe('StatsDashboard', () => {
       />,
     );
     expect(screen.queryByRole('region', { name: 'Wallets' })).toBeNull();
+    expect(screen.queryByRole('link', { name: 'See how the wallet is used' })).toBeNull();
   });
 
   it('shows loading copy', () => {

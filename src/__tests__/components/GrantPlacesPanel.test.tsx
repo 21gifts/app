@@ -100,4 +100,24 @@ describe('GrantPlacesPanel', () => {
     });
     expect(screen.queryByRole('group', { name: 'Grant places' })).toBeNull();
   });
+
+  it('loads again when the reload key changes and keeps the last numbers meanwhile', async () => {
+    fetchMock.mockResolvedValueOnce({ ...OPEN, admitted: 10, placesLeft: 0 });
+    const { rerender } = renderWithLocale(<GrantPlacesPanel reloadKey="admitted" />);
+    expect(await screen.findByText('0 of 10 places are free.')).toBeTruthy();
+    let resolve: (value: GrantPlaces) => void = () => undefined;
+    fetchMock.mockReturnValueOnce(
+      new Promise<GrantPlaces>((next) => {
+        resolve = next;
+      }),
+    );
+    rerender(<GrantPlacesPanel reloadKey="none" />);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(screen.getByText('0 of 10 places are free.')).toBeTruthy();
+    await act(async () => {
+      resolve({ ...OPEN, admitted: 9, placesLeft: 1 });
+      await Promise.resolve();
+    });
+    expect(await screen.findByText('1 of 10 places is free.')).toBeTruthy();
+  });
 });

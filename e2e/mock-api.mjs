@@ -162,6 +162,7 @@ const FOND_PAYMENT_HASH = 'ab'.repeat(32);
 /** Public `GET /fond/summary` fixture, as the api answers for `/fonds/tondo-fond`. */
 const FOND_SUMMARY = {
   username: 'tondo-fond',
+  onchainAddress: 'bc1p5cyxnuxmeuwuvkwfem96lqzszd02n6xdcjrs20cac6yqjjwudpxqkedrcr',
   receivedSats: 210000,
   paidOutSats: 21000,
   feesSats: 210,
@@ -226,6 +227,18 @@ function fondPayoutRow(state) {
 function roleAtLeast(role, min) {
   return ROLE_ORDER.indexOf(role) >= ROLE_ORDER.indexOf(min);
 }
+
+/**
+ * Deposit addresses the Fond sessions registered through
+ * `PUT /fond/deposit-address`, per bearer, with the number of calls.
+ *
+ * @type {Map<string, { address: string | null, puts: number }>}
+ */
+const fondDepositAddresses = new Map();
+
+/** Shape of a Bitcoin mainnet address, as the api checks it. */
+const MAINNET_ADDRESS_RE =
+  /^(?:bc1q[02-9ac-hj-np-z]{38}|bc1[qp][02-9ac-hj-np-z]{58}|[13][1-9A-HJ-NP-Za-km-z]{25,33})$/;
 
 /**
  * Whether a bearer may use the Fond payout fixtures: an account minted by
@@ -733,6 +746,180 @@ function missingContactRequirements(account) {
  */
 function missingListRequirements(account) {
   return account.missing.includes('rules');
+}
+
+/**
+ * Public wallet-usage fixture for `GET /wallets/usage`.
+ * Four UTC days from the release, both accounts, and every purpose.
+ * @returns The canned usage payload.
+ */
+function walletUsageFixture() {
+  const zero = { count: 0, sats: 0 };
+  const cell = (count, sats) => ({ count, sats });
+  const day = (name, purposes, active, sending, receiving) => ({
+    day: name,
+    purposes: {
+      deposit: purposes.deposit,
+      withdrawal: purposes.withdrawal,
+      shop_purchase: purposes.shop,
+      forum_gift: purposes.forum,
+      transfer: purposes.transfer,
+      fund_deposit: purposes.fundDeposit,
+      fund_payout: purposes.fundPayout,
+      other: zero,
+    },
+    activeWalletCount: active,
+    sendingWalletCount: sending,
+    receivingWalletCount: receiving,
+  });
+  const flow = (name, from, to, purpose, count, sats, feeSats) => ({
+    day: name,
+    from,
+    to,
+    purpose,
+    count,
+    sats,
+    feeSats,
+  });
+  const isoDays = (start, count) => {
+    const startMs = Date.parse(`${start}T00:00:00.000Z`);
+    const days = [];
+    for (let offset = 0; offset < count; offset += 1) {
+      days.push(new Date(startMs + offset * 86400000).toISOString().slice(0, 10));
+    }
+    return days;
+  };
+  const hours = [];
+  for (let hourUtc = 0; hourUtc < 24; hourUtc += 1) {
+    hours.push({ hourUtc, count: ((hourUtc % 5) + 1) * 9 });
+  }
+  hours[14].count += 31;
+  return {
+    releasedAt: '2026-11-09T11:17:00.000Z',
+    asOf: '2026-11-12T08:00:00.000Z',
+    totals: {
+      paymentCount: 661,
+      volumeSats: 1875089,
+      feeSats: 215,
+      medianSats: 210,
+      averageSats: 2837,
+      activeWalletCount: 71,
+      sendingWalletCount: 33,
+      topFiveSenderShare: 0.806,
+      heartCount: 329,
+      paidShopChargeCount: 84,
+    },
+    days: [
+      day(
+        '2026-11-09',
+        {
+          deposit: cell(9, 413955),
+          withdrawal: zero,
+          shop: cell(20, 70000),
+          forum: cell(100, 12000),
+          transfer: cell(1, 2000),
+          fundDeposit: cell(1, 280500),
+          fundPayout: cell(30, 69121),
+        },
+        40,
+        10,
+        20,
+      ),
+      day(
+        '2026-11-10',
+        {
+          deposit: cell(8, 110000),
+          withdrawal: cell(1, 20000),
+          shop: cell(22, 72000),
+          forum: cell(102, 13000),
+          transfer: cell(2, 3000),
+          fundDeposit: zero,
+          fundPayout: cell(31, 69122),
+        },
+        52,
+        18,
+        30,
+      ),
+      day(
+        '2026-11-11',
+        {
+          deposit: cell(8, 147793),
+          withdrawal: cell(1, 25000),
+          shop: cell(22, 74439),
+          forum: cell(102, 13465),
+          transfer: cell(2, 4000),
+          fundDeposit: zero,
+          fundPayout: cell(31, 69121),
+        },
+        61,
+        25,
+        40,
+      ),
+      day(
+        '2026-11-12',
+        {
+          deposit: cell(7, 121000),
+          withdrawal: cell(1, 24130),
+          shop: cell(24, 75000),
+          forum: cell(103, 14000),
+          transfer: cell(1, 3321),
+          fundDeposit: cell(1, 100000),
+          fundPayout: cell(31, 69122),
+        },
+        71,
+        33,
+        55,
+      ),
+    ],
+    flows: [
+      flow('2026-11-09', 'outside', 'fund', 'deposit', 1, 293955, 0),
+      flow('2026-11-09', 'outside', 'members', 'deposit', 8, 120000, 0),
+      flow('2026-11-09', 'members', 'members', 'shop_purchase', 20, 70000, 0),
+      flow('2026-11-09', 'members', 'members', 'forum_gift', 100, 12000, 0),
+      flow('2026-11-09', 'members', 'members', 'transfer', 1, 2000, 0),
+      flow('2026-11-09', 'members', 'fund', 'fund_deposit', 1, 280500, 0),
+      flow('2026-11-09', 'fund', 'members', 'fund_payout', 30, 69121, 0),
+      flow('2026-11-09', 'platform', 'fund', 'other', 0, 0, 0),
+      flow('2026-11-10', 'outside', 'members', 'deposit', 8, 110000, 0),
+      flow('2026-11-10', 'members', 'outside', 'withdrawal', 1, 20000, 70),
+      flow('2026-11-10', 'members', 'members', 'shop_purchase', 22, 72000, 0),
+      flow('2026-11-10', 'members', 'members', 'forum_gift', 102, 13000, 0),
+      flow('2026-11-10', 'members', 'members', 'transfer', 2, 3000, 0),
+      flow('2026-11-10', 'fund', 'members', 'fund_payout', 31, 69122, 0),
+      flow('2026-11-11', 'outside', 'fund', 'deposit', 1, 27088, 0),
+      flow('2026-11-11', 'outside', 'members', 'deposit', 7, 120705, 0),
+      flow('2026-11-11', 'members', 'outside', 'withdrawal', 1, 25000, 70),
+      flow('2026-11-11', 'members', 'members', 'shop_purchase', 22, 74439, 0),
+      flow('2026-11-11', 'members', 'members', 'forum_gift', 102, 13465, 0),
+      flow('2026-11-11', 'members', 'members', 'transfer', 2, 4000, 0),
+      flow('2026-11-11', 'fund', 'members', 'fund_payout', 31, 69121, 0),
+      flow('2026-11-12', 'outside', 'members', 'deposit', 7, 121000, 0),
+      flow('2026-11-12', 'members', 'outside', 'withdrawal', 1, 24130, 75),
+      flow('2026-11-12', 'members', 'members', 'shop_purchase', 24, 75000, 0),
+      flow('2026-11-12', 'members', 'members', 'forum_gift', 103, 14000, 0),
+      flow('2026-11-12', 'members', 'members', 'transfer', 1, 3321, 0),
+      flow('2026-11-12', 'members', 'fund', 'fund_deposit', 1, 100000, 0),
+      flow('2026-11-12', 'fund', 'members', 'fund_payout', 31, 69122, 0),
+    ],
+    amountBuckets: [
+      { key: '1', minSats: 1, maxSats: 1, count: 40, sats: 40 },
+      { key: '2-10', minSats: 2, maxSats: 10, count: 80, sats: 400 },
+      { key: '11-100', minSats: 11, maxSats: 100, count: 120, sats: 6000 },
+      { key: '101-1k', minSats: 101, maxSats: 1000, count: 300, sats: 90000 },
+      { key: '1k-10k', minSats: 1000, maxSats: 10000, count: 90, sats: 400000 },
+      { key: '10k-100k', minSats: 10000, maxSats: 100000, count: 25, sats: 800000 },
+      { key: '100k+', minSats: 100000, maxSats: null, count: 6, sats: 578649 },
+    ],
+    hours,
+    forum: isoDays('2026-10-12', 32).map((name, index) =>
+      index < 28
+        ? { day: name, gifts: 2, hearts: 1, sats: 210 }
+        : { day: name, gifts: 80, hearts: 30, sats: 12000 },
+    ),
+    shopCharges: isoDays('2026-10-26', 18).map((name, index) =>
+      index < 14 ? { day: name, created: 3, paid: 1 } : { day: name, created: 24, paid: 21 },
+    ),
+  };
 }
 
 const server = http.createServer(async (req, res) => {
@@ -2067,6 +2254,11 @@ const server = http.createServer(async (req, res) => {
         { day: '2026-07-01', postCount: 4 },
       ],
     });
+    return;
+  }
+
+  if (method === 'GET' && pathName === '/wallets/usage') {
+    json(res, 200, walletUsageFixture());
     return;
   }
 
@@ -3849,6 +4041,56 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
+  if (method === 'POST' && pathName === '/me/wallet/counterparties') {
+    // The merged api (21gifts/api#605) names the other side only from the
+    // transfer its own wallet read observed. Here the only observed transfer is
+    // the received fixture payment from alice; every other id gets no name,
+    // as a payment the server has not read yet, or one from outside 21.gifts.
+    const token = bearer(req);
+    const account = token === null ? undefined : byToken.get(token);
+    if (!account) {
+      json(res, 401, { error: 'Unauthorized' });
+      return;
+    }
+    if (Buffer.byteLength(rawBody) > 16384) {
+      json(res, 413, { error: 'Request body is too large' });
+      return;
+    }
+    let body;
+    try {
+      body = JSON.parse(rawBody);
+    } catch {
+      json(res, 400, { error: 'Invalid counterparty lookup' });
+      return;
+    }
+    const payments = body?.payments;
+    const valid =
+      Array.isArray(payments) &&
+      payments.length >= 1 &&
+      payments.length <= 32 &&
+      payments.every(
+        (payment) =>
+          typeof payment?.id === 'string' &&
+          payment.id.trim().length >= 1 &&
+          payment.id.trim().length <= 256 &&
+          (payment.direction === 'in' || payment.direction === 'out'),
+      );
+    if (!valid) {
+      json(res, 400, { error: 'Invalid counterparty lookup' });
+      return;
+    }
+    const counterparties = payments
+      .map((payment) => ({ id: payment.id.trim(), direction: payment.direction }))
+      .filter(
+        (payment) =>
+          payment.id === '6a6c3f1f-5841-415b-b8a6-f21d3e513bae' && payment.direction === 'in',
+      )
+      .slice(0, 1)
+      .map((payment) => ({ id: payment.id, accountId: 'acc_e2e', username: 'alice' }));
+    json(res, 200, { counterparties });
+    return;
+  }
+
   if (method === 'POST' && pathName === '/me/wallet/hearts') {
     const token = bearer(req);
     const account = token === null ? undefined : byToken.get(token);
@@ -4179,6 +4421,23 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
+  if (method === 'POST' && pathName === '/funding/withdraw') {
+    const token = bearer(req);
+    const account = token === null ? undefined : byToken.get(token);
+    if (!account) {
+      json(res, 401, { error: 'Unauthorized' });
+      return;
+    }
+    if (account.role === 'basis') {
+      json(res, 403, { error: 'Forbidden' });
+      return;
+    }
+    json(res, 200, {
+      funding: { status: 'none', trialUtcDate: null, admittedAt: null, reviewedByName: null },
+    });
+    return;
+  }
+
   if (method === 'GET' && pathName === '/funding/payout-days') {
     const token = bearer(req);
     const account = token === null ? undefined : byToken.get(token);
@@ -4202,6 +4461,21 @@ const server = http.createServer(async (req, res) => {
       ],
       rows: [],
     });
+    return;
+  }
+
+  if (method === 'GET' && pathName === '/shops/activity/shops') {
+    const token = bearer(req);
+    const account = token === null ? undefined : byToken.get(token);
+    if (!account) {
+      json(res, 401, { error: 'Unauthorized' });
+      return;
+    }
+    if (!roleAtLeast(account.role, 'moderator')) {
+      json(res, 403, { error: 'Forbidden' });
+      return;
+    }
+    json(res, 200, { windowDays: 30, today: '2026-09-26', shops: [] });
     return;
   }
 
@@ -4291,6 +4565,41 @@ const server = http.createServer(async (req, res) => {
       state.invoices += 1;
     }
     json(res, 200, state.invoice);
+    return;
+  }
+
+  if (method === 'PUT' && pathName === '/fond/deposit-address') {
+    const token = bearer(req);
+    if (token === null) {
+      json(res, 401, { error: 'Unauthorized' });
+      return;
+    }
+    // The api accepts only the configured Fond account here, not every rank at or above `fond`.
+    if (byToken.get(token)?.role !== 'fond') {
+      json(res, 403, { error: 'Fond only' });
+      return;
+    }
+    const body = jsonObject(rawBody);
+    const address = body?.address;
+    const state = fondDepositAddresses.get(token) ?? { address: null, puts: 0 };
+    state.puts += 1;
+    fondDepositAddresses.set(token, state);
+    if (typeof address !== 'string' || !MAINNET_ADDRESS_RE.test(address)) {
+      json(res, 400, { error: 'Invalid address' });
+      return;
+    }
+    state.address = address;
+    json(res, 200, { address });
+    return;
+  }
+
+  if (method === 'GET' && pathName === '/e2e/fond-deposit-address') {
+    const token = bearer(req);
+    if (token === null || !fondPayer(token)) {
+      json(res, 401, { error: 'Unauthorized' });
+      return;
+    }
+    json(res, 200, fondDepositAddresses.get(token) ?? { address: null, puts: 0 });
     return;
   }
 

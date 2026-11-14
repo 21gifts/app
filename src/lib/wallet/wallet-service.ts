@@ -9,6 +9,7 @@ import {
   loadWalletSdk,
   type OnchainSpeed,
   type WalletConnection,
+  type WalletDeposit,
   type WalletPayment,
   type WalletPaymentPage,
   type WalletPayRequest,
@@ -346,6 +347,9 @@ const incomingListeners = new Set<(payment: WalletPayment) => void>();
 
 /** Listeners told about each newly received payment at once, before the balance is read again. */
 const receivedListeners = new Set<(payment: WalletPayment) => void>();
+
+/** Listeners told when the SDK reports new or unclaimed on-chain deposits. */
+const depositListeners = new Set<() => void>();
 
 /**
  * Received payments that completed while the known payments of the current
@@ -814,7 +818,8 @@ async function announcePayment(
 
 /**
  * Handles one SDK event of the current connection: a sync reads the balance
- * again, and a received payment that just completed is announced to the
+ * again, a new or unclaimed deposit is told to the {@link onWalletDeposits}
+ * listeners, and a received payment that just completed is announced to the
  * {@link onIncomingPayment} listeners and read into the balance, once per
  * payment id; one that completes before the payments known at connect were
  * read is held until that list is in.
@@ -825,6 +830,12 @@ async function announcePayment(
 function onWalletEvent(event: WalletSdkEvent, mnemonic: string): void {
   if (event.type === 'synced') {
     void refreshWallet();
+    return;
+  }
+  if (event.type === 'newDeposits' || event.type === 'unclaimedDeposits') {
+    for (const listener of depositListeners) {
+      listener();
+    }
     return;
   }
   const payment = event.payment;
@@ -1208,6 +1219,67 @@ export async function receiveWalletSparkAddress(
     throw new Error('wallet-connect');
   }
   return conn.receiveSparkAddress();
+}
+
+/**
+ * Subscribes to the SDK's reports of new or unclaimed on-chain deposits
+ * (`newDeposits`, `unclaimedDeposits`) on the current connection.
+ *
+ * @param listener - Called once per such event.
+ * @returns Unsubscribe function.
+ */
+export function onWalletDeposits(listener: () => void): () => void {
+  depositListeners.add(listener);
+  return () => {
+    depositListeners.delete(listener);
+  };
+}
+
+/**
+ * Reads the static Bitcoin deposit address of the connected wallet.
+ *
+ * @returns The address.
+ * @throws Error `wallet-connect` without a connection; otherwise the SDK's error.
+ */
+export async function receiveWalletBitcoinAddress(): Promise<string> {
+  const conn = connection;
+  if (conn === null) {
+    throw new Error('wallet-connect');
+  }
+  return conn.receiveBitcoinAddress();
+}
+
+/**
+ * Lists the on-chain deposits the connected wallet has not finished claiming.
+ *
+ * @returns The deposits.
+ * @throws Error `wallet-connect` without a connection; otherwise the SDK's error.
+ */
+export async function listWalletUnclaimedDeposits(): Promise<WalletDeposit[]> {
+  const conn = connection;
+  if (conn === null) {
+    throw new Error('wallet-connect');
+  }
+  return conn.listUnclaimedDeposits();
+}
+
+/**
+ * Claims one deposit of the connected wallet with a fixed fee ceiling.
+ *
+ * @param deposit - Transaction id and output index of the deposit.
+ * @param maxFeeSats - Most the claim may cost, in sats.
+ * @returns Resolves once the SDK answered.
+ * @throws Error `wallet-connect` without a connection; otherwise the SDK's error.
+ */
+export async function claimWalletDeposit(
+  deposit: { txid: string; vout: number },
+  maxFeeSats: number,
+): Promise<void> {
+  const conn = connection;
+  if (conn === null) {
+    throw new Error('wallet-connect');
+  }
+  await conn.claimDeposit(deposit, maxFeeSats);
 }
 
 /**

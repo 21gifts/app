@@ -191,7 +191,16 @@
 - **Inputs:** None.
 - **Outputs:** `{ walletCount, fundedWalletCount, totalSats, totalBtc, asOf, balanceOverTime }` from the api. `walletCount` counts wallets that ever reported a balance; `fundedWalletCount` counts those with a current balance above zero. Empty data is zeros, `asOf: null`, and `balanceOverTime: []`.
 - **Errors:** The proxy forwards the upstream status, including 503 `{ error: "Wallet stats are unavailable" }`, or answers 502 if the api is unreachable.
-- **Used by:** `fetchWalletStats` on `/stats`. A failed fetch omits the Wallets section without breaking the gift stats.
+- **Used by:** `fetchWalletStats` on `/stats` and on `/stats/wallet` (the wallets-per-day chart). A failed fetch omits the Wallets section on `/stats`, and on `/stats/wallet` only hides that chart.
+- **Auth:** Public.
+
+## Endpoint: GET /wallets/usage
+
+- **Purpose:** Same-origin proxy of api `GET /wallets/usage` (aggregate wallet payments since the production release: totals, days, flows, amount buckets, hours, forum, and shop charges). No person, account, or payment id is in the body.
+- **Inputs:** None.
+- **Outputs:** `WalletUsage`: `releasedAt`, `asOf`, `totals`, `days`, `flows`, `amountBuckets`, `hours` (24 UTC hours), `forum`, and `shopCharges`. The client schema strips unknown extra fields and rejects a missing required field.
+- **Errors:** The proxy forwards the upstream status, or answers 502 if the api is unreachable. The page shows one quiet line **Could not load wallet usage. Please try again.** and does not offer **Try again**.
+- **Used by:** `fetchWalletUsage` on `/stats/wallet`.
 - **Auth:** Public.
 
 ## Endpoint: GET /habits
@@ -212,7 +221,7 @@
 
 - **Purpose:** Same-origin proxy of api `GET /fx/spot`: the current price of 1 BTC in USD, CHF, EUR, and PHP with `asOf` and `source`. A code the api could not price is left out of `rates`. Without any quote the body is `{ "asOf": null, "source": null, "rates": {} }`; the route has no error status of its own.
 - **Errors:** The proxy forwards the upstream status, or 502 if this proxy cannot reach the api.
-- **Used by:** `fetchFxSpot` through `useSpotRate`, on every screen that enters or converts an amount live (the amount field, `/pos`, gift and reaction amounts, the wallet, the payment fiat suffixes, and the `/stats` wallet totals and point tooltips).
+- **Used by:** `fetchFxSpot` through `useSpotRate`, on every screen that enters or converts an amount live (the amount field, `/pos`, gift and reaction amounts, the wallet, the payment fiat suffixes, the `/stats` wallet totals and point tooltips, and the `/stats/wallet` volume and Tondo fund balance).
 - **Auth:** Public. No bearer.
 
 ## Endpoint: GET /shops/activity
@@ -341,6 +350,13 @@
 - **Errors:** Upstream 400, 401, 413, 429, or 502 if the api is unreachable.
 - **Used by:** `postWalletReport` (from `reportWallet`).
 - **Auth:** Bearer.
+
+## Endpoint: POST /me/wallet/counterparties
+
+- **Purpose:** Same-origin proxy of api `POST /me/wallet/counterparties` (21gifts/api#605). Resolves the member on the other side of a completed payment: the sender for incoming (`in`) payments or the recipient for outgoing (`out`) payments. The api names that member only from the completed plain Spark transfer its own read of the caller's wallet observed, and only after the caller's own report carried the payment as completed. It reads wallets about once a minute, so a payment it has not read yet has no name and may get one on a later request; a Lightning swap, an on-chain payment, and a payment whose other side is not a member wallet never get one.
+- **Inputs:** Bearer session and a `payments` array of 1–32 `{ id, direction }` rows, with `in`/`out` directions; each id is trimmed and must then be 1–256 characters; at most 16384 bytes.
+- **Returns:** The upstream `200 { counterparties: [{ id, accountId, username }] }` (the trimmed id; a payment without a name is left out), or its error status: 401 `Unauthorized`, 400 `Invalid counterparty lookup`, 413 `Request body is too large`, 429 `Too many requests` after 60 lookups per account and minute, 503 `Counterparty lookup is unavailable`.
+- **Used by:** `fetchPaymentCounterparties` on the payment details screen, through `usePaymentCounterparty` (at most five lookups per opened screen).
 
 ## Endpoint: POST /me/wallet/hearts
 
@@ -1044,12 +1060,26 @@
 - **Used by:** `postFundingApply`. `FundingApplyScreen` calls it after Yes on the truth question for a verified account with status `none` or `rejected`. A basis account does not call it.
 - **Auth:** Bearer session; the api requires a role other than `basis`.
 
+## Endpoint: POST /funding/withdraw
+
+- **Purpose:** Same-origin Bearer proxy of api `POST /funding/withdraw`. The caller withdraws their own grant: an open application, a one-day trial, or an admitted place. No body. 200 `{ funding }` with status `none`.
+- **Errors:** Upstream 401/403/409/503 unchanged (409: nothing to withdraw, or a staff decision at the same moment), 404 while the api does not have the endpoint yet, or 502 if the api is unreachable.
+- **Used by:** `postFundingWithdraw`. `FundingWithdrawControl` calls it after the member confirms **Withdraw my application** or **Leave the grant** on `/grants`.
+- **Auth:** Bearer session; the api refuses `basis` with 403.
+
 ## Endpoint: GET /funding/payout-days
 
 - **Purpose:** Same-origin Bearer proxy of api `GET /funding/payout-days` (seven-day grant payout matrix for moderators). Lives under `/funding/payout-days` because Next.js forbids a `route.ts` beside the HTML page at `/moderate/payouts`.
 - **Errors:** Upstream 401 without a Bearer session, 403 when the account is below moderator, 503 when the api is unavailable, or 502 JSON if this proxy cannot reach the api origin.
 - **Used by:** `fetchFundingPayoutDays` via `FundingPayoutsScreen` on `/moderate/payouts`.
 - **Auth:** Bearer session; the api requires at least moderator. The app does not fetch this list for other signed-in roles (forbidden copy, no request).
+
+## Endpoint: GET /shops/activity/shops
+
+- **Purpose:** Same-origin Bearer proxy of api `GET /shops/activity/shops` (per-shop POS activity for staff: `windowDays`, `today`, and one row per shop with `noteId`, `name`, `npub`, `accountId`, `username`, `activeDays`, `lastChargeDay`, never used first, then oldest last charge first). The HTML table lives at `/moderate/shops`.
+- **Errors:** Upstream 401 without a Bearer session, 403 when the account is not staff, 503 when the api is unavailable, or 502 JSON if this proxy cannot reach the api origin.
+- **Used by:** `fetchShopActivityShops` via `ShopActivityShopsScreen` on `/moderate/shops`.
+- **Auth:** Bearer session; the api requires staff. The app does not fetch this list for signed-in roles below moderator (forbidden copy, no request).
 
 ## Endpoint: GET /funding/applications
 
@@ -1241,9 +1271,17 @@
 - **Returns:** Upstream 200 `{ id, bolt11, paymentHash, sparkInvoice }`, with `sparkInvoice` a string or null. After the payment, the api detects the send by payment hash, BOLT11, or Spark invoice string and settles the row itself.
 - **Errors:** Upstream 404 for an unknown or malformed id, 409 in progress / not payable / amount below one sat, 401, 403, 503, or 502 when unreachable.
 
+## Endpoint: PUT /fond/deposit-address
+
+- **Purpose:** Same-origin Bearer proxy of api `PUT /fond/deposit-address`. Body `{ address }`: the Fond wallet's static Bitcoin deposit address, read from the wallet SDK in the Fond member's signed-in app. The api stores it idempotently and returns it as `onchainAddress` in `GET /fond/summary`.
+- **Auth:** Bearer session of the Fond account. The api answers 403 for another session and 404 when its Fond surface is off.
+- **Returns:** Upstream 200 `{ address }`.
+- **Errors:** Upstream 400 for an invalid address, 401 without a Bearer session, 403 for another account, 404 when the surface is off, 503 when the api cannot store it now, or 502 when this proxy cannot reach the api.
+- **Used by:** `putFondDepositAddress` through `registerFondDepositAddress` in `FondDepositSync`.
+
 ## Endpoint: GET /fonds/[username]/summary
 
-- **Purpose:** Same-origin public proxy of api `GET /fond/summary` for the Fond page. The 200 body is `{ username, receivedSats, paidOutSats, feesSats, balanceSats, balanceSyncedAt, payoutsPaid, payoutsPaidUsd }`; `balanceSats` and `balanceSyncedAt` may be null, and `payoutsPaidUsd` is the stored two-decimal figure. The route answers 404 when the body's `username` is not the path handle, and answers a malformed 200 body with 502.
+- **Purpose:** Same-origin public proxy of api `GET /fond/summary` for the Fond page. The 200 body is `{ username, receivedSats, paidOutSats, feesSats, balanceSats, balanceSyncedAt, payoutsPaid, payoutsPaidUsd, onchainAddress }`; `balanceSats` and `balanceSyncedAt` may be null, and `payoutsPaidUsd` is the stored two-decimal figure. `onchainAddress` is the Fond wallet's registered deposit address or null; an api that does not send it yet reads as null. The route answers 404 when the body's `username` is not the path handle, and answers a malformed 200 body with 502.
 - **Auth:** Public, no session.
 - **Returns:** Upstream 200 with `Cache-Control: no-store`, or the route's own 404 `{ error: "Not found" }`.
 - **Errors:** Upstream 404 when the api runs without the Fond, 503 `{ error }` on failure, 502 when the api is unreachable or its 200 body is invalid, or the route's 404 for another handle.

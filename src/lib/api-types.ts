@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { ROLE_ORDER } from '@/lib/roles';
+import { isUtcDay } from '@/lib/utc-day';
 
 /** Notification stages stored on the signed-in account. */
 export const NOTIFICATION_LEVELS = ['all', 'active', 'mentions', 'none'] as const;
@@ -497,6 +498,44 @@ export const shopActivitySchema = z.object({
 export type ShopActivityDay = z.infer<typeof shopActivityDaySchema>;
 
 /**
+ * Runtime schema for one shop row from `GET /shops/activity/shops`.
+ *
+ * `npub` and `username` may be null. `activeDays` counts UTC days in the
+ * window with at least one POS charge by the assigned till account.
+ * `lastChargeDay` is that account's latest POS charge day, null when never.
+ */
+export const shopActivityShopSchema = z.object({
+  noteId: z.string().min(1),
+  name: z.string(),
+  npub: z.string().min(1).nullable(),
+  accountId: z.string().min(1),
+  username: z.string().min(1).nullable(),
+  activeDays: z.number().int().nonnegative(),
+  lastChargeDay: z.string().refine(isUtcDay).nullable(),
+});
+
+/**
+ * Runtime schema for the payload of `GET /shops/activity/shops` (staff).
+ *
+ * `shops` keeps the api order: never used first, then oldest last charge first.
+ */
+export const shopActivityShopsSchema = z.object({
+  windowDays: z.number().int().positive(),
+  today: z.string().refine(isUtcDay),
+  shops: z.array(shopActivityShopSchema),
+});
+
+/**
+ * One shop row of the staff per-shop activity table.
+ */
+export type ShopActivityShop = z.infer<typeof shopActivityShopSchema>;
+
+/**
+ * Staff per-shop activity table from the api.
+ */
+export type ShopActivityShops = z.infer<typeof shopActivityShopsSchema>;
+
+/**
  * Runtime schema for the payload of `GET /funding/goal`.
  *
  * Exactly 7 unique contiguous UTC days, oldest first, plus how many shops
@@ -599,6 +638,183 @@ export const walletStatsSchema = z.object({
 
 /** Self-reported 21.gifts wallet totals, by UTC day. */
 export type WalletStats = z.infer<typeof walletStatsSchema>;
+
+/** Parties on a wallet-usage flow. No person, account, or payment id is included. */
+export const WALLET_PARTIES = ['outside', 'members', 'fund', 'platform'] as const;
+
+/** One side of a wallet-usage flow. */
+export type WalletParty = (typeof WALLET_PARTIES)[number];
+
+/** Why a wallet payment was made. */
+export const WALLET_PURPOSES = [
+  'deposit',
+  'withdrawal',
+  'shop_purchase',
+  'forum_gift',
+  'transfer',
+  'fund_deposit',
+  'fund_payout',
+  'other',
+] as const;
+
+/** One purpose on `GET /wallets/usage`. */
+export type WalletPurpose = (typeof WALLET_PURPOSES)[number];
+
+/** Amount-bucket keys, smallest first. */
+export const WALLET_AMOUNT_BUCKETS = [
+  '1',
+  '2-10',
+  '11-100',
+  '101-1k',
+  '1k-10k',
+  '10k-100k',
+  '100k+',
+] as const;
+
+/** One amount-bucket key. */
+export type WalletAmountBucket = (typeof WALLET_AMOUNT_BUCKETS)[number];
+
+/** UTC `YYYY-MM-DD` day key on the usage payload. */
+const walletUsageDayKeySchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
+
+/**
+ * Count and volume for one purpose on one UTC day.
+ * Unknown extra fields are accepted and stripped.
+ */
+export const walletUsagePurposeCellSchema = z.object({
+  count: z.number().int().nonnegative(),
+  sats: z.number().int().nonnegative(),
+});
+
+/** Payments of one purpose on one day. */
+export type WalletUsagePurposeCell = z.infer<typeof walletUsagePurposeCellSchema>;
+
+/**
+ * One UTC day of `GET /wallets/usage`.
+ * Every purpose key is required. Unknown extra fields are accepted and stripped.
+ */
+export const walletUsageDaySchema = z.object({
+  day: walletUsageDayKeySchema,
+  purposes: z.object({
+    deposit: walletUsagePurposeCellSchema,
+    withdrawal: walletUsagePurposeCellSchema,
+    shop_purchase: walletUsagePurposeCellSchema,
+    forum_gift: walletUsagePurposeCellSchema,
+    transfer: walletUsagePurposeCellSchema,
+    fund_deposit: walletUsagePurposeCellSchema,
+    fund_payout: walletUsagePurposeCellSchema,
+    other: walletUsagePurposeCellSchema,
+  }),
+  activeWalletCount: z.number().int().nonnegative(),
+  sendingWalletCount: z.number().int().nonnegative(),
+  receivingWalletCount: z.number().int().nonnegative(),
+});
+
+/** One UTC day of wallet use. */
+export type WalletUsageDay = z.infer<typeof walletUsageDaySchema>;
+
+/**
+ * Payments from one party to another on one UTC day, for one purpose.
+ * Unknown extra fields are accepted and stripped.
+ */
+export const walletUsageFlowSchema = z.object({
+  day: walletUsageDayKeySchema,
+  from: z.enum(WALLET_PARTIES),
+  to: z.enum(WALLET_PARTIES),
+  purpose: z.enum(WALLET_PURPOSES),
+  count: z.number().int().nonnegative(),
+  sats: z.number().int().nonnegative(),
+  feeSats: z.number().int().nonnegative(),
+});
+
+/** One aggregated flow row. */
+export type WalletUsageFlow = z.infer<typeof walletUsageFlowSchema>;
+
+/**
+ * How many payments fell in one size bucket.
+ * `maxSats` is null on the open top bucket.
+ */
+export const walletUsageBucketSchema = z.object({
+  key: z.enum(WALLET_AMOUNT_BUCKETS),
+  minSats: z.number().int().nonnegative(),
+  maxSats: z.number().int().nonnegative().nullable(),
+  count: z.number().int().nonnegative(),
+  sats: z.number().int().nonnegative(),
+});
+
+/** One payment-size bucket. */
+export type WalletUsageBucket = z.infer<typeof walletUsageBucketSchema>;
+
+/** Payment count in one UTC hour. The payload carries 24 of these. */
+export const walletUsageHourSchema = z.object({
+  hourUtc: z.number().int().min(0).max(23),
+  count: z.number().int().nonnegative(),
+});
+
+/** One hour of the time-of-day chart. */
+export type WalletUsageHour = z.infer<typeof walletUsageHourSchema>;
+
+/** Forum gifts and hearts on one UTC day, including the 28 days before release. */
+export const walletUsageForumDaySchema = z.object({
+  day: walletUsageDayKeySchema,
+  gifts: z.number().int().nonnegative(),
+  hearts: z.number().int().nonnegative(),
+  sats: z.number().int().nonnegative(),
+});
+
+/** One forum day. */
+export type WalletUsageForumDay = z.infer<typeof walletUsageForumDaySchema>;
+
+/** Shop till charges created and paid on one UTC day. */
+export const walletUsageShopDaySchema = z.object({
+  day: walletUsageDayKeySchema,
+  created: z.number().int().nonnegative(),
+  paid: z.number().int().nonnegative(),
+});
+
+/** One shop-till day. */
+export type WalletUsageShopDay = z.infer<typeof walletUsageShopDaySchema>;
+
+/**
+ * Headline totals since the wallet release.
+ * `topFiveSenderShare` is a fraction from 0 to 1.
+ */
+export const walletUsageTotalsSchema = z.object({
+  paymentCount: z.number().int().nonnegative(),
+  volumeSats: z.number().int().nonnegative(),
+  feeSats: z.number().int().nonnegative(),
+  medianSats: z.number().nonnegative(),
+  averageSats: z.number().nonnegative(),
+  activeWalletCount: z.number().int().nonnegative(),
+  sendingWalletCount: z.number().int().nonnegative(),
+  topFiveSenderShare: z.number().min(0).max(1),
+  heartCount: z.number().int().nonnegative(),
+  paidShopChargeCount: z.number().int().nonnegative(),
+});
+
+/** Headline totals. */
+export type WalletUsageTotals = z.infer<typeof walletUsageTotalsSchema>;
+
+/**
+ * Runtime schema for `GET /wallets/usage`.
+ *
+ * Unknown extra fields are accepted and stripped. A missing required field
+ * fails parsing, and the loader then shows its error line.
+ */
+export const walletUsageSchema = z.object({
+  releasedAt: z.string(),
+  asOf: z.string().nullable(),
+  totals: walletUsageTotalsSchema,
+  days: z.array(walletUsageDaySchema),
+  flows: z.array(walletUsageFlowSchema),
+  amountBuckets: z.array(walletUsageBucketSchema),
+  hours: z.array(walletUsageHourSchema).length(24),
+  forum: z.array(walletUsageForumDaySchema),
+  shopCharges: z.array(walletUsageShopDaySchema),
+});
+
+/** How the in-app wallet has been used since its release. Aggregates only. */
+export type WalletUsage = z.infer<typeof walletUsageSchema>;
 
 /**
  * FX on account activity. `quotes` is optional so payloads from an api that
@@ -1764,6 +1980,15 @@ export const fundingApplyResponseSchema = z.object({
 });
 
 /**
+ * Runtime schema for `POST /funding/withdraw` success `{ funding }`. After a
+ * withdrawal the owner status is `none`; the enum stays the one of
+ * {@link ownerFundingSchema}.
+ */
+export const fundingWithdrawResponseSchema = z.object({
+  funding: ownerFundingSchema,
+});
+
+/**
  * Runtime schema for one open grant application from `GET /funding/applications`.
  */
 export const fundingApplicationSchema = z.object({
@@ -1950,11 +2175,21 @@ export const fondPayoutInvoiceSchema = z.object({
 export type FondPayoutInvoice = z.infer<typeof fondPayoutInvoiceSchema>;
 
 /**
+ * Runtime schema for a `PUT /fond/deposit-address` success body: the address
+ * the api stored for the Fond wallet.
+ */
+export const fondDepositAddressSchema = z.object({
+  address: z.string().min(1),
+});
+
+/**
  * Runtime schema for the public `GET /fond/summary` body.
  *
  * `balanceSats` and `balanceSyncedAt` may be `null` until the api has synced
  * the Fond's wallet. `payoutsPaidUsd` is the stored two-decimal USD figure at
  * the moment each grant payout was created and is never recomputed.
+ * `onchainAddress` is the Fond wallet's on-chain deposit address once the Fond
+ * wallet has registered it; an api that does not send the field reads as `null`.
  */
 export const fondSummarySchema = z.object({
   username: z.string().min(1),
@@ -1965,6 +2200,7 @@ export const fondSummarySchema = z.object({
   balanceSyncedAt: z.string().min(1).nullable(),
   payoutsPaid: z.number().int().nonnegative(),
   payoutsPaidUsd: z.string(),
+  onchainAddress: z.string().nullable().optional().default(null),
 });
 
 /** Public Fond totals: received, paid out with fees, balance, and paid grant payouts. */
