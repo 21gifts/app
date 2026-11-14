@@ -4,7 +4,6 @@ import { useActiveSession } from '@/hooks/useActiveSession';
 import { usePaymentCounterparty } from '@/hooks/usePaymentCounterparty';
 import { fetchPaymentCounterparties } from '@/lib/wallet/payment-counterparty';
 import { reportWallet, walletReportSettled } from '@/lib/wallet/wallet-report';
-import { useWalletStore } from '@/stores/wallet-store';
 import {
   RECEIVED_FROM_MEMBER_PAYMENT,
   RECEIVED_FROM_MEMBER_SENDER,
@@ -24,6 +23,13 @@ const sent = toFixturePayment(SENT_TO_MEMBER_PAYMENT);
 const originalUrl = window.location.href;
 const originalNow = process.env.NEXT_PUBLIC_E2E_NOW;
 
+/** Advances fake time and lets the lookups it starts finish. */
+async function settle(ms: number): Promise<void> {
+  await act(async () => {
+    await vi.advanceTimersByTimeAsync(ms);
+  });
+}
+
 beforeEach(() => {
   delete process.env.NEXT_PUBLIC_E2E_NOW;
   window.history.replaceState({}, '', '/wallet');
@@ -31,10 +37,10 @@ beforeEach(() => {
   vi.mocked(fetchPaymentCounterparties).mockReset().mockResolvedValue([]);
   vi.mocked(reportWallet).mockReset().mockResolvedValue(undefined);
   vi.mocked(walletReportSettled).mockReset().mockResolvedValue(undefined);
-  useWalletStore.setState({ syncCount: 0 });
 });
 afterEach(() => {
   cleanup();
+  vi.useRealTimers();
   window.history.replaceState({}, '', originalUrl);
   if (originalNow === undefined) delete process.env.NEXT_PUBLIC_E2E_NOW;
   else process.env.NEXT_PUBLIC_E2E_NOW = originalNow;
@@ -97,6 +103,10 @@ describe('usePaymentCounterparty', () => {
   it.each([
     { ...payment, status: 'pending' as const },
     { ...payment, status: 'failed' as const },
+    { ...payment, method: 'lightning' as const },
+    { ...payment, method: 'deposit' as const },
+    { ...payment, method: 'withdraw' as const },
+    { ...sent, method: 'other' as const },
   ])('does not fetch ineligible payments', (entry) => {
     expect(renderHook(() => usePaymentCounterparty(entry)).result.current).toBeNull();
     expect(fetchPaymentCounterparties).not.toHaveBeenCalled();
@@ -123,39 +133,74 @@ describe('usePaymentCounterparty', () => {
     expect(result.current).toEqual(rows[0] ?? null);
     expect(fetchPaymentCounterparties).toHaveBeenCalledTimes(1);
   });
-  it('waits for the report before retrying a miss on sync and stops after a match', async () => {
-    let finishReport!: () => void;
+  it('asks again after 15 s, 30 s, 60 s, and 120 s, then stops', async () => {
+    vi.useFakeTimers();
+    const { result } = renderHook(() => usePaymentCounterparty(payment));
+    await settle(0);
+    expect(fetchPaymentCounterparties).toHaveBeenCalledTimes(1);
+    for (const [delay, calls] of [
+      [15_000, 2],
+      [30_000, 3],
+      [60_000, 4],
+      [120_000, 5],
+    ] as const) {
+      await settle(delay - 1);
+      expect(fetchPaymentCounterparties).toHaveBeenCalledTimes(calls - 1);
+      await settle(1);
+      expect(fetchPaymentCounterparties).toHaveBeenCalledTimes(calls);
+    }
+    await settle(3_600_000);
+    expect(fetchPaymentCounterparties).toHaveBeenCalledTimes(5);
+    expect(walletReportSettled).toHaveBeenCalledTimes(5);
+    expect(reportWallet).not.toHaveBeenCalled();
+    expect(result.current).toBeNull();
+  });
+  it('shows a name that arrives on a retry and stops asking', async () => {
+    vi.useFakeTimers();
     vi.mocked(fetchPaymentCounterparties)
       .mockResolvedValueOnce([])
       .mockResolvedValueOnce([RECEIVED_FROM_MEMBER_SENDER]);
-    const { result, rerender } = renderHook(() => usePaymentCounterparty(payment));
-    await act(async () => {
-      await Promise.resolve();
-    });
+    const { result } = renderHook(() => usePaymentCounterparty(payment));
+    await settle(0);
     expect(result.current).toBeNull();
-    rerender();
-    expect(fetchPaymentCounterparties).toHaveBeenCalledTimes(1);
-    expect(reportWallet).not.toHaveBeenCalled();
+    await settle(15_000);
+    expect(result.current).toEqual(RECEIVED_FROM_MEMBER_SENDER);
+    await settle(3_600_000);
+    expect(fetchPaymentCounterparties).toHaveBeenCalledTimes(2);
+  });
+  it('waits for a running report before a retry', async () => {
+    vi.useFakeTimers();
+    let finishReport!: () => void;
+    renderHook(() => usePaymentCounterparty(payment));
+    await settle(0);
     vi.mocked(walletReportSettled).mockReturnValue(
       new Promise<void>((resolve) => {
         finishReport = resolve;
       }),
     );
-    act(() => useWalletStore.setState({ syncCount: 1 }));
+    await settle(15_000);
     expect(walletReportSettled).toHaveBeenCalledTimes(2);
-    expect(reportWallet).not.toHaveBeenCalled();
     expect(fetchPaymentCounterparties).toHaveBeenCalledTimes(1);
     await act(async () => {
       finishReport();
     });
-    await waitFor(() => expect(result.current).toEqual(RECEIVED_FROM_MEMBER_SENDER));
     expect(fetchPaymentCounterparties).toHaveBeenCalledTimes(2);
-    act(() => useWalletStore.setState({ syncCount: 2 }));
-    expect(fetchPaymentCounterparties).toHaveBeenCalledTimes(2);
-    expect(walletReportSettled).toHaveBeenCalledTimes(2);
     expect(reportWallet).not.toHaveBeenCalled();
   });
-  it('waits for a sync during a pending payment before the first lookup', async () => {
+  it('starts over with a fresh lookup when the screen is opened again', async () => {
+    vi.useFakeTimers();
+    const first = renderHook(() => usePaymentCounterparty(payment));
+    await settle(0);
+    first.unmount();
+    await settle(3_600_000);
+    expect(fetchPaymentCounterparties).toHaveBeenCalledTimes(1);
+    vi.mocked(fetchPaymentCounterparties).mockResolvedValueOnce([RECEIVED_FROM_MEMBER_SENDER]);
+    const second = renderHook(() => usePaymentCounterparty(payment));
+    await settle(0);
+    expect(fetchPaymentCounterparties).toHaveBeenCalledTimes(2);
+    expect(second.result.current).toEqual(RECEIVED_FROM_MEMBER_SENDER);
+  });
+  it('looks up a pending payment once it turns completed, after the running report', async () => {
     let finishReport!: () => void;
     vi.mocked(walletReportSettled).mockReturnValue(
       new Promise<void>((resolve) => {
@@ -167,8 +212,6 @@ describe('usePaymentCounterparty', () => {
         usePaymentCounterparty({ ...payment, status: completed ? 'completed' : 'pending' }),
       { initialProps: { completed: false } },
     );
-    act(() => useWalletStore.setState({ syncCount: 1 }));
-    expect(reportWallet).not.toHaveBeenCalled();
     expect(walletReportSettled).not.toHaveBeenCalled();
     expect(fetchPaymentCounterparties).not.toHaveBeenCalled();
     rerender({ completed: true });
@@ -183,20 +226,18 @@ describe('usePaymentCounterparty', () => {
     ]);
     expect(reportWallet).not.toHaveBeenCalled();
   });
-  it('does not fetch after a pending report is invalidated', async () => {
+  it('does not fetch when unmounted while a retry waits for the report', async () => {
+    vi.useFakeTimers();
     let finishReport!: () => void;
     const hook = renderHook(() => usePaymentCounterparty(payment));
-    await act(async () => {
-      await Promise.resolve();
-    });
+    await settle(0);
     vi.mocked(walletReportSettled).mockReturnValue(
       new Promise<void>((resolve) => {
         finishReport = resolve;
       }),
     );
-    act(() => useWalletStore.setState({ syncCount: 1 }));
+    await settle(15_000);
     expect(walletReportSettled).toHaveBeenCalledTimes(2);
-    expect(reportWallet).not.toHaveBeenCalled();
     hook.unmount();
     await act(async () => {
       finishReport();

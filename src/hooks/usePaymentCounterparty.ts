@@ -13,12 +13,26 @@ import {
 } from '@/lib/wallet/payment-fixtures';
 import { walletReportSettled } from '@/lib/wallet/wallet-report';
 import type { WalletPayment } from '@/lib/wallet/wallet-sdk';
-import { useWalletStore } from '@/stores/wallet-store';
 
 /**
- * Resolve the counterparty of a completed payment in the active session.
- * Wait for a running report before each lookup without requesting one.
- * Cache matches; after a wallet sync, retry a miss.
+ * Pause before each further lookup after a miss, in order. The api names the
+ * other side only once its own read of the wallet saw the transfer, which runs
+ * about once a minute, so a miss right after a payment is expected. Four
+ * retries at 15 s, 30 s, 60 s, and 120 s cover 3 min 45 s after the first
+ * miss with at most five lookups per opened screen, far below the api's 60
+ * lookups per account and minute.
+ */
+const RETRY_DELAYS_MS: readonly number[] = [15_000, 30_000, 60_000, 120_000];
+
+/**
+ * Resolve the counterparty of a completed Spark payment in the active session.
+ * The api names only a plain Spark transfer, so a Lightning, on-chain, or
+ * token payment is not looked up and keeps the rows it had before. Wait for
+ * a running report before each lookup without requesting one, because the api
+ * names only a payment the caller has already reported as completed.
+ * Cache matches while mounted; after a miss, ask again after 15 s, 30 s,
+ * 60 s, and 120 s, then stop until the screen is opened again. A miss is
+ * never cached.
  * In a Playwright build, `?visual=received-from-member` and
  * `?visual=sent-to-member` return their fixtures without a request, and
  * `?visual=received-member-unknown` and `?visual=sent-member-unknown` return
@@ -29,7 +43,6 @@ import { useWalletStore } from '@/stores/wallet-store';
  */
 export function usePaymentCounterparty(payment: WalletPayment): PaymentCounterparty | null {
   const session = useActiveSession();
-  const syncCount = useWalletStore((state) => state.syncCount);
   const pin = visualPin();
   const pinned =
     pin === 'received-from-member' ||
@@ -37,7 +50,7 @@ export function usePaymentCounterparty(payment: WalletPayment): PaymentCounterpa
     pin === 'received-member-unknown' ||
     pin === 'sent-member-unknown';
   const direction = payment.direction === 'received' ? 'in' : 'out';
-  const eligible = payment.status === 'completed';
+  const eligible = payment.status === 'completed' && payment.method === 'spark';
   const key = JSON.stringify([payment.id, direction]);
   const cache = useRef<{ session: string | null; values: Map<string, PaymentCounterparty> }>({
     session: null,
@@ -59,7 +72,8 @@ export function usePaymentCounterparty(payment: WalletPayment): PaymentCounterpa
       return;
     }
     let active = true;
-    const lookup = async (): Promise<void> => {
+    let timer: number | undefined;
+    const lookup = async (attempt: number): Promise<void> => {
       await walletReportSettled();
       if (!active) return;
       const rows = await fetchPaymentCounterparties(session, [{ id: payment.id, direction }]);
@@ -67,12 +81,18 @@ export function usePaymentCounterparty(payment: WalletPayment): PaymentCounterpa
       const counterparty = rows.find((row) => row.id === payment.id) ?? null;
       if (counterparty !== null) cache.current.values.set(key, counterparty);
       setState({ session, key, counterparty });
+      const delay = RETRY_DELAYS_MS[attempt];
+      if (counterparty !== null || delay === undefined) return;
+      timer = window.setTimeout(() => {
+        void lookup(attempt + 1);
+      }, delay);
     };
-    void lookup();
+    void lookup(0);
     return () => {
       active = false;
+      window.clearTimeout(timer);
     };
-  }, [session, pinned, eligible, key, payment.id, direction, syncCount]);
+  }, [session, pinned, eligible, key, payment.id, direction]);
 
   if (pin === 'received-from-member' && payment.id === RECEIVED_FROM_MEMBER_SENDER.id && eligible)
     return RECEIVED_FROM_MEMBER_SENDER;
