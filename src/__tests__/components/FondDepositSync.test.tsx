@@ -235,6 +235,33 @@ describe('FondDepositSync', () => {
     expect(registerFondDepositAddress).toHaveBeenCalledTimes(2);
   });
 
+  it.each(['stop', 'retry'] as const)(
+    'never claims for an account whose registration answered %s',
+    async (outcome) => {
+      vi.mocked(registerFondDepositAddress).mockResolvedValue(outcome);
+      setState('founder', 'sess', 'ready');
+      render(<FondDepositSync />);
+      await flush();
+      setState('founder', 'sess', 'locked');
+      setState('founder', 'sess', 'ready');
+      await flush();
+      expect(claimFondDeposits).not.toHaveBeenCalled();
+      expect(onWalletDeposits).not.toHaveBeenCalled();
+    },
+  );
+
+  it('claims for the new session only after its own registration', async () => {
+    setState('fond', 'sess', 'ready');
+    render(<FondDepositSync />);
+    await flush();
+    expect(claimFondDeposits).toHaveBeenCalledTimes(1);
+    vi.mocked(registerFondDepositAddress).mockResolvedValue('stop');
+    setState('fond', 'sess-2', 'ready');
+    await flush();
+    expect(claimFondDeposits).toHaveBeenCalledTimes(1);
+    expect(depositListeners.size).toBe(0);
+  });
+
   it('claims deposits on activation and on every deposit report', async () => {
     setState('fond', 'sess', 'ready');
     render(<FondDepositSync />);

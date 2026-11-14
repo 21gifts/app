@@ -28,9 +28,12 @@ import { useWalletStore } from '@/stores/wallet-store';
  * any other failure is tried again on the next activation (a wallet reconnect
  * or a new session), never on a timer.
  *
- * Deposits are claimed through {@link claimFondDeposits} on activation and on
- * every `newDeposits` or `unclaimedDeposits` report of the wallet; a pass that
- * is still running absorbs the next report.
+ * Deposits are claimed through {@link claimFondDeposits} only once the api has
+ * stored the address for this session and account, which confirms that the
+ * wallet is the Fond's (any other account at rank `fond` or above gets 403 and
+ * keeps the SDK default). A pass runs then and on every `newDeposits` or
+ * `unclaimedDeposits` report of the wallet; a pass that is still running
+ * absorbs the next report.
  *
  * @returns `null` because the sync has no visual surface.
  */
@@ -44,6 +47,8 @@ export function FondDepositSync(): null {
   const settledKey = useRef<string | null>(null);
   /** `session:accountId` whose registration is in flight. */
   const pendingKey = useRef<string | null>(null);
+  /** `session:accountId` whose address the api stored: the wallet is the Fond's. */
+  const [registeredKey, setRegisteredKey] = useState<string | null>(null);
 
   const active =
     session !== null &&
@@ -70,6 +75,9 @@ export function FondDepositSync(): null {
         if (outcome !== 'retry') {
           settledKey.current = runKey;
         }
+        if (outcome === 'registered') {
+          setRegisteredKey(runKey);
+        }
       } catch {
         // Tried again on the next activation.
       } finally {
@@ -81,7 +89,7 @@ export function FondDepositSync(): null {
   }, [active, session, accountId, e2eWallet]);
 
   useEffect(() => {
-    if (!active) {
+    if (!active || registeredKey !== `${session}:${accountId}`) {
       return;
     }
     const wallet = {
@@ -107,7 +115,7 @@ export function FondDepositSync(): null {
       void pass();
     });
     return unsubscribe;
-  }, [active, e2eWallet]);
+  }, [active, session, accountId, registeredKey, e2eWallet]);
 
   return null;
 }

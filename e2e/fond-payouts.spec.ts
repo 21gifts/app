@@ -320,6 +320,10 @@ test('Function: runFondPayoutTick — the loop invoices and pays the Spark invoi
   const invoiced = await fondDebug(request, session);
   // The next tick finds the completed Spark send in history and issues no second invoice.
   await nextTick(page, request, session, invoiced.lists);
+  // That tick lists first and asks for the invoice next; settle only after its request landed.
+  await expect
+    .poll(async () => (await fondDebug(request, session)).invoiceRequests)
+    .toBeGreaterThan(invoiced.invoiceRequests);
   expect(await fondDebug(request, session)).toMatchObject({ invoices: 1, paid: false });
   await settleFondPayout(request, session);
   // Once the api worker marks the row paid, the list is empty and no invoice is requested again.

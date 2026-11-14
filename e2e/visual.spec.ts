@@ -47323,6 +47323,37 @@ test.describe('fonds screen', () => {
     await shotScreen(page, 'state-fonds-deposit-lightning-only');
   });
 
+  test('state /fonds/[username] deposit-lightning-copied', async ({ page, context }) => {
+    await context.grantPermissions(['clipboard-read', 'clipboard-write']);
+    await page.clock.install();
+    await fulfillSpot(page);
+    await page.goto('/fonds/tondo-fond');
+    await expect(page.getByText('tondo-fond@21.gifts')).toBeVisible();
+    const now = await page.evaluate(() => Date.now());
+    await page.clock.pauseAt(now + 1_000);
+    await page.getByRole('button', { name: 'Copy' }).click();
+    await expect(page.getByRole('button', { name: 'Copied' })).toBeVisible();
+    await shotScreen(page, 'state-fonds-deposit-lightning-copied');
+  });
+
+  test('state /fonds/[username] deposit-onchain-copied', async ({ page, context }) => {
+    await context.grantPermissions(['clipboard-read', 'clipboard-write']);
+    await page.clock.install();
+    await fulfillSpot(page);
+    await page.goto('/fonds/tondo-fond');
+    await expect(page.getByRole('heading', { name: 'tondo-fond' })).toBeVisible();
+    await page
+      .getByRole('group', { name: 'Deposit method' })
+      .getByRole('button', { name: 'On-chain deposit' })
+      .click();
+    await expect(page.getByRole('img', { name: 'Bitcoin address QR code' })).toBeVisible();
+    const now = await page.evaluate(() => Date.now());
+    await page.clock.pauseAt(now + 1_000);
+    await page.getByRole('button', { name: 'Copy' }).click();
+    await expect(page.getByRole('button', { name: 'Copied' })).toBeVisible();
+    await shotScreen(page, 'state-fonds-deposit-onchain-copied');
+  });
+
   test('state /fonds/[username] role-hint', async ({ page }) => {
     await fulfillSpot(page);
     await page.goto('/fonds/tondo-fond');

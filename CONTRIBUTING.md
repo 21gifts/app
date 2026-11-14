@@ -428,10 +428,12 @@ app/
 │   │   │   ├── heart-context.ts # fetchHeartPosts: gift payment hashes → POST /me/wallet/hearts
 │   │   │   ├── wallet-report.ts # reportWallet: balance + unacknowledged payments → POST /me/wallet/report
 │   │   │   ├── fond-payouts.ts  # runFondPayoutTick: list → invoice → pay sparkInvoice ?? bolt11 once
+│   │   │   ├── fond-deposits.ts # registerFondDepositAddress outcome; claimFondDeposits under a bounded fee
 │   │   │   ├── payment-failure.ts # reportPaymentFailure: payment_failed event + `Payment failed` error report
 │   │   │   ├── error-cause.ts   # errorCause, CAUSE_KINDS: name, code, and cause kind of a wallet that did not open
 │   │   │   └── lnurl-relay.ts   # lnurlRelayTarget: outside address or LNURL goes through the api
 │   │   ├── gifts-address.ts     # Public username@21.gifts display handle
+│   │   ├── bitcoin-address.ts   # isMainnetBitcoinAddress shape check before an address is shown or encoded
 │   │   ├── shop-sticker.ts      # Shop-sticker SVG/PDF/PNG/JPG from the member pay QR; ?lang=Kikamba (no PDF library)
 │   │   ├── shop-sticker-artwork.ts # Generated fixed sticker artwork (outlined paths); do not edit by hand
 │   │   ├── missing-requirements.ts # MissingRequirementsError + 409 body parse

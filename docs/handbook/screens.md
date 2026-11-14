@@ -11225,6 +11225,18 @@ The summary has no `onchainAddress` (the api has none registered yet, or does no
 
 ![21.gifts public Fond page Lightning deposit only](images/fonds-deposit-lightning-only.png)
 
+### Variant: deposit-lightning-copied
+
+With **Instant payment** pressed, the copy icon under the QR was pressed: `tondo-fond@21.gifts` is on the clipboard and the icon is a green check named **Copied** for two seconds.
+
+![21.gifts public Fond page Lightning address copied](images/fonds-deposit-lightning-copied.png)
+
+### Variant: deposit-onchain-copied
+
+With **On-chain deposit** pressed, the copy icon under the QR was pressed: the bare address `bc1p5cyxnuxmeuwuvkwfem96lqzszd02n6xdcjrs20cac6yqjjwudpxqkedrcr` is on the clipboard and the icon is a green check named **Copied** for two seconds.
+
+![21.gifts public Fond page on-chain address copied](images/fonds-deposit-onchain-copied.png)
+
 ### Variant: balance-null
 
 The same page while the api has not synced a wallet balance (`balanceSats` and `balanceSyncedAt` null). The **Balance** tile shows an em dash and **not reported yet**; the other tiles keep their figures.

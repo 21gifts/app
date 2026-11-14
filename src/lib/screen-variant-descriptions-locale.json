@@ -8859,6 +8859,16 @@
     "es": "El resumen no tiene onchainAddress (la api aún no tiene una registrada o no la envía). El bloque de depósito muestra Recargar este Fondo y la dirección 21.gifts del Fondo con su código QR y el icono de copiar, sin el selector Pago instantáneo | Depósito on-chain.",
     "fil": "Walang onchainAddress ang buod (wala pang nakarehistro sa api o hindi pa nito ipinapadala). Ipinapakita ng bloke ng deposito ang I-top up ang Fond na ito at ang 21.gifts address ng Fond kasama ang QR code at icon ng kopya, nang walang pagpipiliang Instant na bayad | On-chain na deposito."
   },
+  "/fonds/[username]:deposit-lightning-copied": {
+    "de": "Mit gedrückter Sofortzahlung wurde das Kopier-Symbol unter dem QR-Code gedrückt: tondo-fond@21.gifts ist kopiert, und das Symbol zeigt zwei Sekunden lang ein grünes Häkchen mit dem Namen Kopiert.",
+    "es": "Con Pago instantáneo pulsado se pulsó el icono de copiar bajo el código QR: tondo-fond@21.gifts está copiado y el icono muestra durante dos segundos una marca verde con el nombre Copiado.",
+    "fil": "Habang naka-press ang Instant na bayad, pinindot ang icon ng kopya sa ilalim ng QR code: nakopya ang tondo-fond@21.gifts at nagpapakita ang icon ng berdeng tsek na may pangalang Nakopya sa loob ng dalawang segundo."
+  },
+  "/fonds/[username]:deposit-onchain-copied": {
+    "de": "Mit gedrückter On-chain-Einzahlung wurde das Kopier-Symbol unter dem QR-Code gedrückt: die Adresse bc1p5cyxnuxmeuwuvkwfem96lqzszd02n6xdcjrs20cac6yqjjwudpxqkedrcr ist ohne Präfix kopiert, und das Symbol zeigt zwei Sekunden lang ein grünes Häkchen mit dem Namen Kopiert.",
+    "es": "Con Depósito on-chain pulsado se pulsó el icono de copiar bajo el código QR: la dirección bc1p5cyxnuxmeuwuvkwfem96lqzszd02n6xdcjrs20cac6yqjjwudpxqkedrcr está copiada sin prefijo y el icono muestra durante dos segundos una marca verde con el nombre Copiado.",
+    "fil": "Habang naka-press ang On-chain na deposito, pinindot ang icon ng kopya sa ilalim ng QR code: nakopya ang address na bc1p5cyxnuxmeuwuvkwfem96lqzszd02n6xdcjrs20cac6yqjjwudpxqkedrcr nang walang prefix at nagpapakita ang icon ng berdeng tsek na may pangalang Nakopya sa loob ng dalawang segundo."
+  },
   "/fonds/[username]:balance-null": {
     "de": "Dieselbe Fond-Seite, solange die Api noch keinen Wallet-Kontostand gemeldet hat (balanceSats und balanceSyncedAt sind null). Die Kachel Kontostand zeigt einen Gedankenstrich und noch nicht gemeldet; die anderen Kacheln behalten ihre Beträge.",
     "es": "La misma página del Fondo mientras la api aún no informa un saldo de wallet (balanceSats y balanceSyncedAt son null). La tarjeta Saldo muestra un guion y aún sin datos; las otras tarjetas mantienen sus cifras.",
