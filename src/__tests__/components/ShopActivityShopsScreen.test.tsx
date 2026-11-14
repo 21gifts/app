@@ -232,6 +232,17 @@ describe('ShopActivityShopsScreen', () => {
     expect(screen.getByText('Loading…')).toBeTruthy();
   });
 
+  it('keeps the loaded table when the role changes between staff roles', async () => {
+    listMock.mockResolvedValueOnce(TABLE);
+    renderWithLocale(<ShopActivityShopsScreen />);
+    expect(await screen.findByRole('table')).toBeTruthy();
+    act(() => {
+      useAuthStore.setState({ session: 'sess', account: { ...account, role: 'founder' } });
+    });
+    expect(screen.getByRole('table')).toBeTruthy();
+    expect(listMock).toHaveBeenCalledTimes(1);
+  });
+
   it('does not bring the table back after the staff role is lost and regained', async () => {
     listMock.mockResolvedValueOnce(TABLE);
     renderWithLocale(<ShopActivityShopsScreen />);
