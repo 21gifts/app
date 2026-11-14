@@ -43,28 +43,29 @@ function clockTime(iso: string, locale: string): string | null {
 /** One row of the list: a past charge, or a payment received without a charge. */
 type HistoryRow = { kind: 'charge'; row: PosCharge } | { kind: 'received'; row: PosReceived };
 
+/** On the same instant a charge comes before a received payment. */
+const KIND_RANK = { charge: 0, received: 1 } as const;
+
+/** When a row happened: a charge's creation, a payment's arrival; an unreadable time sorts last. */
+function rowTime(item: HistoryRow): number {
+  const time = Date.parse(item.kind === 'charge' ? item.row.createdAt : item.row.receivedAt);
+  return Number.isNaN(time) ? Number.NEGATIVE_INFINITY : time;
+}
+
 /**
- * Charges and received payments in one list, newest first. The charges keep
- * their own order; a payment goes before the first charge created earlier than
- * it arrived.
+ * Charges and received payments in one list by time, newest first. Without a
+ * received payment the charges keep the order the till gives them. With one,
+ * every row is placed by its time (a charge by its creation, a payment by its
+ * arrival), and on the same instant a charge comes first.
  */
 function mergeRows(charges: readonly PosCharge[], received: readonly PosReceived[]): HistoryRow[] {
-  const merged: HistoryRow[] = [];
-  const waiting = [...received];
-  for (const row of charges) {
-    const created = Date.parse(row.createdAt);
-    let head = waiting[0];
-    while (head !== undefined && Date.parse(head.receivedAt) > created) {
-      merged.push({ kind: 'received', row: head });
-      waiting.shift();
-      head = waiting[0];
-    }
-    merged.push({ kind: 'charge', row });
+  const rows: HistoryRow[] = charges.map((row) => ({ kind: 'charge', row }));
+  if (received.length === 0) {
+    return rows;
   }
-  for (const row of waiting) {
-    merged.push({ kind: 'received', row });
-  }
-  return merged;
+  return [...rows, ...received.map((row): HistoryRow => ({ kind: 'received', row }))].sort(
+    (a, b) => rowTime(b) - rowTime(a) || KIND_RANK[a.kind] - KIND_RANK[b.kind],
+  );
 }
 
 /** Props for {@link PosHistory}. */
@@ -83,7 +84,8 @@ export interface PosHistoryProps {
  * bitcoin with the currency figure stored on that charge, and the date and
  * time the charge was created. The open charge is shown above the list, not
  * in it. Payments the wallet received without a charge stand in the same
- * list by the time they arrived: a green arrow with **Received**, the amount
+ * list, which is then ordered by time (a charge by its creation, a payment
+ * by its arrival): a green arrow with **Received**, the amount
  * in bitcoin, and the date and time with **Instant payment** (Lightning) or
  * **Wallet transfer** (Spark). One that arrives while the list is shown eases
  * in like a new reply. With no past charge and no received payment the list

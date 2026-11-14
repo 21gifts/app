@@ -318,4 +318,70 @@ describe('PosHistory', () => {
     expect(screen.getByText('Sofortzahlung')).toBeTruthy();
     expect(screen.getByText('Wallet-Überweisung')).toBeTruthy();
   });
+
+  it('orders by time also when the till puts an older remembered charge first', () => {
+    renderWithLocale(
+      <PosHistory
+        history={[
+          // A lost create the till remembers is listed first, though it is older than the api rows.
+          row({ id: 'remembered', amountSats: 7, createdAt: '2026-09-18T09:00:00.000Z' }),
+          row({ id: 'new', amountSats: 21_000, createdAt: '2026-09-20T12:00:00.000Z' }),
+          row({
+            id: 'old',
+            amountSats: 500,
+            status: 'expired',
+            createdAt: '2026-09-19T08:30:00.000Z',
+          }),
+        ]}
+        received={[
+          received({ id: 'r1', amountSats: 1_000, receivedAt: '2026-09-20T12:06:00.000Z' }),
+          received({ id: 'r2', amountSats: 250, receivedAt: '2026-09-19T10:15:00.000Z' }),
+        ]}
+        openChargeId={null}
+      />,
+    );
+    const amounts = screen
+      .getAllByRole('listitem')
+      .map((item) => item.querySelector('span.tabular-nums > span')?.textContent);
+    expect(amounts).toEqual(["₿1'000", "₿21'000", '₿250', '₿500', '₿7']);
+  });
+
+  it('keeps the till order of the charges while no payment was received', () => {
+    renderWithLocale(
+      <PosHistory
+        history={[
+          row({ id: 'remembered', amountSats: 7, createdAt: '2026-09-18T09:00:00.000Z' }),
+          row({ id: 'new', amountSats: 21_000, createdAt: '2026-09-20T12:00:00.000Z' }),
+        ]}
+        received={[]}
+        openChargeId={null}
+      />,
+    );
+    const amounts = screen
+      .getAllByRole('listitem')
+      .map((item) => item.querySelector('span.tabular-nums > span')?.textContent);
+    expect(amounts).toEqual(['₿7', "₿21'000"]);
+  });
+
+  it('puts a charge before a payment of the same instant, and a charge with no readable time last', () => {
+    const at = '2026-09-20T12:00:00.000Z';
+    renderWithLocale(
+      <PosHistory
+        history={[
+          row({ id: 'broken', amountSats: 3, createdAt: 'not a time' }),
+          row({ id: 'same', amountSats: 21, createdAt: at }),
+        ]}
+        received={[
+          received({ id: 'a', amountSats: 100, receivedAt: at }),
+          received({ id: 'b', amountSats: 200, receivedAt: at }),
+          received({ id: 'later', amountSats: 300, receivedAt: '2026-09-20T13:00:00.000Z' }),
+        ]}
+        openChargeId={null}
+      />,
+    );
+    const amounts = screen
+      .getAllByRole('listitem')
+      .map((item) => item.querySelector('span.tabular-nums > span')?.textContent);
+    expect(amounts).toEqual(['₿300', '₿21', '₿100', '₿200', '₿3']);
+  });
 });
