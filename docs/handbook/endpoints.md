@@ -1257,9 +1257,17 @@
 - **Returns:** Upstream 200 `{ id, bolt11, paymentHash, sparkInvoice }`, with `sparkInvoice` a string or null. After the payment, the api detects the send by payment hash, BOLT11, or Spark invoice string and settles the row itself.
 - **Errors:** Upstream 404 for an unknown or malformed id, 409 in progress / not payable / amount below one sat, 401, 403, 503, or 502 when unreachable.
 
+## Endpoint: PUT /fond/deposit-address
+
+- **Purpose:** Same-origin Bearer proxy of api `PUT /fond/deposit-address`. Body `{ address }`: the Fond wallet's static Bitcoin deposit address, read from the wallet SDK in the Fond member's signed-in app. The api stores it idempotently and returns it as `onchainAddress` in `GET /fond/summary`.
+- **Auth:** Bearer session of the Fond account. The api answers 403 for another session and 404 when its Fond surface is off.
+- **Returns:** Upstream 200 `{ address }`.
+- **Errors:** Upstream 400 for an invalid address, 401 without a Bearer session, 403 for another account, 404 when the surface is off, 503 when the api cannot store it now, or 502 when this proxy cannot reach the api.
+- **Used by:** `putFondDepositAddress` through `registerFondDepositAddress` in `FondDepositSync`.
+
 ## Endpoint: GET /fonds/[username]/summary
 
-- **Purpose:** Same-origin public proxy of api `GET /fond/summary` for the Fond page. The 200 body is `{ username, receivedSats, paidOutSats, feesSats, balanceSats, balanceSyncedAt, payoutsPaid, payoutsPaidUsd }`; `balanceSats` and `balanceSyncedAt` may be null, and `payoutsPaidUsd` is the stored two-decimal figure. The route answers 404 when the body's `username` is not the path handle, and answers a malformed 200 body with 502.
+- **Purpose:** Same-origin public proxy of api `GET /fond/summary` for the Fond page. The 200 body is `{ username, receivedSats, paidOutSats, feesSats, balanceSats, balanceSyncedAt, payoutsPaid, payoutsPaidUsd, onchainAddress }`; `balanceSats` and `balanceSyncedAt` may be null, and `payoutsPaidUsd` is the stored two-decimal figure. `onchainAddress` is the Fond wallet's registered deposit address or null; an api that does not send it yet reads as null. The route answers 404 when the body's `username` is not the path handle, and answers a malformed 200 body with 502.
 - **Auth:** Public, no session.
 - **Returns:** Upstream 200 with `Cache-Control: no-store`, or the route's own 404 `{ error: "Not found" }`.
 - **Errors:** Upstream 404 when the api runs without the Fond, 503 `{ error }` on failure, 502 when the api is unreachable or its 200 body is invalid, or the route's 404 for another handle.

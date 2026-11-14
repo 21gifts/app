@@ -7802,10 +7802,10 @@ The class exists so the composer can tell a refused free first post from any oth
 
 ## Function: WalletOwnAddress
 
-- **Purpose:** Shared member-owned 21.gifts address block for adding Bitcoin to the in-app wallet.
-- **Inputs:** `username` and optional `copy` (default false); reads the browser hostname and localized labels.
-- **Returns / side effects:** Returns `null` until the host is known or when no address can be formed. Otherwise shows the add-funds sentence, truncated monospaced address, and profile-style Open CryptoPay QR on every device; `copy` also adds an icon-only `IconButton` whose accessible name is **Copy**. It writes the address, then changes to a green check with accessible name **Copied** for two seconds; neither label is visible. Clipboard refusal leaves the readable block unchanged.
-- **Used by:** `LoanRepayScreen` after **Top up your wallet**.
+- **Purpose:** Shared 21.gifts address block: the member's own address for adding Bitcoin to the in-app wallet, or a public account's address with another hint line.
+- **Inputs:** `username`, optional `copy` (default false), and optional `hint` catalog key (default `wallet.payAddFunds`, the own top-up sentence); reads the browser hostname and localized labels.
+- **Returns / side effects:** Returns `null` until the host is known or when no address can be formed. Otherwise shows the `hint` sentence, truncated monospaced address, and profile-style Open CryptoPay QR on every device; `copy` also adds an icon-only `IconButton` whose accessible name is **Copy**. It writes the address, then changes to a green check with accessible name **Copied** for two seconds; neither label is visible. Clipboard refusal leaves the readable block unchanged.
+- **Used by:** `LoanRepayScreen` after **Top up your wallet**, and `FondDeposit` (Instant payment, with `fond.depositLightningHint`).
 
 ## Function: fetchFondPayouts
 
@@ -7824,10 +7824,10 @@ The class exists so the composer can tell a refused free first post from any oth
 
 ## Function: fondE2eWallet
 
-- **Purpose:** Playwright-build-only fake wallet for the Fond payout loop, gated by `getE2eNow()`. It lets e2e drive `runFondPayoutTick` and `runFondPayoutTickOnce` through the running server without a Breez key or a real wallet. It is inert in production: `getE2eNow()` returns null there and the function returns null, so `FondPayoutSync` keeps the real `payFromWallet` and `listWalletPayments`.
+- **Purpose:** Playwright-build-only fake Fond wallet, gated by `getE2eNow()`. It lets e2e drive `runFondPayoutTick`, `runFondPayoutTickOnce`, and `FondDepositSync` through the running server without a Breez key or a real wallet. It is inert in production: `getE2eNow()` returns null there and the function returns null, so `FondPayoutSync` and `FondDepositSync` keep the real wallet functions.
 - **Inputs:** No arguments. Its `payFromWallet` takes a `WalletPayRequest`; only `{ type: 'input', input }` is payable (the fixture Spark invoice, or the BOLT11 when the api returns no Spark invoice). Its `listWalletPayments` takes a `WalletPaymentPage`.
-- **Returns / side effects:** `null` outside a Playwright build. In a Playwright build, `{ payFromWallet, listWalletPayments }`: prepare returns `kind: 'confirm'`, and its `send()` resolves `{ kind: 'paid' }` and records a completed sent payment for that input. History reads return those sends, so the loop's own history check finds the payment. The mock api returns a fixed `spark1…` fixture invoice unless a session fixture asks for `sparkInvoice: null`, and the api detects the send; the fake wallet sends no proof and has no preimage.
-- **Used by:** `FondPayoutSync`, when it detects this fake; no production caller.
+- **Returns / side effects:** `null` outside a Playwright build. In a Playwright build, `{ payFromWallet, listWalletPayments, receiveBitcoinAddress, listUnclaimedDeposits, claimDeposit }`. `receiveBitcoinAddress` resolves the fixed BIP-86 mainnet address `bc1p5cyxnuxmeuwuvkwfem96lqzszd02n6xdcjrs20cac6yqjjwudpxqkedrcr`; `listUnclaimedDeposits` returns one open 50,000-sat deposit, and `claimDeposit` records its ceiling on it, as the SDK does. For payouts: prepare returns `kind: 'confirm'`, and its `send()` resolves `{ kind: 'paid' }` and records a completed sent payment for that input. History reads return those sends, so the loop's own history check finds the payment. The mock api returns a fixed `spark1…` fixture invoice unless a session fixture asks for `sparkInvoice: null`, and the api detects the send; the fake wallet sends no proof and has no preimage.
+- **Used by:** `FondPayoutSync` and `FondDepositSync`, when they detect this fake; no production caller.
 
 ## Function: runFondPayoutTick
 
@@ -7849,6 +7849,83 @@ The class exists so the composer can tell a refused free first post from any oth
 - **Inputs:** Reads the auth store (`session`, account id, role) and the wallet store status. It calls `fondE2eWallet()` once on mount. It calls `runFondPayoutTickOnce` with the real api functions, the fake wallet when that returned one and the real wallet functions otherwise, and `isCancelled: () => stopped` for that effect run.
 - **Returns / side effects:** `null`. Active only when signed in, `roleAtLeast(account.role, 'fond')`, a session token is present, and either the wallet is `ready` or `fondE2eWallet()` returned the Playwright fakes. In that build the fakes replace `payFromWallet` and `listWalletPayments`; in every other build `fondE2eWallet()` is null and the real wallet functions stay. It runs one tick on activation and then every `FOND_PAYOUT_INTERVAL_MS` (60 s). Each tick pays `sparkInvoice ?? bolt11` once and sends no proof; the api detects the payment. Single flight: the module-level guard makes an effect re-run with the same session share the running tick, while a new session waits for it to settle and then runs its own tick; a cancelled tick ends at its next check without scheduling another. A tick result `forbidden` (403) or `off` (404) stops the loop only for the `runKey` (`session:accountId`) of the effect run that started that tick, and the stopped key survives a wallet reconnect in the same tab. Unmount, sign-out, a locked wallet, or an account change cancels the running tick and clears the timer. A rejected tick is swallowed and retried on the next interval.
 - **Used by:** `RootLayout`, right after `WalletSync`.
+
+## Function: FondDeposit
+
+- **Purpose:** Deposit block of the public Fond page, so anyone can top up the Fond by scanning. Heading **Top up this Fond** (`fond.depositTitle`), then the existing neutral `SegmentedControl` (group `fond.depositMethod`, `aria-pressed`) with **Instant payment** (Lightning) and **On-chain deposit**: the wallet's existing labels for those methods (`wallet.payment.method.lightning`, `wallet.payment.method.deposit`), since no screen says Lightning (`docs/ui.md`). Then the selected target.
+- **Inputs:** `username` (the Fond handle) and `onchainAddress` (the summary's `onchainAddress`, or null).
+- **Returns / side effects:** A `section`. Instant payment is selected on every load and renders `WalletOwnAddress` with `copy` and `hint="fond.depositLightningHint"`: the Fond's `username@domain`, its Open CryptoPay QR, and the icon-only **Copy**. On-chain renders the muted `fond.depositOnchainHint`, the address in mono type broken anywhere (`break-all`) within the QR width, a plain `QrCode` of the BIP21 URI `bitcoin:<address>` (no amount, label `fond.depositOnchainQr`), an icon-only **Copy** / **Copied** (`useCopied`) that copies the bare address, and the muted line `fond.depositOnchainConfirmations`. The selector is shown only when `onchainAddress` passes `isMainnetBitcoinAddress`; a null or malformed value shows Instant payment alone, with no disabled option, and is never rendered or encoded. QRs show on every user agent (public view rule).
+- **Used by:** `FondSummaryLoader`, between the KPI tiles and the paid grant-payout line.
+
+## Function: isMainnetBitcoinAddress
+
+- **Purpose:** Shape check of a Bitcoin mainnet address before it is shown or encoded: lowercase bech32 `bc1q` (42 or 62 characters) or `bc1p` (62), or base58 `1…` / `3…` (26 to 34 characters). No checksum; it keeps free text, a testnet address, or a URI out of the deposit QR.
+- **Inputs:** `value` string.
+- **Returns / side effects:** `true` for a plausible mainnet address, otherwise `false`. No side effects.
+- **Used by:** `FondDeposit`.
+
+## Function: putFondDepositAddress
+
+- **Purpose:** PUT `/fond/deposit-address` (same-origin Bearer proxy of api `PUT /fond/deposit-address`) with JSON `{ address }` and parse `fondDepositAddressSchema`.
+- **Inputs:** Bearer `session` of the Fond account and the wallet's static deposit `address`.
+- **Returns / side effects:** `{ ok: true, address }`, or `{ ok: false, status, error }` (`FondPayoutFailure`) without throwing on an HTTP status; `0` for a network failure, and a 2xx body that fails the schema keeps its status with `error: null`. 400 is an address the api refused, 403 another account, 404 a Fond surface that is off, 503 an api that cannot store it now. The address is never logged.
+- **Used by:** `FondDepositSync` through `registerFondDepositAddress`.
+
+## Function: proxyFondDepositAddressPut
+
+- **Purpose:** Proxies PUT `/fond/deposit-address` to the api.
+- **Inputs:** Incoming `Request` with Bearer session and JSON `{ address }`.
+- **Returns / side effects:** Upstream `Response` with the api's status and body, or 502 when the api is unreachable. It forwards the `Authorization` header and the body and logs neither.
+- **Used by:** Route PUT `/fond/deposit-address`.
+
+## Function: registerFondDepositAddress
+
+- **Purpose:** One registration attempt of the Fond wallet's on-chain deposit address with the api.
+- **Inputs:** `session`, `receiveBitcoinAddress` (the wallet's static address read), and `putFondDepositAddress`.
+- **Returns / side effects:** `registered` when the api stored the address; `stop` on 403 or 404, so the caller sends nothing more for that session (as the payout loop stops); `retry` on every other answer (400, 401, 503, a network failure, an unreadable body) and when the wallet could not read its address, in which case nothing is sent.
+- **Used by:** `FondDepositSync`.
+
+## Function: claimFondDeposits
+
+- **Purpose:** Makes the Fond wallet claim its on-chain deposits under a bounded fee. With `defaultConfig('mainnet')` the SDK (`@breeztech/breez-sdk-spark` 0.26.0) claims a deposit by itself only while the claim fits `maxDepositClaimFee`, which defaults to 1 sat/vbyte; a dearer deposit stays unclaimed until the app claims it. This pass calls the SDK's `claimDeposit` with a fixed `maxFee` per deposit. The SDK records that ceiling on the deposit and applies it to its own later attempts, early or at maturity.
+- **Inputs:** `listUnclaimedDeposits` and `claimDeposit` of the wallet.
+- **Returns / side effects:** How many claims it asked for. The ceiling is a tenth of the deposit, at most `FOND_DEPOSIT_CLAIM_MAX_FEE_SATS` (2,000 sats). A deposit that is claimed, submitted, or refunded (`done`), that already carries this ceiling, or whose ceiling would be 0 sats is skipped, so a deposit is claimed once per ceiling and not on every pass. A failed claim (for example a matured deposit that costs more than the ceiling) is swallowed and the next deposit is handled; a failed list rejects.
+- **Used by:** `FondDepositSync`.
+
+## Function: FondDepositSync
+
+- **Purpose:** Root-mounted, `null`-rendering client sync of the Fond's on-chain deposits. Only the Fond member's signed-in app can read the Fond wallet's deposit address, so this registers it with the api and claims the wallet's deposits while that wallet is open. A sibling of `FondPayoutSync` so each stays single-purpose: that one pays, this one receives.
+- **Inputs:** Reads the auth store (`session`, account id, role) and the wallet store status; calls `fondE2eWallet()` once on mount.
+- **Returns / side effects:** `null`. Active on the same condition as `FondPayoutSync`: a session, `roleAtLeast(account.role, 'fond')`, and a `ready` wallet or the Playwright fake. On activation it calls `registerFondDepositAddress` once per `session:accountId`: `registered` and `stop` (403 / 404) settle that key, so a wallet reconnect sends nothing again; `retry` or a thrown error leaves it open for the next activation (a reconnect or a new session), never on a timer, and an attempt in flight blocks a second one. It also runs `claimFondDeposits` on activation and on every `newDeposits` or `unclaimedDeposits` report (`onWalletDeposits`); a pass still running absorbs the next report, and a failed pass waits for the next one. In a Playwright build the fake's `receiveBitcoinAddress`, `listUnclaimedDeposits`, and `claimDeposit` replace the wallet functions. Sign-out, a locked wallet, or unmount stops listening.
+- **Used by:** `RootLayout`, right after `FondPayoutSync`.
+
+## Function: receiveWalletBitcoinAddress
+
+- **Purpose:** Reads the static Bitcoin deposit address of the connected wallet (`receiveBitcoinAddress` of the connection: the SDK's `receivePayment` with `{ type: 'bitcoinAddress' }` and no `newAddress`, so the existing address).
+- **Inputs:** None.
+- **Returns / side effects:** The address. Throws `wallet-connect` without a connection, otherwise the SDK's error. It does not open the wallet.
+- **Used by:** `FondDepositSync` through `registerFondDepositAddress`.
+
+## Function: listWalletUnclaimedDeposits
+
+- **Purpose:** Lists the on-chain deposits the connected wallet tracks and has not finished claiming (the SDK's `listUnclaimedDeposits`), as `WalletDeposit` rows: `txid`, `vout`, `amountSats`, `done` (claim submitted or claimed, or refunded), and `maxClaimFeeSats` (a recorded fixed ceiling, else null).
+- **Inputs:** None.
+- **Returns / side effects:** The deposits. Throws `wallet-connect` without a connection, otherwise the SDK's error.
+- **Used by:** `FondDepositSync` through `claimFondDeposits`.
+
+## Function: claimWalletDeposit
+
+- **Purpose:** Claims one deposit of the connected wallet with a fixed fee ceiling (the SDK's `claimDeposit` with `maxFee: { type: 'fixed', amount }`).
+- **Inputs:** `{ txid, vout }` and `maxFeeSats`.
+- **Returns / side effects:** Resolves once the SDK answered (settled, submitted, or deferred). Throws `wallet-connect` without a connection, otherwise the SDK's error (for example a matured deposit whose claim exceeds the ceiling).
+- **Used by:** `FondDepositSync` through `claimFondDeposits`.
+
+## Function: onWalletDeposits
+
+- **Purpose:** Subscribes to the SDK's `newDeposits` and `unclaimedDeposits` events of the current wallet connection.
+- **Inputs:** `listener`, called once per such event.
+- **Returns / side effects:** An unsubscribe function. Other events (`synced`, payments, `claimedDeposits`) do not call it.
+- **Used by:** `FondDepositSync`.
 
 ## Function: proxyFondPayoutsGet
 
@@ -7873,7 +7950,7 @@ The class exists so the composer can tell a refused free first post from any oth
 
 ## Function: fetchFondSummary
 
-- **Purpose:** Reads the same-origin `GET /fonds/:username/summary` proxy and validates the body with `fondSummarySchema`.
+- **Purpose:** Reads the same-origin `GET /fonds/:username/summary` proxy and validates the body with `fondSummarySchema`. A body without `onchainAddress` (an api that does not send it yet) reads as `onchainAddress: null`.
 - **Inputs:** `username` — Fond handle from the route.
 - **Returns / side effects:** The `FondSummary`, or `null` on 404 (no Fond, or another handle). Throws on any other non-2xx status or a body that fails validation.
 - **Used by:** `FondSummaryLoader` on `/fonds/[username]`.
@@ -7889,5 +7966,5 @@ The class exists so the composer can tell a refused free first post from any oth
 
 - **Purpose:** Client loader for the public Fond card. A new component because `StatsDashboard` is the ink marketing stats page with charts and a fiat picker, and `ViewProfileScreen` renders a member profile with gift charts; neither shows Fond totals.
 - **Inputs:** `username`. Fetches `fetchFondSummary(username)` on mount and after **Try again**.
-- **Returns / side effects:** Loading (`forum.loading`), not-found (`fond.missing`), error (`fond.error` with **Try again**), or the card: the handle with the **Fond** `ForumRoleTag` and hint, three KPI tiles (`fond.received`, `fond.paidOut` + `fond.fees`, `fond.balance` + `fond.balanceAsOf` / `fond.balanceNotReported`), and `fond.payoutsPaid`. Every amount uses `formatBitcoin` with the preferred fiat from the current spot (`useFiatPreference` + `useSpotRate` + `formatFiatDisplay`) under it; the spot is not stored.
+- **Returns / side effects:** Loading (`forum.loading`), not-found (`fond.missing`), error (`fond.error` with **Try again**), or the card: the handle with the **Fond** `ForumRoleTag` and hint, three KPI tiles (`fond.received`, `fond.paidOut` + `fond.fees`, `fond.balance` + `fond.balanceAsOf` / `fond.balanceNotReported`), `FondDeposit` with the handle and the summary's `onchainAddress`, and `fond.payoutsPaid`. Every amount uses `formatBitcoin` with the preferred fiat from the current spot (`useFiatPreference` + `useSpotRate` + `formatFiatDisplay`) under it; the spot is not stored.
 - **Used by:** `FondPage`.

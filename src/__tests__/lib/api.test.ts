@@ -314,7 +314,10 @@ describe('fetchFondSummary', () => {
 
   it('returns the validated summary from the same-origin proxy path', async () => {
     const fetchMock = stubFetch({ ok: true, status: 200, body: summary });
-    await expect(fetchFondSummary('tondo-fond')).resolves.toEqual(summary);
+    await expect(fetchFondSummary('tondo-fond')).resolves.toEqual({
+      ...summary,
+      onchainAddress: null,
+    });
     expect(fetchMock).toHaveBeenCalledWith('/fonds/tondo-fond/summary');
   });
 

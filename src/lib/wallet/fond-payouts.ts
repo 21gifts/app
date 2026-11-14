@@ -3,7 +3,12 @@ import type { FondPayoutFailure } from '@/lib/api';
 import { getE2eNow } from '@/lib/config';
 import { reportPaymentFailure, type PaymentFailure } from '@/lib/wallet/payment-failure';
 import type { WalletPayResult, WalletSendResult } from '@/lib/wallet/wallet-service';
-import type { WalletPayment, WalletPaymentPage, WalletPayRequest } from '@/lib/wallet/wallet-sdk';
+import type {
+  WalletDeposit,
+  WalletPayment,
+  WalletPaymentPage,
+  WalletPayRequest,
+} from '@/lib/wallet/wallet-sdk';
 
 /** How many newest wallet payments one history read covers. */
 const FOND_PAYOUT_HISTORY_LIMIT = 100;
@@ -11,16 +16,32 @@ const FOND_PAYOUT_HISTORY_LIMIT = 100;
 /** Sent payments the Playwright Fond wallet remembers for this tab. */
 const e2eSends: WalletPayment[] = [];
 
+/** The Playwright Fond wallet's static deposit address (a BIP-86 mainnet test vector). */
+const FOND_E2E_DEPOSIT_ADDRESS = 'bc1p5cyxnuxmeuwuvkwfem96lqzszd02n6xdcjrs20cac6yqjjwudpxqkedrcr';
+
+/** The one open deposit the Playwright Fond wallet holds; a claim records its ceiling. */
+const e2eDeposit: WalletDeposit = {
+  txid: 'cd'.repeat(32),
+  vout: 0,
+  amountSats: 50_000,
+  done: false,
+  maxClaimFeeSats: null,
+};
+
 /**
  * The fake Fond wallet for a Playwright build: a prepare that pays the input it
- * is given and records it as a completed send. Returns `null` in every other
- * build, so production and unit tests keep the real wallet functions.
+ * is given and records it as a completed send, a fixed deposit address, and one
+ * open deposit whose claim records the fee ceiling. Returns `null` in every
+ * other build, so production and unit tests keep the real wallet functions.
  *
  * @returns The Playwright wallet fakes, or `null` outside a Playwright build.
  */
 export function fondE2eWallet(): {
   payFromWallet: (request: WalletPayRequest) => Promise<WalletPayResult>;
   listWalletPayments: (page: WalletPaymentPage) => Promise<WalletPayment[]>;
+  receiveBitcoinAddress: () => Promise<string>;
+  listUnclaimedDeposits: () => Promise<WalletDeposit[]>;
+  claimDeposit: (deposit: { txid: string; vout: number }, maxFeeSats: number) => Promise<void>;
 } | null {
   if (getE2eNow() === null) {
     return null;
@@ -62,6 +83,11 @@ export function fondE2eWallet(): {
       };
     },
     listWalletPayments: async () => e2eSends,
+    receiveBitcoinAddress: async () => FOND_E2E_DEPOSIT_ADDRESS,
+    listUnclaimedDeposits: async () => [{ ...e2eDeposit }],
+    claimDeposit: async (_deposit, maxFeeSats) => {
+      e2eDeposit.maxClaimFeeSats = maxFeeSats;
+    },
   };
 }
 

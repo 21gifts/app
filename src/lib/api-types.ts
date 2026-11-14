@@ -2136,11 +2136,21 @@ export const fondPayoutInvoiceSchema = z.object({
 export type FondPayoutInvoice = z.infer<typeof fondPayoutInvoiceSchema>;
 
 /**
+ * Runtime schema for a `PUT /fond/deposit-address` success body: the address
+ * the api stored for the Fond wallet.
+ */
+export const fondDepositAddressSchema = z.object({
+  address: z.string().min(1),
+});
+
+/**
  * Runtime schema for the public `GET /fond/summary` body.
  *
  * `balanceSats` and `balanceSyncedAt` may be `null` until the api has synced
  * the Fond's wallet. `payoutsPaidUsd` is the stored two-decimal USD figure at
  * the moment each grant payout was created and is never recomputed.
+ * `onchainAddress` is the Fond wallet's on-chain deposit address once the Fond
+ * wallet has registered it; an api that does not send the field reads as `null`.
  */
 export const fondSummarySchema = z.object({
   username: z.string().min(1),
@@ -2151,6 +2161,7 @@ export const fondSummarySchema = z.object({
   balanceSyncedAt: z.string().min(1).nullable(),
   payoutsPaid: z.number().int().nonnegative(),
   payoutsPaidUsd: z.string(),
+  onchainAddress: z.string().nullable().optional().default(null),
 });
 
 /** Public Fond totals: received, paid out with fees, balance, and paid grant payouts. */

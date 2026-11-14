@@ -45,6 +45,7 @@ import {
   fondPayoutInvoiceSchema,
   fondPayoutListSchema,
   fondSummarySchema,
+  fondDepositAddressSchema,
   trustActionResultSchema,
   trustChainSchema,
   passkeyBeginSchema,
@@ -2870,12 +2871,25 @@ describe('fondSummarySchema', () => {
   };
 
   it('parses a full summary', () => {
-    expect(fondSummarySchema.parse(summary)).toEqual(summary);
+    const full = {
+      ...summary,
+      onchainAddress: 'bc1p5cyxnuxmeuwuvkwfem96lqzszd02n6xdcjrs20cac6yqjjwudpxqkedrcr',
+    };
+    expect(fondSummarySchema.parse(full)).toEqual(full);
+  });
+
+  it('reads a missing or null on-chain address as null', () => {
+    expect(fondSummarySchema.parse(summary).onchainAddress).toBeNull();
+    expect(fondSummarySchema.parse({ ...summary, onchainAddress: null }).onchainAddress).toBeNull();
+  });
+
+  it('rejects a non-string on-chain address', () => {
+    expect(() => fondSummarySchema.parse({ ...summary, onchainAddress: 1 })).toThrow();
   });
 
   it('accepts a null balance and null synced time', () => {
     const bare = { ...summary, balanceSats: null, balanceSyncedAt: null };
-    expect(fondSummarySchema.parse(bare)).toEqual(bare);
+    expect(fondSummarySchema.parse(bare)).toEqual({ ...bare, onchainAddress: null });
   });
 
   it('rejects an empty username, negative sats, and a non-integer count', () => {
@@ -2943,5 +2957,12 @@ describe('fondPayoutInvoiceSchema', () => {
       paymentHash: invoice.paymentHash,
     };
     expect(() => fondPayoutInvoiceSchema.parse(withoutSparkInvoice)).toThrow();
+  });
+});
+
+describe('fondDepositAddressSchema', () => {
+  it('parses the stored address and rejects an empty one', () => {
+    expect(fondDepositAddressSchema.parse({ address: 'bc1qx' })).toEqual({ address: 'bc1qx' });
+    expect(() => fondDepositAddressSchema.parse({ address: '' })).toThrow();
   });
 });

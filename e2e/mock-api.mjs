@@ -162,6 +162,7 @@ const FOND_PAYMENT_HASH = 'ab'.repeat(32);
 /** Public `GET /fond/summary` fixture, as the api answers for `/fonds/tondo-fond`. */
 const FOND_SUMMARY = {
   username: 'tondo-fond',
+  onchainAddress: 'bc1p5cyxnuxmeuwuvkwfem96lqzszd02n6xdcjrs20cac6yqjjwudpxqkedrcr',
   receivedSats: 210000,
   paidOutSats: 21000,
   feesSats: 210,
@@ -226,6 +227,18 @@ function fondPayoutRow(state) {
 function roleAtLeast(role, min) {
   return ROLE_ORDER.indexOf(role) >= ROLE_ORDER.indexOf(min);
 }
+
+/**
+ * Deposit addresses the Fond sessions registered through
+ * `PUT /fond/deposit-address`, per bearer, with the number of calls.
+ *
+ * @type {Map<string, { address: string | null, puts: number }>}
+ */
+const fondDepositAddresses = new Map();
+
+/** Shape of a Bitcoin mainnet address, as the api checks it. */
+const MAINNET_ADDRESS_RE =
+  /^(?:bc1q[02-9ac-hj-np-z]{38}|bc1[qp][02-9ac-hj-np-z]{58}|[13][1-9A-HJ-NP-Za-km-z]{25,33})$/;
 
 /**
  * Whether a bearer may use the Fond payout fixtures: an account minted by
@@ -4487,6 +4500,40 @@ const server = http.createServer(async (req, res) => {
       state.invoices += 1;
     }
     json(res, 200, state.invoice);
+    return;
+  }
+
+  if (method === 'PUT' && pathName === '/fond/deposit-address') {
+    const token = bearer(req);
+    if (token === null) {
+      json(res, 401, { error: 'Unauthorized' });
+      return;
+    }
+    if (!fondPayer(token)) {
+      json(res, 403, { error: 'Fond only' });
+      return;
+    }
+    const body = jsonObject(rawBody);
+    const address = body?.address;
+    const state = fondDepositAddresses.get(token) ?? { address: null, puts: 0 };
+    state.puts += 1;
+    fondDepositAddresses.set(token, state);
+    if (typeof address !== 'string' || !MAINNET_ADDRESS_RE.test(address)) {
+      json(res, 400, { error: 'Invalid address' });
+      return;
+    }
+    state.address = address;
+    json(res, 200, { address });
+    return;
+  }
+
+  if (method === 'GET' && pathName === '/e2e/fond-deposit-address') {
+    const token = bearer(req);
+    if (token === null || !fondPayer(token)) {
+      json(res, 401, { error: 'Unauthorized' });
+      return;
+    }
+    json(res, 200, fondDepositAddresses.get(token) ?? { address: null, puts: 0 });
     return;
   }
 

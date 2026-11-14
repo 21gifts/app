@@ -12531,6 +12531,20 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/fonds/[username]',
+    id: 'deposit-onchain',
+    image: 'fonds-deposit-onchain.png',
+    visual: 'state-fonds-deposit-onchain',
+    needle: 'state /fonds/[username] deposit-onchain',
+  },
+  {
+    route: '/fonds/[username]',
+    id: 'deposit-lightning-only',
+    image: 'fonds-deposit-lightning-only.png',
+    visual: 'state-fonds-deposit-lightning-only',
+    needle: 'state /fonds/[username] deposit-lightning-only',
+  },
+  {
+    route: '/fonds/[username]',
     id: 'balance-null',
     image: 'fonds-balance-null.png',
     visual: 'state-fonds-balance-null',

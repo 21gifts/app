@@ -27,6 +27,7 @@ const SUMMARY: FondSummary = {
   balanceSyncedAt: '2026-11-11T10:00:00.000Z',
   payoutsPaid: 3,
   payoutsPaidUsd: '3.00',
+  onchainAddress: null,
 };
 
 afterEach(() => {
@@ -56,6 +57,17 @@ describe('FondSummaryLoader', () => {
     expect(screen.getByText(/as of/)).toBeTruthy();
     expect(screen.getByText('3 grant payouts paid (3.00 USD)', { exact: false })).toBeTruthy();
     expect(fetchFondSummary).toHaveBeenCalledWith('tondo-fond');
+  });
+
+  it('shows the deposit block with the summary handle and on-chain address', async () => {
+    vi.mocked(fetchFondSummary).mockResolvedValue({
+      ...SUMMARY,
+      onchainAddress: 'bc1p5cyxnuxmeuwuvkwfem96lqzszd02n6xdcjrs20cac6yqjjwudpxqkedrcr',
+    });
+    renderWithLocale(<FondSummaryLoader username="tondo-fond" />);
+    expect(await screen.findByRole('heading', { name: 'Top up this Fond' })).toBeTruthy();
+    expect(screen.getByRole('group', { name: 'Deposit method' })).toBeTruthy();
+    expect(await screen.findByText('tondo-fond@21.gifts')).toBeTruthy();
   });
 
   it('shows one paid grant payout in the singular', async () => {

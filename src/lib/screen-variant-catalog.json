@@ -10674,6 +10674,18 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/fonds/[username]:deposit-onchain",
+    "label": "/fonds/[username] deposit-onchain",
+    "visual": "state-fonds-deposit-onchain",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/fonds/[username]:deposit-lightning-only",
+    "label": "/fonds/[username] deposit-lightning-only",
+    "visual": "state-fonds-deposit-lightning-only",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/fonds/[username]:balance-null",
     "label": "/fonds/[username] balance-null",
     "visual": "state-fonds-balance-null",

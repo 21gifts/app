@@ -46,6 +46,7 @@ import {
   fondPayoutListSchema,
   fondSummarySchema,
   fondPayoutInvoiceSchema,
+  fondDepositAddressSchema,
   trustActionResultSchema,
   trustChainSchema,
   passkeyBeginSchema,
@@ -5401,7 +5402,7 @@ export async function postLnurlInvoice(
 }
 
 /**
- * Failure of a Fond payout call, without throwing on an HTTP status.
+ * Failure of a Fond payout or deposit-address call, without throwing on an HTTP status.
  *
  * `status` is the HTTP status of the same-origin proxy answer (also for a 2xx
  * whose body is unreadable or fails the schema, then with `error: null`), or
@@ -5416,19 +5417,19 @@ export interface FondPayoutFailure {
 }
 
 /**
- * Calls one `/fond/payouts` endpoint and reads its body without logging the
- * invoice or address.
+ * Calls one `/fond/...` endpoint of the Fond account and reads its body
+ * without logging the invoice or address.
  *
  * @param path - Same-origin path.
  * @param session - Bearer session.
- * @param init - Method, `GET` when omitted.
+ * @param init - Method (`GET` when omitted) and an optional JSON body.
  * @returns The raw response and its parsed JSON body, or a status `0` failure
  *   when the request did not answer.
  */
 async function fondPayoutRequest(
   path: string,
   session: string,
-  init: { method?: 'POST' } = {},
+  init: { method?: 'POST' | 'PUT'; json?: unknown } = {},
 ): Promise<{ response: Response; body: unknown } | FondPayoutFailure> {
   let response: Response;
   try {
@@ -5436,7 +5437,9 @@ async function fondPayoutRequest(
       ...(init.method === undefined ? {} : { method: init.method }),
       headers: {
         Authorization: `Bearer ${session}`,
+        ...(init.json === undefined ? {} : { 'Content-Type': 'application/json' }),
       },
+      ...(init.json === undefined ? {} : { body: JSON.stringify(init.json) }),
     });
   } catch {
     return { ok: false, status: 0, error: null };
@@ -5500,4 +5503,35 @@ export async function postFondPayoutInvoice(
     return { ok: false, status: result.response.status, error: null };
   }
   return { ok: true, invoice: parsed.data };
+}
+
+/**
+ * Registers the Fond wallet's on-chain deposit address through
+ * `PUT /fond/deposit-address` (Bearer). The api stores it idempotently and
+ * returns it in the public `GET /fond/summary`.
+ *
+ * Never throws on an HTTP status: `400` is an address the api refused, `403`
+ * a session that is not the Fond account, `404` an api whose Fond surface is
+ * off, and `503` an api that cannot store it now.
+ *
+ * @param session - Bearer session of the Fond account.
+ * @param address - The Fond wallet's static Bitcoin deposit address.
+ * @returns The stored address, or a {@link FondPayoutFailure}.
+ */
+export async function putFondDepositAddress(
+  session: string,
+  address: string,
+): Promise<{ ok: true; address: string } | FondPayoutFailure> {
+  const result = await fondPayoutRequest('/fond/deposit-address', session, {
+    method: 'PUT',
+    json: { address },
+  });
+  if ('ok' in result) {
+    return result;
+  }
+  const parsed = fondDepositAddressSchema.safeParse(result.body);
+  if (!parsed.success) {
+    return { ok: false, status: result.response.status, error: null };
+  }
+  return { ok: true, address: parsed.data.address };
 }

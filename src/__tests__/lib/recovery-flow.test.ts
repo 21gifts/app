@@ -151,6 +151,9 @@ function connectionOf(balances: number[] = [0]): FakeConnection {
     authorizeAddressTransfer: vi.fn(async () => ({ authorization: 'auth' })),
     claimAddressTransfer: vi.fn(async () => undefined),
     receiveSparkAddress: vi.fn(async () => NEW_ADDRESS),
+    receiveBitcoinAddress: vi.fn(),
+    listUnclaimedDeposits: vi.fn(),
+    claimDeposit: vi.fn(),
     sendToSparkAddress: vi.fn(async () => undefined),
     disconnect: vi.fn(async () => undefined),
   };
