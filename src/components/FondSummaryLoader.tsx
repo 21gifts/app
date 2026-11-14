@@ -2,8 +2,8 @@
 
 import { useEffect, useState, type ReactElement } from 'react';
 import { useFiatPreference } from '@/components/FiatPreferenceProvider';
-import { FondDeposit } from '@/components/FondDeposit';
 import { ForumRoleHint, ForumRoleTag } from '@/components/ForumRoleTag';
+import { FondDeposit } from '@/components/FondDeposit';
 import { useTranslations } from '@/components/LocaleProvider';
 import { useNumberFormat } from '@/components/NumberFormatProvider';
 import { Button, Card } from '@/components/ui';

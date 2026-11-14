@@ -407,6 +407,22 @@ describe('api proxy wrappers', () => {
     expect(new Headers(init.headers).get('authorization')).toBe('Bearer token');
   });
 
+  it('proxyFondDepositAddressPut hits PUT /fond/deposit-address with the body', async () => {
+    const fetchMock = stubApi();
+    await proxyFondDepositAddressPut(
+      new Request('http://localhost/fond/deposit-address', {
+        method: 'PUT',
+        headers: { authorization: 'Bearer token', 'content-type': 'application/json' },
+        body: JSON.stringify({ address: 'bc1qx' }),
+      }),
+    );
+    const [url, init] = fetchMock.mock.calls[0] as [URL, RequestInit];
+    expect(url.pathname).toBe('/fond/deposit-address');
+    expect(init.method).toBe('PUT');
+    expect(new Headers(init.headers).get('authorization')).toBe('Bearer token');
+    expect(new TextDecoder().decode(init.body as ArrayBuffer)).toBe('{"address":"bc1qx"}');
+  });
+
   it('proxyFondPayoutsGet hits GET /fond/payouts', async () => {
     const fetchMock = stubApi();
     await proxyFondPayoutsGet(
@@ -427,22 +443,6 @@ describe('api proxy wrappers', () => {
     expect(url.pathname).toBe('/fond/summary');
     expect(init.method).toBe('GET');
     expect(new Headers(init.headers).get('authorization')).toBeNull();
-  });
-
-  it('proxyFondDepositAddressPut hits PUT /fond/deposit-address with the body', async () => {
-    const fetchMock = stubApi();
-    await proxyFondDepositAddressPut(
-      new Request('http://localhost/fond/deposit-address', {
-        method: 'PUT',
-        headers: { authorization: 'Bearer token', 'content-type': 'application/json' },
-        body: JSON.stringify({ address: 'bc1qx' }),
-      }),
-    );
-    const [url, init] = fetchMock.mock.calls[0] as [URL, RequestInit];
-    expect(url.pathname).toBe('/fond/deposit-address');
-    expect(init.method).toBe('PUT');
-    expect(new Headers(init.headers).get('authorization')).toBe('Bearer token');
-    expect(new TextDecoder().decode(init.body as ArrayBuffer)).toBe('{"address":"bc1qx"}');
   });
 
   it('proxyFondPayoutInvoicePost hits the encoded /fond/payouts/:id/invoice', async () => {
