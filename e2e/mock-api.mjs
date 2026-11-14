@@ -4509,7 +4509,8 @@ const server = http.createServer(async (req, res) => {
       json(res, 401, { error: 'Unauthorized' });
       return;
     }
-    if (!fondPayer(token)) {
+    // The api accepts only the configured Fond account here, not every rank at or above `fond`.
+    if (byToken.get(token)?.role !== 'fond') {
       json(res, 403, { error: 'Fond only' });
       return;
     }

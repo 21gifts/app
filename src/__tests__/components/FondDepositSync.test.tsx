@@ -282,7 +282,30 @@ describe('FondDepositSync', () => {
     expect(claimFondDeposits).toHaveBeenCalledTimes(2);
   });
 
-  it('absorbs a deposit report while a pass is still running', async () => {
+  it('runs exactly one more pass for reports that arrive while a pass runs', async () => {
+    let finish: (value: number) => void = () => undefined;
+    vi.mocked(claimFondDeposits).mockReturnValueOnce(
+      new Promise((resolve) => {
+        finish = resolve;
+      }),
+    );
+    setState('fond', 'sess', 'ready');
+    render(<FondDepositSync />);
+    await flush();
+    act(() => {
+      for (const listener of depositListeners) {
+        listener();
+        listener();
+      }
+    });
+    await flush();
+    expect(claimFondDeposits).toHaveBeenCalledTimes(1);
+    finish(0);
+    await flush();
+    expect(claimFondDeposits).toHaveBeenCalledTimes(2);
+  });
+
+  it('runs no queued pass once cleanup cancelled the running one', async () => {
     let finish: (value: number) => void = () => undefined;
     vi.mocked(claimFondDeposits).mockReturnValueOnce(
       new Promise((resolve) => {
@@ -297,10 +320,11 @@ describe('FondDepositSync', () => {
         listener();
       }
     });
+    setState(null, null, 'locked');
     await flush();
-    expect(claimFondDeposits).toHaveBeenCalledTimes(1);
     finish(0);
     await flush();
+    expect(claimFondDeposits).toHaveBeenCalledTimes(1);
   });
 
   it('keeps listening after a failed pass', async () => {

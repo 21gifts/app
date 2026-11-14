@@ -32,8 +32,8 @@ import { useWalletStore } from '@/stores/wallet-store';
  * stored the address for this session and account, which confirms that the
  * wallet is the Fond's (any other account at rank `fond` or above gets 403 and
  * keeps the SDK default). A pass runs then and on every `newDeposits` or
- * `unclaimedDeposits` report of the wallet; a pass that is still running
- * absorbs the next report. Sign-out, a locked wallet, or another session
+ * `unclaimedDeposits` report of the wallet; reports that arrive while a pass
+ * runs start exactly one more pass after it. Sign-out, a locked wallet, or another session
  * cancels a running pass before its next claim, and a registration answer
  * that arrives after the session changed is dropped.
  *
@@ -103,9 +103,14 @@ export function FondDepositSync(): null {
       claimDeposit: e2eWallet?.claimDeposit ?? claimWalletDeposit,
     };
     let running = false;
+    let again = false;
     let cancelled = false;
     const pass = async (): Promise<void> => {
-      if (running || cancelled) {
+      if (cancelled) {
+        return;
+      }
+      if (running) {
+        again = true;
         return;
       }
       running = true;
@@ -115,6 +120,10 @@ export function FondDepositSync(): null {
         // The next deposit report runs another pass.
       } finally {
         running = false;
+      }
+      if (again) {
+        again = false;
+        void pass();
       }
     };
     void pass();

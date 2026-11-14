@@ -39,10 +39,11 @@ async function withSameOriginFetch<T>(work: () => Promise<T>): Promise<T> {
  */
 async function roleSession(
   request: APIRequestContext,
-  role: 'fond' | 'moderator' = 'fond',
+  role: 'fond' | 'moderator' | 'founder' = 'fond',
 ): Promise<string> {
+  const names = { fond: 'Fond', moderator: 'Mod', founder: 'Founder' };
   const created = await request.post(`${MOCK_API}/e2e/role-session`, {
-    data: { role, name: role === 'fond' ? 'Fond' : 'Mod' },
+    data: { role, name: names[role] },
   });
   expect(created.status()).toBe(200);
   return ((await created.json()) as { token: string }).token;
@@ -110,6 +111,12 @@ test('Function: proxyFondDepositAddressPut — no bearer is 401, another account
     data: { address: ADDRESS },
   });
   expect(refused.status()).toBe(403);
+  const founder = await roleSession(request, 'founder');
+  const founderRefused = await request.put('/fond/deposit-address', {
+    headers: { authorization: `Bearer ${founder}` },
+    data: { address: ADDRESS },
+  });
+  expect(founderRefused.status()).toBe(403);
 });
 
 test('Function: PUT — /fond/deposit-address stores the Fond address and refuses a malformed one', async ({
