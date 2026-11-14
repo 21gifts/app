@@ -2665,6 +2665,13 @@ Builds the country list of the Shops filter from the pins of `GET /forum/message
 - **Returns / side effects:** `{ days, rows }`. Throws visitor copy `Could not load the payout table. Please try again.` on 401/403/503, other non-2xx, network failure, or a body that fails the schema.
 - **Used by:** `FundingPayoutsScreen`.
 
+## Function: fetchShopActivityShops
+
+- **Purpose:** GET `/shops/activity/shops` (same-origin Bearer proxy of api `GET /shops/activity/shops`) and parse `shopActivityShopsSchema`. `today` and `lastChargeDay` must be real calendar days (`isUtcDay`). Keeps the api order of the shops.
+- **Inputs:** Bearer `sessionToken`.
+- **Returns / side effects:** `{ windowDays, today, shops }`. Throws `'moderate.forbidden'` on 403. Throws visitor copy `Could not load shop activity. Please try again.` on 401/503, other non-2xx, network failure, or a body that fails the schema.
+- **Used by:** `ShopActivityShopsScreen`.
+
 ## Function: fetchFundingApplications
 
 - **Purpose:** GET `/funding/applications` (same-origin Bearer proxy of api `GET /funding/applications`) and parse `fundingApplicationsResponseSchema.applications`. Next.js forbids a `route.ts` beside `/grants/applications`, so the proxy lives at this path.
@@ -4102,6 +4109,13 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Inputs:** Incoming `Request` (Bearer session, no body).
 - **Returns / side effects:** Upstream `Response` via `proxyApiRequest`, status and body unchanged (200 `{ funding }`, 401, 403, 409, 503, or 404 while the api does not have the endpoint).
 - **Used by:** Route POST `/funding/withdraw`.
+
+## Function: proxyShopActivityShopsGet
+
+- **Purpose:** Same-origin Bearer proxy helper for api `GET /shops/activity/shops`. Forwards the incoming Authorization header.
+- **Inputs:** Incoming `Request` (Bearer session).
+- **Returns / side effects:** Upstream `Response` via `proxyApiRequest`.
+- **Used by:** Route GET `/shops/activity/shops`.
 
 ## Function: proxyFundingPayoutDaysGet
 
@@ -6499,7 +6513,7 @@ The class exists so the composer can tell a refused free first post from any oth
 
 ## Function: ModerateScreen
 
-- **Purpose:** Client moderation hub of staff tools. Staff (`roleAtLeast(..., 'moderator')`) see a labeled **Goals** `ButtonLink` (`variant="secondary"` `size="lg"`) → `/grants/goals` (first tool), a labeled **Hidden notes** `ButtonLink` (`variant="secondary"` `size="lg"`) → `/moderate/hidden`, a labeled **Open proposals** `ButtonLink` (`variant="secondary"` `size="lg"`) → `/moderate/proposals` that shows `proposalCount` plus `moderate.proposals.unread` when greater than zero, a **Moderators chat group** `ButtonLink` → `/moderate/group` that shows the staff-room unread count plus `moderate.groupUnread` when unread, a labeled **Handbook** `ButtonLink` (`variant="secondary"` `size="lg"`) → `/moderate/handbook`, and a labeled **Show payout per person** `ButtonLink` (`variant="secondary"` `size="lg"`) → `/moderate/payouts` (last tool). There is no payout-goal widget. Non-staff signed-in visitors see the heading plus forbidden copy and no tools list. Does not fetch hidden notes, proposals, applications, gift stats, or the group thread itself; unread for Open proposals and Moderators chat group comes from `useUnreadCount`. Renders `null` without a session. No un-hide control.
+- **Purpose:** Client moderation hub of staff tools. Staff (`roleAtLeast(..., 'moderator')`) see a labeled **Goals** `ButtonLink` (`variant="secondary"` `size="lg"`) → `/grants/goals` (first tool), a labeled **Hidden notes** `ButtonLink` (`variant="secondary"` `size="lg"`) → `/moderate/hidden`, a labeled **Open proposals** `ButtonLink` (`variant="secondary"` `size="lg"`) → `/moderate/proposals` that shows `proposalCount` plus `moderate.proposals.unread` when greater than zero, a **Moderators chat group** `ButtonLink` → `/moderate/group` that shows the staff-room unread count plus `moderate.groupUnread` when unread, a labeled **Handbook** `ButtonLink` (`variant="secondary"` `size="lg"`) → `/moderate/handbook`, a labeled **Show payout per person** `ButtonLink` (`variant="secondary"` `size="lg"`) → `/moderate/payouts`, and a labeled **Show activity per shop** `ButtonLink` (`variant="secondary"` `size="lg"`) → `/moderate/shops` (last tool). There is no payout-goal widget. Non-staff signed-in visitors see the heading plus forbidden copy and no tools list. Does not fetch hidden notes, proposals, applications, gift stats, or the group thread itself; unread for Open proposals and Moderators chat group comes from `useUnreadCount`. Renders `null` without a session. No un-hide control.
 - **Inputs:** Session and account from `useAuthStore`; catalog via `useTranslations`; `useUnreadCount(true, { writeBadge: false })` for Open proposals `proposalCount` and Moderators chat group staff-room unread (network for those counts; does not write the home-screen badge).
 - **Returns / side effects:** React element or `null` without a session. Does not fetch `GET /gifts/stats`. Others see forbidden copy and do not fetch. Does not fetch hidden notes, proposals, applications, or the group thread itself.
 - **Used by:** `ModeratePage`.
@@ -6546,6 +6560,20 @@ The class exists so the composer can tell a refused free first post from any oth
 - **Inputs:** Session and account from `useAuthStore`; catalog via `useTranslations`.
 - **Returns / side effects:** React element or `null` without a session. Fetches `GET /funding/payout-days` only when the role is at least moderator.
 - **Used by:** `PayoutsPage`.
+
+## Function: ShopActivityPage
+
+- **Purpose:** Next.js page for `/moderate/shops` (signed-in staff per-shop activity table). HTML `/moderate/shops` is the table, not a GET proxy. Fill `AppShell` (`align="center"`) with `ProfileChromeLeft` top-left (the only back control: the arrow returns to the previous in-app view in this tab, or `/welcome` when this tab has none; the wordmark is not that control), `SignedInChrome` top-right, and `OnboardingGate screen="welcome"` around `ShopActivityShopsScreen`. JSON lives under `/shops/activity/shops`, the api path. Hub is `/moderate`.
+- **Inputs:** None.
+- **Returns / side effects:** The shop table inside fill AppShell.
+- **Used by:** Route `/moderate/shops`.
+
+## Function: ShopActivityShopsScreen
+
+- **Purpose:** Client table of POS activity per shop. Staff (moderator) fetch `fetchShopActivityShops` and show a lead and one row per shop in the api order: shop name (link to `/{npub}` when set, otherwise text; an empty name reads **Unnamed**), till account (`@username`, otherwise the account id), active days as `N / windowDays`, and the last charge day as a medium localized UTC date or **Never**. A shop with `activeDays` 0 shows its active days and **Inactive** in the danger color. Empty, Loading…, and error plus Try again are separate. Non-staff signed-in visitors see the heading plus forbidden copy and do not fetch; an api 403 shows the same forbidden copy. A session change, or losing the moderator rank, drops the loaded table, and a loaded result is shown only for the session that loaded it; a change between staff roles keeps it, because every staff role gets the same list. Renders `null` without a session. The page chrome owns the back; this screen renders no back control.
+- **Inputs:** Session and account from `useAuthStore`; catalog via `useTranslations`.
+- **Returns / side effects:** React element or `null` without a session. Fetches `GET /shops/activity/shops` only when the role is at least moderator.
+- **Used by:** `ShopActivityPage`.
 
 ## Function: ProposalsPage
 

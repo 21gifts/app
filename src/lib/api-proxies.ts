@@ -771,6 +771,16 @@ export async function proxyShopActivityGet(request: Request): Promise<Response> 
 }
 
 /**
+ * Proxies GET /shops/activity/shops to the 21.gifts api (staff Bearer).
+ *
+ * @param request - Incoming App Router request (Bearer session).
+ * @returns The upstream response.
+ */
+export async function proxyShopActivityShopsGet(request: Request): Promise<Response> {
+  return proxyApiRequest(request, '/shops/activity/shops');
+}
+
+/**
  * Proxies GET /funding/places to the 21.gifts api.
  *
  * No session is required. The incoming request is forwarded as received.

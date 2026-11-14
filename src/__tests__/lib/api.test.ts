@@ -49,6 +49,7 @@ import {
   fetchFundingApplication,
   fetchFundingApplications,
   fetchFundingPayoutDays,
+  fetchShopActivityShops,
   postFundingAdmit,
   postFundingApply,
   postFundingWithdraw,
@@ -7332,6 +7333,67 @@ describe('fetchFundingPayoutDays', () => {
   it('throws visitor copy when the body fails validation', async () => {
     stubFetch({ ok: true, status: 200, body: { days: [], rows: [] } });
     await expect(fetchFundingPayoutDays('sess')).rejects.toThrow(loadError);
+  });
+});
+
+describe('fetchShopActivityShops', () => {
+  const payload = {
+    windowDays: 30,
+    today: '2026-11-14',
+    shops: [
+      {
+        noteId: 'note_a',
+        name: 'Corner Café',
+        npub: 'npub1corner',
+        accountId: 'acc_till',
+        username: 'cornertill',
+        activeDays: 4,
+        lastChargeDay: '2026-11-13',
+      },
+      {
+        noteId: 'note_b',
+        name: 'Bakery',
+        npub: null,
+        accountId: 'acc_bake',
+        username: null,
+        activeDays: 0,
+        lastChargeDay: null,
+      },
+    ],
+  };
+  const loadError = 'Could not load shop activity. Please try again.';
+
+  it('returns the validated payload and sends the bearer header', async () => {
+    const fetchMock = stubFetch({ ok: true, status: 200, body: payload });
+    await expect(fetchShopActivityShops('sess')).resolves.toEqual(payload);
+    expect(fetchMock).toHaveBeenCalledWith('/shops/activity/shops', {
+      headers: { Authorization: 'Bearer sess' },
+    });
+  });
+
+  it('throws the forbidden key on 403', async () => {
+    stubFetch({ ok: false, status: 403, body: { error: 'Forbidden' } });
+    await expect(fetchShopActivityShops('sess')).rejects.toThrow('moderate.forbidden');
+  });
+
+  it('throws visitor copy on 401', async () => {
+    stubFetch({ ok: false, status: 401, body: {} });
+    await expect(fetchShopActivityShops('sess')).rejects.toThrow(loadError);
+  });
+
+  it('throws visitor copy on 503', async () => {
+    stubFetch({ ok: false, status: 503, body: {} });
+    await expect(fetchShopActivityShops('sess')).rejects.toThrow(loadError);
+  });
+
+  it('throws visitor copy when fetch itself fails', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new TypeError('Failed to fetch')));
+    await expect(fetchShopActivityShops('sess')).rejects.toThrow(loadError);
+  });
+
+  it('throws visitor copy when the body fails validation', async () => {
+    stubFetch({ ok: true, status: 200, body: { ...payload, today: 'today' } });
+    await expect(fetchShopActivityShops('sess')).rejects.toThrow(loadError);
   });
 });
 

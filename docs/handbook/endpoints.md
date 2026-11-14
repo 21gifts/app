@@ -1067,6 +1067,13 @@
 - **Used by:** `fetchFundingPayoutDays` via `FundingPayoutsScreen` on `/moderate/payouts`.
 - **Auth:** Bearer session; the api requires at least moderator. The app does not fetch this list for other signed-in roles (forbidden copy, no request).
 
+## Endpoint: GET /shops/activity/shops
+
+- **Purpose:** Same-origin Bearer proxy of api `GET /shops/activity/shops` (per-shop POS activity for staff: `windowDays`, `today`, and one row per shop with `noteId`, `name`, `npub`, `accountId`, `username`, `activeDays`, `lastChargeDay`, never used first, then oldest last charge first). The HTML table lives at `/moderate/shops`.
+- **Errors:** Upstream 401 without a Bearer session, 403 when the account is not staff, 503 when the api is unavailable, or 502 JSON if this proxy cannot reach the api origin.
+- **Used by:** `fetchShopActivityShops` via `ShopActivityShopsScreen` on `/moderate/shops`.
+- **Auth:** Bearer session; the api requires staff. The app does not fetch this list for signed-in roles below moderator (forbidden copy, no request).
+
 ## Endpoint: GET /funding/applications
 
 - **Purpose:** Same-origin Bearer proxy of api `GET /funding/applications` (open grant applications for moderators). Lives under `/funding/applications` because Next.js forbids a `route.ts` beside the HTML page at `/grants/applications` (`/moderate/applications` redirects there).
