@@ -5016,6 +5016,106 @@ test.describe('screen baselines', () => {
     await shotScreen(page, 'state-wallet-payment-heart-open');
   });
 
+  test('state-wallet-payment-received-member-unknown', async ({ page }) => {
+    await stubWalletSetupAccount(page, { sparkWalletVerified: true });
+    await fulfillRateDay(page);
+    await page.goto(
+      '/wallet/payment?id=ab12ce00-1545-4000-8000-000000000014&visual=received-member-unknown',
+    );
+    await expect(page.getByText('Wallet transfer')).toBeVisible();
+    await expect(page.getByText('alice@21.gifts')).toHaveCount(0);
+    await expect(page.getByText('From', { exact: true })).toHaveCount(0);
+    await shotScreen(page, 'state-wallet-payment-received-member-unknown');
+  });
+
+  test('state-wallet-payment-received-member-unknown-open', async ({ page }) => {
+    await stubWalletSetupAccount(page, { sparkWalletVerified: true });
+    await fulfillRateDay(page);
+    await page.goto(
+      '/wallet/payment?id=ab12ce00-1545-4000-8000-000000000014&visual=received-member-unknown',
+    );
+    await page.getByRole('button', { name: 'Details' }).click();
+    await expect(page.getByText('Payment request')).toBeVisible();
+    await expect(page.getByText(/^spark1/)).toBeVisible();
+    await expect(page.getByText('Payment ID')).toBeVisible();
+    await shotScreen(page, 'state-wallet-payment-received-member-unknown-open');
+  });
+
+  test('state-wallet-payment-sent-member-unknown', async ({ page }) => {
+    await stubWalletSetupAccount(page, { sparkWalletVerified: true });
+    await fulfillRateDay(page);
+    await page.goto(
+      '/wallet/payment?id=ab12ce00-1545-4000-8000-000000000015&visual=sent-member-unknown',
+    );
+    await expect(page.getByText('Wallet transfer')).toBeVisible();
+    await expect(page.getByText('bob@21.gifts')).toHaveCount(0);
+    await expect(page.getByText('To', { exact: true })).toHaveCount(0);
+    await shotScreen(page, 'state-wallet-payment-sent-member-unknown');
+  });
+
+  test('state-wallet-payment-sent-member-unknown-open', async ({ page }) => {
+    await stubWalletSetupAccount(page, { sparkWalletVerified: true });
+    await fulfillRateDay(page);
+    await page.goto(
+      '/wallet/payment?id=ab12ce00-1545-4000-8000-000000000015&visual=sent-member-unknown',
+    );
+    await page.getByRole('button', { name: 'Details' }).click();
+    await expect(page.getByText('Payment request')).toBeVisible();
+    await expect(page.getByText(/^spark1/)).toBeVisible();
+    await expect(page.getByText('Payment ID')).toBeVisible();
+    await shotScreen(page, 'state-wallet-payment-sent-member-unknown-open');
+  });
+
+  test('state-wallet-payment-received-from-member', async ({ page }) => {
+    await stubWalletSetupAccount(page, { sparkWalletVerified: true });
+    await fulfillRateDay(page);
+    await page.goto(
+      '/wallet/payment?id=ab12ce00-1545-4000-8000-000000000014&visual=received-from-member',
+    );
+    await expect(page.getByRole('link', { name: 'alice@21.gifts' })).toHaveAttribute(
+      'href',
+      '/members/acc_e2e',
+    );
+    await shotScreen(page, 'state-wallet-payment-received-from-member');
+  });
+
+  test('state-wallet-payment-received-from-member-open', async ({ page }) => {
+    await stubWalletSetupAccount(page, { sparkWalletVerified: true });
+    await fulfillRateDay(page);
+    await page.goto(
+      '/wallet/payment?id=ab12ce00-1545-4000-8000-000000000014&visual=received-from-member',
+    );
+    await page.getByRole('button', { name: 'Details' }).click();
+    await expect(page.getByText('Payment request')).toHaveCount(0);
+    await expect(page.getByText('Payment ID')).toBeVisible();
+    await shotScreen(page, 'state-wallet-payment-received-from-member-open');
+  });
+
+  test('state-wallet-payment-sent-to-member', async ({ page }) => {
+    await stubWalletSetupAccount(page, { sparkWalletVerified: true });
+    await fulfillRateDay(page);
+    await page.goto(
+      '/wallet/payment?id=ab12ce00-1545-4000-8000-000000000015&visual=sent-to-member',
+    );
+    await expect(page.getByRole('link', { name: 'bob@21.gifts' })).toHaveAttribute(
+      'href',
+      '/members/acc_bob',
+    );
+    await shotScreen(page, 'state-wallet-payment-sent-to-member');
+  });
+
+  test('state-wallet-payment-sent-to-member-open', async ({ page }) => {
+    await stubWalletSetupAccount(page, { sparkWalletVerified: true });
+    await fulfillRateDay(page);
+    await page.goto(
+      '/wallet/payment?id=ab12ce00-1545-4000-8000-000000000015&visual=sent-to-member',
+    );
+    await page.getByRole('button', { name: 'Details' }).click();
+    await expect(page.getByText('Payment request')).toHaveCount(0);
+    await expect(page.getByText('Payment ID')).toBeVisible();
+    await shotScreen(page, 'state-wallet-payment-sent-to-member-open');
+  });
+
   test('state-wallet-payment-heart-pending', async ({ page }) => {
     await stubWalletSetupAccount(page, { sparkWalletVerified: true });
     await fulfillRateDay(page);

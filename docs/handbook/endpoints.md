@@ -351,6 +351,13 @@
 - **Used by:** `postWalletReport` (from `reportWallet`).
 - **Auth:** Bearer.
 
+## Endpoint: POST /me/wallet/counterparties
+
+- **Purpose:** Same-origin proxy of api `POST /me/wallet/counterparties` (21gifts/api#605). Resolves the member on the other side of a completed payment: the sender for incoming (`in`) payments or the recipient for outgoing (`out`) payments. The api names that member only from the completed plain Spark transfer its own read of the caller's wallet observed, and only after the caller's own report carried the payment as completed. It reads wallets about once a minute, so a payment it has not read yet has no name and may get one on a later request; a Lightning swap, an on-chain payment, and a payment whose other side is not a member wallet never get one.
+- **Inputs:** Bearer session and a `payments` array of 1–32 `{ id, direction }` rows, with `in`/`out` directions; each id is trimmed and must then be 1–256 characters; at most 16384 bytes.
+- **Returns:** The upstream `200 { counterparties: [{ id, accountId, username }] }` (the trimmed id; a payment without a name is left out), or its error status: 401 `Unauthorized`, 400 `Invalid counterparty lookup`, 413 `Request body is too large`, 429 `Too many requests` after 60 lookups per account and minute, 503 `Counterparty lookup is unavailable`.
+- **Used by:** `fetchPaymentCounterparties` on the payment details screen, through `usePaymentCounterparty` (at most five lookups per opened screen).
+
 ## Endpoint: POST /me/wallet/hearts
 
 - **Purpose:** Same-origin proxy of api `POST /me/wallet/hearts`. Looks up the forum posts attached to 1–32 lowercase Spark payment hashes for the signed-in member, and the credit notes of the ones that are loan repayments.
