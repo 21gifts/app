@@ -45,11 +45,12 @@ export function ShopActivityShopsScreen(): ReactElement | null {
   const [tableAttempt, setTableAttempt] = useState(0);
 
   useEffect(() => {
+    setTable(null);
+    setTableError(null);
     if (session === null || !staff) {
       return;
     }
     let cancelled = false;
-    setTableError(null);
     void (async () => {
       try {
         const next = await fetchShopActivityShops(session);

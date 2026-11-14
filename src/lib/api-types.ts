@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { ROLE_ORDER } from '@/lib/roles';
+import { isUtcDay } from '@/lib/utc-day';
 
 /** Notification stages stored on the signed-in account. */
 export const NOTIFICATION_LEVELS = ['all', 'active', 'mentions', 'none'] as const;
@@ -510,10 +511,7 @@ export const shopActivityShopSchema = z.object({
   accountId: z.string().min(1),
   username: z.string().min(1).nullable(),
   activeDays: z.number().int().nonnegative(),
-  lastChargeDay: z
-    .string()
-    .regex(/^\d{4}-\d{2}-\d{2}$/)
-    .nullable(),
+  lastChargeDay: z.string().refine(isUtcDay).nullable(),
 });
 
 /**
@@ -523,7 +521,7 @@ export const shopActivityShopSchema = z.object({
  */
 export const shopActivityShopsSchema = z.object({
   windowDays: z.number().int().positive(),
-  today: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  today: z.string().refine(isUtcDay),
   shops: z.array(shopActivityShopSchema),
 });
 

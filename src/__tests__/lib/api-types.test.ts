@@ -2584,7 +2584,7 @@ describe('shopActivityShopsSchema', () => {
     expect(shopActivityShopsSchema.parse(body)).toEqual(body);
   });
 
-  it('rejects a negative active day count and a malformed last charge day', () => {
+  it('rejects a negative active day count and a malformed or impossible day', () => {
     expect(() =>
       shopActivityShopsSchema.parse({
         windowDays: 30,
@@ -2598,6 +2598,16 @@ describe('shopActivityShopsSchema', () => {
         today: '2026-11-14',
         shops: [{ ...shop, lastChargeDay: '14.11.2026' }],
       }),
+    ).toThrow();
+    expect(() =>
+      shopActivityShopsSchema.parse({
+        windowDays: 30,
+        today: '2026-11-14',
+        shops: [{ ...shop, lastChargeDay: '2026-02-31' }],
+      }),
+    ).toThrow();
+    expect(() =>
+      shopActivityShopsSchema.parse({ windowDays: 30, today: '2026-13-01', shops: [] }),
     ).toThrow();
   });
 });

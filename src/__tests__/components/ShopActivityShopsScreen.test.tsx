@@ -190,6 +190,35 @@ describe('ShopActivityShopsScreen', () => {
     expect(await screen.findByText('Could not load shop activity. Please try again.')).toBeTruthy();
   });
 
+  it('drops the loaded table when the session changes', async () => {
+    listMock.mockResolvedValueOnce(TABLE);
+    renderWithLocale(<ShopActivityShopsScreen />);
+    expect(await screen.findByRole('table')).toBeTruthy();
+    listMock.mockImplementation(() => new Promise(() => undefined));
+    act(() => {
+      useAuthStore.setState({ session: 'sess-2', account: { ...account, id: 'acc_2' } });
+    });
+    expect(screen.queryByRole('table')).toBeNull();
+    expect(screen.getByText('Loading…')).toBeTruthy();
+    expect(listMock).toHaveBeenLastCalledWith('sess-2');
+  });
+
+  it('does not bring the table back after the staff role is lost and regained', async () => {
+    listMock.mockResolvedValueOnce(TABLE);
+    renderWithLocale(<ShopActivityShopsScreen />);
+    expect(await screen.findByRole('table')).toBeTruthy();
+    act(() => {
+      useAuthStore.setState({ session: 'sess', account: { ...account, role: 'verified' } });
+    });
+    expect(screen.getByText('This page is for moderators.')).toBeTruthy();
+    listMock.mockImplementation(() => new Promise(() => undefined));
+    act(() => {
+      useAuthStore.setState({ session: 'sess', account });
+    });
+    expect(screen.queryByRole('table')).toBeNull();
+    expect(screen.getByText('Loading…')).toBeTruthy();
+  });
+
   it('ignores a stale resolve after unmount', async () => {
     let resolveList: ((value: ShopActivityShops) => void) | undefined;
     listMock.mockImplementation(

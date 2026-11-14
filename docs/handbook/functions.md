@@ -2667,7 +2667,7 @@ Builds the country list of the Shops filter from the pins of `GET /forum/message
 
 ## Function: fetchShopActivityShops
 
-- **Purpose:** GET `/shops/activity/shops` (same-origin Bearer proxy of api `GET /shops/activity/shops`) and parse `shopActivityShopsSchema`. Keeps the api order of the shops.
+- **Purpose:** GET `/shops/activity/shops` (same-origin Bearer proxy of api `GET /shops/activity/shops`) and parse `shopActivityShopsSchema`. `today` and `lastChargeDay` must be real calendar days (`isUtcDay`). Keeps the api order of the shops.
 - **Inputs:** Bearer `sessionToken`.
 - **Returns / side effects:** `{ windowDays, today, shops }`. Throws `'moderate.forbidden'` on 403. Throws visitor copy `Could not load shop activity. Please try again.` on 401/503, other non-2xx, network failure, or a body that fails the schema.
 - **Used by:** `ShopActivityShopsScreen`.
@@ -6570,7 +6570,7 @@ The class exists so the composer can tell a refused free first post from any oth
 
 ## Function: ShopActivityShopsScreen
 
-- **Purpose:** Client table of POS activity per shop. Staff (moderator) fetch `fetchShopActivityShops` and show a lead and one row per shop in the api order: shop name (link to `/{npub}` when set, otherwise text; an empty name reads **Unnamed**), till account (`@username`, otherwise the account id), active days as `N / windowDays`, and the last charge day as a medium localized UTC date or **Never**. A shop with `activeDays` 0 shows its active days and **Inactive** in the danger color. Empty, Loading…, and error plus Try again are separate. Non-staff signed-in visitors see the heading plus forbidden copy and do not fetch; an api 403 shows the same forbidden copy. Renders `null` without a session. The page chrome owns the back; this screen renders no back control.
+- **Purpose:** Client table of POS activity per shop. Staff (moderator) fetch `fetchShopActivityShops` and show a lead and one row per shop in the api order: shop name (link to `/{npub}` when set, otherwise text; an empty name reads **Unnamed**), till account (`@username`, otherwise the account id), active days as `N / windowDays`, and the last charge day as a medium localized UTC date or **Never**. A shop with `activeDays` 0 shows its active days and **Inactive** in the danger color. Empty, Loading…, and error plus Try again are separate. Non-staff signed-in visitors see the heading plus forbidden copy and do not fetch; an api 403 shows the same forbidden copy. A session or role change drops the loaded table before the next request. Renders `null` without a session. The page chrome owns the back; this screen renders no back control.
 - **Inputs:** Session and account from `useAuthStore`; catalog via `useTranslations`.
 - **Returns / side effects:** React element or `null` without a session. Fetches `GET /shops/activity/shops` only when the role is at least moderator.
 - **Used by:** `ShopActivityPage`.
