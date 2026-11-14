@@ -780,8 +780,8 @@ after the Fond's signed-in app registered it. No other screen shows it: not a
 profile, a member or public view, the wallet, Receive, the point of sale, or
 anywhere else. For every member, and for the Fond on every other screen, the
 only address stays `<username>@<app host>`. Nothing else in this section is
-relaxed: no screen names, links to, or opens another wallet app, and nobody can
-link an external address.
+relaxed: no screen names, links to, or opens another wallet app on a member's
+behalf, and members cannot link an external address.
 
 A smartphone shows the same payment QR as a desktop for the profile,
 member, public view, and point of sale. The Shop sticker is
