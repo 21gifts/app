@@ -1410,6 +1410,8 @@ export async function fetchFxSpot(): Promise<FxSpot> {
   }
 }
 
+const SHOP_ACTIVITY_LOAD_ERROR = 'Could not load shop activity. Please try again.';
+
 /**
  * Fetches public shop counts per UTC day. No session.
  *
@@ -1421,15 +1423,13 @@ export async function fetchShopActivity(): Promise<ShopActivityDay[]> {
   try {
     const response = await fetch('/shops/activity');
     if (!response.ok) {
-      throw new Error('Could not load shop activity. Please try again.');
+      throw new Error(SHOP_ACTIVITY_LOAD_ERROR);
     }
     return shopActivitySchema.parse(await response.json()).days;
   } catch {
-    throw new Error('Could not load shop activity. Please try again.');
+    throw new Error(SHOP_ACTIVITY_LOAD_ERROR);
   }
 }
-
-const SHOP_ACTIVITY_SHOPS_LOAD_ERROR = 'Could not load the shop table. Please try again.';
 
 /**
  * Fetches the per-shop activity table for staff.
@@ -1449,18 +1449,18 @@ export async function fetchShopActivityShops(sessionToken: string): Promise<Shop
       headers: { Authorization: `Bearer ${sessionToken}` },
     });
   } catch {
-    throw new Error(SHOP_ACTIVITY_SHOPS_LOAD_ERROR);
+    throw new Error(SHOP_ACTIVITY_LOAD_ERROR);
   }
   if (response.status === 403) {
     throw new Error('moderate.forbidden');
   }
   try {
     if (!response.ok) {
-      throw new Error(SHOP_ACTIVITY_SHOPS_LOAD_ERROR);
+      throw new Error(SHOP_ACTIVITY_LOAD_ERROR);
     }
     return shopActivityShopsSchema.parse(await response.json());
   } catch {
-    throw new Error(SHOP_ACTIVITY_SHOPS_LOAD_ERROR);
+    throw new Error(SHOP_ACTIVITY_LOAD_ERROR);
   }
 }
 

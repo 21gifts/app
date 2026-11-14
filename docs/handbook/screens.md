@@ -9903,7 +9903,7 @@ Staff page while the table is loading. Copy **Loading…**.
 
 ### Variant: error
 
-Staff page when the load fails. Copy **Could not load the shop table. Please try again.** and button **Try again**.
+Staff page when the load fails. Copy **Could not load shop activity. Please try again.** and button **Try again**.
 
 ![21.gifts activity per shop error](images/moderate-shops-error.png)
 

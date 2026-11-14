@@ -41703,7 +41703,7 @@ test.describe('moderate screens', () => {
       await route.fulfill({ status: 503, contentType: 'application/json', body: '{}' });
     });
     await page.goto('/moderate/shops');
-    await expect(page.getByText('Could not load the shop table. Please try again.')).toBeVisible();
+    await expect(page.getByText('Could not load shop activity. Please try again.')).toBeVisible();
     await shotScreen(page, 'state-moderate-shops-error');
   });
 });

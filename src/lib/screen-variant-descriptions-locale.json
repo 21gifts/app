@@ -3350,9 +3350,9 @@
     "fil": "Pahina ng tauhan na walang tindahan. Pangungusap Wala pang tindahan. Walang talahanayan."
   },
   "/moderate/shops:error": {
-    "de": "Personalseite, wenn das Laden fehlschlägt. Die Shop-Tabelle konnte nicht geladen werden. Bitte versuchen Sie es erneut. und Schaltfläche Erneut versuchen.",
-    "es": "Página del personal cuando falla la carga. No se pudo cargar la tabla de tiendas. Inténtalo de nuevo. y botón Intentar de nuevo.",
-    "fil": "Pahina ng tauhan kapag nabigo ang pagkuha. Hindi ma-load ang talahanayan ng mga tindahan. Subukan ulit. at pindutan Subukan ulit."
+    "de": "Personalseite, wenn das Laden fehlschlägt. Die Shop-Aktivität konnte nicht geladen werden. Bitte erneut versuchen. und Schaltfläche Erneut versuchen.",
+    "es": "Página del personal cuando falla la carga. No se pudo cargar la actividad de las tiendas. Inténtalo de nuevo. y botón Intentar de nuevo.",
+    "fil": "Pahina ng tauhan kapag nabigo ang pagkuha. Hindi ma-load ang aktibidad ng tindahan. Pakisubukan muli. at pindutan Subukan ulit."
   },
   "/moderate/shops:forbidden": {
     "de": "Angemeldetes Basis-Konto. Text Diese Seite ist für Moderatorinnen oder Moderatoren. Keine Tabelle.",

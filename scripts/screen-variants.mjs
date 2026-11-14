@@ -8900,7 +8900,7 @@ export const SCREEN_VARIANTS = [
     id: 'error',
     image: 'moderate-shops-error.png',
     visual: 'state-moderate-shops-error',
-    needle: 'Could not load the shop table. Please try again.',
+    needle: 'Could not load shop activity. Please try again.',
   },
   {
     route: '/moderate/hidden',

@@ -1570,7 +1570,6 @@ const en = {
   'moderate.shops.lead':
     'POS charges by the till account of each shop in the last {days} UTC days. Shops without a charge in that window are marked inactive.',
   'moderate.shops.empty': 'No shops yet.',
-  'moderate.shops.error': 'Could not load the shop table. Please try again.',
   'moderate.shops.column.shop': 'Shop',
   'moderate.shops.column.account': 'Till account',
   'moderate.shops.column.activeDays': 'Active days',
@@ -3494,8 +3493,6 @@ const de = {
   'moderate.shops.lead':
     'Kassenbuchungen des Kassenkontos jedes Shops in den letzten {days} UTC-Tagen. Shops ohne Buchung in diesem Zeitraum sind als inaktiv markiert.',
   'moderate.shops.empty': 'Noch keine Shops.',
-  'moderate.shops.error':
-    'Die Shop-Tabelle konnte nicht geladen werden. Bitte versuchen Sie es erneut.',
   'moderate.shops.column.shop': 'Shop',
   'moderate.shops.column.account': 'Kassenkonto',
   'moderate.shops.column.activeDays': 'Aktive Tage',
@@ -5399,7 +5396,6 @@ const es = {
   'moderate.shops.lead':
     'Cobros en el punto de venta de la cuenta de caja de cada tienda en los últimos {days} días UTC. Las tiendas sin cobros en ese periodo aparecen como inactivas.',
   'moderate.shops.empty': 'Todavía no hay tiendas.',
-  'moderate.shops.error': 'No se pudo cargar la tabla de tiendas. Inténtalo de nuevo.',
   'moderate.shops.column.shop': 'Tienda',
   'moderate.shops.column.account': 'Cuenta de caja',
   'moderate.shops.column.activeDays': 'Días activos',
@@ -7305,7 +7301,6 @@ const fil = {
   'moderate.shops.lead':
     'Mga singil sa POS ng till account ng bawat tindahan sa huling {days} araw (UTC). Minarkahang hindi aktibo ang mga tindahang walang singil sa panahong iyon.',
   'moderate.shops.empty': 'Wala pang tindahan.',
-  'moderate.shops.error': 'Hindi ma-load ang talahanayan ng mga tindahan. Subukan ulit.',
   'moderate.shops.column.shop': 'Tindahan',
   'moderate.shops.column.account': 'Till account',
   'moderate.shops.column.activeDays': 'Aktibong araw',

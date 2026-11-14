@@ -96,7 +96,7 @@ export function ShopActivityShopsScreen(): ReactElement | null {
     body = (
       <>
         <p role="alert" className="text-center text-sm text-app-danger">
-          {t('moderate.shops.error')}
+          {t('statistics.shops.error')}
         </p>
         <Button
           type="button"

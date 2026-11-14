@@ -178,9 +178,7 @@ describe('ShopActivityShopsScreen', () => {
   it('shows the error and retries', async () => {
     listMock.mockRejectedValueOnce(new Error('down'));
     renderWithLocale(<ShopActivityShopsScreen />);
-    expect(
-      await screen.findByText('Could not load the shop table. Please try again.'),
-    ).toBeTruthy();
+    expect(await screen.findByText('Could not load shop activity. Please try again.')).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
     expect(await screen.findByText('No shops yet.')).toBeTruthy();
     expect(listMock).toHaveBeenCalledTimes(2);
@@ -189,9 +187,7 @@ describe('ShopActivityShopsScreen', () => {
   it('treats a non-Error rejection as a load error', async () => {
     listMock.mockRejectedValueOnce('down');
     renderWithLocale(<ShopActivityShopsScreen />);
-    expect(
-      await screen.findByText('Could not load the shop table. Please try again.'),
-    ).toBeTruthy();
+    expect(await screen.findByText('Could not load shop activity. Please try again.')).toBeTruthy();
   });
 
   it('ignores a stale resolve after unmount', async () => {

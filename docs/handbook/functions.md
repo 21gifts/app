@@ -2669,7 +2669,7 @@ Builds the country list of the Shops filter from the pins of `GET /forum/message
 
 - **Purpose:** GET `/shops/activity/shops` (same-origin Bearer proxy of api `GET /shops/activity/shops`) and parse `shopActivityShopsSchema`. Keeps the api order of the shops.
 - **Inputs:** Bearer `sessionToken`.
-- **Returns / side effects:** `{ windowDays, today, shops }`. Throws `'moderate.forbidden'` on 403. Throws visitor copy `Could not load the shop table. Please try again.` on 401/503, other non-2xx, network failure, or a body that fails the schema.
+- **Returns / side effects:** `{ windowDays, today, shops }`. Throws `'moderate.forbidden'` on 403. Throws visitor copy `Could not load shop activity. Please try again.` on 401/503, other non-2xx, network failure, or a body that fails the schema.
 - **Used by:** `ShopActivityShopsScreen`.
 
 ## Function: fetchFundingApplications

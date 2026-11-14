@@ -7361,7 +7361,7 @@ describe('fetchShopActivityShops', () => {
       },
     ],
   };
-  const loadError = 'Could not load the shop table. Please try again.';
+  const loadError = 'Could not load shop activity. Please try again.';
 
   it('returns the validated payload and sends the bearer header', async () => {
     const fetchMock = stubFetch({ ok: true, status: 200, body: payload });
