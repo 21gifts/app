@@ -4896,6 +4896,12 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/pos:received",
+    "label": "/pos received",
+    "visual": "state-pos-received",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/pos:loading",
     "label": "/pos loading",
     "visual": "state-pos-loading",

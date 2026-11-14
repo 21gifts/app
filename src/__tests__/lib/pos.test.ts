@@ -54,7 +54,11 @@ describe('pos client', () => {
     });
     vi.stubGlobal('fetch', fetchMock);
     const read = { ...CHARGE, paidAt: null, ...NO_FIAT };
-    await expect(fetchPosState('tok')).resolves.toEqual({ charge: read, history: [read] });
+    await expect(fetchPosState('tok')).resolves.toEqual({
+      charge: read,
+      history: [read],
+      received: [],
+    });
     await expect(createPosCharge('tok', 21)).resolves.toEqual(read);
     expect(logInteraction).toHaveBeenCalledWith(
       'pos_charge_created',
@@ -119,7 +123,11 @@ describe('pos client', () => {
       ...NO_FIAT,
     };
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(json({ charge: paid, history: [paid] })));
-    await expect(fetchPosState('tok')).resolves.toEqual({ charge: paid, history: [paid] });
+    await expect(fetchPosState('tok')).resolves.toEqual({
+      charge: paid,
+      history: [paid],
+      received: [],
+    });
   });
 
   it('sends the typed fiat pair and, for bitcoin, only the sats', async () => {
@@ -134,6 +142,73 @@ describe('pos client', () => {
     });
     await createPosCharge('tok', 21);
     expect(JSON.parse(String(fetchMock.mock.calls[1]?.[1]?.body))).toEqual({ amountSats: 21 });
+  });
+});
+
+describe('fetchPosState received', () => {
+  const LIGHTNING = {
+    id: '0a1b2c3d-0000-4000-8000-000000000002',
+    amountSats: 2100,
+    receivedAt: '2026-10-04T12:03:10.000Z',
+    kind: 'lightning',
+  };
+  const SPARK = {
+    id: '0a1b2c3d-0000-4000-8000-000000000001',
+    amountSats: 500,
+    receivedAt: '2026-10-04T11:40:02.000Z',
+    kind: 'spark',
+  };
+
+  function answer(received: unknown): void {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => json({ charge: null, history: [], received })),
+    );
+  }
+
+  it('reads the payments received without a charge, newest first', async () => {
+    answer([SPARK, LIGHTNING]);
+    await expect(fetchPosState('tok')).resolves.toEqual({
+      charge: null,
+      history: [],
+      received: [LIGHTNING, SPARK],
+    });
+  });
+
+  it('is empty when the api does not send the field, or sends no list', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => json({ charge: null, history: [] })),
+    );
+    await expect(fetchPosState('tok')).resolves.toEqual({
+      charge: null,
+      history: [],
+      received: [],
+    });
+    answer(null);
+    await expect(fetchPosState('tok')).resolves.toMatchObject({ received: [] });
+    answer({ 0: LIGHTNING });
+    await expect(fetchPosState('tok')).resolves.toMatchObject({ received: [] });
+  });
+
+  it('leaves out an entry that is not a usable payment, and a repeated id, and keeps the rest', async () => {
+    answer([
+      LIGHTNING,
+      null,
+      'payment',
+      { ...SPARK, id: '' },
+      { ...SPARK, amountSats: 0 },
+      { ...SPARK, amountSats: 1.5 },
+      { ...SPARK, amountSats: '500' },
+      { ...SPARK, receivedAt: 'yesterday' },
+      { ...SPARK, kind: 'onchain' },
+      { amountSats: 500, receivedAt: SPARK.receivedAt, kind: 'spark' },
+      { ...LIGHTNING, amountSats: 9 },
+      { ...SPARK, payer: 'not read' },
+    ]);
+    await expect(fetchPosState('tok')).resolves.toMatchObject({
+      received: [LIGHTNING, SPARK],
+    });
   });
 });
 

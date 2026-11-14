@@ -5789,6 +5789,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/pos',
+    id: 'received',
+    image: 'pos-received.png',
+    visual: 'state-pos-received',
+    needle: 'state /pos received',
+  },
+  {
+    route: '/pos',
     id: 'loading',
     image: 'pos-loading.png',
     visual: 'state-pos-loading',

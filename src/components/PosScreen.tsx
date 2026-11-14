@@ -43,6 +43,7 @@ import {
   type FiatRateDay,
 } from '@/lib/stats-money';
 import { useAuthStore } from '@/stores/auth-store';
+import { useWalletStore } from '@/stores/wallet-store';
 
 /**
  * Fiat under a till amount. A stored figure is shown as-is. With none, the
@@ -104,6 +105,7 @@ function withoutOpenCharge(state: PosState): PosState {
     return state;
   }
   return {
+    ...state,
     charge: null,
     history: [
       { ...open, status: 'cancelled' },
@@ -588,6 +590,8 @@ type PosTillState = {
   paidByWallet: boolean;
   /** Past charges, with a charge the wallet saw paid already shown as paid. */
   history: PosState['history'];
+  /** Payments the wallet received without a till charge, newest first, from the last read. */
+  received: PosState['received'];
   remaining: number;
   /** The currency figure stored with the open charge, otherwise `null` (the till shows the current spot). */
   chargeFigure: { code: FiatCode; amount: string } | null;
@@ -609,6 +613,8 @@ type PosTillState = {
   retryLoad: () => void;
   /** Closes the paid confirmation of charge `id` and reads the till again. */
   closePaid: (id: string) => void;
+  /** Reads the till again; a failure stays quiet while the till already shows an answer. */
+  readAgain: () => void;
 };
 
 /** Shared till state for the QR page and the amount page. */
@@ -1125,6 +1131,7 @@ function usePosTillState(): PosTillState {
       let known: Set<string> | null;
       // The history of that read: the new charge goes on top of it, not of an older answer.
       let freshHistory: PosCharge[] | null = null;
+      let freshReceived: PosState['received'] | null = null;
       const seqBefore = startRead(reads);
       try {
         const fresh = await fetchPosState(session);
@@ -1145,6 +1152,7 @@ function usePosTillState(): PosTillState {
         }
         known = new Set(tillCharges(fresh).map((row) => row.id));
         freshHistory = fresh.history;
+        freshReceived = fresh.received;
       } catch {
         known = null;
       }
@@ -1153,7 +1161,12 @@ function usePosTillState(): PosTillState {
         whenCurrent(generation, mine, () => {
           /* v8 ignore next -- the form is only shown once state.history is an array */
           const history = freshHistory ?? state?.history ?? [];
-          setTill({ state: { charge: created, history: [created, ...history] }, session });
+          /* v8 ignore next -- the form is only shown once state.received is an array */
+          const received = freshReceived ?? state?.received ?? [];
+          setTill({
+            state: { charge: created, history: [created, ...history], received },
+            session,
+          });
           setAmount('');
         });
       } catch (err) {
@@ -1378,6 +1391,7 @@ function usePosTillState(): PosTillState {
     paid,
     paidByWallet: paid !== null && walletPaid.has(paid.id),
     history,
+    received: state?.received ?? [],
     remaining,
     chargeFigure,
     paidFigure,
@@ -1406,6 +1420,10 @@ function usePosTillState(): PosTillState {
       quietReload.current = state !== null;
       setReload((n) => n + 1);
     },
+    readAgain: () => {
+      quietReload.current = state !== null;
+      setReload((n) => n + 1);
+    },
   };
 }
 
@@ -1422,7 +1440,9 @@ function usePosTillState(): PosTillState {
  * currency figure stored with the charge when there is one.
  * The till reads the api only on open, right before each create, on **Try again**
  * after a failed load,
- * when the session or the language changes, when a charge runs out, when the tab becomes visible again, after
+ * when the session or the language changes, when a charge runs out, when the tab becomes visible again,
+ * after every read of this tab's wallet (a received payment, each wallet sync, and the five-minute
+ * wallet refresh; such a read fails quietly once the till shows an answer), after
  * Cancel, once after a create or cancel whose answer was lost, once after a
  * create the api refuses because a payment is already open, once when a
  * payment pays the open charge only in its late minute, once after a
@@ -1435,7 +1455,8 @@ function usePosTillState(): PosTillState {
  * later read fails or no longer returns it; it is not a payment this tab's
  * wallet saw. Under the till, once it has
  * loaded, {@link PosHistory} lists the past charges, a charge the wallet saw
- * paid already as paid. An
+ * paid already as paid, together with the payments the api lists as received
+ * without a charge. An
  * account whose wallet is not verified sees **Set up your wallet first.**
  * (to `/wallet`), or the inline setup note once the background wallet setup
  * gave up; while that setup is due or gave up, the address and its QR stay
@@ -1460,6 +1481,20 @@ export function PosTill(): ReactElement {
   // for, so a confirmation closed before the first read is still recorded.
   const session = useAuthStore((state) => state.session);
   const paidFor = till.stateSession ?? session;
+  // A payment that reached the wallet without a charge shows in History once the api lists it:
+  // read the till again on every wallet read, as the /wallet payment list does.
+  const syncCount = useWalletStore((state) => state.syncCount);
+  const readSync = useRef(syncCount);
+  // The latest till's read; only a new wallet read asks for it, not every render.
+  const readAgain = useRef(till.readAgain);
+  readAgain.current = till.readAgain;
+  useEffect(() => {
+    if (readSync.current === syncCount) {
+      return;
+    }
+    readSync.current = syncCount;
+    readAgain.current();
+  }, [syncCount]);
   useEffect(() => {
     if (paidId !== null && paidFor !== null && !paidSeen.has(paidId)) {
       paidSeen.add(paidId);
@@ -1552,7 +1587,11 @@ export function PosTill(): ReactElement {
         </p>
       ) : null}
       {till.state !== null ? (
-        <PosHistory history={till.history} openChargeId={till.charge?.id ?? null} />
+        <PosHistory
+          history={till.history}
+          received={till.received}
+          openChargeId={till.charge?.id ?? null}
+        />
       ) : null}
     </Card>
   );
