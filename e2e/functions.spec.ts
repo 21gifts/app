@@ -1640,6 +1640,7 @@ test('Function: pushTagForNotification — clicking a forum reply closes only th
     text: 'hello',
     createdAt: '2026-09-12T12:00:00.000Z',
     readAt: null,
+    personal: true,
   };
   await page.route(/\/me$/, async (route) => {
     await route.fulfill({
@@ -1750,6 +1751,7 @@ test('Function: currentPushEndpoint — clicking a row POSTs read with the push 
     text: 'hello',
     createdAt: '2026-09-12T12:00:00.000Z',
     readAt: null,
+    personal: true,
   };
   await page.route(/\/me$/, async (route) => {
     await route.fulfill({
@@ -1857,6 +1859,7 @@ test('Function: closeLocalPushNotifications — clicking a row closes only the m
     text: 'hello',
     createdAt: '2026-09-12T12:00:00.000Z',
     readAt: null,
+    personal: true,
   };
   await page.route(/\/me$/, async (route) => {
     await route.fulfill({
@@ -4179,7 +4182,7 @@ test('Function: NotificationsLoader — empty notifications copy is visible', as
     });
   });
   await page.goto('/notifications');
-  await expect(page.getByText('No notifications yet.')).toBeVisible();
+  await expect(page.getByText('Nothing for you yet.')).toBeVisible();
 });
 
 test('Function: NotificationsScreen — empty notifications copy is visible', async ({ page }) => {
@@ -4216,7 +4219,172 @@ test('Function: NotificationsScreen — empty notifications copy is visible', as
     });
   });
   await page.goto('/notifications');
-  await expect(page.getByText('No notifications yet.')).toBeVisible();
+  await expect(page.getByText('Nothing for you yet.')).toBeVisible();
+});
+
+test('Function: NotificationsScreen — For you and Living room split rows by personal', async ({
+  page,
+}) => {
+  await page.addInitScript(() => {
+    localStorage.setItem('21gifts.session', 'sess-e2e');
+  });
+  await page.route(/\/me$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        id: 'acc_e2e',
+        linkingKey: null,
+        role: 'basis',
+        name: 'Ada',
+        location: null,
+        lightningAddress: null,
+        lightningAddressVerified: false,
+        forumLawsDismissed: false,
+        createdAt: 1,
+        rulesAgreedAt: 1_700_000_001,
+        viewKey: 'a'.repeat(64),
+        aboutMe: null,
+        setup: null,
+        missing: [],
+      }),
+    });
+  });
+  await page.route(/\/forum\/notifications$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        notifications: [
+          {
+            id: 'n-heart',
+            type: 'heart',
+            parentId: 'own-note',
+            replyId: 'heart-1',
+            name: 'Ivy',
+            text: '1',
+            createdAt: '2026-08-28T12:00:00.000Z',
+            readAt: null,
+            personal: true,
+          },
+          {
+            id: 'n-post',
+            type: 'forum_post',
+            parentId: 'post-olga',
+            replyId: 'post-olga',
+            name: 'Olga',
+            text: 'Morning',
+            createdAt: '2026-08-28T11:00:00.000Z',
+            readAt: null,
+            personal: false,
+          },
+          {
+            id: 'n-old-api',
+            type: 'forum_reply',
+            parentId: 'post-otto',
+            replyId: 'reply-lena',
+            name: 'Lena',
+            text: 'Older api row',
+            createdAt: '2026-08-28T10:00:00.000Z',
+            readAt: '2026-08-28T10:30:00.000Z',
+          },
+        ],
+        unreadCount: 2,
+      }),
+    });
+  });
+  await page.goto('/notifications');
+  const forYou = page.getByRole('button', { name: 'For you, 1 unread' });
+  await expect(forYou).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.getByText('Ivy sent you a heart')).toBeVisible();
+  await expect(page.getByText('Olga posted')).toHaveCount(0);
+  await expect(page.getByText('Lena replied')).toHaveCount(0);
+  await page.getByRole('button', { name: 'Living room, 1 unread' }).click();
+  await expect(page.getByText('Olga posted')).toBeVisible();
+  await expect(page.getByRole('list', { name: 'Already seen notifications' })).toContainText(
+    'Lena replied',
+  );
+  await expect(page.getByText('Ivy sent you a heart')).toHaveCount(0);
+});
+
+test('Function: NotificationsLoader — switching views sends no mark-read request', async ({
+  page,
+}) => {
+  await page.addInitScript(() => {
+    localStorage.setItem('21gifts.session', 'sess-e2e');
+  });
+  await page.route(/\/me$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        id: 'acc_e2e',
+        linkingKey: null,
+        role: 'basis',
+        name: 'Ada',
+        location: null,
+        lightningAddress: null,
+        lightningAddressVerified: false,
+        forumLawsDismissed: false,
+        createdAt: 1,
+        rulesAgreedAt: 1_700_000_001,
+        viewKey: 'a'.repeat(64),
+        aboutMe: null,
+        setup: null,
+        missing: [],
+      }),
+    });
+  });
+  await page.route(/\/forum\/notifications$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        notifications: [
+          {
+            id: 'n-mention',
+            type: 'forum_mention',
+            parentId: 'post-olga',
+            replyId: 'reply-mention',
+            name: 'Olga',
+            text: 'hello @alice',
+            createdAt: '2026-08-28T12:00:00.000Z',
+            readAt: null,
+            personal: true,
+          },
+          {
+            id: 'n-post',
+            type: 'forum_post',
+            parentId: 'post-otto',
+            replyId: 'post-otto',
+            name: 'Otto',
+            text: 'Evening',
+            createdAt: '2026-08-28T11:00:00.000Z',
+            readAt: null,
+            personal: false,
+          },
+        ],
+        unreadCount: 2,
+      }),
+    });
+  });
+  const reads: string[] = [];
+  await page.route(/\/forum\/notifications\/.+$/, async (route) => {
+    reads.push(new URL(route.request().url()).pathname);
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ ok: true, tags: [] }),
+    });
+  });
+  await page.goto('/notifications');
+  await expect(page.getByText('Olga marked you')).toBeVisible();
+  await expect.poll(() => reads).toEqual(['/forum/notifications/read-all']);
+  await page.getByRole('button', { name: 'Living room, 1 unread' }).click();
+  await expect(page.getByText('Otto posted')).toBeVisible();
+  await page.getByRole('button', { name: 'For you, 1 unread' }).click();
+  await expect(page.getByText('Olga marked you')).toBeVisible();
+  expect(reads).toEqual(['/forum/notifications/read-all']);
 });
 
 test('Function: fetchNotifications — empty notifications copy is visible', async ({ page }) => {
@@ -4253,7 +4421,7 @@ test('Function: fetchNotifications — empty notifications copy is visible', asy
     });
   });
   await page.goto('/notifications');
-  await expect(page.getByText('No notifications yet.')).toBeVisible();
+  await expect(page.getByText('Nothing for you yet.')).toBeVisible();
 });
 
 test('Function: markNotificationRead — clicking a row POSTs read', async ({ page }) => {
@@ -4269,6 +4437,7 @@ test('Function: markNotificationRead — clicking a row POSTs read', async ({ pa
     text: 'hello',
     createdAt: '2026-09-12T12:00:00.000Z',
     readAt: null,
+    personal: true,
   };
   await page.route(/\/me$/, async (route) => {
     await route.fulfill({
@@ -4365,7 +4534,7 @@ test('Function: markAllNotificationsRead — list fetch POSTs read-all', async (
   );
   await page.goto('/notifications');
   await readAll;
-  await expect(page.getByText('No notifications yet.')).toBeVisible();
+  await expect(page.getByText('Nothing for you yet.')).toBeVisible();
 });
 
 test('Function: MessagesPage — inbox heading is visible', async ({ page }) => {
@@ -13646,7 +13815,7 @@ test('Function: bumpUnreadAppBadgeEpoch — signed-in notifications screen loads
     });
   });
   await page.goto('/notifications');
-  await expect(page.getByText('No notifications yet.')).toBeVisible();
+  await expect(page.getByText('Nothing for you yet.')).toBeVisible();
 });
 
 test('Function: unreadAppBadgeEpoch — menu shows unread notification count', async ({ page }) => {

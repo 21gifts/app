@@ -1026,26 +1026,26 @@ describe('notificationSchema', () => {
 
   it('accepts a well-formed forum_reply and list, including readAt null and empty text', () => {
     const row = { ...base, type: 'forum_reply' as const };
-    expect(notificationSchema.parse(row)).toEqual(row);
+    expect(notificationSchema.parse(row)).toEqual({ ...row, personal: false });
     expect(notificationListSchema.parse({ notifications: [row], unreadCount: 1 })).toEqual({
-      notifications: [row],
+      notifications: [{ ...row, personal: false }],
       unreadCount: 1,
     });
   });
 
   it('accepts forum_post', () => {
     const row = { ...base, type: 'forum_post' as const, text: 'Hello living room' };
-    expect(notificationSchema.parse(row)).toEqual(row);
+    expect(notificationSchema.parse(row)).toEqual({ ...row, personal: false });
   });
 
   it('accepts zap', () => {
     const row = { ...base, type: 'zap' as const, text: '21' };
-    expect(notificationSchema.parse(row)).toEqual(row);
+    expect(notificationSchema.parse(row)).toEqual({ ...row, personal: false });
   });
 
   it('accepts heart', () => {
     const row = { ...base, type: 'heart' as const, text: '1' };
-    expect(notificationSchema.parse(row)).toEqual(row);
+    expect(notificationSchema.parse(row)).toEqual({ ...row, personal: false });
   });
 
   it('accepts moderator_appointed', () => {
@@ -1055,7 +1055,7 @@ describe('notificationSchema', () => {
       parentId: 'acc_1',
       replyId: 'acc_1',
     };
-    expect(notificationSchema.parse(row)).toEqual(row);
+    expect(notificationSchema.parse(row)).toEqual({ ...row, personal: false });
   });
 
   it('accepts moderator_proposal', () => {
@@ -1065,7 +1065,22 @@ describe('notificationSchema', () => {
       parentId: 'acc_1',
       replyId: 'acc_1',
     };
+    expect(notificationSchema.parse(row)).toEqual({ ...row, personal: false });
+  });
+
+  it('keeps personal when the api sends it', () => {
+    const row = { ...base, type: 'forum_mention' as const, personal: true };
     expect(notificationSchema.parse(row)).toEqual(row);
+    expect(notificationSchema.parse({ ...row, personal: false }).personal).toBe(false);
+  });
+
+  it('treats a missing personal field as false', () => {
+    const parsed = notificationSchema.parse({ ...base, type: 'heart' as const });
+    expect(parsed.personal).toBe(false);
+  });
+
+  it('rejects a personal field that is not a boolean', () => {
+    expect(() => notificationSchema.parse({ ...base, type: 'heart', personal: 'yes' })).toThrow();
   });
 
   it('rejects an unknown type', () => {

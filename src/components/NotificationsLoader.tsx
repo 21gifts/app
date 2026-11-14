@@ -80,8 +80,12 @@ function notificationOpenPath(row: Notification): string {
  * to 0 when inbox or staff-room unread remains). Fetches the staff room only when
  * `roleAtLeast(account?.role, 'moderator')`; below moderator the remaining
  * badge is inbox unread only. Renders nothing when there is no
- * session. The list keeps every fetched row, including those with `readAt` set. There is no
- * composer; opening a `moderator_proposal` row goes to `/moderate/proposals`
+ * session. The list keeps every fetched row, including those with `readAt` set, and
+ * {@link NotificationsScreen} splits it into the **For you** and **Living room**
+ * views. The loader does not mark the rows of the shown view one by one, so
+ * switching views sends no mark-read request; the one mark-all-read after a
+ * successful load and the single-row mark-read on opening a row stay as they
+ * are. There is no composer; opening a `moderator_proposal` row goes to `/moderate/proposals`
  * and does not call `markNotificationRead`; opening a `moderator_appointed`
  * row waits for `markNotificationRead` (then still goes to `/welcome` if that
  * POST fails, and skips navigation if the session changed). A `forum_reply`

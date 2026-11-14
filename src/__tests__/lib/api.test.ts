@@ -5396,6 +5396,7 @@ const notification = {
   text: 'Nice post',
   createdAt: '2026-08-28T12:00:00.000Z',
   readAt: null as string | null,
+  personal: true,
 };
 
 describe('fetchNotifications', () => {

@@ -3450,14 +3450,34 @@
     "fil": "Hub ng staff na may isang bukas na panukala. Ang control na Mga bukas na mungkahi ay nagpapakita ng 1 at ang accessible na pangalan Mga bukas na mungkahi, 1 hindi pa nababasa (moderate.proposals.unread). Mga layunin, Mga nakatagong nota, Chat group ng mga moderator, Handbook, Ipakita ang bayad bawat tao, at Ipakita ang aktibidad bawat tindahan ay hindi nagbabago."
   },
   "/notifications:default": {
-    "de": "Geladene Liste mit mindestens einer ungelesenen Forenantwort (Akteur Bob, Bob hat geantwortet).",
-    "es": "Lista cargada con al menos una respuesta de foro no leída (actor Bob, Bob respondió).",
-    "fil": "Nai-load na listahan na may hindi bababa sa isang hindi pa nababasang tugon sa talakayan (aktor Bob, Bob sumagot)."
+    "de": "Geladene Liste, Für dich ausgewählt: eine ungelesene Antwort auf die eigene Notiz (Akteur Bob, Bob hat geantwortet). Für dich zeigt den Zähler 1 (zugänglicher Name Für dich, 1 ungelesen); Wohnzimmer zeigt 2 für zwei ungelesene Beiträge anderer Mitglieder, die diese Ansicht nicht auflistet.",
+    "es": "Lista cargada con Para ti seleccionado: una respuesta no leída a la nota propia (actor Bob, Bob respondió). Para ti muestra el contador 1 (nombre accesible Para ti, 1 sin leer); Salón muestra 2 por dos publicaciones no leídas de otros miembros que esta vista no lista.",
+    "fil": "Nai-load na listahan, napili ang Para sa iyo: isang hindi pa nababasang tugon sa sariling nota (aktor Bob, Bob sumagot). Ipinapakita ng Para sa iyo ang bilang na 1 (accessible na pangalan Para sa iyo, 1 hindi pa nababasa); ipinapakita ng Living room ang 2 para sa dalawang hindi pa nababasang post ng ibang miyembro na hindi inililista ng view na ito."
   },
   "/notifications:empty": {
-    "de": "Keine Benachrichtigungen. Noch keine Benachrichtigungen.",
-    "es": "No hay notificaciones. Aún no hay notificaciones.",
-    "fil": "Walang mga abiso. Wala pang mga abiso."
+    "de": "Keine Benachrichtigungen. Für dich ist ausgewählt mit dem Text Noch nichts für dich. Keine Option zeigt einen Zähler.",
+    "es": "No hay notificaciones. Para ti está seleccionado con el texto Aún no hay nada para ti. Ninguna opción muestra un contador.",
+    "fil": "Walang mga abiso. Napili ang Para sa iyo na may tekstong Wala pang para sa iyo. Walang opsyon na nagpapakita ng bilang."
+  },
+  "/notifications:empty-living-room": {
+    "de": "Keine Benachrichtigungen, nach dem Tippen auf Wohnzimmer: Wohnzimmer ist ausgewählt mit dem Text Noch nichts aus dem Wohnzimmer. und ohne Liste. Keine Option zeigt einen Zähler.",
+    "es": "No hay notificaciones, tras pulsar Salón: Salón está seleccionado con el texto Aún no hay nada del salón. y sin lista. Ninguna opción muestra un contador.",
+    "fil": "Walang mga abiso, pagkatapos pindutin ang Living room: napili ang Living room na may tekstong Wala pang mula sa living room. at walang listahan. Walang opsyon na nagpapakita ng bilang."
+  },
+  "/notifications:for-you-empty": {
+    "de": "Geladene Liste nur mit nicht persönlichen Zeilen, etwa solange die API personal noch nicht sendet: Für dich ist ausgewählt mit dem Text Noch nichts für dich. und ohne Liste; Wohnzimmer zeigt den Zähler 2 (zugänglicher Name Wohnzimmer, 2 ungelesen).",
+    "es": "Lista cargada solo con filas no personales, por ejemplo mientras la API aún no envía personal: Para ti está seleccionado con el texto Aún no hay nada para ti. y sin lista; Salón muestra el contador 2 (nombre accesible Salón, 2 sin leer).",
+    "fil": "Nai-load na listahan na may mga hilerang hindi personal lamang, halimbawa habang hindi pa ipinapadala ng API ang personal: napili ang Para sa iyo na may tekstong Wala pang para sa iyo. at walang listahan; ipinapakita ng Living room ang bilang na 2 (accessible na pangalan Living room, 2 hindi pa nababasa)."
+  },
+  "/notifications:living-room": {
+    "de": "Nach dem Tippen auf Wohnzimmer in der Standardliste: Wohnzimmer ist ausgewählt und listet unter Ungelesen die zwei ungelesenen Beiträge anderer Mitglieder (Olga hat gepostet, Otto hat gepostet). Bobs Antwort bleibt unter Für dich, das seinen Zähler 1 behält.",
+    "es": "Tras pulsar Salón en la lista por defecto: Salón está seleccionado y lista bajo No leídas las dos publicaciones no leídas de otros miembros (Olga publicó, Otto publicó). La respuesta de Bob queda en Para ti, que mantiene su contador 1.",
+    "fil": "Pagkatapos pindutin ang Living room sa default na listahan: napili ang Living room at inililista sa ilalim ng Hindi pa nababasa ang dalawang hindi pa nababasang post ng ibang miyembro (Olga nag-post, Otto nag-post). Nananatili ang tugon ni Bob sa Para sa iyo, na may bilang pa ring 1."
+  },
+  "/notifications:living-room-empty": {
+    "de": "Nach dem Tippen auf Wohnzimmer, wenn jede Zeile persönlich ist: Wohnzimmer ist ausgewählt mit dem Text Noch nichts aus dem Wohnzimmer. und ohne Liste; Für dich behält seinen Zähler.",
+    "es": "Tras pulsar Salón cuando todas las filas son personales: Salón está seleccionado con el texto Aún no hay nada del salón. y sin lista; Para ti mantiene su contador.",
+    "fil": "Pagkatapos pindutin ang Living room kapag personal ang bawat hilera: napili ang Living room na may tekstong Wala pang mula sa living room. at walang listahan; nananatili ang bilang ng Para sa iyo."
   },
   "/notifications:error": {
     "de": "Das Laden der Liste ist fehlgeschlagen. Schaltfläche Erneut versuchen. Text Benachrichtigungen konnten nicht geladen werden. Bitte versuchen Sie es erneut.",
@@ -3470,9 +3490,9 @@
     "fil": "Naghihintay sa GET /forum/notifications. Naglo-load…"
   },
   "/notifications:moderator-proposal": {
-    "de": "Ungelesene Zeile moderator_proposal (Akteur Bob, Text Bob hat einen Moderator vorgeschlagen).",
-    "es": "Fila moderator_proposal no leída (actor Bob, texto Bob propuso un moderador).",
-    "fil": "Hindi pa nababasang hilera ng moderator_proposal (aktor Bob, sipi Bob nagmungkahi ng moderator)."
+    "de": "Ungelesene Zeile moderator_proposal unter Für dich (Akteur Bob, Text Bob hat einen Moderator vorgeschlagen; Zähler 1 bei Für dich).",
+    "es": "Fila moderator_proposal no leída en Para ti (actor Bob, texto Bob propuso un moderador; contador 1 en Para ti).",
+    "fil": "Hindi pa nababasang hilera ng moderator_proposal sa Para sa iyo (aktor Bob, sipi Bob nagmungkahi ng moderator; bilang na 1 sa Para sa iyo)."
   },
   "/pl:amount-invalid": {
     "de": "Weiter mit einem leeren oder nicht ganzen Betrag zeigt Bitte eine ganze Zahl eingeben. Das Formular bleibt. Kein Bezahlen.",

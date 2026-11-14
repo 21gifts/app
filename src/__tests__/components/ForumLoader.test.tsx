@@ -342,6 +342,7 @@ const UNREAD_APPOINTED: Notification = {
   text: '',
   createdAt: '2026-08-22T12:00:00.000Z',
   readAt: null,
+  personal: true,
 };
 
 const originalScrollIntoView = HTMLElement.prototype.scrollIntoView;
@@ -629,6 +630,7 @@ beforeEach(() => {
     text: '',
     createdAt: '2026-08-22T12:00:00.000Z',
     readAt: '2026-08-28T13:00:00.000Z',
+    personal: true,
   });
   markNotificationsReadForMessageMock.mockResolvedValue({ ok: true, tags: [] });
   markVisibleForumNoteReadMock.mockResolvedValue({ ok: true, tags: [] });
@@ -11560,6 +11562,7 @@ describe('ForumLoader', () => {
       text: '',
       createdAt: '2026-08-22T12:00:00.000Z',
       readAt: '2026-08-28T13:00:00.000Z',
+      personal: true,
     });
     renderWithLocale(<ForumLoader />);
     fireEvent.click(await screen.findByRole('button', { name: 'You are a moderator' }));

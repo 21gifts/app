@@ -1,9 +1,9 @@
 'use client';
 
 import Link from 'next/link';
-import { type ReactElement } from 'react';
+import { useState, type ReactElement } from 'react';
 import { useTranslations } from '@/components/LocaleProvider';
-import { Button, Card } from '@/components/ui';
+import { Button, Card, SegmentedControl } from '@/components/ui';
 import type { Notification } from '@/lib/api-types';
 import { formatForumTime } from '@/lib/forum-time';
 
@@ -16,6 +16,23 @@ const NOTIFICATION_TITLE_KEY = {
   moderator_appointed: 'notifications.moderatorAppointed',
   moderator_proposal: 'notifications.moderatorProposal',
   forum_mention: 'notifications.mention',
+} as const;
+
+/** One of the two views on the notifications page. */
+type NotificationView = 'forYou' | 'livingRoom';
+
+/** Catalog keys for each {@link NotificationView}: label, badged name, empty text. */
+const VIEW_KEYS = {
+  forYou: {
+    label: 'notifications.forYou',
+    unread: 'notifications.forYouUnread',
+    empty: 'notifications.emptyForYou',
+  },
+  livingRoom: {
+    label: 'notifications.livingRoom',
+    unread: 'notifications.livingRoomUnread',
+    empty: 'notifications.emptyLivingRoom',
+  },
 } as const;
 
 function NotificationRow({
@@ -91,10 +108,16 @@ export interface NotificationsScreenProps {
 /**
  * Presentational signed-in notifications list of living-room posts, replies,
  * payments, hearts, moderator appointment, and moderator proposal. There is no
- * composer, no thread view, and no filter. Unread rows (`readAt === null`)
- * are a section above rows that already have `readAt`, each section keeping
- * API order; an empty section is omitted. Under the list (in every state) a
- * **Notification settings** link opens `/settings#notifications`.
+ * composer and no thread view. Once a list has loaded, a `SegmentedControl`
+ * splits it into two views: **For you** (rows with `personal` true) and
+ * **Living room** (every other row). **For you** is selected on load and the
+ * choice is not stored. Each option shows its own unread count when it is
+ * above zero, with an accessible name that states the count. Inside the shown
+ * view, unread rows (`readAt === null`) are a section above rows that already
+ * have `readAt`, each section keeping API order; an empty section is omitted,
+ * and a view without rows shows its own empty text. Loading and error show no
+ * view control. Under the list (in every state) a **Notification settings**
+ * link opens `/settings#notifications`.
  *
  * @param props - List state from {@link NotificationsLoader}.
  * @returns The notifications page column.
@@ -107,6 +130,7 @@ export function NotificationsScreen({
   onOpen,
 }: NotificationsScreenProps): ReactElement {
   const { t } = useTranslations();
+  const [view, setView] = useState<NotificationView>('forYou');
 
   let body: ReactElement;
   if (loading && notifications === null) {
@@ -132,55 +156,70 @@ export function NotificationsScreen({
         </Button>
       </>
     );
-  } else if (notifications === null || notifications.length === 0) {
-    body = (
-      <>
-        <h1 className="text-center text-2xl font-semibold tracking-tight text-app-fg sm:text-3xl">
-          {t('notifications.heading')}
-        </h1>
-        <p className="text-center text-sm text-app-muted">{t('notifications.empty')}</p>
-      </>
-    );
   } else {
-    const unread = notifications.filter((row) => row.readAt === null);
-    const seen = notifications.filter((row) => row.readAt !== null);
+    const rows = notifications ?? [];
+    const byView: Record<NotificationView, Notification[]> = {
+      forYou: rows.filter((row) => row.personal),
+      livingRoom: rows.filter((row) => !row.personal),
+    };
+    const unreadIn = (key: NotificationView): number =>
+      byView[key].filter((row) => row.readAt === null).length;
+    const shown = byView[view];
+    const unread = shown.filter((row) => row.readAt === null);
+    const seen = shown.filter((row) => row.readAt !== null);
     body = (
       <>
         <h1 className="text-center text-2xl font-semibold tracking-tight text-app-fg sm:text-3xl">
           {t('notifications.heading')}
         </h1>
-        <div className="flex w-full flex-col gap-6">
-          {unread.length > 0 ? (
-            <div className="flex w-full flex-col gap-3">
-              <h2 className="text-sm font-semibold text-app-muted">
-                {t('notifications.unreadHeading')}
-              </h2>
-              <ul
-                aria-label={t('notifications.unreadListLabel')}
-                className="flex w-full flex-col gap-3"
-              >
-                {unread.map((row) => (
-                  <NotificationRow key={row.id} row={row} onOpen={onOpen} />
-                ))}
-              </ul>
-            </div>
-          ) : null}
-          {seen.length > 0 ? (
-            <div className="flex w-full flex-col gap-3">
-              <h2 className="text-sm font-semibold text-app-muted">
-                {t('notifications.seenHeading')}
-              </h2>
-              <ul
-                aria-label={t('notifications.seenListLabel')}
-                className="flex w-full flex-col gap-3"
-              >
-                {seen.map((row) => (
-                  <NotificationRow key={row.id} row={row} onOpen={onOpen} />
-                ))}
-              </ul>
-            </div>
-          ) : null}
-        </div>
+        <SegmentedControl
+          value={view}
+          options={(['forYou', 'livingRoom'] as const).map((key) => ({
+            value: key,
+            label: t(VIEW_KEYS[key].label),
+            badge: unreadIn(key),
+            badgeAriaLabel: t(VIEW_KEYS[key].unread, { count: unreadIn(key) }),
+          }))}
+          onChange={setView}
+          ariaLabel={t('notifications.viewLabel')}
+          tone="neutral"
+        />
+        {shown.length === 0 ? (
+          <p className="text-center text-sm text-app-muted">{t(VIEW_KEYS[view].empty)}</p>
+        ) : (
+          <div className="flex w-full flex-col gap-6">
+            {unread.length > 0 ? (
+              <div className="flex w-full flex-col gap-3">
+                <h2 className="text-sm font-semibold text-app-muted">
+                  {t('notifications.unreadHeading')}
+                </h2>
+                <ul
+                  aria-label={t('notifications.unreadListLabel')}
+                  className="flex w-full flex-col gap-3"
+                >
+                  {unread.map((row) => (
+                    <NotificationRow key={row.id} row={row} onOpen={onOpen} />
+                  ))}
+                </ul>
+              </div>
+            ) : null}
+            {seen.length > 0 ? (
+              <div className="flex w-full flex-col gap-3">
+                <h2 className="text-sm font-semibold text-app-muted">
+                  {t('notifications.seenHeading')}
+                </h2>
+                <ul
+                  aria-label={t('notifications.seenListLabel')}
+                  className="flex w-full flex-col gap-3"
+                >
+                  {seen.map((row) => (
+                    <NotificationRow key={row.id} row={row} onOpen={onOpen} />
+                  ))}
+                </ul>
+              </div>
+            ) : null}
+          </div>
+        )}
       </>
     );
   }

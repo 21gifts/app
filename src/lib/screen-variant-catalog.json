@@ -7416,6 +7416,30 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/notifications:empty-living-room",
+    "label": "/notifications empty-living-room",
+    "visual": "state-notifications-empty-living-room",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/notifications:for-you-empty",
+    "label": "/notifications for-you-empty",
+    "visual": "state-notifications-for-you-empty",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/notifications:living-room",
+    "label": "/notifications living-room",
+    "visual": "state-notifications-living-room",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/notifications:living-room-empty",
+    "label": "/notifications living-room-empty",
+    "visual": "state-notifications-living-room-empty",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/notifications:loading",
     "label": "/notifications loading",
     "visual": "state-notifications-loading",

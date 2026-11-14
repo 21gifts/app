@@ -9708,22 +9708,46 @@ Open thread. The incoming message **Hello @ada** stores a profile mark. **View p
 ## Screen: /notifications
 
 - **URL:** `/notifications` — signed-in notifications for living-room posts, replies, payments, moderator appointment, and moderator proposal. A heart row opens `/messages/{parentId}` and is marked read, the same as a zap. Same onboarding gate as `/welcome`. Public notes stay at `/messages/[id]`. JSON is `/forum/notifications` (Next.js forbids `route.ts` beside this page).
-- **What the user sees:** Chrome is the page-frame header (`ProfileChromeLeft` (the arrow returns to the previous in-app view, or `/welcome` when this tab has none; wordmark → `/welcome`), and Menu, inside the rounded sheet). Fill `AppShell` (`align="center"`). Open **Menu** (see **Signed-in header**) for **Home**, **Balance** (`/wallet`), **Shops**, **Point of sale**, Profile, **Grants**, **Account security**, **Settings**, **Living room rules**, **Habit-Tracker**, **Trust Chain**, **Statistics**, **Notifications**, **Messages**, **Contact**, optional **Install app**, and **Log out**. Heading **Notifications**, a list of posts, replies, payments, hearts, moderator appointment, and moderator proposal (actor `{name} posted` / `{name} replied` / `{name} sent bitcoin` / `{name} sent you a heart` / `{name} proposed a moderator`, or **You are a moderator** without `{name}`; post or reply text or **Photo** / **Photo reaction**; zap amount as stored; appointment or proposal with empty text has no body line; time), empty copy **No notifications yet.**, **Loading…**, or **Try again**. Unread rows (`readAt` absent) are a section headed **Unread** above rows that already have `readAt`, headed **Already seen**. Each section keeps the fetched order, and a section with no rows is omitted. Unread rows are semibold; read rows muted. No composer and no filter. `IntroduceYourselfOverlay` never opens here; only `/welcome` shows it. Visiting this screen / mark-all-read treats notification unread as 0; the badge becomes remaining inbox unread plus remaining staff-room unread (0 or 1). Visiting this screen does not clear staff-room unread. Under the list, in every state, a small muted underlined link **Notification settings**.
-- **Actions:** **Notification settings** opens the Notifications section of `/settings` (`/settings#notifications`) without a page load. Click a `moderator_proposal` row to open `/moderate/proposals` (does **not** mark that notification read). Click a `moderator_appointed` row to open `/welcome` (mark that notification read). Click a `forum_reply` or `forum_mention` row to open `/messages/{replyId}`, and a `forum_post`, `zap`, or `heart` row to open `/messages/{parentId}` (mark that notification read; ids are URI-encoded). The top-left arrow returns to the previous in-app view in this tab, or `/welcome` when this tab has none. One arrow. The wordmark is not that control. Open **Menu** (see **Signed-in header**) for **Home**, **Balance** (`/wallet`), **Shops**, **Point of sale**, Profile, **Grants**, **Account security**, **Settings**, **Living room rules**, **Habit-Tracker**, **Trust Chain**, **Statistics**, **Notifications**, **Messages**, **Contact**, optional **Install app**, or **Log out**. Visiting this screen / mark-all-read treats notification unread as 0; the badge becomes remaining inbox unread plus remaining staff-room unread (0 or 1). Visiting this screen does not clear staff-room unread.
+- **What the user sees:** Chrome is the page-frame header (`ProfileChromeLeft` (the arrow returns to the previous in-app view, or `/welcome` when this tab has none; wordmark → `/welcome`), and Menu, inside the rounded sheet). Fill `AppShell` (`align="center"`). Open **Menu** (see **Signed-in header**) for **Home**, **Balance** (`/wallet`), **Shops**, **Point of sale**, Profile, **Grants**, **Account security**, **Settings**, **Living room rules**, **Habit-Tracker**, **Trust Chain**, **Statistics**, **Notifications**, **Messages**, **Contact**, optional **Install app**, and **Log out**. Heading **Notifications**, then (once the list has loaded) a segmented control **For you** | **Living room** (group name **Notification view**). **For you** is selected on load and lists rows the api marks `personal` (a mention of the member, a heart, a moderator appointment or proposal, a reply to or payment on the member's own note); **Living room** lists every other row (other members' posts, replies, and payments; a row without `personal` from an older api counts as Living room). Each option shows its own unread count as a chip when above zero, with the accessible name **For you, {count} unread** / **Living room, {count} unread**. The choice is not stored. The shown view is a list of posts, replies, payments, hearts, moderator appointment, and moderator proposal (actor `{name} posted` / `{name} replied` / `{name} sent bitcoin` / `{name} sent you a heart` / `{name} proposed a moderator`, or **You are a moderator** without `{name}`; post or reply text or **Photo** / **Photo reaction**; zap amount as stored; appointment or proposal with empty text has no body line; time), the view's empty copy **Nothing for you yet.** or **Nothing from the living room yet.**, **Loading…**, or **Try again** (loading and error show no view control). Inside the shown view, unread rows (`readAt` absent) are a section headed **Unread** above rows that already have `readAt`, headed **Already seen**. Each section keeps the fetched order, and a section with no rows is omitted. Unread rows are semibold; read rows muted. No composer. `IntroduceYourselfOverlay` never opens here; only `/welcome` shows it. Visiting this screen / mark-all-read treats notification unread as 0; the badge becomes remaining inbox unread plus remaining staff-room unread (0 or 1). Visiting this screen does not clear staff-room unread. Under the list, in every state, a small muted underlined link **Notification settings**.
+- **Actions:** **For you** and **Living room** switch the shown view on the page; switching sends no request and marks nothing read. **Notification settings** opens the Notifications section of `/settings` (`/settings#notifications`) without a page load. Click a `moderator_proposal` row to open `/moderate/proposals` (does **not** mark that notification read). Click a `moderator_appointed` row to open `/welcome` (mark that notification read). Click a `forum_reply` or `forum_mention` row to open `/messages/{replyId}`, and a `forum_post`, `zap`, or `heart` row to open `/messages/{parentId}` (mark that notification read; ids are URI-encoded). The top-left arrow returns to the previous in-app view in this tab, or `/welcome` when this tab has none. One arrow. The wordmark is not that control. Open **Menu** (see **Signed-in header**) for **Home**, **Balance** (`/wallet`), **Shops**, **Point of sale**, Profile, **Grants**, **Account security**, **Settings**, **Living room rules**, **Habit-Tracker**, **Trust Chain**, **Statistics**, **Notifications**, **Messages**, **Contact**, optional **Install app**, or **Log out**. Visiting this screen / mark-all-read treats notification unread as 0; the badge becomes remaining inbox unread plus remaining staff-room unread (0 or 1). Visiting this screen does not clear staff-room unread.
 - **Calls:** `AppShell`, `ProfileChromeLeft`, `NotificationsPage`, `NotificationsLoader`, `NotificationsScreen`, `SignedInChrome`, `OnboardingGate`, `fetchNotifications`, `fetchConversations`, `fetchModeratorGroup`, `markNotificationRead`, `markAllNotificationsRead`.
 - **Auth:** Bearer session; `OnboardingGate screen="welcome"`.
 
 ### Variant: default
 
-Loaded list with at least one unread forum reply (actor **Bob**, copy **Bob replied**).
+Loaded list, **For you** selected: one unread reply to the member's own note (actor **Bob**, copy **Bob replied**). **For you** shows the chip **1** (accessible name **For you, 1 unread**); **Living room** shows **2** for two unread posts by other members that this view does not list.
 
 ![21.gifts notifications](images/notifications.png)
 
 ### Variant: empty
 
-No notifications. Copy **No notifications yet.**
+No notifications. **For you** is selected with copy **Nothing for you yet.** Neither option shows a count.
 
 ![21.gifts notifications empty](images/notifications-empty.png)
+
+### Variant: empty-living-room
+
+No notifications, after pressing **Living room**: **Living room** is selected with copy **Nothing from the living room yet.** and no list. Neither option shows a count.
+
+![21.gifts notifications empty living room](images/notifications-empty-living-room.png)
+
+### Variant: for-you-empty
+
+Loaded list with only rows that are not personal, for example while the api does not send `personal` yet: **For you** is selected with copy **Nothing for you yet.** and no list; **Living room** shows the chip **2** (accessible name **Living room, 2 unread**).
+
+![21.gifts notifications for you empty](images/notifications-for-you-empty.png)
+
+### Variant: living-room
+
+After pressing **Living room** on the default list: **Living room** is selected and lists the two unread posts by other members (**Olga posted**, **Otto posted**) under **Unread**. Bob's reply stays under **For you**, which keeps its chip **1**.
+
+![21.gifts notifications living room](images/notifications-living-room.png)
+
+### Variant: living-room-empty
+
+After pressing **Living room** when every row is personal: **Living room** is selected with copy **Nothing from the living room yet.** and no list; **For you** keeps its unread chip.
+
+![21.gifts notifications living room empty](images/notifications-living-room-empty.png)
 
 ### Variant: loading
 
@@ -9739,7 +9763,7 @@ List fetch failed. Button **Try again**. Copy **Could not load notifications. Pl
 
 ### Variant: moderator-proposal
 
-Unread `moderator_proposal` row (actor **Bob**, copy **Bob proposed a moderator**).
+Unread `moderator_proposal` row under **For you** (actor **Bob**, copy **Bob proposed a moderator**; chip **1** on **For you**).
 
 ![21.gifts notifications moderator proposal](images/notifications-moderator-proposal.png)
 
