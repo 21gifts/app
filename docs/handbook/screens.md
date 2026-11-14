@@ -8338,7 +8338,7 @@ Signed-in Ada with no open charge and three past charges, scrolled to **History*
 
 ### Variant: received
 
-The same three past charges as **history**, plus two payments that reached the wallet without a charge, all in one list by time, newest first: **Received** with a green arrow and ₿1’000 · $1.00, received today at 12:06 PM as an **Instant payment**; then **Paid ✓ 12:00 PM** with ₿2’100; then **Received** with ₿250 · $0.25, received Sep 19 at 10:15 AM as a **Wallet transfer**; then **Expired** and **Cancelled**. A received payment has no stored currency figure, so it shows the current spot beside the bitcoin, not written onto it. No **Paid** confirmation; **Set an amount** stays above.
+The same three past charges as **history**, plus two payments that reached the wallet without a charge, all in one list by time, newest first: **Received** with a green arrow and ₿1’000 · $1.00, received Sep 20 at 12:06 PM as an **Instant payment**; then **Paid ✓ 12:00 PM** with ₿2’100; then **Received** with ₿250 · $0.25, received Sep 19 at 10:15 AM as a **Wallet transfer**; then **Expired** and **Cancelled**. A received payment has no stored currency figure, so it shows the current spot beside the bitcoin, not written onto it. No **Paid** confirmation; **Set an amount** stays above.
 
 ![21.gifts point of sale with payments received without a charge](images/pos-received.png)
 
