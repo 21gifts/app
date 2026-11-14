@@ -156,10 +156,10 @@ interface LoansSummaryCommon {
   /** True when an active payable loan has due.lastPayment. */
   lastPayment: boolean;
   /**
-   * Earliest next.dueOn among loans whose next is non-null. Without an unpriced next part, its
-   * display matches the original combined summary. When a next part is unpriced, `sats` and
-   * `amount` contain only positive priced loans and each unpriced loan stays in its own fiat-only
-   * entry.
+   * Earliest next.dueOn with a displayable part: positive known sats or an unpriced loan with a
+   * stored fiat amount. Without an unpriced next part, its display matches the original combined
+   * summary. When a next part is unpriced, `sats` and `amount` contain only positive priced loans
+   * and each unpriced loan stays in its own fiat-only entry.
    */
   next: {
     dueOn: string;
@@ -220,9 +220,14 @@ export function summarizeLoans(data: MyLoans, style: NumberFormatStyle): LoansSu
       payableLoans += 1;
       lastPayment ||= loan.due.lastPayment;
     }
-    if (loan.next !== null) {
-      if (nextDueOn === null || loan.next.dueOn < nextDueOn) {
-        nextDueOn = loan.next.dueOn;
+    const next = loan.next;
+    if (next !== null) {
+      const hasDisplayableNext =
+        next.sats === null
+          ? definedFiatAmounts([{ code: loan.goalCurrency, amount: next.amount }], style) !== null
+          : next.sats > 0;
+      if (hasDisplayableNext && (nextDueOn === null || next.dueOn < nextDueOn)) {
+        nextDueOn = next.dueOn;
       }
     }
   }

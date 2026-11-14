@@ -1258,6 +1258,20 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/wallet',
+    id: 'loans-closed-underfunded-sunday',
+    image: 'wallet-loans-closed-underfunded-sunday.png',
+    visual: 'state-wallet-loans-closed-underfunded-sunday',
+    needle: 'state /wallet loans-closed-underfunded-sunday',
+  },
+  {
+    route: '/wallet',
+    id: 'loans-closed-underfunded-sunday-open',
+    image: 'wallet-loans-closed-underfunded-sunday-open.png',
+    visual: 'state-wallet-loans-closed-underfunded-sunday-open',
+    needle: 'state /wallet loans-closed-underfunded-sunday-open',
+  },
+  {
+    route: '/wallet',
     id: 'loans-due-no-rate',
     image: 'wallet-loans-due-no-rate.png',
     visual: 'state-wallet-loans-due-no-rate',
@@ -1658,6 +1672,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/loans/repay',
+    id: 'mixed-rate-who-open',
+    image: 'loans-repay-mixed-rate-who-open.png',
+    visual: 'state-loans-repay-mixed-rate-who-open',
+    needle: 'state /loans/repay mixed-rate-who-open',
+  },
+  {
+    route: '/loans/repay',
     id: 'who-open',
     image: 'loans-repay-who-open.png',
     visual: 'state-loans-repay-who-open',
@@ -1938,6 +1959,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/loans/repay',
+    id: 'partial-unpriced-who-open',
+    image: 'loans-repay-partial-unpriced-who-open.png',
+    visual: 'state-loans-repay-partial-unpriced-who-open',
+    needle: 'state /loans/repay partial-unpriced-who-open',
+  },
+  {
+    route: '/loans/repay',
     id: 'partial-who-open',
     image: 'loans-repay-partial-who-open.png',
     visual: 'state-loans-repay-partial-who-open',
@@ -2096,6 +2124,13 @@ export const SCREEN_VARIANTS = [
     image: 'loans-repay-pay-more-no-rate.png',
     visual: 'state-loans-repay-pay-more-no-rate',
     needle: 'state /loans/repay pay-more-no-rate',
+  },
+  {
+    route: '/loans/repay',
+    id: 'pay-more-no-rate-who-open',
+    image: 'loans-repay-pay-more-no-rate-who-open.png',
+    visual: 'state-loans-repay-pay-more-no-rate-who-open',
+    needle: 'state /loans/repay pay-more-no-rate-who-open',
   },
   {
     route: '/loans/repay',
@@ -4176,6 +4211,20 @@ export const SCREEN_VARIANTS = [
     image: 'welcome-loans-closed-underfunded-open.png',
     visual: 'state-welcome-loans-closed-underfunded-open',
     needle: 'state /welcome loans-closed-underfunded-open',
+  },
+  {
+    route: '/welcome',
+    id: 'loans-closed-underfunded-sunday',
+    image: 'welcome-loans-closed-underfunded-sunday.png',
+    visual: 'state-welcome-loans-closed-underfunded-sunday',
+    needle: 'state /welcome loans-closed-underfunded-sunday',
+  },
+  {
+    route: '/welcome',
+    id: 'loans-closed-underfunded-sunday-open',
+    image: 'welcome-loans-closed-underfunded-sunday-open.png',
+    visual: 'state-welcome-loans-closed-underfunded-sunday-open',
+    needle: 'state /welcome loans-closed-underfunded-sunday-open',
   },
   {
     route: '/welcome',

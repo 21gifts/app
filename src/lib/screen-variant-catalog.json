@@ -1014,6 +1014,18 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/wallet:loans-closed-underfunded-sunday",
+    "label": "/wallet loans-closed-underfunded-sunday",
+    "visual": "state-wallet-loans-closed-underfunded-sunday",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/wallet:loans-closed-underfunded-sunday-open",
+    "label": "/wallet loans-closed-underfunded-sunday-open",
+    "visual": "state-wallet-loans-closed-underfunded-sunday-open",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/wallet:loans-due-no-rate",
     "label": "/wallet loans-due-no-rate",
     "visual": "state-wallet-loans-due-no-rate",
@@ -1356,6 +1368,12 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/loans/repay:mixed-rate-who-open",
+    "label": "/loans/repay mixed-rate-who-open",
+    "visual": "state-loans-repay-mixed-rate-who-open",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/loans/repay:who-open",
     "label": "/loans/repay who-open",
     "visual": "state-loans-repay-who-open",
@@ -1596,6 +1614,12 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/loans/repay:partial-unpriced-who-open",
+    "label": "/loans/repay partial-unpriced-who-open",
+    "visual": "state-loans-repay-partial-unpriced-who-open",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/loans/repay:partial-who-open",
     "label": "/loans/repay partial-who-open",
     "visual": "state-loans-repay-partial-who-open",
@@ -1731,6 +1755,12 @@
     "id": "/loans/repay:pay-more-no-rate",
     "label": "/loans/repay pay-more-no-rate",
     "visual": "state-loans-repay-pay-more-no-rate",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/loans/repay:pay-more-no-rate-who-open",
+    "label": "/loans/repay pay-more-no-rate-who-open",
+    "visual": "state-loans-repay-pay-more-no-rate-who-open",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
@@ -3513,6 +3543,18 @@
     "id": "/welcome:loans-closed-underfunded-open",
     "label": "/welcome loans-closed-underfunded-open",
     "visual": "state-welcome-loans-closed-underfunded-open",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:loans-closed-underfunded-sunday",
+    "label": "/welcome loans-closed-underfunded-sunday",
+    "visual": "state-welcome-loans-closed-underfunded-sunday",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:loans-closed-underfunded-sunday-open",
+    "label": "/welcome loans-closed-underfunded-sunday-open",
+    "visual": "state-welcome-loans-closed-underfunded-sunday-open",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {

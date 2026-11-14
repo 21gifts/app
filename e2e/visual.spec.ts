@@ -3968,22 +3968,44 @@ test.describe('screen baselines', () => {
 
   test('state /wallet loans-closed-underfunded', async ({ page }) => {
     await seedLoanMember(page);
+    await seedLoanData(page, [loanClosedUnderfunded], {});
+    await page.goto('/wallet?visual=balance-ready');
+    const card = page.getByRole('region', { name: 'Your loan' });
+    await expect(card.getByRole('link', { name: 'Repay your loan' })).toHaveAttribute(
+      'href',
+      '/loans/repay',
+    );
+    await shotScreen(page, 'state-wallet-loans-closed-underfunded');
+  });
+
+  test('state /wallet loans-closed-underfunded-open', async ({ page }) => {
+    await seedLoanMember(page);
+    await seedLoanData(page, [loanClosedUnderfunded], {});
+    await page.goto('/wallet?visual=balance-ready');
+    await page.getByRole('button', { name: 'Show loan' }).click();
+    await expect(page.getByRole('link', { name: loanClosedUnderfunded.text })).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Repay your loan' })).toBeVisible();
+    await shotScreen(page, 'state-wallet-loans-closed-underfunded-open');
+  });
+
+  test('state /wallet loans-closed-underfunded-sunday', async ({ page }) => {
+    await seedLoanMember(page);
     await seedLoanData(page, [loanClosedUnderfunded], {}, true);
     await page.goto('/wallet?visual=balance-ready');
     const card = page.getByRole('region', { name: 'Your loan' });
     await expect(card.getByText('No repayments on Sundays')).toBeVisible();
     await expect(card.getByRole('link', { name: 'Repay your loan' })).toHaveCount(0);
-    await shotScreen(page, 'state-wallet-loans-closed-underfunded');
+    await shotScreen(page, 'state-wallet-loans-closed-underfunded-sunday');
   });
 
-  test('state /wallet loans-closed-underfunded-open', async ({ page }) => {
+  test('state /wallet loans-closed-underfunded-sunday-open', async ({ page }) => {
     await seedLoanMember(page);
     await seedLoanData(page, [loanClosedUnderfunded], {}, true);
     await page.goto('/wallet?visual=balance-ready');
     await page.getByRole('button', { name: 'Show loan' }).click();
     await expect(page.getByRole('link', { name: loanClosedUnderfunded.text })).toBeVisible();
     await expect(page.getByText('No repayments on Sundays')).toBeVisible();
-    await shotScreen(page, 'state-wallet-loans-closed-underfunded-open');
+    await shotScreen(page, 'state-wallet-loans-closed-underfunded-sunday-open');
   });
 
   test('state /wallet loans-due-no-rate', async ({ page }) => {
@@ -6858,6 +6880,11 @@ test.describe('screen baselines', () => {
 });
 
 test.describe('loans repay screens', () => {
+  const mixedUnpricedLedger = ledgerWith(ledgerB, {
+    repayments: ledgerB.repayments.map((row) =>
+      row.status === 'due' ? { ...row, sats: null, dueSats: null } : row,
+    ),
+  });
   const waitingLoan = loanWith(loanA, {
     due: {
       payableSats: 800,
@@ -7039,6 +7066,32 @@ test.describe('loans repay screens', () => {
       row.dayIndex === 4 ? { ...row, status: 'paid' as const, dueSats: null } : row,
     ),
   });
+  const payMoreNoRateLoan = loanWith(repaidLoanB, {
+    totalSats: null,
+    maxSats: null,
+    maxAmount: null,
+    due: {
+      payableSats: null,
+      payablePeople: 1,
+      waitingSats: null,
+      waitingPeople: 1,
+      waitingShares: 1,
+      payableAmount: '18.00',
+      waitingAmount: '12.00',
+    },
+    next: { dueOn: '2026-10-08', sats: null, amount: '30.00' },
+  });
+  const payMoreNoRateLedger = ledgerWith(ledgerB, {
+    givers: ledgerB.givers.map((giver) => ({
+      ...giver,
+      canReceive: giver.accountId !== 'acc_farid',
+    })),
+    waitingShares: 1,
+    repayments: ledgerB.repayments.map((row) => ({
+      ...row,
+      waiting: row.status === 'due' && row.accountId === 'acc_farid',
+    })),
+  });
   const collectingLoan = loanWith(loanA, {
     sats: 18_000,
     fundedAt: null,
@@ -7122,16 +7175,11 @@ test.describe('loans repay screens', () => {
   });
 
   test('state /loans/repay mixed-rate', async ({ page }) => {
-    const unpricedLedger = ledgerWith(ledgerB, {
-      repayments: ledgerB.repayments.map((row) =>
-        row.status === 'due' ? { ...row, sats: null, dueSats: null } : row,
-      ),
-    });
     await loanShot(page, {
       loans: mixedPricedUnpricedLoans,
       ledgers: {
         'loan-mixed-priced': ledgerB,
-        'loan-mixed-unpriced': unpricedLedger,
+        'loan-mixed-unpriced': mixedUnpricedLedger,
       },
       text: 'Due today',
     });
@@ -7140,6 +7188,20 @@ test.describe('loans repay screens', () => {
     await expect(page.getByText(/₱6\.00 · ₿120 waits for a lender/)).toBeVisible();
     await expect(page.getByText(/₱3\.00 waits for a lender/)).toBeVisible();
     await shotScreen(page, 'state-loans-repay-mixed-rate');
+  });
+
+  test('state /loans/repay mixed-rate-who-open', async ({ page }) => {
+    await loanShot(page, {
+      loans: mixedPricedUnpricedLoans,
+      ledgers: {
+        'loan-mixed-priced': ledgerB,
+        'loan-mixed-unpriced': mixedUnpricedLedger,
+      },
+      text: 'Elena',
+      pressWho: true,
+    });
+    await expect(page.getByText('₱15.00', { exact: true }).first()).toBeVisible();
+    await shotScreen(page, 'state-loans-repay-mixed-rate-who-open');
   });
 
   test('state /loans/repay who-open', async ({ page }) => {
@@ -7611,6 +7673,19 @@ test.describe('loans repay screens', () => {
     await shotScreen(page, 'state-loans-repay-partial-unpriced');
   });
 
+  test('state /loans/repay partial-unpriced-who-open', async ({ page }) => {
+    await loanShot(page, {
+      loans: [partialUnpricedLoan],
+      ledgers: { 'loan-b': partialUnpricedLedger },
+      visual: 'repay-partial',
+      text: 'Elena',
+      pressWho: true,
+    });
+    await expect(page.getByText('₱15.00', { exact: true }).first()).toBeVisible();
+    await expect(page.getByRole('button', { name: /^Send / })).toHaveCount(0);
+    await shotScreen(page, 'state-loans-repay-partial-unpriced-who-open');
+  });
+
   test('state /loans/repay partial-who-open', async ({ page }) => {
     await loanShot(page, {
       loans: [partialLoan],
@@ -7846,35 +7921,9 @@ test.describe('loans repay screens', () => {
   });
 
   test('state /loans/repay pay-more-no-rate', async ({ page }) => {
-    const noRateLoan = loanWith(repaidLoanB, {
-      totalSats: null,
-      maxSats: null,
-      maxAmount: null,
-      due: {
-        payableSats: null,
-        payablePeople: 1,
-        waitingSats: null,
-        waitingPeople: 1,
-        waitingShares: 1,
-        payableAmount: '18.00',
-        waitingAmount: '12.00',
-      },
-      next: { dueOn: '2026-10-08', sats: null, amount: '30.00' },
-    });
-    const noRateLedger = ledgerWith(ledgerB, {
-      givers: ledgerB.givers.map((giver) => ({
-        ...giver,
-        canReceive: giver.accountId !== 'acc_farid',
-      })),
-      waitingShares: 1,
-      repayments: ledgerB.repayments.map((row) => ({
-        ...row,
-        waiting: row.status === 'due' && row.accountId === 'acc_farid',
-      })),
-    });
     await loanShot(page, {
-      loans: [noRateLoan],
-      ledgers: { 'loan-b': noRateLedger },
+      loans: [payMoreNoRateLoan],
+      ledgers: { 'loan-b': payMoreNoRateLedger },
       visual: 'repay-ready',
       text: 'No PHP exchange rate is available now',
       spotRates: { USD: '100000.00' },
@@ -7887,6 +7936,21 @@ test.describe('loans repay screens', () => {
     await expect(page.getByRole('group', { name: 'Bitcoin or fiat' })).toHaveCount(0);
     await expect(page.getByText('No exchange rate yet')).toBeVisible();
     await shotScreen(page, 'state-loans-repay-pay-more-no-rate');
+  });
+
+  test('state /loans/repay pay-more-no-rate-who-open', async ({ page }) => {
+    await loanShot(page, {
+      loans: [payMoreNoRateLoan],
+      ledgers: { 'loan-b': payMoreNoRateLedger },
+      visual: 'repay-ready',
+      text: 'Elena',
+      pressWho: true,
+      spotRates: { USD: '100000.00' },
+    });
+    await expect(page.getByText('₱18.00', { exact: true }).first()).toBeVisible();
+    await expect(page.getByRole('button', { name: /^Send / })).toHaveCount(0);
+    await expect(page.getByText('No exchange rate yet')).toBeVisible();
+    await shotScreen(page, 'state-loans-repay-pay-more-no-rate-who-open');
   });
 
   test('state /loans/repay pay-more-no-maximum', async ({ page }) => {
@@ -30900,19 +30964,37 @@ test.describe('welcome forum variants', () => {
   });
 
   test('state /welcome loans-closed-underfunded', async ({ page }) => {
-    await openWelcomeLoans(page, myLoans([loanClosedUnderfunded], true));
+    await openWelcomeLoans(page, myLoans([loanClosedUnderfunded]));
     const card = page.getByRole('region', { name: 'Your loan' });
-    await expect(card.getByText('No repayments on Sundays')).toBeVisible();
-    await expect(card.getByRole('link', { name: 'Repay your loan' })).toHaveCount(0);
+    await expect(card.getByRole('link', { name: 'Repay your loan' })).toHaveAttribute(
+      'href',
+      '/loans/repay',
+    );
     await shotScreen(page, 'state-welcome-loans-closed-underfunded');
   });
 
   test('state /welcome loans-closed-underfunded-open', async ({ page }) => {
+    await openWelcomeLoans(page, myLoans([loanClosedUnderfunded]));
+    await page.getByRole('button', { name: 'Show loan' }).click();
+    await expect(page.getByRole('link', { name: loanClosedUnderfunded.text })).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Repay your loan' })).toBeVisible();
+    await shotScreen(page, 'state-welcome-loans-closed-underfunded-open');
+  });
+
+  test('state /welcome loans-closed-underfunded-sunday', async ({ page }) => {
+    await openWelcomeLoans(page, myLoans([loanClosedUnderfunded], true));
+    const card = page.getByRole('region', { name: 'Your loan' });
+    await expect(card.getByText('No repayments on Sundays')).toBeVisible();
+    await expect(card.getByRole('link', { name: 'Repay your loan' })).toHaveCount(0);
+    await shotScreen(page, 'state-welcome-loans-closed-underfunded-sunday');
+  });
+
+  test('state /welcome loans-closed-underfunded-sunday-open', async ({ page }) => {
     await openWelcomeLoans(page, myLoans([loanClosedUnderfunded], true));
     await page.getByRole('button', { name: 'Show loan' }).click();
     await expect(page.getByRole('link', { name: loanClosedUnderfunded.text })).toBeVisible();
     await expect(page.getByText('No repayments on Sundays')).toBeVisible();
-    await shotScreen(page, 'state-welcome-loans-closed-underfunded-open');
+    await shotScreen(page, 'state-welcome-loans-closed-underfunded-sunday-open');
   });
 
   test('state /welcome loans-due-no-rate', async ({ page }) => {

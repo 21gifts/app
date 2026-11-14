@@ -496,15 +496,27 @@ The same Sunday collecting card after **Show loan** is pressed. The linked credi
 
 ### Variant: loans-closed-underfunded
 
-A manually closed loan that did not reach its goal, shown on Sunday with **Show loan** closed. It keeps its partial funding bar and, like a funded loan, shows **No repayments on Sundays** with no **Repay your loan** entry link. The Sunday box is therefore present for every not-funded loan, whether collecting or manually closed.
+A manually closed loan that did not reach its goal, shown on a weekday with **Show loan** closed. It keeps its partial funding bar and, unlike a loan that is still collecting, shows the ordinary **Repay your loan** entry linking to `/loans/repay`.
 
 ![21.gifts wallet closed underfunded loan](images/wallet-loans-closed-underfunded.png)
 
 ### Variant: loans-closed-underfunded-open
 
-The same manually closed underfunded Sunday card after **Show loan** is pressed. The linked credit-note text and **Hide loan** are visible; **No repayments on Sundays** remains and there is still no repayment entry link.
+The same manually closed underfunded weekday card after **Show loan** is pressed. The linked credit-note text and **Hide loan** are visible, and **Repay your loan** remains available.
 
 ![21.gifts wallet closed underfunded loan open](images/wallet-loans-closed-underfunded-open.png)
+
+### Variant: loans-closed-underfunded-sunday
+
+The same manually closed underfunded loan on Sunday with **Show loan** closed. Its partial funding bar remains, while **No repayments on Sundays** replaces the ordinary **Repay your loan** entry. The Sunday box is therefore present for every not-funded loan, whether collecting or manually closed.
+
+![21.gifts wallet closed underfunded loan Sunday](images/wallet-loans-closed-underfunded-sunday.png)
+
+### Variant: loans-closed-underfunded-sunday-open
+
+The same Sunday card after **Show loan** is pressed. The linked credit-note text and **Hide loan** are visible; **No repayments on Sundays** remains and there is no repayment entry link.
+
+![21.gifts wallet closed underfunded loan Sunday open](images/wallet-loans-closed-underfunded-sunday-open.png)
 
 ### Variant: loans-due-no-rate
 
@@ -1300,6 +1312,12 @@ Two PHP loans are due together. The positive priced part is **₱30.00 · ₿1'0
 
 ![21.gifts loans repay mixed priced and unpriced](images/loans-repay-mixed-rate.png)
 
+### Variant: mixed-rate-who-open
+
+The mixed-rate state after **Who gets paid** is opened. The recipient result keeps each priced and fiat-only share separate, never pairs one loan's bitcoin with another loan's fiat, and leaves the priced total and its Send control unchanged.
+
+![21.gifts loans repay mixed priced and unpriced recipients](images/loans-repay-mixed-rate-who-open.png)
+
 ### Variant: who-open
 
 The default state after **Who gets paid** is opened. The list shows Bruno **₿500 · $0.50**, Carla **₿300 · $0.30**, and Diego **₿200 · $0.20**; the due total remains **₿1'000 · $1.00** and the one-tap Send control remains visible.
@@ -1540,6 +1558,12 @@ After a partial success, the only payable loan left is waiting for its PHP rate.
 
 ![21.gifts loans repay partial payment with unpriced debt](images/loans-repay-partial-unpriced.png)
 
+### Variant: partial-unpriced-who-open
+
+The same partial unpriced state after **Who gets paid** is opened. The remaining recipient is shown with the stored fiat-only **₱15.00** share; the sent-to-Bruno result remains, and no wallet balance or Send control appears.
+
+![21.gifts loans repay partial unpriced recipients](images/loans-repay-partial-unpriced-who-open.png)
+
 ### Variant: partial-who-open
 
 The partial-payment state with **Who gets paid** open. Bruno's **₿500** share was sent and Carla plus Diego remain. The heading is **Still due today**, the amount is **₿500** with **$0.50** under it, and the box says **Sent ₿500 · $0.50 to Bruno** before **From your wallet · ₿21'000 · $21.00** and **Send ₿500 · $0.50**. The list shows Carla **₿300 · $0.30** and Diego **₿200 · $0.20**.
@@ -1677,6 +1701,12 @@ Loan A with malformed sats input **12.5**. The standard AmountEntry marks the fi
 A PHP loan without a current conversion rate, so `totalSats`, both due sat totals, `next.sats`, and `maxSats` are null. The screen still shows the stored fiat figures: **₱18.00** due, **₱12.00** waiting, and **Next: tomorrow, ₱30.00 to 2 people**, without inventing sat figures or offering **Send**. AmountEntry stays in the fixed PHP loan unit without a switch and shows **No exchange rate yet**. **Pay more** also explains **No PHP exchange rate is available now, so paying more is disabled.** Both **Max** and **Pay this amount** are disabled.
 
 ![21.gifts loans repay pay more without rate](images/loans-repay-pay-more-no-rate.png)
+
+### Variant: pay-more-no-rate-who-open
+
+The same no-rate PHP state after **Who gets paid** is opened. The recipient result uses the stored PHP amounts without inventing bitcoin figures; the fiat-only due, waiting, and next figures remain, and **Max**, **Pay this amount**, and due Send stay unavailable.
+
+![21.gifts loans repay pay more without rate recipients](images/loans-repay-pay-more-no-rate-who-open.png)
 
 ### Variant: pay-more-no-maximum
 
@@ -3146,15 +3176,27 @@ The same Sunday collecting card after **Show loan** is pressed. The linked credi
 
 ### Variant: loans-closed-underfunded
 
-A manually closed loan that did not reach its goal, shown on Sunday with **Show loan** closed. It keeps its partial funding bar and, like a funded loan, shows **No repayments on Sundays** with no **Repay your loan** entry link. The Sunday box is shown for the manually closed not-funded state as well as the collecting state.
+A manually closed loan that did not reach its goal, shown on a weekday with **Show loan** closed. It keeps its partial funding bar and, unlike a loan that is still collecting, shows the ordinary **Repay your loan** entry linking to `/loans/repay`.
 
 ![21.gifts welcome closed underfunded loan](images/welcome-loans-closed-underfunded.png)
 
 ### Variant: loans-closed-underfunded-open
 
-The same manually closed underfunded Sunday card after **Show loan** is pressed. The linked credit-note text and **Hide loan** are visible; **No repayments on Sundays** remains and the repayment entry link stays absent.
+The same manually closed underfunded weekday card after **Show loan** is pressed. The linked credit-note text and **Hide loan** are visible, and **Repay your loan** remains available.
 
 ![21.gifts welcome closed underfunded loan open](images/welcome-loans-closed-underfunded-open.png)
+
+### Variant: loans-closed-underfunded-sunday
+
+The same manually closed underfunded loan on Sunday with **Show loan** closed. Its partial funding bar remains, while **No repayments on Sundays** replaces the ordinary **Repay your loan** entry. The Sunday box is shown for the manually closed not-funded state as well as the collecting state.
+
+![21.gifts welcome closed underfunded loan Sunday](images/welcome-loans-closed-underfunded-sunday.png)
+
+### Variant: loans-closed-underfunded-sunday-open
+
+The same Sunday card after **Show loan** is pressed. The linked credit-note text and **Hide loan** are visible; **No repayments on Sundays** remains and the repayment entry link stays absent.
+
+![21.gifts welcome closed underfunded loan Sunday open](images/welcome-loans-closed-underfunded-sunday-open.png)
 
 ### Variant: loans-due-no-rate
 

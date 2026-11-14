@@ -472,8 +472,9 @@ describe('LoansCard', () => {
       ],
     });
     expect(screen.getByText('Nothing to send now')).toBeTruthy();
-    expect(screen.queryByText(/^Next:/)).toBeNull();
+    expect(screen.getByText("Next: Monday, October 12, ₿1'000 · $1.00")).toBeTruthy();
     expect(screen.queryByText(/null/)).toBeNull();
+    expect(screen.queryByText(/₿0/)).toBeNull();
   });
 
   it('shows every payable fiat currency with its own sum', () => {

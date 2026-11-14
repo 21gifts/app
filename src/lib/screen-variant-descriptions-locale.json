@@ -1099,6 +1099,11 @@
     "es": "Un préstamo en PHP sin tipo de cambio actual cuyos campos de satoshis sin pagar son null. Los ₱18.00 vencidos, los ₱12.00 en espera y el siguiente pago de ₱30.00 siguen visibles como importes fiat guardados, sin cifras de satoshis inventadas ni Enviar. AmountEntry permanece en PHP sin selector y muestra Aún no hay tipo de cambio. Pagar más explica la falta del tipo PHP; Máximo y Pagar este importe están desactivados.",
     "fil": "PHP loan na walang kasalukuyang rate at null ang mga hindi pa bayad na sats field. Nananatiling nakikita bilang naka-imbak na fiat ang due na ₱18.00, naghihintay na ₱12.00, at susunod na ₱30.00, nang walang inimbentong sats o Ipadala. Nananatili ang AmountEntry sa PHP nang walang switch at ipinapakita ang Wala pang exchange rate. Ipinapaliwanag ng Magbayad pa ang nawawalang PHP rate; hindi aktibo ang Max at Bayaran ang halagang ito."
   },
+  "/loans/repay:pay-more-no-rate-who-open": {
+    "de": "Derselbe PHP-Zustand ohne Kurs mit geöffnetem „Wer wird bezahlt?“ Die Empfängerliste verwendet die gespeicherten PHP-Beträge, ohne Bitcoin-Zahlen zu erfinden; die reinen Fiatbeträge für fällige, wartende und nächste Zahlungen bleiben, und Maximum, Betrag zahlen sowie Senden für die Fälligkeit bleiben deaktiviert.",
+    "es": "El mismo estado PHP sin tipo con Quién recibe el pago abierto. La lista de destinatarios usa los importes PHP guardados sin inventar cifras de bitcoin; permanecen los importes solo fiat vencido, en espera y siguiente, y Máximo, Pagar este importe y Enviar para el vencimiento siguen desactivados.",
+    "fil": "Ang parehong PHP state na walang rate at bukas ang Sino ang babayaran. Ginagamit ng recipient list ang mga naka-imbak na PHP amount nang walang inimbentong bitcoin; nananatili ang fiat-only na due, waiting, at next figure, at hindi aktibo ang Max, Bayaran ang halagang ito, at due na Ipadala."
+  },
   "/loans/repay:pay-more-no-maximum": {
     "de": "Ein BTC-Kredit ohne derzeit verfügbares Rückzahlungsmaximum. AmountEntry bleibt in der festen ₿-Krediteinheit und zeigt die BTC-spezifische Erklärung, dass aktuell kein Maximum verfügbar ist; es wird ausdrücklich kein fehlender Wechselkurs gemeldet. Maximum und Betrag zahlen sind deaktiviert.",
     "es": "Un préstamo en BTC sin un máximo de devolución disponible ahora. AmountEntry permanece en la unidad fija ₿ del préstamo y muestra la explicación específica de BTC de que no hay máximo disponible; no se informa de un tipo de cambio ausente. Máximo y Pagar este importe están desactivados.",
@@ -1264,6 +1269,11 @@
     "es": "Dos préstamos PHP vencen juntos. La parte con precio positivo es ₱30.00 · ₿1'000 y es la única cubierta por Enviar; el préstamo sin tipo aparece por separado como ₱15.00. El aviso de espera también se divide en ₱6.00 · ₿120 y la línea solo fiat ₱3.00. Ninguna línea combina bitcoin con el fiat de otro préstamo.",
     "fil": "Sabay na dapat bayaran ang dalawang PHP na utang. Ang bahaging may positibong presyo ay ₱30.00 · ₿1'000 at iyon lang ang sakop ng Ipadala; hiwalay na ₱15.00 ang utang na walang rate. Hiwalay din ang waiting notice bilang ₱6.00 · ₿120 at fiat-only na ₱3.00. Walang linyang nagtatabi ng bitcoin at fiat mula sa ibang utang."
   },
+  "/loans/repay:mixed-rate-who-open": {
+    "de": "Der Zustand mit gemischten Kursen und geöffnetem „Wer wird bezahlt?“ Die Empfängerliste hält bepreiste und reine Fiatanteile getrennt, verbindet nie Bitcoin eines Kredits mit Fiat eines anderen und lässt die bepreiste Summe samt Senden unverändert.",
+    "es": "El estado de tipos mixtos con Quién recibe el pago abierto. La lista de destinatarios mantiene separadas las partes con precio y solo fiat, nunca combina el bitcoin de un préstamo con el fiat de otro y deja sin cambios el total con precio y Enviar.",
+    "fil": "Ang mixed-rate state na bukas ang Sino ang babayaran. Pinananatiling hiwalay ng recipient list ang priced at fiat-only na mga bahagi, hindi nito pinagtatabi ang bitcoin ng isang utang at fiat ng iba, at hindi nagbabago ang priced total at Ipadala."
+  },
   "/loans/repay:failed": {
     "de": "Die Fälligkeitskarte behält ₿1'000 · $1.00 und zeigt rot Die Bitcoin-Zahlung konnte nicht gestartet werden. Darunter kehren Aus Ihrer Wallet · ₿21'000 · $21.00 und ₿1'000 · $1.00 senden zurück.",
     "es": "La tarjeta conserva ₿1'000 · $1.00 y muestra en rojo No se pudo iniciar el pago de Bitcoin. Debajo vuelven Desde tu wallet · ₿21'000 · $21.00 y Enviar ₿1'000 · $1.00.",
@@ -1403,6 +1413,11 @@
     "de": "Nach einer teilweisen erfolgreichen Zahlung wartet nur noch ein zahlbarer Kredit auf seinen PHP-Kurs. Die Überschrift lautet Heute noch fällig, die verbleibende Schuld ist der reine Fiat-Betrag ₱15.00, und die Karte sagt ₿500 · $0.50 an Bruno gesendet. Es gibt weder Wallet-Zeile noch Senden, bis der Restbetrag in Bitcoin bepreist werden kann.",
     "es": "Tras un pago parcial correcto, solo queda un préstamo pagadero esperando su tipo de PHP. El encabezado dice Aún vence hoy, la deuda restante es el importe solo fiat ₱15.00 y la caja dice Enviado ₿500 · $0.50 a Bruno. No hay línea de wallet ni Enviar hasta que el importe restante pueda calcularse en bitcoin.",
     "fil": "Pagkatapos ng bahagyang matagumpay na bayad, isang payable loan na lang ang natitira at naghihintay ito sa PHP rate. May babayaran pa ngayon ang heading, fiat-only na ₱15.00 ang natitirang utang, at sinasabi ng kahon ang Naipadala ang ₿500 · $0.50 kay Bruno. Walang hilera ng wallet o Ipadala hanggang malagyan ng presyo sa bitcoin ang natitirang halaga."
+  },
+  "/loans/repay:partial-unpriced-who-open": {
+    "de": "Derselbe teilweise gezahlte Zustand ohne Kurs mit geöffnetem „Wer wird bezahlt?“ Die verbleibende Person erscheint mit dem gespeicherten reinen Fiatanteil ₱15.00; die Meldung über die Zahlung an Bruno bleibt, und es gibt weder Wallet-Zeile noch Senden.",
+    "es": "El mismo estado parcial sin tipo con Quién recibe el pago abierto. La persona restante aparece con la parte guardada solo fiat de ₱15.00; permanece el resultado enviado a Bruno y no hay línea de wallet ni Enviar.",
+    "fil": "Ang parehong partial unpriced state na bukas ang Sino ang babayaran. Ipinapakita ang natitirang recipient na may naka-imbak na fiat-only na ₱15.00 na bahagi; nananatili ang resultang ipinadala kay Bruno, at walang wallet row o Ipadala."
   },
   "/loans/repay:partial-who-open": {
     "de": "Der teilweise gezahlte Zustand mit geöffnetem „Wer wird bezahlt?“ Brunos Anteil ₿500 · $0.50 wurde gesendet; Carla und Diego bleiben. Heute noch fällig zeigt ₿500 · $0.50. Vor Aus Ihrer Wallet · ₿21'000 · $21.00 und ₿500 · $0.50 senden steht ₿500 · $0.50 an Bruno gesendet. Die Liste zeigt Carla ₿300 · $0.30 und Diego ₿200 · $0.20.",
@@ -6555,14 +6570,24 @@
     "fil": "Ang parehong Sunday card pagkatapos ng Ipakita ang utang. Nakikita ang naka-link na teksto at Itago ang utang; nananatili ang Walang pagbabayad tuwing Linggo at wala pa rin ang collecting action."
   },
   "/wallet:loans-closed-underfunded": {
-    "de": "Ein manuell geschlossener Kredit, der sein Ziel nicht erreicht hat, am Sonntag mit geschlossener Kredit-Anzeige. Der teilweise Finanzierungsbalken bleibt; wie bei einem finanzierten Kredit zeigt die Karte Sonntags keine Rückzahlungen und keinen Einstieg Kredit zurückzahlen.",
-    "es": "Un préstamo cerrado manualmente sin alcanzar su objetivo, mostrado en domingo con Ver préstamo cerrado. Conserva la barra de financiación parcial y, como un préstamo financiado, muestra Los domingos no hay devoluciones sin el enlace Devolver tu préstamo.",
-    "fil": "Manwal na isinara ang utang bago maabot ang goal, ipinapakita tuwing Linggo na sarado ang Ipakita ang utang. Nananatili ang partial funding bar at, gaya ng funded loan, ipinapakita ang Walang pagbabayad tuwing Linggo nang walang Bayaran ang iyong utang na link."
+    "de": "Ein manuell geschlossener Kredit, der sein Ziel nicht erreicht hat, an einem Wochentag mit geschlossener Kredit-Anzeige. Der teilweise Finanzierungsbalken bleibt; anders als ein noch sammelnder Kredit zeigt er den gewöhnlichen Einstieg Kredit zurückzahlen zu /loans/repay.",
+    "es": "Un préstamo cerrado manualmente sin alcanzar su objetivo, mostrado entre semana con Ver préstamo cerrado. Conserva la barra de financiación parcial y, a diferencia de un préstamo que aún recauda, muestra el acceso normal Devolver tu préstamo a /loans/repay.",
+    "fil": "Manwal na isinara ang utang bago maabot ang goal, ipinapakita sa weekday na sarado ang Ipakita ang utang. Nananatili ang partial funding bar at, hindi gaya ng nangongolekta pa, ipinapakita ang karaniwang Bayaran ang iyong utang na entry papuntang /loans/repay."
   },
   "/wallet:loans-closed-underfunded-open": {
-    "de": "Derselbe manuell geschlossene, unterfinanzierte Sonntagskredit nach Kredit anzeigen. Der verlinkte Kredittext und Kredit ausblenden sind sichtbar; Sonntags keine Rückzahlungen bleibt und der Rückzahlungseinstieg fehlt weiterhin.",
-    "es": "El mismo préstamo dominical cerrado manualmente y sin financiación completa tras Ver préstamo. Se ven el texto enlazado y Ocultar préstamo; Los domingos no hay devoluciones permanece y el acceso de devolución sigue ausente.",
-    "fil": "Ang parehong manwal na isinara at kulang sa pondong Sunday loan pagkatapos ng Ipakita ang utang. Nakikita ang naka-link na teksto at Itago ang utang; nananatili ang Walang pagbabayad tuwing Linggo at wala pa rin ang repayment entry."
+    "de": "Derselbe manuell geschlossene, unterfinanzierte Wochentagskredit nach Kredit anzeigen. Der verlinkte Kredittext und Kredit ausblenden sind sichtbar; Kredit zurückzahlen bleibt verfügbar.",
+    "es": "El mismo préstamo cerrado manualmente y sin financiación completa entre semana tras Ver préstamo. Se ven el texto enlazado y Ocultar préstamo; Devolver tu préstamo sigue disponible.",
+    "fil": "Ang parehong manwal na isinara at kulang sa pondong weekday loan pagkatapos ng Ipakita ang utang. Nakikita ang naka-link na teksto at Itago ang utang; available pa rin ang Bayaran ang iyong utang."
+  },
+  "/wallet:loans-closed-underfunded-sunday": {
+    "de": "Derselbe manuell geschlossene, unterfinanzierte Kredit am Sonntag mit geschlossener Kredit-Anzeige. Der teilweise Finanzierungsbalken bleibt; Sonntags keine Rückzahlungen ersetzt den gewöhnlichen Einstieg Kredit zurückzahlen.",
+    "es": "El mismo préstamo cerrado manualmente y sin financiación completa en domingo con Ver préstamo cerrado. Conserva la barra parcial; Los domingos no hay devoluciones sustituye el acceso normal Devolver tu préstamo.",
+    "fil": "Ang parehong manwal na isinara at kulang sa pondong utang tuwing Linggo na sarado ang Ipakita ang utang. Nananatili ang partial funding bar; pinapalitan ng Walang pagbabayad tuwing Linggo ang karaniwang Bayaran ang iyong utang na entry."
+  },
+  "/wallet:loans-closed-underfunded-sunday-open": {
+    "de": "Dieselbe Sonntagskarte nach Kredit anzeigen. Der verlinkte Kredittext und Kredit ausblenden sind sichtbar; Sonntags keine Rückzahlungen bleibt und der Rückzahlungseinstieg fehlt.",
+    "es": "La misma tarjeta dominical tras Ver préstamo. Se ven el texto enlazado y Ocultar préstamo; Los domingos no hay devoluciones permanece y no hay acceso de devolución.",
+    "fil": "Ang parehong Sunday card pagkatapos ng Ipakita ang utang. Nakikita ang naka-link na teksto at Itago ang utang; nananatili ang Walang pagbabayad tuwing Linggo at walang repayment entry."
   },
   "/wallet:loans-due-no-rate": {
     "de": "Der geschlossene finanzierte PHP-Kredit hat einen gespeicherten fälligen Betrag, aber keine Satoshi-Bepreisung. Heute fällig zeigt ₱30.00 ohne Bitcoin; der nur als Icon gezeigte Link Rückzahlungsdetails ersetzt Senden.",
@@ -7725,14 +7750,24 @@
     "fil": "Ang parehong Sunday card pagkatapos ng Ipakita ang utang. Nakikita ang naka-link na teksto at Itago ang utang; nananatili ang Walang pagbabayad tuwing Linggo at wala ang collecting action."
   },
   "/welcome:loans-closed-underfunded": {
-    "de": "Ein manuell geschlossener Kredit, der sein Ziel nicht erreicht hat, am Sonntag mit geschlossener Kredit-Anzeige. Der teilweise Finanzierungsbalken bleibt; wie bei einem finanzierten Kredit zeigt die Karte Sonntags keine Rückzahlungen und keinen Einstieg Kredit zurückzahlen.",
-    "es": "Un préstamo cerrado manualmente sin alcanzar su objetivo, mostrado en domingo con Ver préstamo cerrado. Conserva la barra de financiación parcial y, como un préstamo financiado, muestra Los domingos no hay devoluciones sin el enlace Devolver tu préstamo.",
-    "fil": "Manwal na isinara ang utang bago maabot ang goal, ipinapakita tuwing Linggo na sarado ang Ipakita ang utang. Nananatili ang partial funding bar at, gaya ng funded loan, ipinapakita ang Walang pagbabayad tuwing Linggo nang walang Bayaran ang iyong utang na link."
+    "de": "Ein manuell geschlossener Kredit, der sein Ziel nicht erreicht hat, an einem Wochentag mit geschlossener Kredit-Anzeige. Der teilweise Finanzierungsbalken bleibt; anders als ein noch sammelnder Kredit zeigt er den gewöhnlichen Einstieg Kredit zurückzahlen zu /loans/repay.",
+    "es": "Un préstamo cerrado manualmente sin alcanzar su objetivo, mostrado entre semana con Ver préstamo cerrado. Conserva la barra de financiación parcial y, a diferencia de un préstamo que aún recauda, muestra el acceso normal Devolver tu préstamo a /loans/repay.",
+    "fil": "Manwal na isinara ang utang bago maabot ang goal, ipinapakita sa weekday na sarado ang Ipakita ang utang. Nananatili ang partial funding bar at, hindi gaya ng nangongolekta pa, ipinapakita ang karaniwang Bayaran ang iyong utang na entry papuntang /loans/repay."
   },
   "/welcome:loans-closed-underfunded-open": {
-    "de": "Derselbe manuell geschlossene, unterfinanzierte Sonntagskredit nach Kredit anzeigen. Der verlinkte Kredittext und Kredit ausblenden sind sichtbar; Sonntags keine Rückzahlungen bleibt und der Rückzahlungseinstieg fehlt.",
-    "es": "El mismo préstamo dominical cerrado manualmente y sin financiación completa tras Ver préstamo. Se ven el texto enlazado y Ocultar préstamo; Los domingos no hay devoluciones permanece y el acceso de devolución falta.",
-    "fil": "Ang parehong manwal na isinara at kulang sa pondong Sunday loan pagkatapos ng Ipakita ang utang. Nakikita ang naka-link na teksto at Itago ang utang; nananatili ang Walang pagbabayad tuwing Linggo at wala ang repayment entry."
+    "de": "Derselbe manuell geschlossene, unterfinanzierte Wochentagskredit nach Kredit anzeigen. Der verlinkte Kredittext und Kredit ausblenden sind sichtbar; Kredit zurückzahlen bleibt verfügbar.",
+    "es": "El mismo préstamo cerrado manualmente y sin financiación completa entre semana tras Ver préstamo. Se ven el texto enlazado y Ocultar préstamo; Devolver tu préstamo sigue disponible.",
+    "fil": "Ang parehong manwal na isinara at kulang sa pondong weekday loan pagkatapos ng Ipakita ang utang. Nakikita ang naka-link na teksto at Itago ang utang; available pa rin ang Bayaran ang iyong utang."
+  },
+  "/welcome:loans-closed-underfunded-sunday": {
+    "de": "Derselbe manuell geschlossene, unterfinanzierte Kredit am Sonntag mit geschlossener Kredit-Anzeige. Der teilweise Finanzierungsbalken bleibt; Sonntags keine Rückzahlungen ersetzt den gewöhnlichen Einstieg Kredit zurückzahlen.",
+    "es": "El mismo préstamo cerrado manualmente y sin financiación completa en domingo con Ver préstamo cerrado. Conserva la barra parcial; Los domingos no hay devoluciones sustituye el acceso normal Devolver tu préstamo.",
+    "fil": "Ang parehong manwal na isinara at kulang sa pondong utang tuwing Linggo na sarado ang Ipakita ang utang. Nananatili ang partial funding bar; pinapalitan ng Walang pagbabayad tuwing Linggo ang karaniwang Bayaran ang iyong utang na entry."
+  },
+  "/welcome:loans-closed-underfunded-sunday-open": {
+    "de": "Dieselbe Sonntagskarte nach Kredit anzeigen. Der verlinkte Kredittext und Kredit ausblenden sind sichtbar; Sonntags keine Rückzahlungen bleibt und der Rückzahlungseinstieg fehlt.",
+    "es": "La misma tarjeta dominical tras Ver préstamo. Se ven el texto enlazado y Ocultar préstamo; Los domingos no hay devoluciones permanece y no hay acceso de devolución.",
+    "fil": "Ang parehong Sunday card pagkatapos ng Ipakita ang utang. Nakikita ang naka-link na teksto at Itago ang utang; nananatili ang Walang pagbabayad tuwing Linggo at walang repayment entry."
   },
   "/welcome:loans-due-no-rate": {
     "de": "Der geschlossene finanzierte PHP-Kredit hat einen gespeicherten fälligen Betrag, aber keine Satoshi-Bepreisung. Heute fällig zeigt ₱30.00 ohne Bitcoin; der nur als Icon gezeigte Link Rückzahlungsdetails ersetzt Senden.",

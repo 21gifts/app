@@ -333,6 +333,39 @@ describe('summarizeLoans', () => {
     ).toEqual({ dueOn: '2026-10-11', sats: 40, amount: null, unpriced: [] });
   });
 
+  it('skips an earlier zero-sat next day when a later payment is displayable', () => {
+    expect(
+      summarizeLoans(
+        {
+          sundayRest: false,
+          loans: [
+            loan({ next: { dueOn: '2026-10-11', sats: 0, amount: null } }),
+            loan({ next: { dueOn: '2026-10-12', sats: 60, amount: null } }),
+          ],
+        },
+        'ch',
+      ).next,
+    ).toEqual({ dueOn: '2026-10-12', sats: 60, amount: null, unpriced: [] });
+  });
+
+  it('skips an earlier unpriced next day without a stored amount', () => {
+    expect(
+      summarizeLoans(
+        {
+          sundayRest: false,
+          loans: [
+            loan({
+              goalCurrency: 'PHP',
+              next: { dueOn: '2026-10-11', sats: null, amount: null },
+            }),
+            loan({ next: { dueOn: '2026-10-12', sats: 60, amount: null } }),
+          ],
+        },
+        'ch',
+      ).next,
+    ).toEqual({ dueOn: '2026-10-12', sats: 60, amount: null, unpriced: [] });
+  });
+
   it('sums the stored next amounts of one fiat currency on the same day', () => {
     const php = (amount: string | null, sats: number, dueOn = '2026-10-11'): MyLoan =>
       loan({
@@ -379,7 +412,7 @@ describe('summarizeLoans', () => {
     });
   });
 
-  it('suppresses the paired next aggregate when no next sat figure is positive', () => {
+  it('omits the next payment when no part is displayable', () => {
     expect(
       summarizeLoans(
         {
@@ -393,12 +426,7 @@ describe('summarizeLoans', () => {
         },
         'ch',
       ).next,
-    ).toEqual({
-      dueOn: '2026-10-11',
-      sats: null,
-      amount: null,
-      unpriced: [],
-    });
+    ).toBeNull();
   });
 
   it('omits bitcoin zero beside an unpriced next amount', () => {
