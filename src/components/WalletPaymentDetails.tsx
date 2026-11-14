@@ -21,12 +21,14 @@ import { preferredFiatSuffix } from '@/components/PreferredFiatSuffix';
 import { WalletBalance } from '@/components/WalletBalance';
 import { Button, Card, IconButton } from '@/components/ui';
 import { useHeartContext } from '@/hooks/useHeartContext';
+import { usePaymentCounterparty } from '@/hooks/usePaymentCounterparty';
 import { useShopChargeFigure } from '@/hooks/useShopChargeFigure';
 import { useSpotRate } from '@/hooks/useSpotRate';
 import { useWallet } from '@/hooks/useWallet';
 import { useWalletPayment } from '@/hooks/useWalletPayment';
 import type { FiatCode } from '@/lib/committed-fiat';
 import { formatDefinedGoalAmount } from '@/lib/forum-goal';
+import { giftsLightningAddress } from '@/lib/gifts-address';
 import { openInSystemBrowser } from '@/lib/in-app-browser';
 import type { MessageKey } from '@/lib/messages';
 import {
@@ -36,6 +38,7 @@ import {
   satsToFiatAmount,
 } from '@/lib/stats-money';
 import { paymentLookupHash, paymentMessage, paymentTitle } from '@/lib/wallet/payment-display';
+import { isSparkPaymentRequest } from '@/lib/wallet/payment-counterparty';
 import type { WalletPayment } from '@/lib/wallet/wallet-sdk';
 
 /**
@@ -133,9 +136,15 @@ function PaymentView(props: { payment: WalletPayment }): ReactElement {
   const [leaving, setLeaving] = useState(false);
   const [open, setOpen] = useState(false);
   const received = payment.direction === 'received';
+  const counterparty = usePaymentCounterparty(payment);
+  const host = typeof window === 'undefined' ? '21.gifts' : window.location.hostname;
+  const counterpartyAddress =
+    counterparty === null ? null : giftsLightningAddress(counterparty.username, host);
   const Icon = received ? ArrowDownLeft : ArrowUpRight;
   const title = paymentTitle(payment);
   const { info } = payment;
+  const toAddress = info.lnAddress ?? (received ? null : counterpartyAddress);
+  const toAccountId = info.lnAddress === undefined ? counterparty?.accountId : info.memberAccountId;
   const lookupHash = paymentLookupHash(payment);
   const heartContext = useHeartContext(lookupHash === null ? [] : [lookupHash]);
   const heart = lookupHash === null ? undefined : heartContext.byHash.get(lookupHash);
@@ -307,16 +316,26 @@ function PaymentView(props: { payment: WalletPayment }): ReactElement {
       <dl className="divide-y divide-app-border rounded-2xl border border-app-border px-4">
         <Row label={t('wallet.payment.date')}>{date}</Row>
         <Row label={t('wallet.payment.type')}>{t(METHOD_KEY[payment.method])}</Row>
-        {info.lnAddress === undefined ? null : (
+        {!received || counterparty === null || counterpartyAddress === null ? null : (
+          <Row label={t('wallet.payment.from')}>
+            <Link
+              href={`/members/${counterparty.accountId}`}
+              className="break-all text-app-fg font-medium underline underline-offset-2"
+            >
+              {counterpartyAddress}
+            </Link>
+          </Row>
+        )}
+        {toAddress === null ? null : (
           <Row label={t('wallet.payment.to')}>
-            {info.memberAccountId === undefined ? (
-              <span className="break-all">{info.lnAddress}</span>
+            {toAccountId === undefined ? (
+              <span className="break-all">{toAddress}</span>
             ) : (
               <Link
-                href={`/members/${info.memberAccountId}`}
+                href={`/members/${toAccountId}`}
                 className="break-all text-app-fg font-medium underline underline-offset-2"
               >
-                {info.lnAddress}
+                {toAddress}
               </Link>
             )}
           </Row>
@@ -386,7 +405,8 @@ function PaymentView(props: { payment: WalletPayment }): ReactElement {
             {info.vout === undefined ? null : (
               <CopyRow label={t('wallet.payment.output')} value={String(info.vout)} />
             )}
-            {info.invoice === undefined ? null : (
+            {info.invoice === undefined ||
+            (counterpartyAddress !== null && isSparkPaymentRequest(info.invoice)) ? null : (
               <CopyRow label={t('wallet.payment.invoice')} value={info.invoice} />
             )}
             {info.paymentHash === undefined ? null : (

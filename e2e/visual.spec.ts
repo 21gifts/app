@@ -5016,6 +5016,106 @@ test.describe('screen baselines', () => {
     await shotScreen(page, 'state-wallet-payment-heart-open');
   });
 
+  test('state-wallet-payment-received-member-unknown', async ({ page }) => {
+    await stubWalletSetupAccount(page, { sparkWalletVerified: true });
+    await fulfillRateDay(page);
+    await page.goto(
+      '/wallet/payment?id=ab12ce00-1545-4000-8000-000000000014&visual=received-member-unknown',
+    );
+    await expect(page.getByText('Wallet transfer')).toBeVisible();
+    await expect(page.getByText('alice@21.gifts')).toHaveCount(0);
+    await expect(page.getByText('From', { exact: true })).toHaveCount(0);
+    await shotScreen(page, 'state-wallet-payment-received-member-unknown');
+  });
+
+  test('state-wallet-payment-received-member-unknown-open', async ({ page }) => {
+    await stubWalletSetupAccount(page, { sparkWalletVerified: true });
+    await fulfillRateDay(page);
+    await page.goto(
+      '/wallet/payment?id=ab12ce00-1545-4000-8000-000000000014&visual=received-member-unknown',
+    );
+    await page.getByRole('button', { name: 'Details' }).click();
+    await expect(page.getByText('Payment request')).toBeVisible();
+    await expect(page.getByText(/^spark1/)).toBeVisible();
+    await expect(page.getByText('Payment ID')).toBeVisible();
+    await shotScreen(page, 'state-wallet-payment-received-member-unknown-open');
+  });
+
+  test('state-wallet-payment-sent-member-unknown', async ({ page }) => {
+    await stubWalletSetupAccount(page, { sparkWalletVerified: true });
+    await fulfillRateDay(page);
+    await page.goto(
+      '/wallet/payment?id=ab12ce00-1545-4000-8000-000000000015&visual=sent-member-unknown',
+    );
+    await expect(page.getByText('Wallet transfer')).toBeVisible();
+    await expect(page.getByText('bob@21.gifts')).toHaveCount(0);
+    await expect(page.getByText('To', { exact: true })).toHaveCount(0);
+    await shotScreen(page, 'state-wallet-payment-sent-member-unknown');
+  });
+
+  test('state-wallet-payment-sent-member-unknown-open', async ({ page }) => {
+    await stubWalletSetupAccount(page, { sparkWalletVerified: true });
+    await fulfillRateDay(page);
+    await page.goto(
+      '/wallet/payment?id=ab12ce00-1545-4000-8000-000000000015&visual=sent-member-unknown',
+    );
+    await page.getByRole('button', { name: 'Details' }).click();
+    await expect(page.getByText('Payment request')).toBeVisible();
+    await expect(page.getByText(/^spark1/)).toBeVisible();
+    await expect(page.getByText('Payment ID')).toBeVisible();
+    await shotScreen(page, 'state-wallet-payment-sent-member-unknown-open');
+  });
+
+  test('state-wallet-payment-received-from-member', async ({ page }) => {
+    await stubWalletSetupAccount(page, { sparkWalletVerified: true });
+    await fulfillRateDay(page);
+    await page.goto(
+      '/wallet/payment?id=ab12ce00-1545-4000-8000-000000000014&visual=received-from-member',
+    );
+    await expect(page.getByRole('link', { name: 'alice@21.gifts' })).toHaveAttribute(
+      'href',
+      '/members/acc_e2e',
+    );
+    await shotScreen(page, 'state-wallet-payment-received-from-member');
+  });
+
+  test('state-wallet-payment-received-from-member-open', async ({ page }) => {
+    await stubWalletSetupAccount(page, { sparkWalletVerified: true });
+    await fulfillRateDay(page);
+    await page.goto(
+      '/wallet/payment?id=ab12ce00-1545-4000-8000-000000000014&visual=received-from-member',
+    );
+    await page.getByRole('button', { name: 'Details' }).click();
+    await expect(page.getByText('Payment request')).toHaveCount(0);
+    await expect(page.getByText('Payment ID')).toBeVisible();
+    await shotScreen(page, 'state-wallet-payment-received-from-member-open');
+  });
+
+  test('state-wallet-payment-sent-to-member', async ({ page }) => {
+    await stubWalletSetupAccount(page, { sparkWalletVerified: true });
+    await fulfillRateDay(page);
+    await page.goto(
+      '/wallet/payment?id=ab12ce00-1545-4000-8000-000000000015&visual=sent-to-member',
+    );
+    await expect(page.getByRole('link', { name: 'bob@21.gifts' })).toHaveAttribute(
+      'href',
+      '/members/acc_bob',
+    );
+    await shotScreen(page, 'state-wallet-payment-sent-to-member');
+  });
+
+  test('state-wallet-payment-sent-to-member-open', async ({ page }) => {
+    await stubWalletSetupAccount(page, { sparkWalletVerified: true });
+    await fulfillRateDay(page);
+    await page.goto(
+      '/wallet/payment?id=ab12ce00-1545-4000-8000-000000000015&visual=sent-to-member',
+    );
+    await page.getByRole('button', { name: 'Details' }).click();
+    await expect(page.getByText('Payment request')).toHaveCount(0);
+    await expect(page.getByText('Payment ID')).toBeVisible();
+    await shotScreen(page, 'state-wallet-payment-sent-to-member-open');
+  });
+
   test('state-wallet-payment-heart-pending', async ({ page }) => {
     await stubWalletSetupAccount(page, { sparkWalletVerified: true });
     await fulfillRateDay(page);
@@ -41467,6 +41567,10 @@ test.describe('moderate screens', () => {
       'href',
       '/moderate/payouts',
     );
+    await expect(page.getByRole('link', { name: 'Show activity per shop' })).toHaveAttribute(
+      'href',
+      '/moderate/shops',
+    );
     await expect(page.getByText('12%')).toHaveCount(0);
     await shotScreen(page, 'screen-moderate');
   });
@@ -41613,6 +41717,94 @@ test.describe('moderate screens', () => {
       page.getByText('Could not load the payout table. Please try again.'),
     ).toBeVisible();
     await shotScreen(page, 'state-moderate-payouts-error');
+  });
+
+  test('moderate shops', async ({ page }) => {
+    await seedAda(page, 'founder');
+    await page.route('**/shops/activity/shops', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          windowDays: 30,
+          today: '2026-09-26',
+          shops: [
+            {
+              noteId: 'note_bakery',
+              name: 'Bakery',
+              npub: null,
+              accountId: 'acc_bake',
+              username: null,
+              activeDays: 0,
+              lastChargeDay: null,
+            },
+            {
+              noteId: 'note_kiosk',
+              name: 'Kiosk',
+              npub: 'npub1kiosk',
+              accountId: 'acc_kiosk',
+              username: 'kiosktill',
+              activeDays: 0,
+              lastChargeDay: '2026-07-14',
+            },
+            {
+              noteId: 'note_cafe',
+              name: 'Corner Café',
+              npub: 'npub1corner',
+              accountId: 'acc_till',
+              username: 'cornertill',
+              activeDays: 12,
+              lastChargeDay: '2026-09-25',
+            },
+          ],
+        }),
+      });
+    });
+    await page.goto('/moderate/shops');
+    await expect(page.getByRole('heading', { name: 'Activity per shop' })).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Corner Café' })).toBeVisible();
+    await expect(page.getByText('Inactive', { exact: true })).toHaveCount(2);
+    await shotScreen(page, 'screen-moderate-shops');
+  });
+
+  test('moderate shops empty', async ({ page }) => {
+    await seedAda(page, 'founder');
+    await page.route('**/shops/activity/shops', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ windowDays: 30, today: '2026-09-26', shops: [] }),
+      });
+    });
+    await page.goto('/moderate/shops');
+    await expect(page.getByText('No shops yet.')).toBeVisible();
+    await shotScreen(page, 'state-moderate-shops-empty');
+  });
+
+  test('moderate shops forbidden', async ({ page }) => {
+    await seedAda(page, 'basis');
+    await page.goto('/moderate/shops');
+    await expect(page.getByText('This page is for moderators.')).toBeVisible();
+    await shotScreen(page, 'state-moderate-shops-forbidden');
+  });
+
+  test('moderate shops loading', async ({ page }) => {
+    await seedAda(page, 'founder');
+    await page.route('**/shops/activity/shops', () => new Promise(() => undefined));
+    await page.goto('/moderate/shops');
+    await expect(page.getByRole('heading', { name: 'Activity per shop' })).toBeVisible();
+    await expect(page.locator('p.text-center', { hasText: 'Loading…' })).toBeVisible();
+    await shotScreen(page, 'state-moderate-shops-loading');
+  });
+
+  test('moderate shops error', async ({ page }) => {
+    await seedAda(page, 'founder');
+    await page.route('**/shops/activity/shops', async (route) => {
+      await route.fulfill({ status: 503, contentType: 'application/json', body: '{}' });
+    });
+    await page.goto('/moderate/shops');
+    await expect(page.getByText('Could not load shop activity. Please try again.')).toBeVisible();
+    await shotScreen(page, 'state-moderate-shops-error');
   });
 });
 

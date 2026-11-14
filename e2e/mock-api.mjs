@@ -4041,6 +4041,56 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
+  if (method === 'POST' && pathName === '/me/wallet/counterparties') {
+    // The merged api (21gifts/api#605) names the other side only from the
+    // transfer its own wallet read observed. Here the only observed transfer is
+    // the received fixture payment from alice; every other id gets no name,
+    // as a payment the server has not read yet, or one from outside 21.gifts.
+    const token = bearer(req);
+    const account = token === null ? undefined : byToken.get(token);
+    if (!account) {
+      json(res, 401, { error: 'Unauthorized' });
+      return;
+    }
+    if (Buffer.byteLength(rawBody) > 16384) {
+      json(res, 413, { error: 'Request body is too large' });
+      return;
+    }
+    let body;
+    try {
+      body = JSON.parse(rawBody);
+    } catch {
+      json(res, 400, { error: 'Invalid counterparty lookup' });
+      return;
+    }
+    const payments = body?.payments;
+    const valid =
+      Array.isArray(payments) &&
+      payments.length >= 1 &&
+      payments.length <= 32 &&
+      payments.every(
+        (payment) =>
+          typeof payment?.id === 'string' &&
+          payment.id.trim().length >= 1 &&
+          payment.id.trim().length <= 256 &&
+          (payment.direction === 'in' || payment.direction === 'out'),
+      );
+    if (!valid) {
+      json(res, 400, { error: 'Invalid counterparty lookup' });
+      return;
+    }
+    const counterparties = payments
+      .map((payment) => ({ id: payment.id.trim(), direction: payment.direction }))
+      .filter(
+        (payment) =>
+          payment.id === '6a6c3f1f-5841-415b-b8a6-f21d3e513bae' && payment.direction === 'in',
+      )
+      .slice(0, 1)
+      .map((payment) => ({ id: payment.id, accountId: 'acc_e2e', username: 'alice' }));
+    json(res, 200, { counterparties });
+    return;
+  }
+
   if (method === 'POST' && pathName === '/me/wallet/hearts') {
     const token = bearer(req);
     const account = token === null ? undefined : byToken.get(token);
@@ -4411,6 +4461,21 @@ const server = http.createServer(async (req, res) => {
       ],
       rows: [],
     });
+    return;
+  }
+
+  if (method === 'GET' && pathName === '/shops/activity/shops') {
+    const token = bearer(req);
+    const account = token === null ? undefined : byToken.get(token);
+    if (!account) {
+      json(res, 401, { error: 'Unauthorized' });
+      return;
+    }
+    if (!roleAtLeast(account.role, 'moderator')) {
+      json(res, 403, { error: 'Forbidden' });
+      return;
+    }
+    json(res, 200, { windowDays: 30, today: '2026-09-26', shops: [] });
     return;
   }
 

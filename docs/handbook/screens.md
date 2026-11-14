@@ -1067,9 +1067,9 @@ Pinned fixture (`?visual=move-arrived`, Playwright builds only): the last step a
 ## Screen: /wallet/payment
 
 - **URL:** `/wallet/payment?id=<payment id>` — one payment of the signed-in member's wallet, opened from a row of the **Payments** list on `/wallet`.
-- **What the user sees:** The same frame as `/wallet`: one top-left arrow (the previous in-app view, the list when opened from it, or `/welcome` when this tab has none) and the wordmark, **Menu** top-right. The heading **Payment** is for screen readers only. At the top, centred: a round badge with the direction arrow, the title (a gift on your post, Gift when a gift memo was sent, Gift on your post when one was received, Shop payment for a shop memo, the paid Lightning address, the description, the on-chain direction, or Received / Sent; neither gift nor shop memo is shown as the description, and a gift memo's 64 hex digits are the payment hash when the payment has none of its own), the amount large with **+** or **−** (a failed payment struck through and muted). A shop payment shows the currency figure stored on that charge under it (`useShopChargeFigure`, then `committedFiatFigure` with the visitor's fiat as preferred). While that read is pending, on a 404, or after a failed read, and for a payment that is not a shop charge, the line under the amount is the current spot once a rate is loaded, and is left out while that rate is loading or a shop receipt is still out. A missing stored string shows that spot, and a status pill: **Completed** in green, **Pending** in the notice colour, **Failed** in red. A resolved heart replaces the direction badge and the **Gift** title with the filled heart and that post card. A payment that is still pending keeps the direction arrow and the **Gift** title and is not looked up. A loan repayment, as the member who was repaid or the member who paid it, replaces the direction badge with the hand-with-coins icon in the accent colour, shows the title **Loan repayment**, and shows the same post card for its credit note (author and text, linking to `/messages/<credit note id>`); until that lookup returns the screen looks as before. A pending send adds **Still on its way. The amount stays reserved until it arrives or comes back.**; a failed send adds **Nothing left your wallet.** A message that came with the payment (the payer's note, the zap message, or the comment sent to a Lightning address) follows in a soft box; the `repay:` marker of a loan repayment paid over Lightning is not a message, and a loan repayment shows no message box at all. A bordered list shows **Date**, **Type**, **To** (the paid Lightning address as plain text, or a link to that member's profile when the payment names a member), **Repayment day** (a loan repayment only: the day of the term, as **3 of 7**, or just the day when the note has no term), **Description** (only when it is not already the title, and never on a loan repayment), **Amount**, **Fee** (**Free** at ₿0; left out for a fee-less receive and for a failed payment), **Total** (a send with a fee), and **Arrived on-chain** (a deposit whose claim fee was deducted); each Bitcoin figure is bitcoin plus one fiat figure. The charge amount uses the stored shop figure. A fee uses the current spot on the fee sats. A shop total keeps the stored charge figure and adds the spot of the fee sats only, in that same currency; a fee in another currency stays beside its own bitcoin and is not a spot of the sum. Any other amount uses the current spot, and omits it only when no rate is loaded. While a shop receipt is still out, the charge amount and the total stay bitcoin. A fee of ₿0 stays Free. A loan repayment then has a **Repayment list** link to `/messages/<credit note id>/repayment-list`. Details is a button that starts closed. Pressing it shows the shortened technical values, each with a Copy icon: **Transaction** and **Output**, **Payment request**, **Payment hash**, **Proof of payment**, and **Payment ID**. An on-chain payment adds **View on mempool.space**, which first asks **Open external link?**. A shop payment shows that stored figure once the receipt returns and does not wait on a spot rate. This screen reads `useSpotRate`. A missing stored string shows the current spot, and the amount stays bitcoin only while that spot is not loaded. The header balance and the Menu wallet balance on this frame still use the current spot. The screen reads the payment again after each wallet sync, so a pending payment updates in place. A missing or unknown id shows **This payment could not be found.**
-- **Actions:** Copy a technical value; open that profile from **To**; open a heart's post or a loan repayment's credit note from its card; open a loan repayment's **Repayment list**; open the transaction on mempool.space after the warning; go back to the previous in-app view (the list when opened from it) with the top-left arrow; open **Menu** (see **Signed-in header**).
-- **Calls:** `AppShell`, `WalletChromeLeft`, `SignedInChrome`, `OnboardingGate`, `WalletPaymentDetails`, `useWalletPayment`, `getWalletPayment`, `paymentTitle`, `paymentMessage`, `paymentLookupHash`, `useHeartContext`, `ExternalLinkWarning`, `openInSystemBrowser`, `useShopChargeFigure`.
+- **What the user sees:** The same frame as `/wallet`: one top-left arrow (the previous in-app view, the list when opened from it, or `/welcome` when this tab has none) and the wordmark, **Menu** top-right. The heading **Payment** is for screen readers only. At the top, centred: a round badge with the direction arrow, the title (a gift on your post, Gift when a gift memo was sent, Gift on your post when one was received, Shop payment for a shop memo, the paid Lightning address, the description, the on-chain direction, or Received / Sent; neither gift nor shop memo is shown as the description, and a gift memo's 64 hex digits are the payment hash when the payment has none of its own), the amount large with **+** or **−** (a failed payment struck through and muted). A shop payment shows the currency figure stored on that charge under it (`useShopChargeFigure`, then `committedFiatFigure` with the visitor's fiat as preferred). While that read is pending, on a 404, or after a failed read, and for a payment that is not a shop charge, the line under the amount is the current spot once a rate is loaded, and is left out while that rate is loading or a shop receipt is still out. A missing stored string shows that spot, and a status pill: **Completed** in green, **Pending** in the notice colour, **Failed** in red. A resolved heart replaces the direction badge and the **Gift** title with the filled heart and that post card. A payment that is still pending keeps the direction arrow and the **Gift** title and is not looked up. A loan repayment, as the member who was repaid or the member who paid it, replaces the direction badge with the hand-with-coins icon in the accent colour, shows the title **Loan repayment**, and shows the same post card for its credit note (author and text, linking to `/messages/<credit note id>`); until that lookup returns the screen looks as before. A pending send adds **Still on its way. The amount stays reserved until it arrives or comes back.**; a failed send adds **Nothing left your wallet.** A message that came with the payment (the payer's note, the zap message, or the comment sent to a Lightning address) follows in a soft box; the `repay:` marker of a loan repayment paid over Lightning is not a message, and a loan repayment shows no message box at all. A bordered list shows **Date**, **Type**, **From** (a received, completed Spark payment whose sender the api has named, as a link to that member's profile with the address `<username>@<host>`), **To** (the paid Lightning address as plain text, or a link to that member's profile when the payment names a member; first the paid Lightning address, otherwise, on a sent Spark payment, the recipient's 21.gifts address from the lookup, as a link to that member's profile), **Repayment day** (a loan repayment only: the day of the term, as **3 of 7**, or just the day when the note has no term), **Description** (only when it is not already the title, and never on a loan repayment), **Amount**, **Fee** (**Free** at ₿0; left out for a fee-less receive and for a failed payment), **Total** (a send with a fee), and **Arrived on-chain** (a deposit whose claim fee was deducted); each Bitcoin figure is bitcoin plus one fiat figure. The charge amount uses the stored shop figure. A fee uses the current spot on the fee sats. A shop total keeps the stored charge figure and adds the spot of the fee sats only, in that same currency; a fee in another currency stays beside its own bitcoin and is not a spot of the sum. Any other amount uses the current spot, and omits it only when no rate is loaded. While a shop receipt is still out, the charge amount and the total stay bitcoin. A fee of ₿0 stays Free. A loan repayment then has a **Repayment list** link to `/messages/<credit note id>/repayment-list`. Details is a button that starts closed. Pressing it shows the shortened technical values, each with a Copy icon: **Transaction** and **Output**, **Payment request**, **Payment hash**, **Proof of payment**, and **Payment ID**. **Payment request** is not shown when the other side is known and the value is a Spark payment request. A Lightning payment request stays. The api names the other side only after its own read of the wallet saw the transfer, about once a minute, so the name can be missing right after a payment: the screen asks again after 15 s, 30 s, 60 s, and 120 s while it is open, and once more each time it is opened again. Until a name arrives there is no **From** row and no looked-up **To** row, and no Spark address or Spark payment request takes their place; the Spark payment request stays only under **Details**. A Lightning, on-chain, or token payment is not looked up and keeps its rows; a payment whose other side is not a 21.gifts member never gets a name. An on-chain payment adds **View on mempool.space**, which first asks **Open external link?**. A shop payment shows that stored figure once the receipt returns and does not wait on a spot rate. This screen reads `useSpotRate`. A missing stored string shows the current spot, and the amount stays bitcoin only while that spot is not loaded. The header balance and the Menu wallet balance on this frame still use the current spot. The screen reads the payment again after each wallet sync, so a pending payment updates in place. A missing or unknown id shows **This payment could not be found.**
+- **Actions:** Copy a technical value; open that profile from **From** or **To**; open a heart's post or a loan repayment's credit note from its card; open a loan repayment's **Repayment list**; open the transaction on mempool.space after the warning; go back to the previous in-app view (the list when opened from it) with the top-left arrow; open **Menu** (see **Signed-in header**).
+- **Calls:** `AppShell`, `WalletChromeLeft`, `SignedInChrome`, `OnboardingGate`, `WalletPaymentDetails`, `useWalletPayment`, `getWalletPayment`, `paymentTitle`, `paymentMessage`, `paymentLookupHash`, `useHeartContext`, `ExternalLinkWarning`, `openInSystemBrowser`, `useShopChargeFigure`, `usePaymentCounterparty`, `walletReportSettled`, `fetchPaymentCounterparties`, `giftsLightningAddress`, `isSparkPaymentRequest`.
 
 ### Variant: default
 
@@ -1130,6 +1130,54 @@ Pinned with `?visual=heart-payment` and id `b7e4a1c0-6f28-4a55-9c31-0d5e8a7b6c42
 The same heart as heart-payment after pressing **Details**, so the payment request, the payment hash from the gift memo, and the payment id are visible. The memo is not shown. Author **Ada** and the text **Sunday lunch** stay, with the chevron, **To** @ada stays a link to that member's profile, and there is still no **Gift** title.
 
 ![21.gifts wallet payment heart open](images/wallet-payment-heart-open.png)
+
+### Variant: received-member-unknown
+
+Pinned with `?visual=received-member-unknown` and id `ab12ce00-1545-4000-8000-000000000014`. This is the same payment as received-from-member while the api has not named the other side (it has not read the transfer yet, or the other side is not a 21.gifts member), so there is no **From** row and nothing takes its place. The title is **Received**, the amount is `+₿200` with its fiat figure, and the status is **Completed**. The summary has **Date**, **Type** Wallet transfer, and **Amount** with bitcoin and fiat. There is no **Fee**, **Total**, or **To** row. **Details** is closed, and the Spark payment request is under **Details**.
+
+![21.gifts received payment without a known member](images/wallet-payment-received-member-unknown.png)
+
+### Variant: received-member-unknown-open
+
+Pinned with `?visual=received-member-unknown` and id `ab12ce00-1545-4000-8000-000000000014`, after pressing **Details**. This is the same payment as received-from-member while the api has not named the other side (it has not read the transfer yet, or the other side is not a 21.gifts member), so there is no **From** row and nothing takes its place. The Spark payment request and the payment ID are visible, and there is no payment hash. **Received**, `+₿200` with fiat, **Completed**, and the **Date**, **Type**, and **Amount** rows stay visible. There is no **Fee**, **Total**, or **To** row.
+
+![21.gifts received payment without a known member with details](images/wallet-payment-received-member-unknown-open.png)
+
+### Variant: sent-member-unknown
+
+Pinned with `?visual=sent-member-unknown` and id `ab12ce00-1545-4000-8000-000000000015`. This is the same payment as sent-to-member while the api has not named the other side (it has not read the transfer yet, or the other side is not a 21.gifts member), so there is no **To** row and nothing takes its place. The title is **Sent**, the amount is `−₿200` with fiat, and the status is **Completed**. The summary shows **Date**, **Type** Wallet transfer, **Amount** with fiat, and **Fee** Free. There is no **From** or **Total** row. **Details** is closed, and the Spark payment request is under **Details**.
+
+![21.gifts sent payment without a known member](images/wallet-payment-sent-member-unknown.png)
+
+### Variant: sent-member-unknown-open
+
+Pinned with `?visual=sent-member-unknown` and id `ab12ce00-1545-4000-8000-000000000015`, after pressing **Details**. This is the same payment as sent-to-member while the api has not named the other side (it has not read the transfer yet, or the other side is not a 21.gifts member), so there is no **To** row and nothing takes its place. The Spark payment request and the payment ID are visible, and there is no payment hash. **Sent**, `−₿200` with fiat, **Completed**, and the **Date**, **Type**, **Amount**, and **Fee** rows stay visible. There is no **From** or **Total** row.
+
+![21.gifts sent payment without a known member with details](images/wallet-payment-sent-member-unknown-open.png)
+
+### Variant: received-from-member
+
+Pinned with `?visual=received-from-member` and id `ab12ce00-1545-4000-8000-000000000014`. The incoming payment shows the title **Received**, `+₿200` with its fiat figure, and the **Completed** status. The summary has **Date**, **Type** Wallet transfer, **From** alice@21.gifts linking to `/members/acc_e2e`, and **Amount** with bitcoin and fiat. There is no **Fee**, **Total**, or **To** row. **Details** is closed, so the payment ID is hidden. The Spark payment request is not shown because the other side is known. This payment has no payment hash.
+
+![21.gifts received payment from a member](images/wallet-payment-received-from-member.png)
+
+### Variant: received-from-member-open
+
+The same received payment after pressing **Details**: the payment ID is visible; the Spark payment request is hidden and there is no payment hash. **Received**, `+₿200` with fiat, **Completed**, and the **Date**, **Type**, **From**, and **Amount** rows stay visible. **From** alice@21.gifts remains a link to `/members/acc_e2e`; there is no **Fee**, **Total**, or **To** row.
+
+![21.gifts received payment from a member with details](images/wallet-payment-received-from-member-open.png)
+
+### Variant: sent-to-member
+
+Pinned with `?visual=sent-to-member` and id `ab12ce00-1545-4000-8000-000000000015`. The title is **Sent**, the amount is `−₿200` with fiat, and the status is **Completed**. The summary shows **Date**, **Type** Wallet transfer, **To** bob@21.gifts linking to `/members/acc_bob`, **Amount** with fiat, and **Fee** Free. There is no **From** or **Total** row. **Details** is closed and the payment ID is hidden.
+
+![21.gifts sent payment to a member](images/wallet-payment-sent-to-member.png)
+
+### Variant: sent-to-member-open
+
+The same sent payment after pressing **Details**: the payment ID is visible, the Spark payment request is hidden, and there is no payment hash. **Sent**, `−₿200` with fiat, **Completed**, and the **Date**, **Type**, **To**, **Amount**, and **Fee** rows remain visible. **To** bob@21.gifts remains a member link; there is no **From** or **Total** row.
+
+![21.gifts sent payment to a member with details](images/wallet-payment-sent-to-member-open.png)
 
 ### Variant: heart-payment-pending
 
@@ -9802,26 +9850,26 @@ Staff (moderator) page. The people panel shows **Could not load payouts. Please 
 ## Screen: /moderate
 
 - **URL:** `/moderate` — signed-in moderation hub for moderators. Same onboarding gate as `/welcome` (`OnboardingGate screen="welcome"`). HTML `/moderate` is the hub, not a GET proxy; this page does not fetch hidden notes, proposals, applications, or gift stats. The Open proposals count comes from `useUnreadCount` (`GET /trust/proposals`); the queue itself is `/moderate/proposals`. JSON for hidden notes lives under `/forum/messages/hidden`; JSON for open proposals lives under `/trust/proposals`; JSON for grant applications lives under `/funding/applications` (Next.js forbids `route.ts` beside this page).
-- **What the user sees:** Chrome is the page-frame header (`ProfileChromeLeft` (the arrow returns to the previous in-app view, or `/welcome` when this tab has none; wordmark → `/welcome`), and Menu, inside the rounded sheet). Fill `AppShell` (`align="center"`). Heading **Moderation**. Staff (moderator) see a labeled **Goals** `ButtonLink` (`variant="secondary"` `size="lg"`) to `/grants/goals` (first tool), a labeled **Hidden notes** `ButtonLink` (`variant="secondary"` `size="lg"`) to `/moderate/hidden`, a labeled **Open proposals** `ButtonLink` (`variant="secondary"` `size="lg"`) to `/moderate/proposals` that shows a count when `proposalCount` > 0 (`moderate.proposals.unread`, accessible name like Open proposals, 1 unread), **Moderators chat group** `ButtonLink` → `/moderate/group`, **Handbook** `ButtonLink` → `/moderate/handbook`, and **Show payout per person** `ButtonLink` → `/moderate/payouts` (last tool). Hub **Moderators chat group** ButtonLink shows a count when staff-room unread (`moderationUnreadCount - proposalCount`) is greater than zero (`moderate.groupUnread`, accessible name like Moderators chat group, 1 unread); href stays `/moderate/group`. Non-staff signed-in visitors see the heading plus **This page is for moderators.** and no tools list. Menu row **Statistics** sits before Moderation. Menu row **Moderation** (`nav.moderate`, lucide `Shield`, `/moderate`) only when `roleAtLeast(role, 'moderator')`, after **Statistics**. Staff Menu row **Moderation** shows a count when staff-room unread plus open-proposal count is greater than zero (`nav.moderateUnread`, accessible name like Moderation, 1 unread); href stays `/moderate`. Menu has no Open proposals row.
-- **Actions:** Open **Goals** to `/grants/goals`. Open **Hidden notes** to `/moderate/hidden`. Open **Open proposals** to `/moderate/proposals`. Moderators also open **Moderators chat group** to `/moderate/group`. Open **Handbook** to `/moderate/handbook`. Open **Show payout per person** to `/moderate/payouts`. The top-left arrow returns to the previous in-app view in this tab, or `/welcome` when this tab has none. One arrow. The wordmark is not that control. Open **Menu**. No list fetch and no un-hide control on this page. Hub does not fetch proposals, applications, or gift stats itself (Open proposals count comes from `useUnreadCount`).
+- **What the user sees:** Chrome is the page-frame header (`ProfileChromeLeft` (the arrow returns to the previous in-app view, or `/welcome` when this tab has none; wordmark → `/welcome`), and Menu, inside the rounded sheet). Fill `AppShell` (`align="center"`). Heading **Moderation**. Staff (moderator) see a labeled **Goals** `ButtonLink` (`variant="secondary"` `size="lg"`) to `/grants/goals` (first tool), a labeled **Hidden notes** `ButtonLink` (`variant="secondary"` `size="lg"`) to `/moderate/hidden`, a labeled **Open proposals** `ButtonLink` (`variant="secondary"` `size="lg"`) to `/moderate/proposals` that shows a count when `proposalCount` > 0 (`moderate.proposals.unread`, accessible name like Open proposals, 1 unread), **Moderators chat group** `ButtonLink` → `/moderate/group`, **Handbook** `ButtonLink` → `/moderate/handbook`, **Show payout per person** `ButtonLink` → `/moderate/payouts`, and **Show activity per shop** `ButtonLink` → `/moderate/shops` (last tool). Hub **Moderators chat group** ButtonLink shows a count when staff-room unread (`moderationUnreadCount - proposalCount`) is greater than zero (`moderate.groupUnread`, accessible name like Moderators chat group, 1 unread); href stays `/moderate/group`. Non-staff signed-in visitors see the heading plus **This page is for moderators.** and no tools list. Menu row **Statistics** sits before Moderation. Menu row **Moderation** (`nav.moderate`, lucide `Shield`, `/moderate`) only when `roleAtLeast(role, 'moderator')`, after **Statistics**. Staff Menu row **Moderation** shows a count when staff-room unread plus open-proposal count is greater than zero (`nav.moderateUnread`, accessible name like Moderation, 1 unread); href stays `/moderate`. Menu has no Open proposals row.
+- **Actions:** Open **Goals** to `/grants/goals`. Open **Hidden notes** to `/moderate/hidden`. Open **Open proposals** to `/moderate/proposals`. Moderators also open **Moderators chat group** to `/moderate/group`. Open **Handbook** to `/moderate/handbook`. Open **Show payout per person** to `/moderate/payouts`. Open **Show activity per shop** to `/moderate/shops`. The top-left arrow returns to the previous in-app view in this tab, or `/welcome` when this tab has none. One arrow. The wordmark is not that control. Open **Menu**. No list fetch and no un-hide control on this page. Hub does not fetch proposals, applications, or gift stats itself (Open proposals count comes from `useUnreadCount`).
 - **Calls:** `AppShell`, `ProfileChromeLeft`, `ModeratePage`, `ModerateScreen`, `SignedInChrome`, `OnboardingGate`, `useUnreadCount`.
 - **Auth:** Bearer session; `OnboardingGate screen="welcome"`. Hub tools only when `roleAtLeast(role, 'moderator')`; others see forbidden copy and do not fetch. This page does not call `GET /gifts/stats`.
 
 ### Variant: default
 
-Staff (moderator) hub with heading **Moderation**, labeled **Goals** control → `/grants/goals`, labeled **Hidden notes** control → `/moderate/hidden`, labeled **Open proposals** control → `/moderate/proposals`, **Moderators chat group** control → `/moderate/group`, **Handbook** control → `/moderate/handbook`, and **Show payout per person** → `/moderate/payouts`. No goal widget.
+Staff (moderator) hub with heading **Moderation**, labeled **Goals** control → `/grants/goals`, labeled **Hidden notes** control → `/moderate/hidden`, labeled **Open proposals** control → `/moderate/proposals`, **Moderators chat group** control → `/moderate/group`, **Handbook** control → `/moderate/handbook`, **Show payout per person** → `/moderate/payouts`, and **Show activity per shop** → `/moderate/shops`. No goal widget.
 
 ![21.gifts moderation](images/moderate.png)
 
 ### Variant: group-unread
 
-Staff hub with an unread Moderators chat group. **Moderators chat group** control shows **1** and accessible name **Moderators chat group, 1 unread** (`moderate.groupUnread`). Goals, Hidden notes, Open proposals, Handbook, and Show payout per person unchanged.
+Staff hub with an unread Moderators chat group. **Moderators chat group** control shows **1** and accessible name **Moderators chat group, 1 unread** (`moderate.groupUnread`). Goals, Hidden notes, Open proposals, Handbook, Show payout per person, and Show activity per shop unchanged.
 
 ![21.gifts moderation group unread](images/moderate-group-unread.png)
 
 ### Variant: proposals-unread
 
-Staff hub with one open proposal. **Open proposals** control shows **1** and accessible name **Open proposals, 1 unread** (`moderate.proposals.unread`). Goals, Hidden notes, Moderators chat group, Handbook, and Show payout per person unchanged.
+Staff hub with one open proposal. **Open proposals** control shows **1** and accessible name **Open proposals, 1 unread** (`moderate.proposals.unread`). Goals, Hidden notes, Moderators chat group, Handbook, Show payout per person, and Show activity per shop unchanged.
 
 ![21.gifts moderation proposals unread](images/moderate-proposals-unread.png)
 
@@ -9868,6 +9916,44 @@ Staff page while the table is loading. Copy **Loading…**.
 Staff page when the load fails. Copy **Could not load the payout table. Please try again.** and button **Try again**.
 
 ![21.gifts payout per person error](images/moderate-payouts-error.png)
+
+## Screen: /moderate/shops
+
+- **URL:** `/moderate/shops` — signed-in staff table of POS activity per shop. Same onboarding gate as `/moderate` (`OnboardingGate screen="welcome"`). HTML `/moderate/shops` is the table, not a GET proxy. JSON is `GET /shops/activity/shops`. Hub is `/moderate`.
+- **What the user sees:** Fill `AppShell` (`align="center"`) with one top-left arrow (`ProfileChromeLeft`) that returns to the previous in-app view in this tab, or `/welcome` when this tab has none, plus wordmark → `/welcome`. The wordmark is not that control. One **Menu** sits top-right. No in-card back. Heading **Activity per shop**. Staff see the lead (POS charges by the till account of each shop over the window, shops without a charge marked inactive), then a table with **Shop**, **Till account**, **Active days**, and **Last charge**, one row per shop in the api order (never used first, then oldest last charge first). The shop name links to the shop page `/{npub}` when the shop has an npub. The till account is `@username`, or the account id when the account has no username. Active days read `N / 30` from `windowDays`; a shop with `0` active days shows that figure and **Inactive** in the danger color. The last charge day is a medium localized date in UTC, or **Never**. Empty copy **No shops yet.** Loading… or error plus **Try again**. Non-staff, and staff the api answers with 403, see the heading plus **This page is for moderators.** and no table.
+- **Actions:** The top-left arrow returns to the previous in-app view in this tab, or `/welcome` when this tab has none. One arrow. The wordmark is not that control (wordmark → `/welcome`). Open a shop page when the row has an npub. **Try again** after a load error. Open **Menu**.
+- **Calls:** `ShopActivityPage`, `ShopActivityShopsScreen`, `fetchShopActivityShops`.
+- **Auth:** Bearer session; `OnboardingGate screen="welcome"`. The table fetches only when `roleAtLeast(role, 'moderator')`.
+
+### Variant: default
+
+Staff table with three shops in the api order: Bakery (no npub, no username, never charged), Kiosk (last charge in July), both marked **Inactive** with `0 / 30`, then Corner Café with `12 / 30` and a last charge the day before today.
+
+![21.gifts activity per shop](images/moderate-shops.png)
+
+### Variant: empty
+
+Staff page when there is no shop. Sentence **No shops yet.** No table.
+
+![21.gifts activity per shop empty](images/moderate-shops-empty.png)
+
+### Variant: forbidden
+
+Signed-in basis account. Copy **This page is for moderators.** No table.
+
+![21.gifts activity per shop forbidden](images/moderate-shops-forbidden.png)
+
+### Variant: loading
+
+Staff page while the table is loading. Copy **Loading…**.
+
+![21.gifts activity per shop loading](images/moderate-shops-loading.png)
+
+### Variant: error
+
+Staff page when the load fails. Copy **Could not load shop activity. Please try again.** and button **Try again**.
+
+![21.gifts activity per shop error](images/moderate-shops-error.png)
 
 ## Screen: /moderate/hidden
 

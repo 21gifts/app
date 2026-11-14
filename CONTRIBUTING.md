@@ -82,6 +82,7 @@ app/
 │   │   │   ├── wallet/route.ts  # PUT /me/wallet (claim the in-app wallet key)
 │   │   │   ├── wallet/report/route.ts  # POST /me/wallet/report (wallet data report)
 │   │   │   ├── wallet/hearts/route.ts  # POST /me/wallet/hearts (heart payment lookup)
+│   │   │   ├── wallet/counterparties/route.ts # POST /me/wallet/counterparties (counterparty lookup)
 │   │   │   ├── events/route.ts  # POST /me/events (interaction log batch)
 │   │   │   ├── recovery-share/route.ts  # PUT /me/recovery-share (the Social Recovery share 21.gifts keeps)
 │   │   │   ├── held-shares/
@@ -286,7 +287,7 @@ app/
 │   │   ├── WalletFooterActions.tsx # Receive / Send footer buttons shared by /wallet and /welcome
 │   │   ├── WalletPanelView.tsx  # Open Receive or Send view as the page body (/wallet and over /welcome)
 │   │   ├── WalletReceive.tsx    # Receive view: address QR, 21.gifts address, Copy, Set an amount, Move Bitcoin from another wallet (hadExternalWallet)
-│   │   ├── WalletPaymentDetails.tsx # /wallet/payment one payment: amount, status, summary, technical details
+│   │   ├── WalletPaymentDetails.tsx # /wallet/payment one payment: amount, status, counterparty, summary, technical details
 │   │   ├── WalletBalance.tsx    # /wallet large balance (connecting / ready with ₿/fiat tap / error or setup note)
 │   │   ├── WalletHistory.tsx    # /wallet payments card (newest first, paged on scroll)
 │   │   ├── WalletSetupNote.tsx  # Inline wallet setup note on money screens (Try again)
@@ -376,6 +377,7 @@ app/
 │   │   ├── useActiveSession.ts  # Session token public pages may act with (null while a login's wallet is opening)
 │   │   ├── useWalletOpen.ts     # Whether the account's wallet phrase is open in this tab
 │   │   ├── useHeartContext.ts   # Gift payment hashes resolved to the heart's forum post
+│   │   ├── usePaymentCounterparty.ts # Counterparty lookup for a payment
 │   │   ├── useWalletHistory.ts  # /wallet payment pages, reloaded on every wallet sync
 │   │   ├── useWalletSetup.ts    # Inline setup-failure state, screenshot pins, and retry
 │   │   ├── useWalletPay.ts      # In-app pay path of one invoice (prepare, confirm, send, 60 s wait)
@@ -426,6 +428,7 @@ app/
 │   │   │   ├── payment-display.ts # Payment title, message, and screen link for the list and /wallet/payment
 │   │   │   ├── payment-fixtures.ts # Synthetic SDK payments for the history-rows pin (invariants unit-tested)
 │   │   │   ├── heart-context.ts # fetchHeartPosts: gift payment hashes → POST /me/wallet/hearts
+│   │   │   ├── payment-counterparty.ts # fetchPaymentCounterparties: payments → POST /me/wallet/counterparties
 │   │   │   ├── wallet-report.ts # reportWallet: balance + unacknowledged payments → POST /me/wallet/report
 │   │   │   ├── fond-payouts.ts  # runFondPayoutTick: list → invoice → pay sparkInvoice ?? bolt11 once
 │   │   │   ├── fond-deposits.ts # registerFondDepositAddress outcome; claimFondDeposits under a bounded fee
@@ -501,7 +504,7 @@ app/
 │   ├── login.spec.ts            # /login Log in + account choice + signed-in forms
 │   ├── login-gate.spec.ts       # logins_closed / app_outdated notices, X-App-Build, wiped session falls back to signed out
 │   ├── wallet.spec.ts           # /wallet recovery-phrase, balance, Send (camera), Receive, and Function titles
-│   ├── data-collection.spec.ts  # POST /me/wallet/report, /me/wallet/hearts, and /me/events proxies, interaction log in the browser
+│   ├── data-collection.spec.ts  # POST /me/wallet/report, /me/wallet/hearts, /me/wallet/counterparties, and /me/events proxies, interaction log in the browser
 │   ├── camera.ts                # Stubbed getUserMedia (black stream, QR stream, one QR per request, blocked, none) for camera specs
 │   ├── fake-webauthn.ts         # Stubbed passkey that always succeeds with PRF output (login, login gate)
 │   ├── no-prf.ts                # Stubbed passkeys without PRF output + the one no-wallet sentence
@@ -949,7 +952,7 @@ switch that makes a screen show fixture data or a forced state) is honoured
 **only in a Playwright build**: check `getE2eNow()` (`NEXT_PUBLIC_E2E_NOW`,
 unset in every deployed build) before reading the pin. `visualPin` does that
 for `useWallet` (including `?visual=balance-reopening`), `useWalletPay`, `useWalletSetup`, `useWalletSend`, `useWalletPanel`, `useWalletPayment`, `useRecoveryFlow`, `useSocialRecoverySetup`, `useRemainingBalance`, `useIncomingPayment`, `useLoanRepay`, the login card's
-wallet gate, `sendHeartTip`, `useHeartTip`, `useHeartContext`, `PosScreen`, `MoveFundsSheet`, `payment-display`, and `wallet-open`; `useWalletHistory`, `useWalletPhrase`, and
+wallet gate, `sendHeartTip`, `useHeartTip`, `useHeartContext`, `usePaymentCounterparty`, `PosScreen`, `MoveFundsSheet`, `payment-display`, and `wallet-open`; `useWalletHistory`, `useWalletPhrase`, and
 `PasskeyRenewNotice` check `getE2eNow()` themselves. Inline scripts that run before
 React check for the `e2e-now` meta tag, which only a Playwright build renders.
 Do not add a second mechanism. A production build must ignore every pin, and a

@@ -6,6 +6,8 @@ import {
   HEART_VISUAL_PAYMENT,
   REPAYMENT_BORROWER_VISUAL_PAYMENT,
   REPAYMENT_GIVER_VISUAL_PAYMENT,
+  RECEIVED_FROM_MEMBER_PAYMENT,
+  SENT_TO_MEMBER_PAYMENT,
   SHOP_SUM_VISUAL_PAYMENT,
   toFixturePayment,
   WALLET_PAYMENT_FIXTURES,
@@ -36,16 +38,28 @@ function isUnknownPayment(error: unknown): boolean {
 /**
  * The fixture payment under the `?visual=history-rows` pin, the heart fixture
  * under `?visual=heart-payment` and `?visual=heart-payment-pending`, the two
- * repayment fixtures under `?visual=repayment-payment`, and a failed read
- * under `?visual=history-error` (Playwright builds only).
+ * repayment fixtures under `?visual=repayment-payment`, the member fixtures
+ * under `?visual=received-from-member`, `?visual=received-member-unknown`,
+ * `?visual=sent-to-member`, and `?visual=sent-member-unknown`, and a failed
+ * read under `?visual=history-error` (Playwright builds only).
  *
  * @param id - Payment id from the address.
- * @returns The pinned state, or `null` without either pin.
+ * @returns The pinned state, or `null` without one of these pins.
  */
 function pinnedPayment(id: string | null): WalletPaymentState | null {
   const pin = visualPin();
   if (pin === 'history-error') {
     return { status: 'error', retry: () => undefined };
+  }
+  if (pin === 'received-from-member' || pin === 'received-member-unknown') {
+    return id === RECEIVED_FROM_MEMBER_PAYMENT.id
+      ? { status: 'ready', payment: toFixturePayment(RECEIVED_FROM_MEMBER_PAYMENT) }
+      : { status: 'missing' };
+  }
+  if (pin === 'sent-to-member' || pin === 'sent-member-unknown') {
+    return id === SENT_TO_MEMBER_PAYMENT.id
+      ? { status: 'ready', payment: toFixturePayment(SENT_TO_MEMBER_PAYMENT) }
+      : { status: 'missing' };
   }
   if (pin === 'heart-payment' || pin === 'heart-payment-pending') {
     return id === HEART_VISUAL_PAYMENT.id
@@ -84,7 +98,10 @@ function pinnedPayment(id: string | null): WalletPaymentState | null {
  * shows the fixture payment with that id, under `?visual=heart-payment` and
  * `?visual=heart-payment-pending` the heart fixture when the id matches
  * (otherwise missing), under `?visual=repayment-payment` the received or sent
- * repayment fixture whose id matches (otherwise missing), and under
+ * repayment fixture whose id matches (otherwise missing), under
+ * `?visual=received-from-member`, `?visual=received-member-unknown`,
+ * `?visual=sent-to-member`, and `?visual=sent-member-unknown` the respective
+ * member payment fixture when the id matches (otherwise missing), and under
  * `?visual=history-error` a failed read.
  *
  * @param id - SDK payment id, or `null` when the address has none.

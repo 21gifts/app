@@ -80,6 +80,10 @@ function visualStatus(reopened: boolean): WalletViewStatus | null {
     case 'heart-payment-pending':
     case 'history-repayment':
     case 'repayment-payment':
+    case 'received-from-member':
+    case 'received-member-unknown':
+    case 'sent-to-member':
+    case 'sent-member-unknown':
     case 'history-error':
     case 'wallet-received':
     case 'move-arrived':
@@ -108,7 +112,9 @@ function visualStatus(reopened: boolean): WalletViewStatus | null {
  * page is never reloaded. Visual pins (`?visual=balance-…`,
  * `?visual=history-…` including `history-heart`, `history-heart-pending`, and
  * `history-repayment`, `?visual=heart-payment`, `?visual=heart-payment-pending`,
- * and `?visual=repayment-payment`,
+ * `?visual=repayment-payment`, `?visual=received-from-member`,
+ * `?visual=received-member-unknown`, `?visual=sent-to-member`, and
+ * `?visual=sent-member-unknown`,
  * `?visual=wallet-received`, `?visual=move-arrived` and
  * `?visual=wallet-pay-insufficient` as ready,
  * `?visual=setup-pending` as connecting, `?visual=balance-downloading` as

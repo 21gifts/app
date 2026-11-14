@@ -2665,6 +2665,13 @@ Builds the country list of the Shops filter from the pins of `GET /forum/message
 - **Returns / side effects:** `{ days, rows }`. Throws visitor copy `Could not load the payout table. Please try again.` on 401/403/503, other non-2xx, network failure, or a body that fails the schema.
 - **Used by:** `FundingPayoutsScreen`.
 
+## Function: fetchShopActivityShops
+
+- **Purpose:** GET `/shops/activity/shops` (same-origin Bearer proxy of api `GET /shops/activity/shops`) and parse `shopActivityShopsSchema`. `today` and `lastChargeDay` must be real calendar days (`isUtcDay`). Keeps the api order of the shops.
+- **Inputs:** Bearer `sessionToken`.
+- **Returns / side effects:** `{ windowDays, today, shops }`. Throws `'moderate.forbidden'` on 403. Throws visitor copy `Could not load shop activity. Please try again.` on 401/503, other non-2xx, network failure, or a body that fails the schema.
+- **Used by:** `ShopActivityShopsScreen`.
+
 ## Function: fetchFundingApplications
 
 - **Purpose:** GET `/funding/applications` (same-origin Bearer proxy of api `GET /funding/applications`) and parse `fundingApplicationsResponseSchema.applications`. Next.js forbids a `route.ts` beside `/grants/applications`, so the proxy lives at this path.
@@ -4056,6 +4063,8 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 ## Function: POST
 
+The `/me/wallet/counterparties` route re-exports `proxyMeWalletCounterpartiesPost` for the payment counterparty lookup.
+
 - **Purpose:** Shared App Router POST export name. `/me/name` re-exports `proxyMeNamePost`; `/me/location` re-exports `proxyMeLocationPost`; `/me/forum-laws-dismissed` re-exports `proxyMeForumLawsDismissedPost`; `/me/wallet-intro-seen` re-exports `proxyMeWalletIntroSeenPost`; `/me/notification-level` re-exports `proxyMeNotificationLevelPost`; `/me/heart-notifications` re-exports `proxyMeHeartNotificationsPost`; `/me/rules-agreement` re-exports `proxyMeRulesAgreementPost`; `/me/push-subscriptions` re-exports `proxyMePushSubscriptionsPost`; `/me/wallet-backup-seen` re-exports `proxyMeWalletBackupSeenPost`; `/me/wallet/report` re-exports `proxyMeWalletReportPost`; `/me/wallet/hearts` re-exports `proxyMeWalletHeartsPost`; `/me/events` re-exports `proxyMeEventsPost`; `/lnurlpay/[pubkey]` calls `proxyLnurlpayRegisterPost` and `/lnurlpay/[pubkey]/recover` calls `proxyLnurlpayRecoverPost` with the async `pubkey`; `/me/passkey-renew/report` re-exports `proxyMePasskeyRenewReportPost`; `/me/passkey-renew/ack` re-exports `proxyMePasskeyRenewAckPost`; `/auth/passkey/{register,authenticate,replace,seed,recovery}/{begin,finish}` re-export the ten passkey proxy POSTs; `/lnurlpay/[pubkey]/transfer` calls `proxyLnurlpayTransferPost` with the async `pubkey`; `/forum/messages` re-exports `proxyMessagesPost`; `/messages/[id]/invoice` re-exports `proxyMessagesInvoicePost`; `/messages/[id]/repayment` re-exports `proxyMessagesRepaymentPost` for both no-body and `{ amount }` requests; `/messages/[id]/repayment/due` and `/close` re-export their matching repayment proxy helpers; `/conversations` re-exports `proxyConversationsPost`; `/conversations/[id]` re-exports `proxyConversationPost`; `/conversations/[id]/invoice` re-exports `proxyConversationInvoicePost`; `/conversations/[id]/read` re-exports `proxyConversationReadPost`; `/forum/notifications/read-all` re-exports `proxyNotificationsReadAllPost`; `/forum/notifications/read-by-message` re-exports `proxyNotificationsReadByMessagePost`; `/forum/notifications/read-visible` re-exports `proxyNotificationsReadVisiblePost`; `/forum/notifications/[id]/read` re-exports `proxyNotificationReadPost`; `/contact/submit` re-exports `proxyContactPost`; `/lnurl/pay-request` re-exports `proxyLnurlPayRequestPost`; `/lnurl/invoice` re-exports `proxyLnurlInvoicePost`; `/translate` re-exports `proxyTranslateNotePost` with JSON `{ messageId, target }`; `/conversations/[id]/messages/[messageId]/translate` re-exports `proxyTranslateConversationMessagePost` with JSON `{ target }`; `/trust/verify` re-exports `proxyTrustVerifyPost`; `/trust/propose-moderator` re-exports `proxyTrustProposeModeratorPost`; `/trust/confirm-moderator` re-exports `proxyTrustConfirmModeratorPost`; `/trust/reject-moderator` re-exports `proxyTrustRejectModeratorPost`; `/trust/appoint-moderator` re-exports `proxyTrustAppointModeratorPost`; `/funding/apply` re-exports `proxyFundingApplyPost`; `/funding/withdraw` re-exports `proxyFundingWithdrawPost`; `/funding/trial` re-exports `proxyFundingTrialPost`; `/funding/admit` re-exports `proxyFundingAdmitPost`; `/funding/reject` re-exports `proxyFundingRejectPost`; `/funding/daily-roster/comment` re-exports `proxyFundingDailyRosterCommentPost`; `/funding/daily-roster/payments` re-exports `proxyFundingDailyRosterPaymentsPost`; `/funding/daily-roster/recipients` re-exports `proxyFundingDailyRosterRecipientsPost`; `/funding/daily-roster/recipients/update` re-exports `proxyFundingDailyRosterRecipientsUpdatePost`; `/funding/daily-roster/recipients/delete` re-exports `proxyFundingDailyRosterRecipientsDeletePost`. `/pos/charge` re-exports `proxyPosPost`. HTML `/pos` is the till page, not a POST proxy. HTML `/messages` is the inbox page, not a POST proxy.
 - **Inputs:** Incoming `Request`.
 - **Returns / side effects:** Upstream api `Response` on api proxies; `/translate` returns `{ translatedText, cached }` or 400/404/503/502 from the 21.gifts api.
@@ -4102,6 +4111,13 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Inputs:** Incoming `Request` (Bearer session, no body).
 - **Returns / side effects:** Upstream `Response` via `proxyApiRequest`, status and body unchanged (200 `{ funding }`, 401, 403, 409, 503, or 404 while the api does not have the endpoint).
 - **Used by:** Route POST `/funding/withdraw`.
+
+## Function: proxyShopActivityShopsGet
+
+- **Purpose:** Same-origin Bearer proxy helper for api `GET /shops/activity/shops`. Forwards the incoming Authorization header.
+- **Inputs:** Incoming `Request` (Bearer session).
+- **Returns / side effects:** Upstream `Response` via `proxyApiRequest`.
+- **Used by:** Route GET `/shops/activity/shops`.
 
 ## Function: proxyFundingPayoutDaysGet
 
@@ -5284,7 +5300,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 ## Function: useWallet
 
 - **Purpose:** State and actions for the `/wallet` balance block after the central gate has established that the wallet is open. An unconfigured wallet or account that cannot hold one is `disabled`; there is no rendered locked state. A store that has not connected yet is presented as `connecting`. An account still needing wallet verification also stays `connecting` while background setup runs, with `downloading` set while the wallet code downloads; exhausted setup reports `error` with `setupFailed`. After a failed open the status is `error` with `retrying` while the wallet service opens the wallet again in the background, and turns `ready` on its own. While the wallet code is still downloading the status is `connecting` with `downloading` set. `retry` always connects again in this page; it never reloads the page.
-- **Inputs:** None. Reads the auth store, `useWalletStore`, `useWalletSetup` (`due`, `failed`), and Playwright-only pins through `visualPin` (`?visual=setup-pending` shows connecting, `?visual=wallet-received`, `?visual=move-arrived`, `?visual=wallet-pay-insufficient`, `?visual=heart-payment`, `?visual=heart-payment-pending`, `?visual=history-heart`, `?visual=history-heart-pending`, `?visual=history-repayment`, and `?visual=repayment-payment` show ready with the fixture balance, `?visual=balance-reopening` shows `error` with `retrying` and turns ready with the fixture balance after `WALLET_VISUAL_REOPEN_MS`, 4 s, and `?visual=balance-downloading` shows `connecting` with `downloading`).
+- **Inputs:** None. Reads the auth store, `useWalletStore`, `useWalletSetup` (`due`, `failed`), and Playwright-only pins through `visualPin` (`?visual=setup-pending` shows connecting, `?visual=wallet-received`, `?visual=move-arrived`, `?visual=wallet-pay-insufficient`, `?visual=heart-payment`, `?visual=heart-payment-pending`, `?visual=received-from-member`, `?visual=received-member-unknown`, `?visual=sent-to-member`, `?visual=sent-member-unknown`, `?visual=history-heart`, `?visual=history-heart-pending`, `?visual=history-repayment`, and `?visual=repayment-payment` show ready with the fixture balance, `?visual=balance-reopening` shows `error` with `retrying` and turns ready with the fixture balance after `WALLET_VISUAL_REOPEN_MS`, 4 s, and `?visual=balance-downloading` shows `connecting` with `downloading`).
 - **Returns / side effects:** `{ status, balanceSats, retry, downloading, setupFailed, retrying }`, where `status` excludes `locked`, `downloading` is true only at `connecting` while the wallet code downloads, and `retrying` is true only at `error` while a retry is on its way (never with `setupFailed`). `retry` reconnects in this page. Balance, history, and send pins set deterministic states only in a Playwright build; pinned retry is inert.
 - **Used by:** `WalletScreen`, `WelcomeScreen`, `useWalletSend`, `MenuAccountHeader`, `HeaderBalance`, `WalletTour`, `MoveFundsSheet`.
 
@@ -5568,6 +5584,64 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Returns / side effects:** `{ copied, copy }`: `copy(text)` writes `text` with `navigator.clipboard.writeText`; each success shows `copied` for two seconds, counted again from each copy. A missing or refusing clipboard changes nothing. Clears its timer on unmount.
 - **Used by:** `WalletReceive`, `SettingsScreen` (address row), `MoveFundsSheet`.
 
+## Function: RECEIVED_FROM_MEMBER_PAYMENT
+
+- **Purpose:** Provide a synthetic completed incoming Spark payment for screenshot coverage.
+- **Inputs:** None; the fixture is fixed and outside the payment history list.
+- **Returns:** An SDK payment of ₿200.
+- **Used by:** `useWalletPayment` under the Playwright pin.
+
+## Function: RECEIVED_FROM_MEMBER_SENDER
+
+- **Purpose:** Provide the sender associated with the screenshot payment.
+- **Inputs:** None; the fixture is fixed.
+- **Returns:** Payment id, account id and username for Alice.
+- **Used by:** `usePaymentCounterparty` under the Playwright pin.
+
+## Function: SENT_TO_MEMBER_PAYMENT
+
+- **Purpose:** Provide a completed outgoing Spark payment for screenshots.
+- **Inputs:** None.
+- **Returns:** A synthetic SDK payment of ₿200 with no fee.
+- **Used by:** `useWalletPayment` under the Playwright pin.
+
+## Function: SENT_TO_MEMBER_COUNTERPARTY
+
+- **Purpose:** Provide Bob as the screenshot payment's counterparty.
+- **Inputs:** None.
+- **Returns:** Payment id, account id and username.
+- **Used by:** `usePaymentCounterparty` under the Playwright pin.
+
+## Function: isSparkPaymentRequest
+
+- **Purpose:** Recognize Spark invoice and address prefixes.
+- **Inputs:** A payment request string.
+- **Returns:** Whether it begins with a Spark prefix.
+- **Used by:** `WalletPaymentDetails`.
+
+## Function: fetchPaymentCounterparties
+
+- **Purpose:** Look up counterparties for wallet payments.
+- **Inputs:** A session and payment rows containing only id and incoming or outgoing direction.
+- **Returns:** Valid counterparty rows, or an empty list on failure or invalid response.
+- **Used by:** `usePaymentCounterparty`.
+
+## Function: usePaymentCounterparty
+
+The api names the other side only from the transfer its own read of the wallet observed (about once a minute), so a name can be missing right after a payment and appear later; a payment whose other side is not a member wallet never gets one.
+
+- **Purpose:** Resolve the counterparty of a completed Spark payment by id and direction, even without an invoice or hash. A Lightning, on-chain, deposit, withdraw, or token payment is not looked up, because the api names only plain Spark transfers. Each lookup first waits for a running wallet report without requesting another, because the api names only a payment the caller has already reported as completed. A match is cached for the mounted screen and its session by id and direction. After a miss the hook asks again after 15 s, 30 s, 60 s, and 120 s (at most five lookups per opened screen), then stops; a miss is never cached, so opening the screen again starts with a fresh lookup. A match stops the retries, and unmounting or a session change cancels a waiting retry and drops a late answer.
+- **Inputs:** One wallet payment.
+- **Returns:** Its counterparty or null. `?visual=received-from-member` and `?visual=sent-to-member` return fixtures without a request. `?visual=received-member-unknown` and `?visual=sent-member-unknown` return null without a request.
+- **Used by:** `WalletPaymentDetails`.
+
+## Function: proxyMeWalletCounterpartiesPost
+
+- **Purpose:** Forward the counterparty lookup to the api.
+- **Inputs:** A POST request with bearer session and payment identifiers.
+- **Returns:** The upstream response.
+- **Used by:** `POST /me/wallet/counterparties`.
+
 ## Function: fetchHeartPosts
 
 - **Purpose:** Looks up the forum posts attached to wallet heart payments, and the credit notes behind loan repayments, through the same-origin `POST /me/wallet/hearts` proxy. It lowercases the submitted hashes and accepts only complete, typed rows with a lowercase 64-hex payment hash. A repayment row (`RepaymentContext`) also needs a non-empty `messageId`, an integer `dayIndex` of at least 0, `termDays` as an integer of at least 1 or `null`, `role` `borrower` or `giver`, string `authorName` and `text` (either may be empty), and a boolean `deleted`. A body without a `repayments` array (an api from before repayments) has no repayments; the hearts are read as before.
@@ -5814,7 +5888,7 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 
 ## Function: useWalletPayment
 
-- **Purpose:** Loads one payment for `/wallet/payment`: once the wallet is ready it calls `getWalletPayment(id)`, and again whenever `useWalletStore.syncCount` changes, so a pending payment turns completed or failed in place. A missing id, a payment the wallet does not know (the SDK's not-found answer), or a token payment is `missing`; any other failed read is `error` with a `retry` that shows `loading` and reads again; a later read that fails keeps a payment already shown, and a wallet that stops being ready drops it back to `loading`; an answer after unmount is dropped. Under the `?visual=history-rows` pin (Playwright builds only) it shows the `WALLET_PAYMENT_FIXTURES` payment with that id through `toFixturePayment` (or `missing`), under `?visual=heart-payment` and `?visual=heart-payment-pending` the heart fixture when the id matches (otherwise `missing`), under `?visual=repayment-payment` the received or the sent repayment fixture whose id matches (otherwise `missing`), under `?visual=history-error` a failed read (`error`, whose `retry` does nothing), and reads nothing.
+- **Purpose:** Loads one payment for `/wallet/payment`: once the wallet is ready it calls `getWalletPayment(id)`, and again whenever `useWalletStore.syncCount` changes, so a pending payment turns completed or failed in place. A missing id, a payment the wallet does not know (the SDK's not-found answer), or a token payment is `missing`; any other failed read is `error` with a `retry` that shows `loading` and reads again; a later read that fails keeps a payment already shown, and a wallet that stops being ready drops it back to `loading`; an answer after unmount is dropped. Under the `?visual=history-rows` pin (Playwright builds only) it shows the `WALLET_PAYMENT_FIXTURES` payment with that id through `toFixturePayment` (or `missing`), under `?visual=heart-payment` and `?visual=heart-payment-pending` the heart fixture when the id matches (otherwise `missing`), under `?visual=repayment-payment` the received or the sent repayment fixture whose id matches (otherwise `missing`), under `?visual=received-from-member`, `?visual=received-member-unknown`, `?visual=sent-to-member`, and `?visual=sent-member-unknown` the respective member payment fixture when the id matches (otherwise `missing`), under `?visual=history-error` a failed read (`error`, whose `retry` does nothing), and reads nothing.
 - **Inputs:** `id` from the address, or `null`.
 - **Returns / side effects:** `{ status: 'loading' }`, `{ status: 'ready', payment }`, `{ status: 'missing' }`, or `{ status: 'error', retry }`.
 - **Used by:** `WalletPaymentDetails`.
@@ -5822,7 +5896,8 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 ## Function: WalletPaymentDetails
 
 - **Purpose:** The `/wallet/payment?id=…` screen (`useSearchParams`, so the page wraps it in `Suspense`). `Card surface={false}` with an `sr-only` **h1** **Payment**. Ready: a centred head with the direction icon in a round `bg-app-card-muted` badge, the title (`paymentTitle`: **Gift on your post** for a zap, **Gift** when a gift memo was sent, **Gift on your post** when one was received, **Shop payment** for a shop memo; neither memo is shown as the description, and a gift memo's 64 hex digits are the payment hash when the payment has none of its own). A gift hash on a payment that is not still pending, resolved by `useHeartContext`, replaces that direction icon and gift title with the filled accent heart and, after the status, a bordered link to `/messages/<messageId>` containing the author when present, up to three lines of post text when present, and a chevron; deleted posts get no deleted label. A payment that is still pending keeps the direction icon and the gift title and is not looked up. Every other payment with a payment hash that is not a shop payment is looked up (`paymentLookupHash`). A hash resolved as a loan repayment, for the member as giver or as borrower, replaces the direction icon with the lucide `HandCoins` icon in the accent colour, keeps a title but makes it **Loan repayment** (`wallet.payment.repayment`), shows the same post card for the credit note (link to `/messages/<messageId>`, author and text; a deleted note gets no deleted label, like a deleted heart post), drops the message block and the **Description** row, adds a **Repayment day** row (`wallet.payment.repaymentDay`: `wallet.payment.repaymentDayOf` **{day} of {days}** with the one-based day and `termDays`, or only the day when `termDays` is null), and after the summary list a **Repayment list** link (`forum.creditList`, the wording the note's own repayment list link uses) to `/messages/<messageId>/repayment-list`. The `repay:` marker is never shown, also while the lookup is out. The link's accessible name is the author and the text, or **Post** (`shops.viewPost`) when both are empty, not the note id. The summary list keeps **To** when the payment names a recipient, the same member link as a sent gift. While its lookup is pending the direction icon and the gift title stay and the post card is absent; a miss or failure keeps today's icon and title. The amount is large (`text-3xl` semibold), signed `+` / `−` (failed: struck through and muted). A shop payment shows the currency figure stored on that charge under it, from `useShopChargeFigure` (`committedFiatFigure` of the receipt, with the visitor's fiat as preferred). While that read is pending, on a 404 or a failed read, and for any payment that is not a shop charge, the amount shows the current spot once a rate is loaded. This screen reads `useSpotRate`. A missing stored string shows that spot, and the amount stays bitcoin only while the spot is not loaded or a shop receipt is still out. Then a status pill (**Completed** success, **Pending** notice, **Failed** danger) and, for a pending send, **Still on its way. The amount stays reserved until it arrives or comes back.**, for a failed send **Nothing left your wallet.**; then the message block (`paymentMessage`) when there is one; then a bordered summary list: **Date** (long date and short time in the UI language), **Type** (Instant payment for Lightning, Wallet transfer for Spark, On-chain deposit, On-chain withdrawal, Payment), **To** (plain text for a Lightning address and a link to `/members/<accountId>` when `memberAccountId` is set; the sent-gift fixture links to `/members/acc_e2e`), **Description** (only when the title is not already the description), **Amount**, **Fee** (**Free** at ₿0; hidden for a fee-less receive and for a failed payment), **Total** (sends with a fee), and **Arrived on-chain** (a deposit with a claim fee); every ₿ figure is bitcoin plus one fiat figure. The charge amount uses the stored shop figure and does not add the visitor's spot beside it. A fee uses the current spot on the fee sats. A shop total keeps the stored charge figure and adds the spot of the fee sats only, in that same currency; a fee in another currency stays beside its own bitcoin and is not a spot of the sum. Any other amount uses the current spot, and omits it only when no rate is loaded. While a shop receipt is still out, the charge amount and the total stay bitcoin. A fee of ₿0 stays Free. Then a Details button (`wallet.payment.technical`) with aria-expanded, closed until pressed, not an always-visible h2 list. Pressing it opens the technical list of the same values, each shortened to its first 10 and last 6 characters with an icon-only Copy (`IconButton` ghost, accessible name **Copy {label}**, a check mark and a polite **Copied** for two seconds; a refused clipboard keeps the icon): **Transaction** and **Output**, **Payment request** (the invoice), **Payment hash**, **Proof of payment** (preimage), and **Payment ID**. The zapper's key and the zapped note are not shown (`docs/ui.md`: no keys, npub, or zap jargon on screen). An on-chain payment also has **View on mempool.space**, which opens `https://mempool.space/tx/<txid>` only after `ExternalLinkWarning` is confirmed (`openInSystemBrowser`). Missing: `role="alert"` **This payment could not be found.** A read that failed otherwise: `role="alert"` **This payment could not be loaded. Please try again.** (danger) and **Try again**, which reads it again. A shop payment shows the stored figure once the receipt returns. It does not call `useSpotRateState` and does not wait on a rate. A missing stored string shows the current spot once it has loaded, and the amount stays bitcoin until then. A payment that is not a shop charge shows that same spot. While the wallet is still connecting, could not be opened, or its one-time setup gave up, `WalletBalance` is shown with no balance sats. A session whose wallet is not open in this tab sees `WalletLoginCard` from `OnboardingGate` in place of this screen; the `balance-locked-prf-unsupported` pin adds the no-PRF alert above **Log in**. With no wallet here (`useWallet` `disabled`) it says the payment could not be found.
-- **Inputs:** None (the `id` query parameter, `useWalletPayment`, `useHeartContext`, `useShopChargeFigure`, `useWallet`, number format, the UI language). The viewer's currency is not applied to the charge figure.
+  For a received payment, **From** (`wallet.payment.from`) shows the counterparty's `giftsLightningAddress` when both exist, linked to `/members/<counterparty.accountId>`. **To** uses `info.lnAddress` first; otherwise, for a sent payment, it shows the counterparty's address linked to `/members/<counterparty.accountId>`. **Payment request** is omitted when the counterparty address is known and `isSparkPaymentRequest(info.invoice)` is true. While `usePaymentCounterparty` has no name (not looked up, not named yet, or never named), neither **From** nor a looked-up **To** is rendered, and no Spark value is put in their place.
+- **Inputs:** None (the `id` query parameter, `useWalletPayment`, `useHeartContext`, `usePaymentCounterparty`, `useShopChargeFigure`, `useWallet`, number format, the UI language). The viewer's currency is not applied to the charge figure.
 - **Returns / side effects:** The screen. Writes to the clipboard only on Copy; leaves the site only after the warning.
 - **Used by:** `WalletPaymentPage`.
 
@@ -5846,6 +5921,13 @@ The No gifts yet mode keeps only loaded messages with exactly zero sats, includi
 - **Inputs:** None. Reads the session from `useAuthStore` and the status, balance, and identity key from `useWalletStore`.
 - **Returns / side effects:** A promise that never rejects. Without a session or a `ready` wallet nothing is sent. It lists every payment with `listWalletReportPayments` in pages of `WALLET_REPORT_PAGE_SIZE` (200) and posts them in requests of at most 200 with `postWalletReport`. The acknowledged ids and their statuses live in tab memory only (no storage of any kind), keyed to the wallet identity: another wallet starts over, and a new tab sends the history again (the api treats repeats as the same payment). A payment that moved onto the next page while the pages were read is kept once. A failed list or post, or one that has not answered after `WALLET_REPORT_STEP_TIMEOUT_MS` (30 s), stops the report; the next one sends the rest. A report with no unacknowledged payment and the same balance as the last one waits `WALLET_REPORT_QUIET_MS` (60 s) after it. A call while a report runs adds one report after it. After the first listing in a tab, a received payment that is newly completed is recorded once as `payment_received_seen` with its id and amount. The body holds only the fields of `WalletReportPayment`: never the recovery phrase, a private key, PRF output, or a preimage.
 - **Used by:** `WalletSync`.
+
+## Function: walletReportSettled
+
+- **Purpose:** Wait for the running wallet report and any report requested while it runs, without requesting another report.
+- **Inputs:** None.
+- **Returns:** A promise that resolves when the report settles, or immediately when none is running.
+- **Used by:** `usePaymentCounterparty`.
 
 ## Function: InteractionLog
 
@@ -6499,7 +6581,7 @@ The class exists so the composer can tell a refused free first post from any oth
 
 ## Function: ModerateScreen
 
-- **Purpose:** Client moderation hub of staff tools. Staff (`roleAtLeast(..., 'moderator')`) see a labeled **Goals** `ButtonLink` (`variant="secondary"` `size="lg"`) → `/grants/goals` (first tool), a labeled **Hidden notes** `ButtonLink` (`variant="secondary"` `size="lg"`) → `/moderate/hidden`, a labeled **Open proposals** `ButtonLink` (`variant="secondary"` `size="lg"`) → `/moderate/proposals` that shows `proposalCount` plus `moderate.proposals.unread` when greater than zero, a **Moderators chat group** `ButtonLink` → `/moderate/group` that shows the staff-room unread count plus `moderate.groupUnread` when unread, a labeled **Handbook** `ButtonLink` (`variant="secondary"` `size="lg"`) → `/moderate/handbook`, and a labeled **Show payout per person** `ButtonLink` (`variant="secondary"` `size="lg"`) → `/moderate/payouts` (last tool). There is no payout-goal widget. Non-staff signed-in visitors see the heading plus forbidden copy and no tools list. Does not fetch hidden notes, proposals, applications, gift stats, or the group thread itself; unread for Open proposals and Moderators chat group comes from `useUnreadCount`. Renders `null` without a session. No un-hide control.
+- **Purpose:** Client moderation hub of staff tools. Staff (`roleAtLeast(..., 'moderator')`) see a labeled **Goals** `ButtonLink` (`variant="secondary"` `size="lg"`) → `/grants/goals` (first tool), a labeled **Hidden notes** `ButtonLink` (`variant="secondary"` `size="lg"`) → `/moderate/hidden`, a labeled **Open proposals** `ButtonLink` (`variant="secondary"` `size="lg"`) → `/moderate/proposals` that shows `proposalCount` plus `moderate.proposals.unread` when greater than zero, a **Moderators chat group** `ButtonLink` → `/moderate/group` that shows the staff-room unread count plus `moderate.groupUnread` when unread, a labeled **Handbook** `ButtonLink` (`variant="secondary"` `size="lg"`) → `/moderate/handbook`, a labeled **Show payout per person** `ButtonLink` (`variant="secondary"` `size="lg"`) → `/moderate/payouts`, and a labeled **Show activity per shop** `ButtonLink` (`variant="secondary"` `size="lg"`) → `/moderate/shops` (last tool). There is no payout-goal widget. Non-staff signed-in visitors see the heading plus forbidden copy and no tools list. Does not fetch hidden notes, proposals, applications, gift stats, or the group thread itself; unread for Open proposals and Moderators chat group comes from `useUnreadCount`. Renders `null` without a session. No un-hide control.
 - **Inputs:** Session and account from `useAuthStore`; catalog via `useTranslations`; `useUnreadCount(true, { writeBadge: false })` for Open proposals `proposalCount` and Moderators chat group staff-room unread (network for those counts; does not write the home-screen badge).
 - **Returns / side effects:** React element or `null` without a session. Does not fetch `GET /gifts/stats`. Others see forbidden copy and do not fetch. Does not fetch hidden notes, proposals, applications, or the group thread itself.
 - **Used by:** `ModeratePage`.
@@ -6546,6 +6628,20 @@ The class exists so the composer can tell a refused free first post from any oth
 - **Inputs:** Session and account from `useAuthStore`; catalog via `useTranslations`.
 - **Returns / side effects:** React element or `null` without a session. Fetches `GET /funding/payout-days` only when the role is at least moderator.
 - **Used by:** `PayoutsPage`.
+
+## Function: ShopActivityPage
+
+- **Purpose:** Next.js page for `/moderate/shops` (signed-in staff per-shop activity table). HTML `/moderate/shops` is the table, not a GET proxy. Fill `AppShell` (`align="center"`) with `ProfileChromeLeft` top-left (the only back control: the arrow returns to the previous in-app view in this tab, or `/welcome` when this tab has none; the wordmark is not that control), `SignedInChrome` top-right, and `OnboardingGate screen="welcome"` around `ShopActivityShopsScreen`. JSON lives under `/shops/activity/shops`, the api path. Hub is `/moderate`.
+- **Inputs:** None.
+- **Returns / side effects:** The shop table inside fill AppShell.
+- **Used by:** Route `/moderate/shops`.
+
+## Function: ShopActivityShopsScreen
+
+- **Purpose:** Client table of POS activity per shop. Staff (moderator) fetch `fetchShopActivityShops` and show a lead and one row per shop in the api order: shop name (link to `/{npub}` when set, otherwise text; an empty name reads **Unnamed**), till account (`@username`, otherwise the account id), active days as `N / windowDays`, and the last charge day as a medium localized UTC date or **Never**. A shop with `activeDays` 0 shows its active days and **Inactive** in the danger color. Empty, Loading…, and error plus Try again are separate. Non-staff signed-in visitors see the heading plus forbidden copy and do not fetch; an api 403 shows the same forbidden copy. A session change, or losing the moderator rank, drops the loaded table, and a loaded result is shown only for the session that loaded it; a change between staff roles keeps it, because every staff role gets the same list. Renders `null` without a session. The page chrome owns the back; this screen renders no back control.
+- **Inputs:** Session and account from `useAuthStore`; catalog via `useTranslations`.
+- **Returns / side effects:** React element or `null` without a session. Fetches `GET /shops/activity/shops` only when the role is at least moderator.
+- **Used by:** `ShopActivityPage`.
 
 ## Function: ProposalsPage
 

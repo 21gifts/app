@@ -30,6 +30,7 @@ import {
   walletStatsSchema,
   walletUsageSchema,
   shopActivitySchema,
+  shopActivityShopsSchema,
   shopResponseSchema,
   memberProfileSchema,
   moderatorProposalSchema,
@@ -2564,6 +2565,50 @@ describe('walletUsageSchema', () => {
         ...usage,
         amountBuckets: [{ ...firstBucket, maxSats: -1 }],
       }),
+    ).toThrow();
+  });
+});
+
+describe('shopActivityShopsSchema', () => {
+  const shop = {
+    noteId: 'note_a',
+    name: 'Corner Café',
+    npub: null,
+    accountId: 'acc_till',
+    username: null,
+    activeDays: 0,
+    lastChargeDay: null,
+  };
+
+  it('accepts null npub, username, and last charge day', () => {
+    const body = { windowDays: 30, today: '2026-11-14', shops: [shop] };
+    expect(shopActivityShopsSchema.parse(body)).toEqual(body);
+  });
+
+  it('rejects a negative active day count and a malformed or impossible day', () => {
+    expect(() =>
+      shopActivityShopsSchema.parse({
+        windowDays: 30,
+        today: '2026-11-14',
+        shops: [{ ...shop, activeDays: -1 }],
+      }),
+    ).toThrow();
+    expect(() =>
+      shopActivityShopsSchema.parse({
+        windowDays: 30,
+        today: '2026-11-14',
+        shops: [{ ...shop, lastChargeDay: '14.11.2026' }],
+      }),
+    ).toThrow();
+    expect(() =>
+      shopActivityShopsSchema.parse({
+        windowDays: 30,
+        today: '2026-11-14',
+        shops: [{ ...shop, lastChargeDay: '2026-02-31' }],
+      }),
+    ).toThrow();
+    expect(() =>
+      shopActivityShopsSchema.parse({ windowDays: 30, today: '2026-13-01', shops: [] }),
     ).toThrow();
   });
 });
