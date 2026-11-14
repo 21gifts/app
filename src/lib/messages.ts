@@ -1566,6 +1566,18 @@ const en = {
   'moderate.payouts.cell.paid': '{name}, {date}, payout received',
   'moderate.payouts.cell.welcome': '{name}, {date}, welcome gift',
   'moderate.payouts.cell.both': '{name}, {date}, daily grant and welcome gift',
+  'moderate.shops.link': 'Show activity per shop',
+  'moderate.shops.heading': 'Activity per shop',
+  'moderate.shops.lead':
+    'POS charges by the till account of each shop in the last {days} UTC days. Shops without a charge in that window are marked inactive.',
+  'moderate.shops.empty': 'No shops yet.',
+  'moderate.shops.column.shop': 'Shop',
+  'moderate.shops.column.account': 'Till account',
+  'moderate.shops.column.activeDays': 'Active days',
+  'moderate.shops.column.lastCharge': 'Last charge',
+  'moderate.shops.activeDays': '{count} / {days}',
+  'moderate.shops.inactive': 'Inactive',
+  'moderate.shops.never': 'Never',
   'moderate.handbook.heading': 'Handbook',
   'moderate.handbook.tocLabel': 'Chapters',
   'moderate.handbook.login.title': '21.gifts login',
@@ -1650,6 +1662,17 @@ const en = {
   'funding.participatesSinceBy':
     'Takes part in the 21.gifts funding program since {date}, reviewed by {name}',
   'funding.applyError': 'Could not submit your application. Please try again.',
+  'funding.withdraw.application': 'Withdraw my application',
+  'funding.withdraw.leave': 'Leave the grant',
+  'funding.withdraw.applicationTitle': 'Withdraw your application?',
+  'funding.withdraw.applicationBody':
+    'A moderator will no longer review it. You can apply again later.',
+  'funding.withdraw.leaveTitle': 'Leave the grant?',
+  'funding.withdraw.leaveBody':
+    'Your daily payout stops today. Your place becomes free for someone else. You can apply again later, but a place is not guaranteed.',
+  'funding.withdraw.cancel': 'Cancel',
+  'funding.withdraw.applicationError': 'Could not withdraw your application. Please try again.',
+  'funding.withdraw.leaveError': 'Could not leave the grant. Please try again.',
   'funding.applications.heading': 'Open applications',
   'funding.applications.openCount':
     '{count, plural, one {Open application ({count})} other {Open applications ({count})}}',
@@ -3467,6 +3490,18 @@ const de = {
   'moderate.payouts.cell.paid': '{name}, {date}, Auszahlung erhalten',
   'moderate.payouts.cell.welcome': '{name}, {date}, Willkommensgeschenk',
   'moderate.payouts.cell.both': '{name}, {date}, Tagesförderung und Willkommensgeschenk',
+  'moderate.shops.link': 'Aktivität pro Shop anzeigen',
+  'moderate.shops.heading': 'Aktivität pro Shop',
+  'moderate.shops.lead':
+    'Kassenbuchungen des Kassenkontos jedes Shops in den letzten {days} UTC-Tagen. Shops ohne Buchung in diesem Zeitraum sind als inaktiv markiert.',
+  'moderate.shops.empty': 'Noch keine Shops.',
+  'moderate.shops.column.shop': 'Shop',
+  'moderate.shops.column.account': 'Kassenkonto',
+  'moderate.shops.column.activeDays': 'Aktive Tage',
+  'moderate.shops.column.lastCharge': 'Letzte Buchung',
+  'moderate.shops.activeDays': '{count} / {days}',
+  'moderate.shops.inactive': 'Inaktiv',
+  'moderate.shops.never': 'Nie',
   'moderate.handbook.heading': 'Handbuch',
   'moderate.handbook.tocLabel': 'Kapitel',
   'moderate.handbook.login.title': '21.gifts-Anmeldung',
@@ -3560,6 +3595,19 @@ const de = {
     'Nimmt seit {date} am 21.gifts Förderprogramm teil, geprüft von {name}',
   'funding.applyError':
     'Die Bewerbung konnte nicht gesendet werden. Bitte versuchen Sie es erneut.',
+  'funding.withdraw.application': 'Meine Bewerbung zurückziehen',
+  'funding.withdraw.leave': 'Förderprogramm verlassen',
+  'funding.withdraw.applicationTitle': 'Ihre Bewerbung zurückziehen?',
+  'funding.withdraw.applicationBody':
+    'Eine Moderatorin oder ein Moderator prüft sie dann nicht mehr. Sie können sich später erneut bewerben.',
+  'funding.withdraw.leaveTitle': 'Förderprogramm verlassen?',
+  'funding.withdraw.leaveBody':
+    'Ihre tägliche Auszahlung endet heute. Ihr Platz wird für eine andere Person frei. Sie können sich später erneut bewerben, aber ein Platz ist nicht garantiert.',
+  'funding.withdraw.cancel': 'Abbrechen',
+  'funding.withdraw.applicationError':
+    'Die Bewerbung konnte nicht zurückgezogen werden. Bitte versuchen Sie es erneut.',
+  'funding.withdraw.leaveError':
+    'Das Förderprogramm konnte nicht verlassen werden. Bitte versuchen Sie es erneut.',
   'funding.applications.heading': 'Offene Bewerbungen',
   'funding.applications.openCount':
     '{count, plural, one {Offene Bewerbung ({count})} other {Offene Bewerbungen ({count})}}',
@@ -5346,6 +5394,18 @@ const es = {
   'moderate.payouts.cell.paid': '{name}, {date}, pago recibido',
   'moderate.payouts.cell.welcome': '{name}, {date}, regalo de bienvenida',
   'moderate.payouts.cell.both': '{name}, {date}, ayuda diaria y regalo de bienvenida',
+  'moderate.shops.link': 'Mostrar actividad por tienda',
+  'moderate.shops.heading': 'Actividad por tienda',
+  'moderate.shops.lead':
+    'Cobros en el punto de venta de la cuenta de caja de cada tienda en los últimos {days} días UTC. Las tiendas sin cobros en ese periodo aparecen como inactivas.',
+  'moderate.shops.empty': 'Todavía no hay tiendas.',
+  'moderate.shops.column.shop': 'Tienda',
+  'moderate.shops.column.account': 'Cuenta de caja',
+  'moderate.shops.column.activeDays': 'Días activos',
+  'moderate.shops.column.lastCharge': 'Último cobro',
+  'moderate.shops.activeDays': '{count} / {days}',
+  'moderate.shops.inactive': 'Inactiva',
+  'moderate.shops.never': 'Nunca',
   'moderate.handbook.heading': 'Manual',
   'moderate.handbook.tocLabel': 'Capítulos',
   'moderate.handbook.login.title': 'Inicio de sesión en 21.gifts',
@@ -5435,6 +5495,17 @@ const es = {
   'funding.participatesSinceBy':
     'Participa en el programa de apoyo de 21.gifts desde {date}, revisado por {name}',
   'funding.applyError': 'No se pudo enviar la solicitud. Inténtalo de nuevo.',
+  'funding.withdraw.application': 'Retirar mi solicitud',
+  'funding.withdraw.leave': 'Dejar la beca',
+  'funding.withdraw.applicationTitle': '¿Retirar tu solicitud?',
+  'funding.withdraw.applicationBody':
+    'Ninguna persona moderadora la revisará. Puedes volver a solicitar la beca más adelante.',
+  'funding.withdraw.leaveTitle': '¿Dejar la beca?',
+  'funding.withdraw.leaveBody':
+    'Tu pago diario se detiene hoy. Tu plaza queda libre para otra persona. Puedes volver a solicitar la beca más adelante, pero no se garantiza una plaza.',
+  'funding.withdraw.cancel': 'Cancelar',
+  'funding.withdraw.applicationError': 'No se pudo retirar la solicitud. Inténtalo de nuevo.',
+  'funding.withdraw.leaveError': 'No se pudo dejar la beca. Inténtalo de nuevo.',
   'funding.applications.heading': 'Solicitudes abiertas',
   'funding.applications.openCount':
     '{count, plural, one {Solicitud abierta ({count})} other {Solicitudes abiertas ({count})}}',
@@ -7229,6 +7300,18 @@ const fil = {
   'moderate.payouts.cell.paid': '{name}, {date}, natanggap ang bayad',
   'moderate.payouts.cell.welcome': '{name}, {date}, welcome gift',
   'moderate.payouts.cell.both': '{name}, {date}, araw-araw na grant at welcome gift',
+  'moderate.shops.link': 'Ipakita ang aktibidad bawat tindahan',
+  'moderate.shops.heading': 'Aktibidad bawat tindahan',
+  'moderate.shops.lead':
+    'Mga singil sa POS ng till account ng bawat tindahan sa huling {days} araw (UTC). Minarkahang hindi aktibo ang mga tindahang walang singil sa panahong iyon.',
+  'moderate.shops.empty': 'Wala pang tindahan.',
+  'moderate.shops.column.shop': 'Tindahan',
+  'moderate.shops.column.account': 'Till account',
+  'moderate.shops.column.activeDays': 'Aktibong araw',
+  'moderate.shops.column.lastCharge': 'Huling singil',
+  'moderate.shops.activeDays': '{count} / {days}',
+  'moderate.shops.inactive': 'Hindi aktibo',
+  'moderate.shops.never': 'Hindi pa',
   'moderate.handbook.heading': 'Handbook',
   'moderate.handbook.tocLabel': 'Mga kabanata',
   'moderate.handbook.login.title': 'Pag-login sa 21.gifts',
@@ -7320,6 +7403,17 @@ const fil = {
   'funding.participatesSinceBy':
     'Kasali sa programa ng tulong ng 21.gifts mula noong {date}, sinuri ni {name}',
   'funding.applyError': 'Hindi maipasa ang iyong aplikasyon. Subukan ulit.',
+  'funding.withdraw.application': 'Bawiin ang aking aplikasyon',
+  'funding.withdraw.leave': 'Umalis sa grant',
+  'funding.withdraw.applicationTitle': 'Bawiin ang iyong aplikasyon?',
+  'funding.withdraw.applicationBody':
+    'Hindi na ito susuriin ng isang moderator. Maaari kang mag-apply ulit sa ibang pagkakataon.',
+  'funding.withdraw.leaveTitle': 'Umalis sa grant?',
+  'funding.withdraw.leaveBody':
+    'Titigil ngayong araw ang iyong araw-araw na payout. Magiging bakante ang iyong puwesto para sa iba. Maaari kang mag-apply ulit sa ibang pagkakataon, pero hindi garantisado ang puwesto.',
+  'funding.withdraw.cancel': 'Kanselahin',
+  'funding.withdraw.applicationError': 'Hindi mabawi ang iyong aplikasyon. Subukan ulit.',
+  'funding.withdraw.leaveError': 'Hindi makaalis sa grant. Subukan ulit.',
   'funding.applications.heading': 'Mga bukas na aplikasyon',
   'funding.applications.openCount':
     '{count, plural, one {Bukas na aplikasyon ({count})} other {Mga bukas na aplikasyon ({count})}}',

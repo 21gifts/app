@@ -201,6 +201,9 @@ describe('ModerateScreen', () => {
       expect(
         screen.getByRole('link', { name: 'Show payout per person' }).getAttribute('href'),
       ).toBe('/moderate/payouts');
+      expect(
+        screen.getByRole('link', { name: 'Show activity per shop' }).getAttribute('href'),
+      ).toBe('/moderate/shops');
       expect(fetchMock).not.toHaveBeenCalled();
     },
   );

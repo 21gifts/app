@@ -94,6 +94,7 @@ import {
   proxyMessagesHiddenGet,
   proxyMessagesPlacesGet,
   proxyWalletStatsGet,
+  proxyWalletUsageGet,
   proxyMessagesInvoicePost,
   proxyMessagesRepaymentClosePost,
   proxyMessagesRepaymentDuePost,
@@ -129,7 +130,9 @@ import {
   proxyFundingApplicationGet,
   proxyFundingApplicationsGet,
   proxyFundingPayoutDaysGet,
+  proxyShopActivityShopsGet,
   proxyFundingApplyPost,
+  proxyFundingWithdrawPost,
   proxyFundingRejectPost,
   proxyFundingTrialPost,
   proxyViewAboutPhotoGet,
@@ -845,6 +848,12 @@ describe('api proxy wrappers', () => {
     expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/wallets/stats');
   });
 
+  it('proxyWalletUsageGet hits /wallets/usage', async () => {
+    const fetchMock = stubApi();
+    await proxyWalletUsageGet(new Request('http://localhost/wallets/usage'));
+    expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/wallets/usage');
+  });
+
   it('proxyGiftsStatsGet forwards recipient', async () => {
     const fetchMock = stubApi();
     await proxyGiftsStatsGet(new Request('http://localhost/gifts/stats?recipient=alice'));
@@ -1461,10 +1470,31 @@ describe('api proxy wrappers', () => {
     expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/funding/apply');
   });
 
+  it('proxyFundingWithdrawPost hits POST /funding/withdraw with the Bearer session', async () => {
+    const fetchMock = stubApi();
+    await proxyFundingWithdrawPost(
+      new Request('http://localhost/funding/withdraw', {
+        method: 'POST',
+        headers: { Authorization: 'Bearer sess' },
+      }),
+    );
+    expect((fetchMock.mock.calls[0]?.[1] as RequestInit).method).toBe('POST');
+    expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/funding/withdraw');
+    expect(
+      new Headers((fetchMock.mock.calls[0]?.[1] as RequestInit).headers).get('authorization'),
+    ).toBe('Bearer sess');
+  });
+
   it('proxyFundingPayoutDaysGet hits GET /funding/payout-days', async () => {
     const fetchMock = stubApi();
     await proxyFundingPayoutDaysGet(new Request('http://localhost/funding/payout-days'));
     expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/funding/payout-days');
+  });
+
+  it('proxyShopActivityShopsGet hits GET /shops/activity/shops', async () => {
+    const fetchMock = stubApi();
+    await proxyShopActivityShopsGet(new Request('http://localhost/shops/activity/shops'));
+    expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/shops/activity/shops');
   });
 
   it('proxyFundingApplicationsGet hits GET /funding/applications', async () => {

@@ -28,13 +28,16 @@ import {
   hiddenMessageSchema,
   giftStatsSchema,
   walletStatsSchema,
+  walletUsageSchema,
   shopActivitySchema,
+  shopActivityShopsSchema,
   shopResponseSchema,
   memberProfileSchema,
   moderatorProposalSchema,
   moderatorProposalsResponseSchema,
   ownerFundingSchema,
   fundingApplyResponseSchema,
+  fundingWithdrawResponseSchema,
   fundingApplicationSchema,
   fundingApplicationsResponseSchema,
   fundingPayoutDaysResponseSchema,
@@ -471,6 +474,31 @@ describe('fundingApplyResponseSchema', () => {
       reviewedByName: null,
     };
     expect(fundingApplyResponseSchema.parse({ funding })).toEqual({ funding });
+  });
+});
+
+describe('fundingWithdrawResponseSchema', () => {
+  it('unwraps the funding with status none', () => {
+    const funding = {
+      status: 'none' as const,
+      trialUtcDate: null,
+      admittedAt: null,
+      reviewedByName: null,
+    };
+    expect(fundingWithdrawResponseSchema.parse({ funding })).toEqual({ funding });
+  });
+
+  it('rejects a status outside the owner funding enum', () => {
+    expect(() =>
+      fundingWithdrawResponseSchema.parse({
+        funding: {
+          status: 'withdrawn',
+          trialUtcDate: null,
+          admittedAt: null,
+          reviewedByName: null,
+        },
+      }),
+    ).toThrow();
   });
 });
 
@@ -2369,6 +2397,217 @@ describe('walletStatsSchema', () => {
       walletStatsSchema.parse(
         Object.fromEntries(Object.entries(stats).filter(([key]) => key !== 'balanceOverTime')),
       ),
+    ).toThrow();
+  });
+});
+
+describe('walletUsageSchema', () => {
+  const zero = { count: 0, sats: 0 };
+  const usage = {
+    releasedAt: '2026-11-09T11:17:00.000Z',
+    asOf: '2026-11-12T08:00:00.000Z' as string | null,
+    totals: {
+      paymentCount: 1,
+      volumeSats: 10,
+      feeSats: 0,
+      medianSats: 10,
+      averageSats: 2.5,
+      activeWalletCount: 1,
+      sendingWalletCount: 1,
+      topFiveSenderShare: 0.5,
+      heartCount: 0,
+      paidShopChargeCount: 0,
+    },
+    days: [
+      {
+        day: '2026-11-09',
+        purposes: {
+          deposit: zero,
+          withdrawal: zero,
+          shop_purchase: zero,
+          forum_gift: { count: 1, sats: 10 },
+          transfer: zero,
+          fund_deposit: zero,
+          fund_payout: zero,
+          other: zero,
+        },
+        activeWalletCount: 1,
+        sendingWalletCount: 1,
+        receivingWalletCount: 1,
+      },
+    ],
+    flows: [
+      {
+        day: '2026-11-09',
+        from: 'outside' as const,
+        to: 'members' as const,
+        purpose: 'deposit' as const,
+        count: 1,
+        sats: 10,
+        feeSats: 0,
+      },
+    ],
+    amountBuckets: [
+      { key: '1' as const, minSats: 1, maxSats: 1, count: 1, sats: 1 },
+      { key: '100k+' as const, minSats: 100000, maxSats: null, count: 0, sats: 0 },
+    ],
+    hours: Array.from({ length: 24 }, (_, hourUtc) => ({ hourUtc, count: hourUtc === 0 ? 1 : 0 })),
+    forum: [{ day: '2026-10-12', gifts: 0, hearts: 0, sats: 0 }],
+    shopCharges: [{ day: '2026-10-26', created: 0, paid: 0 }],
+  };
+
+  it('accepts the payload and strips unknown fields', () => {
+    const firstFlow = usage.flows[0];
+    if (!firstFlow) {
+      throw new Error('fixture has no flow');
+    }
+    expect(walletUsageSchema.parse(usage)).toEqual(usage);
+    expect(walletUsageSchema.parse({ ...usage, extra: true, asOf: null })).toEqual({
+      ...usage,
+      asOf: null,
+    });
+    expect(
+      walletUsageSchema.parse({
+        ...usage,
+        flows: [{ ...firstFlow, note: 'no person' }],
+      }),
+    ).toEqual(usage);
+  });
+
+  it('accepts a fractional average and a null top bucket', () => {
+    const parsed = walletUsageSchema.parse(usage);
+    expect(parsed.totals.averageSats).toBe(2.5);
+    expect(parsed.amountBuckets[1]?.maxSats).toBeNull();
+    expect(
+      walletUsageSchema.parse({
+        ...usage,
+        totals: { ...usage.totals, topFiveSenderShare: 0 },
+      }),
+    ).toBeTruthy();
+    expect(
+      walletUsageSchema.parse({
+        ...usage,
+        totals: { ...usage.totals, topFiveSenderShare: 1 },
+      }),
+    ).toBeTruthy();
+  });
+
+  it('rejects a missing field, a bad day, a bad party, and a bad share', () => {
+    const firstDay = usage.days[0];
+    if (!firstDay) {
+      throw new Error('fixture has no day');
+    }
+    const firstFlow = usage.flows[0];
+    if (!firstFlow) {
+      throw new Error('fixture has no flow');
+    }
+    const firstBucket = usage.amountBuckets[0];
+    if (!firstBucket) {
+      throw new Error('fixture has no bucket');
+    }
+    expect(() =>
+      walletUsageSchema.parse(
+        Object.fromEntries(Object.entries(usage).filter(([key]) => key !== 'totals')),
+      ),
+    ).toThrow();
+    expect(() =>
+      walletUsageSchema.parse({
+        ...usage,
+        days: [{ ...firstDay, day: '2026-11-9' }],
+      }),
+    ).toThrow();
+    expect(() =>
+      walletUsageSchema.parse({
+        ...usage,
+        days: [
+          {
+            ...firstDay,
+            purposes: Object.fromEntries(
+              Object.entries(firstDay.purposes).filter(([key]) => key !== 'deposit'),
+            ),
+          },
+        ],
+      }),
+    ).toThrow();
+    expect(() =>
+      walletUsageSchema.parse({
+        ...usage,
+        flows: [{ ...firstFlow, from: 'person' }],
+      }),
+    ).toThrow();
+    expect(() =>
+      walletUsageSchema.parse({
+        ...usage,
+        totals: { ...usage.totals, topFiveSenderShare: -0.01 },
+      }),
+    ).toThrow();
+    expect(() =>
+      walletUsageSchema.parse({
+        ...usage,
+        totals: { ...usage.totals, topFiveSenderShare: 1.01 },
+      }),
+    ).toThrow();
+    expect(() =>
+      walletUsageSchema.parse({
+        ...usage,
+        totals: { ...usage.totals, medianSats: -1 },
+      }),
+    ).toThrow();
+    expect(() =>
+      walletUsageSchema.parse({
+        ...usage,
+        hours: usage.hours.slice(0, 23),
+      }),
+    ).toThrow();
+    expect(() =>
+      walletUsageSchema.parse({
+        ...usage,
+        amountBuckets: [{ ...firstBucket, maxSats: -1 }],
+      }),
+    ).toThrow();
+  });
+});
+
+describe('shopActivityShopsSchema', () => {
+  const shop = {
+    noteId: 'note_a',
+    name: 'Corner Café',
+    npub: null,
+    accountId: 'acc_till',
+    username: null,
+    activeDays: 0,
+    lastChargeDay: null,
+  };
+
+  it('accepts null npub, username, and last charge day', () => {
+    const body = { windowDays: 30, today: '2026-11-14', shops: [shop] };
+    expect(shopActivityShopsSchema.parse(body)).toEqual(body);
+  });
+
+  it('rejects a negative active day count and a malformed or impossible day', () => {
+    expect(() =>
+      shopActivityShopsSchema.parse({
+        windowDays: 30,
+        today: '2026-11-14',
+        shops: [{ ...shop, activeDays: -1 }],
+      }),
+    ).toThrow();
+    expect(() =>
+      shopActivityShopsSchema.parse({
+        windowDays: 30,
+        today: '2026-11-14',
+        shops: [{ ...shop, lastChargeDay: '14.11.2026' }],
+      }),
+    ).toThrow();
+    expect(() =>
+      shopActivityShopsSchema.parse({
+        windowDays: 30,
+        today: '2026-11-14',
+        shops: [{ ...shop, lastChargeDay: '2026-02-31' }],
+      }),
+    ).toThrow();
+    expect(() =>
+      shopActivityShopsSchema.parse({ windowDays: 30, today: '2026-13-01', shops: [] }),
     ).toThrow();
   });
 });

@@ -191,7 +191,16 @@
 - **Inputs:** None.
 - **Outputs:** `{ walletCount, fundedWalletCount, totalSats, totalBtc, asOf, balanceOverTime }` from the api. `walletCount` counts wallets that ever reported a balance; `fundedWalletCount` counts those with a current balance above zero. Empty data is zeros, `asOf: null`, and `balanceOverTime: []`.
 - **Errors:** The proxy forwards the upstream status, including 503 `{ error: "Wallet stats are unavailable" }`, or answers 502 if the api is unreachable.
-- **Used by:** `fetchWalletStats` on `/stats`. A failed fetch omits the Wallets section without breaking the gift stats.
+- **Used by:** `fetchWalletStats` on `/stats` and on `/stats/wallet` (the wallets-per-day chart). A failed fetch omits the Wallets section on `/stats`, and on `/stats/wallet` only hides that chart.
+- **Auth:** Public.
+
+## Endpoint: GET /wallets/usage
+
+- **Purpose:** Same-origin proxy of api `GET /wallets/usage` (aggregate wallet payments since the production release: totals, days, flows, amount buckets, hours, forum, and shop charges). No person, account, or payment id is in the body.
+- **Inputs:** None.
+- **Outputs:** `WalletUsage`: `releasedAt`, `asOf`, `totals`, `days`, `flows`, `amountBuckets`, `hours` (24 UTC hours), `forum`, and `shopCharges`. The client schema strips unknown extra fields and rejects a missing required field.
+- **Errors:** The proxy forwards the upstream status, or answers 502 if the api is unreachable. The page shows one quiet line **Could not load wallet usage. Please try again.** and does not offer **Try again**.
+- **Used by:** `fetchWalletUsage` on `/stats/wallet`.
 - **Auth:** Public.
 
 ## Endpoint: GET /habits
@@ -212,7 +221,7 @@
 
 - **Purpose:** Same-origin proxy of api `GET /fx/spot`: the current price of 1 BTC in USD, CHF, EUR, and PHP with `asOf` and `source`. A code the api could not price is left out of `rates`. Without any quote the body is `{ "asOf": null, "source": null, "rates": {} }`; the route has no error status of its own.
 - **Errors:** The proxy forwards the upstream status, or 502 if this proxy cannot reach the api.
-- **Used by:** `fetchFxSpot` through `useSpotRate`, on every screen that enters or converts an amount live (the amount field, `/pos`, gift and reaction amounts, the wallet, the payment fiat suffixes, and the `/stats` wallet totals and point tooltips).
+- **Used by:** `fetchFxSpot` through `useSpotRate`, on every screen that enters or converts an amount live (the amount field, `/pos`, gift and reaction amounts, the wallet, the payment fiat suffixes, the `/stats` wallet totals and point tooltips, and the `/stats/wallet` volume and Tondo fund balance).
 - **Auth:** Public. No bearer.
 
 ## Endpoint: GET /shops/activity
@@ -1051,12 +1060,26 @@
 - **Used by:** `postFundingApply`. `FundingApplyScreen` calls it after Yes on the truth question for a verified account with status `none` or `rejected`. A basis account does not call it.
 - **Auth:** Bearer session; the api requires a role other than `basis`.
 
+## Endpoint: POST /funding/withdraw
+
+- **Purpose:** Same-origin Bearer proxy of api `POST /funding/withdraw`. The caller withdraws their own grant: an open application, a one-day trial, or an admitted place. No body. 200 `{ funding }` with status `none`.
+- **Errors:** Upstream 401/403/409/503 unchanged (409: nothing to withdraw, or a staff decision at the same moment), 404 while the api does not have the endpoint yet, or 502 if the api is unreachable.
+- **Used by:** `postFundingWithdraw`. `FundingWithdrawControl` calls it after the member confirms **Withdraw my application** or **Leave the grant** on `/grants`.
+- **Auth:** Bearer session; the api refuses `basis` with 403.
+
 ## Endpoint: GET /funding/payout-days
 
 - **Purpose:** Same-origin Bearer proxy of api `GET /funding/payout-days` (seven-day grant payout matrix for moderators). Lives under `/funding/payout-days` because Next.js forbids a `route.ts` beside the HTML page at `/moderate/payouts`.
 - **Errors:** Upstream 401 without a Bearer session, 403 when the account is below moderator, 503 when the api is unavailable, or 502 JSON if this proxy cannot reach the api origin.
 - **Used by:** `fetchFundingPayoutDays` via `FundingPayoutsScreen` on `/moderate/payouts`.
 - **Auth:** Bearer session; the api requires at least moderator. The app does not fetch this list for other signed-in roles (forbidden copy, no request).
+
+## Endpoint: GET /shops/activity/shops
+
+- **Purpose:** Same-origin Bearer proxy of api `GET /shops/activity/shops` (per-shop POS activity for staff: `windowDays`, `today`, and one row per shop with `noteId`, `name`, `npub`, `accountId`, `username`, `activeDays`, `lastChargeDay`, never used first, then oldest last charge first). The HTML table lives at `/moderate/shops`.
+- **Errors:** Upstream 401 without a Bearer session, 403 when the account is not staff, 503 when the api is unavailable, or 502 JSON if this proxy cannot reach the api origin.
+- **Used by:** `fetchShopActivityShops` via `ShopActivityShopsScreen` on `/moderate/shops`.
+- **Auth:** Bearer session; the api requires staff. The app does not fetch this list for signed-in roles below moderator (forbidden copy, no request).
 
 ## Endpoint: GET /funding/applications
 

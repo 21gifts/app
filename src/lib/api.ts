@@ -26,16 +26,19 @@ import {
   giftStatsSchema,
   fxSpotSchema,
   shopActivitySchema,
+  shopActivityShopsSchema,
   shopListResponseSchema,
   grantContinuationSchema,
   grantPlacesSchema,
   postStatsSchema,
   walletStatsSchema,
+  walletUsageSchema,
   accountActivitySchema,
   memberProfileSchema,
   messageInvoiceSchema,
   moderatorProposalsResponseSchema,
   fundingApplyResponseSchema,
+  fundingWithdrawResponseSchema,
   fundingApplicationDetailSchema,
   fundingApplicationsResponseSchema,
   fundingPayoutDaysResponseSchema,
@@ -76,11 +79,13 @@ import {
   type GiftStats,
   type FxSpot,
   type ShopActivityDay,
+  type ShopActivityShops,
   type ShopListItem,
   type GrantContinuation,
   type GrantPlaces,
   type PostStats,
   type WalletStats,
+  type WalletUsage,
   type AccountActivity,
   type LnurlInvoice,
   type LnurlPayRequest,
@@ -1405,6 +1410,8 @@ export async function fetchFxSpot(): Promise<FxSpot> {
   }
 }
 
+const SHOP_ACTIVITY_LOAD_ERROR = 'Could not load shop activity. Please try again.';
+
 /**
  * Fetches public shop counts per UTC day. No session.
  *
@@ -1416,11 +1423,44 @@ export async function fetchShopActivity(): Promise<ShopActivityDay[]> {
   try {
     const response = await fetch('/shops/activity');
     if (!response.ok) {
-      throw new Error('Could not load shop activity. Please try again.');
+      throw new Error(SHOP_ACTIVITY_LOAD_ERROR);
     }
     return shopActivitySchema.parse(await response.json()).days;
   } catch {
-    throw new Error('Could not load shop activity. Please try again.');
+    throw new Error(SHOP_ACTIVITY_LOAD_ERROR);
+  }
+}
+
+/**
+ * Fetches the per-shop activity table for staff.
+ *
+ * Hits same-origin `GET /shops/activity/shops` (Bearer).
+ *
+ * @param sessionToken - A bearer token from a completed challenge.
+ * @returns The parsed payload (`windowDays`, `today`, `shops` in api order).
+ * @throws Error `'moderate.forbidden'` on 403.
+ * @throws Error with visitor-facing copy on 401, 503, other non-2xx, a network
+ * failure, or a body that fails {@link shopActivityShopsSchema}.
+ */
+export async function fetchShopActivityShops(sessionToken: string): Promise<ShopActivityShops> {
+  let response: Response;
+  try {
+    response = await fetch('/shops/activity/shops', {
+      headers: { Authorization: `Bearer ${sessionToken}` },
+    });
+  } catch {
+    throw new Error(SHOP_ACTIVITY_LOAD_ERROR);
+  }
+  if (response.status === 403) {
+    throw new Error('moderate.forbidden');
+  }
+  try {
+    if (!response.ok) {
+      throw new Error(SHOP_ACTIVITY_LOAD_ERROR);
+    }
+    return shopActivityShopsSchema.parse(await response.json());
+  } catch {
+    throw new Error(SHOP_ACTIVITY_LOAD_ERROR);
   }
 }
 
@@ -1536,6 +1576,27 @@ export async function fetchWalletStats(): Promise<WalletStats> {
     return walletStatsSchema.parse(await response.json());
   } catch {
     throw new Error('Could not load wallet stats. Please try again.');
+  }
+}
+
+/**
+ * Fetches aggregate wallet use since the production release.
+ *
+ * The payload has no person, account, or payment id.
+ *
+ * @returns The {@link WalletUsage} payload.
+ * @throws Error with visitor-facing copy when the api is unavailable or the
+ * body fails {@link walletUsageSchema}.
+ */
+export async function fetchWalletUsage(): Promise<WalletUsage> {
+  try {
+    const response = await fetch('/wallets/usage');
+    if (!response.ok) {
+      throw new Error('Could not load wallet usage. Please try again.');
+    }
+    return walletUsageSchema.parse(await response.json());
+  } catch {
+    throw new Error('Could not load wallet usage. Please try again.');
   }
 }
 
@@ -1709,6 +1770,7 @@ export async function fetchTrustProposals(sessionToken: string): Promise<Moderat
 }
 
 const FUNDING_APPLY_ERROR = 'Could not submit your application. Please try again.';
+const FUNDING_WITHDRAW_ERROR = 'Could not withdraw. Please try again.';
 const FUNDING_APPLICATIONS_LOAD_ERROR = 'Could not load grant applications. Please try again.';
 const FUNDING_APPLICATION_LOAD_ERROR = 'Could not load this application. Please try again.';
 const FUNDING_PAYOUT_DAYS_LOAD_ERROR = 'Could not load the payout table. Please try again.';
@@ -1830,6 +1892,45 @@ export async function postFundingApply(sessionToken: string): Promise<OwnerFundi
       throw err;
     }
     throw new Error(FUNDING_APPLY_ERROR);
+  }
+}
+
+/**
+ * Withdraws the signed-in member's own grant: an open application, a trial,
+ * or an admitted place. The place becomes free for someone else.
+ *
+ * Hits same-origin `POST /funding/withdraw` (Bearer, no body).
+ *
+ * @param sessionToken - A bearer token from a completed challenge.
+ * @returns The updated {@link OwnerFunding} object (status `none`).
+ * @throws Error `Unauthorized` on 401, so the caller signs the member out.
+ * @throws Error `Conflict` on 409 (nothing to withdraw, or a staff decision at
+ * the same moment), so the caller reloads the account.
+ * @throws Error with visitor-facing copy on 403, 404 (an api without the
+ * endpoint), 503, any other non-2xx, a network failure, or a body that fails
+ * {@link fundingWithdrawResponseSchema}.
+ */
+export async function postFundingWithdraw(sessionToken: string): Promise<OwnerFunding> {
+  try {
+    const response = await fetch('/funding/withdraw', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${sessionToken}` },
+    });
+    if (response.status === 401) {
+      throw new Error('Unauthorized');
+    }
+    if (response.status === 409) {
+      throw new Error('Conflict');
+    }
+    if (!response.ok) {
+      throw new Error(FUNDING_WITHDRAW_ERROR);
+    }
+    return fundingWithdrawResponseSchema.parse(await response.json()).funding;
+  } catch (err) {
+    if (err instanceof Error && (err.message === 'Unauthorized' || err.message === 'Conflict')) {
+      throw err;
+    }
+    throw new Error(FUNDING_WITHDRAW_ERROR);
   }
 }
 
