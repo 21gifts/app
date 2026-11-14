@@ -7536,6 +7536,36 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/moderate/shops:default",
+    "label": "/moderate/shops default",
+    "visual": "screen-moderate-shops",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/moderate/shops:empty",
+    "label": "/moderate/shops empty",
+    "visual": "state-moderate-shops-empty",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/moderate/shops:forbidden",
+    "label": "/moderate/shops forbidden",
+    "visual": "state-moderate-shops-forbidden",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/moderate/shops:loading",
+    "label": "/moderate/shops loading",
+    "visual": "state-moderate-shops-loading",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/moderate/shops:error",
+    "label": "/moderate/shops error",
+    "visual": "state-moderate-shops-error",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/moderate/hidden:default",
     "label": "/moderate/hidden default",
     "visual": "screen-moderate-hidden",

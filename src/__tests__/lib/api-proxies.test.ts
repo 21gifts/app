@@ -129,6 +129,7 @@ import {
   proxyFundingApplicationGet,
   proxyFundingApplicationsGet,
   proxyFundingPayoutDaysGet,
+  proxyShopActivityShopsGet,
   proxyFundingApplyPost,
   proxyFundingWithdrawPost,
   proxyFundingRejectPost,
@@ -1469,6 +1470,12 @@ describe('api proxy wrappers', () => {
     const fetchMock = stubApi();
     await proxyFundingPayoutDaysGet(new Request('http://localhost/funding/payout-days'));
     expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/funding/payout-days');
+  });
+
+  it('proxyShopActivityShopsGet hits GET /shops/activity/shops', async () => {
+    const fetchMock = stubApi();
+    await proxyShopActivityShopsGet(new Request('http://localhost/shops/activity/shops'));
+    expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/shops/activity/shops');
   });
 
   it('proxyFundingApplicationsGet hits GET /funding/applications', async () => {

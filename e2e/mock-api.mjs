@@ -4401,6 +4401,21 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
+  if (method === 'GET' && pathName === '/shops/activity/shops') {
+    const token = bearer(req);
+    const account = token === null ? undefined : byToken.get(token);
+    if (!account) {
+      json(res, 401, { error: 'Unauthorized' });
+      return;
+    }
+    if (!roleAtLeast(account.role, 'moderator')) {
+      json(res, 403, { error: 'Forbidden' });
+      return;
+    }
+    json(res, 200, { windowDays: 30, today: '2026-09-26', shops: [] });
+    return;
+  }
+
   if (pathName === '/funding/daily-roster' || pathName.startsWith('/funding/daily-roster/')) {
     const token = bearer(req);
     const account = token === null ? undefined : byToken.get(token);

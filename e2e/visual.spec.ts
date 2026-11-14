@@ -41467,6 +41467,10 @@ test.describe('moderate screens', () => {
       'href',
       '/moderate/payouts',
     );
+    await expect(page.getByRole('link', { name: 'Show activity per shop' })).toHaveAttribute(
+      'href',
+      '/moderate/shops',
+    );
     await expect(page.getByText('12%')).toHaveCount(0);
     await shotScreen(page, 'screen-moderate');
   });
@@ -41613,6 +41617,94 @@ test.describe('moderate screens', () => {
       page.getByText('Could not load the payout table. Please try again.'),
     ).toBeVisible();
     await shotScreen(page, 'state-moderate-payouts-error');
+  });
+
+  test('moderate shops', async ({ page }) => {
+    await seedAda(page, 'founder');
+    await page.route('**/shops/activity/shops', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          windowDays: 30,
+          today: '2026-09-26',
+          shops: [
+            {
+              noteId: 'note_bakery',
+              name: 'Bakery',
+              npub: null,
+              accountId: 'acc_bake',
+              username: null,
+              activeDays: 0,
+              lastChargeDay: null,
+            },
+            {
+              noteId: 'note_kiosk',
+              name: 'Kiosk',
+              npub: 'npub1kiosk',
+              accountId: 'acc_kiosk',
+              username: 'kiosktill',
+              activeDays: 0,
+              lastChargeDay: '2026-07-14',
+            },
+            {
+              noteId: 'note_cafe',
+              name: 'Corner Café',
+              npub: 'npub1corner',
+              accountId: 'acc_till',
+              username: 'cornertill',
+              activeDays: 12,
+              lastChargeDay: '2026-09-25',
+            },
+          ],
+        }),
+      });
+    });
+    await page.goto('/moderate/shops');
+    await expect(page.getByRole('heading', { name: 'Activity per shop' })).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Corner Café' })).toBeVisible();
+    await expect(page.getByText('Inactive')).toHaveCount(2);
+    await shotScreen(page, 'screen-moderate-shops');
+  });
+
+  test('moderate shops empty', async ({ page }) => {
+    await seedAda(page, 'founder');
+    await page.route('**/shops/activity/shops', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ windowDays: 30, today: '2026-09-26', shops: [] }),
+      });
+    });
+    await page.goto('/moderate/shops');
+    await expect(page.getByText('No shops yet.')).toBeVisible();
+    await shotScreen(page, 'state-moderate-shops-empty');
+  });
+
+  test('moderate shops forbidden', async ({ page }) => {
+    await seedAda(page, 'basis');
+    await page.goto('/moderate/shops');
+    await expect(page.getByText('This page is for moderators.')).toBeVisible();
+    await shotScreen(page, 'state-moderate-shops-forbidden');
+  });
+
+  test('moderate shops loading', async ({ page }) => {
+    await seedAda(page, 'founder');
+    await page.route('**/shops/activity/shops', () => new Promise(() => undefined));
+    await page.goto('/moderate/shops');
+    await expect(page.getByRole('heading', { name: 'Activity per shop' })).toBeVisible();
+    await expect(page.locator('p.text-center', { hasText: 'Loading…' })).toBeVisible();
+    await shotScreen(page, 'state-moderate-shops-loading');
+  });
+
+  test('moderate shops error', async ({ page }) => {
+    await seedAda(page, 'founder');
+    await page.route('**/shops/activity/shops', async (route) => {
+      await route.fulfill({ status: 503, contentType: 'application/json', body: '{}' });
+    });
+    await page.goto('/moderate/shops');
+    await expect(page.getByText('Could not load the shop table. Please try again.')).toBeVisible();
+    await shotScreen(page, 'state-moderate-shops-error');
   });
 });
 

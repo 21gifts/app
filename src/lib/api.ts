@@ -26,6 +26,7 @@ import {
   giftStatsSchema,
   fxSpotSchema,
   shopActivitySchema,
+  shopActivityShopsSchema,
   shopListResponseSchema,
   grantContinuationSchema,
   grantPlacesSchema,
@@ -78,6 +79,7 @@ import {
   type GiftStats,
   type FxSpot,
   type ShopActivityDay,
+  type ShopActivityShops,
   type ShopListItem,
   type GrantContinuation,
   type GrantPlaces,
@@ -1424,6 +1426,41 @@ export async function fetchShopActivity(): Promise<ShopActivityDay[]> {
     return shopActivitySchema.parse(await response.json()).days;
   } catch {
     throw new Error('Could not load shop activity. Please try again.');
+  }
+}
+
+const SHOP_ACTIVITY_SHOPS_LOAD_ERROR = 'Could not load the shop table. Please try again.';
+
+/**
+ * Fetches the per-shop activity table for staff.
+ *
+ * Hits same-origin `GET /shops/activity/shops` (Bearer).
+ *
+ * @param sessionToken - A bearer token from a completed challenge.
+ * @returns The parsed payload (`windowDays`, `today`, `shops` in api order).
+ * @throws Error `'moderate.forbidden'` on 403.
+ * @throws Error with visitor-facing copy on 401, 503, other non-2xx, a network
+ * failure, or a body that fails {@link shopActivityShopsSchema}.
+ */
+export async function fetchShopActivityShops(sessionToken: string): Promise<ShopActivityShops> {
+  let response: Response;
+  try {
+    response = await fetch('/shops/activity/shops', {
+      headers: { Authorization: `Bearer ${sessionToken}` },
+    });
+  } catch {
+    throw new Error(SHOP_ACTIVITY_SHOPS_LOAD_ERROR);
+  }
+  if (response.status === 403) {
+    throw new Error('moderate.forbidden');
+  }
+  try {
+    if (!response.ok) {
+      throw new Error(SHOP_ACTIVITY_SHOPS_LOAD_ERROR);
+    }
+    return shopActivityShopsSchema.parse(await response.json());
+  } catch {
+    throw new Error(SHOP_ACTIVITY_SHOPS_LOAD_ERROR);
   }
 }
 

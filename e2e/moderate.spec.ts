@@ -99,6 +99,15 @@ test('Function: ModerateScreen — staff tools include payout per person', async
   await expect(page.getByRole('button', { name: /Goal/ })).toHaveCount(0);
 });
 
+test('Function: ModerateScreen — staff tools include activity per shop', async ({ page }) => {
+  await seedAdaSession(page, 'moderator');
+  await page.goto('/moderate');
+  await expect(page.getByRole('link', { name: 'Show activity per shop' })).toHaveAttribute(
+    'href',
+    '/moderate/shops',
+  );
+});
+
 test('Function: ModerateScreen — basis visitors see the forbidden copy', async ({ page }) => {
   await seedAdaSession(page, 'basis');
   await page.goto('/moderate');

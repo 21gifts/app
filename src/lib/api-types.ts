@@ -497,6 +497,47 @@ export const shopActivitySchema = z.object({
 export type ShopActivityDay = z.infer<typeof shopActivityDaySchema>;
 
 /**
+ * Runtime schema for one shop row from `GET /shops/activity/shops`.
+ *
+ * `npub` and `username` may be null. `activeDays` counts UTC days in the
+ * window with at least one POS charge by the assigned till account.
+ * `lastChargeDay` is that account's latest POS charge day, null when never.
+ */
+export const shopActivityShopSchema = z.object({
+  noteId: z.string().min(1),
+  name: z.string(),
+  npub: z.string().min(1).nullable(),
+  accountId: z.string().min(1),
+  username: z.string().min(1).nullable(),
+  activeDays: z.number().int().nonnegative(),
+  lastChargeDay: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/)
+    .nullable(),
+});
+
+/**
+ * Runtime schema for the payload of `GET /shops/activity/shops` (staff).
+ *
+ * `shops` keeps the api order: never used first, then oldest last charge first.
+ */
+export const shopActivityShopsSchema = z.object({
+  windowDays: z.number().int().positive(),
+  today: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  shops: z.array(shopActivityShopSchema),
+});
+
+/**
+ * One shop row of the staff per-shop activity table.
+ */
+export type ShopActivityShop = z.infer<typeof shopActivityShopSchema>;
+
+/**
+ * Staff per-shop activity table from the api.
+ */
+export type ShopActivityShops = z.infer<typeof shopActivityShopsSchema>;
+
+/**
  * Runtime schema for the payload of `GET /funding/goal`.
  *
  * Exactly 7 unique contiguous UTC days, oldest first, plus how many shops

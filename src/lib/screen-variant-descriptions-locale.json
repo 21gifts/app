@@ -3339,6 +3339,31 @@
     "es": "Página del personal mientras se carga la tabla. Cargando….",
     "fil": "Pahina ng tauhan habang naglo-load ang talahanayan. Naglo-load…."
   },
+  "/moderate/shops:default": {
+    "de": "Personaltabelle mit drei Shops in der Reihenfolge der API: Bakery (ohne npub, ohne Benutzername, nie gebucht) und Kiosk (letzte Buchung im Juli), beide mit 0 / 30 als Inaktiv markiert, danach Corner Café mit 12 / 30 und einer letzten Buchung am Vortag.",
+    "es": "Tabla del personal con tres tiendas en el orden de la API: Bakery (sin npub, sin nombre de usuario, nunca cobró) y Kiosk (último cobro en julio), ambas marcadas como Inactiva con 0 / 30, luego Corner Café con 12 / 30 y un último cobro el día anterior.",
+    "fil": "Talahanayan ng tauhan na may tatlong tindahan ayon sa ayos ng API: Bakery (walang npub, walang username, hindi pa sumingil) at Kiosk (huling singil noong Hulyo), parehong minarkahang Hindi aktibo na may 0 / 30, saka Corner Café na may 12 / 30 at huling singil kahapon."
+  },
+  "/moderate/shops:empty": {
+    "de": "Personalseite ohne Shop. Satz Noch keine Shops. Keine Tabelle.",
+    "es": "Página del personal sin tiendas. Frase Todavía no hay tiendas. Sin tabla.",
+    "fil": "Pahina ng tauhan na walang tindahan. Pangungusap Wala pang tindahan. Walang talahanayan."
+  },
+  "/moderate/shops:error": {
+    "de": "Personalseite, wenn das Laden fehlschlägt. Die Shop-Tabelle konnte nicht geladen werden. Bitte versuchen Sie es erneut. und Schaltfläche Erneut versuchen.",
+    "es": "Página del personal cuando falla la carga. No se pudo cargar la tabla de tiendas. Inténtalo de nuevo. y botón Intentar de nuevo.",
+    "fil": "Pahina ng tauhan kapag nabigo ang pagkuha. Hindi ma-load ang talahanayan ng mga tindahan. Subukan ulit. at pindutan Subukan ulit."
+  },
+  "/moderate/shops:forbidden": {
+    "de": "Angemeldetes Basis-Konto. Text Diese Seite ist für Moderatorinnen oder Moderatoren. Keine Tabelle.",
+    "es": "Cuenta basis con sesión iniciada. Texto Esta página es para personas moderadoras. Sin tabla.",
+    "fil": "Naka-sign-in na basis na account. Teksto Ang pahinang ito ay para sa mga moderator. Walang talahanayan."
+  },
+  "/moderate/shops:loading": {
+    "de": "Personalseite, während die Tabelle lädt. Text Wird geladen…",
+    "es": "Página del personal mientras carga la tabla. Texto Cargando…",
+    "fil": "Pahina ng tauhan habang naglo-load ang talahanayan. Teksto Naglo-load…"
+  },
   "/moderate/proposals:confirm-error": {
     "de": "Personal (Moderator) Als Moderator bestätigen fehlgeschlagen. Dieses Mitglied konnte nicht aktualisiert werden. Bitte versuchen Sie es erneut.",
     "es": "Personal (moderador) Confirmar como moderador falló. No se pudo actualizar a este miembro. Inténtalo de nuevo.",
@@ -3405,9 +3430,9 @@
     "fil": "Hilera ng staff (moderator) na sila mismo ang nagmungkahi. Teksto Naghihintay ng kumpirmasyon mula sa ibang moderator. Walang pindutang Kumpirmahin. Nakikita ang Tanggihan."
   },
   "/moderate:default": {
-    "de": "Personal- (Moderatoren-)Hub mit Überschrift Moderation, beschriftete Steuerung Ziele → /grants/goals, beschriftete Steuerung Ausgeblendete Notizen → /moderate/hidden, beschriftete Steuerung Offene Vorschläge → /moderate/proposals, Steuerung Moderatoren Chatgruppe → /moderate/group, Steuerung Handbuch → /moderate/handbook und Auszahlung pro Person anzeigen → /moderate/payouts. Kein Ziel-Widget.",
-    "es": "Centro del personal (moderador) con encabezado Moderación, control etiquetado Objetivos → /grants/goals, control etiquetado Notas ocultas → /moderate/hidden, control etiquetado Propuestas abiertas → /moderate/proposals, control Chat de moderadores → /moderate/group, control Manual → /moderate/handbook, y Mostrar el pago por persona → /moderate/payouts. Sin widget de objetivo.",
-    "fil": "Hub ng staff (moderator) na may pamagat na Moderasyon, kontrol na may label na Mga layunin → /grants/goals, kontrol na may label na Mga nakatagong nota → /moderate/hidden, kontrol na may label na Mga bukas na mungkahi → /moderate/proposals, kontrol na Chat group ng mga moderator → /moderate/group, kontrol na Handbook → /moderate/handbook, at Ipakita ang bayad bawat tao → /moderate/payouts. Walang widget ng layunin."
+    "de": "Personal- (Moderatoren-)Hub mit Überschrift Moderation, beschriftete Steuerung Ziele → /grants/goals, beschriftete Steuerung Ausgeblendete Notizen → /moderate/hidden, beschriftete Steuerung Offene Vorschläge → /moderate/proposals, Steuerung Moderatoren Chatgruppe → /moderate/group, Steuerung Handbuch → /moderate/handbook, Auszahlung pro Person anzeigen → /moderate/payouts und Aktivität pro Shop anzeigen → /moderate/shops. Kein Ziel-Widget.",
+    "es": "Centro del personal (moderador) con encabezado Moderación, control etiquetado Objetivos → /grants/goals, control etiquetado Notas ocultas → /moderate/hidden, control etiquetado Propuestas abiertas → /moderate/proposals, control Chat de moderadores → /moderate/group, control Manual → /moderate/handbook, Mostrar el pago por persona → /moderate/payouts y Mostrar actividad por tienda → /moderate/shops. Sin widget de objetivo.",
+    "fil": "Hub ng staff (moderator) na may pamagat na Moderasyon, kontrol na may label na Mga layunin → /grants/goals, kontrol na may label na Mga nakatagong nota → /moderate/hidden, kontrol na may label na Mga bukas na mungkahi → /moderate/proposals, kontrol na Chat group ng mga moderator → /moderate/group, kontrol na Handbook → /moderate/handbook, Ipakita ang bayad bawat tao → /moderate/payouts, at Ipakita ang aktibidad bawat tindahan → /moderate/shops. Walang widget ng layunin."
   },
   "/moderate:forbidden": {
     "de": "Angemeltes Basis-Konto. Wortlaut Diese Seite ist für Moderatorinnen oder Moderatoren. Keine Werkzeugliste.",
@@ -3415,14 +3440,14 @@
     "fil": "Naka-sign-in na basis na account. Sipi Ang pahinang ito ay para sa mga moderator. Walang listahan ng mga kasangkapan."
   },
   "/moderate:group-unread": {
-    "de": "Personalhub mit ungelesener Moderatoren Chatgruppe. Das Steuerelement Moderatoren Chatgruppe zeigt 1 und den barrierefreien Namen Moderatoren Chatgruppe, 1 ungelesen (moderate.groupUnread). Ziele, Ausgeblendete Notizen, Offene Vorschläge, Handbuch und Auszahlung pro Person anzeigen unverändert.",
-    "es": "Centro del personal con un Chat de moderadores no leído. El control Chat de moderadores muestra 1 y el nombre accesible Chat de moderadores, 1 no leído (moderate.groupUnread). Objetivos, Notas ocultas, Propuestas abiertas, Manual y Mostrar el pago por persona sin cambios.",
-    "fil": "Hub ng staff na may hindi pa nabasang Chat group ng mga moderator. Ang kontrol na Chat group ng mga moderator ay nagpapakita ng 1 at accessible na pangalan Chat group ng mga moderator, 1 hindi pa nababasa (moderate.groupUnread). Mga layunin, Mga nakatagong nota, Mga bukas na mungkahi, Handbook, at Ipakita ang bayad bawat tao ay hindi nagbabago."
+    "de": "Personalhub mit ungelesener Moderatoren Chatgruppe. Das Steuerelement Moderatoren Chatgruppe zeigt 1 und den barrierefreien Namen Moderatoren Chatgruppe, 1 ungelesen (moderate.groupUnread). Ziele, Ausgeblendete Notizen, Offene Vorschläge, Handbuch, Auszahlung pro Person anzeigen und Aktivität pro Shop anzeigen unverändert.",
+    "es": "Centro del personal con un Chat de moderadores no leído. El control Chat de moderadores muestra 1 y el nombre accesible Chat de moderadores, 1 no leído (moderate.groupUnread). Objetivos, Notas ocultas, Propuestas abiertas, Manual, Mostrar el pago por persona y Mostrar actividad por tienda sin cambios.",
+    "fil": "Hub ng staff na may hindi pa nabasang Chat group ng mga moderator. Ang kontrol na Chat group ng mga moderator ay nagpapakita ng 1 at accessible na pangalan Chat group ng mga moderator, 1 hindi pa nababasa (moderate.groupUnread). Mga layunin, Mga nakatagong nota, Mga bukas na mungkahi, Handbook, Ipakita ang bayad bawat tao, at Ipakita ang aktibidad bawat tindahan ay hindi nagbabago."
   },
   "/moderate:proposals-unread": {
-    "de": "Mitarbeitenden-Zentrale mit einem offenen Vorschlag. Das Steuerelement Offene Vorschläge zeigt 1 und den barrierefreien Namen Offene Vorschläge, 1 ungelesen (moderate.proposals.unread). Ziele, Ausgeblendete Notizen, Moderatoren Chatgruppe, Handbuch und Auszahlung pro Person anzeigen unverändert.",
-    "es": "Centro del personal con una propuesta abierta. El control Propuestas abiertas muestra 1 y el nombre accesible Propuestas abiertas, 1 sin leer (moderate.proposals.unread). Metas, Notas ocultas, Chat de moderadores, Manual y Mostrar el pago por persona sin cambios.",
-    "fil": "Hub ng staff na may isang bukas na panukala. Ang control na Mga bukas na mungkahi ay nagpapakita ng 1 at ang accessible na pangalan Mga bukas na mungkahi, 1 hindi pa nababasa (moderate.proposals.unread). Mga layunin, Mga nakatagong nota, Chat group ng mga moderator, Handbook, at Ipakita ang bayad bawat tao ay hindi nagbabago."
+    "de": "Mitarbeitenden-Zentrale mit einem offenen Vorschlag. Das Steuerelement Offene Vorschläge zeigt 1 und den barrierefreien Namen Offene Vorschläge, 1 ungelesen (moderate.proposals.unread). Ziele, Ausgeblendete Notizen, Moderatoren Chatgruppe, Handbuch, Auszahlung pro Person anzeigen und Aktivität pro Shop anzeigen unverändert.",
+    "es": "Centro del personal con una propuesta abierta. El control Propuestas abiertas muestra 1 y el nombre accesible Propuestas abiertas, 1 sin leer (moderate.proposals.unread). Metas, Notas ocultas, Chat de moderadores, Manual, Mostrar el pago por persona y Mostrar actividad por tienda sin cambios.",
+    "fil": "Hub ng staff na may isang bukas na panukala. Ang control na Mga bukas na mungkahi ay nagpapakita ng 1 at ang accessible na pangalan Mga bukas na mungkahi, 1 hindi pa nababasa (moderate.proposals.unread). Mga layunin, Mga nakatagong nota, Chat group ng mga moderator, Handbook, Ipakita ang bayad bawat tao, at Ipakita ang aktibidad bawat tindahan ay hindi nagbabago."
   },
   "/notifications:default": {
     "de": "Geladene Liste mit mindestens einer ungelesenen Forenantwort (Akteur Bob, Bob hat geantwortet).",
