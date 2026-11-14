@@ -1211,6 +1211,29 @@ export async function receiveWalletSparkAddress(
 }
 
 /**
+ * Signs `message` with the open wallet's identity key. The signature is the
+ * SDK's compact r‖s hex over one SHA-256 of the UTF-8 text.
+ *
+ * @param message - Text to sign. The caller supplies the text; this function signs it unchanged.
+ * @param loadSdk - SDK loader forwarded to {@link ensureWalletConnected}.
+ * @returns The signature hex.
+ * @throws Error `wallet-connect` when the wallet could not be opened or closed
+ *   meanwhile; otherwise the SDK's error. The text and the signature are not logged.
+ */
+export async function signWithWallet(
+  message: string,
+  loadSdk: WalletSdkLoader = loadWalletSdk,
+): Promise<string> {
+  await ensureWalletConnected(loadSdk);
+  const conn = connection;
+  if (conn === null) {
+    throw new Error('wallet-connect');
+  }
+  const signed = await conn.signMessage(message);
+  return signed.signature;
+}
+
+/**
  * Registers the account's username as the address of the connected wallet.
  * Never asks whether a name is free: only the account's own username is sent.
  *

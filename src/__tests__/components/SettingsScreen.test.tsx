@@ -4,7 +4,9 @@ import { SettingsScreen } from '@/components/SettingsScreen';
 import { saveAmountUnit } from '@/lib/amount-unit';
 import { fetchPreviousWallets, setAccountFiat, setHeartSats, setUsername } from '@/lib/api';
 import type { Account } from '@/lib/api-types';
+import { dfxLoginUrl } from '@/lib/dfx-login';
 import { useAuthStore } from '@/stores/auth-store';
+import { useWalletStore } from '@/stores/wallet-store';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
 import { fetchFxSpot } from '@/lib/api';
 import { SPOT_REFRESH_MS } from '@/hooks/useSpotRate';
@@ -33,6 +35,10 @@ vi.mock('next/link', () => ({
 
 vi.mock('@/lib/amount-unit', () => ({
   saveAmountUnit: vi.fn(() => Promise.resolve()),
+}));
+
+vi.mock('@/lib/dfx-login', () => ({
+  dfxLoginUrl: vi.fn(),
 }));
 
 vi.mock('@/lib/api', async (importOriginal) => ({
@@ -68,24 +74,98 @@ const originalScrollIntoView = HTMLElement.prototype.scrollIntoView;
 const ADD_HINT =
   'This creates a recovery phrase on this device. Your existing login passkey stays.';
 
+const DFX_HINT =
+  'Opens DFX in a new tab, signed in with your 21.gifts wallet, so you can buy Bitcoin with a bank transfer.';
+const DFX_ERROR =
+  'DFX could not be opened. Try again. If no new tab opens, allow new tabs for this site.';
+const DFX_BUY =
+  'https://app.dfx.swiss/buy?session=header.payload.sig&blockchain=Spark&asset-out=BTC';
+
+/**
+ * A tab opened by the row. The href setter records `opener` at the moment of
+ * navigation, so a test can see that it was cleared first.
+ *
+ * @param failNavigation - Throw from the href setter.
+ * @returns The tab stand-in.
+ */
+function fakeTab(failNavigation = false): {
+  opener: Window | null;
+  closed: boolean;
+  close: ReturnType<typeof vi.fn>;
+  location: Location;
+  href: string;
+  openerAtNavigation: Window | null | 'pending';
+} {
+  const tab = {
+    opener: window as Window | null,
+    closed: false,
+    close: vi.fn(),
+    location: {} as Location,
+    href: '',
+    openerAtNavigation: 'pending' as Window | null | 'pending',
+  };
+  Object.defineProperty(tab.location, 'href', {
+    configurable: true,
+    get: () => tab.href,
+    set: (value: string) => {
+      tab.openerAtNavigation = tab.opener;
+      tab.href = value;
+      if (failNavigation) {
+        throw new Error('nav');
+      }
+    },
+  });
+  return tab;
+}
+
+/**
+ * Runs the button's click handler while React leaves it disabled.
+ * A real click does not reach the handler then, so the in-flight guard
+ * would stay uncovered.
+ *
+ * @param button - Disabled button.
+ */
+function pressDespiteDisabled(button: HTMLElement): void {
+  const reactPropsKey = Object.getOwnPropertyNames(button).find((key) =>
+    key.startsWith('__reactProps$'),
+  );
+  if (reactPropsKey === undefined) {
+    throw new Error('missing react props');
+  }
+  const reactProps = (button as unknown as Record<string, { onClick?: () => void } | undefined>)[
+    reactPropsKey
+  ];
+  const onClick = reactProps?.onClick;
+  if (typeof onClick !== 'function') {
+    throw new Error('missing onClick');
+  }
+  act(() => {
+    onClick();
+  });
+}
+
 beforeEach(() => {
   vi.stubEnv('NEXT_PUBLIC_APP_VERSION', '42');
   vi.mocked(fetchPreviousWallets).mockReset().mockResolvedValue([]);
   vi.mocked(setHeartSats).mockReset();
   vi.mocked(setAccountFiat).mockReset();
   vi.mocked(fetchFxSpot).mockReset();
+  vi.mocked(dfxLoginUrl).mockReset().mockRejectedValue(new Error('dfx-login'));
   useAuthStore.setState({ session: 'sess', account });
+  useWalletStore.getState().reset();
 });
 
 afterEach(() => {
   cleanup();
   vi.unstubAllEnvs();
+  vi.unstubAllGlobals();
   vi.useRealTimers();
   vi.mocked(saveAmountUnit).mockClear();
   HTMLElement.prototype.scrollIntoView = originalScrollIntoView;
   Reflect.deleteProperty(navigator, 'clipboard');
   window.history.replaceState(null, '', '/');
   useAuthStore.setState({ session: null, account: null });
+  useWalletStore.getState().reset();
 });
 
 describe('SettingsScreen', () => {
@@ -132,6 +212,7 @@ describe('SettingsScreen', () => {
     }
     expect(screen.queryByText(ADD_HINT)).toBeNull();
     expect(screen.queryByText('Available once your wallet is connected.')).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Log in at DFX' })).toBeNull();
     for (const id of ['recovery', 'social-recovery', 'previous-wallets']) {
       expect(document.getElementById(id)).toBeNull();
     }
@@ -695,5 +776,360 @@ describe('SettingsScreen', () => {
     renderWithLocale(<SettingsScreen />);
     expect(screen.getByRole('heading', { level: 1, name: 'Settings' })).toBeTruthy();
     expect(scrollIntoView).not.toHaveBeenCalled();
+  });
+
+  it('shows Log in at DFX in Wallet once the in-app wallet is ready', () => {
+    useWalletStore.getState().setReady(21, 'id');
+    renderWithLocale(<SettingsScreen />);
+    const wallet = screen.getByRole('region', { name: 'Wallet' });
+    expect(within(wallet).getByText(DFX_HINT)).toBeTruthy();
+    const button = within(wallet).getByRole('button', { name: 'Log in at DFX' });
+    expect(button.hasAttribute('disabled')).toBe(false);
+    expect(within(wallet).queryByText('Opening DFX…')).toBeNull();
+    expect(within(wallet).queryByRole('alert')).toBeNull();
+    expect(dfxLoginUrl).not.toHaveBeenCalled();
+  });
+
+  it('ignores each DFX login pin in a production build', () => {
+    vi.stubEnv('NEXT_PUBLIC_E2E_NOW', '');
+    for (const pin of ['dfx-login', 'dfx-login-busy', 'dfx-login-error']) {
+      // visualPin reads window.location.search, not the mocked useSearchParams.
+      window.history.replaceState(null, '', `/settings?visual=${pin}`);
+      const view = renderWithLocale(<SettingsScreen />);
+      expect(screen.queryByRole('button', { name: 'Log in at DFX' })).toBeNull();
+      view.unmount();
+    }
+    useWalletStore.getState().setReady(21, 'id');
+    window.history.replaceState(null, '', '/settings?visual=dfx-login-busy');
+    const busy = renderWithLocale(<SettingsScreen />);
+    expect(screen.getByRole('button', { name: 'Log in at DFX' }).hasAttribute('disabled')).toBe(
+      false,
+    );
+    expect(screen.queryByText('Opening DFX…')).toBeNull();
+    busy.unmount();
+    window.history.replaceState(null, '', '/settings?visual=dfx-login-error');
+    renderWithLocale(<SettingsScreen />);
+    expect(screen.queryByRole('alert')).toBeNull();
+    expect(dfxLoginUrl).not.toHaveBeenCalled();
+  });
+
+  it('draws each DFX login pin without calling the wallet or DFX', () => {
+    vi.stubEnv('NEXT_PUBLIC_E2E_NOW', '2026-01-07T12:00:00.000Z');
+    window.history.replaceState(null, '', '/settings?visual=dfx-login');
+    const idle = renderWithLocale(<SettingsScreen />);
+    const idleButton = screen.getByRole('button', { name: 'Log in at DFX' });
+    expect(idleButton.hasAttribute('disabled')).toBe(false);
+    expect(screen.getByText(DFX_HINT)).toBeTruthy();
+    expect(screen.queryByText('Opening DFX…')).toBeNull();
+    expect(screen.queryByRole('alert')).toBeNull();
+    idle.unmount();
+
+    window.history.replaceState(null, '', '/settings?visual=dfx-login-busy');
+    const busy = renderWithLocale(<SettingsScreen />);
+    expect(screen.getByRole('button', { name: 'Log in at DFX' }).hasAttribute('disabled')).toBe(
+      true,
+    );
+    expect(screen.getByText('Opening DFX…')).toBeTruthy();
+    expect(screen.queryByRole('alert')).toBeNull();
+    busy.unmount();
+
+    window.history.replaceState(null, '', '/settings?visual=dfx-login-error');
+    renderWithLocale(<SettingsScreen />);
+    expect(screen.getByRole('button', { name: 'Log in at DFX' }).hasAttribute('disabled')).toBe(
+      false,
+    );
+    expect(screen.getByRole('alert').textContent).toBe(DFX_ERROR);
+    expect(screen.queryByText('Opening DFX…')).toBeNull();
+    expect(dfxLoginUrl).not.toHaveBeenCalled();
+  });
+
+  it('opens one tab synchronously and navigates it only after the session URL exists', async () => {
+    useWalletStore.getState().setReady(21, 'id');
+    const tab = fakeTab();
+    const open = vi.fn(() => tab as unknown as Window);
+    vi.stubGlobal('open', open);
+    const order: string[] = [];
+    open.mockImplementation(() => {
+      order.push('open');
+      return tab as unknown as Window;
+    });
+    vi.mocked(dfxLoginUrl).mockImplementation(() => {
+      order.push('url');
+      return Promise.resolve(DFX_BUY);
+    });
+    renderWithLocale(<SettingsScreen />);
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Log in at DFX' }));
+    });
+    expect(order).toEqual(['open', 'url']);
+    expect(open).toHaveBeenCalledWith('', '_blank');
+    expect(tab.openerAtNavigation).toBeNull();
+    expect(tab.href).toBe(DFX_BUY);
+    expect(tab.close).not.toHaveBeenCalled();
+    expect(screen.queryByRole('alert')).toBeNull();
+    expect(screen.queryByText('Opening DFX…')).toBeNull();
+    expect(screen.queryByText(DFX_BUY)).toBeNull();
+    expect(window.location.pathname).not.toBe('/buy');
+  });
+
+  it('closes the tab and shows the alert when sign-in fails, then allows another press', async () => {
+    useWalletStore.getState().setReady(21, 'id');
+    const first = fakeTab();
+    const second = fakeTab();
+    const open = vi
+      .fn()
+      .mockReturnValueOnce(first as unknown as Window)
+      .mockReturnValueOnce(second as unknown as Window);
+    vi.stubGlobal('open', open);
+    vi.mocked(dfxLoginUrl).mockRejectedValueOnce(new Error('wallet-connect'));
+    renderWithLocale(<SettingsScreen />);
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Log in at DFX' }));
+    });
+    expect(first.close).toHaveBeenCalledTimes(1);
+    expect(first.href).toBe('');
+    const alert = screen.getByRole('alert');
+    expect(alert.textContent).toBe(DFX_ERROR);
+    expect(alert.textContent).not.toContain('wallet-connect');
+    const button = screen.getByRole('button', { name: 'Log in at DFX' });
+    expect(button.hasAttribute('disabled')).toBe(false);
+
+    vi.mocked(dfxLoginUrl).mockResolvedValueOnce(DFX_BUY);
+    await act(async () => {
+      fireEvent.click(button);
+    });
+    expect(screen.queryByRole('alert')).toBeNull();
+    expect(second.openerAtNavigation).toBeNull();
+    expect(second.href).toBe(DFX_BUY);
+  });
+
+  it('shows the alert and does not ask DFX when the new tab is blocked', async () => {
+    useWalletStore.getState().setReady(21, 'id');
+    const open = vi.fn(() => null);
+    vi.stubGlobal('open', open);
+    renderWithLocale(<SettingsScreen />);
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Log in at DFX' }));
+    });
+    expect(open).toHaveBeenCalledWith('', '_blank');
+    expect(dfxLoginUrl).not.toHaveBeenCalled();
+    expect(screen.getByRole('alert').textContent).toBe(DFX_ERROR);
+    expect(screen.getByRole('button', { name: 'Log in at DFX' }).hasAttribute('disabled')).toBe(
+      false,
+    );
+  });
+
+  it('closes the tab when navigation throws', async () => {
+    useWalletStore.getState().setReady(21, 'id');
+    const tab = fakeTab(true);
+    vi.stubGlobal(
+      'open',
+      vi.fn(() => tab as unknown as Window),
+    );
+    vi.mocked(dfxLoginUrl).mockResolvedValue(DFX_BUY);
+    renderWithLocale(<SettingsScreen />);
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Log in at DFX' }));
+    });
+    expect(tab.openerAtNavigation).toBeNull();
+    expect(tab.close).toHaveBeenCalledTimes(1);
+    expect(screen.getByRole('alert').textContent).toBe(DFX_ERROR);
+    expect(window.location.pathname).not.toBe('/buy');
+  });
+
+  it('opens only one tab when Log in at DFX is pressed twice before the first press finishes', async () => {
+    useWalletStore.getState().setReady(21, 'id');
+    const tab = fakeTab();
+    const open = vi.fn(() => tab as unknown as Window);
+    vi.stubGlobal('open', open);
+    let finish: (url: string) => void = () => undefined;
+    vi.mocked(dfxLoginUrl).mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          finish = resolve;
+        }),
+    );
+    renderWithLocale(<SettingsScreen />);
+    const button = screen.getByRole('button', { name: 'Log in at DFX' });
+    fireEvent.click(button);
+    expect(screen.getByText('Opening DFX…')).toBeTruthy();
+    expect(button.hasAttribute('disabled')).toBe(true);
+    pressDespiteDisabled(button);
+    expect(open).toHaveBeenCalledTimes(1);
+    expect(dfxLoginUrl).toHaveBeenCalledTimes(1);
+    await act(async () => {
+      finish(DFX_BUY);
+    });
+    expect(tab.href).toBe(DFX_BUY);
+    expect(screen.queryByText('Opening DFX…')).toBeNull();
+  });
+
+  it.each([
+    ['resolve', false],
+    ['reject', false],
+    ['resolve', true],
+    ['reject', true],
+  ] as const)(
+    'does not navigate or warn after unmount on %s with closed=%s',
+    async (outcome, closed) => {
+      useWalletStore.getState().setReady(21, 'id');
+      const tab = fakeTab();
+      vi.stubGlobal(
+        'open',
+        vi.fn(() => tab as unknown as Window),
+      );
+      const error = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+      let finish: (url: string) => void = () => undefined;
+      let fail: (reason: Error) => void = () => undefined;
+      vi.mocked(dfxLoginUrl).mockReturnValueOnce(
+        new Promise((resolve, reject) => {
+          finish = resolve;
+          fail = reject;
+        }),
+      );
+      const view = renderWithLocale(<SettingsScreen />);
+      fireEvent.click(screen.getByRole('button', { name: 'Log in at DFX' }));
+      view.unmount();
+      tab.closed = closed;
+      await act(async () => {
+        if (outcome === 'resolve') finish(DFX_BUY);
+        else fail(new Error('dfx-login'));
+      });
+      expect(tab.close).toHaveBeenCalledTimes(closed ? 0 : 1);
+      expect(tab.href).toBe('');
+      expect(screen.queryByRole('alert')).toBeNull();
+      expect(error).not.toHaveBeenCalled();
+      error.mockRestore();
+    },
+  );
+
+  it('still signs in when the idle pin showed the row and the wallet is off', async () => {
+    vi.stubEnv('NEXT_PUBLIC_E2E_NOW', '2026-01-07T12:00:00.000Z');
+    window.history.replaceState(null, '', '/settings?visual=dfx-login');
+    const tab = fakeTab();
+    vi.stubGlobal(
+      'open',
+      vi.fn(() => tab as unknown as Window),
+    );
+    vi.mocked(dfxLoginUrl).mockRejectedValue(new Error('wallet-connect'));
+    renderWithLocale(<SettingsScreen />);
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Log in at DFX' }));
+    });
+    expect(dfxLoginUrl).toHaveBeenCalledTimes(1);
+    expect(tab.close).toHaveBeenCalledTimes(1);
+    expect(screen.getByRole('alert').textContent).toBe(DFX_ERROR);
+  });
+
+  it('clears opener while the sign-in URL is still pending', async () => {
+    useWalletStore.getState().setReady(21, 'id');
+    const tab = fakeTab();
+    vi.stubGlobal(
+      'open',
+      vi.fn(() => tab as unknown as Window),
+    );
+    let finish: (url: string) => void = () => undefined;
+    vi.mocked(dfxLoginUrl).mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          finish = resolve;
+        }),
+    );
+    renderWithLocale(<SettingsScreen />);
+    fireEvent.click(screen.getByRole('button', { name: 'Log in at DFX' }));
+    expect(dfxLoginUrl).toHaveBeenCalledTimes(1);
+    expect(tab.opener).toBeNull();
+    expect(tab.href).toBe('');
+    expect(tab.openerAtNavigation).toBe('pending');
+    await act(async () => {
+      finish(DFX_BUY);
+    });
+    expect(tab.openerAtNavigation).toBeNull();
+    expect(tab.href).toBe(DFX_BUY);
+    expect(screen.queryByRole('alert')).toBeNull();
+  });
+
+  it('drops the URL when the member closes the tab during the wait, then allows another press', async () => {
+    useWalletStore.getState().setReady(21, 'id');
+    const first = fakeTab();
+    const second = fakeTab();
+    const open = vi
+      .fn()
+      .mockReturnValueOnce(first as unknown as Window)
+      .mockReturnValueOnce(second as unknown as Window);
+    vi.stubGlobal('open', open);
+    let finish: (url: string) => void = () => undefined;
+    vi.mocked(dfxLoginUrl).mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          finish = resolve;
+        }),
+    );
+    renderWithLocale(<SettingsScreen />);
+    const button = screen.getByRole('button', { name: 'Log in at DFX' });
+    fireEvent.click(button);
+    expect(first.opener).toBeNull();
+    first.closed = true;
+    await act(async () => {
+      finish(DFX_BUY);
+    });
+    expect(first.href).toBe('');
+    expect(first.openerAtNavigation).toBe('pending');
+    expect(first.close).not.toHaveBeenCalled();
+    expect(screen.queryByRole('alert')).toBeNull();
+    expect(screen.queryByText('Opening DFX…')).toBeNull();
+    expect(button.hasAttribute('disabled')).toBe(false);
+
+    vi.mocked(dfxLoginUrl).mockResolvedValueOnce(DFX_BUY);
+    await act(async () => {
+      fireEvent.click(button);
+    });
+    expect(open).toHaveBeenCalledTimes(2);
+    expect(second.href).toBe(DFX_BUY);
+    expect(second.openerAtNavigation).toBeNull();
+    expect(first.href).toBe('');
+    expect(screen.queryByRole('alert')).toBeNull();
+  });
+
+  it('stays silent when sign-in fails after the member closes the tab, then allows another press', async () => {
+    useWalletStore.getState().setReady(21, 'id');
+    const first = fakeTab();
+    const second = fakeTab();
+    const open = vi
+      .fn()
+      .mockReturnValueOnce(first as unknown as Window)
+      .mockReturnValueOnce(second as unknown as Window);
+    vi.stubGlobal('open', open);
+    let fail: (error: Error) => void = () => undefined;
+    const pending = new Promise<string>((_resolve, reject) => {
+      fail = reject;
+    });
+    const rejectionObserved = pending.catch(() => undefined);
+    vi.mocked(dfxLoginUrl).mockReturnValueOnce(pending);
+    renderWithLocale(<SettingsScreen />);
+    const button = screen.getByRole('button', { name: 'Log in at DFX' });
+    fireEvent.click(button);
+    expect(first.opener).toBeNull();
+    first.closed = true;
+    await act(async () => {
+      fail(new Error('wallet-connect'));
+      await rejectionObserved;
+    });
+    expect(first.close).not.toHaveBeenCalled();
+    expect(first.href).toBe('');
+    expect(first.openerAtNavigation).toBe('pending');
+    expect(screen.queryByRole('alert')).toBeNull();
+    expect(screen.queryByText('Opening DFX…')).toBeNull();
+    expect(button.hasAttribute('disabled')).toBe(false);
+
+    vi.mocked(dfxLoginUrl).mockResolvedValueOnce(DFX_BUY);
+    await act(async () => {
+      fireEvent.click(button);
+    });
+    expect(open).toHaveBeenCalledTimes(2);
+    expect(dfxLoginUrl).toHaveBeenCalledTimes(2);
+    expect(second.href).toBe(DFX_BUY);
+    expect(second.openerAtNavigation).toBeNull();
+    expect(screen.queryByRole('alert')).toBeNull();
   });
 });

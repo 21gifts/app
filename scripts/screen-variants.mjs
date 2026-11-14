@@ -2420,6 +2420,27 @@ export const SCREEN_VARIANTS = [
     needle: "shotScreen(page, 'state-settings-push-enable-error')",
   },
   {
+    route: '/settings',
+    id: 'dfx-login',
+    image: 'settings-dfx-login.png',
+    visual: 'state-settings-dfx-login',
+    needle: "shotScreen(page, 'state-settings-dfx-login')",
+  },
+  {
+    route: '/settings',
+    id: 'dfx-login-busy',
+    image: 'settings-dfx-login-busy.png',
+    visual: 'state-settings-dfx-login-busy',
+    needle: "shotScreen(page, 'state-settings-dfx-login-busy')",
+  },
+  {
+    route: '/settings',
+    id: 'dfx-login-error',
+    image: 'settings-dfx-login-error.png',
+    visual: 'state-settings-dfx-login-error',
+    needle: "shotScreen(page, 'state-settings-dfx-login-error')",
+  },
+  {
     route: '/settings/held-shares',
     id: 'default',
     image: 'settings-held-shares.png',
