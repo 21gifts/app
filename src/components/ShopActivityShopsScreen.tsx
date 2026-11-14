@@ -31,7 +31,7 @@ function formatChargeDay(day: string, locale: string): string {
  * active day is marked inactive. Other signed-in visitors, and staff the api
  * answers with 403, see a short forbidden message and no table. Renders
  * nothing without a session. The page chrome owns the back; this screen
- * renders none.
+ * renders none. A loaded result is shown only for the session that loaded it.
  *
  * @returns The shop table card, forbidden copy, or `null` without a session.
  */
@@ -40,13 +40,15 @@ export function ShopActivityShopsScreen(): ReactElement | null {
   const session = useAuthStore((state) => state.session);
   const account = useAuthStore((state) => state.account);
   const staff = roleAtLeast(account?.role, 'moderator');
-  const [table, setTable] = useState<ShopActivityShops | null>(null);
-  const [tableError, setTableError] = useState<'forbidden' | 'error' | null>(null);
+  const [result, setResult] = useState<{
+    session: string;
+    table: ShopActivityShops | null;
+    error: 'forbidden' | 'error' | null;
+  } | null>(null);
   const [tableAttempt, setTableAttempt] = useState(0);
 
   useEffect(() => {
-    setTable(null);
-    setTableError(null);
+    setResult(null);
     if (session === null || !staff) {
       return;
     }
@@ -57,21 +59,27 @@ export function ShopActivityShopsScreen(): ReactElement | null {
         if (cancelled) {
           return;
         }
-        setTable(next);
+        setResult({ session, table: next, error: null });
       } catch (err) {
         if (cancelled) {
           return;
         }
-        setTable(null);
-        setTableError(
-          err instanceof Error && err.message === 'moderate.forbidden' ? 'forbidden' : 'error',
-        );
+        setResult({
+          session,
+          table: null,
+          error:
+            err instanceof Error && err.message === 'moderate.forbidden' ? 'forbidden' : 'error',
+        });
       }
     })();
     return () => {
       cancelled = true;
     };
   }, [session, staff, tableAttempt]);
+
+  const current = result !== null && result.session === session ? result : null;
+  const table = current?.table ?? null;
+  const tableError = current?.error ?? null;
 
   if (session === null) {
     return null;

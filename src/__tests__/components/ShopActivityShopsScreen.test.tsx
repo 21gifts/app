@@ -1,4 +1,5 @@
 import { act, cleanup, fireEvent, screen, within } from '@testing-library/react';
+import { Profiler } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ShopActivityShopsScreen } from '@/components/ShopActivityShopsScreen';
 import type { Account, ShopActivityShops } from '@/lib/api-types';
@@ -201,6 +202,34 @@ describe('ShopActivityShopsScreen', () => {
     expect(screen.queryByRole('table')).toBeNull();
     expect(screen.getByText('Loading…')).toBeTruthy();
     expect(listMock).toHaveBeenLastCalledWith('sess-2');
+  });
+
+  it('never renders a table loaded for another session', async () => {
+    listMock.mockResolvedValueOnce(TABLE);
+    const commits: boolean[] = [];
+    renderWithLocale(
+      <Profiler
+        id="shops"
+        onRender={() => {
+          commits.push(document.querySelector('table') !== null);
+        }}
+      >
+        <ShopActivityShopsScreen />
+      </Profiler>,
+    );
+    expect(await screen.findByRole('table')).toBeTruthy();
+    listMock.mockImplementation(() => new Promise(() => undefined));
+    const before = commits.length;
+    act(() => {
+      useAuthStore.setState({
+        session: 'sess-founder',
+        account: { ...account, id: 'acc_founder', role: 'founder' },
+      });
+    });
+    const after = commits.slice(before);
+    expect(after.length).toBeGreaterThan(0);
+    expect(after.every((hasTable) => !hasTable)).toBe(true);
+    expect(screen.getByText('Loading…')).toBeTruthy();
   });
 
   it('does not bring the table back after the staff role is lost and regained', async () => {
