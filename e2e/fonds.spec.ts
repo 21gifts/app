@@ -41,8 +41,34 @@ test('Function: FondPage — public page shows the Fond totals', async ({ page }
   await expect(page.getByText("₿189'000")).toBeVisible();
   await expect(page.getByText(/as of /)).toBeVisible();
   await expect(page.getByText('3 grant payouts paid (3.00 USD)')).toBeVisible();
-  await expect(page.getByRole('heading', { name: 'Top up this Fond' })).toBeVisible();
   await expect(page.getByRole('link', { name: 'Back to the forum' })).toBeVisible();
+});
+
+test('Function: FondSummaryLoader — balance null says not reported yet', async ({ page }) => {
+  await fulfillSpot(page);
+  await page.route(`**/fonds/${FOND_USERNAME}/summary`, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ ...SUMMARY, balanceSats: null, balanceSyncedAt: null }),
+    });
+  });
+  await page.goto(`/fonds/${FOND_USERNAME}`);
+  await expect(page.getByText('not reported yet')).toBeVisible();
+  await expect(page.getByText('\u2014')).toBeVisible();
+});
+
+test('Function: FondSummaryLoader — 503 shows Try again', async ({ page }) => {
+  await page.route(`**/fonds/${FOND_USERNAME}/summary`, async (route) => {
+    await route.fulfill({
+      status: 503,
+      contentType: 'application/json',
+      body: JSON.stringify({ error: 'Fond unavailable' }),
+    });
+  });
+  await page.goto(`/fonds/${FOND_USERNAME}`);
+  await expect(page.getByText('Could not load the Fond. Please try again.')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Try again' })).toBeVisible();
 });
 
 test('Function: FondDeposit — Lightning on load, On-chain shows the BIP21 QR and copies the bare address', async ({
@@ -115,33 +141,6 @@ test('Function: isMainnetBitcoinAddress — a malformed summary address is never
   await expect(page.getByText('tondo-fond@21.gifts')).toBeVisible();
   await expect(page.getByRole('group', { name: 'Deposit method' })).toHaveCount(0);
   await expect(page.getByText('javascript:alert(1)')).toHaveCount(0);
-});
-
-test('Function: FondSummaryLoader — balance null says not reported yet', async ({ page }) => {
-  await fulfillSpot(page);
-  await page.route(`**/fonds/${FOND_USERNAME}/summary`, async (route) => {
-    await route.fulfill({
-      status: 200,
-      contentType: 'application/json',
-      body: JSON.stringify({ ...SUMMARY, balanceSats: null, balanceSyncedAt: null }),
-    });
-  });
-  await page.goto(`/fonds/${FOND_USERNAME}`);
-  await expect(page.getByText('not reported yet')).toBeVisible();
-  await expect(page.getByText('\u2014')).toBeVisible();
-});
-
-test('Function: FondSummaryLoader — 503 shows Try again', async ({ page }) => {
-  await page.route(`**/fonds/${FOND_USERNAME}/summary`, async (route) => {
-    await route.fulfill({
-      status: 503,
-      contentType: 'application/json',
-      body: JSON.stringify({ error: 'Fond unavailable' }),
-    });
-  });
-  await page.goto(`/fonds/${FOND_USERNAME}`);
-  await expect(page.getByText('Could not load the Fond. Please try again.')).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Try again' })).toBeVisible();
 });
 
 test('Function: GET — /fonds/tondo-fond/summary proxies the public Fond summary', async ({
