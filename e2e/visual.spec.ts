@@ -41663,7 +41663,7 @@ test.describe('moderate screens', () => {
     await page.goto('/moderate/shops');
     await expect(page.getByRole('heading', { name: 'Activity per shop' })).toBeVisible();
     await expect(page.getByRole('link', { name: 'Corner Café' })).toBeVisible();
-    await expect(page.getByText('Inactive')).toHaveCount(2);
+    await expect(page.getByText('Inactive', { exact: true })).toHaveCount(2);
     await shotScreen(page, 'screen-moderate-shops');
   });
 

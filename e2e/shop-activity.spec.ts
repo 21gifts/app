@@ -93,8 +93,8 @@ test('Function: ShopActivityShopsScreen — a shop name links to the shop page',
     '/npub1corner',
   );
   await expect(page.getByRole('rowheader', { name: 'Bakery' })).toBeVisible();
-  await expect(page.getByText('Inactive')).toHaveCount(1);
-  await expect(page.getByText('Never')).toBeVisible();
+  await expect(page.getByText('Inactive', { exact: true })).toHaveCount(1);
+  await expect(page.getByText('Never', { exact: true })).toBeVisible();
 });
 
 test('Function: fetchShopActivityShops — an api 403 shows the forbidden copy', async ({ page }) => {
