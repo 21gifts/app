@@ -943,6 +943,52 @@ const WALLET_STATS_DEFAULT = {
   ],
 };
 
+/** Wallet series for `/stats/wallet`. The day before release is dropped by the chart. */
+const WALLET_USAGE_SERIES = {
+  walletCount: 80,
+  fundedWalletCount: 48,
+  totalSats: 500000,
+  totalBtc: '0.00500000',
+  asOf: '2026-11-12T08:00:00.000Z',
+  balanceOverTime: [
+    {
+      day: '2026-11-08',
+      totalSats: 1000,
+      totalBtc: '0.00001000',
+      walletCount: 10,
+      fundedWalletCount: 4,
+    },
+    {
+      day: '2026-11-09',
+      totalSats: 200000,
+      totalBtc: '0.00200000',
+      walletCount: 40,
+      fundedWalletCount: 20,
+    },
+    {
+      day: '2026-11-10',
+      totalSats: 300000,
+      totalBtc: '0.00300000',
+      walletCount: 55,
+      fundedWalletCount: 30,
+    },
+    {
+      day: '2026-11-11',
+      totalSats: 400000,
+      totalBtc: '0.00400000',
+      walletCount: 70,
+      fundedWalletCount: 40,
+    },
+    {
+      day: '2026-11-12',
+      totalSats: 500000,
+      totalBtc: '0.00500000',
+      walletCount: 80,
+      fundedWalletCount: 48,
+    },
+  ],
+};
+
 /**
  * Serves the self-reported wallet series so `/stats` wallet baselines include it.
  *
@@ -27708,6 +27754,7 @@ test.describe('profile activity chart variants', () => {
     await page.getByRole('button', { name: 'Write your About me' }).click();
     await page.getByRole('button', { name: 'Save About me' }).click();
     await expect(page.getByText('Could not save. Please try again.')).toBeVisible();
+    await topAtRest(page.getByRole('textbox', { name: 'About me' }));
     await shotScreen(page, 'state-members-about-save-error');
   });
 
@@ -28387,6 +28434,7 @@ test.describe('profile funding states', () => {
     await expect(
       page.getByText('Your application is open. A moderator will review your posts.'),
     ).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Withdraw my application' })).toBeVisible();
     await shotScreen(page, 'state-profile-funding-pending');
   });
 
@@ -28404,6 +28452,7 @@ test.describe('profile funding states', () => {
     await expect(
       page.getByText('You are on a one-day trial. Review repeats tomorrow.'),
     ).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Leave the grant' })).toBeVisible();
     await shotScreen(page, 'state-profile-funding-trial');
   });
 
@@ -28420,6 +28469,7 @@ test.describe('profile funding states', () => {
     await page.goto('/grants');
     await expect(page.getByText('You are admitted to daily 21.gifts grant payouts.')).toBeVisible();
     await expect(page.getByText(/Takes part in the 21.gifts funding program since/)).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Leave the grant' })).toBeVisible();
     await shotScreen(page, 'state-profile-funding-admitted');
   });
 
@@ -28442,6 +28492,119 @@ test.describe('profile funding states', () => {
     await expect(revealed).toBeVisible();
     await revealed.scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-profile-funding-program-open', false);
+  });
+
+  /**
+   * Opens the withdraw question of a grant card in `status`, with the same today's payout
+   * line as that idle funding state, and answers POST /funding/withdraw with `answer`.
+   */
+  async function openWithdraw(
+    page: Page,
+    status: 'pending' | 'trial' | 'admitted',
+    answer: 'never' | 'unavailable' = 'never',
+  ): Promise<void> {
+    await seedFundingProfile(page, {
+      funding: {
+        status,
+        trialUtcDate: status === 'trial' ? '2026-09-20' : null,
+        admittedAt: status === 'admitted' ? Date.parse('2026-08-28T12:00:00.000Z') : null,
+        reviewedByName: status === 'admitted' ? 'Ada' : null,
+        payoutToday:
+          status === 'pending'
+            ? { state: 'blocked', reason: 'admission' }
+            : status === 'trial'
+              ? { state: 'due', reason: 'payments_paused' }
+              : { state: 'blocked', reason: 'wallet' },
+      },
+    });
+    await page.route(/\/funding\/withdraw$/, async (route) => {
+      if (answer === 'never') {
+        return;
+      }
+      await route.fulfill({
+        status: 503,
+        contentType: 'application/json',
+        body: JSON.stringify({ error: 'Funding is unavailable' }),
+      });
+    });
+    await page.goto('/grants');
+    const action = status === 'pending' ? 'Withdraw my application' : 'Leave the grant';
+    await page.getByRole('button', { name: action }).click();
+  }
+
+  test('state /grants withdraw-confirm', async ({ page }) => {
+    await openWithdraw(page, 'admitted');
+    const question = page.getByRole('group', { name: 'Leave the grant?' });
+    await expect(
+      question.getByText(
+        'Your daily payout stops today. Your place becomes free for someone else. You can apply again later, but a place is not guaranteed.',
+      ),
+    ).toBeVisible();
+    await question.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-grants-withdraw-confirm');
+  });
+
+  test('state /grants withdraw-confirm-trial', async ({ page }) => {
+    await openWithdraw(page, 'trial');
+    await expect(
+      page.getByText('You are on a one-day trial. Review repeats tomorrow.'),
+    ).toBeVisible();
+    await expect(page.getByRole('group', { name: 'Leave the grant?' })).toBeVisible();
+    await shotScreen(page, 'state-grants-withdraw-confirm-trial');
+  });
+
+  test('state /grants withdraw-confirm-pending', async ({ page }) => {
+    await openWithdraw(page, 'pending');
+    await expect(
+      page
+        .getByRole('group', { name: 'Withdraw your application?' })
+        .getByText('A moderator will no longer review it. You can apply again later.'),
+    ).toBeVisible();
+    await shotScreen(page, 'state-grants-withdraw-confirm-pending');
+  });
+
+  test('state /grants withdraw-busy', async ({ page }) => {
+    await openWithdraw(page, 'admitted', 'never');
+    const question = page.getByRole('group', { name: 'Leave the grant?' });
+    const confirm = question.getByRole('button', { name: 'Leave the grant' });
+    await confirm.click();
+    await expect(confirm).toBeDisabled();
+    await expect(question.getByRole('button', { name: 'Cancel' })).toBeDisabled();
+    await question.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-grants-withdraw-busy');
+  });
+
+  test('state /grants withdraw-error', async ({ page }) => {
+    await openWithdraw(page, 'admitted', 'unavailable');
+    const question = page.getByRole('group', { name: 'Leave the grant?' });
+    await question.getByRole('button', { name: 'Leave the grant' }).click();
+    await expect(question.getByRole('alert')).toHaveText(
+      'Could not leave the grant. Please try again.',
+    );
+    await expect(question.getByRole('button', { name: 'Leave the grant' })).toBeEnabled();
+    await question.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-grants-withdraw-error');
+  });
+
+  test('state /grants withdraw-busy-pending', async ({ page }) => {
+    await openWithdraw(page, 'pending', 'never');
+    const question = page.getByRole('group', { name: 'Withdraw your application?' });
+    const confirm = question.getByRole('button', { name: 'Withdraw my application' });
+    await confirm.click();
+    await expect(confirm).toBeDisabled();
+    await expect(question.getByRole('button', { name: 'Cancel' })).toBeDisabled();
+    await shotScreen(page, 'state-grants-withdraw-busy-pending');
+  });
+
+  test('state /grants withdraw-error-pending', async ({ page }) => {
+    await openWithdraw(page, 'pending', 'unavailable');
+    const question = page.getByRole('group', { name: 'Withdraw your application?' });
+    await question.getByRole('button', { name: 'Withdraw my application' }).click();
+    await expect(question.getByRole('alert')).toHaveText(
+      'Could not withdraw your application. Please try again.',
+    );
+    await expect(question.getByRole('button', { name: 'Withdraw my application' })).toBeEnabled();
+    await shotScreen(page, 'state-grants-withdraw-error-pending');
   });
 
   test('state /grants open-applications', async ({ page }) => {
@@ -41404,6 +41567,10 @@ test.describe('moderate screens', () => {
       'href',
       '/moderate/payouts',
     );
+    await expect(page.getByRole('link', { name: 'Show activity per shop' })).toHaveAttribute(
+      'href',
+      '/moderate/shops',
+    );
     await expect(page.getByText('12%')).toHaveCount(0);
     await shotScreen(page, 'screen-moderate');
   });
@@ -41550,6 +41717,94 @@ test.describe('moderate screens', () => {
       page.getByText('Could not load the payout table. Please try again.'),
     ).toBeVisible();
     await shotScreen(page, 'state-moderate-payouts-error');
+  });
+
+  test('moderate shops', async ({ page }) => {
+    await seedAda(page, 'founder');
+    await page.route('**/shops/activity/shops', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          windowDays: 30,
+          today: '2026-09-26',
+          shops: [
+            {
+              noteId: 'note_bakery',
+              name: 'Bakery',
+              npub: null,
+              accountId: 'acc_bake',
+              username: null,
+              activeDays: 0,
+              lastChargeDay: null,
+            },
+            {
+              noteId: 'note_kiosk',
+              name: 'Kiosk',
+              npub: 'npub1kiosk',
+              accountId: 'acc_kiosk',
+              username: 'kiosktill',
+              activeDays: 0,
+              lastChargeDay: '2026-07-14',
+            },
+            {
+              noteId: 'note_cafe',
+              name: 'Corner Café',
+              npub: 'npub1corner',
+              accountId: 'acc_till',
+              username: 'cornertill',
+              activeDays: 12,
+              lastChargeDay: '2026-09-25',
+            },
+          ],
+        }),
+      });
+    });
+    await page.goto('/moderate/shops');
+    await expect(page.getByRole('heading', { name: 'Activity per shop' })).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Corner Café' })).toBeVisible();
+    await expect(page.getByText('Inactive', { exact: true })).toHaveCount(2);
+    await shotScreen(page, 'screen-moderate-shops');
+  });
+
+  test('moderate shops empty', async ({ page }) => {
+    await seedAda(page, 'founder');
+    await page.route('**/shops/activity/shops', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ windowDays: 30, today: '2026-09-26', shops: [] }),
+      });
+    });
+    await page.goto('/moderate/shops');
+    await expect(page.getByText('No shops yet.')).toBeVisible();
+    await shotScreen(page, 'state-moderate-shops-empty');
+  });
+
+  test('moderate shops forbidden', async ({ page }) => {
+    await seedAda(page, 'basis');
+    await page.goto('/moderate/shops');
+    await expect(page.getByText('This page is for moderators.')).toBeVisible();
+    await shotScreen(page, 'state-moderate-shops-forbidden');
+  });
+
+  test('moderate shops loading', async ({ page }) => {
+    await seedAda(page, 'founder');
+    await page.route('**/shops/activity/shops', () => new Promise(() => undefined));
+    await page.goto('/moderate/shops');
+    await expect(page.getByRole('heading', { name: 'Activity per shop' })).toBeVisible();
+    await expect(page.locator('p.text-center', { hasText: 'Loading…' })).toBeVisible();
+    await shotScreen(page, 'state-moderate-shops-loading');
+  });
+
+  test('moderate shops error', async ({ page }) => {
+    await seedAda(page, 'founder');
+    await page.route('**/shops/activity/shops', async (route) => {
+      await route.fulfill({ status: 503, contentType: 'application/json', body: '{}' });
+    });
+    await page.goto('/moderate/shops');
+    await expect(page.getByText('Could not load shop activity. Please try again.')).toBeVisible();
+    await shotScreen(page, 'state-moderate-shops-error');
   });
 });
 
@@ -43265,6 +43520,105 @@ test.describe('stats variant baselines', () => {
     await page.goto('/stats');
     await expect(page.getByRole('button', { name: 'Try again' })).toBeVisible();
     await shotScreen(page, 'state-stats-error');
+  });
+
+  test('stats wallet', async ({ page }) => {
+    await stubWalletStats(page, WALLET_USAGE_SERIES);
+    await fulfillSpot(page);
+    await page.goto('/stats/wallet');
+    await expect(page.getByRole('heading', { name: 'Payments per day by purpose' })).toBeVisible();
+    await expect(page.getByText("$1'875.09", { exact: true })).toBeVisible();
+    await shotScreen(page, 'screen-stats-wallet');
+  });
+
+  test('stats wallet day', async ({ page }) => {
+    await stubWalletStats(page, WALLET_USAGE_SERIES);
+    await fulfillSpot(page);
+    await page.goto('/stats/wallet');
+    await expect(page.getByText("$1'875.09", { exact: true })).toBeVisible();
+    await page.getByRole('combobox', { name: 'Day' }).click();
+    await page.getByRole('option', { name: '2026-11-10', exact: true }).click();
+    await expect(
+      page
+        .getByRole('img', { name: 'Tondo fund' })
+        .locator('[data-flow="Balance at start of day"]'),
+    ).toBeVisible();
+    await shotScreen(page, 'state-stats-wallet-day');
+  });
+
+  test('stats wallet day open', async ({ page }) => {
+    await stubWalletStats(page, WALLET_USAGE_SERIES);
+    await fulfillSpot(page);
+    await page.goto('/stats/wallet');
+    await expect(page.getByText("$1'875.09", { exact: true })).toBeVisible();
+    const day = page.getByRole('combobox', { name: 'Day' });
+    // The pill sits low on a long page. Centering it keeps the open list
+    // below the pill instead of pinning it to the window.
+    await day.evaluate((node) => {
+      node.scrollIntoView({ block: 'center', inline: 'nearest' });
+    });
+    await day.click();
+    await expect(page.getByRole('option', { name: '2026-11-10', exact: true })).toBeVisible();
+    await expect(page.getByRole('option', { name: 'All days', exact: true })).toBeVisible();
+    await shotScreen(page, 'state-stats-wallet-day-open');
+  });
+
+  test('stats wallet count', async ({ page }) => {
+    await stubWalletStats(page, WALLET_USAGE_SERIES);
+    await fulfillSpot(page);
+    await page.goto('/stats/wallet');
+    await expect(page.getByText("$1'875.09", { exact: true })).toBeVisible();
+    await page
+      .getByRole('group', { name: 'Flow metric' })
+      .getByRole('button', { name: 'Count' })
+      .click();
+    await expect(page.locator('[data-flow="Balance at end of day"]')).toHaveCount(0);
+    await shotScreen(page, 'state-stats-wallet-count');
+  });
+
+  test('stats wallet error', async ({ page }) => {
+    await page.route('**/wallets/usage', async (route) => {
+      await route.fulfill({ status: 503, contentType: 'application/json', body: '{}' });
+    });
+    await page.goto('/stats/wallet');
+    await expect(page.getByText('Could not load wallet usage. Please try again.')).toBeVisible();
+    await shotScreen(page, 'state-stats-wallet-error');
+  });
+
+  test('stats wallet loading', async ({ page }) => {
+    await page.route('**/wallets/usage', () => new Promise(() => undefined));
+    await page.goto('/stats/wallet');
+    await expect(page.getByText('Loading…')).toBeVisible();
+    await shotScreen(page, 'state-stats-wallet-loading');
+  });
+
+  test('stats wallet method', async ({ page }) => {
+    await stubWalletStats(page, WALLET_USAGE_SERIES);
+    await fulfillSpot(page);
+    await page.goto('/stats/wallet');
+    await expect(page.getByText("$1'875.09", { exact: true })).toBeVisible();
+    await page.getByText('How these numbers are made').click();
+    await expect(page.locator('details')).toHaveJSProperty('open', true);
+    await shotScreen(page, 'state-stats-wallet-method');
+  });
+
+  test('stats wallet no-rate', async ({ page }) => {
+    await stubWalletStats(page, WALLET_USAGE_SERIES);
+    await fulfillSpot(page, {});
+    const spot = page.waitForResponse('**/fx/spot');
+    await page.goto('/stats/wallet');
+    await spot;
+    await expect(page.getByText("₿1'875'089", { exact: true })).toBeVisible();
+    await expect(page.getByText("$1'875.09", { exact: true })).toHaveCount(0);
+    await shotScreen(page, 'state-stats-wallet-no-rate');
+  });
+
+  test('stats wallet no-wallets', async ({ page }) => {
+    await fulfillSpot(page);
+    await page.goto('/stats/wallet');
+    await expect(page.getByText("$1'875.09", { exact: true })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Wallets per day' })).toHaveCount(0);
+    await shotScreen(page, 'state-stats-wallet-no-wallets');
   });
 
   test('stats day empty', async ({ page }) => {

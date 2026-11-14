@@ -69,3 +69,15 @@ export function refreshOwnerAccount(sessionToken: string): void {
     () => undefined,
   );
 }
+
+/**
+ * Drops every owner refresh still in flight, after the caller stored a newer
+ * owner payout itself (a funding answer or a whole account from `GET /me`).
+ * Without it, a `GET /me` started earlier, for example when `/grants` opened,
+ * could still copy its older `payoutToday` and `shopPaymentDue` onto that
+ * newer funding. A refresh started after this call applies as usual.
+ */
+export function discardOwnerRefreshes(): void {
+  latestRefresh += 1;
+  lastAppliedRefresh = latestRefresh;
+}

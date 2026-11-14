@@ -353,8 +353,8 @@ Fetch failed. Button **Try again**.
 ## Screen: /stats
 
 - **URL:** `/stats` — public donation totals, a posts total, and self-reported wallet totals (no auth gate).
-- **What the user sees:** Dark 21.gifts header with one top-left arrow (previous in-app view, or `/welcome` when this tab has none) beside the wordmark (wordmark the localized public home when unsigned, `/welcome` when a session is hydrated; the wordmark is not that arrow) and a language switcher, heading **Donations**. When post stats load, a **Posts** total sits above the donation cards: living notes and replies counted together, hidden notes excluded, with a bar on each UTC day that has posts and a gap where a day has none. When wallet stats load, a **Wallets** section sits directly after **Posts** and before the gift tiles: tiles **In wallets** (BIP-177 **₿** of `totalSats` over the preferred-fiat spot in the same two-line layout as **Total spent**) and **Wallets with balance** (`fundedWalletCount`), the caption that this is the total of all 21.gifts wallets at the end of each UTC day as reported by the wallets themselves and that the fiat figures use today's spot rather than the day's price, and a line/area chart of `balanceOverTime[].totalSats` with ₿ ticks. Each chart point's `<title>` is the day, ₿, and the same spot fiat; bitcoin stands alone only while no spot is available. The wallet chart uses the gift chart's drawing, axes, and accent paint but has no `/stats/{day}` links (those are gift days). A single day is a horizontal line; an empty series omits the Wallets section, like a failed fetch. A failed post or wallet fetch omits only its own block and still shows the gift diagrams. Four KPI cards (total spent as BIP-177 **₿** plus the selected fiat, donations, people, period), a FiatPicker (CHF | EUR | USD | PHP) above the cards **only when unsigned**, then diagrams: **Total spend over time** (one cumulative chart; days with spend are markers on the series, not a wrapping date list) and **By month**. Each diagram has a `SegmentedControl tone="gift" shell="dark"` ₿ | selected fiat control that defaults to ₿; over time switches the series, and month bars rescale with the selected unit while each label shows only that unit. A missing fiat amount on a month label is an em dash when fiat is selected. Signed-in visitors still display and scale with the preferred code and cannot change it here. Empty database copy: **No donations recorded yet.** Stats body copy stays English.
-- **Actions:** Change language. Read the posts total, the wallet totals and chart, and the donation charts. Open a spend day (`/stats/{YYYY-MM-DD}`) from **Total spend over time** by clicking a day with spend. The wallet chart has no day links. When unsigned, pick CHF | EUR | USD | PHP on FiatPicker (writes cookie `fiat`). Switch **Total spend over time** and **By month** between ₿ and the selected fiat. **By month** labels show only the selected unit. Header **Stats** stays on this page; **Log in** goes to `/login`.
+- **What the user sees:** Dark 21.gifts header with one top-left arrow (previous in-app view, or `/welcome` when this tab has none) beside the wordmark (wordmark the localized public home when unsigned, `/welcome` when a session is hydrated; the wordmark is not that arrow) and a language switcher, heading **Donations**. When post stats load, a **Posts** total sits above the donation cards: living notes and replies counted together, hidden notes excluded, with a bar on each UTC day that has posts and a gap where a day has none. When wallet stats load, a **Wallets** section sits directly after **Posts** and before the gift tiles: tiles **In wallets** (BIP-177 **₿** of `totalSats` over the preferred-fiat spot in the same two-line layout as **Total spent**) and **Wallets with balance** (`fundedWalletCount`), the caption that this is the total of all 21.gifts wallets at the end of each UTC day as reported by the wallets themselves and that the fiat figures use today's spot rather than the day's price, and a line/area chart of `balanceOverTime[].totalSats` with ₿ ticks. Each chart point's `<title>` is the day, ₿, and the same spot fiat; bitcoin stands alone only while no spot is available. The wallet chart uses the gift chart's drawing, axes, and accent paint but has no `/stats/{day}` links (those are gift days). A single day is a horizontal line; an empty series omits the Wallets section, like a failed fetch. When the Wallets section is shown, **See how the wallet is used** links to `/stats/wallet`. A failed post or wallet fetch omits only its own block and still shows the gift diagrams. Four KPI cards (total spent as BIP-177 **₿** plus the selected fiat, donations, people, period), a FiatPicker (CHF | EUR | USD | PHP) above the cards **only when unsigned**, then diagrams: **Total spend over time** (one cumulative chart; days with spend are markers on the series, not a wrapping date list) and **By month**. Each diagram has a `SegmentedControl tone="gift" shell="dark"` ₿ | selected fiat control that defaults to ₿; over time switches the series, and month bars rescale with the selected unit while each label shows only that unit. A missing fiat amount on a month label is an em dash when fiat is selected. Signed-in visitors still display and scale with the preferred code and cannot change it here. Empty database copy: **No donations recorded yet.** Stats body copy stays English.
+- **Actions:** Change language. Read the posts total, the wallet totals and chart, and the donation charts. Open a spend day (`/stats/{YYYY-MM-DD}`) from **Total spend over time** by clicking a day with spend. The wallet chart has no day links. Open **See how the wallet is used** (`/stats/wallet`) when the Wallets section is shown. When unsigned, pick CHF | EUR | USD | PHP on FiatPicker (writes cookie `fiat`). Switch **Total spend over time** and **By month** between ₿ and the selected fiat. **By month** labels show only the selected unit. Header **Stats** stays on this page; **Log in** goes to `/login`.
 - **Calls:** `StatsPage`, `StatsLoader`, `StatsDashboard`, `FiatPicker`, `useSpotRate` (same-origin `GET /fx/spot` for the wallet fiat), `fetchGiftStats` (same-origin `GET /gifts/stats`), `fetchPostStats` (same-origin `GET /messages/stats`), `fetchWalletStats` (same-origin `GET /wallets/stats`), `LanguageSwitcher`.
 
 ### Variant: default
@@ -373,13 +373,13 @@ Inverted ranking fixture (June tall in ₿ / short in USD, July the reverse). **
 
 ### Variant: wallets
 
-Loaded gift and post stats plus the self-reported wallet series. **Wallets** shows **In wallets** ₿89'096 over **$89.10**, the current spot in the visitor's currency rather than a day's price, **Wallets with balance** 32, the UTC-day caption, and the ₿ line/area chart with no gift-day links. Each point tooltip is the day, ₿, and the same spot fiat.
+Loaded gift and post stats plus the self-reported wallet series. **Wallets** shows **In wallets** ₿89'096 over **$89.10**, the current spot in the visitor's currency rather than a day's price, **Wallets with balance** 32, the UTC-day caption, the link **See how the wallet is used** to `/stats/wallet`, and the ₿ line/area chart with no gift-day links. Each point tooltip is the day, ₿, and the same spot fiat.
 
 ![21.gifts wallet stats](images/stats-wallets.png)
 
 ### Variant: wallets-no-rate
 
-Loaded gift and post stats plus the self-reported wallet series. **Wallets** shows **In wallets** ₿89'096 with no fiat line because no spot rate is available, **Wallets with balance** 32, the UTC-day caption, and the ₿ line/area chart with no gift-day links. Each point tooltip is the day and ₿ only.
+Loaded gift and post stats plus the self-reported wallet series. **Wallets** shows **In wallets** ₿89'096 with no fiat line because no spot rate is available, **Wallets with balance** 32, the UTC-day caption, the link **See how the wallet is used** to `/stats/wallet`, and the ₿ line/area chart with no gift-day links. Each point tooltip is the day and ₿ only.
 
 ![21.gifts wallet stats without spot](images/stats-wallets-no-rate.png)
 
@@ -400,6 +400,67 @@ Waiting on `GET /gifts/stats`. Copy **Loading…**
 Fetch failed. Copy **Could not load donation stats. Please try again.** and **Try again**.
 
 ![21.gifts stats error](images/stats-error.png)
+
+## Screen: /stats/wallet
+
+- **URL:** `/stats/wallet` — public aggregates of how the in-app wallet is used since the production release (no auth gate, no person, account, or payment).
+- **What the user sees:** Same dark marketing frame as `/stats`: one top-left arrow, wordmark, language switcher, heading **Wallet usage**. Under it, the release instant and the as-of time (or a line that figures have no as-of time), then one takeaway: payments since release, active wallets, and how many times as often the forum is paid per day as in the 28 days before. Six tiles: **Payments**, **Volume** (₿ over the preferred fiat, or ₿ alone when no spot is available), **Wallets** (wallets with a balance from `GET /wallets/stats`, plus sending wallets; the balance count is omitted when that fetch fails), **Forum payments per day** (after · before), **Paid till charges**, and **Tondo fund balance** (end of the last day, computed from fund flows starting at 0 on the release day). Then, in order: **Payments per day by purpose** (stacked bars of payment counts, one colour per purpose whose count is above 0 on any day, including a purpose paid 0 sats; legend; tooltip per day with the count and the sats plus spot fiat), **Forum payments before and after the release** (gifts and hearts, release line), **Shop till: charges created and paid** (created muted, paid on top, release line), **Payment sizes** (one bar per bucket, count labels, sats in the tooltip), **Time of day (Manila, UTC+8)** (24 bars), and **Wallets per day** only when wallet stats loaded and the series from the release day is non-empty (line = wallets with a balance, bars = active wallets that day). **Where the money comes from and where it goes** has a **Day** `FilterMenu` (**All days**, then each UTC day, newest last; the control sits on a rounded `bg-paper` plate with padding, inside `scheme-light` with the light app tokens pinned by the homepage shops filters) and an Amount/Count switch shared by two diagrams, **Tondo fund** and **Member wallets (all together)**. Each diagram stays the three-column SVG while its container is at least 520 px wide. Below that it is a **Where from** list, the account with the shared-scale total, and a **Where to** list: the same nodes and order, body text at `text-sm` or larger, and a horizontal bar on the shared scale in the purpose colour (balance rows muted and last; a balance of exactly 0 adds no row). Then **All flows** over every day (from, to, purpose, payments, sats, fee), sorted by sats descending: a table from the `sm` breakpoint up, and below `sm` one stacked entry per flow (**From → To** and the purpose, then payments, sats with fiat when a spot exists, and fee) that does not break words. A closed **How these numbers are made** explains that a payment is counted once, diagram balances start at 0 on the release day, the headline balance on `/stats` can lag, the Tondo fund pays daily, moderator and welcome gifts, days are UTC, and the time-of-day chart is Manila time. Stats body copy stays English. There is no FiatPicker.
+- **Actions:** Change language. Read the tiles, charts, diagrams, and table. Open the **Day** list. Choose **All days** or one UTC day. Switch **Amount** / **Count**. Open **How these numbers are made**. Hover or focus a flow ribbon, or a row of the narrow diagram, to read its status line. Header **Stats** stays on `/stats`; this page is not a second back control. **Log in** goes to `/login`.
+- **Calls:** `WalletUsagePage`, `WalletUsageLoader`, `WalletUsageDashboard`, `FilterMenu`, `WalletFlowDiagram`, `accountBalances`, `OverTimeChart`, `formatCount`, `fetchWalletUsage` (same-origin `GET /wallets/usage`), `fetchWalletStats` (same-origin `GET /wallets/stats`), `useSpotRate` (same-origin `GET /fx/spot`), `LanguageSwitcher`.
+
+### Variant: default
+
+All days, Amount. Tiles include 661 payments, volume ₿1'875'089 over $1'875.09, 48 wallets with a balance and 33 sending, forum pace 110 after · 3 before, 84 paid till charges, and Tondo fund balance ₿425'057 over $425.06. **Payments per day by purpose** is the stacked chart. Both flow diagrams and **All flows** are visible. **How these numbers are made** stays closed.
+
+![21.gifts wallet usage](images/stats-wallet.png)
+
+### Variant: day
+
+Day 2026-11-10, still Amount. The **Tondo fund** diagram shows **Balance at start of day**. **All flows** still covers every day.
+
+![21.gifts wallet usage one day](images/stats-wallet-day.png)
+
+### Variant: day-open
+
+The **Day** list is open. The option **2026-11-10** is visible. **All days**, **2026-11-09**, **2026-11-11**, and **2026-11-12** are listed. **Amount** stays selected. The menu sits on a paper plate.
+
+![21.gifts wallet usage day list open](images/stats-wallet-day-open.png)
+
+### Variant: count
+
+All days, Count. Flow ribbons use payment counts. **Balance at start of day**, **Balance at end of day**, and **Fees** are absent.
+
+![21.gifts wallet usage by count](images/stats-wallet-count.png)
+
+### Variant: error
+
+`GET /wallets/usage` failed. One line: **Could not load wallet usage. Please try again.** No **Try again** button. No charts.
+
+![21.gifts wallet usage error](images/stats-wallet-error.png)
+
+### Variant: loading
+
+Waiting on `GET /wallets/usage`. Copy **Loading…**
+
+![21.gifts wallet usage loading](images/stats-wallet-loading.png)
+
+### Variant: method
+
+All days, Amount, with **How these numbers are made** open. The note says wallet payments are counted once, flow balances start at 0 on the release day, the `/stats` headline balance can lag, the Tondo fund pays daily, moderator and welcome gifts, days are UTC, and the time-of-day chart is Manila time.
+
+![21.gifts wallet usage method](images/stats-wallet-method.png)
+
+### Variant: no-rate
+
+All days, Amount, with wallet stats loaded and no spot. Volume and the Tondo fund balance show ₿ only. $1'875.09 is absent. **Wallets per day** is visible.
+
+![21.gifts wallet usage without spot](images/stats-wallet-no-rate.png)
+
+### Variant: no-wallets
+
+All days, Amount. `GET /wallets/stats` failed, so **Wallets per day** is absent. Sending wallets still show 33 sending. The other charts stay.
+
+![21.gifts wallet usage without wallet stats](images/stats-wallet-no-wallets.png)
 
 ## Screen: /trust-chain
 
@@ -8769,9 +8830,9 @@ The location editor is open. When POST /me/location answers 500, the form shows 
 
 ## Screen: /grants
 
-- **Purpose:** Signed-in grants page. `GrantsScreen` shows `FundingStatusCard`, a visible **Today's payout** panel with exactly one sentence from `funding.payoutToday` whenever `funding` is an object (an explicit null stays unavailable), or from `grantPayoutToday` only when `funding` is null or absent, then the public **Grant places** panel (`GrantPlacesPanel`: free places, admissions, that applications stay open, and the 20-shop goal that opens the next round). Missing/null or unknown payout data shows **Today's payout status is not available.** The only title is the page `h1` **21 gifts grant**. A signed-in account also sees a secondary large **Goals** link to `/grants/goals`, under the grant card and above the staff queue. A missing account shows no link. A viewer at least initiator (`canEditDailyPayoutRoster`), meaning initiator and founder, also sees three secondary large links, **Daily payment text** to `/grants/payments/comment`, **Daily payment amounts** to `/grants/payments/amounts`, and **Moderator payments** to `/grants/payments/moderators`. Those links do not load the roster. A moderator, a fond, or a software developer does not see them. An account at least moderator (`roleAtLeast(role, 'moderator')`), including a fond, a software developer, an initiator, and a founder, with at least one open application sees a secondary large **Open application (1)** link when the count is one and **Open applications (N)** otherwise (`funding.applications.openCount`) to `/grants/applications`. When none are open, the sentence **No open applications.** is plain text, not a link. While the count is loading, the sentence is **Loading…**. When the load fails, the error sentence and **Try again** are shown, not the applications link. The profile no longer shows this card.
+- **Purpose:** Signed-in grants page. `GrantsScreen` shows `FundingStatusCard`, a visible **Today's payout** panel with exactly one sentence from `funding.payoutToday` whenever `funding` is an object (an explicit null stays unavailable), or from `grantPayoutToday` only when `funding` is null or absent, then the public **Grant places** panel (`GrantPlacesPanel`: free places, admissions, that applications stay open, and the 20-shop goal that opens the next round). Missing/null or unknown payout data shows **Today's payout status is not available.** The only title is the page `h1` **21 gifts grant**. A signed-in account also sees a secondary large **Goals** link to `/grants/goals`, under the grant card and above the staff queue. A missing account shows no link. A viewer at least initiator (`canEditDailyPayoutRoster`), meaning initiator and founder, also sees three secondary large links, **Daily payment text** to `/grants/payments/comment`, **Daily payment amounts** to `/grants/payments/amounts`, and **Moderator payments** to `/grants/payments/moderators`. Those links do not load the roster. A moderator, a fond, or a software developer does not see them. An account at least moderator (`roleAtLeast(role, 'moderator')`), including a fond, a software developer, an initiator, and a founder, with at least one open application sees a secondary large **Open application (1)** link when the count is one and **Open applications (N)** otherwise (`funding.applications.openCount`) to `/grants/applications`. When none are open, the sentence **No open applications.** is plain text, not a link. While the count is loading, the sentence is **Loading…**. When the load fails, the error sentence and **Try again** are shown, not the applications link. The profile no longer shows this card. Under the pending, trial, or admitted status text, a small underlined text button (`FundingWithdrawControl`) offers the way out of the grant: **Withdraw my application** for pending, **Leave the grant** for trial and admitted. None and rejected do not show it. Pressing it opens a bordered question (`InlineConfirm`) in its place; nothing is sent before its confirm action. After `POST /funding/withdraw` answers, the card shows the status-none state with **Apply for the 21 gifts grant**, the **Grant places** panel loads again, so a freed place shows without a page load, and **Today's payout** takes its new line from `GET /me` (`refreshOwnerAccount`), because the withdraw answer carries no `payoutToday`.
 - **Inputs:** Session account via `OnboardingGate screen="profile"` / `useAuthStore`.
-- **Actions:** Read verification, grant status, and exactly one reason for today's payout. The payout sentence reuses the existing destination that fixes the step: Trust Chain, apply, wallet, Social Recovery, shops, or the forum composer; a pending application is information only. A basis account reads that it is not verified yet and does not open Apply. A verified account with status pending, trial, or admitted reads that copy. A verified account with status none or rejected reads the daily-gift sentence, opens About, or opens Apply. Every visitor reads the free grant places of the current round. Signed-in accounts open **Goals** (`/grants/goals`). A viewer at least initiator (initiator and founder) opens **Daily payment text**, **Daily payment amounts**, or **Moderator payments**. An account at least moderator, including a fond, a software developer, an initiator, and a founder, opens **Open application (1)** or **Open applications (N)** only when N is at least 1. **Try again** repeats the load after an error.
+- **Actions:** Read verification, grant status, and exactly one reason for today's payout. The payout sentence reuses the existing destination that fixes the step: Trust Chain, apply, wallet, Social Recovery, shops, or the forum composer; a pending application is information only. A basis account reads that it is not verified yet and does not open Apply. A verified account with status pending, trial, or admitted reads that copy, then opens **Withdraw my application** (pending) or **Leave the grant** (trial, admitted), reads the question and what it changes, and confirms with the same label or closes it with **Cancel**. While the request runs, both actions are disabled and the confirm action spins; a second tap sends nothing. A 409 loads the account again and shows its state without an error; a 401 signs out to the login card; any other failure shows the error inside the open question. A verified account with status none or rejected reads the daily-gift sentence, opens About, or opens Apply. Every visitor reads the free grant places of the current round. Signed-in accounts open **Goals** (`/grants/goals`). A viewer at least initiator (initiator and founder) opens **Daily payment text**, **Daily payment amounts**, or **Moderator payments**. An account at least moderator, including a fond, a software developer, an initiator, and a founder, opens **Open application (1)** or **Open applications (N)** only when N is at least 1. **Try again** repeats the load after an error.
 - **Used by:** Route `/grants` (`GrantsPage`).
 
 ### Variant: default
@@ -8806,26 +8867,68 @@ Basis owner. Grant section on `/grants`. Copy **You are not verified yet.** plus
 
 ### Variant: funding-pending
 
-Verified owner with `funding.status` **pending**. Copy **Your application is open. A moderator will review your posts.** **Today's payout** shows the one line **You must be admitted to the grant program. Your application is being reviewed.** without a link. The **Grant places** panel under the card reads **10 of 10 places are free.**
+Verified owner with `funding.status` **pending**. Copy **Your application is open. A moderator will review your posts.** Under it, the small underlined text button **Withdraw my application**. **Today's payout** shows the one line **You must be admitted to the grant program. Your application is being reviewed.** without a link. The **Grant places** panel under the card reads **10 of 10 places are free.**
 
 ![21.gifts profile funding pending](images/profile-funding-pending.png)
 
 ### Variant: funding-trial
 
-Verified owner with `funding.status` **trial**. Copy **You are on a one-day trial. Review repeats tomorrow.** **Today's payout** shows **All conditions are met, but payouts are paused right now.** The **Grant places** panel under the card reads **10 of 10 places are free.**
+Verified owner with `funding.status` **trial**. Copy **You are on a one-day trial. Review repeats tomorrow.** Under it, the small underlined text button **Leave the grant**. **Today's payout** shows **All conditions are met, but payouts are paused right now.** The **Grant places** panel under the card reads **10 of 10 places are free.**
 
 ![21.gifts profile funding trial](images/profile-funding-trial.png)
 
 ### Variant: funding-admitted
 
-Verified owner with `funding.status` **admitted**. Copy **You are admitted to daily 21.gifts grant payouts.** plus **Takes part in the 21.gifts funding program since {date}**. **Today's payout** links **Set up your wallet to receive payouts.** to `/wallet`. When `reviewedByName` is set, the participation sentence names the reviewer. Trial, pending, and rejected do not show a name. The funding-program icon on the public facts is closed here. The pressed result is **funding-program-open**. The **Grant places** panel under the card reads **10 of 10 places are free.**
+Verified owner with `funding.status` **admitted**. Copy **You are admitted to daily 21.gifts grant payouts.** plus **Takes part in the 21.gifts funding program since {date}**. Under it, the small underlined text button **Leave the grant**. **Today's payout** links **Set up your wallet to receive payouts.** to `/wallet`. When `reviewedByName` is set, the participation sentence names the reviewer. Trial, pending, and rejected do not show a name. The funding-program icon on the public facts is closed here. The pressed result is **funding-program-open**. The **Grant places** panel under the card reads **10 of 10 places are free.**
 ![21.gifts profile funding admitted](images/profile-funding-admitted.png)
 
 ### Variant: funding-program-open
 
-Admitted owner on `/grants`. The participation sentence **Takes part in the 21.gifts funding program since {date}** is visible on the grant card. **Today's payout** links **Secure your account to receive payouts.** to `/settings/social-recovery`. Viewport capture after scrolling the participation line into view. The **Grant places** panel under the card reads **10 of 10 places are free.**
+Admitted owner on `/grants`. The participation sentence **Takes part in the 21.gifts funding program since {date}** is visible on the grant card, with **Leave the grant** under it. **Today's payout** links **Secure your account to receive payouts.** to `/settings/social-recovery`. Viewport capture after scrolling the participation line into view. The **Grant places** panel under the card reads **10 of 10 places are free.**
 
 ![21.gifts profile funding program open](images/profile-funding-program-open.png)
+
+### Variant: withdraw-confirm
+
+Admitted owner after **Leave the grant**. In place of that button, the bordered question **Leave the grant?** with the muted line **Your daily payout stops today. Your place becomes free for someone else. You can apply again later, but a place is not guaranteed.**, then the confirm action (check icon, accessible name **Leave the grant**) and **Cancel** (X icon). Nothing has been sent yet. **Today's payout** links **Set up your wallet to receive payouts.** to `/wallet`. The **Grant places** panel under the card reads **10 of 10 places are free.** Needle `state-grants-withdraw-confirm`.
+
+![21.gifts grants leave the grant question](images/grants-withdraw-confirm.png)
+
+### Variant: withdraw-confirm-trial
+
+Owner on a one-day trial after **Leave the grant**. Under **You are on a one-day trial. Review repeats tomorrow.**, the same question **Leave the grant?** and muted line as for an admitted owner, with the confirm action **Leave the grant** and **Cancel**. **Today's payout** shows **All conditions are met, but payouts are paused right now.** Needle `state-grants-withdraw-confirm-trial`.
+
+![21.gifts grants leave the grant question on a trial](images/grants-withdraw-confirm-trial.png)
+
+### Variant: withdraw-confirm-pending
+
+Owner with an open application after **Withdraw my application**. Under **Your application is open. A moderator will review your posts.**, the bordered question **Withdraw your application?** with the muted line **A moderator will no longer review it. You can apply again later.**, then the confirm action (accessible name **Withdraw my application**) and **Cancel**. **Today's payout** shows the one line **You must be admitted to the grant program. Your application is being reviewed.** without a link. Needle `state-grants-withdraw-confirm-pending`.
+
+![21.gifts grants withdraw application question](images/grants-withdraw-confirm-pending.png)
+
+### Variant: withdraw-busy
+
+Admitted owner after the confirm action of **Leave the grant?**, while `POST /funding/withdraw` has not answered. The confirm action shows a spinner, and both actions are disabled; another tap sends nothing. A trial owner sees the same question and spinner under the trial status text. Needle `state-grants-withdraw-busy`.
+
+![21.gifts grants leaving the grant](images/grants-withdraw-busy.png)
+
+### Variant: withdraw-error
+
+Admitted owner after the confirm action of **Leave the grant?** when `POST /funding/withdraw` failed (403, 404 while the api does not have the endpoint, 503, or no connection). The question stays open with **Could not leave the grant. Please try again.** under it, and both actions are enabled again for another try or **Cancel**. A trial owner sees the same question and error under the trial status text. Needle `state-grants-withdraw-error`.
+
+![21.gifts grants leave the grant error](images/grants-withdraw-error.png)
+
+### Variant: withdraw-busy-pending
+
+Owner with an open application after the confirm action of **Withdraw your application?**, while `POST /funding/withdraw` has not answered. The confirm action (**Withdraw my application**) shows a spinner, and both actions are disabled; another tap sends nothing. Needle `state-grants-withdraw-busy-pending`.
+
+![21.gifts grants withdrawing the application](images/grants-withdraw-busy-pending.png)
+
+### Variant: withdraw-error-pending
+
+Owner with an open application after the confirm action of **Withdraw your application?** when `POST /funding/withdraw` failed. The question stays open with **Could not withdraw your application. Please try again.** under it, and both actions are enabled again for another try or **Cancel**. Needle `state-grants-withdraw-error-pending`.
+
+![21.gifts grants withdraw application error](images/grants-withdraw-error-pending.png)
 
 ### Variant: open-applications
 
@@ -9747,26 +9850,26 @@ Staff (moderator) page. The people panel shows **Could not load payouts. Please 
 ## Screen: /moderate
 
 - **URL:** `/moderate` — signed-in moderation hub for moderators. Same onboarding gate as `/welcome` (`OnboardingGate screen="welcome"`). HTML `/moderate` is the hub, not a GET proxy; this page does not fetch hidden notes, proposals, applications, or gift stats. The Open proposals count comes from `useUnreadCount` (`GET /trust/proposals`); the queue itself is `/moderate/proposals`. JSON for hidden notes lives under `/forum/messages/hidden`; JSON for open proposals lives under `/trust/proposals`; JSON for grant applications lives under `/funding/applications` (Next.js forbids `route.ts` beside this page).
-- **What the user sees:** Chrome is the page-frame header (`ProfileChromeLeft` (the arrow returns to the previous in-app view, or `/welcome` when this tab has none; wordmark → `/welcome`), and Menu, inside the rounded sheet). Fill `AppShell` (`align="center"`). Heading **Moderation**. Staff (moderator) see a labeled **Goals** `ButtonLink` (`variant="secondary"` `size="lg"`) to `/grants/goals` (first tool), a labeled **Hidden notes** `ButtonLink` (`variant="secondary"` `size="lg"`) to `/moderate/hidden`, a labeled **Open proposals** `ButtonLink` (`variant="secondary"` `size="lg"`) to `/moderate/proposals` that shows a count when `proposalCount` > 0 (`moderate.proposals.unread`, accessible name like Open proposals, 1 unread), **Moderators chat group** `ButtonLink` → `/moderate/group`, **Handbook** `ButtonLink` → `/moderate/handbook`, and **Show payout per person** `ButtonLink` → `/moderate/payouts` (last tool). Hub **Moderators chat group** ButtonLink shows a count when staff-room unread (`moderationUnreadCount - proposalCount`) is greater than zero (`moderate.groupUnread`, accessible name like Moderators chat group, 1 unread); href stays `/moderate/group`. Non-staff signed-in visitors see the heading plus **This page is for moderators.** and no tools list. Menu row **Statistics** sits before Moderation. Menu row **Moderation** (`nav.moderate`, lucide `Shield`, `/moderate`) only when `roleAtLeast(role, 'moderator')`, after **Statistics**. Staff Menu row **Moderation** shows a count when staff-room unread plus open-proposal count is greater than zero (`nav.moderateUnread`, accessible name like Moderation, 1 unread); href stays `/moderate`. Menu has no Open proposals row.
-- **Actions:** Open **Goals** to `/grants/goals`. Open **Hidden notes** to `/moderate/hidden`. Open **Open proposals** to `/moderate/proposals`. Moderators also open **Moderators chat group** to `/moderate/group`. Open **Handbook** to `/moderate/handbook`. Open **Show payout per person** to `/moderate/payouts`. The top-left arrow returns to the previous in-app view in this tab, or `/welcome` when this tab has none. One arrow. The wordmark is not that control. Open **Menu**. No list fetch and no un-hide control on this page. Hub does not fetch proposals, applications, or gift stats itself (Open proposals count comes from `useUnreadCount`).
+- **What the user sees:** Chrome is the page-frame header (`ProfileChromeLeft` (the arrow returns to the previous in-app view, or `/welcome` when this tab has none; wordmark → `/welcome`), and Menu, inside the rounded sheet). Fill `AppShell` (`align="center"`). Heading **Moderation**. Staff (moderator) see a labeled **Goals** `ButtonLink` (`variant="secondary"` `size="lg"`) to `/grants/goals` (first tool), a labeled **Hidden notes** `ButtonLink` (`variant="secondary"` `size="lg"`) to `/moderate/hidden`, a labeled **Open proposals** `ButtonLink` (`variant="secondary"` `size="lg"`) to `/moderate/proposals` that shows a count when `proposalCount` > 0 (`moderate.proposals.unread`, accessible name like Open proposals, 1 unread), **Moderators chat group** `ButtonLink` → `/moderate/group`, **Handbook** `ButtonLink` → `/moderate/handbook`, **Show payout per person** `ButtonLink` → `/moderate/payouts`, and **Show activity per shop** `ButtonLink` → `/moderate/shops` (last tool). Hub **Moderators chat group** ButtonLink shows a count when staff-room unread (`moderationUnreadCount - proposalCount`) is greater than zero (`moderate.groupUnread`, accessible name like Moderators chat group, 1 unread); href stays `/moderate/group`. Non-staff signed-in visitors see the heading plus **This page is for moderators.** and no tools list. Menu row **Statistics** sits before Moderation. Menu row **Moderation** (`nav.moderate`, lucide `Shield`, `/moderate`) only when `roleAtLeast(role, 'moderator')`, after **Statistics**. Staff Menu row **Moderation** shows a count when staff-room unread plus open-proposal count is greater than zero (`nav.moderateUnread`, accessible name like Moderation, 1 unread); href stays `/moderate`. Menu has no Open proposals row.
+- **Actions:** Open **Goals** to `/grants/goals`. Open **Hidden notes** to `/moderate/hidden`. Open **Open proposals** to `/moderate/proposals`. Moderators also open **Moderators chat group** to `/moderate/group`. Open **Handbook** to `/moderate/handbook`. Open **Show payout per person** to `/moderate/payouts`. Open **Show activity per shop** to `/moderate/shops`. The top-left arrow returns to the previous in-app view in this tab, or `/welcome` when this tab has none. One arrow. The wordmark is not that control. Open **Menu**. No list fetch and no un-hide control on this page. Hub does not fetch proposals, applications, or gift stats itself (Open proposals count comes from `useUnreadCount`).
 - **Calls:** `AppShell`, `ProfileChromeLeft`, `ModeratePage`, `ModerateScreen`, `SignedInChrome`, `OnboardingGate`, `useUnreadCount`.
 - **Auth:** Bearer session; `OnboardingGate screen="welcome"`. Hub tools only when `roleAtLeast(role, 'moderator')`; others see forbidden copy and do not fetch. This page does not call `GET /gifts/stats`.
 
 ### Variant: default
 
-Staff (moderator) hub with heading **Moderation**, labeled **Goals** control → `/grants/goals`, labeled **Hidden notes** control → `/moderate/hidden`, labeled **Open proposals** control → `/moderate/proposals`, **Moderators chat group** control → `/moderate/group`, **Handbook** control → `/moderate/handbook`, and **Show payout per person** → `/moderate/payouts`. No goal widget.
+Staff (moderator) hub with heading **Moderation**, labeled **Goals** control → `/grants/goals`, labeled **Hidden notes** control → `/moderate/hidden`, labeled **Open proposals** control → `/moderate/proposals`, **Moderators chat group** control → `/moderate/group`, **Handbook** control → `/moderate/handbook`, **Show payout per person** → `/moderate/payouts`, and **Show activity per shop** → `/moderate/shops`. No goal widget.
 
 ![21.gifts moderation](images/moderate.png)
 
 ### Variant: group-unread
 
-Staff hub with an unread Moderators chat group. **Moderators chat group** control shows **1** and accessible name **Moderators chat group, 1 unread** (`moderate.groupUnread`). Goals, Hidden notes, Open proposals, Handbook, and Show payout per person unchanged.
+Staff hub with an unread Moderators chat group. **Moderators chat group** control shows **1** and accessible name **Moderators chat group, 1 unread** (`moderate.groupUnread`). Goals, Hidden notes, Open proposals, Handbook, Show payout per person, and Show activity per shop unchanged.
 
 ![21.gifts moderation group unread](images/moderate-group-unread.png)
 
 ### Variant: proposals-unread
 
-Staff hub with one open proposal. **Open proposals** control shows **1** and accessible name **Open proposals, 1 unread** (`moderate.proposals.unread`). Goals, Hidden notes, Moderators chat group, Handbook, and Show payout per person unchanged.
+Staff hub with one open proposal. **Open proposals** control shows **1** and accessible name **Open proposals, 1 unread** (`moderate.proposals.unread`). Goals, Hidden notes, Moderators chat group, Handbook, Show payout per person, and Show activity per shop unchanged.
 
 ![21.gifts moderation proposals unread](images/moderate-proposals-unread.png)
 
@@ -9813,6 +9916,44 @@ Staff page while the table is loading. Copy **Loading…**.
 Staff page when the load fails. Copy **Could not load the payout table. Please try again.** and button **Try again**.
 
 ![21.gifts payout per person error](images/moderate-payouts-error.png)
+
+## Screen: /moderate/shops
+
+- **URL:** `/moderate/shops` — signed-in staff table of POS activity per shop. Same onboarding gate as `/moderate` (`OnboardingGate screen="welcome"`). HTML `/moderate/shops` is the table, not a GET proxy. JSON is `GET /shops/activity/shops`. Hub is `/moderate`.
+- **What the user sees:** Fill `AppShell` (`align="center"`) with one top-left arrow (`ProfileChromeLeft`) that returns to the previous in-app view in this tab, or `/welcome` when this tab has none, plus wordmark → `/welcome`. The wordmark is not that control. One **Menu** sits top-right. No in-card back. Heading **Activity per shop**. Staff see the lead (POS charges by the till account of each shop over the window, shops without a charge marked inactive), then a table with **Shop**, **Till account**, **Active days**, and **Last charge**, one row per shop in the api order (never used first, then oldest last charge first). The shop name links to the shop page `/{npub}` when the shop has an npub. The till account is `@username`, or the account id when the account has no username. Active days read `N / 30` from `windowDays`; a shop with `0` active days shows that figure and **Inactive** in the danger color. The last charge day is a medium localized date in UTC, or **Never**. Empty copy **No shops yet.** Loading… or error plus **Try again**. Non-staff, and staff the api answers with 403, see the heading plus **This page is for moderators.** and no table.
+- **Actions:** The top-left arrow returns to the previous in-app view in this tab, or `/welcome` when this tab has none. One arrow. The wordmark is not that control (wordmark → `/welcome`). Open a shop page when the row has an npub. **Try again** after a load error. Open **Menu**.
+- **Calls:** `ShopActivityPage`, `ShopActivityShopsScreen`, `fetchShopActivityShops`.
+- **Auth:** Bearer session; `OnboardingGate screen="welcome"`. The table fetches only when `roleAtLeast(role, 'moderator')`.
+
+### Variant: default
+
+Staff table with three shops in the api order: Bakery (no npub, no username, never charged), Kiosk (last charge in July), both marked **Inactive** with `0 / 30`, then Corner Café with `12 / 30` and a last charge the day before today.
+
+![21.gifts activity per shop](images/moderate-shops.png)
+
+### Variant: empty
+
+Staff page when there is no shop. Sentence **No shops yet.** No table.
+
+![21.gifts activity per shop empty](images/moderate-shops-empty.png)
+
+### Variant: forbidden
+
+Signed-in basis account. Copy **This page is for moderators.** No table.
+
+![21.gifts activity per shop forbidden](images/moderate-shops-forbidden.png)
+
+### Variant: loading
+
+Staff page while the table is loading. Copy **Loading…**.
+
+![21.gifts activity per shop loading](images/moderate-shops-loading.png)
+
+### Variant: error
+
+Staff page when the load fails. Copy **Could not load shop activity. Please try again.** and button **Try again**.
+
+![21.gifts activity per shop error](images/moderate-shops-error.png)
 
 ## Screen: /moderate/hidden
 
