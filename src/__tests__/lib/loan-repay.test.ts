@@ -11,6 +11,7 @@ import {
   definedFiatAmounts,
   definedDueLabel,
   definedFiatSum,
+  displayableNextAmount,
   dueShares,
   fittingPrefix,
   isCollecting,
@@ -637,6 +638,28 @@ describe('definedFiatAmounts', () => {
     expect(definedFiatAmounts([{ code: 'BTC', amount: '1.00' }], 'ch')).toBeNull();
     expect(definedFiatAmounts([{ code: 'PHP', amount: null }], 'ch')).toBeNull();
     expect(definedFiatAmounts([{ code: 'PHP', amount: 'not-an-amount' }], 'ch')).toBeNull();
+  });
+});
+
+describe('displayableNextAmount', () => {
+  it('accepts known positive sats regardless of the stored fiat part', () => {
+    expect(displayableNextAmount(1, 'PHP', null)).toBe(true);
+    expect(displayableNextAmount(1, 'BTC', null)).toBe(true);
+    expect(displayableNextAmount(1, 'PHP', '0.00')).toBe(true);
+  });
+
+  it('accepts only a parseable positive fiat amount when sats are unknown', () => {
+    expect(displayableNextAmount(null, 'PHP', '0.01')).toBe(true);
+    expect(displayableNextAmount(null, 'PHP', '0,01')).toBe(true);
+    expect(displayableNextAmount(null, 'PHP', '0.00')).toBe(false);
+    expect(displayableNextAmount(null, 'PHP', null)).toBe(false);
+    expect(displayableNextAmount(null, 'PHP', 'not-an-amount')).toBe(false);
+    expect(displayableNextAmount(null, 'BTC', '1.00')).toBe(false);
+  });
+
+  it('rejects a known zero or negative sat amount', () => {
+    expect(displayableNextAmount(0, 'PHP', '3.00')).toBe(false);
+    expect(displayableNextAmount(-1, 'PHP', '3.00')).toBe(false);
   });
 });
 

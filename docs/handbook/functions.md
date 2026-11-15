@@ -7595,6 +7595,13 @@ The class exists so the composer can tell a refused free first post from any oth
 - **Returns / side effects:** Returns `{ units, text }`, where units are `bigint` sats or cents and text is trimmed while preserving its decimal separator; returns null for empty, zero, negative, or malformed input. It is pure.
 - **Used by:** `checkLoanAmount` and the repayment screen's free-amount field.
 
+## Function: displayableNextAmount
+
+- **Purpose:** Says whether a loan's next-payment part has an amount the repayment UI can show.
+- **Inputs:** The next `sats` (null when its rate is unavailable), the loan's `goalCurrency`, and the stored next `amount` in that currency.
+- **Returns / side effects:** Returns true for known positive sats; when sats are null, returns true only for a non-BTC stored fiat amount that `creditSmallestUnits` reads as positive. A zero or negative sat amount, a BTC part without sats, and a missing, zero, or malformed fiat amount return false. It is pure and performs no I/O.
+- **Used by:** `summarizeLoans` (which next part can set the next due day) and `LoanRepayScreen` (whether a same-day part contributes people to the next-payment line).
+
 ## Function: loanMaxUnits
 
 - **Purpose:** Converts the api-provided free-repayment maximum into integer comparison units.

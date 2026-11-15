@@ -2108,7 +2108,7 @@ describe('LoanRepayScreen', () => {
       );
       await Promise.resolve();
     });
-    expect(await screen.findByText('Next: tomorrow, ₱5.00 to 1 person')).toBeTruthy();
+    expect(await screen.findByText('Next: tomorrow, ₱5.00 to 2 people')).toBeTruthy();
     expect(screen.queryByText(/₿40/)).toBeNull();
     expect(screen.queryByText(/null/)).toBeNull();
   });
@@ -2146,6 +2146,41 @@ describe('LoanRepayScreen', () => {
     });
     expect(await screen.findByText('Next: tomorrow, ₱3.00 to 1 person')).toBeTruthy();
     expect(screen.queryByText(/₿0/)).toBeNull();
+  });
+
+  it('omits a same-day unpriced loan whose stored fiat amount is zero', async () => {
+    vi.mocked(getRepayment).mockImplementation((id) =>
+      Promise.resolve(
+        ledger({
+          repayments: [
+            {
+              ...ledger().repayments[1]!,
+              accountId: id === 'php-next-unpriced' ? 'giver-1' : 'giver-2',
+            },
+          ],
+        }),
+      ),
+    );
+    const clearDue = { ...loan().due, payableSats: 0, payablePeople: 0 };
+    show({
+      sundayRest: false,
+      loans: [
+        loan({
+          messageId: 'php-next-unpriced',
+          goalCurrency: 'PHP',
+          due: clearDue,
+          next: { dueOn: '2026-10-11', amount: '3.00', sats: null },
+        }),
+        loan({
+          messageId: 'php-next-zero-fiat',
+          goalCurrency: 'PHP',
+          due: clearDue,
+          next: { dueOn: '2026-10-11', amount: '0.00', sats: null },
+        }),
+      ],
+    });
+    expect(await screen.findByText('Next: tomorrow, ₱3.00 to 1 person')).toBeTruthy();
+    expect(screen.queryByText(/Next: tomorrow, ₱3\.00 to 2 people/)).toBeNull();
   });
 
   it('omits the next aggregate when its only priced loan has zero sats', () => {
@@ -2724,11 +2759,11 @@ describe('LoanRepayScreen', () => {
     expect(screen.queryByText('$2.50')).toBeNull();
   });
 
-  it('keeps an all-waiting prepay result ready for another amount', () => {
+  it('keeps an all-waiting prepay result idle and ready for another amount', () => {
     show(
       { sundayRest: false, loans: [loan()] },
       repay({
-        phase: 'repaid',
+        phase: 'idle',
         activeAction: { kind: 'prepay', messageId: 'loan-1' },
         prepayMessageId: 'loan-1',
         prepayWaiting: [

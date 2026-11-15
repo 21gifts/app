@@ -7822,7 +7822,12 @@ test.describe('loans repay screens', () => {
       text: 'No PHP exchange rate is available now',
       spotRates: { USD: '100000.00' },
     });
-    await expect(page.getByText('₱18.00', { exact: true })).toBeVisible();
+    const dueAmount = page
+      .getByText('Due today', { exact: true })
+      .locator('..')
+      .getByText('₱18.00', { exact: true });
+    await expect(dueAmount).toHaveText('₱18.00');
+    await expect(dueAmount).not.toContainText('₿');
     await expect(page.getByText(/₱12\.00 waits for a lender/)).toBeVisible();
     await expect(page.getByRole('button', { name: /^Send / })).toHaveCount(0);
     await expect(page.getByLabel('Amount (PHP)')).toBeVisible();
@@ -7980,6 +7985,7 @@ test.describe('loans repay screens', () => {
     });
     await expect(page.getByLabel('Amount (₿)')).toBeEnabled();
     await expect(page.getByRole('button', { name: 'Pay this amount' })).toBeDisabled();
+    await expect(page.getByLabel('Amount (₿)')).toHaveValue('');
     await shotScreen(page, 'state-loans-repay-pay-more-all-waiting');
   });
 

@@ -1662,7 +1662,7 @@ Loan A with malformed sats input **12.5**. The standard AmountEntry marks the fi
 
 ### Variant: pay-more-no-rate
 
-A PHP loan without a current conversion rate, so `totalSats`, both due sat totals, `next.sats`, and `maxSats` are null. The screen still shows the combined stored fiat figures: **₱18.00** due, **₱12.00** waiting, and **Next: tomorrow, ₱30.00 to 1 person**, without any bitcoin figure or **Send**. AmountEntry stays in the fixed PHP loan unit without a switch and shows **No exchange rate yet**. **Pay more** also explains **No PHP exchange rate is available now, so paying more is disabled.** Both **Max** and **Pay this amount** are disabled.
+A PHP loan without a current conversion rate, so `totalSats`, both due sat totals, `next.sats`, and `maxSats` are null. Unknown sat figures for the due, waiting, next, total, and maximum amounts are shown without bitcoin. The screen still shows the combined stored fiat figures: **₱18.00** due, **₱12.00** waiting, and **Next: tomorrow, ₱30.00 to 1 person**, with no bitcoin figure on those amounts and no **Send**. Already repaid amounts keep their stored sats, so the progress reads **Repaid ₿6'000 · ₱120.00 of ₱300.00**. AmountEntry stays in the fixed PHP loan unit without a switch and shows **No exchange rate yet**. **Pay more** also explains **No PHP exchange rate is available now, so paying more is disabled.** Both **Max** and **Pay this amount** are disabled.
 
 ![21.gifts loans repay pay more without rate](images/loans-repay-pay-more-no-rate.png)
 
@@ -1758,7 +1758,7 @@ The free payment is waiting after its payable bills were sent. A muted **Waiting
 
 ### Variant: pay-more-all-waiting
 
-The free-payment result returned only a waiting recipient and sent zero bills. The run is finished (`phase: 'repaid'`): **Waiting for Carla to set up their wallet** with **₿200 · $0.20** remains under the matching loan, while the empty fixed-unit field, **Max**, and the disabled **Pay this amount** are ready for another input.
+The free-payment result returned only a waiting recipient and sent zero bills. The run returns to the idle, nothing-payable state (`phase: 'idle'`): **Waiting for Carla to set up their wallet** with **₿200 · $0.20** remains under the matching loan, while the empty fixed-unit field, **Max**, and the disabled **Pay this amount** are ready for another input. No **Repaid** success message appears.
 
 ![21.gifts loans repay all waiting result](images/loans-repay-pay-more-all-waiting.png)
 

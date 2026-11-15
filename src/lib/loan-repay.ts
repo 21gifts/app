@@ -31,6 +31,29 @@ function fiatUnits(input: string): bigint | null {
 }
 
 /**
+ * Says whether a next-payment part has an amount the screen can show.
+ *
+ * @param sats - The loan's next sats, or null when its rate is unavailable.
+ * @param code - Loan currency used by the stored amount.
+ * @param amount - Stored next amount in the loan currency.
+ * @returns True for known positive sats or a parseable positive fiat amount.
+ */
+export function displayableNextAmount(
+  sats: number | null,
+  code: MyLoan['goalCurrency'],
+  amount: string | null,
+): boolean {
+  if (sats !== null) {
+    return sats > 0;
+  }
+  if (code === 'BTC' || amount === null) {
+    return false;
+  }
+  const units = creditSmallestUnits(amount, false);
+  return units !== null && units > 0n;
+}
+
+/**
  * Parses a positive free repayment amount without floating-point arithmetic.
  *
  * @param input - User input; surrounding whitespace is ignored.
@@ -224,11 +247,7 @@ export function summarizeLoans(data: MyLoans, style: NumberFormatStyle): LoansSu
     }
     if (loan.next !== null) {
       const partSats = loan.next.sats;
-      const displayable =
-        partSats === null
-          ? definedFiatAmounts([{ code: loan.goalCurrency, amount: loan.next.amount }], style) !==
-            null
-          : partSats > 0;
+      const displayable = displayableNextAmount(partSats, loan.goalCurrency, loan.next.amount);
       if (!displayable) {
         continue;
       }

@@ -23,6 +23,7 @@ import {
   definedFiatAmounts,
   definedDueLabel,
   definedFiatSum,
+  displayableNextAmount,
   dueShares,
   fittingPrefix,
   isCollecting,
@@ -271,7 +272,7 @@ export function LoanRepayScreen(): ReactElement {
       }
       if (
         next.sats === null
-          ? loan.next.sats !== null
+          ? !displayableNextAmount(loan.next.sats, loan.goalCurrency, loan.next.amount)
           : loan.next.sats === null || loan.next.sats <= 0
       ) {
         return [];

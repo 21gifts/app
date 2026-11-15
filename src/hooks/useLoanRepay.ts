@@ -520,7 +520,7 @@ const PINNED_RESULTS: Record<string, PinnedLoanRepay> = {
   },
   'repay-pay-more-all-waiting': {
     ...PIN_BASE,
-    phase: 'repaid',
+    phase: 'idle',
     balanceSats: 21_000,
     activeAction: { kind: 'prepay', messageId: 'loan-a' },
     prepayWaiting: [
@@ -919,7 +919,7 @@ export function useLoanRepay(options: {
           }
           if (ordered.length === 0) {
             setTopUpOpen(false);
-            setPaymentPhase('repaid');
+            setPaymentPhase('idle');
             return;
           }
           setPaymentPhase('idle');

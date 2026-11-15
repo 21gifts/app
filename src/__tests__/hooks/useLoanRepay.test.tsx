@@ -380,7 +380,7 @@ describe('useLoanRepay preparation', () => {
     expect(result.current).toMatchObject({ phase: 'idle', errorKey: null });
   });
 
-  it('skips zero and unpriced payable sats and treats no bills as freshly repaid', async () => {
+  it('skips zero and unpriced payable sats and ends idle when no bills were sent', async () => {
     const reload = vi.fn(async (): Promise<MyLoans> => body([]));
     vi.mocked(postRepaymentDue).mockResolvedValue({ bills: [], waiting: [] });
     const { result } = renderHook(() => useLoanRepay({ reload }));
@@ -391,7 +391,7 @@ describe('useLoanRepay preparation', () => {
     };
     act(() => result.current.openTopUp());
     act(() => result.current.pay([loan('skip', 0), unpriced, loan()]));
-    await waitFor(() => expect(result.current.phase).toBe('repaid'));
+    await waitFor(() => expect(result.current.phase).toBe('idle'));
     expect(postRepaymentDue).toHaveBeenCalledTimes(1);
     expect(postRepaymentDue).toHaveBeenCalledWith('token', 'm1');
     expect(reload).toHaveBeenCalledTimes(1);
@@ -2229,7 +2229,7 @@ describe('useLoanRepay free repayment and collecting actions', () => {
           ],
         });
       });
-      await waitFor(() => expect(result.current.phase).toBe('repaid'));
+      await waitFor(() => expect(result.current.phase).toBe('idle'));
       expect(reload).toHaveBeenCalledTimes(1);
       expect(result.current.prepayWaiting).toEqual([
         expect.objectContaining({ recipientAccountId: 'waiting-wallet', amountSats: 500 }),
@@ -2416,7 +2416,7 @@ describe('useLoanRepay free repayment and collecting actions', () => {
     ]);
   });
 
-  it('keeps an all-waiting prepay as nothing payable now instead of failing', async () => {
+  it('ends an all-waiting prepay idle with its waiting rows and no success', async () => {
     vi.mocked(prepayLoan).mockResolvedValue({
       amountSats: 0,
       amount: null,
@@ -2437,9 +2437,10 @@ describe('useLoanRepay free repayment and collecting actions', () => {
     const { result } = renderHook(() => useLoanRepay({ reload }));
 
     act(() => result.current.prepay(current, '500'));
-    await waitFor(() => expect(result.current.phase).toBe('repaid'));
+    await waitFor(() => expect(result.current.phase).toBe('idle'));
 
     expect(result.current.errorKey).toBeNull();
+    expect(result.current.sentSats).toBe(0);
     expect(result.current.prepayWaiting).toEqual([
       expect.objectContaining({ name: 'Carla', amountSats: 500 }),
     ]);
@@ -2779,7 +2780,7 @@ describe('useLoanRepay visual pins', () => {
     ['repay-pay-more-nothing-due', 'failed', 21_000],
     ['repay-pay-more-sending', 'sending', 21_000],
     ['repay-pay-more-waiting', 'waiting', 21_000],
-    ['repay-pay-more-all-waiting', 'repaid', 21_000],
+    ['repay-pay-more-all-waiting', 'idle', 21_000],
     ['repay-pay-more-unconfirmed', 'unconfirmed', 21_000],
     ['repay-pay-more-success', 'repaid', 21_000],
     ['repay-pay-more-shortfall', 'idle', 500],
