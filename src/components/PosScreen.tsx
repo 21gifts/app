@@ -433,14 +433,16 @@ function confirmAsked(memory: WalletSettled, state: PosState, tie: boolean): voi
   // this read). History rows are never tied, and neither is the charge of an answer the till did not
   // apply (`tie` false: an ask a newer read overtook).
   const current = state.charge;
+  // A new tie can start the asks: the till is told, not left to an unrelated render.
+  let changed = false;
   if (tie && current !== null && current.status !== 'cancelled' && current.status !== 'expired') {
     for (const receipt of memory.unnamed) {
       if (!receipt.forCharges.includes(current.id) && mayPay(current, receipt)) {
         receipt.forCharges = [...receipt.forCharges, current.id];
+        changed = true;
       }
     }
   }
-  let changed = false;
   for (const receipt of memory.unnamed) {
     const row = tillCharges(state).find(
       (candidate) =>
@@ -836,6 +838,7 @@ function usePosTillState(): PosTillState {
       return;
     }
     const memory = settledFor(session);
+    const openBefore = memory.open?.id ?? null;
     /* v8 ignore next -- a till this session read always has an answer */
     if (state !== null) {
       for (const row of tillCharges(state)) {
@@ -860,6 +863,10 @@ function usePosTillState(): PosTillState {
       // cancelled after it: no further payment belongs to it. One that only ran out stays, so a
       // payment just after its end still counts, and the till still asks the api about it.
       memory.open = null;
+    }
+    if ((memory.open?.id ?? null) !== openBefore) {
+      // Another open charge (or none) can start or end the asks: the till is told.
+      settledChanged();
     }
   }, [busy, charge, session, state, tillSession]);
 

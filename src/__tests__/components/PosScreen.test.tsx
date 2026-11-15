@@ -4139,6 +4139,33 @@ describe('PosScreen', () => {
       expect(most).toBe(1);
     });
 
+    it('asks at once when the first read arms the charge a payment heard during it could be', async () => {
+      const answers: Array<(response: Response) => void> = [];
+      vi.stubGlobal(
+        'fetch',
+        vi.fn(
+          () =>
+            new Promise<Response>((resolve) => {
+              answers.push(resolve);
+            }),
+        ),
+      );
+      renderWithLocale(<PosScreen />);
+      await waitFor(() => {
+        expect(answers).toHaveLength(1);
+      });
+      receive(21);
+      await act(async () => undefined);
+      // The read arms the charge and ties the payment to it: the ask goes out with no clock tick.
+      await act(async () => {
+        answers[0]?.(jsonResponse({ charge: OPEN, history: [OPEN] }));
+        for (let step = 0; step < 5; step += 1) {
+          await Promise.resolve();
+        }
+      });
+      expect(answers).toHaveLength(2);
+    });
+
     it('lets a read of the session before that never answers hold up no read of the next session', async () => {
       let apiPaid = false;
       vi.stubGlobal(
