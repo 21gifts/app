@@ -2702,6 +2702,69 @@ describe('PosScreen', () => {
       }
     });
 
+    it('ties no payment to the charge before when an already-open refusal shows another tab’s newer charge', async () => {
+      const ended = { ...OPEN, expiresAt: new Date(Date.now() - 1_000).toISOString() };
+      const theirs = {
+        ...OPEN,
+        id: 'c2',
+        createdAt: new Date().toISOString(),
+        expiresAt: new Date(Date.now() + 600_000).toISOString(),
+      };
+      // The charge before was paid by a payment of its own; the api lists it paid in History.
+      const endedPaid = { ...ended, status: 'paid', paidAt: new Date().toISOString() };
+      let phase: 'before' | 'after' | 'theirs' | 'paid' = 'before';
+      let refusePost: ((value: Response) => void) | undefined;
+      vi.stubGlobal(
+        'fetch',
+        vi.fn((_input: RequestInfo | URL, init?: RequestInit) => {
+          if (init?.method === 'POST') {
+            return new Promise<Response>((resolve) => {
+              refusePost = resolve;
+            });
+          }
+          if (phase === 'before') {
+            phase = 'after';
+            return Promise.resolve(jsonResponse({ charge: ended, history: [ended] }));
+          }
+          if (phase === 'after') {
+            return Promise.resolve(jsonResponse({ charge: null, history: [ended] }));
+          }
+          const charge =
+            phase === 'paid'
+              ? { ...theirs, status: 'paid', paidAt: new Date().toISOString() }
+              : theirs;
+          return Promise.resolve(jsonResponse({ charge, history: [charge, endedPaid] }));
+        }),
+      );
+      const till = renderWithLocale(<PosScreen />);
+      expect(await screen.findByRole('link', { name: 'Set an amount' })).toBeTruthy();
+      till.unmount();
+      const amountPage = renderWithLocale(<PosAmount />);
+      await pressAmount('5');
+      fireEvent.click(screen.getByRole('button', { name: 'Create payment' }));
+      await waitFor(() => {
+        expect(refusePost).toBeDefined();
+      });
+      // A payment that names no charge arrives while the create is on its way; meanwhile another
+      // tab opened a charge of the same amount, so the api refuses this create.
+      receive(21);
+      phase = 'theirs';
+      await act(async () => {
+        refusePost?.(jsonResponse({ error: 'A payment is already open' }, 409));
+      });
+      expect(await screen.findByText('A payment is already open.')).toBeTruthy();
+      amountPage.unmount();
+      renderWithLocale(<PosScreen />);
+      // The payment belongs to the newer charge, not to the charge before the api lists as paid.
+      expect(await screen.findByRole('button', { name: 'Cancel' })).toBeTruthy();
+      await act(async () => undefined);
+      expect(screen.queryByRole('alertdialog')).toBeNull();
+      phase = 'paid';
+      expect(
+        await screen.findByRole('alertdialog', { name: 'Paid' }, { timeout: 6_000 }),
+      ).toBeTruthy();
+    }, 12_000);
+
     it('does not count a payment reported while a cancel that goes through is on its way', async () => {
       let releaseDelete: ((value: Response) => void) | undefined;
       vi.stubGlobal(

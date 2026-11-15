@@ -509,6 +509,19 @@ function rearm(memory: WalletSettled, charge: PosCharge | null): void {
   settledChanged();
 }
 
+/**
+ * Whether `found`, the current charge of a read after a create that did not go through, is a
+ * newer charge than `before`, the charge open before the create: the receiving address then went
+ * to it, so a payment of this amount is not the charge before's.
+ */
+function isNewerCharge(found: PosCharge | null, before: PosCharge | null): boolean {
+  return (
+    found !== null &&
+    (before === null ||
+      (found.id !== before.id && Date.parse(found.createdAt) > Date.parse(before.createdAt)))
+  );
+}
+
 /** How far the api's clock may run behind this one when a lost create is matched to its charge. */
 const POS_CREATE_SKEW_MS = 30_000;
 
@@ -1198,8 +1211,9 @@ function usePosTillState(): PosTillState {
           err instanceof WalletRequiredError ||
           err instanceof CannotReceiveError ||
           POS_CREATE_REFUSALS.has(message);
-        // Whether the read after a lost answer shows a newer charge (open or paid): the receiving
-        // address then went to it, so a payment of this amount is not the charge before's.
+        // Whether the read after a lost answer, or after an already-open refusal, shows a newer charge
+        // (open or paid): the receiving address then went to it, so a payment of this amount is not
+        // the charge before's.
         let newer = false;
         if (!refused) {
           // The answer may be lost although the charge was made (and even paid): read the till once.
@@ -1210,11 +1224,7 @@ function usePosTillState(): PosTillState {
             // (the api's clock may lag) and after the one before. Any other charge the read finds is
             // set as the till's answer, and the error shows.
             const found = next.charge;
-            newer =
-              found !== null &&
-              (before === null ||
-                (found.id !== before.id &&
-                  Date.parse(found.createdAt) > Date.parse(before.createdAt)));
+            newer = isNewerCharge(found, before);
             const made =
               found !== null &&
               known !== null &&
@@ -1257,6 +1267,7 @@ function usePosTillState(): PosTillState {
           try {
             const seq = startRead(reads);
             const next = await fetchPosState(session);
+            newer = isNewerCharge(next.charge, before);
             whenCurrent(generation, mine, () => {
               applyRead(reads, seq, () => {
                 setTill({ state: next, session });
