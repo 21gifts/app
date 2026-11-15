@@ -861,6 +861,9 @@ function usePosTillState(): PosTillState {
         // Applied also after a newer payment started the asks again: `applyRead` keeps the newest
         // answer. Not for another session.
         if (useAuthStore.getState().session === session) {
+          // A paid charge stays paid: the api's paid status in this answer counts even when a read
+          // started later already answered, which `applyRead` then keeps on screen.
+          confirmAsked(settledFor(session), next);
           whenCurrent(generation, mine, () => {
             applyRead(reads, seq, () => {
               setTill({ state: next, session });

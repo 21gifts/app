@@ -4142,6 +4142,34 @@ describe('PosScreen', () => {
       expect(screen.getByRole('button', { name: 'Cancel' })).toBeTruthy();
     });
 
+    it('confirms the paid answer of an ask that a later read overtook', async () => {
+      let reads = 0;
+      vi.stubGlobal(
+        'fetch',
+        vi.fn(async () => {
+          reads += 1;
+          if (reads === 2) {
+            // The ask: slow, and the api has marked the charge paid by the time it answers.
+            await pause(1_000);
+            return jsonResponse({ charge: PAID, history: [PAID] });
+          }
+          return jsonResponse({ charge: OPEN, history: [OPEN] });
+        }),
+      );
+      renderWithLocale(<PosScreen />);
+      expect(await screen.findByRole('button', { name: 'Cancel' })).toBeTruthy();
+      receive(21);
+      await waitFor(() => {
+        expect(reads).toBe(2);
+      });
+      // A read on tab focus starts later and answers first, with the charge still open.
+      showTab();
+      await waitFor(() => {
+        expect(reads).toBe(3);
+      });
+      expect(await confirmation()).toBeTruthy();
+    }, 10_000);
+
     it('keeps asking quietly after a failed read while an unnamed payment could be the charge’s', async () => {
       let reads = 0;
       vi.stubGlobal(
