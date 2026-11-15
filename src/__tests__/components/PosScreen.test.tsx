@@ -2199,6 +2199,52 @@ describe('PosScreen', () => {
       });
     });
 
+    it('asks about the charge before after a failed create for a payment heard while the create was on its way', async () => {
+      const ended = { ...OPEN, expiresAt: new Date(Date.now() - 1_000).toISOString() };
+      let failPost: ((value: Response) => void) | undefined;
+      let first = true;
+      let failed = false;
+      vi.stubGlobal(
+        'fetch',
+        vi.fn((_input: RequestInfo | URL, init?: RequestInit) => {
+          if (init?.method === 'POST') {
+            return new Promise<Response>((resolve) => {
+              failPost = resolve;
+            });
+          }
+          if (!failed) {
+            const charge = first ? ended : null;
+            first = false;
+            return Promise.resolve(jsonResponse({ charge, history: [ended] }));
+          }
+          // After the failed create the api has the charge before paid, listed only in History.
+          const paid = { ...ended, status: 'paid', paidAt: new Date().toISOString() };
+          return Promise.resolve(jsonResponse({ charge: null, history: [paid] }));
+        }),
+      );
+      const till = renderWithLocale(<PosScreen />);
+      expect(await screen.findByRole('link', { name: 'Set an amount' })).toBeTruthy();
+      till.unmount();
+      const amountPage = renderWithLocale(<PosAmount />);
+      await pressAmount('5');
+      fireEvent.click(screen.getByRole('button', { name: 'Create payment' }));
+      await waitFor(() => {
+        expect(failPost).toBeDefined();
+      });
+      // A payment of the charge before, naming no charge, arrives while the create is on its way.
+      receive(21);
+      failed = true;
+      await act(async () => {
+        failPost?.(jsonResponse({ error: 'down' }, 502));
+      });
+      amountPage.unmount();
+      // The failed create made the charge before open again and tied the payment to it, so the till
+      // asks about it and confirms it from the api's paid status.
+      renderWithLocale(<PosScreen />);
+      const dialog = await confirmation();
+      expect(within(dialog).getByText('₿21')).toBeTruthy();
+    });
+
     it('lets the late wallet report of a settled charge change nothing on the next one', async () => {
       const next = { ...OPEN, id: 'c2', createdAt: new Date().toISOString() };
       let charge: Record<string, unknown> = OPEN;
