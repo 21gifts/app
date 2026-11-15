@@ -401,24 +401,31 @@ function askingFor(memory: WalletSettled, now: number): string | null {
 }
 
 /**
- * When `state` shows the open charge in `memory` paid and this tab's wallet
- * received a Lightning payment that could be its payment ({@link mayPay}), the
- * api tied that payment to the charge (it knows the charge's invoices): the
- * charge counts as paid by this tab's wallet, with the api's payment time, so
- * the amount page returns to the till for its confirmation as it does for a
- * payment that names the charge. That payment is used up: it counts for this
- * charge only and makes the till ask about no other.
+ * For each charge `state` shows paid that this tab's wallet has not paid yet,
+ * when this tab's wallet received a Lightning payment that could be its
+ * payment ({@link mayPay}), the api tied that payment to the charge (it knows
+ * the charge's invoices): the charge counts as paid by this tab's wallet, with
+ * the api's payment time, so the amount page returns to the till for its
+ * confirmation as it does for a payment that names the charge. Read from the
+ * answer itself, not from the open charge, so it also holds after a create or
+ * a Cancel cleared that. That payment is used up: it counts for this charge
+ * only and makes the till ask about no other.
  */
 function confirmAsked(memory: WalletSettled, state: PosState): void {
-  const open = memory.open;
-  const used = open === null ? undefined : memory.unnamed.find((receipt) => mayPay(open, receipt));
-  if (open === null || used === undefined) {
-    return;
-  }
-  const row = tillCharges(state).find((candidate) => candidate.id === open.id);
-  if (row?.status === 'paid') {
+  let changed = false;
+  for (const row of tillCharges(state)) {
+    if (row.status !== 'paid' || memory.paid.has(row.id)) {
+      continue;
+    }
+    const used = memory.unnamed.find((receipt) => mayPay(row, receipt));
+    if (used === undefined) {
+      continue;
+    }
     memory.paid.set(row.id, row);
     memory.unnamed = memory.unnamed.filter((receipt) => receipt !== used);
+    changed = true;
+  }
+  if (changed) {
     settledChanged();
   }
 }
@@ -1411,8 +1418,9 @@ function usePosTillState(): PosTillState {
  * `PAY_POLL_MS` after each ask settled, one ask at a time for a payment, until a read shows
  * the charge paid, cancelled or gone before its end,
  * and at most until one minute after that payment (a newer such payment
- * starts the asks again at once); once a read shows the
- * charge paid, it counts as paid by this tab's wallet, and that payment counts for no other charge. A paid charge
+ * starts the asks again at once); once any read shows a charge paid that
+ * such a payment could be the payment of, also after a create or Cancel, it
+ * counts as paid by this tab's wallet, and that payment counts for no other charge. A paid charge
  * the api returns also opens the confirmation. A lost create the api already
  * shows paid is remembered for the session and still confirmed here when a
  * later read fails or no longer returns it; it is not a payment this tab's

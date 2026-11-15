@@ -4170,6 +4170,29 @@ describe('PosScreen', () => {
       expect(await confirmation()).toBeTruthy();
     }, 10_000);
 
+    it('counts an unnamed payment for the charge a read shows paid after Cancel cleared it', async () => {
+      let cancelled = false;
+      vi.stubGlobal(
+        'fetch',
+        vi.fn(async (_input: RequestInfo | URL, init?: RequestInit) => {
+          if (init?.method === 'DELETE') {
+            cancelled = true;
+            return jsonResponse({ charge: null });
+          }
+          // After the cancel, the api shows that charge paid in History only: the payment won.
+          return cancelled
+            ? jsonResponse({ charge: null, history: [PAID] })
+            : jsonResponse({ charge: OPEN, history: [OPEN] });
+        }),
+      );
+      renderWithLocale(<PosScreen />);
+      expect(await screen.findByRole('button', { name: 'Cancel' })).toBeTruthy();
+      receive(21);
+      fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+      // The payment the wallet received could be that charge's, and the api has it paid.
+      expect(await confirmation()).toBeTruthy();
+    });
+
     it('keeps asking quietly after a failed read while an unnamed payment could be the charge’s', async () => {
       let reads = 0;
       vi.stubGlobal(
