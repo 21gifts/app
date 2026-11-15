@@ -4501,6 +4501,53 @@ describe('PosScreen', () => {
       expect(screen.getByRole('button', { name: 'Cancel' })).toBeTruthy();
     }, 10_000);
 
+    it('asks about the charge again after a failed Cancel for a payment heard while Cancel was on its way', async () => {
+      // The charge runs out while Cancel is on its way.
+      const c = { ...OPEN, expiresAt: new Date(Date.now() + 1_500).toISOString() };
+      let phase: 'open' | 'cancel' | 'expired' | 'paid' = 'open';
+      let failCancel: ((response: Response) => void) | undefined;
+      vi.stubGlobal(
+        'fetch',
+        vi.fn(async (_input: RequestInfo | URL, init?: RequestInit) => {
+          if (init?.method === 'DELETE') {
+            return new Promise<Response>((resolve) => {
+              failCancel = resolve;
+            });
+          }
+          if (phase === 'open') {
+            return jsonResponse({ charge: c, history: [c] });
+          }
+          if (phase === 'paid') {
+            const paid = { ...c, status: 'paid', paidAt: new Date().toISOString() };
+            return jsonResponse({ charge: paid, history: [paid] });
+          }
+          // Read back after the failed cancel: run out, only in History.
+          phase = 'paid';
+          return jsonResponse({ charge: null, history: [{ ...c, status: 'expired' }] });
+        }),
+      );
+      renderWithLocale(<PosScreen />);
+      expect(await screen.findByRole('button', { name: 'Cancel' })).toBeTruthy();
+      await act(async () => undefined);
+      phase = 'cancel';
+      fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+      await waitFor(() => {
+        expect(failCancel).toBeDefined();
+      });
+      // A payment of the charge arrives while Cancel is on its way.
+      receive(21);
+      await pause(1_600);
+      phase = 'expired';
+      await act(async () => {
+        failCancel?.(jsonResponse({ error: 'down' }, 502));
+        await Promise.resolve();
+      });
+      // The charge is open again (run out), the payment is tied to it, and the api has it paid.
+      expect(
+        await screen.findByRole('alertdialog', { name: 'Paid' }, { timeout: 4_000 }),
+      ).toBeTruthy();
+    }, 12_000);
+
     it('keeps asking quietly after a failed read while an unnamed payment could be the charge’s', async () => {
       let reads = 0;
       vi.stubGlobal(

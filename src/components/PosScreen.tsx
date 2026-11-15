@@ -489,11 +489,22 @@ function finishedIn(state: PosState, id: string): boolean {
   );
 }
 
-/** Make `charge` the open charge in `memory` again, when there was one. */
+/**
+ * Make `charge` the open charge in `memory` again, when there was one (a create or Cancel failed),
+ * and tie to it each Lightning payment that names no charge, heard while no charge was open, that
+ * it could be the payment of.
+ */
 function rearm(memory: WalletSettled, charge: PosCharge | null): void {
-  if (charge !== null) {
-    armOpen(memory, charge);
+  if (charge === null) {
+    return;
   }
+  armOpen(memory, charge);
+  for (const receipt of memory.unnamed) {
+    if (!receipt.forCharges.includes(charge.id) && mayPay(charge, receipt)) {
+      receipt.forCharges = [...receipt.forCharges, charge.id];
+    }
+  }
+  settledChanged();
 }
 
 /** How far the api's clock may run behind this one when a lost create is matched to its charge. */
