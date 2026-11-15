@@ -4454,6 +4454,53 @@ describe('PosScreen', () => {
       });
     });
 
+    it('ties no payment to another tab’s charge that an overtaken ask shows paid', async () => {
+      // The open charge, and another tab's newer one of the same amount, made before the payment
+      // and already paid.
+      const open = { ...OPEN, createdAt: new Date(Date.now() - 60_000).toISOString() };
+      const x = {
+        ...OPEN,
+        id: 'c-x',
+        createdAt: new Date(Date.now() - 5_000).toISOString(),
+        status: 'paid',
+        paidAt: new Date().toISOString(),
+      };
+      let reads = 0;
+      vi.stubGlobal(
+        'fetch',
+        vi.fn(async () => {
+          reads += 1;
+          if (reads === 2) {
+            // The ask: slow, and a newer read answers first.
+            await pause(1_000);
+            return jsonResponse({ charge: x, history: [x, open] });
+          }
+          return jsonResponse({ charge: open, history: [open] });
+        }),
+      );
+      vi.mocked(logInteraction).mockClear();
+      renderWithLocale(<PosScreen />);
+      expect(await screen.findByRole('button', { name: 'Cancel' })).toBeTruthy();
+      await act(async () => undefined);
+      receive(21);
+      await waitFor(() => {
+        expect(reads).toBe(2);
+      });
+      showTab();
+      await waitFor(() => {
+        expect(reads).toBe(3);
+      });
+      // The overtaken answer ties the payment to nothing new: no confirmation for the other charge.
+      await pause(1_300);
+      expect(screen.queryByRole('alertdialog')).toBeNull();
+      expect(logInteraction).not.toHaveBeenCalledWith(
+        'pos_charge_paid_seen',
+        expect.anything(),
+        expect.anything(),
+      );
+      expect(screen.getByRole('button', { name: 'Cancel' })).toBeTruthy();
+    }, 10_000);
+
     it('keeps asking quietly after a failed read while an unnamed payment could be the charge’s', async () => {
       let reads = 0;
       vi.stubGlobal(

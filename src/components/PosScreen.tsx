@@ -902,10 +902,10 @@ function usePosTillState(): PosTillState {
         if (useAuthStore.getState().session === session) {
           // A paid charge stays paid: the api's paid status in this answer counts even when a read
           // started later already answered, which `applyRead` then keeps on screen.
-          // Only what this payment is tied to already: an answer `applyRead` drops ties nothing.
-          confirmAsked(settledFor(session), next, false);
+          let applied = false;
           whenCurrent(generation, mine, () => {
             applyRead(reads, seq, () => {
+              applied = true;
               setTill({ state: next, session });
               if (readFailed.current) {
                 readFailed.current = false;
@@ -913,6 +913,12 @@ function usePosTillState(): PosTillState {
               }
             });
           });
+          if (!applied) {
+            // A newer read overtook this answer: it counts only the payments already tied to a
+            // charge it shows paid, and ties nothing. An applied answer is tied and counted by the
+            // arming effect.
+            confirmAsked(settledFor(session), next, false);
+          }
         }
       } catch {
         // Quiet: the next ask follows.
