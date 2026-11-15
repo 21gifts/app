@@ -277,15 +277,19 @@ function pays(charge: PosCharge, payment: TillPayment): boolean {
  * `charge`: its amount, or its amount after the fee, made (by the wallet's own
  * payment time, compared in whole seconds, {@link POS_PAID_TIME_GRAIN_MS})
  * from the second of the charge's creation up to {@link POS_LATE_PAID_MS}
- * after its end. It does not pay the charge: it only makes the till ask the
- * api, which knows the invoices it handed out for the charge.
+ * after its end, and for a charge the api already has paid, no later than
+ * the second of its `paidAt` (a payment made after it cannot be the one that
+ * paid it). It does not pay the charge: it only makes the till ask the api,
+ * which knows the invoices it handed out for the charge.
  */
 function mayPay(charge: PosCharge, receipt: UnnamedReceipt): boolean {
+  const second = Math.floor(receipt.timestamp / POS_PAID_TIME_GRAIN_MS);
   return (
     fitsAmount(charge, receipt) &&
-    Math.floor(receipt.timestamp / POS_PAID_TIME_GRAIN_MS) >=
-      Math.floor(Date.parse(charge.createdAt) / POS_PAID_TIME_GRAIN_MS) &&
-    receipt.timestamp <= Date.parse(charge.expiresAt) + POS_LATE_PAID_MS
+    second >= Math.floor(Date.parse(charge.createdAt) / POS_PAID_TIME_GRAIN_MS) &&
+    receipt.timestamp <= Date.parse(charge.expiresAt) + POS_LATE_PAID_MS &&
+    (charge.paidAt === null ||
+      second <= Math.floor(Date.parse(charge.paidAt) / POS_PAID_TIME_GRAIN_MS))
   );
 }
 

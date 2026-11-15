@@ -4561,13 +4561,14 @@ describe('PosScreen', () => {
     }, 12_000);
 
     it('sends the amount page back to the till when the first read after an unnamed payment shows another tab’s charge paid', async () => {
-      // Another tab's charge, made before the payment; this till never had it open.
+      // Another tab's charge, made before the payment; this till never had it open. The api marks it
+      // paid once it saw the payment, so after it.
       const b = {
         ...OPEN,
         id: 'c-b',
         createdAt: new Date(Date.now() - 5_000).toISOString(),
         status: 'paid',
-        paidAt: new Date().toISOString(),
+        paidAt: new Date(Date.now() + 2_000).toISOString(),
       };
       let reads = 0;
       vi.stubGlobal(
@@ -4588,6 +4589,31 @@ describe('PosScreen', () => {
       await waitFor(() => {
         expect(replace).toHaveBeenCalledWith('/pos');
       });
+    });
+
+    it('ties no payment made after it to a charge the api already shows paid', async () => {
+      // The current charge was paid a few seconds ago, by a payment of its own.
+      const paid = {
+        ...OPEN,
+        createdAt: new Date(Date.now() - 60_000).toISOString(),
+        status: 'paid',
+        paidAt: new Date(Date.now() - 5_000).toISOString(),
+      };
+      const fetchMock = vi.fn(async () => jsonResponse({ charge: paid, history: [paid] }));
+      vi.stubGlobal('fetch', fetchMock);
+      vi.mocked(logInteraction).mockClear();
+      renderWithLocale(<PosAmount />);
+      expect(await screen.findByRole('button', { name: 'Create payment' })).toBeTruthy();
+      // An unrelated Lightning payment of the same amount arrives after that.
+      receive(21);
+      showTab();
+      await waitFor(() => {
+        expect(fetchMock.mock.calls.length).toBeGreaterThanOrEqual(2);
+      });
+      await act(async () => undefined);
+      // The amount page stays: the payment is not that charge's.
+      expect(replace).not.toHaveBeenCalled();
+      expect(logInteraction).not.toHaveBeenCalledWith('pos_charge_paid_seen', expect.anything());
     });
 
     it('ties no payment to another tab’s charge that an overtaken ask shows paid', async () => {
