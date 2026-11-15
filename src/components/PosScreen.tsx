@@ -409,21 +409,15 @@ function askingFor(memory: WalletSettled, now: number): string | null {
  * confirmation as it does for a payment that names the charge. Read from the
  * answer itself, not from the open charge, so it also holds after a create or
  * a Cancel cleared that. That payment is used up: it counts for this charge
- * only and makes the till ask about no other. While a charge is open only that
- * charge is looked at. A charge whose confirmation was closed, or that the api
- * had paid before that payment was made (allowing for an api clock up to
- * {@link POS_CREATE_SKEW_MS} behind), takes none.
+ * only and makes the till ask about no other. A charge whose confirmation was
+ * closed, or that the api had paid before that payment was made (allowing for
+ * an api clock up to {@link POS_CREATE_SKEW_MS} behind), takes none: an
+ * earlier charge still in History cannot take a payment of the open one.
  */
 function confirmAsked(memory: WalletSettled, state: PosState): void {
   let changed = false;
-  const open = memory.open;
   for (const row of tillCharges(state)) {
-    if (
-      row.status !== 'paid' ||
-      memory.paid.has(row.id) ||
-      memory.closed.has(row.id) ||
-      (open !== null && row.id !== open.id)
-    ) {
+    if (row.status !== 'paid' || memory.paid.has(row.id) || memory.closed.has(row.id)) {
       continue;
     }
     const paidAt = row.paidAt === null ? Number.NaN : Date.parse(row.paidAt);
