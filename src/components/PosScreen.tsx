@@ -406,6 +406,17 @@ function confirmAsked(memory: WalletSettled, state: PosState): void {
   }
 }
 
+/** Till reads of one session that are on their way. */
+type ReadsInFlight = { session: string | null; count: number };
+
+/** The count of reads on their way for `session`; another session starts it over at none. */
+function inFlightFor(ref: { current: ReadsInFlight }, session: string | null): ReadsInFlight {
+  if (ref.current.session !== session) {
+    ref.current = { session, count: 0 };
+  }
+  return ref.current;
+}
+
 /** Make `charge` the open charge in `memory` and try the kept payments on it again; the rest stay kept. */
 function armOpen(memory: WalletSettled, charge: PosCharge): void {
   // A charge this tab's wallet already paid takes no further payment, even while the api still
@@ -626,9 +637,10 @@ function usePosTillState(): PosTillState {
   // Counts the till reads of the load effect that settled, so the api is asked again only after
   // the read before answered or failed.
   const [readsSettled, setReadsSettled] = useState(0);
-  // How many till reads (of the load effect, or the 0:00 read) are on their way: the next ask
-  // waits until none is, so a slow read is never cut off and its answer never dropped.
-  const readsInFlight = useRef(0);
+  // How many till reads of this session (of the load effect, or the 0:00 read) are on their way:
+  // the next ask waits until none is, so a slow read is never cut off and its answer never
+  // dropped. A read of the session before counts only for that session.
+  const readsInFlight = useRef<ReadsInFlight>({ session, count: 0 });
   const memory = settledFor(session);
   const walletPaid = memory.paid;
   const closed = memory.closed;
@@ -662,7 +674,8 @@ function usePosTillState(): PosTillState {
     const pending = tillWrite;
     const quiet = quietReload.current;
     quietReload.current = false;
-    readsInFlight.current += 1;
+    const inFlight = inFlightFor(readsInFlight, session);
+    inFlight.count += 1;
     void (async (): Promise<void> => {
       try {
         if (pending !== null) {
@@ -699,7 +712,7 @@ function usePosTillState(): PosTillState {
         }
       } finally {
         // Also a read a later load replaced: it was on its way until now.
-        readsInFlight.current -= 1;
+        inFlight.count -= 1;
         setReadsSettled((n) => n + 1);
       }
     })();
@@ -825,13 +838,14 @@ function usePosTillState(): PosTillState {
   useEffect(() => {
     // A payment the till cannot settle itself arrived: one read shows what the api knows (whether
     // it paid the open charge, or which charge a payment names). Quiet once the till has an answer.
+    // After a read on its way, never beside it, so that read is not cut off.
     const settled = settledFor(session);
-    if (session !== null && settled.recheck) {
+    if (session !== null && settled.recheck && inFlightFor(readsInFlight, session).count === 0) {
       settled.recheck = false;
       quietReload.current = state !== null;
       setReload((n) => n + 1);
     }
-  }, [session, settledVersion, state]);
+  }, [readsSettled, session, settledVersion, state]);
 
   // A Lightning payment that names no charge could be the open charge's: only the api, which
   // knows the invoices it handed out for the charge, can say so. Until a read shows the charge
@@ -841,11 +855,14 @@ function usePosTillState(): PosTillState {
   // its way, and so never cuts one off.
   const asking = session !== null && asksApi(memory, Date.now());
   useEffect(() => {
-    if (!asking || session === null || readsInFlight.current > 0) {
+    if (!asking || session === null || inFlightFor(readsInFlight, session).count > 0) {
       return;
     }
     const timer = setTimeout(() => {
-      if (readsInFlight.current === 0 && asksApi(settledFor(session), Date.now())) {
+      if (
+        inFlightFor(readsInFlight, session).count === 0 &&
+        asksApi(settledFor(session), Date.now())
+      ) {
         quietReload.current = true;
         setReload((n) => n + 1);
       }
@@ -952,16 +969,17 @@ function usePosTillState(): PosTillState {
       charge === null ||
       remaining > 0 ||
       refreshed.current === charge.id ||
-      readsInFlight.current > 0
+      inFlightFor(readsInFlight, session).count > 0
     ) {
       return;
     }
     refreshed.current = charge.id;
     const mine = generation.current;
     const seq = startRead(reads);
-    readsInFlight.current += 1;
+    const inFlight = inFlightFor(readsInFlight, session);
+    inFlight.count += 1;
     const settled = (): void => {
-      readsInFlight.current -= 1;
+      inFlight.count -= 1;
       setReadsSettled((n) => n + 1);
     };
     fetchPosState(session)

@@ -4048,6 +4048,73 @@ describe('PosScreen', () => {
       expect(reads).toBe(3);
     }, 12_000);
 
+    it('asks for a payment only after the read already on its way, never beside it', async () => {
+      const answers: Array<(response: Response) => void> = [];
+      let inFlight = 0;
+      let most = 0;
+      vi.stubGlobal(
+        'fetch',
+        vi.fn(
+          () =>
+            new Promise<Response>((resolve) => {
+              inFlight += 1;
+              most = Math.max(most, inFlight);
+              answers.push((response) => {
+                inFlight -= 1;
+                resolve(response);
+              });
+            }),
+        ),
+      );
+      renderWithLocale(<PosScreen />);
+      await waitFor(() => {
+        expect(answers).toHaveLength(1);
+      });
+      // A Lightning payment arrives while the first read is still on its way: it waits for it.
+      receive(21);
+      await act(async () => undefined);
+      expect(answers).toHaveLength(1);
+      await act(async () => {
+        answers[0]?.(jsonResponse({ charge: OPEN, history: [OPEN] }));
+        await Promise.resolve();
+      });
+      await waitFor(() => {
+        expect(answers).toHaveLength(2);
+      });
+      await act(async () => {
+        answers[1]?.(jsonResponse({ charge: PAID, history: [PAID] }));
+        await Promise.resolve();
+      });
+      expect(await confirmation()).toBeTruthy();
+      expect(most).toBe(1);
+    });
+
+    it('lets a read of the session before that never answers hold up no read of the next session', async () => {
+      let apiPaid = false;
+      vi.stubGlobal(
+        'fetch',
+        vi.fn(async (_input: RequestInfo | URL, init?: RequestInit) => {
+          const auth = new Headers(init?.headers).get('Authorization');
+          if (auth === 'Bearer tok') {
+            // The read of the session before never answers.
+            return new Promise<Response>(() => undefined);
+          }
+          const charge = apiPaid ? PAID : OPEN;
+          return jsonResponse({ charge, history: [charge] });
+        }),
+      );
+      renderWithLocale(<PosScreen />);
+      act(() => {
+        useAuthStore.setState({ session: 'other' });
+      });
+      expect(await screen.findByRole('button', { name: 'Cancel' })).toBeTruthy();
+      receive(21);
+      apiPaid = true;
+      expect(
+        await screen.findByRole('alertdialog', { name: 'Paid' }, { timeout: 4_000 }),
+      ).toBeTruthy();
+    }, 10_000);
+
     it('keeps asking quietly after a failed read while an unnamed payment could be the charge’s', async () => {
       let reads = 0;
       vi.stubGlobal(
