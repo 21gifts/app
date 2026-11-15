@@ -361,6 +361,24 @@ describe('summarizeLoans', () => {
     ).toEqual({ dueOn: '2026-10-12', sats: 60, amount: null });
   });
 
+  it('chooses the later priced next after an earlier sats-null amount-null entry', () => {
+    expect(
+      summarizeLoans(
+        {
+          sundayRest: false,
+          loans: [
+            loan({
+              goalCurrency: 'PHP',
+              next: { dueOn: '2026-10-11', sats: null, amount: null },
+            }),
+            loan({ next: { dueOn: '2026-10-12', sats: 60, amount: null } }),
+          ],
+        },
+        'ch',
+      ).next,
+    ).toEqual({ dueOn: '2026-10-12', sats: 60, amount: null });
+  });
+
   it('sums the stored next amounts of one fiat currency on the same day', () => {
     const php = (amount: string | null, sats: number, dueOn = '2026-10-11'): MyLoan =>
       loan({
@@ -445,6 +463,34 @@ describe('summarizeLoans', () => {
       sats: null,
       amount: '₱5.00',
     });
+  });
+
+  it('ignores an undisplayable earlier day in the stored same-day total', () => {
+    const dueOn = '2026-10-12';
+    expect(
+      summarizeLoans(
+        {
+          sundayRest: false,
+          loans: [
+            loan({
+              goalCurrency: 'PHP',
+              next: { dueOn: '2026-10-11', sats: null, amount: null },
+            }),
+            loan({
+              messageId: 'priced-next',
+              goalCurrency: 'PHP',
+              next: { dueOn, sats: 40, amount: '2.00' },
+            }),
+            loan({
+              messageId: 'unpriced-next',
+              goalCurrency: 'PHP',
+              next: { dueOn, sats: null, amount: '3.00' },
+            }),
+          ],
+        },
+        'ch',
+      ).next,
+    ).toEqual({ dueOn, sats: null, amount: '₱5.00' });
   });
 
   it('returns null for a due part when one sibling loan has no rate', () => {

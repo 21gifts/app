@@ -8051,6 +8051,62 @@ test.describe('loans repay screens', () => {
     await shotScreen(page, 'state-loans-repay-pay-more-shortfall-copied');
   });
 
+  test('state /loans/repay pay-more-shortfall-waiting', async ({ page }) => {
+    await seedLoanMember(page);
+    await seedLoanData(page, [loanWith(loanA, { maxSats: 23_000 })], {
+      'loan-a': ledgerA,
+    });
+    await page.route('**/messages/loan-a/repayment', async (route) => {
+      if (route.request().method() !== 'POST') {
+        await route.fallback();
+        return;
+      }
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          amountSats: 22_000,
+          amount: null,
+          bills: [
+            {
+              dayIndex: 12,
+              recipientAccountId: 'acc_bruno',
+              name: 'Bruno',
+              username: 'bruno',
+              amountSats: 22_000,
+              amount: null,
+              pr: 'lnbc22000nprepay',
+              sparkInvoice: 'spark-prepay-22000',
+            },
+          ],
+          waiting: [
+            {
+              dayIndex: 13,
+              recipientAccountId: 'acc_carla',
+              name: 'Carla',
+              username: 'carla',
+              amountSats: 200,
+              amount: null,
+            },
+          ],
+        }),
+      });
+    });
+    await page.goto('/loans/repay?visual=repay-e2e-payment');
+    const amount = page.getByLabel('Amount (₿)');
+    await amount.fill('22200');
+    await expect(page.getByText('$22.20')).toBeVisible();
+    await page.getByRole('button', { name: 'Pay this amount' }).click();
+    await expect(page.getByText('Waiting for Carla to set up their wallet')).toBeVisible();
+    await expect(
+      page.getByText("Your wallet has ₿21'000 · $21.00. Still missing ₿1'000 · $1.00."),
+    ).toBeVisible();
+    await expect(amount).toHaveValue('22200');
+    await expect(page.getByRole('button', { name: 'Top up your wallet' })).toBeVisible();
+    await topAtRest(amount);
+    await shotScreen(page, 'state-loans-repay-pay-more-shortfall-waiting');
+  });
+
   test('state /loans/repay collecting-pay-confirm', async ({ page }) => {
     await loanShot(page, {
       loans: [collectingLoan],

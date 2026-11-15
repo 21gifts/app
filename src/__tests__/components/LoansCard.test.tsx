@@ -672,6 +672,27 @@ describe('LoansCard', () => {
     expect(screen.queryByText(/^Next:/)).toBeNull();
   });
 
+  it('shows a later priced next day after an undisplayable earlier entry', () => {
+    const clearDue = { ...loan().due, payableSats: 0, payablePeople: 0 };
+    show({
+      sundayRest: false,
+      loans: [
+        phpLoan({
+          messageId: 'unpriced-next',
+          due: clearDue,
+          next: { dueOn: '2026-10-11', sats: null, amount: null },
+        }),
+        loan({
+          messageId: 'priced-next',
+          due: clearDue,
+          next: { dueOn: '2026-10-12', sats: 1_000, amount: null },
+        }),
+      ],
+    });
+    expect(screen.getByText("Next: Monday, October 12, ₿1'000 · $1.00")).toBeTruthy();
+    expect(screen.queryByText(/October 11/)).toBeNull();
+  });
+
   it('falls back to bitcoin and spot for missing stored strings', () => {
     show({
       sundayRest: false,

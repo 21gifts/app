@@ -222,6 +222,11 @@ export function summarizeLoans(data: MyLoans, style: NumberFormatStyle): LoansSu
   let behindDays = 0;
   let payableLoans = 0;
   let lastPayment = false;
+  const displayableNext = data.loans.flatMap((loan) =>
+    loan.next !== null && displayableNextAmount(loan.next.sats, loan.goalCurrency, loan.next.amount)
+      ? [{ loan, next: loan.next }]
+      : [],
+  );
   let nextDueOn: string | null = null;
   let nextSats: number | null = 0;
 
@@ -245,20 +250,14 @@ export function summarizeLoans(data: MyLoans, style: NumberFormatStyle): LoansSu
       payableLoans += 1;
       lastPayment ||= loan.due.lastPayment;
     }
-    if (loan.next !== null) {
-      const partSats = loan.next.sats;
-      const displayable = displayableNextAmount(partSats, loan.goalCurrency, loan.next.amount);
-      if (!displayable) {
-        continue;
-      }
-      if (nextDueOn === null || loan.next.dueOn < nextDueOn) {
-        nextDueOn = loan.next.dueOn;
-        nextSats = partSats;
-      } else if (loan.next.dueOn === nextDueOn) {
-        if (nextSats !== null && partSats !== null) {
-          nextSats += partSats;
-        }
-      }
+  }
+
+  for (const { next: part } of displayableNext) {
+    if (nextDueOn === null || part.dueOn < nextDueOn) {
+      nextDueOn = part.dueOn;
+      nextSats = part.sats;
+    } else if (part.dueOn === nextDueOn && nextSats !== null && part.sats !== null) {
+      nextSats += part.sats;
     }
   }
 

@@ -1758,7 +1758,7 @@ The free payment is waiting after its payable bills were sent. A muted **Waiting
 
 ### Variant: pay-more-all-waiting
 
-The free-payment result returned only a waiting recipient and sent zero bills. The run returns to the idle, nothing-payable state (`phase: 'idle'`): **Waiting for Carla to set up their wallet** with **₿200 · $0.20** remains under the matching loan, while the empty fixed-unit field, **Max**, and the disabled **Pay this amount** are ready for another input. No **Repaid** success message appears.
+The free-payment result returned only a waiting recipient and sent zero bills, with no payable bills in the result. The run returns to the idle, nothing-payable state (`phase: 'idle'`): **Waiting for Carla to set up their wallet** with **₿200 · $0.20** remains under the matching loan, while the empty fixed-unit field, **Max**, and the disabled **Pay this amount** are ready for another input. Only this all-waiting result clears the field; a shortfall keeps the submitted amount. No **Repaid** success message appears.
 
 ![21.gifts loans repay all waiting result](images/loans-repay-pay-more-all-waiting.png)
 
@@ -1791,6 +1791,12 @@ The same free-payment shortfall before the top-up block is opened. The matching 
 The opened free-payment shortfall after Ada's address is copied. Its address control reads **Copied**, the Open CryptoPay QR remains visible exactly once, and **Waiting for your top-up…** stays below it; the due box keeps its own Send state.
 
 ![21.gifts loans repay pay more shortfall copied](images/loans-repay-pay-more-shortfall-copied.png)
+
+### Variant: pay-more-shortfall-waiting
+
+A mixed free-payment result contains both payable bills and a waiting share. The submitted fixed-unit field keeps **22200** over its live **$22.20** counter while **Waiting for Carla to set up their wallet** with **₿200 · $0.20** appears under the matching loan. The wallet has ₿21'000 · $21.00, so the shortfall block says **Still missing ₿1'000 · $1.00** and offers **Top up your wallet**; the amount is not cleared because the result was not all-waiting.
+
+![21.gifts loans repay mixed shortfall with waiting recipient](images/loans-repay-pay-more-shortfall-waiting.png)
 
 ### Variant: collecting-pay-confirm
 

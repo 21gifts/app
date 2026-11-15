@@ -1848,6 +1848,12 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/loans/repay:pay-more-shortfall-waiting",
+    "label": "/loans/repay pay-more-shortfall-waiting",
+    "visual": "state-loans-repay-pay-more-shortfall-waiting",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/loans/repay:collecting-pay-confirm",
     "label": "/loans/repay collecting-pay-confirm",
     "visual": "state-loans-repay-collecting-pay-confirm",

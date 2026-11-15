@@ -761,6 +761,33 @@ describe('LoanRepayScreen', () => {
     expect(screen.queryByText(/null/)).toBeNull();
   });
 
+  it('shows the later priced next day after an undisplayable earlier entry', () => {
+    const clearDue = { ...loan().due, payableSats: 0, payablePeople: 0 };
+    vi.mocked(getRepayment).mockResolvedValue(null);
+    show(
+      {
+        sundayRest: false,
+        loans: [
+          loan({
+            messageId: 'unpriced-next',
+            goalCurrency: 'PHP',
+            goalAmount: '900.00',
+            due: clearDue,
+            next: { dueOn: '2026-10-11', sats: null, amount: null },
+          }),
+          loan({
+            messageId: 'priced-next',
+            due: clearDue,
+            next: { dueOn: '2026-10-12', sats: 1_000, amount: null },
+          }),
+        ],
+      },
+      repay(),
+    );
+    expect(screen.getByText("Next: Monday, October 12, ₿1'000 · $1.00")).toBeTruthy();
+    expect(screen.queryByText(/October 11/)).toBeNull();
+  });
+
   it('shows the develop all-waiting wording without a fiat label', () => {
     show(
       {

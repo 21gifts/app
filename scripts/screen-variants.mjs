@@ -2232,6 +2232,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/loans/repay',
+    id: 'pay-more-shortfall-waiting',
+    image: 'loans-repay-pay-more-shortfall-waiting.png',
+    visual: 'state-loans-repay-pay-more-shortfall-waiting',
+    needle: 'state /loans/repay pay-more-shortfall-waiting',
+  },
+  {
+    route: '/loans/repay',
     id: 'collecting-pay-confirm',
     image: 'loans-repay-collecting-pay-confirm.png',
     visual: 'state-loans-repay-collecting-pay-confirm',
