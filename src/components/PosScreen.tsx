@@ -167,14 +167,14 @@ type TillPayment = Pick<WalletPayment, 'amountSats' | 'feesSats' | 'timestamp'> 
  * payment id, amount, fee and payment time. `GET /pos` does not return the payment hashes of the
  * BOLT11 invoices the api handed out for a charge, so the till cannot tell a
  * payment of the charge from another payment of that amount (the static
- * sticker QR, a grant, another member). It pays no charge. `forCharge` is the
- * open charge it could be the payment of ({@link mayPay}) when it was heard, or
- * when that charge was armed after it, else `null`: the till asks the api about
- * that charge only, and counts the payment for that charge only once the api
- * returns it paid.
+ * sticker QR, a grant, another member). It pays no charge. `forCharges` are
+ * the open charges it could be the payment of ({@link mayPay}): the one open
+ * when it was heard, and each one armed after it (another tab's newer charge
+ * among them). The till asks the api about those charges only, and counts the
+ * payment for the first of them the api returns paid.
  */
 type UnnamedReceipt = Pick<WalletPayment, 'id' | 'amountSats' | 'feesSats' | 'timestamp'> & {
-  forCharge: string | null;
+  forCharges: string[];
 };
 
 /**
@@ -371,7 +371,7 @@ function keepEarly(memory: WalletSettled, payment: TillPayment): void {
 function keepUnnamed(memory: WalletSettled, receipt: UnnamedReceipt): void {
   const open = memory.open;
   if (open !== null && !memory.paid.has(open.id) && mayPay(open, receipt)) {
-    receipt.forCharge = open.id;
+    receipt.forCharges = [open.id];
   }
   memory.unnamed = [...memory.unnamed, receipt]
     .sort((a, b) => a.timestamp - b.timestamp)
@@ -405,7 +405,7 @@ function askingFor(memory: WalletSettled, now: number): string | null {
   // Kept by payment time, oldest first: the last that counts is the newest.
   let newest: string | null = null;
   for (const receipt of memory.unnamed) {
-    if (receipt.forCharge === open.id && now <= receipt.timestamp + POS_LATE_PAID_MS) {
+    if (receipt.forCharges.includes(open.id) && now <= receipt.timestamp + POS_LATE_PAID_MS) {
       newest = receipt.id;
     }
   }
@@ -413,23 +413,28 @@ function askingFor(memory: WalletSettled, now: number): string | null {
 }
 
 /**
- * When `state` shows paid the charge a Lightning payment that names no charge
- * was tied to (`forCharge`: the open charge it could be the payment of), the
+ * When `state` shows paid a charge a Lightning payment that names no charge
+ * was tied to (`forCharges`: the open charges it could be the payment of), the
  * api tied that payment to the charge (it knows the charge's invoices): the
  * charge counts as paid by this tab's wallet, with the api's payment time, so
  * the amount page returns to the till for its confirmation as it does for a
  * payment that names the charge. Read from the answer itself, so it also holds
  * after a create or a Cancel made that charge no longer the open one. That
- * payment is used up. No other charge, an earlier one in History among them,
- * ever takes it, and a charge whose confirmation was closed takes none.
+ * payment is used up: it counts for that one charge only. No charge it was not
+ * tied to, an earlier one in History among them, ever takes it, and a charge
+ * whose confirmation was closed takes none.
  */
 function confirmAsked(memory: WalletSettled, state: PosState): void {
   let changed = false;
   for (const receipt of memory.unnamed) {
     const row = tillCharges(state).find(
-      (candidate) => candidate.id === receipt.forCharge && candidate.status === 'paid',
+      (candidate) =>
+        receipt.forCharges.includes(candidate.id) &&
+        candidate.status === 'paid' &&
+        !memory.paid.has(candidate.id) &&
+        !memory.closed.has(candidate.id),
     );
-    if (row === undefined || memory.paid.has(row.id) || memory.closed.has(row.id)) {
+    if (row === undefined) {
       continue;
     }
     memory.paid.set(row.id, row);
@@ -450,10 +455,10 @@ function armOpen(memory: WalletSettled, charge: PosCharge): void {
   }
   memory.open = charge;
   // A Lightning payment heard before this charge was known, that could be its payment, is tied to
-  // it.
+  // it too, also when it is already tied to the charge before (another tab may have opened this one).
   for (const receipt of memory.unnamed) {
-    if (receipt.forCharge === null && mayPay(charge, receipt)) {
-      receipt.forCharge = charge.id;
+    if (!receipt.forCharges.includes(charge.id) && mayPay(charge, receipt)) {
+      receipt.forCharges = [...receipt.forCharges, charge.id];
     }
   }
   const early = memory.early;
@@ -538,7 +543,7 @@ function listenToWallet(): void {
           amountSats: payment.amountSats,
           feesSats: payment.feesSats,
           timestamp: payment.timestamp,
-          forCharge: null,
+          forCharges: [],
         });
         settledChanged();
       }

@@ -4383,6 +4383,47 @@ describe('PosScreen', () => {
       expect(within(history).getByText('Cancelled')).toBeTruthy();
     });
 
+    it('asks about another tab’s newer charge too for a payment heard while the one before was in its late minute', async () => {
+      // The charge before ran out 10 s ago; another tab opened a newer one of the same amount.
+      const ended = {
+        ...OPEN,
+        createdAt: new Date(Date.now() - 300_000).toISOString(),
+        expiresAt: new Date(Date.now() - 10_000).toISOString(),
+      };
+      const b = { ...OPEN, id: 'c-b', createdAt: new Date(Date.now() - 5_000).toISOString() };
+      let phase: 'ended' | 'b-open' | 'b-paid' = 'ended';
+      let reads = 0;
+      vi.stubGlobal(
+        'fetch',
+        vi.fn(async () => {
+          reads += 1;
+          if (reads === 1) {
+            return jsonResponse({ charge: ended, history: [ended] });
+          }
+          if (phase === 'ended') {
+            return jsonResponse({ charge: null, history: [ended] });
+          }
+          const charge =
+            phase === 'b-paid' ? { ...b, status: 'paid', paidAt: new Date().toISOString() } : b;
+          return jsonResponse({ charge, history: [charge, ended] });
+        }),
+      );
+      renderWithLocale(<PosScreen />);
+      expect(await screen.findByRole('link', { name: 'Set an amount' })).toBeTruthy();
+      await act(async () => undefined);
+      // The newer charge's payment arrives while this tab still holds the charge before.
+      phase = 'b-open';
+      receive(21);
+      expect(
+        await screen.findByRole('button', { name: 'Cancel' }, { timeout: 4_000 }),
+      ).toBeTruthy();
+      // The till keeps asking about the newer charge, and confirms it once the api has it paid.
+      phase = 'b-paid';
+      expect(
+        await screen.findByRole('alertdialog', { name: 'Paid' }, { timeout: 4_000 }),
+      ).toBeTruthy();
+    }, 12_000);
+
     it('keeps asking quietly after a failed read while an unnamed payment could be the charge’s', async () => {
       let reads = 0;
       vi.stubGlobal(
