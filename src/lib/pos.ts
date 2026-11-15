@@ -42,13 +42,13 @@ const posChargeSchema = z.object({
 /**
  * One payment the shop's own wallet received without a till charge, as
  * `GET /pos` lists it in `received`: the Spark transfer id, whole sats, the
- * time it was received, and whether it came over Lightning or as a Spark
+ * time it was received (an ISO-8601 instant with its offset), and whether it came over Lightning or as a Spark
  * transfer. No fiat figure is stored with it.
  */
 const posReceivedSchema = z.object({
   id: z.string().min(1),
   amountSats: z.number().int().positive(),
-  receivedAt: z.string().refine((value) => !Number.isNaN(Date.parse(value))),
+  receivedAt: z.string().datetime({ offset: true }),
   kind: z.enum(['lightning', 'spark']),
 });
 

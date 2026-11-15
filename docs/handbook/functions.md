@@ -68,7 +68,7 @@
 
 - **Purpose:** `GET /pos/charge` for the signed-in till.
 - **Inputs:** Bearer `sessionToken`.
-- **Returns / side effects:** `{ charge, history, received }`. A charge is `pending`, `paid`, `cancelled`, or `expired`, with `paidAt` (ISO string, or `null`; `null` also when the api does not send it). `charge` is the pending charge, or one paid within the last minute. `received` lists the payments the wallet received without a till charge, `{ id, amountSats, receivedAt, kind }` (`kind` `lightning` or `spark`), newest first; it is empty when the api does not send the field or sends no list, and an entry that is not a usable payment (no id, not a whole positive amount, no valid time, another kind) or repeats an id is left out while the rest stay. Throws when the response is not OK or `charge` / `history` are not the expected JSON.
+- **Returns / side effects:** `{ charge, history, received }`. A charge is `pending`, `paid`, `cancelled`, or `expired`, with `paidAt` (ISO string, or `null`; `null` also when the api does not send it). `charge` is the pending charge, or one paid within the last minute. `received` lists the payments the wallet received without a till charge, `{ id, amountSats, receivedAt, kind }` (`kind` `lightning` or `spark`), newest first; it is empty when the api does not send the field or sends no list, and an entry that is not a usable payment (no id, not a whole positive amount, a time that is not an ISO-8601 instant with its offset, another kind) or repeats an id is left out while the rest stay. Throws when the response is not OK or `charge` / `history` are not the expected JSON.
 - **Used by:** `PosTill`, `PosAmount`.
 
 ## Function: createPosCharge
