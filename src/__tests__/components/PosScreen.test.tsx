@@ -4231,6 +4231,7 @@ describe('PosScreen', () => {
     }, 10_000);
 
     it('lets a charge the api paid before the payment was made take none of it', async () => {
+      // No charge is open; the charge before is still in its window, paid 90 s before the payment.
       const a = {
         ...OPEN,
         id: 'c-a',
@@ -4238,24 +4239,26 @@ describe('PosScreen', () => {
         status: 'paid',
         paidAt: new Date(Date.now() - 90_000).toISOString(),
       };
-      const b = { ...OPEN, id: 'c-b', createdAt: new Date(Date.now() - 5_000).toISOString() };
-      let reads = 0;
       vi.stubGlobal(
         'fetch',
-        vi.fn(async () => {
-          reads += 1;
-          return jsonResponse({ charge: b, history: [b, a] });
-        }),
+        vi.fn(async () => jsonResponse({ charge: null, history: [a] })),
       );
+      vi.mocked(logInteraction).mockClear();
       renderWithLocale(<PosScreen />);
-      expect(await screen.findByRole('button', { name: 'Cancel' })).toBeTruthy();
+      expect(await screen.findByRole('link', { name: 'Set an amount' })).toBeTruthy();
       receive(21);
-      const before = reads;
-      await pause(2_300);
-      // The payment stays the open charge's to ask about.
-      expect(reads).toBeGreaterThan(before);
-      expect(screen.getByRole('button', { name: 'Cancel' })).toBeTruthy();
-    }, 10_000);
+      // A read after the payment shows that charge paid: it was paid before, so the payment is not
+      // its, and no confirmation opens.
+      showTab();
+      await act(async () => undefined);
+      await act(async () => undefined);
+      expect(screen.queryByRole('alertdialog')).toBeNull();
+      expect(logInteraction).not.toHaveBeenCalledWith(
+        'pos_charge_paid_seen',
+        expect.anything(),
+        expect.anything(),
+      );
+    });
 
     it('keeps asking quietly after a failed read while an unnamed payment could be the charge’s', async () => {
       let reads = 0;
