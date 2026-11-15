@@ -423,14 +423,17 @@ function askingFor(memory: WalletSettled, now: number): string | null {
  * after a create or a Cancel made that charge no longer the open one. That
  * payment is used up: it counts for that one charge only. No charge it was not
  * tied to, an earlier one in History among them, ever takes it, and a charge
- * whose confirmation was closed takes none.
+ * whose confirmation was closed takes none. With `tie`, for an answer the till
+ * applied, it first ties each payment to the answer's current charge that it
+ * could be the payment of.
  */
-function confirmAsked(memory: WalletSettled, state: PosState): void {
+function confirmAsked(memory: WalletSettled, state: PosState, tie: boolean): void {
   // The answer's own charge (open, or paid within the last minute) is tied to each payment it could
   // be the payment of, also when this till never had it open (another tab's charge, already paid by
-  // this read). History rows are never tied.
+  // this read). History rows are never tied, and neither is the charge of an answer the till did not
+  // apply (`tie` false: an ask a newer read overtook).
   const current = state.charge;
-  if (current !== null && current.status !== 'cancelled' && current.status !== 'expired') {
+  if (tie && current !== null && current.status !== 'cancelled' && current.status !== 'expired') {
     for (const receipt of memory.unnamed) {
       if (!receipt.forCharges.includes(current.id) && mayPay(current, receipt)) {
         receipt.forCharges = [...receipt.forCharges, current.id];
@@ -827,7 +830,7 @@ function usePosTillState(): PosTillState {
       for (const row of tillCharges(state)) {
         memory.seen.add(row.id);
       }
-      confirmAsked(memory, state);
+      confirmAsked(memory, state, true);
     }
     if (charge !== null) {
       // A payment the wallet reported while this charge was still being read counts for it. Not
@@ -899,7 +902,8 @@ function usePosTillState(): PosTillState {
         if (useAuthStore.getState().session === session) {
           // A paid charge stays paid: the api's paid status in this answer counts even when a read
           // started later already answered, which `applyRead` then keeps on screen.
-          confirmAsked(settledFor(session), next);
+          // Only what this payment is tied to already: an answer `applyRead` drops ties nothing.
+          confirmAsked(settledFor(session), next, false);
           whenCurrent(generation, mine, () => {
             applyRead(reads, seq, () => {
               setTill({ state: next, session });
