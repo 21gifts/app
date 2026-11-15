@@ -40,25 +40,69 @@ const posChargeSchema = z.object({
 });
 
 /**
+ * One payment the shop's own wallet received without a till charge, as
+ * `GET /pos` lists it in `received`: the Spark transfer id, whole sats, the
+ * time it was received (an ISO-8601 instant with its offset), and whether it came over Lightning or as a Spark
+ * transfer. No fiat figure is stored with it.
+ */
+const posReceivedSchema = z.object({
+  id: z.string().min(1),
+  amountSats: z.number().int().positive(),
+  // The shape alone also passes an offset such as +99:99, which is no instant.
+  receivedAt: z
+    .string()
+    .datetime({ offset: true })
+    .refine((value) => !Number.isNaN(Date.parse(value))),
+  kind: z.enum(['lightning', 'spark']),
+});
+
+/** A payment received without a till charge. */
+export type PosReceived = z.infer<typeof posReceivedSchema>;
+
+/**
+ * `received` of `GET /pos`, newest first. An api that does not send the field
+ * yet, or sends something that is not a list, gives an empty list. An entry
+ * that is not a usable payment, or repeats an id, is left out; the rest stay.
+ */
+const posReceivedListSchema = z.unknown().transform((value): PosReceived[] => {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+  const seen = new Set<string>();
+  const rows: PosReceived[] = [];
+  for (const entry of value) {
+    const parsed = posReceivedSchema.safeParse(entry);
+    if (parsed.success && !seen.has(parsed.data.id)) {
+      seen.add(parsed.data.id);
+      rows.push(parsed.data);
+    }
+  }
+  return rows.sort((a, b) => Date.parse(b.receivedAt) - Date.parse(a.receivedAt));
+});
+
+/**
  * `GET /pos/charge` body. `charge` is the pending charge, or one paid within
- * the last minute.
+ * the last minute. `received` lists the payments that reached the wallet
+ * without a till charge.
  */
 const posStateSchema = z.object({
   charge: posChargeSchema.nullable(),
   history: z.array(posChargeSchema),
+  received: posReceivedListSchema,
 });
 
 /** A charge the till is showing. */
 export type PosCharge = z.infer<typeof posChargeSchema>;
 
-/** Open charge plus recent rows. */
+/** Open charge, recent rows, and payments received without a charge. */
 export type PosState = z.infer<typeof posStateSchema>;
 
 /**
  * Load the signed-in till.
  *
  * @param sessionToken - Bearer session.
- * @returns The open charge and history.
+ * @returns The open charge, the history, and the payments received without a
+ *   charge (empty when the api does not send them; unusable entries left out).
  * @throws Error when the response is not OK or not the expected JSON.
  */
 export async function fetchPosState(sessionToken: string): Promise<PosState> {

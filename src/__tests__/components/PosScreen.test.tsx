@@ -9,6 +9,7 @@ import { spotRateDay } from '@/lib/stats-money';
 import { logInteraction } from '@/lib/interaction-log';
 import { previousViewPath, recordCurrentView, resetViewHistory } from '@/lib/view-history';
 import { useAuthStore } from '@/stores/auth-store';
+import { useWalletStore } from '@/stores/wallet-store';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
 
 const setup = vi.hoisted(() => ({ failed: false, retry: vi.fn() }));
@@ -5343,5 +5344,124 @@ describe('PosScreen', () => {
       expect(await screen.findByRole('button', { name: 'Create payment' })).toBeTruthy();
       expect(replace).not.toHaveBeenCalled();
     });
+  });
+});
+
+describe('PosScreen received without a charge', () => {
+  const RECEIVED = {
+    id: '0a1b2c3d-0000-4000-8000-000000000002',
+    amountSats: 2_100,
+    receivedAt: '2026-10-04T12:03:10.000Z',
+    kind: 'lightning',
+  };
+
+  /** This tab's wallet read its balance again (a payment, a sync, or the five-minute refresh). */
+  function walletRead(): void {
+    act(() => {
+      useWalletStore.setState((state) => ({ syncCount: state.syncCount + 1 }));
+    });
+  }
+
+  it('reads the till again on every wallet read and lists the payment without a reload', async () => {
+    vi.mocked(logInteraction).mockClear();
+    const fetchMock = vi.fn(async () => jsonResponse({ charge: null, history: [] }));
+    vi.stubGlobal('fetch', fetchMock);
+    const view = renderWithLocale(<PosScreen />);
+    expect(await screen.findByText('No payments yet.')).toBeTruthy();
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    // A render without a new wallet read asks nothing.
+    view.rerender(<PosScreen />);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+
+    fetchMock.mockImplementation(async () =>
+      jsonResponse({ charge: null, history: [], received: [RECEIVED] }),
+    );
+    walletRead();
+    const history = screen.getByRole('region', { name: 'History' });
+    expect(await within(history).findByText('Received')).toBeTruthy();
+    expect(within(history).getByText("₿2'100")).toBeTruthy();
+    expect(within(history).getByText('Instant payment')).toBeTruthy();
+    expect(screen.queryByText('No payments yet.')).toBeNull();
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    // It is not a paid charge: no full-screen confirmation, and Set an amount stays.
+    expect(screen.queryByRole('dialog')).toBeNull();
+    expect(screen.queryByText('Paid')).toBeNull();
+    expect(screen.getByRole('link', { name: 'Set an amount' })).toBeTruthy();
+    expect(logInteraction).not.toHaveBeenCalledWith(
+      'pos_charge_paid_seen',
+      expect.anything(),
+      expect.anything(),
+    );
+  });
+
+  it('keeps the till as it is, without an error, when the read after a wallet read fails', async () => {
+    const fetchMock = vi.fn(async () =>
+      jsonResponse({ charge: null, history: [], received: [RECEIVED] }),
+    );
+    vi.stubGlobal('fetch', fetchMock);
+    renderWithLocale(<PosScreen />);
+    expect(await screen.findByText('Received')).toBeTruthy();
+    fetchMock.mockImplementation(async () => jsonResponse({ error: 'down' }, 500));
+    walletRead();
+    await waitFor(() => {
+      expect(fetchMock).toHaveBeenCalledTimes(2);
+    });
+    await act(async () => {
+      await Promise.resolve();
+    });
+    expect(screen.queryByText('Point of sale is unavailable.')).toBeNull();
+    expect(screen.getByText('Received')).toBeTruthy();
+  });
+
+  it('shows the error when the first read fails, also when a wallet read asked for it', async () => {
+    let answer: (value: Response) => void = () => undefined;
+    const fetchMock = vi.fn(
+      () =>
+        new Promise<Response>((resolve) => {
+          answer = resolve;
+        }),
+    );
+    vi.stubGlobal('fetch', fetchMock);
+    renderWithLocale(<PosScreen />);
+    await waitFor(() => {
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+    });
+    walletRead();
+    await waitFor(() => {
+      expect(fetchMock).toHaveBeenCalledTimes(2);
+    });
+    await act(async () => {
+      answer(jsonResponse({ error: 'down' }, 500));
+    });
+    expect(await screen.findByText('Point of sale is unavailable.')).toBeTruthy();
+  });
+
+  it('keeps the received payments when Cancel takes the open charge off', async () => {
+    const charge = {
+      id: 'c1',
+      amountSats: 21,
+      status: 'pending',
+      createdAt: new Date().toISOString(),
+      expiresAt: new Date(Date.now() + 60_000).toISOString(),
+    };
+    const fetchMock = vi.fn(async (_input: RequestInfo | URL, init?: RequestInit) => {
+      if (init?.method === 'DELETE') {
+        return jsonResponse({ charge: null });
+      }
+      return jsonResponse({ charge, history: [charge], received: [RECEIVED] });
+    });
+    vi.stubGlobal('fetch', fetchMock);
+    renderWithLocale(<PosScreen />);
+    expect(await screen.findByRole('button', { name: 'Cancel' })).toBeTruthy();
+    expect(screen.getByText('Received')).toBeTruthy();
+    // The read after the cancel never answers: the till shows what the cancel left.
+    fetchMock.mockImplementation(async (_input: RequestInfo | URL, init?: RequestInit) =>
+      init?.method === 'DELETE' ? jsonResponse({ charge: null }) : new Promise<Response>(() => {}),
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+    expect(await screen.findByRole('link', { name: 'Set an amount' })).toBeTruthy();
+    const history = screen.getByRole('region', { name: 'History' });
+    expect(within(history).getByText('Cancelled')).toBeTruthy();
+    expect(within(history).getByText('Received')).toBeTruthy();
   });
 });

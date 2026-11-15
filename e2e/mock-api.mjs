@@ -2385,7 +2385,8 @@ const server = http.createServer(async (req, res) => {
       });
       return;
     }
-    json(res, 200, { charge: null, history: [] });
+    // `received`: payments the wallet got without a till charge (api `GET /pos`); none here.
+    json(res, 200, { charge: null, history: [], received: [] });
     return;
   }
 

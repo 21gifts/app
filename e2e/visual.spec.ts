@@ -14472,6 +14472,101 @@ test.describe('onboarding screens', () => {
     await shotScreen(page, 'state-pos-history');
   });
 
+  test('state /pos received', async ({ page }) => {
+    await fulfillRateDay(page);
+    await page.addInitScript(() => {
+      const fixed = Date.parse('2026-09-20T12:10:00.000Z');
+      Date.now = () => fixed;
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          name: 'Ada',
+          location: null,
+          username: 'alice',
+          lightningAddress: null,
+          sparkWalletVerified: true,
+          rulesAgreedAt: 1_700_000_001,
+          viewKey: 'a'.repeat(64),
+          aboutMe: null,
+          setup: null,
+          missing: [],
+        }),
+      });
+    });
+    await page.route(/\/pos\/charge$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          charge: null,
+          history: [
+            {
+              id: 'pos-paid',
+              amountSats: 2_100,
+              status: 'paid',
+              createdAt: '2026-09-20T12:00:00.000Z',
+              expiresAt: '2026-09-20T12:05:00.000Z',
+              paidAt: '2026-09-20T12:00:40.000Z',
+            },
+            {
+              id: 'pos-expired',
+              amountSats: 500,
+              status: 'expired',
+              createdAt: '2026-09-19T08:30:00.000Z',
+              expiresAt: '2026-09-19T08:35:00.000Z',
+              paidAt: null,
+            },
+            {
+              id: 'pos-cancelled',
+              amountSats: 42,
+              status: 'cancelled',
+              createdAt: '2026-09-18T17:45:00.000Z',
+              expiresAt: '2026-09-18T17:50:00.000Z',
+              paidAt: null,
+            },
+          ],
+          // Synthetic transfer ids: two payments that reached the wallet without a charge.
+          received: [
+            {
+              id: '0a1b2c3d-0000-4000-8000-000000000002',
+              amountSats: 1_000,
+              receivedAt: '2026-09-20T12:06:00.000Z',
+              kind: 'lightning',
+            },
+            {
+              id: '0a1b2c3d-0000-4000-8000-000000000001',
+              amountSats: 250,
+              receivedAt: '2026-09-19T10:15:00.000Z',
+              kind: 'spark',
+            },
+          ],
+        }),
+      });
+    });
+    await page.goto('/pos');
+    await expect(page.getByRole('link', { name: 'Set an amount' })).toBeVisible();
+    const history = page.getByRole('region', { name: 'History' });
+    const rows = history.getByRole('listitem');
+    await expect(rows).toHaveCount(5);
+    await expect(rows.nth(0)).toContainText('Received');
+    await expect(rows.nth(0)).toContainText("₿1'000 · $1.00");
+    await expect(rows.nth(0)).toContainText('Instant payment');
+    await expect(rows.nth(1)).toContainText('Paid ✓ 12:00 PM');
+    await expect(rows.nth(2)).toContainText('Received');
+    await expect(rows.nth(2)).toContainText('Wallet transfer');
+    await expect(rows.nth(2)).toContainText('Sep 19, 2026, 10:15 AM');
+    await expect(rows.nth(3)).toContainText('Expired');
+    await expect(rows.nth(4)).toContainText('Cancelled');
+    await expect(page.getByRole('alertdialog', { name: 'Paid' })).toHaveCount(0);
+    await history.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-pos-received');
+  });
+
   test('pos loading', async ({ page }) => {
     await page.addInitScript(() => {
       localStorage.setItem('21gifts.session', 'sess-e2e');
