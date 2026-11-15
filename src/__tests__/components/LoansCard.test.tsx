@@ -354,6 +354,8 @@ describe('LoansCard', () => {
     expect(screen.queryByText('Not fully funded yet.')).toBeNull();
     expect(screen.queryByText('No repayments on Sundays')).toBeNull();
     expect(screen.getByRole('link', { name: 'Repay your loan' })).toBeTruthy();
+    const header = screen.getByRole('heading', { name: 'Your loan' }).parentElement;
+    expect(header?.querySelector('p')).toBeNull();
   });
 
   it('shows an ordinary due-today row with the funded status', () => {

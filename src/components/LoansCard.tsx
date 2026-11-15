@@ -143,7 +143,7 @@ export function LoansCard({ place }: LoansCardProps): ReactElement | null {
     >
       <div>
         <h2 className="text-sm font-semibold text-app-fg">{title}</h2>
-        <p className="mt-1 text-sm text-app-muted">{status}</p>
+        {status === null ? null : <p className="mt-1 text-sm text-app-muted">{status}</p>}
       </div>
       {single && loans.loans[0] !== undefined ? (
         renderGoalBar(loans.loans[0])
