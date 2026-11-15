@@ -4424,6 +4424,36 @@ describe('PosScreen', () => {
       ).toBeTruthy();
     }, 12_000);
 
+    it('sends the amount page back to the till when the first read after an unnamed payment shows another tab’s charge paid', async () => {
+      // Another tab's charge, made before the payment; this till never had it open.
+      const b = {
+        ...OPEN,
+        id: 'c-b',
+        createdAt: new Date(Date.now() - 5_000).toISOString(),
+        status: 'paid',
+        paidAt: new Date().toISOString(),
+      };
+      let reads = 0;
+      vi.stubGlobal(
+        'fetch',
+        vi.fn(async () => {
+          reads += 1;
+          return reads === 1
+            ? jsonResponse({ charge: null, history: [] })
+            : jsonResponse({ charge: b, history: [b] });
+        }),
+      );
+      renderWithLocale(<PosAmount />);
+      expect(await screen.findByRole('button', { name: 'Create payment' })).toBeTruthy();
+      receive(21);
+      expect(replace).not.toHaveBeenCalled();
+      // The next read already shows that charge paid: the payment is its, and the page returns.
+      showTab();
+      await waitFor(() => {
+        expect(replace).toHaveBeenCalledWith('/pos');
+      });
+    });
+
     it('keeps asking quietly after a failed read while an unnamed payment could be the charge’s', async () => {
       let reads = 0;
       vi.stubGlobal(
