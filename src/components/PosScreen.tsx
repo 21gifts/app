@@ -369,18 +369,41 @@ function keepUnnamed(memory: WalletSettled, receipt: UnnamedReceipt): void {
 /**
  * Whether the till asks the api again for the open charge in `memory`: a
  * Lightning payment that names no charge could be its payment ({@link mayPay}),
- * and the wallet did not pay it by its Spark invoice. Ends once a read shows the
- * charge paid, cancelled or gone before its end (the arming effect drops it),
- * and {@link POS_LATE_PAID_MS} after its end.
+ * made at most {@link POS_LATE_PAID_MS} before `now`, and the wallet did not pay
+ * the charge by its Spark invoice. Ends once a read shows the charge paid,
+ * cancelled or gone before its end (the arming effect drops it), and one minute
+ * after the last such payment, so one made in the last second of the charge's
+ * late minute still gets its reads.
  */
 function asksApi(memory: WalletSettled, now: number): boolean {
   const open = memory.open;
   return (
     open !== null &&
     !memory.paid.has(open.id) &&
-    now <= Date.parse(open.expiresAt) + POS_LATE_PAID_MS &&
-    memory.unnamed.some((receipt) => mayPay(open, receipt))
+    memory.unnamed.some(
+      (receipt) => mayPay(open, receipt) && now <= receipt.timestamp + POS_LATE_PAID_MS,
+    )
   );
+}
+
+/**
+ * When `state` shows the open charge in `memory` paid and this tab's wallet
+ * received a Lightning payment that could be its payment ({@link mayPay}), the
+ * api tied that payment to the charge (it knows the charge's invoices): the
+ * charge counts as paid by this tab's wallet, with the api's payment time, so
+ * the amount page returns to the till for its confirmation as it does for a
+ * payment that names the charge.
+ */
+function confirmAsked(memory: WalletSettled, state: PosState): void {
+  const open = memory.open;
+  if (open === null || !memory.unnamed.some((receipt) => mayPay(open, receipt))) {
+    return;
+  }
+  const row = tillCharges(state).find((candidate) => candidate.id === open.id);
+  if (row?.status === 'paid') {
+    memory.paid.set(row.id, row);
+    settledChanged();
+  }
 }
 
 /** Make `charge` the open charge in `memory` and try the kept payments on it again; the rest stay kept. */
@@ -764,6 +787,7 @@ function usePosTillState(): PosTillState {
       for (const row of tillCharges(state)) {
         memory.seen.add(row.id);
       }
+      confirmAsked(memory, state);
     }
     if (charge !== null) {
       // A payment the wallet reported while this charge was still being read counts for it. Not
@@ -812,11 +836,12 @@ function usePosTillState(): PosTillState {
   // A Lightning payment that names no charge could be the open charge's: only the api, which
   // knows the invoices it handed out for the charge, can say so. Until a read shows the charge
   // paid (or cancelled, or gone) the till asks again, each time {@link PAY_POLL_MS} after the read
-  // before settled, and at most until {@link POS_LATE_PAID_MS} after the charge's end. The first
+  // before settled, and at most until {@link POS_LATE_PAID_MS} after that payment. The first
   // ask follows the read the payment asked for at once (`recheck`), never runs beside a read on
   // its way, and so never cuts one off.
+  const asking = session !== null && asksApi(memory, Date.now());
   useEffect(() => {
-    if (session === null || loading.current || !asksApi(settledFor(session), Date.now())) {
+    if (!asking || session === null || loading.current) {
       return;
     }
     const timer = setTimeout(() => {
@@ -828,7 +853,7 @@ function usePosTillState(): PosTillState {
     return () => {
       clearTimeout(timer);
     };
-  }, [readsSettled, session]);
+  }, [asking, readsSettled, session]);
 
   useEffect(() => {
     // A confirmation a newer open charge hid is over: it does not come back once that charge ends.
@@ -919,20 +944,29 @@ function usePosTillState(): PosTillState {
   }
 
   useEffect(() => {
+    // At 0:00 the till reads once. Not beside a read of the load effect on its way, and none of
+    // the reads a payment asks for starts beside this one (`loading`), so neither cuts the other off.
     if (
       session === null ||
       busy ||
       charge === null ||
       remaining > 0 ||
-      refreshed.current === charge.id
+      refreshed.current === charge.id ||
+      loading.current
     ) {
       return;
     }
     refreshed.current = charge.id;
     const mine = generation.current;
     const seq = startRead(reads);
+    loading.current = true;
+    const settled = (): void => {
+      loading.current = false;
+      setReadsSettled((n) => n + 1);
+    };
     fetchPosState(session)
       .then((next) => {
+        settled();
         // Another session signed in meanwhile: this answer is not its till.
         if (useAuthStore.getState().session !== session) {
           return;
@@ -948,6 +982,7 @@ function usePosTillState(): PosTillState {
         });
       })
       .catch(() => {
+        settled();
         // A newer read already answered, or another session signed in: this failure says nothing
         // about the till now.
         if (seq < reads.current.applied || useAuthStore.getState().session !== session) {
@@ -958,7 +993,7 @@ function usePosTillState(): PosTillState {
           setErrorState({ message: t('pos.error'), session });
         });
       });
-  }, [busy, charge, remaining, session, t]);
+  }, [busy, charge, readsSettled, remaining, session, t]);
 
   useEffect(() => {
     if (!loadingAlert || !rateSettled) {
@@ -1348,7 +1383,8 @@ function usePosTillState(): PosTillState {
  * be the open charge's (its amount, made from the second the charge was
  * created to one minute after its end), it reads again `PAY_POLL_MS` after
  * each read settled, until a read shows the charge paid, cancelled or gone,
- * and at most until one minute after its end. A paid charge
+ * and at most until one minute after that payment; once a read shows the
+ * charge paid, it counts as paid by this tab's wallet. A paid charge
  * the api returns also opens the confirmation. A lost create the api already
  * shows paid is remembered for the session and still confirmed here when a
  * later read fails or no longer returns it; it is not a payment this tab's

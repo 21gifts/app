@@ -4065,9 +4065,43 @@ describe('PosScreen', () => {
       expect(screen.queryByRole('alertdialog')).toBeNull();
     }, 10_000);
 
-    it('stops asking the api a minute after the charge ran out', async () => {
-      // The charge ran out 59 s ago: a payment now may still be its, for one more second.
+    it('keeps asking past the late minute for a payment made in its last second, and confirms it', async () => {
+      // The charge ran out 59 s ago: a payment now may still be its.
       const ended = { ...OPEN, expiresAt: new Date(Date.now() - 59_000).toISOString() };
+      const paid = { ...ended, status: 'paid', paidAt: new Date().toISOString() };
+      let reads = 0;
+      vi.stubGlobal(
+        'fetch',
+        vi.fn(async () => {
+          reads += 1;
+          // The api marks it paid only after the read the payment asks for at once.
+          const charge = reads <= 2 ? null : reads === 3 ? null : paid;
+          return jsonResponse({ charge: reads === 1 ? ended : charge, history: [ended] });
+        }),
+      );
+      renderWithLocale(<PosScreen />);
+      expect(await screen.findByRole('link', { name: 'Set an amount' })).toBeTruthy();
+      await waitFor(() => {
+        expect(reads).toBe(2);
+      });
+      receive(21);
+      await waitFor(() => {
+        expect(reads).toBe(3);
+      });
+      // The poll pause ends after the charge's late minute: the till still asks, and confirms.
+      expect(
+        await screen.findByRole('alertdialog', { name: 'Paid' }, { timeout: 4_000 }),
+      ).toBeTruthy();
+      expect(reads).toBe(4);
+    }, 10_000);
+
+    it('stops asking the api a minute after the payment that could be the charge’s', async () => {
+      // The charge ran out 150 s ago; the payment came 95 s ago, inside its late minute.
+      const ended = {
+        ...OPEN,
+        createdAt: new Date(Date.now() - 450_000).toISOString(),
+        expiresAt: new Date(Date.now() - 150_000).toISOString(),
+      };
       let reads = 0;
       vi.stubGlobal(
         'fetch',
@@ -4081,14 +4115,80 @@ describe('PosScreen', () => {
       await waitFor(() => {
         expect(reads).toBe(2);
       });
-      receive(21);
+      receive(21, 0, Date.now() - 95_000);
       await waitFor(() => {
         expect(reads).toBe(3);
       });
-      // The poll pause ends after the charge's last minute: no further read.
+      // More than a minute after that payment: no further read.
       await pause(2_300);
       expect(reads).toBe(3);
       expect(screen.queryByRole('alertdialog')).toBeNull();
+    }, 10_000);
+
+    it('keeps asking the api after a failed Cancel for an unnamed payment that could be the charge’s', async () => {
+      let apiPaid = false;
+      let reads = 0;
+      vi.stubGlobal(
+        'fetch',
+        vi.fn(async (_input: RequestInfo | URL, init?: RequestInit) => {
+          if (init?.method === 'DELETE') {
+            return jsonResponse({ error: 'down' }, 502);
+          }
+          reads += 1;
+          const charge = apiPaid ? PAID : OPEN;
+          return jsonResponse({ charge, history: [charge] });
+        }),
+      );
+      renderWithLocale(<PosScreen />);
+      expect(await screen.findByRole('button', { name: 'Cancel' })).toBeTruthy();
+      receive(21);
+      await waitFor(() => {
+        expect(reads).toBe(2);
+      });
+      // Cancel fails: the charge is open again, and the till goes on asking for that payment.
+      fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+      expect(await screen.findByRole('alert')).toBeTruthy();
+      const afterCancel = reads;
+      apiPaid = true;
+      expect(
+        await screen.findByRole('alertdialog', { name: 'Paid' }, { timeout: 4_000 }),
+      ).toBeTruthy();
+      expect(reads).toBeGreaterThan(afterCancel);
+    }, 10_000);
+
+    it('sends the amount page back to the till when the api confirms an unnamed payment of the charge that ran out', async () => {
+      const ended = { ...OPEN, expiresAt: new Date(Date.now() - 1_000).toISOString() };
+      const paid = { ...ended, status: 'paid', paidAt: new Date().toISOString() };
+      let apiPaid = false;
+      let reads = 0;
+      vi.stubGlobal(
+        'fetch',
+        vi.fn(async () => {
+          reads += 1;
+          return jsonResponse(
+            reads === 1
+              ? { charge: ended, history: [ended] }
+              : { charge: apiPaid ? paid : null, history: [apiPaid ? paid : ended] },
+          );
+        }),
+      );
+      const till = renderWithLocale(<PosScreen />);
+      expect(await screen.findByRole('link', { name: 'Set an amount' })).toBeTruthy();
+      till.unmount();
+      renderWithLocale(<PosAmount />);
+      expect(await screen.findByRole('button', { name: 'Create payment' })).toBeTruthy();
+      // A Lightning payment of the amount, in the minute after the end, that names no charge.
+      receive(21);
+      expect(replace).not.toHaveBeenCalled();
+      // The api ties it to the charge: the amount page returns to the till for the confirmation.
+      apiPaid = true;
+      await waitFor(
+        () => {
+          expect(replace).toHaveBeenCalledWith('/pos');
+        },
+        { timeout: 4_000 },
+      );
+      expect(screen.queryByRole('button', { name: 'Create payment' })).toBeNull();
     }, 10_000);
 
     it('never counts one payment for two charges', async () => {
