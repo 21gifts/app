@@ -4262,6 +4262,85 @@ describe('PosScreen', () => {
       );
     });
 
+    it('lets an earlier charge paid in History take no payment the open charge could be paid by', async () => {
+      // On this till the earlier charge was never shown or closed (another tab, or a reload); the
+      // api sent no paid time for it.
+      const a = {
+        ...OPEN,
+        id: 'c-a',
+        createdAt: new Date(Date.now() - 60_000).toISOString(),
+        status: 'paid',
+        paidAt: null,
+      };
+      const b = { ...OPEN, id: 'c-b', createdAt: new Date(Date.now() - 5_000).toISOString() };
+      let bPaid = false;
+      let reads = 0;
+      vi.stubGlobal(
+        'fetch',
+        vi.fn(async () => {
+          reads += 1;
+          const charge = bPaid ? { ...b, status: 'paid', paidAt: new Date().toISOString() } : b;
+          return jsonResponse({ charge, history: [charge, a] });
+        }),
+      );
+      renderWithLocale(<PosScreen />);
+      expect(await screen.findByRole('button', { name: 'Cancel' })).toBeTruthy();
+      await act(async () => undefined);
+      receive(21);
+      await waitFor(() => {
+        expect(reads).toBeGreaterThanOrEqual(2);
+      });
+      // The earlier charge does not take it: the till keeps asking about the open one.
+      const before = reads;
+      await pause(2_300);
+      expect(reads).toBeGreaterThan(before);
+      expect(screen.queryByRole('alertdialog')).toBeNull();
+      bPaid = true;
+      const dialog = await screen.findByRole('alertdialog', { name: 'Paid' }, { timeout: 4_000 });
+      expect(within(dialog).getByText('₿21')).toBeTruthy();
+    }, 12_000);
+
+    it('lets an earlier charge paid in History take no payment heard before the open charge was armed', async () => {
+      const a = {
+        ...OPEN,
+        id: 'c-a',
+        createdAt: new Date(Date.now() - 60_000).toISOString(),
+        status: 'paid',
+        paidAt: null,
+      };
+      const b = { ...OPEN, id: 'c-b', createdAt: new Date(Date.now() - 5_000).toISOString() };
+      let answerFirst: ((response: Response) => void) | undefined;
+      let reads = 0;
+      vi.stubGlobal(
+        'fetch',
+        vi.fn(async () => {
+          reads += 1;
+          if (reads === 1) {
+            return new Promise<Response>((resolve) => {
+              answerFirst = resolve;
+            });
+          }
+          return jsonResponse({ charge: b, history: [b, a] });
+        }),
+      );
+      renderWithLocale(<PosScreen />);
+      await waitFor(() => {
+        expect(answerFirst).toBeDefined();
+      });
+      // The payment of the open charge is heard while the till is still reading it.
+      receive(21);
+      await act(async () => {
+        answerFirst?.(jsonResponse({ charge: b, history: [b, a] }));
+        await Promise.resolve();
+      });
+      expect(await screen.findByRole('button', { name: 'Cancel' })).toBeTruthy();
+      // The earlier charge did not take it: the till asks about the open one.
+      await waitFor(() => {
+        expect(reads).toBeGreaterThanOrEqual(2);
+      });
+      expect(screen.queryByRole('alertdialog')).toBeNull();
+    });
+
     it('keeps asking quietly after a failed read while an unnamed payment could be the charge’s', async () => {
       let reads = 0;
       vi.stubGlobal(

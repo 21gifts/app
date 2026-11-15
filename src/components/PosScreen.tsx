@@ -411,10 +411,17 @@ function askingFor(memory: WalletSettled, now: number): string | null {
  * a Cancel cleared that. That payment is used up: it counts for this charge
  * only and makes the till ask about no other. A charge whose confirmation was
  * closed, or that the api had paid before that payment was made (allowing for
- * an api clock up to {@link POS_CREATE_SKEW_MS} behind), takes none: an
- * earlier charge still in History cannot take a payment of the open one.
+ * an api clock up to {@link POS_CREATE_SKEW_MS} behind), takes none; nor does
+ * any other charge take a payment the open charge (or, before it is armed, the
+ * charge `state` shows open) could be paid by ({@link mayPay}): an earlier
+ * charge still in History cannot take a payment of the open one.
  */
 function confirmAsked(memory: WalletSettled, state: PosState): void {
+  // The open charge, or before it is armed (a create on its way, the first read) the one this
+  // answer shows open.
+  const open =
+    memory.open ??
+    (state.charge !== null && state.charge.status === 'pending' ? state.charge : null);
   let changed = false;
   for (const row of tillCharges(state)) {
     if (row.status !== 'paid' || memory.paid.has(row.id) || memory.closed.has(row.id)) {
@@ -424,7 +431,9 @@ function confirmAsked(memory: WalletSettled, state: PosState): void {
     const used = memory.unnamed.find(
       (receipt) =>
         mayPay(row, receipt) &&
-        (Number.isNaN(paidAt) || paidAt + POS_CREATE_SKEW_MS >= receipt.timestamp),
+        (Number.isNaN(paidAt) || paidAt + POS_CREATE_SKEW_MS >= receipt.timestamp) &&
+        // A payment the open charge could take is that charge's to ask about.
+        (open === null || open.id === row.id || !mayPay(open, receipt)),
     );
     if (used === undefined) {
       continue;
