@@ -964,6 +964,9 @@ export function LoanRepayScreen(): ReactElement {
                   prepayWaiting={
                     repay.prepayMessageId === loan.messageId ? repay.prepayWaiting : []
                   }
+                  prepayAllWaiting={
+                    repay.prepayMessageId === loan.messageId && repay.prepayAllWaiting
+                  }
                   balanceSats={repay.balanceSats}
                   missingSats={repay.missingSats}
                   showShortfall={

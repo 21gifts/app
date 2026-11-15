@@ -948,6 +948,7 @@ describe('LoanPayMore', () => {
       payMoreState(item, completed.onPay, completed.onCloseCollecting, {
         phase: 'idle',
         activeAction: { kind: 'prepay', messageId: 'loan-1' },
+        prepayAllWaiting: true,
         prepayWaiting: [
           {
             dayIndex: 2,
@@ -962,6 +963,37 @@ describe('LoanPayMore', () => {
     );
 
     expect((screen.getByLabelText('Amount (₿)') as HTMLInputElement).value).toBe('');
+  });
+
+  it('keeps a short mixed prepay amount and shows the top-up prompt', () => {
+    const item = loan();
+    const completed = show(item);
+    const input = screen.getByLabelText('Amount (₿)') as HTMLInputElement;
+    fireEvent.change(input, { target: { value: '1000' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Pay this amount' }));
+    completed.rerender(
+      payMoreState(item, completed.onPay, completed.onCloseCollecting, {
+        phase: 'idle',
+        activeAction: { kind: 'prepay', messageId: 'loan-1' },
+        balanceSats: 500,
+        missingSats: 500,
+        prepayAllWaiting: false,
+        prepayWaiting: [
+          {
+            dayIndex: 2,
+            recipientAccountId: 'acc_waiting',
+            name: 'Carla',
+            username: 'carla',
+            amountSats: 200,
+            amount: null,
+          },
+        ],
+      }),
+    );
+
+    expect((screen.getByLabelText('Amount (₿)') as HTMLInputElement).value).toBe('1000');
+    expect(screen.getByText('Your wallet has ₿500. Still missing ₿500.')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Top up your wallet' })).toBeTruthy();
   });
 
   it('reuses the wallet top-up controls after a free payment is short', () => {

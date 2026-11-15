@@ -49,6 +49,8 @@ export interface LoanPayMoreProps {
   errorKey: LoanRepayResult['errorKey'];
   /** Recipients returned by the latest prepay request whose wallets are not ready. */
   prepayWaiting?: readonly RepaymentWaiting[];
+  /** True when the latest prepay had no bills (every share is waiting) and returned to idle. */
+  prepayAllWaiting?: boolean;
   /** Ready wallet balance, when known. */
   balanceSats: number | null;
   /** Shortfall from the latest wallet preparation. */
@@ -138,6 +140,7 @@ export function LoanPayMore({
   actionError,
   errorKey,
   prepayWaiting = [],
+  prepayAllWaiting = false,
   balanceSats,
   missingSats,
   showShortfall,
@@ -314,8 +317,7 @@ export function LoanPayMore({
   }, [actionError, entryFiat, formatSats, loan, numberFormat, rateDay, shownPendingAction, t]);
 
   useEffect(() => {
-    const allWaitingComplete =
-      pendingAction === 'pay' && phase === 'idle' && prepayWaiting.length > 0;
+    const allWaitingComplete = pendingAction === 'pay' && phase === 'idle' && prepayAllWaiting;
     if (
       shownPendingAction === 'pay' &&
       matchingAction === 'prepay' &&
@@ -331,7 +333,7 @@ export function LoanPayMore({
       setServerError(null);
       setServerAmountInvalid(false);
     }
-  }, [matchingAction, pendingAction, phase, prepayWaiting, shownPendingAction]);
+  }, [matchingAction, pendingAction, phase, prepayAllWaiting, shownPendingAction]);
 
   useEffect(() => {
     if (

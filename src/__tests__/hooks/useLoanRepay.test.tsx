@@ -2445,8 +2445,47 @@ describe('useLoanRepay free repayment and collecting actions', () => {
       expect.objectContaining({ name: 'Carla', amountSats: 500 }),
     ]);
     expect(result.current.prepayMessageId).toBe('prepay-all-waiting');
+    expect(result.current.prepayAllWaiting).toBe(true);
     expect(payFromWallet).not.toHaveBeenCalled();
     expect(reload).toHaveBeenCalledTimes(1);
+  });
+
+  it('keeps a short mixed prepay idle without marking every share as waiting', async () => {
+    const row = bill('Ahead', 500, 8);
+    vi.mocked(prepayLoan).mockResolvedValue({
+      amountSats: 500,
+      amount: null,
+      bills: [row],
+      waiting: [
+        {
+          dayIndex: 9,
+          recipientAccountId: 'acc_waiting',
+          name: 'Carla',
+          username: 'carla',
+          amountSats: 200,
+          amount: null,
+        },
+      ],
+    });
+    vi.mocked(payFromWallet).mockResolvedValue(confirmed(500));
+    setWallet('ready', 400);
+    const current = loan('prepay-mixed-short', 0, 100);
+    const { result } = renderHook(() =>
+      useLoanRepay({ reload: vi.fn(async () => body([current])) }),
+    );
+
+    act(() => result.current.prepay(current, '700'));
+    await waitFor(() => expect(result.current.missingSats).toBe(100));
+
+    expect(result.current).toMatchObject({
+      phase: 'idle',
+      prepayAllWaiting: false,
+      missingSats: 100,
+      sentSats: 0,
+    });
+    expect(result.current.prepayWaiting).toEqual([
+      expect.objectContaining({ name: 'Carla', amountSats: 200 }),
+    ]);
   });
 
   it('accepts a comma-decimal fiat request when the prepay response matches', async () => {

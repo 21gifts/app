@@ -129,6 +129,7 @@ function repay(overrides: Partial<LoanRepayResult> = {}): LoanRepayResult {
     sentAmounts: [],
     sentNames: [],
     prepayWaiting: [],
+    prepayAllWaiting: false,
     prepayMessageId: null,
     feeSats: 0,
     missingSats: null,
@@ -2766,6 +2767,7 @@ describe('LoanRepayScreen', () => {
         phase: 'idle',
         activeAction: { kind: 'prepay', messageId: 'loan-1' },
         prepayMessageId: 'loan-1',
+        prepayAllWaiting: true,
         prepayWaiting: [
           {
             dayIndex: 12,
