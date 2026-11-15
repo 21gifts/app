@@ -4151,7 +4151,8 @@ describe('PosScreen', () => {
           if (reads === 2) {
             // The ask: slow, and the api has marked the charge paid by the time it answers.
             await pause(1_000);
-            return jsonResponse({ charge: PAID, history: [PAID] });
+            const paid = { ...PAID, paidAt: new Date().toISOString() };
+            return jsonResponse({ charge: paid, history: [paid] });
           }
           return jsonResponse({ charge: OPEN, history: [OPEN] });
         }),
@@ -4179,9 +4180,10 @@ describe('PosScreen', () => {
             cancelled = true;
             return jsonResponse({ charge: null });
           }
-          // After the cancel, the api shows that charge paid in History only: the payment won.
+          // After the cancel, the api shows that charge paid in History only, without a paid time:
+          // the payment won.
           return cancelled
-            ? jsonResponse({ charge: null, history: [PAID] })
+            ? jsonResponse({ charge: null, history: [{ ...PAID, paidAt: null }] })
             : jsonResponse({ charge: OPEN, history: [OPEN] });
         }),
       );
@@ -4192,6 +4194,68 @@ describe('PosScreen', () => {
       // The payment the wallet received could be that charge's, and the api has it paid.
       expect(await confirmation()).toBeTruthy();
     });
+
+    it('lets a charge closed after the api paid it take no unnamed payment of the next one', async () => {
+      const a = {
+        ...OPEN,
+        id: 'c-a',
+        createdAt: new Date(Date.now() - 60_000).toISOString(),
+        status: 'paid',
+        paidAt: new Date(Date.now() - 50_000).toISOString(),
+      };
+      const b = { ...OPEN, id: 'c-b', createdAt: new Date(Date.now() - 5_000).toISOString() };
+      let phase: 'a' | 'b' = 'a';
+      let reads = 0;
+      vi.stubGlobal(
+        'fetch',
+        vi.fn(async () => {
+          reads += 1;
+          return phase === 'a'
+            ? jsonResponse({ charge: a, history: [a] })
+            : jsonResponse({ charge: b, history: [b, a] });
+        }),
+      );
+      renderWithLocale(<PosScreen />);
+      // The api shows the charge before paid: Done closes its confirmation.
+      fireEvent.click(within(await confirmation()).getByRole('button', { name: 'Done' }));
+      phase = 'b';
+      showTab();
+      expect(await screen.findByRole('button', { name: 'Cancel' })).toBeTruthy();
+      receive(21);
+      const before = reads;
+      // The closed charge does not take the payment: the till keeps asking about the open one.
+      await pause(2_300);
+      expect(reads).toBeGreaterThan(before);
+      expect(screen.queryByRole('alertdialog')).toBeNull();
+      expect(screen.getByRole('button', { name: 'Cancel' })).toBeTruthy();
+    }, 10_000);
+
+    it('lets a charge the api paid before the payment was made take none of it', async () => {
+      const a = {
+        ...OPEN,
+        id: 'c-a',
+        createdAt: new Date(Date.now() - 120_000).toISOString(),
+        status: 'paid',
+        paidAt: new Date(Date.now() - 90_000).toISOString(),
+      };
+      const b = { ...OPEN, id: 'c-b', createdAt: new Date(Date.now() - 5_000).toISOString() };
+      let reads = 0;
+      vi.stubGlobal(
+        'fetch',
+        vi.fn(async () => {
+          reads += 1;
+          return jsonResponse({ charge: b, history: [b, a] });
+        }),
+      );
+      renderWithLocale(<PosScreen />);
+      expect(await screen.findByRole('button', { name: 'Cancel' })).toBeTruthy();
+      receive(21);
+      const before = reads;
+      await pause(2_300);
+      // The payment stays the open charge's to ask about.
+      expect(reads).toBeGreaterThan(before);
+      expect(screen.getByRole('button', { name: 'Cancel' })).toBeTruthy();
+    }, 10_000);
 
     it('keeps asking quietly after a failed read while an unnamed payment could be the charge’s', async () => {
       let reads = 0;

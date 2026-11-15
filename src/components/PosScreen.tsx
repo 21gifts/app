@@ -409,15 +409,29 @@ function askingFor(memory: WalletSettled, now: number): string | null {
  * confirmation as it does for a payment that names the charge. Read from the
  * answer itself, not from the open charge, so it also holds after a create or
  * a Cancel cleared that. That payment is used up: it counts for this charge
- * only and makes the till ask about no other.
+ * only and makes the till ask about no other. While a charge is open only that
+ * charge is looked at. A charge whose confirmation was closed, or that the api
+ * had paid before that payment was made (allowing for an api clock up to
+ * {@link POS_CREATE_SKEW_MS} behind), takes none.
  */
 function confirmAsked(memory: WalletSettled, state: PosState): void {
   let changed = false;
+  const open = memory.open;
   for (const row of tillCharges(state)) {
-    if (row.status !== 'paid' || memory.paid.has(row.id)) {
+    if (
+      row.status !== 'paid' ||
+      memory.paid.has(row.id) ||
+      memory.closed.has(row.id) ||
+      (open !== null && row.id !== open.id)
+    ) {
       continue;
     }
-    const used = memory.unnamed.find((receipt) => mayPay(row, receipt));
+    const paidAt = row.paidAt === null ? Number.NaN : Date.parse(row.paidAt);
+    const used = memory.unnamed.find(
+      (receipt) =>
+        mayPay(row, receipt) &&
+        (Number.isNaN(paidAt) || paidAt + POS_CREATE_SKEW_MS >= receipt.timestamp),
+    );
     if (used === undefined) {
       continue;
     }
@@ -465,7 +479,10 @@ function rearm(memory: WalletSettled, charge: PosCharge | null): void {
   }
 }
 
-/** How far the api's clock may run behind this one when a lost create is matched to its charge. */
+/**
+ * How far the api's clock may run behind this one: when a lost create is matched to its charge,
+ * and when a charge the api paid is matched to a payment this tab's wallet received.
+ */
 const POS_CREATE_SKEW_MS = 30_000;
 
 /** Create answers that say for certain no charge was made. */
