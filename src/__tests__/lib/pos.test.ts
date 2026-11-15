@@ -203,6 +203,7 @@ describe('fetchPosState received', () => {
       { ...SPARK, receivedAt: 'yesterday' },
       { ...SPARK, receivedAt: '2026-10-04' },
       { ...SPARK, receivedAt: '2026-10-04T11:40:02' },
+      { ...SPARK, receivedAt: '2026-10-04T11:40:02+99:99' },
       { ...SPARK, receivedAt: 'Sun, 04 Oct 2026 11:40:02 GMT' },
       { ...SPARK, kind: 'onchain' },
       { amountSats: 500, receivedAt: SPARK.receivedAt, kind: 'spark' },

@@ -48,7 +48,11 @@ const posChargeSchema = z.object({
 const posReceivedSchema = z.object({
   id: z.string().min(1),
   amountSats: z.number().int().positive(),
-  receivedAt: z.string().datetime({ offset: true }),
+  // The shape alone also passes an offset such as +99:99, which is no instant.
+  receivedAt: z
+    .string()
+    .datetime({ offset: true })
+    .refine((value) => !Number.isNaN(Date.parse(value))),
   kind: z.enum(['lightning', 'spark']),
 });
 
