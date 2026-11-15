@@ -65,7 +65,9 @@ const account = {
   sparkWalletVerified: true,
 };
 
-function loan(messageId = 'm1', payableSats = 500, repaidSats = 100): MyLoan {
+type LoanFixture = Omit<MyLoan, 'closedAt'> & { closedAt?: string | null };
+
+function loan(messageId = 'm1', payableSats = 500, repaidSats = 100): LoanFixture {
   return {
     messageId,
     text: 'Train ticket',
@@ -151,8 +153,8 @@ function confirmed(
   return { kind: 'confirm', amountSats, feeSats, method: 'spark', send };
 }
 
-function body(loans: MyLoan[]): MyLoans {
-  return { sundayRest: false, loans };
+function body(loans: LoanFixture[]): MyLoans {
+  return { sundayRest: false, loans: loans as MyLoan[] };
 }
 
 beforeEach(() => {
@@ -2360,7 +2362,7 @@ describe('useLoanRepay free repayment and collecting actions', () => {
       ],
     });
     vi.mocked(payFromWallet).mockResolvedValue(confirmed(500));
-    const current: MyLoan = {
+    const current: LoanFixture = {
       ...loan('prepay-waiting', 0, 100),
       goalCurrency: 'PHP',
       goalAmount: '7.00',
@@ -2376,6 +2378,42 @@ describe('useLoanRepay free repayment and collecting actions', () => {
       expect.objectContaining({ name: 'Carla', amountSats: 200 }),
     ]);
     expect(result.current.prepayMessageId).toBe('prepay-waiting');
+  });
+
+  it('accepts a prepay total that counts only the bills, not the waiting share', async () => {
+    vi.mocked(prepayLoan).mockResolvedValue({
+      amountSats: 500,
+      amount: '7.00',
+      bills: [bill('Ahead', 500, 8, undefined, '5.00')],
+      waiting: [
+        {
+          dayIndex: 9,
+          recipientAccountId: 'acc_waiting',
+          name: 'Carla',
+          username: 'carla',
+          amountSats: 500,
+          amount: '2.00',
+        },
+      ],
+    });
+    vi.mocked(payFromWallet).mockResolvedValue(confirmed(500));
+    const current: LoanFixture = {
+      ...loan('prepay-bills-only', 0, 100),
+      goalCurrency: 'PHP',
+      goalAmount: '7.00',
+      maxAmount: '7.00',
+    };
+    const { result } = renderHook(() =>
+      useLoanRepay({ reload: vi.fn(async () => body([current])) }),
+    );
+
+    act(() => result.current.prepay(current, '7.00'));
+    await waitFor(() => expect(result.current.sentSats).toBe(500));
+
+    expect(payFromWallet).toHaveBeenCalledTimes(1);
+    expect(result.current.prepayWaiting).toEqual([
+      expect.objectContaining({ name: 'Carla', amountSats: 500 }),
+    ]);
   });
 
   it('keeps an all-waiting prepay as nothing payable now instead of failing', async () => {
@@ -2419,7 +2457,7 @@ describe('useLoanRepay free repayment and collecting actions', () => {
       waiting: [],
     });
     vi.mocked(payFromWallet).mockResolvedValue(confirmed(1_250));
-    const current: MyLoan = {
+    const current: LoanFixture = {
       ...loan('prepay-comma', 0, 100),
       goalCurrency: 'PHP',
       goalAmount: '12.50',
@@ -2514,7 +2552,7 @@ describe('useLoanRepay free repayment and collecting actions', () => {
           },
         ],
       });
-      const current: MyLoan = {
+      const current: LoanFixture = {
         ...loan(`prepay-fiat-${invalid}`, 0, 100),
         goalCurrency: 'PHP',
         goalAmount: '7.00',
@@ -2552,10 +2590,10 @@ describe('useLoanRepay free repayment and collecting actions', () => {
   });
 
   it('closes a collecting loan and accepts a due payment afterward', async () => {
-    const collecting = loan('collecting', 0, 0);
+    const collecting: LoanFixture = { ...loan('collecting', 0, 0) };
+    delete collecting.closedAt;
     const due = loan('due-after-close');
     collecting.fundedAt = null;
-    delete collecting.closedAt;
     vi.mocked(closeLoan).mockResolvedValue({
       fundedAt: null,
       closedAt: '2026-11-11T10:00:00.000Z',

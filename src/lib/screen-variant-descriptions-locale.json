@@ -1095,14 +1095,9 @@
     "fil": "Utang A na may maling sats value na 12.5. Minamarkahan ng AmountEntry na invalid ang field, ipinapakita sa ilalim ang Maglagay ng buong halagang ₿ na higit sa zero., at hindi aktibo ang Bayaran ang halagang ito. Lumalabas din ang parehong nakarehistrong invalid na state at currency-specific na error kapag binura ang na-edit na halaga; tahimik ang hindi pa nagalaw na empty field."
   },
   "/loans/repay:pay-more-no-rate": {
-    "de": "Ein PHP-Kredit ohne aktuellen Kurs, dessen ungezahlte Satoshi-Felder null sind. Die fälligen ₱18.00, die wartenden ₱12.00 und die nächste Zahlung von ₱30.00 bleiben als gespeicherte Fiat-Beträge sichtbar, ohne erfundene Satoshi-Zahlen oder Senden. AmountEntry bleibt ohne Schalter in PHP und zeigt Noch kein Wechselkurs. Mehr zurückzahlen erklärt den fehlenden PHP-Kurs; Maximum und Betrag zahlen sind deaktiviert.",
-    "es": "Un préstamo en PHP sin tipo de cambio actual cuyos campos de satoshis sin pagar son null. Los ₱18.00 vencidos, los ₱12.00 en espera y el siguiente pago de ₱30.00 siguen visibles como importes fiat guardados, sin cifras de satoshis inventadas ni Enviar. AmountEntry permanece en PHP sin selector y muestra Aún no hay tipo de cambio. Pagar más explica la falta del tipo PHP; Máximo y Pagar este importe están desactivados.",
-    "fil": "PHP loan na walang kasalukuyang rate at null ang mga hindi pa bayad na sats field. Nananatiling nakikita bilang naka-imbak na fiat ang due na ₱18.00, naghihintay na ₱12.00, at susunod na ₱30.00, nang walang inimbentong sats o Ipadala. Nananatili ang AmountEntry sa PHP nang walang switch at ipinapakita ang Wala pang exchange rate. Ipinapaliwanag ng Magbayad pa ang nawawalang PHP rate; hindi aktibo ang Max at Bayaran ang halagang ito."
-  },
-  "/loans/repay:pay-more-no-rate-who-open": {
-    "de": "Derselbe PHP-Zustand ohne Kurs mit geöffnetem „Wer wird bezahlt?“ Die Empfängerliste verwendet die gespeicherten PHP-Beträge, ohne Bitcoin-Zahlen zu erfinden; die reinen Fiatbeträge für fällige, wartende und nächste Zahlungen bleiben, und Maximum, Betrag zahlen sowie Senden für die Fälligkeit bleiben deaktiviert.",
-    "es": "El mismo estado PHP sin tipo con Quién recibe el pago abierto. La lista de destinatarios usa los importes PHP guardados sin inventar cifras de bitcoin; permanecen los importes solo fiat vencido, en espera y siguiente, y Máximo, Pagar este importe y Enviar para el vencimiento siguen desactivados.",
-    "fil": "Ang parehong PHP state na walang rate at bukas ang Sino ang babayaran. Ginagamit ng recipient list ang mga naka-imbak na PHP amount nang walang inimbentong bitcoin; nananatili ang fiat-only na due, waiting, at next figure, at hindi aktibo ang Max, Bayaran ang halagang ito, at due na Ipadala."
+    "de": "Ein PHP-Kredit ohne aktuellen Umrechnungskurs, daher sind totalSats, beide fälligen Sat-Summen, next.sats und maxSats null. Der Bildschirm zeigt weiterhin die kombinierten gespeicherten Fiat-Beträge: ₱18.00 fällig, ₱12.00 wartend und Nächste Zahlung: morgen, ₱30.00 an 1 Person, ohne Bitcoin-Figur und ohne Senden. AmountEntry bleibt in der festen PHP-Kreditwährung ohne Umschalter und zeigt Noch kein Wechselkurs. Pay more erklärt außerdem Kein PHP-Wechselkurs verfügbar, daher ist die Zahlung deaktiviert. Max und Diesen Betrag zahlen sind deaktiviert.",
+    "es": "Un préstamo PHP sin tipo de cambio actual, así que totalSats, ambos totales de sats vencidos, next.sats y maxSats son null. La pantalla sigue mostrando los importes fiat almacenados combinados: ₱18.00 vencidos, ₱12.00 en espera y Siguiente: mañana, ₱30.00 para 1 persona, sin ninguna cifra en bitcoin ni Enviar. AmountEntry permanece en la unidad fija PHP del préstamo sin selector y muestra Aún no hay tipo de cambio. Pagar más también explica No hay tipo de cambio PHP disponible ahora, así que pagar más está desactivado. Max y Pagar este importe están desactivados.",
+    "fil": "Isang PHP loan na walang kasalukuyang conversion rate, kaya null ang totalSats, ang dalawang due sat total, next.sats, at maxSats. Ipinapakita pa rin ng screen ang pinagsamang naka-imbak na fiat: ₱18.00 na due, ₱12.00 na waiting, at Susunod: bukas, ₱30.00 sa 1 tao, na walang bitcoin figure at walang Ipadala. Nananatili ang AmountEntry sa fixed PHP loan unit na walang switch at ipinapakita ang Wala pang exchange rate. Ipinaliwanag din ng Pay more ang Walang available na PHP exchange rate ngayon, kaya naka-disable ang pagbabayad. Naka-disable ang Max at Bayaran ang halagang ito."
   },
   "/loans/repay:pay-more-no-maximum": {
     "de": "Ein BTC-Kredit ohne derzeit verfügbares Rückzahlungsmaximum. AmountEntry bleibt in der festen ₿-Krediteinheit und zeigt die BTC-spezifische Erklärung, dass aktuell kein Maximum verfügbar ist; es wird ausdrücklich kein fehlender Wechselkurs gemeldet. Maximum und Betrag zahlen sind deaktiviert.",
@@ -1264,16 +1259,6 @@
     "es": "El préstamo A está listo para pagar: Vence hoy, ₿1'000 con $1.00 debajo, para 3 personas, Quién recibe el pago cerrado, Desde tu wallet · ₿21'000 · $21.00 y Enviar ₿1'000 · $1.00. Tu préstamo muestra el texto de la máquina de coser, ₿30'000 · $30.00 · 30 días · ₿1'000 · $1.00 al día, Devuelto ₿11'000 · $11.00 de ₿30'000 · $30.00, Día 12 de 30 y Lista de devolución.",
     "fil": "Handang bayaran ang utang A: Bayaran ngayon, ₿1'000 na may $1.00 sa ilalim, sa 3 tao, saradong Sino ang babayaran, Mula sa wallet mo · ₿21'000 · $21.00 at Ipadala ang ₿1'000 · $1.00. Ipinapakita ng Ang utang mo ang teksto ng makinang panahi, ₿30'000 · $30.00 · 30 araw · ₿1'000 · $1.00 bawat araw, Nabayaran ang ₿11'000 · $11.00 sa ₿30'000 · $30.00, Araw 12 sa 30 at Listahan ng ibabalik."
   },
-  "/loans/repay:mixed-rate": {
-    "de": "Zwei PHP-Kredite sind gemeinsam fällig. Der positiv bepreiste Teil ist ₱30.00 · ₿1'000 und allein durch Senden gedeckt; der Kredit ohne Kurs steht separat als ₱15.00. Auch der Wartehinweis ist in ₱6.00 · ₿120 und die reine Fiatzeile ₱3.00 getrennt. Keine Zeile verbindet Bitcoin mit Fiat eines anderen Kredits.",
-    "es": "Dos préstamos PHP vencen juntos. La parte con precio positivo es ₱30.00 · ₿1'000 y es la única cubierta por Enviar; el préstamo sin tipo aparece por separado como ₱15.00. El aviso de espera también se divide en ₱6.00 · ₿120 y la línea solo fiat ₱3.00. Ninguna línea combina bitcoin con el fiat de otro préstamo.",
-    "fil": "Sabay na dapat bayaran ang dalawang PHP na utang. Ang bahaging may positibong presyo ay ₱30.00 · ₿1'000 at iyon lang ang sakop ng Ipadala; hiwalay na ₱15.00 ang utang na walang rate. Hiwalay din ang waiting notice bilang ₱6.00 · ₿120 at fiat-only na ₱3.00. Walang linyang nagtatabi ng bitcoin at fiat mula sa ibang utang."
-  },
-  "/loans/repay:mixed-rate-who-open": {
-    "de": "Der Zustand mit gemischten Kursen und geöffnetem „Wer wird bezahlt?“ Die Empfängerliste hält bepreiste und reine Fiatanteile getrennt, verbindet nie Bitcoin eines Kredits mit Fiat eines anderen und lässt die bepreiste Summe samt Senden unverändert.",
-    "es": "El estado de tipos mixtos con Quién recibe el pago abierto. La lista de destinatarios mantiene separadas las partes con precio y solo fiat, nunca combina el bitcoin de un préstamo con el fiat de otro y deja sin cambios el total con precio y Enviar.",
-    "fil": "Ang mixed-rate state na bukas ang Sino ang babayaran. Pinananatiling hiwalay ng recipient list ang priced at fiat-only na mga bahagi, hindi nito pinagtatabi ang bitcoin ng isang utang at fiat ng iba, at hindi nagbabago ang priced total at Ipadala."
-  },
   "/loans/repay:failed": {
     "de": "Die Fälligkeitskarte behält ₿1'000 · $1.00 und zeigt rot Die Bitcoin-Zahlung konnte nicht gestartet werden. Darunter kehren Aus Ihrer Wallet · ₿21'000 · $21.00 und ₿1'000 · $1.00 senden zurück.",
     "es": "La tarjeta conserva ₿1'000 · $1.00 y muestra en rojo No se pudo iniciar el pago de Bitcoin. Debajo vuelven Desde tu wallet · ₿21'000 · $21.00 y Enviar ₿1'000 · $1.00.",
@@ -1408,16 +1393,6 @@
     "de": "Brunos Anteil ₿500 · $0.50 wurde gesendet; Carla und Diego bleiben. Heute noch fällig zeigt ₿500 · $0.50. Vor Aus Ihrer Wallet · ₿21'000 · $21.00 und ₿500 · $0.50 senden steht ₿500 · $0.50 an Bruno gesendet.",
     "es": "Se envió la parte de Bruno, ₿500 · $0.50; quedan Carla y Diego. Aún vence hoy muestra ₿500 · $0.50. Antes de Desde tu wallet · ₿21'000 · $21.00 y Enviar ₿500 · $0.50 aparece Enviado ₿500 · $0.50 a Bruno.",
     "fil": "Naipadala ang bahagi ni Bruno na ₿500 · $0.50; natitira sina Carla at Diego. Ipinapakita ng May babayaran pa ngayon ang ₿500 · $0.50. Bago ang Mula sa wallet mo · ₿21'000 · $21.00 at Ipadala ang ₿500 · $0.50 ay Naipadala ang ₿500 · $0.50 kay Bruno."
-  },
-  "/loans/repay:partial-unpriced": {
-    "de": "Nach einer teilweisen erfolgreichen Zahlung wartet nur noch ein zahlbarer Kredit auf seinen PHP-Kurs. Die Überschrift lautet Heute noch fällig, die verbleibende Schuld ist der reine Fiat-Betrag ₱15.00, und die Karte sagt ₿500 · $0.50 an Bruno gesendet. Es gibt weder Wallet-Zeile noch Senden, bis der Restbetrag in Bitcoin bepreist werden kann.",
-    "es": "Tras un pago parcial correcto, solo queda un préstamo pagadero esperando su tipo de PHP. El encabezado dice Aún vence hoy, la deuda restante es el importe solo fiat ₱15.00 y la caja dice Enviado ₿500 · $0.50 a Bruno. No hay línea de wallet ni Enviar hasta que el importe restante pueda calcularse en bitcoin.",
-    "fil": "Pagkatapos ng bahagyang matagumpay na bayad, isang payable loan na lang ang natitira at naghihintay ito sa PHP rate. May babayaran pa ngayon ang heading, fiat-only na ₱15.00 ang natitirang utang, at sinasabi ng kahon ang Naipadala ang ₿500 · $0.50 kay Bruno. Walang hilera ng wallet o Ipadala hanggang malagyan ng presyo sa bitcoin ang natitirang halaga."
-  },
-  "/loans/repay:partial-unpriced-who-open": {
-    "de": "Derselbe teilweise gezahlte Zustand ohne Kurs mit geöffnetem „Wer wird bezahlt?“ Die verbleibende Person erscheint mit dem gespeicherten reinen Fiatanteil ₱15.00; die Meldung über die Zahlung an Bruno bleibt, und es gibt weder Wallet-Zeile noch Senden.",
-    "es": "El mismo estado parcial sin tipo con Quién recibe el pago abierto. La persona restante aparece con la parte guardada solo fiat de ₱15.00; permanece el resultado enviado a Bruno y no hay línea de wallet ni Enviar.",
-    "fil": "Ang parehong partial unpriced state na bukas ang Sino ang babayaran. Ipinapakita ang natitirang recipient na may naka-imbak na fiat-only na ₱15.00 na bahagi; nananatili ang resultang ipinadala kay Bruno, at walang wallet row o Ipadala."
   },
   "/loans/repay:partial-who-open": {
     "de": "Der teilweise gezahlte Zustand mit geöffnetem „Wer wird bezahlt?“ Brunos Anteil ₿500 · $0.50 wurde gesendet; Carla und Diego bleiben. Heute noch fällig zeigt ₿500 · $0.50. Vor Aus Ihrer Wallet · ₿21'000 · $21.00 und ₿500 · $0.50 senden steht ₿500 · $0.50 an Bruno gesendet. Die Liste zeigt Carla ₿300 · $0.30 und Diego ₿200 · $0.20.",
@@ -6599,16 +6574,6 @@
     "es": "El mismo préstamo sin tipo tras Ver préstamo. Aparecen el texto enlazado y Ocultar préstamo; ₱30.00 y el enlace de solo icono Detalles de devolución permanecen, sin Enviar.",
     "fil": "Ang parehong no-rate loan pagkatapos ng Ipakita ang utang. Lumalabas ang naka-link na teksto at Itago ang utang; nananatili ang ₱30.00 at icon-only na Mga detalye ng pagbabayad, walang Ipadala."
   },
-  "/wallet:loans-mixed-rate": {
-    "de": "Zwei finanzierte PHP-Kredite mit geschlossener Kredit-Anzeige. Der bepreiste Kredit zeigt zahlbar ₱30.00 · ₿1'000 mit Senden; der Kredit ohne Kurs steht separat als reine Fiatzeile ₱15.00. Die Wartebeträge sind ebenso in ₱6.00 · ₿120 und ₱3.00 getrennt.",
-    "es": "Dos préstamos PHP financiados con Ver préstamos cerrado. El préstamo con precio muestra ₱30.00 · ₿1'000 con Enviar; el préstamo sin tipo aparece aparte como la línea solo fiat ₱15.00. Los importes en espera también están separados en ₱6.00 · ₿120 y ₱3.00.",
-    "fil": "Dalawang funded PHP loan na sarado ang Ipakita ang mga utang. Ipinapakita ng priced loan ang ₱30.00 · ₿1'000 na may Ipadala; hiwalay na fiat-only na ₱15.00 ang no-rate loan. Hiwalay din ang waiting amounts bilang ₱6.00 · ₿120 at ₱3.00."
-  },
-  "/wallet:loans-mixed-rate-open": {
-    "de": "Dieselbe Karte mit gemischten Kursen nach Kredite anzeigen. Beide verlinkten Kreditzeilen sind sichtbar; die bepreisten und reinen Fiatzeilen sowie Senden bleiben unverändert.",
-    "es": "La misma tarjeta de tipos mixtos tras Ver préstamos. Se ven las dos filas enlazadas; las líneas con precio y solo fiat, y Enviar, no cambian.",
-    "fil": "Ang parehong mixed-rate card pagkatapos ng Ipakita ang mga utang. Nakikita ang dalawang naka-link na loan row; hindi nagbabago ang priced at fiat-only na mga linya at Ipadala."
-  },
   "/wallet:loans-multi": {
     "de": "Die bereite Wallet zeigt Guthaben ₿21'000 · $21.00 und den gemeldeten Produktionsfall: Ihre Kredite (2), 1 von 2 vollständig finanziert. und kein gemeinsamer Balken. Jeder Kredit hat seinen nicht verlinkten, gekürzten Text über seinem eigenen ForumGoalBar: Der finanzierte Lieferrad-Kredit behält ₱10’000.00 als Ziel und ₱10’000.98 als eingefrorenen gesammelten Betrag; der sammelnde Schulbücher-Kredit behält ₱15’000.00 als Ziel und ₱480.28 als eingefrorenen gesammelten Betrag. Weder Balken noch Karte zeigen den Spot der summierten Ziel-Sats (₱27’051.19). Die Karte zeigt Heute ist nichts fällig, Nächste Zahlung: Montag, 16. November, ₱199.99 · ₿3'857 und kein Senden. Kredite anzeigen ist geschlossen.",
     "es": "La wallet lista muestra Saldo ₿21'000 · $21.00 y el caso de producción informado: Tus préstamos (2), 1 de 2 totalmente financiados. y ninguna barra combinada. Cada préstamo tiene su texto truncado y no enlazado sobre su propio ForumGoalBar: el préstamo financiado para la bicicleta de reparto conserva ₱10’000.00 como objetivo y ₱10’000.98 como importe recaudado congelado; el préstamo para libros escolares que aún recauda conserva ₱15’000.00 como objetivo y ₱480.28 como importe recaudado congelado. Ni las barras ni la tarjeta muestran el spot de los sats objetivo sumados (₱27’051.19). La tarjeta muestra No vence nada hoy, Siguiente: lunes, 16 de noviembre, ₱199.99 · ₿3'857 y ningún Enviar. Ver préstamos está cerrado.",
@@ -7779,16 +7744,6 @@
     "es": "El mismo préstamo sin tipo tras Ver préstamo. Aparecen el texto enlazado y Ocultar préstamo; ₱30.00 y el enlace de solo icono Detalles de devolución permanecen, sin Enviar.",
     "fil": "Ang parehong no-rate loan pagkatapos ng Ipakita ang utang. Lumalabas ang naka-link na teksto at Itago ang utang; nananatili ang ₱30.00 at icon-only na Mga detalye ng pagbabayad, walang Ipadala."
   },
-  "/welcome:loans-mixed-rate": {
-    "de": "Zwei finanzierte PHP-Kredite mit geschlossener Kredit-Anzeige. Die bepreiste Zeile zeigt ₱30.00 · ₿1'000 mit Senden; der Kredit ohne Kurs steht separat als ₱15.00. Die Wartebeträge sind in ₱6.00 · ₿120 und die reine Fiatzeile ₱3.00 getrennt.",
-    "es": "Dos préstamos PHP financiados con Ver préstamos cerrado. La línea con precio muestra ₱30.00 · ₿1'000 con Enviar; el préstamo sin tipo aparece aparte como ₱15.00. Los importes en espera están separados en ₱6.00 · ₿120 y la línea solo fiat ₱3.00.",
-    "fil": "Dalawang funded PHP loan na sarado ang Ipakita ang mga utang. Ipinapakita ng priced line ang ₱30.00 · ₿1'000 na may Ipadala; hiwalay na ₱15.00 ang no-rate loan. Hiwalay ang waiting amounts bilang ₱6.00 · ₿120 at fiat-only na ₱3.00."
-  },
-  "/welcome:loans-mixed-rate-open": {
-    "de": "Dieselbe Karte mit gemischten Kursen nach Kredite anzeigen. Beide verlinkten Kreditzeilen und Kredite ausblenden sind sichtbar; die getrennten Betragszeilen und Senden bleiben unverändert.",
-    "es": "La misma tarjeta de tipos mixtos tras Ver préstamos. Se ven las dos filas enlazadas y Ocultar préstamos; las líneas separadas y Enviar no cambian.",
-    "fil": "Ang parehong mixed-rate card pagkatapos ng Ipakita ang mga utang. Nakikita ang dalawang naka-link na loan row at Itago ang mga utang; hindi nagbabago ang magkahiwalay na amount line at Ipadala."
-  },
   "/welcome:loans-due": {
     "de": "Unter Willkommen, Ada sagt die geschlossene neutrale Karte Ihr Kredit und Vollständig finanziert., zeigt Anfragen ₿30'000 · $30.00 mit 100 %, Heute fällig, ₿1'000 · $1.00 und Senden. Kredit anzeigen bleibt geschlossen.",
     "es": "Bajo Hola, Ada, la tarjeta neutral cerrada dice Tu préstamo y Totalmente financiado., y muestra Pedir ₿30'000 · $30.00 con 100 %, Vence hoy, ₿1'000 · $1.00 y Enviar. Ver préstamo sigue cerrado.",
@@ -7933,11 +7888,6 @@
     "de": "Das geöffnete Menü zeigt im Konto-Kopf unter der ersten Zeile die Zeile Kreditrückzahlung heute fällig, ₿1'000 · $1.00 und Senden. Senden schließt das Menü und öffnet /loans/repay.",
     "es": "El Menú abierto muestra en la cabecera de la cuenta, bajo su primera fila, la fila La devolución del préstamo vence hoy, ₿1'000 · $1.00 y Enviar. Enviar cierra el Menú y abre /loans/repay.",
     "fil": "Ipinapakita ng bukas na Menu sa header ng account, sa ilalim ng unang hilera nito, ang hilerang Bayaran ngayon ang utang, ₿1'000 · $1.00 at Ipadala. Isinasara ng Ipadala ang Menu at binubuksan ang /loans/repay."
-  },
-  "/welcome:menu-loan-mixed-rate": {
-    "de": "Das geöffnete Menü für zwei finanzierte PHP-Kredite: Einer ist bepreist und zahlbar, der andere ist zahlbar, wartet aber noch auf seinen Bitcoin-Kurs. Der Konto-Kopf zeigt Kreditrückzahlung heute fällig, die gekoppelte Zeile ₱30.00 · ₿1'000, eine separate reine Fiatzeile ₱15.00 und Senden zu /loans/repay.",
-    "es": "El Menú abierto con dos préstamos PHP financiados: uno tiene precio y se puede pagar; el otro se puede pagar pero aún espera su tipo de bitcoin. La cabecera de la cuenta muestra La devolución del préstamo vence hoy, la línea combinada ₱30.00 · ₿1'000, una línea separada solo fiat ₱15.00 y Enviar a /loans/repay.",
-    "fil": "Ang bukas na Menu na may dalawang funded PHP loan: priced at payable ang isa, habang payable ang isa pa pero naghihintay pa sa bitcoin rate nito. Ipinapakita ng account header ang Bayaran ngayon ang utang, ang paired line na ₱30.00 · ₿1'000, hiwalay na fiat-only na ₱15.00, at Ipadala papuntang /loans/repay."
   },
   "/welcome:menu-moderation-unread": {
     "de": "Personal (Moderator) mit geöffnetem Menü und GET /conversations/moderator-group, ungelesen auf true gestubbt → Moderation zeigt 1 rechts (nav.moderateUnread, barrierefreier Name Moderation, 1 ungelesen). Benachrichtigungen und Posteingang bleiben bei Zähler 0. Statistiken steht bereits im Mitglieder-Menü (kein Ungelesen-Zähler, unmittelbar nach Trust-Kette). Der einzige Extra-Eintrag fürs Personal gegenüber menu-open ist Moderation.",

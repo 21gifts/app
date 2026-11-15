@@ -103,7 +103,7 @@ export interface LoanRepayResult {
   /** Opens the top-up block (the screen's "Top up your wallet"); starts the balance poll. */
   openTopUp: () => void;
   /**
-   * One tap: pays every bill of loans with a known positive `due.payableSats`.
+   * One tap: pays every payable bill of `loans` (all loans with due.payableSats \> 0).
    * `onlyShares` (optional): pay only the bills whose share key
    * (`messageId:dayIndex:recipientAccountId`) is in the set (the "send ₿C now"
    * link passes the named shares). The named shares are taken from all due shares;

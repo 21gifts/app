@@ -1038,18 +1038,6 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
-    "id": "/wallet:loans-mixed-rate",
-    "label": "/wallet loans-mixed-rate",
-    "visual": "state-wallet-loans-mixed-rate",
-    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
-  },
-  {
-    "id": "/wallet:loans-mixed-rate-open",
-    "label": "/wallet loans-mixed-rate-open",
-    "visual": "state-wallet-loans-mixed-rate-open",
-    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
-  },
-  {
     "id": "/wallet:loans-multi",
     "label": "/wallet loans-multi",
     "visual": "state-wallet-loans-multi",
@@ -1362,18 +1350,6 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
-    "id": "/loans/repay:mixed-rate",
-    "label": "/loans/repay mixed-rate",
-    "visual": "state-loans-repay-mixed-rate",
-    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
-  },
-  {
-    "id": "/loans/repay:mixed-rate-who-open",
-    "label": "/loans/repay mixed-rate-who-open",
-    "visual": "state-loans-repay-mixed-rate-who-open",
-    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
-  },
-  {
     "id": "/loans/repay:who-open",
     "label": "/loans/repay who-open",
     "visual": "state-loans-repay-who-open",
@@ -1608,18 +1584,6 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
-    "id": "/loans/repay:partial-unpriced",
-    "label": "/loans/repay partial-unpriced",
-    "visual": "state-loans-repay-partial-unpriced",
-    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
-  },
-  {
-    "id": "/loans/repay:partial-unpriced-who-open",
-    "label": "/loans/repay partial-unpriced-who-open",
-    "visual": "state-loans-repay-partial-unpriced-who-open",
-    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
-  },
-  {
     "id": "/loans/repay:partial-who-open",
     "label": "/loans/repay partial-who-open",
     "visual": "state-loans-repay-partial-who-open",
@@ -1755,12 +1719,6 @@
     "id": "/loans/repay:pay-more-no-rate",
     "label": "/loans/repay pay-more-no-rate",
     "visual": "state-loans-repay-pay-more-no-rate",
-    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
-  },
-  {
-    "id": "/loans/repay:pay-more-no-rate-who-open",
-    "label": "/loans/repay pay-more-no-rate-who-open",
-    "visual": "state-loans-repay-pay-more-no-rate-who-open",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
@@ -3570,18 +3528,6 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
-    "id": "/welcome:loans-mixed-rate",
-    "label": "/welcome loans-mixed-rate",
-    "visual": "state-welcome-loans-mixed-rate",
-    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
-  },
-  {
-    "id": "/welcome:loans-mixed-rate-open",
-    "label": "/welcome loans-mixed-rate-open",
-    "visual": "state-welcome-loans-mixed-rate-open",
-    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
-  },
-  {
     "id": "/welcome:loans-due",
     "label": "/welcome loans-due",
     "visual": "state-welcome-loans-due",
@@ -3693,12 +3639,6 @@
     "id": "/welcome:menu-loan-due",
     "label": "/welcome menu-loan-due",
     "visual": "state-welcome-menu-loan-due",
-    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
-  },
-  {
-    "id": "/welcome:menu-loan-mixed-rate",
-    "label": "/welcome menu-loan-mixed-rate",
-    "visual": "state-welcome-menu-loan-mixed-rate",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {

@@ -1286,20 +1286,6 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/wallet',
-    id: 'loans-mixed-rate',
-    image: 'wallet-loans-mixed-rate.png',
-    visual: 'state-wallet-loans-mixed-rate',
-    needle: 'state /wallet loans-mixed-rate',
-  },
-  {
-    route: '/wallet',
-    id: 'loans-mixed-rate-open',
-    image: 'wallet-loans-mixed-rate-open.png',
-    visual: 'state-wallet-loans-mixed-rate-open',
-    needle: 'state /wallet loans-mixed-rate-open',
-  },
-  {
-    route: '/wallet',
     id: 'loans-multi',
     image: 'wallet-loans-multi.png',
     visual: 'state-wallet-loans-multi',
@@ -1665,20 +1651,6 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/loans/repay',
-    id: 'mixed-rate',
-    image: 'loans-repay-mixed-rate.png',
-    visual: 'state-loans-repay-mixed-rate',
-    needle: 'state /loans/repay mixed-rate',
-  },
-  {
-    route: '/loans/repay',
-    id: 'mixed-rate-who-open',
-    image: 'loans-repay-mixed-rate-who-open.png',
-    visual: 'state-loans-repay-mixed-rate-who-open',
-    needle: 'state /loans/repay mixed-rate-who-open',
-  },
-  {
-    route: '/loans/repay',
     id: 'who-open',
     image: 'loans-repay-who-open.png',
     visual: 'state-loans-repay-who-open',
@@ -1952,20 +1924,6 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/loans/repay',
-    id: 'partial-unpriced',
-    image: 'loans-repay-partial-unpriced.png',
-    visual: 'state-loans-repay-partial-unpriced',
-    needle: 'state /loans/repay partial-unpriced',
-  },
-  {
-    route: '/loans/repay',
-    id: 'partial-unpriced-who-open',
-    image: 'loans-repay-partial-unpriced-who-open.png',
-    visual: 'state-loans-repay-partial-unpriced-who-open',
-    needle: 'state /loans/repay partial-unpriced-who-open',
-  },
-  {
-    route: '/loans/repay',
     id: 'partial-who-open',
     image: 'loans-repay-partial-who-open.png',
     visual: 'state-loans-repay-partial-who-open',
@@ -2124,13 +2082,6 @@ export const SCREEN_VARIANTS = [
     image: 'loans-repay-pay-more-no-rate.png',
     visual: 'state-loans-repay-pay-more-no-rate',
     needle: 'state /loans/repay pay-more-no-rate',
-  },
-  {
-    route: '/loans/repay',
-    id: 'pay-more-no-rate-who-open',
-    image: 'loans-repay-pay-more-no-rate-who-open.png',
-    visual: 'state-loans-repay-pay-more-no-rate-who-open',
-    needle: 'state /loans/repay pay-more-no-rate-who-open',
   },
   {
     route: '/loans/repay',
@@ -4242,20 +4193,6 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/welcome',
-    id: 'loans-mixed-rate',
-    image: 'welcome-loans-mixed-rate.png',
-    visual: 'state-welcome-loans-mixed-rate',
-    needle: 'state /welcome loans-mixed-rate',
-  },
-  {
-    route: '/welcome',
-    id: 'loans-mixed-rate-open',
-    image: 'welcome-loans-mixed-rate-open.png',
-    visual: 'state-welcome-loans-mixed-rate-open',
-    needle: 'state /welcome loans-mixed-rate-open',
-  },
-  {
-    route: '/welcome',
     id: 'loans-due',
     image: 'welcome-loans-due.png',
     visual: 'state-welcome-loans-due',
@@ -4386,13 +4323,6 @@ export const SCREEN_VARIANTS = [
     image: 'welcome-menu-loan-due.png',
     visual: 'state-welcome-menu-loan-due',
     needle: 'state /welcome menu-loan-due',
-  },
-  {
-    route: '/welcome',
-    id: 'menu-loan-mixed-rate',
-    image: 'welcome-menu-loan-mixed-rate.png',
-    visual: 'state-welcome-menu-loan-mixed-rate',
-    needle: 'state /welcome menu-loan-mixed-rate',
   },
   {
     route: '/welcome',

@@ -530,18 +530,6 @@ The same no-rate due card after **Show loan** is pressed. Its linked credit-note
 
 ![21.gifts wallet loan due without rate open](images/wallet-loans-due-no-rate-open.png)
 
-### Variant: loans-mixed-rate
-
-Two funded PHP loans with **Show loans** closed: the priced loan's payable amount is **₱30.00 · ₿1'000** and keeps **Send**; the no-rate sibling is its own **₱15.00** fiat-only line. Waiting amounts are likewise split into **₱6.00 · ₿120** and **₱3.00**, so no fiat is paired with another loan's bitcoin.
-
-![21.gifts wallet mixed priced and unpriced loans](images/wallet-loans-mixed-rate.png)
-
-### Variant: loans-mixed-rate-open
-
-The same mixed-rate card after **Show loans** is pressed. Both linked credit-note rows are visible; the priced payable and waiting lines, the separate fiat-only lines, and **Send** remain unchanged.
-
-![21.gifts wallet mixed priced and unpriced loans open](images/wallet-loans-mixed-rate-open.png)
-
 ### Variant: loans-multi
 
 Ready wallet with **Balance ₿21'000 · $21.00** and the reported production case: **Your loans (2)** and **1 of 2 fully funded.**, with no combined bar. Each loan has its own muted, non-linked, truncated text above its own `ForumGoalBar`: the funded delivery-bike loan keeps **₱10'000.00** as its goal and receives **₱10'000.98** as its frozen collected figure; the collecting school-books loan keeps **₱15'000.00** as its goal and receives **₱480.28** as its frozen collected figure. Neither bar nor the card shows the spot for the summed goal sats (**₱27'051.19**). The card shows **Nothing due today**, **Next: Monday, November 16, ₱199.99 · ₿3'857**, and no Send. **Show loans** is closed.
@@ -1306,18 +1294,6 @@ Loan A ready to pay: **Due today**, **₿1'000** with **$1.00** under it, **to 3
 
 ![21.gifts loans repay](images/loans-repay.png)
 
-### Variant: mixed-rate
-
-Two PHP loans are due together. The positive priced part is **₱30.00 · ₿1'000** and is the only amount covered by **Send**; the no-rate sibling appears on its own as **₱15.00**. The waiting notice is also split into **₱6.00 · ₿120** and the fiat-only **₱3.00**. No line shows bitcoin beside fiat from a different loan.
-
-![21.gifts loans repay mixed priced and unpriced](images/loans-repay-mixed-rate.png)
-
-### Variant: mixed-rate-who-open
-
-The mixed-rate state after **Who gets paid** is opened. The recipient result keeps each priced and fiat-only share separate, never pairs one loan's bitcoin with another loan's fiat, and leaves the priced total and its Send control unchanged.
-
-![21.gifts loans repay mixed priced and unpriced recipients](images/loans-repay-mixed-rate-who-open.png)
-
 ### Variant: who-open
 
 The default state after **Who gets paid** is opened. The list shows Bruno **₿500 · $0.50**, Carla **₿300 · $0.30**, and Diego **₿200 · $0.20**; the due total remains **₿1'000 · $1.00** and the one-tap Send control remains visible.
@@ -1552,18 +1528,6 @@ Bruno's **₿500** share was sent and Carla plus Diego remain. The heading is **
 
 ![21.gifts loans repay partial payment](images/loans-repay-partial.png)
 
-### Variant: partial-unpriced
-
-After a partial success, the only payable loan left is waiting for its PHP rate. The heading is **Still due today**, the remaining debt is the fiat-only **₱15.00**, and the box says **Sent ₿500 · $0.50 to Bruno**. There is no wallet balance line or Send control until the remaining amount can be priced in bitcoin.
-
-![21.gifts loans repay partial payment with unpriced debt](images/loans-repay-partial-unpriced.png)
-
-### Variant: partial-unpriced-who-open
-
-The same partial unpriced state after **Who gets paid** is opened. The remaining recipient is shown with the stored fiat-only **₱15.00** share; the sent-to-Bruno result remains, and no wallet balance or Send control appears.
-
-![21.gifts loans repay partial unpriced recipients](images/loans-repay-partial-unpriced-who-open.png)
-
 ### Variant: partial-who-open
 
 The partial-payment state with **Who gets paid** open. Bruno's **₿500** share was sent and Carla plus Diego remain. The heading is **Still due today**, the amount is **₿500** with **$0.50** under it, and the box says **Sent ₿500 · $0.50 to Bruno** before **From your wallet · ₿21'000 · $21.00** and **Send ₿500 · $0.50**. The list shows Carla **₿300 · $0.30** and Diego **₿200 · $0.20**.
@@ -1698,15 +1662,9 @@ Loan A with malformed sats input **12.5**. The standard AmountEntry marks the fi
 
 ### Variant: pay-more-no-rate
 
-A PHP loan without a current conversion rate, so `totalSats`, both due sat totals, `next.sats`, and `maxSats` are null. The screen still shows the stored fiat figures: **₱18.00** due, **₱12.00** waiting, and **Next: tomorrow, ₱30.00 to 2 people**, without inventing sat figures or offering **Send**. AmountEntry stays in the fixed PHP loan unit without a switch and shows **No exchange rate yet**. **Pay more** also explains **No PHP exchange rate is available now, so paying more is disabled.** Both **Max** and **Pay this amount** are disabled.
+A PHP loan without a current conversion rate, so `totalSats`, both due sat totals, `next.sats`, and `maxSats` are null. The screen still shows the combined stored fiat figures: **₱18.00** due, **₱12.00** waiting, and **Next: tomorrow, ₱30.00 to 1 person**, without any bitcoin figure or **Send**. AmountEntry stays in the fixed PHP loan unit without a switch and shows **No exchange rate yet**. **Pay more** also explains **No PHP exchange rate is available now, so paying more is disabled.** Both **Max** and **Pay this amount** are disabled.
 
 ![21.gifts loans repay pay more without rate](images/loans-repay-pay-more-no-rate.png)
-
-### Variant: pay-more-no-rate-who-open
-
-The same no-rate PHP state after **Who gets paid** is opened. The recipient result uses the stored PHP amounts without inventing bitcoin figures; the fiat-only due, waiting, and next figures remain, and **Max**, **Pay this amount**, and due Send stay unavailable.
-
-![21.gifts loans repay pay more without rate recipients](images/loans-repay-pay-more-no-rate-who-open.png)
 
 ### Variant: pay-more-no-maximum
 
@@ -3198,30 +3156,6 @@ The same Sunday card after **Show loan** is pressed. The linked credit-note text
 
 ![21.gifts welcome closed underfunded loan Sunday open](images/welcome-loans-closed-underfunded-sunday-open.png)
 
-### Variant: loans-due-no-rate
-
-The collapsed funded PHP loan has a stored due amount but no satoshi price. **Due today** shows **₱30.00** without bitcoin; the icon-only **Repayment details** link replaces **Send**.
-
-![21.gifts welcome loan due without rate](images/welcome-loans-due-no-rate.png)
-
-### Variant: loans-due-no-rate-open
-
-The same no-rate due card after **Show loan** is pressed. Its linked credit-note text and **Hide loan** appear while **₱30.00** and the icon-only repayment-details link remain; there is no **Send**.
-
-![21.gifts welcome loan due without rate open](images/welcome-loans-due-no-rate-open.png)
-
-### Variant: loans-mixed-rate
-
-Two funded PHP loans with **Show loans** closed. The priced payable line is **₱30.00 · ₿1'000** with **Send**; the no-rate sibling is a separate fiat-only **₱15.00** line. Their waiting amounts are separately **₱6.00 · ₿120** and **₱3.00**, never one combined fiat total beside partial bitcoin.
-
-![21.gifts welcome mixed priced and unpriced loans](images/welcome-loans-mixed-rate.png)
-
-### Variant: loans-mixed-rate-open
-
-The same mixed-rate card after **Show loans** is pressed. Both linked credit-note rows and **Hide loans** are visible; the priced lines, separate fiat-only lines, and **Send** stay unchanged.
-
-![21.gifts welcome mixed priced and unpriced loans open](images/welcome-loans-mixed-rate-open.png)
-
 ### Variant: loans-due
 
 The collapsed neutral **Your loan** card says **Fully funded.**, then shows **Ask ₿30'000 · $30.00** with **100%**, **Due today**, **₿1'000 · $1.00**, and **Send**. **Show loan** remains closed.
@@ -3318,6 +3252,18 @@ The Sunday card after **Show loan** is pressed. It keeps **Fully funded.**, **As
 
 ![21.gifts welcome loan Sunday open](images/welcome-loans-sunday-open.png)
 
+### Variant: loans-due-no-rate
+
+The collapsed funded PHP loan has a stored due amount but no satoshi price. **Due today** shows **₱30.00** without bitcoin; the icon-only **Repayment details** link replaces **Send**.
+
+![21.gifts welcome loan due without rate](images/welcome-loans-due-no-rate.png)
+
+### Variant: loans-due-no-rate-open
+
+The same no-rate due card after **Show loan** is pressed. Its linked credit-note text and **Hide loan** appear while **₱30.00** and the icon-only repayment-details link remain; there is no **Send**.
+
+![21.gifts welcome loan due without rate open](images/welcome-loans-due-no-rate-open.png)
+
 ### Variant: loans-multi
 
 The reported production case: **Your loans (2)** and **1 of 2 fully funded.**, with no combined bar. Each loan has its own muted, non-linked, truncated text above its own `ForumGoalBar`: the funded loan keeps **₱10'000.00** as its goal and receives **₱10'000.98** as its frozen collected figure; the collecting loan keeps **₱15'000.00** as its goal and receives **₱480.28** as its frozen collected figure. Neither bar nor the card shows the spot for the summed goal sats (**₱27'051.19**). The funded loan is not payable yet, so the card shows **Nothing due today**, **Next: Monday, November 16, ₱199.99 · ₿3'857**, and no Send. **Show loans** is closed.
@@ -3335,12 +3281,6 @@ The same two PHP loans after **Show loans** is pressed. Both text plus bar rows 
 Open **Menu** with Loan A payable. Under its first row, the account header shows **Loan repayment due today**, **₿1'000 · $1.00**, and **Send**. Send closes the Menu and opens `/loans/repay`.
 
 ![21.gifts welcome menu loan due](images/welcome-menu-loan-due.png)
-
-### Variant: menu-loan-mixed-rate
-
-Open **Menu** with two funded PHP loans: one priced and payable, the other payable but still waiting for its bitcoin rate. The account header shows **Loan repayment due today**, the paired line **₱30.00 · ₿1'000**, a separate fiat-only **₱15.00** line, and **Send** to `/loans/repay`.
-
-![21.gifts welcome menu mixed-rate loans](images/welcome-menu-loan-mixed-rate.png)
 
 ### Variant: menu-loan-behind
 

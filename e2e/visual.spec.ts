@@ -27,7 +27,6 @@ import {
   loanB,
   loanClosedUnderfunded,
   loanCollecting,
-  mixedPricedUnpricedLoans,
   productionPhpLoans,
   loanWith,
   myLoans,
@@ -4046,28 +4045,6 @@ test.describe('screen baselines', () => {
     await shotScreen(page, 'state-wallet-loans-due-no-rate-open');
   });
 
-  test('state /wallet loans-mixed-rate', async ({ page }) => {
-    await seedLoanMember(page);
-    await seedLoanData(page, mixedPricedUnpricedLoans, {});
-    await page.goto('/wallet?visual=balance-ready');
-    const card = page.getByRole('region', { name: 'Your loans (2)' });
-    await expect(card.getByText("₱30.00 · ₿1'000", { exact: true })).toBeVisible();
-    await expect(card.getByText('₱15.00', { exact: true })).toBeVisible();
-    await expect(card.getByRole('link', { name: 'Send' })).toBeVisible();
-    await shotScreen(page, 'state-wallet-loans-mixed-rate');
-  });
-
-  test('state /wallet loans-mixed-rate-open', async ({ page }) => {
-    await seedLoanMember(page);
-    await seedLoanData(page, mixedPricedUnpricedLoans, {});
-    await page.goto('/wallet?visual=balance-ready');
-    await page.getByRole('button', { name: 'Show loans' }).click();
-    await expect(page.getByRole('link', { name: mixedPricedUnpricedLoans[0]!.text })).toBeVisible();
-    await expect(page.getByRole('link', { name: mixedPricedUnpricedLoans[1]!.text })).toBeVisible();
-    await expect(page.getByText('₱15.00', { exact: true })).toBeVisible();
-    await shotScreen(page, 'state-wallet-loans-mixed-rate-open');
-  });
-
   test('state /wallet loans-multi', async ({ page }) => {
     await seedLoanMember(page);
     await seedLoanData(page, productionPhpLoans, {});
@@ -6880,11 +6857,6 @@ test.describe('screen baselines', () => {
 });
 
 test.describe('loans repay screens', () => {
-  const mixedUnpricedLedger = ledgerWith(ledgerB, {
-    repayments: ledgerB.repayments.map((row) =>
-      row.status === 'due' ? { ...row, sats: null, dueSats: null } : row,
-    ),
-  });
   const waitingLoan = loanWith(loanA, {
     due: {
       payableSats: 800,
@@ -6971,29 +6943,6 @@ test.describe('loans repay screens', () => {
         ? { ...row, status: 'paid' as const, dueSats: null }
         : row,
     ),
-  });
-  const partialUnpricedLoan = loanWith(loanB, {
-    totalSats: null,
-    maxSats: null,
-    maxAmount: null,
-    due: {
-      payableSats: null,
-      payablePeople: 1,
-      payableAmount: '15.00',
-      waitingSats: 0,
-      waitingPeople: 0,
-    },
-    next: null,
-  });
-  const partialUnpricedLedger = ledgerWith(ledgerB, {
-    repayments: ledgerB.repayments.map((row) => {
-      if (row.status !== 'due') {
-        return row;
-      }
-      return row.accountId === 'acc_elena'
-        ? { ...row, amount: '15.00', sats: null, dueSats: null }
-        : { ...row, status: 'paid' as const, dueSats: null };
-    }),
   });
   const paidLedger = ledgerWith(ledgerA, {
     repayments: ledgerA.repayments.map((row) =>
@@ -7172,36 +7121,6 @@ test.describe('loans repay screens', () => {
       text: 'Due today',
     });
     await shotScreen(page, 'screen-loans-repay');
-  });
-
-  test('state /loans/repay mixed-rate', async ({ page }) => {
-    await loanShot(page, {
-      loans: mixedPricedUnpricedLoans,
-      ledgers: {
-        'loan-mixed-priced': ledgerB,
-        'loan-mixed-unpriced': mixedUnpricedLedger,
-      },
-      text: 'Due today',
-    });
-    await expect(page.getByText("₱30.00 · ₿1'000", { exact: true })).toBeVisible();
-    await expect(page.getByText('₱15.00', { exact: true })).toBeVisible();
-    await expect(page.getByText(/₱6\.00 · ₿120 waits for a lender/)).toBeVisible();
-    await expect(page.getByText(/₱3\.00 waits for a lender/)).toBeVisible();
-    await shotScreen(page, 'state-loans-repay-mixed-rate');
-  });
-
-  test('state /loans/repay mixed-rate-who-open', async ({ page }) => {
-    await loanShot(page, {
-      loans: mixedPricedUnpricedLoans,
-      ledgers: {
-        'loan-mixed-priced': ledgerB,
-        'loan-mixed-unpriced': mixedUnpricedLedger,
-      },
-      text: 'Elena',
-      pressWho: true,
-    });
-    await expect(page.getByText('₱15.00', { exact: true }).first()).toBeVisible();
-    await shotScreen(page, 'state-loans-repay-mixed-rate-who-open');
   });
 
   test('state /loans/repay who-open', async ({ page }) => {
@@ -7661,31 +7580,6 @@ test.describe('loans repay screens', () => {
     await shotScreen(page, 'state-loans-repay-partial');
   });
 
-  test('state /loans/repay partial-unpriced', async ({ page }) => {
-    await loanShot(page, {
-      loans: [partialUnpricedLoan],
-      ledgers: { 'loan-b': partialUnpricedLedger },
-      visual: 'repay-partial',
-      text: 'Still due today',
-    });
-    await expect(page.getByText('₱15.00', { exact: true })).toBeVisible();
-    await expect(page.getByRole('button', { name: /^Send / })).toHaveCount(0);
-    await shotScreen(page, 'state-loans-repay-partial-unpriced');
-  });
-
-  test('state /loans/repay partial-unpriced-who-open', async ({ page }) => {
-    await loanShot(page, {
-      loans: [partialUnpricedLoan],
-      ledgers: { 'loan-b': partialUnpricedLedger },
-      visual: 'repay-partial',
-      text: 'Elena',
-      pressWho: true,
-    });
-    await expect(page.getByText('₱15.00', { exact: true }).first()).toBeVisible();
-    await expect(page.getByRole('button', { name: /^Send / })).toHaveCount(0);
-    await shotScreen(page, 'state-loans-repay-partial-unpriced-who-open');
-  });
-
   test('state /loans/repay partial-who-open', async ({ page }) => {
     await loanShot(page, {
       loans: [partialLoan],
@@ -7929,28 +7823,12 @@ test.describe('loans repay screens', () => {
       spotRates: { USD: '100000.00' },
     });
     await expect(page.getByText('₱18.00', { exact: true })).toBeVisible();
-    await expect(page.getByText(/₱12\.00 waits for a lender/)).toBeVisible();
-    await expect(page.getByText('Next: tomorrow, ₱30.00 to 2 people')).toBeVisible();
+    await expect(page.getByText(/₱18\.00 waits for a lender/)).toBeVisible();
     await expect(page.getByRole('button', { name: /^Send / })).toHaveCount(0);
     await expect(page.getByLabel('Amount (PHP)')).toBeVisible();
     await expect(page.getByRole('group', { name: 'Bitcoin or fiat' })).toHaveCount(0);
     await expect(page.getByText('No exchange rate yet')).toBeVisible();
     await shotScreen(page, 'state-loans-repay-pay-more-no-rate');
-  });
-
-  test('state /loans/repay pay-more-no-rate-who-open', async ({ page }) => {
-    await loanShot(page, {
-      loans: [payMoreNoRateLoan],
-      ledgers: { 'loan-b': payMoreNoRateLedger },
-      visual: 'repay-ready',
-      text: 'Elena',
-      pressWho: true,
-      spotRates: { USD: '100000.00' },
-    });
-    await expect(page.getByText('₱18.00', { exact: true }).first()).toBeVisible();
-    await expect(page.getByRole('button', { name: /^Send / })).toHaveCount(0);
-    await expect(page.getByText('No exchange rate yet')).toBeVisible();
-    await shotScreen(page, 'state-loans-repay-pay-more-no-rate-who-open');
   });
 
   test('state /loans/repay pay-more-no-maximum', async ({ page }) => {
@@ -31031,24 +30909,6 @@ test.describe('welcome forum variants', () => {
     await shotScreen(page, 'state-welcome-loans-due-no-rate-open');
   });
 
-  test('state /welcome loans-mixed-rate', async ({ page }) => {
-    await openWelcomeLoans(page, myLoans(mixedPricedUnpricedLoans));
-    const card = page.getByRole('region', { name: 'Your loans (2)' });
-    await expect(card.getByText("₱30.00 · ₿1'000", { exact: true })).toBeVisible();
-    await expect(card.getByText('₱15.00', { exact: true })).toBeVisible();
-    await expect(card.getByRole('link', { name: 'Send' })).toBeVisible();
-    await shotScreen(page, 'state-welcome-loans-mixed-rate');
-  });
-
-  test('state /welcome loans-mixed-rate-open', async ({ page }) => {
-    await openWelcomeLoans(page, myLoans(mixedPricedUnpricedLoans));
-    await page.getByRole('button', { name: 'Show loans' }).click();
-    await expect(page.getByRole('link', { name: mixedPricedUnpricedLoans[0]!.text })).toBeVisible();
-    await expect(page.getByRole('link', { name: mixedPricedUnpricedLoans[1]!.text })).toBeVisible();
-    await expect(page.getByText('₱15.00', { exact: true })).toBeVisible();
-    await shotScreen(page, 'state-welcome-loans-mixed-rate-open');
-  });
-
   test('state /welcome loans-due', async ({ page }) => {
     await openWelcomeLoans(page, myLoans([loanA]));
     await expect(page.getByRole('region', { name: 'Your loan' })).toContainText('Due today');
@@ -31302,17 +31162,6 @@ test.describe('welcome forum variants', () => {
     await expect(page.getByText('Loan repayment due today')).toBeVisible();
     await expect(page.getByRole('link', { name: 'Send' }).last()).toBeVisible();
     await shotScreen(page, 'state-welcome-menu-loan-due');
-  });
-
-  test('state /welcome menu-loan-mixed-rate', async ({ page }) => {
-    await openWelcomeLoans(page, myLoans(mixedPricedUnpricedLoans));
-    await page.getByRole('button', { name: 'Menu' }).click();
-    const menu = page.locator('#signed-in-menu');
-    await expect(menu.getByText('Loan repayment due today')).toBeVisible();
-    await expect(menu.getByText("₱30.00 · ₿1'000", { exact: true })).toBeVisible();
-    await expect(menu.getByText('₱15.00', { exact: true })).toBeVisible();
-    await expect(menu.getByRole('link', { name: 'Send' })).toBeVisible();
-    await shotScreen(page, 'state-welcome-menu-loan-mixed-rate');
   });
 
   test('state /welcome menu-loan-behind', async ({ page }) => {

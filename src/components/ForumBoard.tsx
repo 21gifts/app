@@ -1581,12 +1581,6 @@ export function ForumBoard({
                   full: message.sats >= message.goalSats,
                 }
               : null;
-          const loanCollecting =
-            loanOfCard !== null &&
-            isCollecting({
-              fundedAt: loanOfCard.full ? 'funded' : null,
-              ...(message.goalClosedAt === undefined ? {} : { closedAt: message.goalClosedAt }),
-            });
           const loanClosed = message.goalRepayable === true && message.goalClosedAt !== undefined;
           const replyPayLocked =
             (payInvoice !== null && payMessageId === message.id && payHost !== 'composer') ||
@@ -1958,7 +1952,16 @@ export function ForumBoard({
                       className="text-xs font-medium text-app-fg underline"
                       onClick={stopCardToggle}
                     >
-                      {t(loanCollecting ? 'forum.repayCollectingOpen' : 'forum.repayOpen')}
+                      {t(
+                        isCollecting({
+                          fundedAt: message.sats >= message.goalSats ? 'funded' : null,
+                          ...(message.goalClosedAt === undefined
+                            ? {}
+                            : { closedAt: message.goalClosedAt }),
+                        })
+                          ? 'forum.repayCollectingOpen'
+                          : 'forum.repayOpen',
+                      )}
                     </Link>
                   ) : null}
                   {message.parentId !== undefined &&

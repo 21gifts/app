@@ -24,7 +24,13 @@ function testSats(sats: number): string {
   return formatBitcoin(sats, 'ch');
 }
 
-function loan(overrides: Partial<MyLoan> = {}): MyLoan {
+type LoanFixture = Omit<MyLoan, 'closedAt'> & { closedAt?: string | null };
+
+function asLoan(item: LoanFixture): MyLoan {
+  return item as MyLoan;
+}
+
+function loan(overrides: Partial<LoanFixture> = {}): LoanFixture {
   return {
     messageId: 'loan-1',
     text: 'Tools for a repair stall',
@@ -66,7 +72,7 @@ function loan(overrides: Partial<MyLoan> = {}): MyLoan {
 }
 
 function show(
-  item: MyLoan = loan(),
+  item: LoanFixture = loan(),
   actionError: LoanRepayActionError | null = null,
 ): {
   onPay: ReturnType<typeof vi.fn>;
@@ -77,7 +83,7 @@ function show(
   const onCloseCollecting = vi.fn();
   const view = renderWithLocale(
     <LoanPayMore
-      loan={item}
+      loan={asLoan(item)}
       phase="idle"
       actionError={actionError}
       errorKey={null}
@@ -99,14 +105,14 @@ function show(
 }
 
 function payMoreState(
-  item: MyLoan,
+  item: LoanFixture,
   onPay: ReturnType<typeof vi.fn>,
   onCloseCollecting: ReturnType<typeof vi.fn>,
   overrides: Partial<LoanPayMoreProps> = {},
 ): ReactElement {
   return (
     <LoanPayMore
-      loan={item}
+      loan={asLoan(item)}
       phase="idle"
       actionError={null}
       errorKey={null}
@@ -597,7 +603,13 @@ describe('LoanPayMore', () => {
   });
 
   it('confirms that a first payment ends collecting when closedAt is omitted', () => {
-    const collecting = loan({ fundedAt: null, sats: 4_000, maxSats: 4_000 });
+    const collecting: LoanFixture = {
+      ...loan({
+        fundedAt: null,
+        sats: 4_000,
+        maxSats: 4_000,
+      }),
+    };
     delete collecting.closedAt;
     const { onPay } = show(collecting);
     fireEvent.change(screen.getByLabelText('Amount (₿)'), { target: { value: '1000' } });
@@ -650,7 +662,7 @@ describe('LoanPayMore', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Pay this amount' }));
     view.rerender(
       <LoanPayMore
-        loan={item}
+        loan={asLoan(item)}
         phase="failed"
         actionError={{
           messageId: 'loan-1',
@@ -683,7 +695,7 @@ describe('LoanPayMore', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Pay this amount' }));
     opened.rerender(
       <LoanPayMore
-        loan={item}
+        loan={asLoan(item)}
         phase="failed"
         actionError={{
           messageId: 'loan-1',
@@ -933,7 +945,7 @@ describe('LoanPayMore', () => {
     const onCloseCollecting = vi.fn();
     const view = renderWithLocale(
       <LoanPayMore
-        loan={item}
+        loan={asLoan(item)}
         phase="idle"
         actionError={null}
         errorKey={null}
@@ -954,7 +966,7 @@ describe('LoanPayMore', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Pay this amount' }));
     view.rerender(
       <LoanPayMore
-        loan={item}
+        loan={asLoan(item)}
         phase="idle"
         activeAction={{ kind: 'prepay', messageId: 'loan-1' }}
         actionError={null}
@@ -977,7 +989,7 @@ describe('LoanPayMore', () => {
     expect(openTopUp).toHaveBeenCalledTimes(1);
     view.rerender(
       <LoanPayMore
-        loan={item}
+        loan={asLoan(item)}
         phase="idle"
         activeAction={{ kind: 'prepay', messageId: 'loan-1' }}
         actionError={null}
@@ -1068,12 +1080,14 @@ describe('LoanPayMore', () => {
   it('shows prepay waiting recipients with the same muted waiting copy', () => {
     renderWithLocale(
       <LoanPayMore
-        loan={loan({
-          goalCurrency: 'PHP',
-          goalAmount: '480.28',
-          maxSats: 9_283,
-          maxAmount: '480.28',
-        })}
+        loan={asLoan(
+          loan({
+            goalCurrency: 'PHP',
+            goalAmount: '480.28',
+            maxSats: 9_283,
+            maxAmount: '480.28',
+          }),
+        )}
         phase="waiting"
         activeAction={{ kind: 'prepay', messageId: 'loan-1' }}
         actionError={null}
