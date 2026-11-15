@@ -167,10 +167,15 @@ type TillPayment = Pick<WalletPayment, 'amountSats' | 'feesSats' | 'timestamp'> 
  * payment id, amount, fee and payment time. `GET /pos` does not return the payment hashes of the
  * BOLT11 invoices the api handed out for a charge, so the till cannot tell a
  * payment of the charge from another payment of that amount (the static
- * sticker QR, a grant, another member). It pays no charge; while it could be
- * the open charge's ({@link mayPay}), the till asks the api, which knows.
+ * sticker QR, a grant, another member). It pays no charge. `forCharge` is the
+ * open charge it could be the payment of ({@link mayPay}) when it was heard, or
+ * when that charge was armed after it, else `null`: the till asks the api about
+ * that charge only, and counts the payment for that charge only once the api
+ * returns it paid.
  */
-type UnnamedReceipt = Pick<WalletPayment, 'id' | 'amountSats' | 'feesSats' | 'timestamp'>;
+type UnnamedReceipt = Pick<WalletPayment, 'id' | 'amountSats' | 'feesSats' | 'timestamp'> & {
+  forCharge: string | null;
+};
 
 /**
  * What this tab's wallet settled for one session, shared by `/pos` and
@@ -359,8 +364,15 @@ function keepEarly(memory: WalletSettled, payment: TillPayment): void {
     .slice(-POS_EARLY_PAYMENTS);
 }
 
-/** Keeps `receipt`, a Lightning payment that names no charge, among the newest by payment time. */
+/**
+ * Keeps `receipt`, a Lightning payment that names no charge, among the newest by payment time,
+ * tied to the open charge when it could be that charge's payment.
+ */
 function keepUnnamed(memory: WalletSettled, receipt: UnnamedReceipt): void {
+  const open = memory.open;
+  if (open !== null && !memory.paid.has(open.id) && mayPay(open, receipt)) {
+    receipt.forCharge = open.id;
+  }
   memory.unnamed = [...memory.unnamed, receipt]
     .sort((a, b) => a.timestamp - b.timestamp)
     .slice(-POS_EARLY_PAYMENTS);
@@ -393,7 +405,7 @@ function askingFor(memory: WalletSettled, now: number): string | null {
   // Kept by payment time, oldest first: the last that counts is the newest.
   let newest: string | null = null;
   for (const receipt of memory.unnamed) {
-    if (mayPay(open, receipt) && now <= receipt.timestamp + POS_LATE_PAID_MS) {
+    if (receipt.forCharge === open.id && now <= receipt.timestamp + POS_LATE_PAID_MS) {
       newest = receipt.id;
     }
   }
@@ -401,45 +413,27 @@ function askingFor(memory: WalletSettled, now: number): string | null {
 }
 
 /**
- * For each charge `state` shows paid that this tab's wallet has not paid yet,
- * when this tab's wallet received a Lightning payment that could be its
- * payment ({@link mayPay}), the api tied that payment to the charge (it knows
- * the charge's invoices): the charge counts as paid by this tab's wallet, with
- * the api's payment time, so the amount page returns to the till for its
- * confirmation as it does for a payment that names the charge. Read from the
- * answer itself, not from the open charge, so it also holds after a create or
- * a Cancel cleared that. That payment is used up: it counts for this charge
- * only and makes the till ask about no other. A charge whose confirmation was
- * closed, or that the api had paid before that payment was made (allowing for
- * an api clock up to {@link POS_CREATE_SKEW_MS} behind), takes none; nor does
- * any other charge take a payment the open charge (or, before it is armed, the
- * charge `state` shows open) could be paid by ({@link mayPay}): an earlier
- * charge still in History cannot take a payment of the open one.
+ * When `state` shows paid the charge a Lightning payment that names no charge
+ * was tied to (`forCharge`: the open charge it could be the payment of), the
+ * api tied that payment to the charge (it knows the charge's invoices): the
+ * charge counts as paid by this tab's wallet, with the api's payment time, so
+ * the amount page returns to the till for its confirmation as it does for a
+ * payment that names the charge. Read from the answer itself, so it also holds
+ * after a create or a Cancel made that charge no longer the open one. That
+ * payment is used up. No other charge, an earlier one in History among them,
+ * ever takes it, and a charge whose confirmation was closed takes none.
  */
 function confirmAsked(memory: WalletSettled, state: PosState): void {
-  // The open charge, or before it is armed (a create on its way, the first read) the one this
-  // answer shows open.
-  const open =
-    memory.open ??
-    (state.charge !== null && state.charge.status === 'pending' ? state.charge : null);
   let changed = false;
-  for (const row of tillCharges(state)) {
-    if (row.status !== 'paid' || memory.paid.has(row.id) || memory.closed.has(row.id)) {
-      continue;
-    }
-    const paidAt = row.paidAt === null ? Number.NaN : Date.parse(row.paidAt);
-    const used = memory.unnamed.find(
-      (receipt) =>
-        mayPay(row, receipt) &&
-        (Number.isNaN(paidAt) || paidAt + POS_CREATE_SKEW_MS >= receipt.timestamp) &&
-        // A payment the open charge could take is that charge's to ask about.
-        (open === null || open.id === row.id || !mayPay(open, receipt)),
+  for (const receipt of memory.unnamed) {
+    const row = tillCharges(state).find(
+      (candidate) => candidate.id === receipt.forCharge && candidate.status === 'paid',
     );
-    if (used === undefined) {
+    if (row === undefined || memory.paid.has(row.id) || memory.closed.has(row.id)) {
       continue;
     }
     memory.paid.set(row.id, row);
-    memory.unnamed = memory.unnamed.filter((receipt) => receipt !== used);
+    memory.unnamed = memory.unnamed.filter((kept) => kept !== receipt);
     changed = true;
   }
   if (changed) {
@@ -455,6 +449,13 @@ function armOpen(memory: WalletSettled, charge: PosCharge): void {
     return;
   }
   memory.open = charge;
+  // A Lightning payment heard before this charge was known, that could be its payment, is tied to
+  // it.
+  for (const receipt of memory.unnamed) {
+    if (receipt.forCharge === null && mayPay(charge, receipt)) {
+      receipt.forCharge = charge.id;
+    }
+  }
   const early = memory.early;
   memory.early = [];
   for (const payment of early) {
@@ -482,10 +483,7 @@ function rearm(memory: WalletSettled, charge: PosCharge | null): void {
   }
 }
 
-/**
- * How far the api's clock may run behind this one: when a lost create is matched to its charge,
- * and when a charge the api paid is matched to a payment this tab's wallet received.
- */
+/** How far the api's clock may run behind this one when a lost create is matched to its charge. */
 const POS_CREATE_SKEW_MS = 30_000;
 
 /** Create answers that say for certain no charge was made. */
@@ -540,6 +538,7 @@ function listenToWallet(): void {
           amountSats: payment.amountSats,
           feesSats: payment.feesSats,
           timestamp: payment.timestamp,
+          forCharge: null,
         });
         settledChanged();
       }
@@ -1438,9 +1437,9 @@ function usePosTillState(): PosTillState {
  * `PAY_POLL_MS` after each ask settled, one ask at a time for a payment, until a read shows
  * the charge paid, cancelled or gone before its end,
  * and at most until one minute after that payment (a newer such payment
- * starts the asks again at once); once any read shows a charge paid that
- * such a payment could be the payment of, also after a create or Cancel, it
- * counts as paid by this tab's wallet, and that payment counts for no other charge. A paid charge
+ * starts the asks again at once). Such a payment is tied to that charge; once
+ * any read shows that charge paid, also after a create or Cancel, it counts as
+ * paid by this tab's wallet, and the payment counts for no other charge. A paid charge
  * the api returns also opens the confirmation. A lost create the api already
  * shows paid is remembered for the session and still confirmed here when a
  * later read fails or no longer returns it; it is not a payment this tab's

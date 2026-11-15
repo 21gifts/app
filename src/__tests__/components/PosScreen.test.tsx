@@ -4341,6 +4341,48 @@ describe('PosScreen', () => {
       expect(screen.queryByRole('alertdialog')).toBeNull();
     });
 
+    it('lets an earlier charge paid in History take no payment of the open charge after Cancel', async () => {
+      // Never shown or closed on this till; the api sent no paid time for it.
+      const a = {
+        ...OPEN,
+        id: 'c-a',
+        createdAt: new Date(Date.now() - 60_000).toISOString(),
+        status: 'paid',
+        paidAt: null,
+      };
+      const b = { ...OPEN, id: 'c-b', createdAt: new Date(Date.now() - 5_000).toISOString() };
+      let cancelled = false;
+      vi.stubGlobal(
+        'fetch',
+        vi.fn(async (_input: RequestInfo | URL, init?: RequestInit) => {
+          if (init?.method === 'DELETE') {
+            cancelled = true;
+            return jsonResponse({ charge: null });
+          }
+          const current = cancelled ? { ...b, status: 'cancelled' } : b;
+          return jsonResponse({ charge: cancelled ? null : b, history: [current, a] });
+        }),
+      );
+      vi.mocked(logInteraction).mockClear();
+      renderWithLocale(<PosScreen />);
+      expect(await screen.findByRole('button', { name: 'Cancel' })).toBeTruthy();
+      await act(async () => undefined);
+      receive(21);
+      fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+      expect(await screen.findByRole('link', { name: 'Set an amount' })).toBeTruthy();
+      await act(async () => undefined);
+      await act(async () => undefined);
+      // The payment was the cancelled charge's to ask about: the earlier charge never takes it.
+      expect(screen.queryByRole('alertdialog')).toBeNull();
+      expect(logInteraction).not.toHaveBeenCalledWith(
+        'pos_charge_paid_seen',
+        expect.anything(),
+        expect.anything(),
+      );
+      const history = screen.getByRole('region', { name: 'History' });
+      expect(within(history).getByText('Cancelled')).toBeTruthy();
+    });
+
     it('keeps asking quietly after a failed read while an unnamed payment could be the charge’s', async () => {
       let reads = 0;
       vi.stubGlobal(
