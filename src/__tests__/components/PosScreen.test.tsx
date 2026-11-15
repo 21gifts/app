@@ -3833,6 +3833,8 @@ describe('PosScreen', () => {
       vi.stubGlobal('fetch', fetchMock);
       renderWithLocale(<PosScreen />);
       expect(await screen.findByRole('button', { name: 'Cancel' })).toBeTruthy();
+      // The effects of the first read have run: the charge is armed and listed.
+      await act(async () => undefined);
       receive(21, 0, Date.now(), 'c1');
       showTab();
       await waitFor(() => {
