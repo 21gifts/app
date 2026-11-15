@@ -4616,6 +4616,38 @@ describe('PosScreen', () => {
       expect(logInteraction).not.toHaveBeenCalledWith('pos_charge_paid_seen', expect.anything());
     });
 
+    it('counts no payment tied while the charge looked pending for it once the api shows it paid before that payment', async () => {
+      // The till still has the charge pending; the api had it paid by a payment of its own a while ago.
+      const open = {
+        ...OPEN,
+        createdAt: new Date(Date.now() - 180_000).toISOString(),
+        expiresAt: new Date(Date.now() + 600_000).toISOString(),
+      };
+      const paid = {
+        ...open,
+        status: 'paid',
+        paidAt: new Date(Date.now() - 70_000).toISOString(),
+      };
+      let reads = 0;
+      const fetchMock = vi.fn(async () => {
+        reads += 1;
+        return reads === 1
+          ? jsonResponse({ charge: open, history: [open] })
+          : jsonResponse({ charge: null, history: [paid] });
+      });
+      vi.stubGlobal('fetch', fetchMock);
+      renderWithLocale(<PosScreen />);
+      expect(await screen.findByRole('button', { name: 'Cancel' })).toBeTruthy();
+      // An unrelated Lightning payment of the same amount: tied to the charge that still looks open.
+      receive(21);
+      await waitFor(() => {
+        expect(reads).toBeGreaterThanOrEqual(2);
+      });
+      await act(async () => undefined);
+      // The api had the charge paid before this payment was made: no Paid screen for it.
+      expect(screen.queryByRole('alertdialog')).toBeNull();
+    });
+
     it('ties no payment to another tab’s charge that an overtaken ask shows paid', async () => {
       // The open charge, and another tab's newer one of the same amount, made before the payment
       // and already paid.
@@ -4968,7 +5000,8 @@ describe('PosScreen', () => {
 
     it('sends the amount page back to the till when the api confirms an unnamed payment of the charge that ran out', async () => {
       const ended = { ...OPEN, expiresAt: new Date(Date.now() - 1_000).toISOString() };
-      const paid = { ...ended, status: 'paid', paidAt: new Date().toISOString() };
+      // The api marks it paid once it saw the payment, so after it.
+      const paid = { ...ended, status: 'paid', paidAt: new Date(Date.now() + 2_000).toISOString() };
       let apiPaid = false;
       let reads = 0;
       vi.stubGlobal(

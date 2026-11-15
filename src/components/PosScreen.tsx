@@ -452,6 +452,8 @@ function confirmAsked(memory: WalletSettled, state: PosState, tie: boolean): voi
       (candidate) =>
         receipt.forCharges.includes(candidate.id) &&
         candidate.status === 'paid' &&
+        // Tied while the till still had it pending: a payment made after its `paidAt` is not its.
+        mayPay(candidate, receipt) &&
         !memory.paid.has(candidate.id) &&
         !memory.closed.has(candidate.id),
     );
