@@ -376,14 +376,27 @@ function keepUnnamed(memory: WalletSettled, receipt: UnnamedReceipt): void {
  * late minute still gets its reads.
  */
 function asksApi(memory: WalletSettled, now: number): boolean {
+  return askingFor(memory, now) !== null;
+}
+
+/**
+ * The payment time of the newest Lightning payment that names no charge and
+ * makes the till ask the api ({@link asksApi}), or `null` when none does. A
+ * newer such payment starts the asks again, also after they stopped.
+ */
+function askingFor(memory: WalletSettled, now: number): number | null {
   const open = memory.open;
-  return (
-    open !== null &&
-    !memory.paid.has(open.id) &&
-    memory.unnamed.some(
-      (receipt) => mayPay(open, receipt) && now <= receipt.timestamp + POS_LATE_PAID_MS,
-    )
-  );
+  if (open === null || memory.paid.has(open.id)) {
+    return null;
+  }
+  // Kept by payment time, oldest first: the last that counts is the newest.
+  let newest: number | null = null;
+  for (const receipt of memory.unnamed) {
+    if (mayPay(open, receipt) && now <= receipt.timestamp + POS_LATE_PAID_MS) {
+      newest = receipt.timestamp;
+    }
+  }
+  return newest;
 }
 
 /**
@@ -825,9 +838,10 @@ function usePosTillState(): PosTillState {
   // {@link PAY_POLL_MS} after each ask settled, at most until {@link POS_LATE_PAID_MS} after that
   // payment: one ask at a time, as every pay poll does. Each ask is a read of its own, ordered with
   // the till's other reads by `applyRead`: none of them cuts another off, and a failed ask is quiet.
-  const asking = session !== null && asksApi(memory, Date.now());
+  // The payment that makes the till ask: a newer one starts the asks again, at once.
+  const askingSince = session === null ? null : askingFor(memory, Date.now());
   useEffect(() => {
-    if (!asking || session === null) {
+    if (askingSince === null || session === null) {
       return;
     }
     let alive = true;
@@ -837,7 +851,9 @@ function usePosTillState(): PosTillState {
       const seq = startRead(reads);
       try {
         const next = await fetchPosState(session);
-        if (alive) {
+        // Applied also after a newer payment started the asks again: `applyRead` keeps the newest
+        // answer. Not for another session.
+        if (useAuthStore.getState().session === session) {
           whenCurrent(generation, mine, () => {
             applyRead(reads, seq, () => {
               setTill({ state: next, session });
@@ -864,7 +880,7 @@ function usePosTillState(): PosTillState {
       alive = false;
       clearTimeout(timer);
     };
-  }, [asking, session]);
+  }, [askingSince, session]);
 
   useEffect(() => {
     // A confirmation a newer open charge hid is over: it does not come back once that charge ends.
@@ -1384,7 +1400,8 @@ function usePosTillState(): PosTillState {
  * created to one minute after its end), it asks the api at once and then
  * `PAY_POLL_MS` after each ask settled, one ask at a time, until a read shows
  * the charge paid, cancelled or gone before its end,
- * and at most until one minute after that payment; once a read shows the
+ * and at most until one minute after that payment (a newer such payment
+ * starts the asks again at once); once a read shows the
  * charge paid, it counts as paid by this tab's wallet. A paid charge
  * the api returns also opens the confirmation. A lost create the api already
  * shows paid is remembered for the session and still confirmed here when a

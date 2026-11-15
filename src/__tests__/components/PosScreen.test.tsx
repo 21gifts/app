@@ -4237,6 +4237,43 @@ describe('PosScreen', () => {
       expect(screen.queryByRole('alertdialog')).toBeNull();
     }, 10_000);
 
+    it('asks again at once for a newer unnamed payment after the asks for an older one stopped', async () => {
+      const ended = {
+        ...OPEN,
+        createdAt: new Date(Date.now() - 400_000).toISOString(),
+        expiresAt: new Date(Date.now() - 10_000).toISOString(),
+      };
+      const paid = { ...ended, status: 'paid', paidAt: new Date().toISOString() };
+      let apiPaid = false;
+      let reads = 0;
+      vi.stubGlobal(
+        'fetch',
+        vi.fn(async () => {
+          reads += 1;
+          const charge = reads === 1 ? ended : apiPaid ? paid : null;
+          return jsonResponse({ charge, history: [charge ?? ended] });
+        }),
+      );
+      renderWithLocale(<PosScreen />);
+      await waitFor(() => {
+        expect(reads).toBe(2);
+      });
+      // A payment whose minute ends in half a second: one ask, then the asks stop.
+      receive(21, 0, Date.now() - 59_500);
+      await waitFor(() => {
+        expect(reads).toBe(3);
+      });
+      await pause(2_300);
+      expect(reads).toBe(3);
+      // A newer payment that could be the charge's: asked about at once, and confirmed.
+      apiPaid = true;
+      receive(21);
+      expect(
+        await screen.findByRole('alertdialog', { name: 'Paid' }, { timeout: 1_500 }),
+      ).toBeTruthy();
+      expect(reads).toBe(4);
+    }, 10_000);
+
     it('keeps asking the api after a failed Cancel for an unnamed payment that could be the charge’s', async () => {
       let apiPaid = false;
       let reads = 0;
