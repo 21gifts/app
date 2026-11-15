@@ -603,6 +603,9 @@ function usePosTillState(): PosTillState {
   // Counts the till reads of the load effect that settled, so the api is asked again only after
   // the read before answered or failed.
   const [readsSettled, setReadsSettled] = useState(0);
+  // Whether a read of the load effect is on its way: the next ask waits for it, so a slow read is
+  // never cut off and its answer never dropped.
+  const loading = useRef(false);
   const memory = settledFor(session);
   const walletPaid = memory.paid;
   const closed = memory.closed;
@@ -636,6 +639,7 @@ function usePosTillState(): PosTillState {
     const pending = tillWrite;
     const quiet = quietReload.current;
     quietReload.current = false;
+    loading.current = true;
     void (async (): Promise<void> => {
       if (pending !== null) {
         await pending;
@@ -649,6 +653,7 @@ function usePosTillState(): PosTillState {
         if (!alive) {
           return;
         }
+        loading.current = false;
         whenCurrent(generation, mine, () => {
           applyRead(reads, seq, () => {
             setTill({ state: next, session });
@@ -662,6 +667,7 @@ function usePosTillState(): PosTillState {
         setReadsSettled((n) => n + 1);
       } catch {
         if (alive) {
+          loading.current = false;
           setReadsSettled((n) => n + 1);
         }
         // A newer read already answered, so this failure says nothing about the till now.
@@ -806,14 +812,15 @@ function usePosTillState(): PosTillState {
   // A Lightning payment that names no charge could be the open charge's: only the api, which
   // knows the invoices it handed out for the charge, can say so. Until a read shows the charge
   // paid (or cancelled, or gone) the till asks again, each time {@link PAY_POLL_MS} after the read
-  // before settled, and at most until {@link POS_LATE_PAID_MS} after the charge's end.
-  const asking = session !== null && asksApi(memory, Date.now());
+  // before settled, and at most until {@link POS_LATE_PAID_MS} after the charge's end. The first
+  // ask follows the read the payment asked for at once (`recheck`), never runs beside a read on
+  // its way, and so never cuts one off.
   useEffect(() => {
-    if (!asking || session === null) {
+    if (session === null || loading.current || !asksApi(settledFor(session), Date.now())) {
       return;
     }
     const timer = setTimeout(() => {
-      if (asksApi(settledFor(session), Date.now())) {
+      if (!loading.current && asksApi(settledFor(session), Date.now())) {
         quietReload.current = true;
         setReload((n) => n + 1);
       }
@@ -821,7 +828,7 @@ function usePosTillState(): PosTillState {
     return () => {
       clearTimeout(timer);
     };
-  }, [asking, readsSettled, session]);
+  }, [readsSettled, session]);
 
   useEffect(() => {
     // A confirmation a newer open charge hid is over: it does not come back once that charge ends.

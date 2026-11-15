@@ -3980,6 +3980,37 @@ describe('PosScreen', () => {
       expect(reads).toBe(after);
     }, 15_000);
 
+    it('never cuts off a read slower than the poll pause, and confirms from its answer', async () => {
+      let reads = 0;
+      let inFlight = 0;
+      let most = 0;
+      vi.stubGlobal(
+        'fetch',
+        vi.fn(async () => {
+          reads += 1;
+          const mine = reads;
+          inFlight += 1;
+          most = Math.max(most, inFlight);
+          // The read the payment asks for takes longer than the poll pause, and returns it paid.
+          if (mine === 2) {
+            await pause(3_000);
+          }
+          inFlight -= 1;
+          const charge = mine >= 2 ? PAID : OPEN;
+          return jsonResponse({ charge, history: [charge] });
+        }),
+      );
+      renderWithLocale(<PosScreen />);
+      expect(await screen.findByRole('button', { name: 'Cancel' })).toBeTruthy();
+      receive(21);
+      // No second ask starts while that read is on its way, and its answer is not dropped.
+      expect(
+        await screen.findByRole('alertdialog', { name: 'Paid' }, { timeout: 5_000 }),
+      ).toBeTruthy();
+      expect(reads).toBe(2);
+      expect(most).toBe(1);
+    }, 10_000);
+
     it('keeps asking quietly after a failed read while an unnamed payment could be the charge’s', async () => {
       let reads = 0;
       vi.stubGlobal(
