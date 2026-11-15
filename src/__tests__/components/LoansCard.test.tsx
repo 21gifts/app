@@ -403,7 +403,7 @@ describe('LoansCard', () => {
 
     expect(screen.getByText('₱30.00')).toBeTruthy();
     expect(screen.getByText('₱15.00 is waiting for a lender to set up their wallet')).toBeTruthy();
-    expect(screen.getByText('Next: tomorrow, ₱30.00')).toBeTruthy();
+    expect(screen.queryByText(/^Next:/)).toBeNull();
     expect(screen.queryByRole('link', { name: 'Send' })).toBeNull();
     expect(screen.getByRole('link', { name: 'Repayment details' })).toBeTruthy();
   });

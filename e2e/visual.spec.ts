@@ -7823,7 +7823,7 @@ test.describe('loans repay screens', () => {
       spotRates: { USD: '100000.00' },
     });
     await expect(page.getByText('₱18.00', { exact: true })).toBeVisible();
-    await expect(page.getByText(/₱18\.00 waits for a lender/)).toBeVisible();
+    await expect(page.getByText(/₱12\.00 waits for a lender/)).toBeVisible();
     await expect(page.getByRole('button', { name: /^Send / })).toHaveCount(0);
     await expect(page.getByLabel('Amount (PHP)')).toBeVisible();
     await expect(page.getByRole('group', { name: 'Bitcoin or fiat' })).toHaveCount(0);

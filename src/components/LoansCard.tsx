@@ -232,6 +232,9 @@ export function LoansCard({ place }: LoansCardProps): ReactElement | null {
                   ) : null}
                   {t(nothingWaiting ? 'loans.nothingDue' : 'loans.nothingToSend')}
                 </p>
+                {nextLine() === null ? null : (
+                  <p className="text-xs tabular-nums lining-nums text-app-muted">{nextLine()}</p>
+                )}
               </div>
               <Link
                 href="/loans/repay"
@@ -264,9 +267,6 @@ export function LoansCard({ place }: LoansCardProps): ReactElement | null {
           <ChevronRight aria-hidden="true" className="h-5 w-5 shrink-0 text-app-muted" />
         </Link>
       )}
-      {summary.fundedCount > 0 && nextLine() !== null ? (
-        <p className="mt-1 text-xs tabular-nums lining-nums text-app-muted">{nextLine()}</p>
-      ) : null}
       <button
         type="button"
         aria-expanded={open}
