@@ -163,14 +163,14 @@ type TillPayment = Pick<WalletPayment, 'amountSats' | 'feesSats' | 'timestamp'> 
 };
 
 /**
- * A Lightning payment the wallet received that names no charge: its amount,
- * fee and payment time. `GET /pos` does not return the payment hashes of the
+ * A Lightning payment the wallet received that names no charge: its wallet
+ * payment id, amount, fee and payment time. `GET /pos` does not return the payment hashes of the
  * BOLT11 invoices the api handed out for a charge, so the till cannot tell a
  * payment of the charge from another payment of that amount (the static
  * sticker QR, a grant, another member). It pays no charge; while it could be
  * the open charge's ({@link mayPay}), the till asks the api, which knows.
  */
-type UnnamedReceipt = Pick<WalletPayment, 'amountSats' | 'feesSats' | 'timestamp'>;
+type UnnamedReceipt = Pick<WalletPayment, 'id' | 'amountSats' | 'feesSats' | 'timestamp'>;
 
 /**
  * What this tab's wallet settled for one session, shared by `/pos` and
@@ -380,20 +380,21 @@ function asksApi(memory: WalletSettled, now: number): boolean {
 }
 
 /**
- * The payment time of the newest Lightning payment that names no charge and
- * makes the till ask the api ({@link asksApi}), or `null` when none does. A
- * newer such payment starts the asks again, also after they stopped.
+ * The wallet payment id of the newest Lightning payment that names no charge
+ * and makes the till ask the api ({@link asksApi}), or `null` when none does.
+ * A newer such payment, also one of the same second, starts the asks again,
+ * also after they stopped.
  */
-function askingFor(memory: WalletSettled, now: number): number | null {
+function askingFor(memory: WalletSettled, now: number): string | null {
   const open = memory.open;
   if (open === null || memory.paid.has(open.id)) {
     return null;
   }
   // Kept by payment time, oldest first: the last that counts is the newest.
-  let newest: number | null = null;
+  let newest: string | null = null;
   for (const receipt of memory.unnamed) {
     if (mayPay(open, receipt) && now <= receipt.timestamp + POS_LATE_PAID_MS) {
-      newest = receipt.timestamp;
+      newest = receipt.id;
     }
   }
   return newest;
@@ -405,16 +406,19 @@ function askingFor(memory: WalletSettled, now: number): number | null {
  * api tied that payment to the charge (it knows the charge's invoices): the
  * charge counts as paid by this tab's wallet, with the api's payment time, so
  * the amount page returns to the till for its confirmation as it does for a
- * payment that names the charge.
+ * payment that names the charge. That payment is used up: it counts for this
+ * charge only and makes the till ask about no other.
  */
 function confirmAsked(memory: WalletSettled, state: PosState): void {
   const open = memory.open;
-  if (open === null || !memory.unnamed.some((receipt) => mayPay(open, receipt))) {
+  const used = open === null ? undefined : memory.unnamed.find((receipt) => mayPay(open, receipt));
+  if (open === null || used === undefined) {
     return;
   }
   const row = tillCharges(state).find((candidate) => candidate.id === open.id);
   if (row?.status === 'paid') {
     memory.paid.set(row.id, row);
+    memory.unnamed = memory.unnamed.filter((receipt) => receipt !== used);
     settledChanged();
   }
 }
@@ -505,6 +509,7 @@ function listenToWallet(): void {
       // or an on-chain deposit, is someone else's money.
       if (payment.method === 'lightning') {
         keepUnnamed(memory, {
+          id: payment.id,
           amountSats: payment.amountSats,
           feesSats: payment.feesSats,
           timestamp: payment.timestamp,
@@ -836,9 +841,11 @@ function usePosTillState(): PosTillState {
   // knows the invoices it handed out for the charge, can say so. Until a read shows the charge
   // paid (or cancelled, or gone before its end) the till asks it, at once and then
   // {@link PAY_POLL_MS} after each ask settled, at most until {@link POS_LATE_PAID_MS} after that
-  // payment: one ask at a time, as every pay poll does. Each ask is a read of its own, ordered with
+  // payment: one ask at a time for a payment, as every pay poll does. Each ask is a read of its own, ordered with
   // the till's other reads by `applyRead`: none of them cuts another off, and a failed ask is quiet.
-  // The payment that makes the till ask: a newer one starts the asks again, at once.
+  // The payment that makes the till ask: a newer one starts the asks again, at once. Its first
+  // ask does not wait for an ask of the payment before that may still be on its way; both answers
+  // are ordered by `applyRead`, and the newer read wins.
   const askingSince = session === null ? null : askingFor(memory, Date.now());
   useEffect(() => {
     if (askingSince === null || session === null) {
@@ -1398,11 +1405,11 @@ function usePosTillState(): PosTillState {
  * confirmation is closed. While a Lightning payment that names no charge could
  * be the open charge's (its amount, made from the second the charge was
  * created to one minute after its end), it asks the api at once and then
- * `PAY_POLL_MS` after each ask settled, one ask at a time, until a read shows
+ * `PAY_POLL_MS` after each ask settled, one ask at a time for a payment, until a read shows
  * the charge paid, cancelled or gone before its end,
  * and at most until one minute after that payment (a newer such payment
  * starts the asks again at once); once a read shows the
- * charge paid, it counts as paid by this tab's wallet. A paid charge
+ * charge paid, it counts as paid by this tab's wallet, and that payment counts for no other charge. A paid charge
  * the api returns also opens the confirmation. A lost create the api already
  * shows paid is remembered for the session and still confirmed here when a
  * later read fails or no longer returns it; it is not a payment this tab's

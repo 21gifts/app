@@ -42,6 +42,7 @@ vi.mock('next/navigation', () => ({
 const received = vi.hoisted(() => ({
   listeners: new Set<
     (payment: {
+      id: string;
       amountSats: number;
       feesSats: number;
       timestamp: number;
@@ -72,6 +73,7 @@ vi.mock('@/lib/wallet/wallet-service', async () => {
     // The real one checks the Playwright build itself (wallet-service tests); here it reaches the
     // same listeners the mocked onPaymentReceived keeps.
     announceReceivedForE2e: (payment: {
+      id: string;
       amountSats: number;
       feesSats: number;
       timestamp: number;
@@ -90,6 +92,8 @@ vi.mock('@/lib/wallet/wallet-service', async () => {
  * `timestamp`; `chargeId` when it paid the api's Spark invoice of that charge (memo `pos:<id>`).
  * `method` is how it arrived: Lightning, or Spark for a named one, unless given.
  */
+let receivedCount = 0;
+
 function receive(
   amountSats: number,
   feesSats = 0,
@@ -97,9 +101,12 @@ function receive(
   chargeId?: string,
   method = chargeId === undefined ? 'lightning' : 'spark',
 ): void {
+  receivedCount += 1;
+  const id = `payment-${receivedCount}`;
   act(() => {
     for (const listener of [...received.listeners]) {
       listener({
+        id,
         amountSats,
         feesSats,
         timestamp,
@@ -3559,6 +3566,8 @@ describe('PosScreen', () => {
       );
       renderWithLocale(<PosScreen />);
       expect(await screen.findByRole('button', { name: 'Cancel' })).toBeTruthy();
+      // The effects of the first read have run.
+      await act(async () => undefined);
       const before = reads;
       receive(21, 0, Date.now(), older.id);
       const history = screen.getByRole('region', { name: 'History' });
@@ -4272,6 +4281,90 @@ describe('PosScreen', () => {
         await screen.findByRole('alertdialog', { name: 'Paid' }, { timeout: 1_500 }),
       ).toBeTruthy();
       expect(reads).toBe(4);
+    }, 10_000);
+
+    it('asks again at once for a second unnamed payment made in the same second', async () => {
+      const answers: Array<(response: Response) => void> = [];
+      vi.stubGlobal(
+        'fetch',
+        vi.fn(
+          () =>
+            new Promise<Response>((resolve) => {
+              answers.push(resolve);
+            }),
+        ),
+      );
+      renderWithLocale(<PosScreen />);
+      await waitFor(() => {
+        expect(answers).toHaveLength(1);
+      });
+      await act(async () => {
+        answers[0]?.(jsonResponse({ charge: OPEN, history: [OPEN] }));
+        await Promise.resolve();
+      });
+      expect(await screen.findByRole('button', { name: 'Cancel' })).toBeTruthy();
+      const at = Date.now();
+      receive(21, 0, at);
+      await waitFor(() => {
+        expect(answers).toHaveLength(2);
+      });
+      // Another payment of the same second: it starts the asks again at once.
+      receive(21, 0, at);
+      await waitFor(() => {
+        expect(answers).toHaveLength(3);
+      });
+      await act(async () => {
+        answers[2]?.(jsonResponse({ charge: PAID, history: [PAID] }));
+        await Promise.resolve();
+      });
+      expect(await confirmation()).toBeTruthy();
+    });
+
+    it('counts an unnamed payment the api confirmed for one charge for no other', async () => {
+      const ended = {
+        ...OPEN,
+        createdAt: new Date(Date.now() - 200_000).toISOString(),
+        expiresAt: new Date(Date.now() - 10_000).toISOString(),
+      };
+      const paidA = { ...ended, status: 'paid', paidAt: new Date().toISOString() };
+      // Another device's charge of the same amount, made before the payment.
+      const b = { ...OPEN, id: 'c-b', createdAt: new Date(Date.now() - 5_000).toISOString() };
+      let phase: 'open' | 'paid' = 'open';
+      let reads = 0;
+      vi.stubGlobal(
+        'fetch',
+        vi.fn(async () => {
+          reads += 1;
+          if (reads === 1) {
+            return jsonResponse({ charge: ended, history: [ended] });
+          }
+          return phase === 'open'
+            ? jsonResponse({ charge: null, history: [ended] })
+            : jsonResponse({ charge: b, history: [b, paidA] });
+        }),
+      );
+      renderWithLocale(<PosScreen />);
+      await waitFor(() => {
+        expect(reads).toBe(2);
+      });
+      receive(21);
+      await waitFor(() => {
+        expect(reads).toBe(3);
+      });
+      // The api marks the first charge paid and shows the newer one open: that payment was the
+      // first charge's, and the till does not ask about the newer one for it.
+      phase = 'paid';
+      expect(
+        await screen.findByRole('button', { name: 'Cancel' }, { timeout: 4_000 }),
+      ).toBeTruthy();
+      const history = screen.getByRole('region', { name: 'History' });
+      expect(within(history).getByText(/^Paid ✓/)).toBeTruthy();
+      // The newer open charge hides the older one's confirmation.
+      expect(screen.queryByRole('alertdialog')).toBeNull();
+      await act(async () => undefined);
+      const after = reads;
+      await pause(2_300);
+      expect(reads).toBe(after);
     }, 10_000);
 
     it('keeps asking the api after a failed Cancel for an unnamed payment that could be the charge’s', async () => {
