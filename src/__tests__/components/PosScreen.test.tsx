@@ -4011,6 +4011,43 @@ describe('PosScreen', () => {
       expect(most).toBe(1);
     }, 10_000);
 
+    it('does not cut off the read a payment asks for when the 0:00 read beside it answers first', async () => {
+      const ended = { ...OPEN, expiresAt: new Date(Date.now() - 1_000).toISOString() };
+      const paid = { ...ended, status: 'paid', paidAt: new Date().toISOString() };
+      let reads = 0;
+      vi.stubGlobal(
+        'fetch',
+        vi.fn(async () => {
+          reads += 1;
+          const mine = reads;
+          if (mine === 2) {
+            // The 0:00 read: slow, and the api still has the charge open.
+            await pause(1_000);
+            return jsonResponse({ charge: null, history: [ended] });
+          }
+          if (mine === 3) {
+            // The read the payment asks for: slower than the 0:00 read plus the poll pause.
+            await pause(4_000);
+            return jsonResponse({ charge: paid, history: [paid] });
+          }
+          return jsonResponse({ charge: mine === 1 ? ended : null, history: [ended] });
+        }),
+      );
+      renderWithLocale(<PosScreen />);
+      await waitFor(() => {
+        expect(reads).toBe(2);
+      });
+      receive(21);
+      await waitFor(() => {
+        expect(reads).toBe(3);
+      });
+      // Its answer is kept: no ask started while it was on its way.
+      expect(
+        await screen.findByRole('alertdialog', { name: 'Paid' }, { timeout: 6_000 }),
+      ).toBeTruthy();
+      expect(reads).toBe(3);
+    }, 12_000);
+
     it('keeps asking quietly after a failed read while an unnamed payment could be the charge’s', async () => {
       let reads = 0;
       vi.stubGlobal(

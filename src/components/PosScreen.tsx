@@ -626,9 +626,9 @@ function usePosTillState(): PosTillState {
   // Counts the till reads of the load effect that settled, so the api is asked again only after
   // the read before answered or failed.
   const [readsSettled, setReadsSettled] = useState(0);
-  // Whether a read of the load effect is on its way: the next ask waits for it, so a slow read is
-  // never cut off and its answer never dropped.
-  const loading = useRef(false);
+  // How many till reads (of the load effect, or the 0:00 read) are on their way: the next ask
+  // waits until none is, so a slow read is never cut off and its answer never dropped.
+  const readsInFlight = useRef(0);
   const memory = settledFor(session);
   const walletPaid = memory.paid;
   const closed = memory.closed;
@@ -662,45 +662,45 @@ function usePosTillState(): PosTillState {
     const pending = tillWrite;
     const quiet = quietReload.current;
     quietReload.current = false;
-    loading.current = true;
+    readsInFlight.current += 1;
     void (async (): Promise<void> => {
-      if (pending !== null) {
-        await pending;
-      }
-      if (!alive) {
-        return;
-      }
-      const seq = startRead(reads);
       try {
-        const next = await fetchPosState(session);
+        if (pending !== null) {
+          await pending;
+        }
         if (!alive) {
           return;
         }
-        loading.current = false;
-        whenCurrent(generation, mine, () => {
-          applyRead(reads, seq, () => {
-            setTill({ state: next, session });
-            // The till answered: an earlier failed read no longer holds.
-            if (readFailed.current) {
-              readFailed.current = false;
-              setErrorState(null);
-            }
+        const seq = startRead(reads);
+        try {
+          const next = await fetchPosState(session);
+          if (!alive) {
+            return;
+          }
+          whenCurrent(generation, mine, () => {
+            applyRead(reads, seq, () => {
+              setTill({ state: next, session });
+              // The till answered: an earlier failed read no longer holds.
+              if (readFailed.current) {
+                readFailed.current = false;
+                setErrorState(null);
+              }
+            });
           });
-        });
+        } catch {
+          // A newer read already answered, so this failure says nothing about the till now.
+          if (!alive || quiet || seq < reads.current.applied) {
+            return;
+          }
+          whenCurrent(generation, mine, () => {
+            readFailed.current = true;
+            setErrorState({ message: t('pos.error'), session });
+          });
+        }
+      } finally {
+        // Also a read a later load replaced: it was on its way until now.
+        readsInFlight.current -= 1;
         setReadsSettled((n) => n + 1);
-      } catch {
-        if (alive) {
-          loading.current = false;
-          setReadsSettled((n) => n + 1);
-        }
-        // A newer read already answered, so this failure says nothing about the till now.
-        if (!alive || quiet || seq < reads.current.applied) {
-          return;
-        }
-        whenCurrent(generation, mine, () => {
-          readFailed.current = true;
-          setErrorState({ message: t('pos.error'), session });
-        });
       }
     })();
     return () => {
@@ -835,17 +835,17 @@ function usePosTillState(): PosTillState {
 
   // A Lightning payment that names no charge could be the open charge's: only the api, which
   // knows the invoices it handed out for the charge, can say so. Until a read shows the charge
-  // paid (or cancelled, or gone) the till asks again, each time {@link PAY_POLL_MS} after the read
+  // paid (or cancelled, or gone before its end) the till asks again, each time {@link PAY_POLL_MS} after the read
   // before settled, and at most until {@link POS_LATE_PAID_MS} after that payment. The first
   // ask follows the read the payment asked for at once (`recheck`), never runs beside a read on
   // its way, and so never cuts one off.
   const asking = session !== null && asksApi(memory, Date.now());
   useEffect(() => {
-    if (!asking || session === null || loading.current) {
+    if (!asking || session === null || readsInFlight.current > 0) {
       return;
     }
     const timer = setTimeout(() => {
-      if (!loading.current && asksApi(settledFor(session), Date.now())) {
+      if (readsInFlight.current === 0 && asksApi(settledFor(session), Date.now())) {
         quietReload.current = true;
         setReload((n) => n + 1);
       }
@@ -945,23 +945,23 @@ function usePosTillState(): PosTillState {
 
   useEffect(() => {
     // At 0:00 the till reads once. Not beside a read of the load effect on its way, and none of
-    // the reads a payment asks for starts beside this one (`loading`), so neither cuts the other off.
+    // the reads a payment asks for starts beside this one (`readsInFlight`), so neither cuts the other off.
     if (
       session === null ||
       busy ||
       charge === null ||
       remaining > 0 ||
       refreshed.current === charge.id ||
-      loading.current
+      readsInFlight.current > 0
     ) {
       return;
     }
     refreshed.current = charge.id;
     const mine = generation.current;
     const seq = startRead(reads);
-    loading.current = true;
+    readsInFlight.current += 1;
     const settled = (): void => {
-      loading.current = false;
+      readsInFlight.current -= 1;
       setReadsSettled((n) => n + 1);
     };
     fetchPosState(session)
@@ -1382,7 +1382,7 @@ function usePosTillState(): PosTillState {
  * confirmation is closed. While a Lightning payment that names no charge could
  * be the open charge's (its amount, made from the second the charge was
  * created to one minute after its end), it reads again `PAY_POLL_MS` after
- * each read settled, until a read shows the charge paid, cancelled or gone,
+ * each read settled, until a read shows the charge paid, cancelled or gone before its end,
  * and at most until one minute after that payment; once a read shows the
  * charge paid, it counts as paid by this tab's wallet. A paid charge
  * the api returns also opens the confirmation. A lost create the api already
