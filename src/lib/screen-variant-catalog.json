@@ -6918,6 +6918,18 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/view/[viewKey]:repay-collecting",
+    "label": "/view/[viewKey] repay-collecting",
+    "visual": "state-view-repay-collecting",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/view/[viewKey]:repay-closed",
+    "label": "/view/[viewKey] repay-closed",
+    "visual": "state-view-repay-closed",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/view/[viewKey]:cannot-receive",
     "label": "/view/[viewKey] cannot-receive",
     "visual": "state-view-cannot-receive",
@@ -9147,6 +9159,18 @@
     "id": "/shops:heart-paid",
     "label": "/shops heart-paid",
     "visual": "state-shops-heart-paid",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/shops:repay-collecting",
+    "label": "/shops repay-collecting",
+    "visual": "state-shops-repay-collecting",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/shops:repay-closed",
+    "label": "/shops repay-closed",
+    "visual": "state-shops-repay-closed",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {

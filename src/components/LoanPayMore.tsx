@@ -314,7 +314,13 @@ export function LoanPayMore({
   }, [actionError, entryFiat, formatSats, loan, numberFormat, rateDay, shownPendingAction, t]);
 
   useEffect(() => {
-    if (shownPendingAction === 'pay' && matchingAction === 'prepay' && phase === 'repaid') {
+    const allWaitingComplete =
+      pendingAction === 'pay' && phase === 'idle' && prepayWaiting.length > 0;
+    if (
+      shownPendingAction === 'pay' &&
+      matchingAction === 'prepay' &&
+      (phase === 'repaid' || allWaitingComplete)
+    ) {
       setAmount('');
       setAmountEdited(false);
       setExactLoanAmount(null);
@@ -325,7 +331,7 @@ export function LoanPayMore({
       setServerError(null);
       setServerAmountInvalid(false);
     }
-  }, [matchingAction, phase, shownPendingAction]);
+  }, [matchingAction, pendingAction, phase, prepayWaiting, shownPendingAction]);
 
   useEffect(() => {
     if (

@@ -5620,6 +5620,18 @@ Same Cafe Luna post after opening `?visual=heart-paid` and clicking Send ₿1. T
 
 ![21.gifts shops heart paid](images/shops-heart-paid.png)
 
+### Variant: repay-collecting
+
+A signed-in member's own shop note is a credit still collecting at **50%** (`accountId` matches the signed-in account, and `goalClosedAt` is absent). There is no **Lend** on her own note. **Pay early or end collecting** is a clear link to `/loans/repay`, where paying ends collecting after confirmation; **Repayment list** remains a link.
+
+![21.gifts shops repay collecting](images/shops-repay-collecting.png)
+
+### Variant: repay-closed
+
+The same own shop note is a credit manually closed at **50%** (`goalClosedAt` is present). There is no **Lend** and collecting has ended, so **Repay your loan** links to `/loans/repay`; **Repayment list** remains a link.
+
+![21.gifts shops repay closed underfunded loan](images/shops-repay-closed.png)
+
 ### Variant: no-pin
 
 Heading **Shops**, the **List** pill selected. One row **Roadside Stall** links to the shop page and has no place line under the name. **Add a shop** is absent.
@@ -11356,6 +11368,18 @@ A signed-in member opens the profile through its view key. The posts feed is ope
 The same view-key profile and Hearts list with Grace's **Moderator** pill pressed. The hint **This person helps keep the living room in order.** appears under her heart row. The sats and times remain visible.
 
 ![21.gifts public view replies open hearts role](images/view-replies-open-hearts-role.png)
+
+### Variant: repay-collecting
+
+A signed-in member opens her own profile through its view key and presses **14 posts**. Her own credit is still collecting at **50%** (`accountId` matches the signed-in account, and `goalClosedAt` is absent). There is no **Lend** on her own note. **Pay early or end collecting** is a clear link to `/loans/repay`; **Repayment list** remains a link.
+
+![21.gifts public view repay collecting](images/view-repay-collecting.png)
+
+### Variant: repay-closed
+
+The same own credit is manually closed at **50%** (`goalClosedAt` is present). There is no **Lend** and collecting has ended, so **Repay your loan** links to `/loans/repay`; **Repayment list** remains a link.
+
+![21.gifts public view repay closed underfunded loan](images/view-repay-closed.png)
 
 ### Variant: cannot-receive
 

@@ -5199,6 +5199,16 @@
     "es": "La misma publicación de Cafe Luna tras abrir ?visual=heart-paid y pulsar Enviar un corazón. El corazón relleno y el +1 que muestra cada toque se mantienen para la captura.",
     "fil": "Parehong post ng Cafe Luna pagkatapos buksan ang ?visual=heart-paid at pindutin ang Magpadala ng puso. Nananatili para sa kuha ang punong puso at ang +1 na ipinapakita ng bawat pindot."
   },
+  "/shops:repay-collecting": {
+    "de": "Die eigene Shop-Notiz eines angemeldeten Mitglieds ist ein Kredit, der noch bei 50 % sammelt (accountId entspricht dem angemeldeten Konto, goalClosedAt fehlt). Auf ihrer eigenen Notiz gibt es kein Leihen. Früh zurückzahlen oder Sammeln beenden ist ein klarer Link zu /loans/repay; Rückzahlungsliste bleibt ein Link.",
+    "es": "La nota de tienda propia de un miembro con sesión es un préstamo que aún recauda al 50 % (accountId coincide con la cuenta iniciada, goalClosedAt no está). En su propia nota no hay Prestar. Pagar antes o finalizar la recaudación es un enlace claro a /loans/repay; Lista de devolución sigue siendo un enlace.",
+    "fil": "Ang sariling tala ng shop ng naka-sign in na miyembro ay utang na nangongolekta pa sa 50% (tugma ang accountId sa naka-log-in na account, wala ang goalClosedAt). Walang Magpahiram sa sarili niyang tala. Malinaw na link sa /loans/repay ang Magbayad nang maaga o tapusin ang pangongolekta; link pa rin ang Listahan ng ibabalik."
+  },
+  "/shops:repay-closed": {
+    "de": "Die eigene Shop-Notiz ist ein Kredit, der bei 50 % manuell geschlossen wurde (goalClosedAt ist vorhanden). Es gibt kein Leihen, und das Sammeln ist beendet; Kredit zurückzahlen verlinkt auf /loans/repay, und Rückzahlungsliste bleibt ein Link.",
+    "es": "La nota de tienda propia es un préstamo cerrado manualmente al 50 % (goalClosedAt está presente). No hay Prestar y la recaudación ha terminado; Devolver tu préstamo enlaza a /loans/repay, y Lista de devolución sigue siendo un enlace.",
+    "fil": "Ang sariling tala ng shop ay utang na manwal na isinara sa 50% (may goalClosedAt). Walang Magpahiram at tapos na ang pangongolekta; link sa /loans/repay ang Bayaran ang iyong utang, at link pa rin ang Listahan ng ibabalik."
+  },
   "/shops:list-empty": {
     "de": "Liste ist ausgewählt und es gibt keine Shops. Leerer Text Noch keine Shops — fügen Sie den ersten hinzu. Der Eingabebereich ist weg.",
     "es": "Lista está seleccionada y no hay tiendas. Texto vacío Aún no hay tiendas — añade la primera. El cuadro de redacción desapareció.",
@@ -6103,6 +6113,16 @@
     "de": "Im über den View-Key geöffneten Profil ist die Herzen-Liste unter der Antwort sichtbar. Die Rolle Moderator in Graces Herz-Zeile ist gedrückt, und darunter steht der Hinweis Diese Person hilft, das Wohnzimmer in Ordnung zu halten. Die Beträge und Zeiten bleiben sichtbar.",
     "es": "En el perfil abierto mediante la clave de vista se ve la lista Corazones bajo la respuesta. La pastilla Moderador de la fila de Grace está pulsada y debajo aparece Esta persona ayuda a mantener el salón en orden. Los importes y las horas siguen visibles.",
     "fil": "Sa profile na binuksan gamit ang view key, nakikita ang listahang Mga puso sa ilalim ng sagot. Nakapindot ang pill na Moderator sa hilera ni Grace, at nasa ibaba ang Tumutulong ang taong ito na panatilihing maayos ang living room. Nakikita pa rin ang mga halaga at oras."
+  },
+  "/view/[viewKey]:repay-collecting": {
+    "de": "Ein angemeldetes Mitglied öffnet sein eigenes Profil über den View-Key und drückt 14 Beiträge. Der eigene Kredit sammelt noch bei 50 % (accountId entspricht dem angemeldeten Konto, goalClosedAt fehlt). Auf der eigenen Notiz gibt es kein Leihen. Früh zurückzahlen oder Sammeln beenden ist ein klarer Link zu /loans/repay; Rückzahlungsliste bleibt ein Link.",
+    "es": "Un miembro con sesión abre su propio perfil mediante la clave de vista y pulsa 14 publicaciones. Su préstamo propio aún recauda al 50 % (accountId coincide con la cuenta iniciada, goalClosedAt no está). En su propia nota no hay Prestar. Pagar antes o finalizar la recaudación es un enlace claro a /loans/repay; Lista de devolución sigue siendo un enlace.",
+    "fil": "Binuksan ng naka-sign in na miyembro ang sariling profile sa view key at pinindot ang 14 na post. Nangongolekta pa sa 50% ang sarili niyang utang (tugma ang accountId sa naka-log-in na account, wala ang goalClosedAt). Walang Magpahiram sa sariling tala. Malinaw na link sa /loans/repay ang Magbayad nang maaga o tapusin ang pangongolekta; link pa rin ang Listahan ng ibabalik."
+  },
+  "/view/[viewKey]:repay-closed": {
+    "de": "Das eigene Profil wurde über den View-Key geöffnet; Beiträge sind ausgewählt. Der eigene Kredit ist bei 50 % manuell geschlossen (goalClosedAt ist vorhanden). Es gibt kein Leihen, und das Sammeln ist beendet; Kredit zurückzahlen verlinkt auf /loans/repay, und Rückzahlungsliste bleibt ein Link.",
+    "es": "El perfil propio se abrió mediante la clave de vista; publicaciones está seleccionado. El préstamo propio está cerrado manualmente al 50 % (goalClosedAt está presente). No hay Prestar y la recaudación ha terminado; Devolver tu préstamo enlaza a /loans/repay, y Lista de devolución sigue siendo un enlace.",
+    "fil": "Binuksan ang sariling profile sa view key; napili ang mga post. Manwal na isinara sa 50% ang sariling utang (may goalClosedAt). Walang Magpahiram at tapos na ang pangongolekta; link sa /loans/repay ang Bayaran ang iyong utang, at link pa rin ang Listahan ng ibabalik."
   },
   "/view/[viewKey]:error": {
     "de": "Das Laden des Profils ist fehlgeschlagen. Text Profil konnte nicht geladen werden. Bitte versuchen Sie es erneut. und Erneut versuchen.",

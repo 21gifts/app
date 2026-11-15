@@ -8148,6 +8148,20 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/view/[viewKey]',
+    id: 'repay-collecting',
+    image: 'view-repay-collecting.png',
+    visual: 'state-view-repay-collecting',
+    needle: "shotScreen(page, 'state-view-repay-collecting')",
+  },
+  {
+    route: '/view/[viewKey]',
+    id: 'repay-closed',
+    image: 'view-repay-closed.png',
+    visual: 'state-view-repay-closed',
+    needle: "shotScreen(page, 'state-view-repay-closed')",
+  },
+  {
+    route: '/view/[viewKey]',
     id: 'cannot-receive',
     image: 'view-cannot-receive.png',
     visual: 'state-view-cannot-receive',
@@ -10750,6 +10764,20 @@ export const SCREEN_VARIANTS = [
     image: 'shops-heart-paid.png',
     visual: 'state-shops-heart-paid',
     needle: '+1',
+  },
+  {
+    route: '/shops',
+    id: 'repay-collecting',
+    image: 'shops-repay-collecting.png',
+    visual: 'state-shops-repay-collecting',
+    needle: "shotScreen(page, 'state-shops-repay-collecting')",
+  },
+  {
+    route: '/shops',
+    id: 'repay-closed',
+    image: 'shops-repay-closed.png',
+    visual: 'state-shops-repay-closed',
+    needle: "shotScreen(page, 'state-shops-repay-closed')",
   },
   {
     route: '/shops',

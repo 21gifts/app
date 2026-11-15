@@ -938,6 +938,32 @@ describe('LoanPayMore', () => {
     expect(screen.getByRole('alert').textContent).toBe('Could not start the Bitcoin payment');
   });
 
+  it('clears a completed all-waiting free payment', () => {
+    const item = loan();
+    const completed = show(item);
+    const input = screen.getByLabelText('Amount (₿)') as HTMLInputElement;
+    fireEvent.change(input, { target: { value: '1000' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Pay this amount' }));
+    completed.rerender(
+      payMoreState(item, completed.onPay, completed.onCloseCollecting, {
+        phase: 'idle',
+        activeAction: { kind: 'prepay', messageId: 'loan-1' },
+        prepayWaiting: [
+          {
+            dayIndex: 2,
+            recipientAccountId: 'acc_waiting',
+            name: 'Carla',
+            username: 'carla',
+            amountSats: 200,
+            amount: null,
+          },
+        ],
+      }),
+    );
+
+    expect((screen.getByLabelText('Amount (₿)') as HTMLInputElement).value).toBe('');
+  });
+
   it('reuses the wallet top-up controls after a free payment is short', () => {
     const item = loan();
     const openTopUp = vi.fn();
