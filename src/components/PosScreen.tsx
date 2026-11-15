@@ -195,7 +195,7 @@ type WalletSettled = {
   early: Array<TillPayment>;
   /** Lightning payments that name no charge, by payment time: each may make the till ask the api. */
   unnamed: Array<UnnamedReceipt>;
-  /** A payment arrived that the till cannot settle itself: one read shows what the api knows. */
+  /** A payment names a charge no read listed: one read shows whether another tab or device opened it. */
   recheck: boolean;
   /**
    * The charge before a create that is on its way: a payment that names it
@@ -406,17 +406,6 @@ function confirmAsked(memory: WalletSettled, state: PosState): void {
   }
 }
 
-/** Till reads of one session that are on their way. */
-type ReadsInFlight = { session: string | null; count: number };
-
-/** The count of reads on their way for `session`; another session starts it over at none. */
-function inFlightFor(ref: { current: ReadsInFlight }, session: string | null): ReadsInFlight {
-  if (ref.current.session !== session) {
-    ref.current = { session, count: 0 };
-  }
-  return ref.current;
-}
-
 /** Make `charge` the open charge in `memory` and try the kept payments on it again; the rest stay kept. */
 function armOpen(memory: WalletSettled, charge: PosCharge): void {
   // A charge this tab's wallet already paid takes no further payment, even while the api still
@@ -498,16 +487,15 @@ function listenToWallet(): void {
     if (chargeId === undefined) {
       // A payment that names no charge pays none: its amount and time do not tie it to a charge.
       // Only a Lightning one can be a till payment (the till's address takes the charge amount over
-      // Lightning); the api knows whether it paid one of the charge's invoices, so one read asks it,
-      // and while it could be the open charge's the till keeps asking (`asksApi`). A Spark transfer
-      // without that name, or an on-chain deposit, is someone else's money.
+      // Lightning); the api knows whether it paid one of the charge's invoices, so while it could
+      // be the open charge's the till asks the api (`asksApi`). A Spark transfer without that name,
+      // or an on-chain deposit, is someone else's money.
       if (payment.method === 'lightning') {
         keepUnnamed(memory, {
           amountSats: payment.amountSats,
           feesSats: payment.feesSats,
           timestamp: payment.timestamp,
         });
-        memory.recheck = true;
         settledChanged();
       }
       return;
@@ -634,13 +622,6 @@ function usePosTillState(): PosTillState {
   // The read after a closed confirmation fails quietly: the till already shows what it needs.
   const quietReload = useRef(false);
   const [settledVersion, setSettledVersion] = useState(0);
-  // Counts the till reads of the load effect that settled, so the api is asked again only after
-  // the read before answered or failed.
-  const [readsSettled, setReadsSettled] = useState(0);
-  // How many till reads of this session (of the load effect, or the 0:00 read) are on their way:
-  // the next ask waits until none is, so a slow read is never cut off and its answer never
-  // dropped. A read of the session before counts only for that session.
-  const readsInFlight = useRef<ReadsInFlight>({ session, count: 0 });
   const memory = settledFor(session);
   const walletPaid = memory.paid;
   const closed = memory.closed;
@@ -674,46 +655,38 @@ function usePosTillState(): PosTillState {
     const pending = tillWrite;
     const quiet = quietReload.current;
     quietReload.current = false;
-    const inFlight = inFlightFor(readsInFlight, session);
-    inFlight.count += 1;
     void (async (): Promise<void> => {
+      if (pending !== null) {
+        await pending;
+      }
+      if (!alive) {
+        return;
+      }
+      const seq = startRead(reads);
       try {
-        if (pending !== null) {
-          await pending;
-        }
+        const next = await fetchPosState(session);
         if (!alive) {
           return;
         }
-        const seq = startRead(reads);
-        try {
-          const next = await fetchPosState(session);
-          if (!alive) {
-            return;
-          }
-          whenCurrent(generation, mine, () => {
-            applyRead(reads, seq, () => {
-              setTill({ state: next, session });
-              // The till answered: an earlier failed read no longer holds.
-              if (readFailed.current) {
-                readFailed.current = false;
-                setErrorState(null);
-              }
-            });
+        whenCurrent(generation, mine, () => {
+          applyRead(reads, seq, () => {
+            setTill({ state: next, session });
+            // The till answered: an earlier failed read no longer holds.
+            if (readFailed.current) {
+              readFailed.current = false;
+              setErrorState(null);
+            }
           });
-        } catch {
-          // A newer read already answered, so this failure says nothing about the till now.
-          if (!alive || quiet || seq < reads.current.applied) {
-            return;
-          }
-          whenCurrent(generation, mine, () => {
-            readFailed.current = true;
-            setErrorState({ message: t('pos.error'), session });
-          });
+        });
+      } catch {
+        // A newer read already answered, so this failure says nothing about the till now.
+        if (!alive || quiet || seq < reads.current.applied) {
+          return;
         }
-      } finally {
-        // Also a read a later load replaced: it was on its way until now.
-        inFlight.count -= 1;
-        setReadsSettled((n) => n + 1);
+        whenCurrent(generation, mine, () => {
+          readFailed.current = true;
+          setErrorState({ message: t('pos.error'), session });
+        });
       }
     })();
     return () => {
@@ -836,41 +809,62 @@ function usePosTillState(): PosTillState {
   }, [session]);
 
   useEffect(() => {
-    // A payment the till cannot settle itself arrived: one read shows what the api knows (whether
-    // it paid the open charge, or which charge a payment names). Quiet once the till has an answer.
-    // After a read on its way, never beside it, so that read is not cut off.
+    // A payment names a charge no read listed: one read (not on a timer) shows whether another tab
+    // or device opened the charge it pays. Quiet once the till has an answer.
     const settled = settledFor(session);
-    if (session !== null && settled.recheck && inFlightFor(readsInFlight, session).count === 0) {
+    if (session !== null && settled.recheck) {
       settled.recheck = false;
       quietReload.current = state !== null;
       setReload((n) => n + 1);
     }
-  }, [readsSettled, session, settledVersion, state]);
+  }, [session, settledVersion, state]);
 
   // A Lightning payment that names no charge could be the open charge's: only the api, which
   // knows the invoices it handed out for the charge, can say so. Until a read shows the charge
-  // paid (or cancelled, or gone before its end) the till asks again, each time {@link PAY_POLL_MS} after the read
-  // before settled, and at most until {@link POS_LATE_PAID_MS} after that payment. The first
-  // ask follows the read the payment asked for at once (`recheck`), never runs beside a read on
-  // its way, and so never cuts one off.
+  // paid (or cancelled, or gone before its end) the till asks it, at once and then
+  // {@link PAY_POLL_MS} after each ask settled, at most until {@link POS_LATE_PAID_MS} after that
+  // payment: one ask at a time, as every pay poll does. Each ask is a read of its own, ordered with
+  // the till's other reads by `applyRead`: none of them cuts another off, and a failed ask is quiet.
   const asking = session !== null && asksApi(memory, Date.now());
   useEffect(() => {
-    if (!asking || session === null || inFlightFor(readsInFlight, session).count > 0) {
+    if (!asking || session === null) {
       return;
     }
-    const timer = setTimeout(() => {
-      if (
-        inFlightFor(readsInFlight, session).count === 0 &&
-        asksApi(settledFor(session), Date.now())
-      ) {
-        quietReload.current = true;
-        setReload((n) => n + 1);
+    let alive = true;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const ask = async (): Promise<void> => {
+      const mine = generation.current;
+      const seq = startRead(reads);
+      try {
+        const next = await fetchPosState(session);
+        if (alive) {
+          whenCurrent(generation, mine, () => {
+            applyRead(reads, seq, () => {
+              setTill({ state: next, session });
+              if (readFailed.current) {
+                readFailed.current = false;
+                setErrorState(null);
+              }
+            });
+          });
+        }
+      } catch {
+        // Quiet: the next ask follows.
       }
-    }, PAY_POLL_MS);
+      if (alive && asksApi(settledFor(session), Date.now())) {
+        timer = setTimeout(() => {
+          if (alive && asksApi(settledFor(session), Date.now())) {
+            void ask();
+          }
+        }, PAY_POLL_MS);
+      }
+    };
+    void ask();
     return () => {
+      alive = false;
       clearTimeout(timer);
     };
-  }, [asking, readsSettled, session]);
+  }, [asking, session]);
 
   useEffect(() => {
     // A confirmation a newer open charge hid is over: it does not come back once that charge ends.
@@ -961,30 +955,20 @@ function usePosTillState(): PosTillState {
   }
 
   useEffect(() => {
-    // At 0:00 the till reads once. Not beside a read of the load effect on its way, and none of
-    // the reads a payment asks for starts beside this one (`readsInFlight`), so neither cuts the other off.
     if (
       session === null ||
       busy ||
       charge === null ||
       remaining > 0 ||
-      refreshed.current === charge.id ||
-      inFlightFor(readsInFlight, session).count > 0
+      refreshed.current === charge.id
     ) {
       return;
     }
     refreshed.current = charge.id;
     const mine = generation.current;
     const seq = startRead(reads);
-    const inFlight = inFlightFor(readsInFlight, session);
-    inFlight.count += 1;
-    const settled = (): void => {
-      inFlight.count -= 1;
-      setReadsSettled((n) => n + 1);
-    };
     fetchPosState(session)
       .then((next) => {
-        settled();
         // Another session signed in meanwhile: this answer is not its till.
         if (useAuthStore.getState().session !== session) {
           return;
@@ -1000,7 +984,6 @@ function usePosTillState(): PosTillState {
         });
       })
       .catch(() => {
-        settled();
         // A newer read already answered, or another session signed in: this failure says nothing
         // about the till now.
         if (seq < reads.current.applied || useAuthStore.getState().session !== session) {
@@ -1011,7 +994,7 @@ function usePosTillState(): PosTillState {
           setErrorState({ message: t('pos.error'), session });
         });
       });
-  }, [busy, charge, readsSettled, remaining, session, t]);
+  }, [busy, charge, remaining, session, t]);
 
   useEffect(() => {
     if (!loadingAlert || !rateSettled) {
@@ -1395,12 +1378,12 @@ function usePosTillState(): PosTillState {
  * wallet refresh; such a read fails quietly once the till shows an answer), after
  * Cancel, once after a create or cancel whose answer was lost, once after a
  * create the api refuses because a payment is already open, once after a
- * Lightning payment that names no charge, or a payment that names a charge
- * no read listed, and when the
+ * payment that names a charge no read listed, and when the
  * confirmation is closed. While a Lightning payment that names no charge could
  * be the open charge's (its amount, made from the second the charge was
- * created to one minute after its end), it reads again `PAY_POLL_MS` after
- * each read settled, until a read shows the charge paid, cancelled or gone before its end,
+ * created to one minute after its end), it asks the api at once and then
+ * `PAY_POLL_MS` after each ask settled, one ask at a time, until a read shows
+ * the charge paid, cancelled or gone before its end,
  * and at most until one minute after that payment; once a read shows the
  * charge paid, it counts as paid by this tab's wallet. A paid charge
  * the api returns also opens the confirmation. A lost create the api already

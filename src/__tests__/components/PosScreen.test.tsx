@@ -1684,12 +1684,9 @@ describe('PosScreen', () => {
       const before = fetchMock.mock.calls.length;
       receive(21);
       expect(screen.queryByRole('alertdialog')).toBeNull();
-      // One read asks the api; past the charge's late minute the till does not ask again.
-      await waitFor(() => {
-        expect(fetchMock).toHaveBeenCalledTimes(before + 1);
-      });
+      // Past the charge's late minute it cannot be its payment: the till does not ask the api.
       await new Promise((resolve) => setTimeout(resolve, 2_300));
-      expect(fetchMock).toHaveBeenCalledTimes(before + 1);
+      expect(fetchMock).toHaveBeenCalledTimes(before);
       expect(screen.queryByRole('alertdialog')).toBeNull();
     });
 
@@ -2002,7 +1999,7 @@ describe('PosScreen', () => {
       expect(await confirmation()).toBeTruthy();
     });
 
-    it('reads once, and not again, after a payment that pays no charge it knows', async () => {
+    it('reads nothing for a Lightning payment of another amount that names no charge', async () => {
       const fetchMock = vi
         .fn()
         .mockImplementation(async () => jsonResponse({ charge: OPEN, history: [OPEN] }));
@@ -2010,13 +2007,10 @@ describe('PosScreen', () => {
       renderWithLocale(<PosScreen />);
       expect(await screen.findByRole('button', { name: 'Cancel' })).toBeTruthy();
       receive(99);
-      await waitFor(() => {
-        expect(fetchMock).toHaveBeenCalledTimes(2);
-      });
-      // The read armed the open charge again and tried the kept payment: no further read.
+      // It cannot be the open charge's payment: the till does not ask the api.
       await act(async () => undefined);
       await act(async () => undefined);
-      expect(fetchMock).toHaveBeenCalledTimes(2);
+      expect(fetchMock).toHaveBeenCalledTimes(1);
       expect(screen.queryByRole('alertdialog')).toBeNull();
     });
 
@@ -3404,14 +3398,11 @@ describe('PosScreen', () => {
       await act(async () => undefined);
       expect(reads).toBe(before);
       expect(screen.queryByRole('alertdialog')).toBeNull();
-      // A payment of that amount that names no charge: one read asks the api, and since the paid
-      // charge is no longer the open one, the till does not keep asking.
+      // A payment of that amount that names no charge: the paid charge is no longer the open one,
+      // so the till does not ask the api.
       receive(21);
-      await waitFor(() => {
-        expect(reads).toBe(before + 1);
-      });
       await new Promise((resolve) => setTimeout(resolve, 2_300));
-      expect(reads).toBe(before + 1);
+      expect(reads).toBe(before);
       expect(screen.queryByRole('alertdialog')).toBeNull();
     });
 
@@ -3955,30 +3946,32 @@ describe('PosScreen', () => {
       renderWithLocale(<PosScreen />);
       expect(await screen.findByRole('button', { name: 'Cancel' })).toBeTruthy();
       receive(21);
-      // One read at once.
+      // One ask at once.
       await waitFor(() => {
-        expect(reads).toBe(2);
+        expect(reads).toBeGreaterThanOrEqual(2);
       });
       expect(screen.queryByRole('alertdialog')).toBeNull();
       // The api has not marked it yet: the till asks again after the poll pause, still open.
       await waitFor(
         () => {
-          expect(reads).toBe(3);
+          expect(reads).toBeGreaterThanOrEqual(3);
         },
-        { timeout: 3_000 },
+        { timeout: 5_000 },
       );
       expect(screen.queryByRole('alertdialog')).toBeNull();
       expect(screen.getByRole('button', { name: 'Cancel' })).toBeTruthy();
-      // The api marks the charge paid: the next read confirms it.
+      // The api marks the charge paid: the next ask confirms it.
       apiPaid = true;
       expect(
-        await screen.findByRole('alertdialog', { name: 'Paid' }, { timeout: 3_000 }),
+        await screen.findByRole('alertdialog', { name: 'Paid' }, { timeout: 5_000 }),
       ).toBeTruthy();
+      // The effects of the paid answer have run.
+      await act(async () => undefined);
       const after = reads;
       // Then it stops asking.
       await pause(2_300);
       expect(reads).toBe(after);
-    }, 15_000);
+    }, 20_000);
 
     it('never cuts off a read slower than the poll pause, and confirms from its answer', async () => {
       let reads = 0;
@@ -4115,6 +4108,31 @@ describe('PosScreen', () => {
       ).toBeTruthy();
     }, 10_000);
 
+    it('clears a failed read once an ask for an unnamed payment answers', async () => {
+      let reads = 0;
+      vi.stubGlobal(
+        'fetch',
+        vi.fn(async () => {
+          reads += 1;
+          if (reads === 2) {
+            throw new TypeError('Failed to fetch');
+          }
+          return jsonResponse({ charge: OPEN, history: [OPEN] });
+        }),
+      );
+      renderWithLocale(<PosScreen />);
+      expect(await screen.findByRole('button', { name: 'Cancel' })).toBeTruthy();
+      // The read on tab focus fails and shows the error.
+      showTab();
+      expect(await screen.findByRole('alert')).toBeTruthy();
+      // The ask for a payment that could be the charge's answers: the error goes.
+      receive(21);
+      await waitFor(() => {
+        expect(screen.queryByRole('alert')).toBeNull();
+      });
+      expect(screen.getByRole('button', { name: 'Cancel' })).toBeTruthy();
+    });
+
     it('keeps asking quietly after a failed read while an unnamed payment could be the charge’s', async () => {
       let reads = 0;
       vi.stubGlobal(
@@ -4142,7 +4160,7 @@ describe('PosScreen', () => {
       expect(reads).toBe(3);
     }, 10_000);
 
-    it('asks once, and not again, for an unnamed payment that cannot be the charge’s', async () => {
+    it('does not ask the api for an unnamed payment that cannot be the charge’s', async () => {
       let reads = 0;
       vi.stubGlobal(
         'fetch',
@@ -4153,19 +4171,12 @@ describe('PosScreen', () => {
       );
       renderWithLocale(<PosScreen />);
       expect(await screen.findByRole('button', { name: 'Cancel' })).toBeTruthy();
-      // Another amount: one read.
+      // Another amount, and the charge amount made before the charge was created.
       receive(22);
-      await waitFor(() => {
-        expect(reads).toBe(2);
-      });
-      // The charge amount, made before the charge was created: one read.
       receive(21, 0, Date.parse(OPEN.createdAt) - 5_000);
-      await waitFor(() => {
-        expect(reads).toBe(3);
-      });
-      // Neither could be the charge's payment: no read after the poll pause.
+      // Neither could be the charge's payment: no read, also after the poll pause.
       await pause(2_300);
-      expect(reads).toBe(3);
+      expect(reads).toBe(1);
       expect(screen.queryByRole('alertdialog')).toBeNull();
     }, 10_000);
 
@@ -4220,12 +4231,9 @@ describe('PosScreen', () => {
         expect(reads).toBe(2);
       });
       receive(21, 0, Date.now() - 95_000);
-      await waitFor(() => {
-        expect(reads).toBe(3);
-      });
-      // More than a minute after that payment: no further read.
+      // More than a minute after that payment: the till does not ask the api.
       await pause(2_300);
-      expect(reads).toBe(3);
+      expect(reads).toBe(2);
       expect(screen.queryByRole('alertdialog')).toBeNull();
     }, 10_000);
 
