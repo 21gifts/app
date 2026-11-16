@@ -467,7 +467,7 @@ describe('useLoanRepay preparation', () => {
   });
 
   it.each<WalletPayResult>([
-    { kind: 'failed', failure: failure('prepare', 'sdk_error') },
+    { kind: 'failed', failure: failure('prepare', 'network') },
     { kind: 'unlock', failure: failure('prepare', 'unlock') },
     { kind: 'belowMinimum', minSats: 1_000, failure: failure('prepare', 'below_minimum') },
     confirmed(501),
@@ -530,7 +530,7 @@ describe('useLoanRepay preparation', () => {
     };
     vi.mocked(payFromWallet).mockImplementation(async (request) => {
       if (request.type !== 'input') {
-        return { kind: 'failed', failure: failure('prepare', 'sdk_error') };
+        return { kind: 'failed', failure: failure('prepare', 'network') };
       }
       const { input } = request;
       return confirmed(
@@ -696,10 +696,10 @@ describe('useLoanRepay preparation', () => {
     });
     vi.mocked(payFromWallet).mockImplementation(async (request) => {
       if (request.type !== 'input') {
-        return { kind: 'failed', failure: failure('prepare', 'sdk_error') };
+        return { kind: 'failed', failure: failure('prepare', 'network') };
       }
       if (request.input === invoiceOf(laterBill)) {
-        return { kind: 'failed', failure: failure('prepare', 'sdk_error') };
+        return { kind: 'failed', failure: failure('prepare', 'network') };
       }
       return confirmed(500, send, 10);
     });
@@ -896,7 +896,7 @@ describe('useLoanRepay preparation', () => {
     });
     vi.mocked(payFromWallet).mockImplementation(async (request) => {
       if (request.type !== 'input') {
-        return { kind: 'failed', failure: failure('prepare', 'sdk_error') };
+        return { kind: 'failed', failure: failure('prepare', 'network') };
       }
       if (request.input === invoiceOf(billA)) {
         return confirmed(450, sendA);
@@ -1484,7 +1484,7 @@ describe('useLoanRepay failure report', () => {
     await waitFor(() => expect(payFromWallet).toHaveBeenCalledTimes(1));
     unmount();
     await act(async () => {
-      resolvePrepare({ kind: 'failed', failure: failure('prepare', 'sdk_error') });
+      resolvePrepare({ kind: 'failed', failure: failure('prepare', 'network') });
     });
     expect(reportPaymentFailure).not.toHaveBeenCalled();
   });
@@ -1577,7 +1577,7 @@ describe('useLoanRepay already-sent invoices', () => {
     vi.mocked(payFromWallet).mockReset();
     vi.mocked(payFromWallet).mockImplementation(async (request) => {
       if (request.type !== 'input') {
-        return { kind: 'failed', failure: failure('prepare', 'sdk_error') };
+        return { kind: 'failed', failure: failure('prepare', 'network') };
       }
       expect(request.input).toBe(invoiceOf(billB));
       return confirmed(400, sendB);
@@ -1666,7 +1666,7 @@ describe('useLoanRepay already-sent invoices', () => {
     vi.mocked(payFromWallet).mockReset();
     vi.mocked(payFromWallet).mockImplementation(async (request) => {
       if (request.type !== 'input') {
-        return { kind: 'failed', failure: failure('prepare', 'sdk_error') };
+        return { kind: 'failed', failure: failure('prepare', 'network') };
       }
       expect(request.input).toBe(invoiceOf(secondBill));
       return confirmed(400, sendSecond);
@@ -1929,7 +1929,7 @@ describe('useLoanRepay already-sent invoices', () => {
     vi.mocked(postRepaymentDue).mockResolvedValue({ bills: [billA, billB], waiting: [] });
     vi.mocked(payFromWallet).mockImplementation(async (request) => {
       if (request.type !== 'input') {
-        return { kind: 'failed', failure: failure('prepare', 'sdk_error') };
+        return { kind: 'failed', failure: failure('prepare', 'network') };
       }
       if (request.input === invoiceOf(billA)) {
         return confirmed(500, sendA);
@@ -1986,7 +1986,7 @@ describe('useLoanRepay already-sent invoices', () => {
     vi.mocked(payFromWallet).mockReset();
     vi.mocked(payFromWallet).mockImplementation(async (request) => {
       if (request.type !== 'input') {
-        return { kind: 'failed', failure: failure('prepare', 'sdk_error') };
+        return { kind: 'failed', failure: failure('prepare', 'network') };
       }
       expect(request.input).toBe(invoiceOf(billB));
       return confirmed(400, sendB);
@@ -2029,7 +2029,7 @@ describe('useLoanRepay already-sent invoices', () => {
     vi.mocked(payFromWallet).mockReset();
     vi.mocked(payFromWallet).mockImplementation(async (request) => {
       if (request.type !== 'input') {
-        return { kind: 'failed', failure: failure('prepare', 'sdk_error') };
+        return { kind: 'failed', failure: failure('prepare', 'network') };
       }
       expect(request.input).toBe(invoiceOf(billD));
       return confirmed(400, sendD);
@@ -2069,7 +2069,7 @@ describe('useLoanRepay already-sent invoices', () => {
     vi.mocked(payFromWallet).mockReset();
     vi.mocked(payFromWallet).mockImplementation(async (request) => {
       if (request.type !== 'input') {
-        return { kind: 'failed', failure: failure('prepare', 'sdk_error') };
+        return { kind: 'failed', failure: failure('prepare', 'network') };
       }
       expect(request.input).toBe(invoiceOf(billB));
       return confirmed(400, sendB);
