@@ -27,10 +27,11 @@ export const ownerFundingSchema = z.object({
   /** True when the owner should see the stopped-daily-payout notice. Optional so older payloads still parse. */
   dailyPayoutStoppedNotice: z.boolean().optional(),
   /**
-   * True while the owner's qualifying shop payments today and yesterday UTC are
-   * below `shopPaymentRequiredSats` (also true, failing closed, without a
-   * stored price or on a roster skip), false once they reach it, `null` when a
-   * read failed.
+   * For a member in the grant program today: true while the owner's
+   * qualifying shop payments today and yesterday UTC are below
+   * `shopPaymentRequiredSats` (also true, failing closed, without a stored
+   * price or on a roster skip), false once they reach it. False outside the
+   * program, `null` when a read failed.
    */
   shopPaymentDue: z.boolean().nullable().optional(),
   /**
