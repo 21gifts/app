@@ -16482,6 +16482,14 @@ test('Function: displayableNextAmount — a stored fiat next amount stays visibl
   expect(displayableNextAmount(null, 'BTC', '199.99')).toBe(false);
   expect(displayableNextAmount(null, 'PHP', '0.00')).toBe(false);
   const fiatOnly = loanWith(loanB, {
+    due: {
+      payableSats: 0,
+      payablePeople: 0,
+      waitingSats: 0,
+      waitingPeople: 0,
+      payableAmount: null,
+      waitingAmount: null,
+    },
     next: { dueOn: '2026-11-16', sats: null, amount: '199.99' },
   });
   await openLoanUi(page, '/welcome', myLoans([fiatOnly]), false);
