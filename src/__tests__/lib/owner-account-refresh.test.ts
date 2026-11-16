@@ -139,6 +139,8 @@ it('keeps stored funding and copies only its owner-only fields when both account
       dailyPayoutStoppedNotice: false,
       payoutToday: { state: 'paid', reason: null },
       shopPaymentDue: true,
+      shopPaymentSats: 200,
+      shopPaymentRequiredSats: 500,
     },
   });
   await settleAnswers();
@@ -156,8 +158,41 @@ it('keeps stored funding and copies only its owner-only fields when both account
       dailyPayoutStoppedNotice: true,
       payoutToday: { state: 'paid', reason: null },
       shopPaymentDue: true,
+      shopPaymentSats: 200,
+      shopPaymentRequiredSats: 500,
     },
   });
+});
+
+it('clears stored shop sums when the answer has none', async () => {
+  const owner = deferred<Account | null>();
+  vi.mocked(fetchMe).mockReturnValueOnce(owner.promise);
+
+  refreshOwnerAccount('sess');
+  useAuthStore.getState().setAccount({
+    ...account,
+    funding: {
+      ...account.funding!,
+      payoutToday: { state: 'blocked', reason: 'shop_payment' },
+      shopPaymentDue: true,
+      shopPaymentSats: 200,
+      shopPaymentRequiredSats: 500,
+    },
+  });
+  owner.resolve({
+    ...account,
+    funding: {
+      ...account.funding!,
+      payoutToday: { state: 'blocked', reason: 'shop_payment' },
+      shopPaymentDue: true,
+      shopPaymentSats: null,
+    },
+  });
+  await settleAnswers();
+
+  const funding = useAuthStore.getState().account?.funding;
+  expect(funding?.shopPaymentSats).toBeNull();
+  expect(funding?.shopPaymentRequiredSats).toBeUndefined();
 });
 
 it('drops an answer after the session changes', async () => {

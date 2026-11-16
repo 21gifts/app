@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { fulfillSpot } from './fx-spot';
 
 const APPLICATION = {
   accountId: 'acc_rose',
@@ -135,22 +136,54 @@ test('Function: GrantsScreen — moderator sees the applications link', async ({
 test("Function: refreshOwnerAccount — today's payout shows one actionable reason", async ({
   page,
 }) => {
+  await fulfillSpot(page);
   await seedAdaSession(page, 'verified', {
     status: 'none',
     trialUtcDate: null,
     admittedAt: null,
     reviewedByName: null,
     shopPaymentDue: true,
+    shopPaymentSats: 200,
+    shopPaymentRequiredSats: 500,
     payoutToday: { state: 'blocked', reason: 'shop_payment' },
   });
   await page.goto('/grants');
   const payout = page.getByRole('group', { name: "Today's payout" });
   await expect(payout.locator('p')).toHaveCount(1);
-  await expect(
-    payout.getByRole('link', {
-      name: 'You must have made at least one purchase in a 21.gifts shop today or yesterday.',
-    }),
-  ).toHaveAttribute('href', '/shops');
+  const sentence =
+    'You must spend at least ₿500 · $0.50 in 21.gifts shops today and yesterday together, half of your daily grant.';
+  await expect(payout.getByRole('link', { name: sentence, exact: true })).toHaveAttribute(
+    'href',
+    '/shops',
+  );
+  await expect(payout.locator('p')).toHaveText(
+    `${sentence} Spent so far: ₿200 · $0.20. Still missing: ₿300 · $0.30.`,
+  );
+});
+
+test('Function: GrantsScreen — without the shop sums the payout names half the daily grant', async ({
+  page,
+}) => {
+  await fulfillSpot(page);
+  await seedAdaSession(page, 'verified', {
+    status: 'none',
+    trialUtcDate: null,
+    admittedAt: null,
+    reviewedByName: null,
+    shopPaymentDue: true,
+    shopPaymentSats: 200,
+    shopPaymentRequiredSats: null,
+    payoutToday: { state: 'blocked', reason: 'shop_payment' },
+  });
+  await page.goto('/grants');
+  const payout = page.getByRole('group', { name: "Today's payout" });
+  const sentence =
+    'You must spend at least half of your daily grant in 21.gifts shops today and yesterday together.';
+  await expect(payout.getByRole('link', { name: sentence, exact: true })).toHaveAttribute(
+    'href',
+    '/shops',
+  );
+  await expect(payout.locator('p')).toHaveText(sentence);
 });
 
 test('Function: GrantGoalsPage — signed-in goals page explains the shop target', async ({

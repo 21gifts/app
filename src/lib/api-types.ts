@@ -28,6 +28,20 @@ export const ownerFundingSchema = z.object({
   dailyPayoutStoppedNotice: z.boolean().optional(),
   /** Whether a qualifying shop purchase is still missing, or `null` when the read failed. */
   shopPaymentDue: z.boolean().nullable().optional(),
+  /**
+   * Whole sats of the member's qualifying shop payments on the payout UTC day
+   * and the day before, together. `null` when the member is not in the grant
+   * program today or the read failed. Optional so older payloads still parse;
+   * missing means `null`.
+   */
+  shopPaymentSats: z.number().int().nonnegative().nullable().optional(),
+  /**
+   * Whole sats those shop payments must reach: half the daily grant, rounded
+   * up, at least 1. `null` when the member is not in the grant program, the
+   * server has no stored BTC price, or a read failed. Optional so older
+   * payloads still parse; missing means `null`.
+   */
+  shopPaymentRequiredSats: z.number().int().nonnegative().nullable().optional(),
   /** Today's one payout state and, when present, its single reason. */
   payoutToday: z
     .object({

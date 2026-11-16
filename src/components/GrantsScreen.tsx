@@ -2,15 +2,51 @@
 
 import Link from 'next/link';
 import { useEffect, useState, type ReactElement } from 'react';
+import { useFiatPreference } from '@/components/FiatPreferenceProvider';
 import { FundingStatusCard } from '@/components/FundingStatusCard';
 import { GrantPlacesPanel } from '@/components/GrantPlacesPanel';
 import { useTranslations } from '@/components/LocaleProvider';
+import { useNumberFormat } from '@/components/NumberFormatProvider';
 import { Button, ButtonLink, Card } from '@/components/ui';
+import { useSpotRate } from '@/hooks/useSpotRate';
 import { fetchFundingApplications } from '@/lib/api';
+import type { OwnerFunding } from '@/lib/api-types';
 import { requestForumCompose } from '@/lib/forum-feed';
 import { refreshOwnerAccount } from '@/lib/owner-account-refresh';
 import { canEditDailyPayoutRoster, roleAtLeast } from '@/lib/roles';
+import { formatBitcoin, formatFiatDisplay, satsToFiatAmount } from '@/lib/stats-money';
 import { useAuthStore } from '@/stores/auth-store';
+
+/** Shop payments today and yesterday together, and the sum they must reach. */
+interface ShopPaymentProgress {
+  /** Whole sats paid in 21.gifts shops on the payout UTC day and the day before. */
+  paidSats: number;
+  /** Whole sats those payments must reach: half the daily grant, rounded up. */
+  requiredSats: number;
+}
+
+/**
+ * The shop amounts behind a `shop_payment` block, when the api sent both.
+ *
+ * @param funding - The owner funding object, or `null`/`undefined` without one.
+ * @returns Paid and required sats while today's payout is blocked by the shop
+ *   payment and both numbers are known, otherwise `null`.
+ */
+function shopPaymentProgress(funding: OwnerFunding | null | undefined): ShopPaymentProgress | null {
+  if (funding === null || funding === undefined) {
+    return null;
+  }
+  const payout = funding.payoutToday;
+  if (payout?.state !== 'blocked' || payout.reason !== 'shop_payment') {
+    return null;
+  }
+  const paidSats = funding.shopPaymentSats ?? null;
+  const requiredSats = funding.shopPaymentRequiredSats ?? null;
+  if (paidSats === null || requiredSats === null) {
+    return null;
+  }
+  return { paidSats, requiredSats };
+}
 
 /**
  * Signed-in grants page: the owner grant card, the public grant places
@@ -23,7 +59,13 @@ import { useAuthStore } from '@/stores/auth-store';
  * (initiator and founder) also sees three secondary links, to the daily
  * payment text, the amounts, and the moderator payments.
  * Those links do not fetch the daily roster. A missing account shows neither
- * the goals link nor those payment links. Accounts at least moderator,
+ * the goals link nor those payment links. While today's payout is blocked by
+ * the shop payment and the api sent both shop amounts, the payout line names
+ * the sum to spend in shops today and yesterday together (half the daily
+ * grant), what was spent so far, and what is still missing (never below
+ * zero), each as bitcoin with the current spot in the visitor's currency
+ * beside it while a spot is available. Without both amounts it names half
+ * the daily grant without a figure. Accounts at least moderator,
  * including a fond, an initiator, and a founder, see how many open grant applications
  * exist. When the count is greater than zero, a secondary link to
  * `/grants/applications` shows that count. When the count is zero, that
@@ -41,6 +83,10 @@ export function GrantsScreen(): ReactElement | null {
   const [openCount, setOpenCount] = useState<number | null>(null);
   const [applicationsError, setApplicationsError] = useState(false);
   const [attempt, setAttempt] = useState(0);
+  const { numberFormat } = useNumberFormat();
+  const { fiat } = useFiatPreference();
+  const shopProgress = shopPaymentProgress(account?.funding);
+  const rateDay = useSpotRate(shopProgress !== null);
 
   useEffect(() => {
     if (session === null) {
@@ -94,10 +140,20 @@ export function GrantsScreen(): ReactElement | null {
     | 'funding.payoutToday.wallet'
     | 'funding.payoutToday.recoveryShare'
     | 'funding.payoutToday.shopPayment'
+    | 'funding.payoutToday.shopPaymentAmount'
     | 'funding.payoutToday.mediaPost'
     | 'funding.payoutToday.unavailable' = 'funding.payoutToday.unavailable';
   let payoutHref: string | null = null;
+  let payoutVars: Record<string, string> | undefined;
+  let payoutNote: string | null = null;
   let opensComposer = false;
+  const money = (sats: number): string => {
+    const bitcoin = formatBitcoin(sats, numberFormat);
+    const amount = satsToFiatAmount(sats, rateDay, fiat);
+    return amount === null
+      ? bitcoin
+      : `${bitcoin} · ${formatFiatDisplay(amount, fiat, numberFormat)}`;
+  };
   if (payoutToday?.state === 'paid' && payoutToday.reason === null) {
     payoutKey = 'funding.payoutToday.paid';
   } else if (payoutToday?.state === 'paid' && payoutToday.reason === 'welcome') {
@@ -126,8 +182,17 @@ export function GrantsScreen(): ReactElement | null {
       payoutKey = 'funding.payoutToday.recoveryShare';
       payoutHref = '/settings/social-recovery';
     } else if (payoutToday.reason === 'shop_payment') {
-      payoutKey = 'funding.payoutToday.shopPayment';
       payoutHref = '/shops';
+      if (shopProgress === null) {
+        payoutKey = 'funding.payoutToday.shopPayment';
+      } else {
+        payoutKey = 'funding.payoutToday.shopPaymentAmount';
+        payoutVars = { required: money(shopProgress.requiredSats) };
+        payoutNote = t('funding.payoutToday.shopPaymentProgress', {
+          paid: money(shopProgress.paidSats),
+          missing: money(Math.max(0, shopProgress.requiredSats - shopProgress.paidSats)),
+        });
+      }
     } else if (payoutToday.reason === 'media_post') {
       payoutKey = 'funding.payoutToday.mediaPost';
       payoutHref = '/welcome';
@@ -135,7 +200,7 @@ export function GrantsScreen(): ReactElement | null {
     }
   }
 
-  const payoutLine = t(payoutKey);
+  const payoutLine = t(payoutKey, payoutVars);
   const payoutContent =
     payoutHref === null ? (
       payoutLine
@@ -197,7 +262,10 @@ export function GrantsScreen(): ReactElement | null {
         >
           {t('funding.payoutToday.heading')}
         </h2>
-        <p className="text-center text-sm text-app-muted">{payoutContent}</p>
+        <p className="text-center text-sm text-app-muted">
+          {payoutContent}
+          {payoutNote === null ? null : ` ${payoutNote}`}
+        </p>
       </div>
       <GrantPlacesPanel reloadKey={account?.funding?.status ?? 'none'} />
       {account !== null ? (
