@@ -80,7 +80,8 @@ export function LoansCard({ place }: LoansCardProps): ReactElement | null {
             ? money(summary.waitingSats)
             : `${definedWaiting} · ${formatBitcoin(summary.waitingSats, numberFormat)}`
           : null;
-  const nothingWaiting = summary.waitingPeople === 0;
+  const nothingWaiting =
+    summary.waitingSats === null ? summary.waitingPeople === 0 : summary.waitingSats === 0;
   const border =
     summary.tone === 'danger'
       ? 'border-app-danger/50'

@@ -912,6 +912,30 @@ describe('LoansCard', () => {
     expect(screen.queryByText(/₿0\b/)).toBeNull();
   });
 
+  it('shows nothing due today when a known-zero waiting part still has people', () => {
+    show({
+      sundayRest: false,
+      loans: [
+        loan({
+          due: {
+            ...loan().due,
+            payableSats: 0,
+            payablePeople: 0,
+            waitingSats: 0,
+            waitingPeople: 1,
+            waitingAmount: null,
+          },
+        }),
+      ],
+    });
+
+    const nothingDue = screen.getByText('Nothing due today');
+    expect(nothingDue.className).toContain('text-app-success');
+    expect(nothingDue.closest('p')?.querySelector('svg')).toBeTruthy();
+    expect(screen.queryByText('Nothing to send now')).toBeNull();
+    expect(screen.queryByText(/is waiting for/)).toBeNull();
+  });
+
   it('omits priced waiting sats when no lender is waiting', () => {
     show({
       sundayRest: false,

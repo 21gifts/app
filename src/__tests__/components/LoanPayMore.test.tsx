@@ -946,6 +946,15 @@ describe('LoanPayMore', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Pay this amount' }));
     completed.rerender(
       payMoreState(item, completed.onPay, completed.onCloseCollecting, {
+        phase: 'preparing',
+        activeAction: { kind: 'prepay', messageId: 'loan-1' },
+        prepayAllWaiting: false,
+      }),
+    );
+    expect((screen.getByLabelText('Amount (₿)') as HTMLInputElement).value).toBe('1000');
+
+    completed.rerender(
+      payMoreState(item, completed.onPay, completed.onCloseCollecting, {
         phase: 'idle',
         activeAction: { kind: 'prepay', messageId: 'loan-1' },
         prepayAllWaiting: true,
