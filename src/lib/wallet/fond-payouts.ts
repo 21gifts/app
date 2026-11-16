@@ -315,8 +315,9 @@ type RowOutcome = 'paid' | 'insufficient' | 'cancelled' | 'skipped';
  * Pays one invoice once through the in-app wallet.
  *
  * The Spark invoice is prepared first; one the wallet refuses at prepare is
- * reported (unless the tick was cancelled meanwhile) and the BOLT11 is
- * prepared instead (`payInvoiceSparkFirst`). Only a
+ * reported and the BOLT11 is prepared instead (`payInvoiceSparkFirst`); a
+ * refusal that arrives after the tick was cancelled ends the row as
+ * `cancelled` without a report, whatever the fallback prepare gives. Only a
  * `confirm` prepare proceeds to `send`. No balance stops the whole tick
  * (`insufficient`); every other outcome skips the row.
  *
@@ -329,19 +330,30 @@ async function payInvoice(deps: FondPayoutTickDeps, target: PayoutTarget): Promi
     return 'cancelled';
   }
   let prepared: WalletPayResult;
+  // A Spark refusal that arrives after the tick was cancelled ends the row
+  // quietly: neither the refusal nor its Lightning fallback is reported.
+  let refusedWhileCancelled = false;
   try {
     prepared = await payInvoiceSparkFirst(
       deps.payFromWallet,
       { sparkInvoice: target.sparkInvoice, pr: target.bolt11 },
       (failure) => {
-        if (!deps.isCancelled()) {
+        if (deps.isCancelled()) {
+          refusedWhileCancelled = true;
+        } else {
           reportFondPayoutFailure(deps.session, failure);
         }
       },
     );
   } catch (error) {
+    if (refusedWhileCancelled) {
+      return 'cancelled';
+    }
     reportFondPayoutFailure(deps.session, thrownFailure('prepare', error));
     return 'skipped';
+  }
+  if (refusedWhileCancelled) {
+    return 'cancelled';
   }
   if (prepared.kind === 'insufficient') {
     reportFondPayoutFailure(deps.session, prepared.failure);

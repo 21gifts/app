@@ -438,6 +438,44 @@ describe('runFondPayoutTick rows', () => {
     expect(send).not.toHaveBeenCalled();
   });
 
+  it('reports neither the refusal nor a failing Lightning prepare of a tick cancelled meanwhile', async () => {
+    const refusal: PaymentFailure = { ...FAILURE, reason: 'sdk_error', method: 'spark' };
+    const lightning: WalletPayResult[] = [
+      { kind: 'failed', failure: FAILURE },
+      { kind: 'insufficient', failure: FAILURE },
+    ];
+    for (const outcome of lightning) {
+      vi.mocked(report).mockClear();
+      let cancelled = false;
+      const deps = depsFor([OWED]);
+      vi.mocked(deps.isCancelled).mockImplementation(() => cancelled);
+      vi.mocked(deps.payFromWallet).mockImplementation(async (request) => {
+        if (request.type === 'input' && request.input === SPARK_A) {
+          cancelled = true;
+          return { kind: 'failed', failure: refusal };
+        }
+        return outcome;
+      });
+      await expect(tick(deps)).resolves.toEqual({ paid: 0, skipped: 0, stop: null });
+      expect(report).not.toHaveBeenCalled();
+    }
+  });
+
+  it('does not report a Lightning prepare that throws after a refusal of a cancelled tick', async () => {
+    let cancelled = false;
+    const deps = depsFor([OWED]);
+    vi.mocked(deps.isCancelled).mockImplementation(() => cancelled);
+    vi.mocked(deps.payFromWallet).mockImplementation(async (request) => {
+      if (request.type === 'input' && request.input === SPARK_A) {
+        cancelled = true;
+        return { kind: 'failed', failure: { ...FAILURE, reason: 'sdk_error', method: 'spark' } };
+      }
+      throw new Error('boom');
+    });
+    await expect(tick(deps)).resolves.toEqual({ paid: 0, skipped: 0, stop: null });
+    expect(report).not.toHaveBeenCalled();
+  });
+
   it('skips the row without Lightning when the Spark prepare stops for another reason', async () => {
     const deps = depsFor([OWED]);
     vi.mocked(deps.payFromWallet).mockResolvedValue({ kind: 'failed', failure: FAILURE });
