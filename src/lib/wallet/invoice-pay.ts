@@ -30,6 +30,7 @@ export interface SparkFirstInvoice {
  * @param invoice - Spark invoice and payment request of the same invoice.
  * @param onSparkFailure - Called with the Spark prepare's failure before the fallback.
  * @returns The prepare result of the Spark invoice, or of `pr` after a fallback or without one.
+ * @throws The rejection of `pay` when the injected prepare rejects; `payFromWallet` never does.
  */
 export async function payInvoiceSparkFirst(
   pay: (request: WalletPayRequest) => Promise<WalletPayResult>,
