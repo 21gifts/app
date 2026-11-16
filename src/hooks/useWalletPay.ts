@@ -94,9 +94,14 @@ export interface UseWalletPayResult {
 type Phase =
   'idle' | 'preparing' | 'confirm' | 'paying' | 'insufficient' | 'unconfirmed' | 'failed';
 
-/** The invoice and sheet amount a prepared send belongs to. */
+/**
+ * The invoice and sheet amount a prepared send belongs to: the request tried
+ * first, its Lightning payment request (paid when the wallet refuses the Spark
+ * invoice), and the amount.
+ */
 interface PreparedKey {
   input: string;
+  pr: string;
   amountSats: number;
 }
 
@@ -110,15 +115,17 @@ interface PreparedSend extends PreparedKey {
  *
  * @param key - Prepared send or its key, or `null`.
  * @param input - Current request text.
+ * @param pr - Current Lightning payment request of the same invoice.
  * @param amountSats - Current sheet amount.
  * @returns `true` only for a prepared send of this invoice and amount.
  */
 function preparedMatches<T extends PreparedKey>(
   key: T | null,
   input: string,
+  pr: string,
   amountSats: number,
 ): key is T {
-  return key !== null && key.input === input && key.amountSats === amountSats;
+  return key !== null && key.input === input && key.pr === pr && key.amountSats === amountSats;
 }
 
 const VISUAL_VIEWS: Record<string, WalletPayView> = {
@@ -309,8 +316,8 @@ export function useWalletPay(
         );
         setPhase('failed');
       } else if (result.kind === 'confirm') {
-        sendRef.current = { send: result.send, input, amountSats };
-        setPreparedFor({ input, amountSats });
+        sendRef.current = { send: result.send, input, pr, amountSats };
+        setPreparedFor({ input, pr, amountSats });
         setFeeSats(result.feeSats);
         setPhase('confirm');
       } else {
@@ -382,13 +389,13 @@ export function useWalletPay(
       pinned !== null ||
       !canPay ||
       phase !== 'confirm' ||
-      !preparedMatches(prepared, input, amountSats)
+      !preparedMatches(prepared, input, pr, amountSats)
     ) {
       return;
     }
     sendRef.current = null;
     sendPrepared(prepared.send, generation.current, prepared.amountSats, flow);
-  }, [pinned, canPay, phase, input, amountSats, flow, sendPrepared]);
+  }, [pinned, canPay, phase, input, pr, amountSats, flow, sendPrepared]);
 
   const retry = useCallback((): void => {
     if (pinned !== null) {
@@ -422,7 +429,7 @@ export function useWalletPay(
   } else if (phase === 'idle') {
     view = 'preparing';
   } else if (phase === 'confirm') {
-    view = preparedMatches(preparedFor, input, amountSats) ? 'confirm' : 'preparing';
+    view = preparedMatches(preparedFor, input, pr, amountSats) ? 'confirm' : 'preparing';
   } else {
     view = phase;
   }

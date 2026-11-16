@@ -315,7 +315,8 @@ type RowOutcome = 'paid' | 'insufficient' | 'cancelled' | 'skipped';
  * Pays one invoice once through the in-app wallet.
  *
  * The Spark invoice is prepared first; one the wallet refuses at prepare is
- * reported and the BOLT11 is prepared instead (`payInvoiceSparkFirst`). Only a
+ * reported (unless the tick was cancelled meanwhile) and the BOLT11 is
+ * prepared instead (`payInvoiceSparkFirst`). Only a
  * `confirm` prepare proceeds to `send`. No balance stops the whole tick
  * (`insufficient`); every other outcome skips the row.
  *
@@ -333,7 +334,9 @@ async function payInvoice(deps: FondPayoutTickDeps, target: PayoutTarget): Promi
       deps.payFromWallet,
       { sparkInvoice: target.sparkInvoice, pr: target.bolt11 },
       (failure) => {
-        reportFondPayoutFailure(deps.session, failure);
+        if (!deps.isCancelled()) {
+          reportFondPayoutFailure(deps.session, failure);
+        }
       },
     );
   } catch (error) {
