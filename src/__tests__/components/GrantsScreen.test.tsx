@@ -23,7 +23,9 @@ vi.mock('next/link', () => ({
 }));
 
 vi.mock('@/components/GrantPlacesPanel', () => ({
-  GrantPlacesPanel: () => <div data-testid="grant-places-panel" />,
+  GrantPlacesPanel: ({ reloadKey }: { reloadKey?: string }) => (
+    <div data-testid="grant-places-panel" data-reload-key={reloadKey} />
+  ),
 }));
 
 vi.mock('@/lib/api', () => ({
@@ -627,5 +629,23 @@ describe('GrantsScreen', () => {
     });
     expect(container.firstChild).toBeNull();
     expect(screen.queryByRole('link', { name: /Open applications/ })).toBeNull();
+  });
+
+  it('reloads the grant places with the owner grant status as key', () => {
+    useAuthStore.setState({
+      session: 'sess',
+      account: {
+        ...account,
+        funding: { status: 'admitted', trialUtcDate: null, admittedAt: 1, reviewedByName: null },
+      },
+    });
+    renderWithLocale(<GrantsScreen />);
+    expect(screen.getByTestId('grant-places-panel').getAttribute('data-reload-key')).toBe(
+      'admitted',
+    );
+    act(() => {
+      useAuthStore.setState({ account: { ...account, funding: null } });
+    });
+    expect(screen.getByTestId('grant-places-panel').getAttribute('data-reload-key')).toBe('none');
   });
 });

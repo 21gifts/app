@@ -1,5 +1,5 @@
-import { cleanup, screen } from '@testing-library/react';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { cleanup, fireEvent, screen, waitFor } from '@testing-library/react';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { FundingStatusCard } from '@/components/FundingStatusCard';
 import type { Account, OwnerFunding } from '@/lib/api-types';
 import { formatForumTimeFromMs } from '@/lib/forum-time';
@@ -41,7 +41,10 @@ beforeEach(() => {
   useAuthStore.setState({ session: 'sess', account });
 });
 
-afterEach(cleanup);
+afterEach(() => {
+  cleanup();
+  vi.unstubAllGlobals();
+});
 
 describe('FundingStatusCard', () => {
   it('renders nothing when there is no session', () => {
@@ -232,5 +235,82 @@ describe('FundingStatusCard', () => {
     expect(
       screen.getByRole('link', { name: 'Apply for the 21 gifts grant' }).getAttribute('href'),
     ).toBe('/grants/apply');
+  });
+
+  it.each([
+    ['pending', 'Withdraw my application'],
+    ['trial', 'Leave the grant'],
+    ['admitted', 'Leave the grant'],
+  ] as const)('offers the way out under the %s status text', (status, label) => {
+    useAuthStore.setState({
+      session: 'sess',
+      account: {
+        ...account,
+        funding: {
+          status,
+          trialUtcDate: status === 'trial' ? '2026-09-20' : null,
+          admittedAt: status === 'admitted' ? 1_700_000_000_000 : null,
+          reviewedByName: null,
+        },
+      },
+    });
+    renderWithLocale(<FundingStatusCard />);
+    expect(screen.getByRole('button', { name: label })).toBeTruthy();
+  });
+
+  it.each(['none', 'rejected'] as const)('offers no way out for status %s', (status) => {
+    useAuthStore.setState({
+      session: 'sess',
+      account: { ...account, funding: { ...pending, status } },
+    });
+    renderWithLocale(<FundingStatusCard />);
+    expect(screen.queryByRole('button', { name: 'Withdraw my application' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Leave the grant' })).toBeNull();
+  });
+
+  it('offers no way out to a basis account', () => {
+    useAuthStore.setState({
+      session: 'sess',
+      account: { ...account, role: 'basis', funding: null },
+    });
+    renderWithLocale(<FundingStatusCard />);
+    expect(screen.queryByRole('button', { name: 'Leave the grant' })).toBeNull();
+  });
+
+  it('shows the apply state again after leaving the grant', async () => {
+    useAuthStore.setState({
+      session: 'sess',
+      account: {
+        ...account,
+        funding: {
+          status: 'admitted',
+          trialUtcDate: null,
+          admittedAt: null,
+          reviewedByName: null,
+        },
+      },
+    });
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: () =>
+        Promise.resolve({
+          funding: { status: 'none', trialUtcDate: null, admittedAt: null, reviewedByName: null },
+        }),
+    });
+    vi.stubGlobal('fetch', fetchMock);
+    renderWithLocale(<FundingStatusCard />);
+    fireEvent.click(screen.getByRole('button', { name: 'Leave the grant' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Leave the grant' }));
+    await waitFor(() => {
+      expect(screen.getByRole('link', { name: 'Apply for the 21 gifts grant' })).toBeTruthy();
+    });
+    // The withdraw answer, then the owner refresh that loads today's payout reason.
+    await waitFor(() => {
+      expect(fetchMock).toHaveBeenCalledTimes(2);
+    });
+    expect(fetchMock.mock.calls[0]?.[0]).toBe('/funding/withdraw');
+    expect(fetchMock.mock.calls[1]?.[0]).toBe('/me');
+    expect(screen.queryByRole('button', { name: 'Leave the grant' })).toBeNull();
   });
 });

@@ -424,6 +424,16 @@ export async function proxyFondPayoutInvoicePost(request: Request, id: string): 
 }
 
 /**
+ * Proxies PUT /fond/deposit-address to the 21.gifts api.
+ *
+ * @param request - Incoming App Router request (Bearer session + JSON `{ address }`).
+ * @returns The upstream response.
+ */
+export async function proxyFondDepositAddressPut(request: Request): Promise<Response> {
+  return proxyApiRequest(request, '/fond/deposit-address');
+}
+
+/**
  * Proxies POST /me/wallet/report (wallet data report) to the 21.gifts api.
  *
  * @param request - Incoming App Router request (Bearer session + JSON
@@ -442,6 +452,16 @@ export async function proxyMeWalletReportPost(request: Request): Promise<Respons
  */
 export async function proxyMeWalletHeartsPost(request: Request): Promise<Response> {
   return proxyApiRequest(request, '/me/wallet/hearts');
+}
+
+/**
+ * Proxies the signed-in member's payment counterparty lookup to the api.
+ *
+ * @param request - Incoming request with session and payment identifiers.
+ * @returns The upstream response.
+ */
+export async function proxyMeWalletCounterpartiesPost(request: Request): Promise<Response> {
+  return proxyApiRequest(request, '/me/wallet/counterparties');
 }
 
 /**
@@ -771,6 +791,16 @@ export async function proxyShopActivityGet(request: Request): Promise<Response> 
 }
 
 /**
+ * Proxies GET /shops/activity/shops to the 21.gifts api (staff Bearer).
+ *
+ * @param request - Incoming App Router request (Bearer session).
+ * @returns The upstream response.
+ */
+export async function proxyShopActivityShopsGet(request: Request): Promise<Response> {
+  return proxyApiRequest(request, '/shops/activity/shops');
+}
+
+/**
  * Proxies GET /funding/places to the 21.gifts api.
  *
  * No session is required. The incoming request is forwarded as received.
@@ -825,6 +855,16 @@ export async function proxyMessagesStatsGet(request: Request): Promise<Response>
  */
 export async function proxyWalletStatsGet(request: Request): Promise<Response> {
   return proxyApiRequest(request, '/wallets/stats');
+}
+
+/**
+ * Proxies GET /wallets/usage to the 21.gifts api.
+ *
+ * @param request - Incoming App Router request.
+ * @returns The upstream response.
+ */
+export async function proxyWalletUsageGet(request: Request): Promise<Response> {
+  return proxyApiRequest(request, '/wallets/usage');
 }
 
 /**
@@ -907,6 +947,16 @@ export async function proxyTrustAppointModeratorPost(request: Request): Promise<
  */
 export async function proxyFundingApplyPost(request: Request): Promise<Response> {
   return proxyApiRequest(request, '/funding/apply');
+}
+
+/**
+ * Proxies POST /funding/withdraw to the 21.gifts api.
+ *
+ * @param request - Incoming App Router request (Bearer session, no body).
+ * @returns The upstream response.
+ */
+export async function proxyFundingWithdrawPost(request: Request): Promise<Response> {
+  return proxyApiRequest(request, '/funding/withdraw');
 }
 
 /**

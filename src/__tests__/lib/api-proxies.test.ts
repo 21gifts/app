@@ -14,6 +14,7 @@ import {
   proxyAuthPasskeySeedFinishPost,
   proxyMeWalletBackupSeenPost,
   proxyMeWalletHeartsPost,
+  proxyMeWalletCounterpartiesPost,
   proxyMeWalletReportPost,
   proxyMeEventsPost,
   proxyMeWalletPut,
@@ -29,6 +30,7 @@ import {
   proxyMeHeldSharePut,
   proxyMeHeldSharesGet,
   proxyFondPayoutInvoicePost,
+  proxyFondDepositAddressPut,
   proxyFondPayoutsGet,
   proxyFondSummaryGet,
   proxyMePreviousWalletDelete,
@@ -93,6 +95,7 @@ import {
   proxyMessagesHiddenGet,
   proxyMessagesPlacesGet,
   proxyWalletStatsGet,
+  proxyWalletUsageGet,
   proxyMessagesInvoicePost,
   proxyMessagesRepaymentClosePost,
   proxyMessagesRepaymentDuePost,
@@ -128,7 +131,9 @@ import {
   proxyFundingApplicationGet,
   proxyFundingApplicationsGet,
   proxyFundingPayoutDaysGet,
+  proxyShopActivityShopsGet,
   proxyFundingApplyPost,
+  proxyFundingWithdrawPost,
   proxyFundingRejectPost,
   proxyFundingTrialPost,
   proxyViewAboutPhotoGet,
@@ -203,6 +208,24 @@ describe('api proxy wrappers', () => {
     );
     const [url, init] = fetchMock.mock.calls[0] as [URL, RequestInit];
     expect(url.pathname).toBe('/me/wallet/report');
+    expect(new TextDecoder().decode(init.body as ArrayBuffer)).toBe(body);
+    expect((init.headers as Headers).get('authorization')).toBe('Bearer sess');
+  });
+
+  it('proxyMeWalletCounterpartiesPost forwards the body and bearer', async () => {
+    const fetchMock = stubApi();
+    const body = JSON.stringify({
+      payments: [{ id: 'p1', direction: 'in', invoice: 'spark1', paymentHash: null }],
+    });
+    await proxyMeWalletCounterpartiesPost(
+      new Request('http://localhost/me/wallet/counterparties', {
+        method: 'POST',
+        headers: { authorization: 'Bearer sess', 'content-type': 'application/json' },
+        body,
+      }),
+    );
+    const [url, init] = fetchMock.mock.calls[0] as [URL, RequestInit];
+    expect(url.pathname).toBe('/me/wallet/counterparties');
     expect(new TextDecoder().decode(init.body as ArrayBuffer)).toBe(body);
     expect((init.headers as Headers).get('authorization')).toBe('Bearer sess');
   });
@@ -402,6 +425,22 @@ describe('api proxy wrappers', () => {
     expect(url.pathname).toBe('/me/held-shares/a%2Fb');
     expect(init.method).toBe('DELETE');
     expect(new Headers(init.headers).get('authorization')).toBe('Bearer token');
+  });
+
+  it('proxyFondDepositAddressPut hits PUT /fond/deposit-address with the body', async () => {
+    const fetchMock = stubApi();
+    await proxyFondDepositAddressPut(
+      new Request('http://localhost/fond/deposit-address', {
+        method: 'PUT',
+        headers: { authorization: 'Bearer token', 'content-type': 'application/json' },
+        body: JSON.stringify({ address: 'bc1qx' }),
+      }),
+    );
+    const [url, init] = fetchMock.mock.calls[0] as [URL, RequestInit];
+    expect(url.pathname).toBe('/fond/deposit-address');
+    expect(init.method).toBe('PUT');
+    expect(new Headers(init.headers).get('authorization')).toBe('Bearer token');
+    expect(new TextDecoder().decode(init.body as ArrayBuffer)).toBe('{"address":"bc1qx"}');
   });
 
   it('proxyFondPayoutsGet hits GET /fond/payouts', async () => {
@@ -824,6 +863,12 @@ describe('api proxy wrappers', () => {
     const fetchMock = stubApi();
     await proxyWalletStatsGet(new Request('http://localhost/wallets/stats'));
     expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/wallets/stats');
+  });
+
+  it('proxyWalletUsageGet hits /wallets/usage', async () => {
+    const fetchMock = stubApi();
+    await proxyWalletUsageGet(new Request('http://localhost/wallets/usage'));
+    expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/wallets/usage');
   });
 
   it('proxyGiftsStatsGet forwards recipient', async () => {
@@ -1442,10 +1487,31 @@ describe('api proxy wrappers', () => {
     expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/funding/apply');
   });
 
+  it('proxyFundingWithdrawPost hits POST /funding/withdraw with the Bearer session', async () => {
+    const fetchMock = stubApi();
+    await proxyFundingWithdrawPost(
+      new Request('http://localhost/funding/withdraw', {
+        method: 'POST',
+        headers: { Authorization: 'Bearer sess' },
+      }),
+    );
+    expect((fetchMock.mock.calls[0]?.[1] as RequestInit).method).toBe('POST');
+    expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/funding/withdraw');
+    expect(
+      new Headers((fetchMock.mock.calls[0]?.[1] as RequestInit).headers).get('authorization'),
+    ).toBe('Bearer sess');
+  });
+
   it('proxyFundingPayoutDaysGet hits GET /funding/payout-days', async () => {
     const fetchMock = stubApi();
     await proxyFundingPayoutDaysGet(new Request('http://localhost/funding/payout-days'));
     expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/funding/payout-days');
+  });
+
+  it('proxyShopActivityShopsGet hits GET /shops/activity/shops', async () => {
+    const fetchMock = stubApi();
+    await proxyShopActivityShopsGet(new Request('http://localhost/shops/activity/shops'));
+    expect((fetchMock.mock.calls[0]?.[0] as URL).pathname).toBe('/shops/activity/shops');
   });
 
   it('proxyFundingApplicationsGet hits GET /funding/applications', async () => {

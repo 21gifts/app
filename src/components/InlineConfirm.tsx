@@ -1,13 +1,15 @@
 'use client';
 
 import { Check, Loader2, X } from 'lucide-react';
-import type { ReactElement } from 'react';
+import { useId, type ReactElement } from 'react';
 import { IconButton } from '@/components/ui/IconButton';
 
 /** Props for the bordered confirm or cancel group. */
 export interface InlineConfirmProps {
   /** Question shown above the two actions, and the group's accessible name. */
   label: string;
+  /** What the action changes, under the question and the group's description. Omit for none. */
+  description?: string | null;
   /** Accessible name of the confirm action. */
   confirmLabel: string;
   /** Accessible name of the cancel action. */
@@ -23,15 +25,18 @@ export interface InlineConfirmProps {
 }
 
 /**
- * Bordered confirm or cancel group used by delete and archive.
+ * Bordered confirm or cancel group used by delete, archive, and leaving the
+ * grant.
  *
- * Callers keep their own idle button. This is only the open question.
+ * Callers keep their own idle button. This is only the open question, with an
+ * optional muted line that says what the action changes.
  *
  * @param props - Labels, callbacks, and optional pending or failure state.
  * @returns The group.
  */
 export function InlineConfirm({
   label,
+  description = null,
   confirmLabel,
   cancelLabel,
   onConfirm,
@@ -39,13 +44,20 @@ export function InlineConfirm({
   busy = false,
   error = null,
 }: InlineConfirmProps): ReactElement {
+  const descriptionId = useId();
   return (
     <div
       role="group"
       aria-label={label}
+      aria-describedby={description !== null ? descriptionId : undefined}
       className="flex flex-col gap-2 rounded-xl border border-app-border p-3"
     >
       <p className="text-sm text-app-fg">{label}</p>
+      {description !== null ? (
+        <p id={descriptionId} className="text-sm text-app-muted">
+          {description}
+        </p>
+      ) : null}
       {error !== null ? (
         <p role="alert" className="text-sm text-app-danger">
           {error}

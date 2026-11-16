@@ -177,6 +177,29 @@ describe('fondE2eWallet', () => {
     expect(e2eWallet()).toBeNull();
   });
 
+  it('has a fixed deposit address and one open deposit whose claim records the ceiling', async () => {
+    process.env.NEXT_PUBLIC_E2E_NOW = '2026-01-07T12:00:00.000Z';
+    const wallet = e2eWallet();
+    expect(wallet).not.toBeNull();
+    if (wallet === null) {
+      return;
+    }
+    await expect(wallet.receiveBitcoinAddress()).resolves.toBe(
+      'bc1p5cyxnuxmeuwuvkwfem96lqzszd02n6xdcjrs20cac6yqjjwudpxqkedrcr',
+    );
+    const [open] = await wallet.listUnclaimedDeposits();
+    expect(open).toEqual({
+      txid: 'cd'.repeat(32),
+      vout: 0,
+      amountSats: 50_000,
+      done: false,
+      maxClaimFeeSats: null,
+    });
+    await wallet.claimDeposit({ txid: 'cd'.repeat(32), vout: 0 }, 2_000);
+    const [claimed] = await wallet.listUnclaimedDeposits();
+    expect(claimed?.maxClaimFeeSats).toBe(2_000);
+  });
+
   it('pays an input invoice and records it as a completed send', async () => {
     process.env.NEXT_PUBLIC_E2E_NOW = '2026-01-07T12:00:00.000Z';
     const wallet = e2eWallet();

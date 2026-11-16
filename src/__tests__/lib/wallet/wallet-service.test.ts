@@ -15,6 +15,10 @@ import {
   parseWalletInput,
   payFromWallet,
   receiveWalletSparkAddress,
+  receiveWalletBitcoinAddress,
+  listWalletUnclaimedDeposits,
+  claimWalletDeposit,
+  onWalletDeposits,
   refreshWallet,
   registerWalletAddress,
   WALLET_RETRY_BASE_MS,
@@ -52,6 +56,18 @@ const MNEMONIC =
 const API_KEY = 'test-breez-api-key';
 const IDENTITY = `02${'a'.repeat(64)}`;
 const SPARK_ADDRESS = 'spark1qexampleaddress';
+
+/** The fake wallet's static Bitcoin deposit address. */
+const BITCOIN_ADDRESS = 'bc1p5cyxnuxmeuwuvkwfem96lqzszd02n6xdcjrs20cac6yqjjwudpxqkedrcr';
+
+/** One open deposit of the fake wallet. */
+const DEPOSIT = {
+  txid: 'ab'.repeat(32),
+  vout: 0,
+  amountSats: 50_000,
+  done: false,
+  maxClaimFeeSats: null,
+};
 
 const sdkImport = vi.hoisted(() =>
   vi.fn(async () => {
@@ -109,6 +125,9 @@ function createFakeSdk(overrides?: {
     getPayment: ReturnType<typeof vi.fn>;
     listReportPayments: ReturnType<typeof vi.fn>;
     receiveSparkAddress: ReturnType<typeof vi.fn>;
+    receiveBitcoinAddress: ReturnType<typeof vi.fn>;
+    listUnclaimedDeposits: ReturnType<typeof vi.fn>;
+    claimDeposit: ReturnType<typeof vi.fn>;
     disconnect: ReturnType<typeof vi.fn>;
   };
   connect: ReturnType<typeof vi.fn>;
@@ -143,6 +162,9 @@ function createFakeSdk(overrides?: {
     getPayment: vi.fn(),
     listReportPayments: vi.fn(async () => []),
     receiveSparkAddress: vi.fn(async () => SPARK_ADDRESS),
+    receiveBitcoinAddress: vi.fn(async () => BITCOIN_ADDRESS),
+    listUnclaimedDeposits: vi.fn(async () => [DEPOSIT]),
+    claimDeposit: vi.fn(async () => undefined),
     disconnect: vi.fn(overrides?.disconnect ?? (async () => undefined)),
   };
   const connect = vi.fn(
@@ -2900,6 +2922,39 @@ describe('receiveWalletSparkAddress', () => {
     const { loadSdk, connection } = createFakeSdk();
     connection.receiveSparkAddress.mockRejectedValueOnce(new Error('sdk failed'));
     await expect(receiveWalletSparkAddress(loadSdk)).rejects.toThrow('sdk failed');
+  });
+});
+
+describe('on-chain deposits of the connected wallet', () => {
+  it('rejects every call without a connection', async () => {
+    await expect(receiveWalletBitcoinAddress()).rejects.toThrow('wallet-connect');
+    await expect(listWalletUnclaimedDeposits()).rejects.toThrow('wallet-connect');
+    await expect(claimWalletDeposit({ txid: 't', vout: 0 }, 1)).rejects.toThrow('wallet-connect');
+  });
+
+  it('reads the deposit address, lists deposits, and claims one on the connection', async () => {
+    rememberSessionPhrase(MNEMONIC);
+    const { loadSdk, connection } = createFakeSdk();
+    await connectWallet(loadSdk);
+    await expect(receiveWalletBitcoinAddress()).resolves.toBe(BITCOIN_ADDRESS);
+    await expect(listWalletUnclaimedDeposits()).resolves.toEqual([DEPOSIT]);
+    await expect(claimWalletDeposit({ txid: 't', vout: 1 }, 500)).resolves.toBeUndefined();
+    expect(connection.claimDeposit).toHaveBeenCalledWith({ txid: 't', vout: 1 }, 500);
+  });
+
+  it('tells deposit listeners about new and unclaimed deposits until they unsubscribe', async () => {
+    rememberSessionPhrase(MNEMONIC);
+    const { loadSdk, listeners } = createFakeSdk();
+    await connectWallet(loadSdk);
+    const listener = vi.fn();
+    const unsubscribe = onWalletDeposits(listener);
+    listeners[0]?.({ type: 'newDeposits' });
+    listeners[0]?.({ type: 'unclaimedDeposits' });
+    listeners[0]?.({ type: 'claimedDeposits' });
+    expect(listener).toHaveBeenCalledTimes(2);
+    unsubscribe();
+    listeners[0]?.({ type: 'newDeposits' });
+    expect(listener).toHaveBeenCalledTimes(2);
   });
 });
 

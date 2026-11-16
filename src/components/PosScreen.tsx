@@ -16,6 +16,7 @@ import { Button, ButtonLink, Card } from '@/components/ui';
 import { useSpotRateState } from '@/hooks/useSpotRate';
 import { useWalletSetup } from '@/hooks/useWalletSetup';
 import { giftsLightningAddress, openCryptoPayQrValue } from '@/lib/gifts-address';
+import { PAY_POLL_MS } from '@/lib/payment-link';
 import { logInteraction } from '@/lib/interaction-log';
 import { CannotReceiveError, WalletRequiredError } from '@/lib/api';
 import { committedFiatFigure, type FiatCode } from '@/lib/committed-fiat';
@@ -43,6 +44,7 @@ import {
   type FiatRateDay,
 } from '@/lib/stats-money';
 import { useAuthStore } from '@/stores/auth-store';
+import { useWalletStore } from '@/stores/wallet-store';
 
 /**
  * Fiat under a till amount. A stored figure is shown as-is. With none, the
@@ -79,14 +81,23 @@ function whenCurrent(latest: { readonly current: number }, mine: number, apply: 
 }
 
 /**
- * How long past its end a charge still counts as paid by a payment the
- * wallet receives. The api still marks a charge paid when the payment is
- * confirmed after it ran out.
+ * How long past its end a Lightning payment the wallet receives can still be
+ * the charge's: the api still marks a charge paid when the payment is
+ * confirmed after it ran out, so the till keeps asking it that long.
  */
 const POS_LATE_PAID_MS = 60_000;
 
-/** Screenshot pin: the wallet reports the open charge paid the moment it shows (Playwright builds only). */
+/**
+ * Screenshot pin: the wallet reports a payment of the open charge's Spark invoice the moment the
+ * charge shows (Playwright builds only).
+ */
 const POS_RECEIVED_VISUAL_PIN = 'pos-received';
+
+/**
+ * Pin: the wallet reports a Lightning payment of the open charge's amount that names no charge
+ * the moment the charge shows (Playwright builds only). It pays nothing; the till asks the api.
+ */
+const POS_UNNAMED_VISUAL_PIN = 'pos-received-unnamed';
 
 /** The later-created of two charges, or the one that is not `null`. */
 function newerCharge(a: PosCharge | null, b: PosCharge | null): PosCharge | null {
@@ -104,6 +115,7 @@ function withoutOpenCharge(state: PosState): PosState {
     return state;
   }
   return {
+    ...state,
     charge: null,
     history: [
       { ...open, status: 'cancelled' },
@@ -141,35 +153,42 @@ let tillWrite: Promise<void> | null = null;
 const paidSeen = new Set<string>();
 
 /**
- * A wallet payment as the till weighs it: its amount, fee and payment time,
- * and, for a payment of the api's Spark invoice of a charge (memo
- * `pos:<id>`, read by the wallet as `info.chargeId`), the id of that charge.
+ * A wallet payment that names a charge: a payment of the api's Spark invoice
+ * of a charge (memo `pos:<id>`, read by the wallet as `info.chargeId`), with
+ * its amount, fee and payment time. Only such a payment is tied to a charge by
+ * an identifier, so only such a payment pays one on this till.
  */
 type TillPayment = Pick<WalletPayment, 'amountSats' | 'feesSats' | 'timestamp'> & {
-  chargeId?: string;
+  chargeId: string;
+};
+
+/**
+ * A Lightning payment the wallet received that names no charge: its wallet
+ * payment id, amount, fee and payment time. `GET /pos` does not return the payment hashes of the
+ * BOLT11 invoices the api handed out for a charge, so the till cannot tell a
+ * payment of the charge from another payment of that amount (the static
+ * sticker QR, a grant, another member). It pays no charge. `forCharges` are
+ * the charges it could be the payment of ({@link mayPay}): the one open when it
+ * was heard, and each charge a read returns as its current charge after it
+ * (another tab's newer charge among them, also one already paid). The till asks
+ * the api about those charges only, and counts the payment for the first of
+ * them the api returns paid.
+ */
+type UnnamedReceipt = Pick<WalletPayment, 'id' | 'amountSats' | 'feesSats' | 'timestamp'> & {
+  forCharges: string[];
 };
 
 /**
  * What this tab's wallet settled for one session, shared by `/pos` and
- * `/pos/amount` so a page change keeps it: the last open charge (a payment
- * just after its end still counts), the charges the wallet saw paid before
- * the api may know it, a lost create the api already showed paid, and the
- * paid charges whose confirmation was closed.
+ * `/pos/amount` so a page change keeps it: the last open charge (the api
+ * still marks a payment just after its end), the charges the wallet saw paid
+ * before the api may know it, a lost create the api already showed paid, and
+ * the paid charges whose confirmation was closed.
  */
 type WalletSettled = {
   session: string | null;
   open: PosCharge | null;
   paid: Map<string, PosCharge>;
-  /**
-   * Payments that pay the open charge only in its late minute, each with that
-   * charge, held until a read says whether a newer charge (another tab's) took it.
-   */
-  late: Array<{
-    payment: TillPayment;
-    charge: PosCharge;
-  }>;
-  /** The wallet payment that paid each charge in `paid`, so a later read can give it to its charge. */
-  paidBy: Map<string, TillPayment>;
   /**
    * A create whose answer was lost, when the read after it already showed the
    * new charge paid. The till confirms it after that page is gone, even when
@@ -178,18 +197,15 @@ type WalletSettled = {
    */
   reported: Map<string, PosCharge>;
   closed: Set<string>;
-  /** Payments no known open charge took (a till still reading the next one), by payment time. */
+  /** Payments that name a charge no known open charge is (a till still reading the next one), by payment time. */
   early: Array<TillPayment>;
-  /**
-   * A payment that names no charge paid the open charge on its amount and time
-   * alone, or paid no charge this till knows: one read checks whether another
-   * device's newer charge takes it.
-   */
+  /** Lightning payments that name no charge, by payment time: each may make the till ask the api. */
+  unnamed: Array<UnnamedReceipt>;
+  /** A payment names a charge no read listed: one read shows whether another tab or device opened it. */
   recheck: boolean;
   /**
-   * The charge before a create that is on its way: a payment that pays it is
-   * held like a late-minute one, so the read after the create gives it to the
-   * new charge or to this one.
+   * The charge before a create that is on its way: a payment that names it
+   * still pays it while no charge is open.
    */
   creatingAfter: PosCharge | null;
   /** Ids of every charge a read of this session listed. */
@@ -197,9 +213,9 @@ type WalletSettled = {
 };
 
 /**
- * How many payments no known open charge took are kept for the next one: the
- * newest by the wallet's payment time, so old payments a connection lists
- * never push out a new one.
+ * How many payments no known open charge took, and how many Lightning
+ * payments that name no charge, are kept: the newest by the wallet's payment
+ * time, so old payments a connection lists never push out a new one.
  */
 const POS_EARLY_PAYMENTS = 20;
 
@@ -218,11 +234,10 @@ function settledFor(session: string | null): WalletSettled {
       session,
       open: null,
       paid: new Map(),
-      late: [],
-      paidBy: new Map(),
       reported: new Map(),
       closed: new Set(),
       early: [],
+      unnamed: [],
       recheck: false,
       creatingAfter: null,
       seen: new Set(),
@@ -238,68 +253,68 @@ function settledChanged(): void {
   }
 }
 
+/** Whether `amountSats`, or `amountSats` after `feesSats`, is the amount of `charge`. */
+function fitsAmount(
+  charge: PosCharge,
+  payment: Pick<WalletPayment, 'amountSats' | 'feesSats'>,
+): boolean {
+  return (
+    payment.amountSats === charge.amountSats ||
+    payment.amountSats + payment.feesSats === charge.amountSats
+  );
+}
+
 /**
- * Whether `payment` pays `charge`: its amount, or its amount after the fee,
- * made (by the wallet's own payment time, compared in whole seconds,
- * {@link POS_PAID_TIME_GRAIN_MS}) from the second of the charge's creation
- * up to {@link POS_LATE_PAID_MS} after its end. While a charge is open
- * the receiving address takes no other amount, so the time tells a payment of
- * this charge from one of the charge before, however late the wallet reports it.
+ * Whether `payment` pays `charge`: it names that charge (the charge's Spark
+ * invoice) and carries its amount. Amount and time alone never pay a charge.
  */
 function pays(charge: PosCharge, payment: TillPayment): boolean {
-  // A payment that names its charge pays that charge and no other.
-  if (payment.chargeId !== undefined) {
-    return payment.chargeId === charge.id;
-  }
+  return payment.chargeId === charge.id && fitsAmount(charge, payment);
+}
+
+/**
+ * Whether a Lightning payment that names no charge could be the payment of
+ * `charge`: its amount, or its amount after the fee, made (by the wallet's own
+ * payment time, compared in whole seconds, {@link POS_PAID_TIME_GRAIN_MS})
+ * from the second of the charge's creation up to {@link POS_LATE_PAID_MS}
+ * after its end, and for a charge the api already has paid, no later than
+ * the second of its `paidAt` (a payment made after it cannot be the one that
+ * paid it). It does not pay the charge: it only makes the till ask the api,
+ * which knows the invoices it handed out for the charge.
+ */
+function mayPay(charge: PosCharge, receipt: UnnamedReceipt): boolean {
+  const second = Math.floor(receipt.timestamp / POS_PAID_TIME_GRAIN_MS);
   return (
-    (payment.amountSats === charge.amountSats ||
-      payment.amountSats + payment.feesSats === charge.amountSats) &&
-    Math.floor(payment.timestamp / POS_PAID_TIME_GRAIN_MS) >=
-      Math.floor(Date.parse(charge.createdAt) / POS_PAID_TIME_GRAIN_MS) &&
-    payment.timestamp <= Date.parse(charge.expiresAt) + POS_LATE_PAID_MS
+    fitsAmount(charge, receipt) &&
+    second >= Math.floor(Date.parse(charge.createdAt) / POS_PAID_TIME_GRAIN_MS) &&
+    receipt.timestamp <= Date.parse(charge.expiresAt) + POS_LATE_PAID_MS &&
+    (charge.paidAt === null ||
+      second <= Math.floor(Date.parse(charge.paidAt) / POS_PAID_TIME_GRAIN_MS))
   );
 }
 
 /**
  * The open charge in `memory` is paid the moment this tab's wallet reports a
  * payment that {@link pays} it. No reading of the api in between. A payment
- * the known open charge does not take (the till is still reading the next
- * one) is kept and tried again once the next open charge is known. Works on
- * the memory it is given, so a session that ended meanwhile never touches the
- * memory of the next one.
+ * that names another charge is kept and tried again once the next open charge
+ * is known, or settled by {@link settleNamed} when a read lists the charge it
+ * names. Works on the memory it is given, so a session that ended meanwhile
+ * never touches the memory of the next one.
  */
 function settleOpen(memory: WalletSettled, payment: TillPayment): void {
   const open = memory.open;
   const before = memory.creatingAfter;
   if (open === null && before !== null && pays(before, payment)) {
-    if (payment.chargeId !== undefined) {
-      // It names the charge before: that charge, at once.
-      markPaid(memory, before, payment);
-      return;
-    }
-    // The charge before's, or the new one's, which only a read after the create tells.
-    memory.late = [...memory.late, { payment, charge: before }];
-    settledChanged();
+    // It names the charge before, while a create is on its way: that charge, at once.
+    markPaid(memory, before, payment);
     return;
   }
   if (open === null || !pays(open, payment)) {
-    // Not this charge's: it may be the next one's, which the till has not read yet.
+    // Not this charge's: it may name the next one, which the till has not read yet, or one the
+    // till already read (`settleNamed`).
     keepEarly(memory, payment);
-    if (payment.chargeId !== undefined) {
-      // It may name a charge the till already read (`settleNamed`).
-      settledChanged();
-    }
-    return;
-  }
-  if (payment.chargeId === undefined && payment.timestamp > Date.parse(open.expiresAt)) {
-    // Made in the late minute: another tab may have made a newer charge of this amount that took
-    // the receiving address, which only the api knows. Held until the till has read it.
-    memory.late = [...memory.late, { payment, charge: open }];
     settledChanged();
     return;
-  }
-  if (payment.chargeId === undefined) {
-    memory.recheck = true;
   }
   markPaid(memory, open, payment);
 }
@@ -315,114 +330,13 @@ function markPaid(memory: WalletSettled, charge: PosCharge, payment: TillPayment
     status: 'paid',
     paidAt: new Date(payment.timestamp).toISOString(),
   });
-  memory.paidBy.set(charge.id, payment);
   settledChanged();
-}
-
-/**
- * Settles the held late-minute payments, in the order the wallet reported
- * them, once the till has read after them: a newer charge that `state` shows,
- * that {@link pays} a payment and that no payment took yet, takes it (nothing
- * to confirm here when the api already shows that charge finished);
- * otherwise, and when the read failed (`state` is `null`), the charge it was
- * held for does, unless an earlier payment already paid that charge, when it
- * is kept like any payment no known charge took.
- */
-function resolveLate(
-  memory: WalletSettled,
-  state: PosState | null,
-  batch: WalletSettled['late'],
-): void {
-  // Only the payments this read was sent for. One that arrived after the request
-  // stays held: it needs a read taken after it, not this earlier snapshot.
-  const held = batch;
-  memory.late = memory.late.filter((item) => !held.includes(item));
-  const taken = new Set<string>();
-  for (const { payment, charge } of held) {
-    // Newer charges the payment could pay: made after it was, so the receiving address was theirs.
-    // A cancelled charge takes no payment, as no cancel time tells a payment before it from one after.
-    const newerOnes =
-      state === null
-        ? []
-        : tillCharges(state).filter(
-            (row) =>
-              row.id !== charge.id &&
-              row.status !== 'cancelled' &&
-              Date.parse(row.createdAt) > Date.parse(charge.createdAt) &&
-              pays(row, payment),
-          );
-    const newer = newerOnes.find((row) => !taken.has(row.id) && !memory.paid.has(row.id));
-    if (newer === undefined && newerOnes.length > 0) {
-      // Each newer charge it could pay already took a payment: kept, and never given to the older
-      // charge, as it was made while the newer one held the receiving address.
-      keepEarly(memory, payment);
-      continue;
-    }
-    if (newer !== undefined) {
-      taken.add(newer.id);
-      // Nothing to confirm here when the api already shows that newer charge paid.
-      if (newer.status !== 'paid') {
-        markPaid(memory, newer, payment);
-      }
-      continue;
-    }
-    if (!memory.paid.has(charge.id)) {
-      markPaid(memory, charge, payment);
-      continue;
-    }
-    keepEarly(memory, payment);
-  }
-  settledChanged();
-}
-
-/**
- * A payment the wallet gave to a charge in its late minute belongs to a newer
- * charge the till did not know yet (another tab made it, and the receiving
- * address went to it) when `state` shows one that {@link pays} it too: move
- * the payment there, or drop it from the older charge when the api already
- * shows the newer one finished.
- */
-function reassignPaid(memory: WalletSettled, state: PosState): void {
-  let moved = false;
-  for (const [id, payment] of [...memory.paidBy]) {
-    const older = memory.paid.get(id);
-    /* v8 ignore next 3 -- paid and paidBy are set together */
-    if (older === undefined) {
-      continue;
-    }
-    // Not a charge another payment already paid: one payment pays one charge.
-    const newer = tillCharges(state).find(
-      (row) =>
-        row.id !== id &&
-        row.status !== 'cancelled' &&
-        !memory.paid.has(row.id) &&
-        Date.parse(row.createdAt) > Date.parse(older.createdAt) &&
-        pays(row, payment),
-    );
-    if (newer === undefined) {
-      continue;
-    }
-    memory.paid.delete(id);
-    memory.paidBy.delete(id);
-    if (newer.status !== 'paid') {
-      memory.paid.set(newer.id, {
-        ...newer,
-        status: 'paid',
-        paidAt: new Date(payment.timestamp).toISOString(),
-      });
-      memory.paidBy.set(newer.id, payment);
-    }
-    moved = true;
-  }
-  if (moved) {
-    settledChanged();
-  }
 }
 
 /**
  * A kept payment that names a charge `state` lists, other than the charge on
- * screen, pays that charge at once, however long ago it ran out (the payment
- * names it, like {@link pays}); a paid or cancelled charge takes none. The charge on screen
+ * screen, pays that charge at once, however long ago it ran out, when it
+ * carries its amount ({@link pays}); a paid or cancelled charge takes none. The charge on screen
  * takes payments only as the open charge, so none pays it while Cancel is on
  * its way.
  */
@@ -434,7 +348,7 @@ function settleNamed(memory: WalletSettled, state: PosState): void {
         ? undefined
         : state.history.find(
             (row) =>
-              row.id === payment.chargeId &&
+              pays(row, payment) &&
               row.status !== 'paid' &&
               row.status !== 'cancelled' &&
               !memory.paid.has(row.id),
@@ -455,6 +369,106 @@ function keepEarly(memory: WalletSettled, payment: TillPayment): void {
     .slice(-POS_EARLY_PAYMENTS);
 }
 
+/**
+ * Keeps `receipt`, a Lightning payment that names no charge, among the newest by payment time,
+ * tied to the open charge when it could be that charge's payment.
+ */
+function keepUnnamed(memory: WalletSettled, receipt: UnnamedReceipt): void {
+  const open = memory.open;
+  if (open !== null && !memory.paid.has(open.id) && mayPay(open, receipt)) {
+    receipt.forCharges = [open.id];
+  }
+  memory.unnamed = [...memory.unnamed, receipt]
+    .sort((a, b) => a.timestamp - b.timestamp)
+    .slice(-POS_EARLY_PAYMENTS);
+}
+
+/**
+ * Whether the till asks the api again for the open charge in `memory`: a
+ * Lightning payment that names no charge could be its payment ({@link mayPay}),
+ * made at most {@link POS_LATE_PAID_MS} before `now`, and the wallet did not pay
+ * the charge by its Spark invoice. Ends once a read shows the charge paid,
+ * cancelled or gone before its end (the arming effect drops it), and one minute
+ * after the last such payment, so one made in the last second of the charge's
+ * late minute still gets its reads.
+ */
+function asksApi(memory: WalletSettled, now: number): boolean {
+  return askingFor(memory, now) !== null;
+}
+
+/**
+ * The wallet payment id of the newest Lightning payment that names no charge
+ * and makes the till ask the api ({@link asksApi}), or `null` when none does.
+ * A newer such payment, also one of the same second, starts the asks again,
+ * also after they stopped.
+ */
+function askingFor(memory: WalletSettled, now: number): string | null {
+  const open = memory.open;
+  if (open === null || memory.paid.has(open.id)) {
+    return null;
+  }
+  // Kept by payment time, oldest first: the last that counts is the newest.
+  let newest: string | null = null;
+  for (const receipt of memory.unnamed) {
+    if (receipt.forCharges.includes(open.id) && now <= receipt.timestamp + POS_LATE_PAID_MS) {
+      newest = receipt.id;
+    }
+  }
+  return newest;
+}
+
+/**
+ * When `state` shows paid a charge a Lightning payment that names no charge
+ * was tied to (`forCharges`: the open charges it could be the payment of), the
+ * api tied that payment to the charge (it knows the charge's invoices): the
+ * charge counts as paid by this tab's wallet, with the api's payment time, so
+ * the amount page returns to the till for its confirmation as it does for a
+ * payment that names the charge. Read from the answer itself, so it also holds
+ * after a create or a Cancel made that charge no longer the open one. That
+ * payment is used up: it counts for that one charge only. No charge it was not
+ * tied to, an earlier one in History among them, ever takes it, and a charge
+ * whose confirmation was closed takes none. With `tie`, for an answer the till
+ * applied, it first ties each payment to the answer's current charge that it
+ * could be the payment of.
+ */
+function confirmAsked(memory: WalletSettled, state: PosState, tie: boolean): void {
+  // The answer's own charge (open, or paid within the last minute) is tied to each payment it could
+  // be the payment of, also when this till never had it open (another tab's charge, already paid by
+  // this read). History rows are never tied, and neither is the charge of an answer the till did not
+  // apply (`tie` false: an ask a newer read overtook).
+  const current = state.charge;
+  // A new tie can start the asks: the till is told, not left to an unrelated render.
+  let changed = false;
+  if (tie && current !== null && current.status !== 'cancelled' && current.status !== 'expired') {
+    for (const receipt of memory.unnamed) {
+      if (!receipt.forCharges.includes(current.id) && mayPay(current, receipt)) {
+        receipt.forCharges = [...receipt.forCharges, current.id];
+        changed = true;
+      }
+    }
+  }
+  for (const receipt of memory.unnamed) {
+    const row = tillCharges(state).find(
+      (candidate) =>
+        receipt.forCharges.includes(candidate.id) &&
+        candidate.status === 'paid' &&
+        // Tied while the till still had it pending: a payment made after its `paidAt` is not its.
+        mayPay(candidate, receipt) &&
+        !memory.paid.has(candidate.id) &&
+        !memory.closed.has(candidate.id),
+    );
+    if (row === undefined) {
+      continue;
+    }
+    memory.paid.set(row.id, row);
+    memory.unnamed = memory.unnamed.filter((kept) => kept !== receipt);
+    changed = true;
+  }
+  if (changed) {
+    settledChanged();
+  }
+}
+
 /** Make `charge` the open charge in `memory` and try the kept payments on it again; the rest stay kept. */
 function armOpen(memory: WalletSettled, charge: PosCharge): void {
   // A charge this tab's wallet already paid takes no further payment, even while the api still
@@ -466,7 +480,7 @@ function armOpen(memory: WalletSettled, charge: PosCharge): void {
   const early = memory.early;
   memory.early = [];
   for (const payment of early) {
-    // One this charge does not take stays kept: `pays` never lets it pay a charge made after it.
+    // One that names another charge stays kept.
     settleOpen(memory, payment);
   }
 }
@@ -483,11 +497,35 @@ function finishedIn(state: PosState, id: string): boolean {
   );
 }
 
-/** Make `charge` the open charge in `memory` again, when there was one. */
+/**
+ * Make `charge` the open charge in `memory` again, when there was one (a create or Cancel failed),
+ * and tie to it each Lightning payment that names no charge, heard while no charge was open, that
+ * it could be the payment of.
+ */
 function rearm(memory: WalletSettled, charge: PosCharge | null): void {
-  if (charge !== null) {
-    armOpen(memory, charge);
+  if (charge === null) {
+    return;
   }
+  armOpen(memory, charge);
+  for (const receipt of memory.unnamed) {
+    if (!receipt.forCharges.includes(charge.id) && mayPay(charge, receipt)) {
+      receipt.forCharges = [...receipt.forCharges, charge.id];
+    }
+  }
+  settledChanged();
+}
+
+/**
+ * Whether `found`, the current charge of a read after a create that did not go through, is a
+ * newer charge than `before`, the charge open before the create: the receiving address then went
+ * to it, so a payment of this amount is not the charge before's.
+ */
+function isNewerCharge(found: PosCharge | null, before: PosCharge | null): boolean {
+  return (
+    found !== null &&
+    (before === null ||
+      (found.id !== before.id && Date.parse(found.createdAt) > Date.parse(before.createdAt)))
+  );
 }
 
 /** How far the api's clock may run behind this one when a lost create is matched to its charge. */
@@ -528,36 +566,41 @@ function listenToWallet(): void {
   }
   walletListening = onPaymentReceived((payment) => {
     const session = useAuthStore.getState().session;
-    if (session !== null) {
-      const { chargeId } = payment.info;
-      // Without a charge it names, only a Lightning payment can be a till payment: the till's
-      // address takes the charge amount over Lightning. A Spark transfer without that name, or an
-      // on-chain deposit, of the same amount is someone else's money and pays no charge.
-      if (chargeId === undefined && payment.method !== 'lightning') {
-        return;
-      }
-      const memory = settledFor(session);
-      const till: TillPayment =
-        chargeId === undefined
-          ? {
-              amountSats: payment.amountSats,
-              feesSats: payment.feesSats,
-              timestamp: payment.timestamp,
-            }
-          : {
-              amountSats: payment.amountSats,
-              feesSats: payment.feesSats,
-              timestamp: payment.timestamp,
-              chargeId,
-            };
-      settleOpen(memory, till);
-      if (memory.early.includes(till) && (chargeId === undefined || !memory.seen.has(chargeId))) {
-        // It pays no charge this till knows, or names one no read listed: one read shows whether
-        // another tab or device opened the charge it pays. Only for a payment the wallet just
-        // reported, not a kept one tried again.
-        memory.recheck = true;
+    if (session === null) {
+      return;
+    }
+    const { chargeId } = payment.info;
+    const memory = settledFor(session);
+    if (chargeId === undefined) {
+      // A payment that names no charge pays none: its amount and time do not tie it to a charge.
+      // Only a Lightning one can be a till payment (the till's address takes the charge amount over
+      // Lightning); the api knows whether it paid one of the charge's invoices, so while it could
+      // be the open charge's the till asks the api (`asksApi`). A Spark transfer without that name,
+      // or an on-chain deposit, is someone else's money.
+      if (payment.method === 'lightning') {
+        keepUnnamed(memory, {
+          id: payment.id,
+          amountSats: payment.amountSats,
+          feesSats: payment.feesSats,
+          timestamp: payment.timestamp,
+          forCharges: [],
+        });
         settledChanged();
       }
+      return;
+    }
+    const till: TillPayment = {
+      amountSats: payment.amountSats,
+      feesSats: payment.feesSats,
+      timestamp: payment.timestamp,
+      chargeId,
+    };
+    settleOpen(memory, till);
+    if (memory.early.includes(till) && !memory.seen.has(chargeId)) {
+      // It names a charge no read listed: one read shows whether another tab or device opened the
+      // charge it pays. Only for a payment the wallet just reported, not a kept one tried again.
+      memory.recheck = true;
+      settledChanged();
     }
   });
 }
@@ -588,6 +631,8 @@ type PosTillState = {
   paidByWallet: boolean;
   /** Past charges, with a charge the wallet saw paid already shown as paid. */
   history: PosState['history'];
+  /** Payments the wallet received without a till charge, newest first, from the last read. */
+  received: PosState['received'];
   remaining: number;
   /** The currency figure stored with the open charge, otherwise `null` (the till shows the current spot). */
   chargeFigure: { code: FiatCode; amount: string } | null;
@@ -609,6 +654,8 @@ type PosTillState = {
   retryLoad: () => void;
   /** Closes the paid confirmation of charge `id` and reads the till again. */
   closePaid: (id: string) => void;
+  /** Reads the till again; a failure stays quiet while the till already shows an answer. */
+  readAgain: () => void;
 };
 
 /** Shared till state for the QR page and the amount page. */
@@ -665,24 +712,6 @@ function usePosTillState(): PosTillState {
   const quietReload = useRef(false);
   const [settledVersion, setSettledVersion] = useState(0);
   const memory = settledFor(session);
-  const lateHeld = memory.late.length > 0;
-  // The read asked for by a held late-minute payment: it settles once that read answers.
-  const lateRead = useRef<number | null>(null);
-  // Its number, drawn when the payment is held, until the load that follows claims it.
-  const latePending = useRef<number | null>(null);
-  // False after this till is gone. Its read must not spend a payment the next till claimed.
-  const mounted = useRef(true);
-  useEffect(() => {
-    mounted.current = true;
-    return () => {
-      mounted.current = false;
-    };
-  }, []);
-  useEffect(() => {
-    // A read of the session before never answers for this session's late-minute payments.
-    lateRead.current = null;
-    latePending.current = null;
-  }, [session]);
   const walletPaid = memory.paid;
   const closed = memory.closed;
 
@@ -690,22 +719,8 @@ function usePosTillState(): PosTillState {
     setShowQr(true);
   }, []);
 
-  const sessionRef = useRef(session);
-  sessionRef.current = session;
   useEffect(() => {
     const listener = (): void => {
-      const current = sessionRef.current;
-      if (current !== null) {
-        const held = settledFor(current);
-        // Draw before this callback returns. A load or a cancel that follows in
-        // this turn takes the next number, so it cannot answer this payment or
-        // be overwritten by it.
-        if (held.late.length > 0 && lateRead.current === null) {
-          const seq = startRead(reads);
-          lateRead.current = seq;
-          latePending.current = seq;
-        }
-      }
       setSettledVersion((n) => n + 1);
     };
     walletSettledListeners.add(listener);
@@ -736,63 +751,23 @@ function usePosTillState(): PosTillState {
       if (!alive) {
         return;
       }
-      // The late-minute read drew its number already. A later startRead must not take it.
-      // A payment already held when this till mounted has no number yet: this load is that read.
-      const reserved = latePending.current;
-      let seq: number;
-      if (reserved !== null) {
-        latePending.current = null;
-        seq = reserved;
-      } else if (lateRead.current === null && settledFor(session).late.length > 0) {
-        seq = startRead(reads);
-        lateRead.current = seq;
-      } else {
-        seq = startRead(reads);
-      }
-      // Taken at the request, not when the answer arrives. A payment that lands
-      // after this stays held for a later read.
-      const batch = lateRead.current === seq ? settledFor(session).late.slice() : null;
+      const seq = startRead(reads);
       try {
         const next = await fetchPosState(session);
-        // A later load may already have replaced this effect. It still must not
-        // drop this answer: a held late-minute payment is settled from it below.
-        if (alive) {
-          whenCurrent(generation, mine, () => {
-            applyRead(reads, seq, () => {
-              setTill({ state: next, session });
-              // The till answered: an earlier failed read no longer holds.
-              if (readFailed.current) {
-                readFailed.current = false;
-                setErrorState(null);
-              }
-            });
+        if (!alive) {
+          return;
+        }
+        whenCurrent(generation, mine, () => {
+          applyRead(reads, seq, () => {
+            setTill({ state: next, session });
+            // The till answered: an earlier failed read no longer holds.
+            if (readFailed.current) {
+              readFailed.current = false;
+              setErrorState(null);
+            }
           });
-        }
-        // Only this read spends the payment, from its own answer, even when a later
-        // load is already on screen. A till that has gone must not: the next one claimed it.
-        if (batch !== null && lateRead.current === seq && mounted.current) {
-          const memory = settledFor(session);
-          reassignPaid(memory, next);
-          // Clear before settling, so a payment that arrived after this request
-          // draws its own number from the wallet callback.
-          lateRead.current = null;
-          resolveLate(memory, next, batch);
-          if (memory.late.length > 0) {
-            setReload((n) => n + 1);
-          }
-        }
+        });
       } catch {
-        // This read failed: the payment goes to the charge it was held for, also when a
-        // later load already replaced this effect. A later load's own failure does not,
-        // and neither does a till that has gone.
-        if (batch !== null && lateRead.current === seq && mounted.current) {
-          lateRead.current = null;
-          const memory = settledFor(session);
-          resolveLate(memory, null, batch);
-          if (memory.late.length > 0) {
-            setReload((n) => n + 1);
-          }
-        }
         // A newer read already answered, so this failure says nothing about the till now.
         if (!alive || quiet || seq < reads.current.applied) {
           return;
@@ -882,12 +857,13 @@ function usePosTillState(): PosTillState {
       return;
     }
     const memory = settledFor(session);
+    const openBefore = memory.open?.id ?? null;
     /* v8 ignore next -- a till this session read always has an answer */
     if (state !== null) {
       for (const row of tillCharges(state)) {
         memory.seen.add(row.id);
       }
-      reassignPaid(memory, state);
+      confirmAsked(memory, state, true);
     }
     if (charge !== null) {
       // A payment the wallet reported while this charge was still being read counts for it. Not
@@ -904,8 +880,12 @@ function usePosTillState(): PosTillState {
     ) {
       // Gone before its end (cancelled elsewhere, or paid per the api), or read as paid or
       // cancelled after it: no further payment belongs to it. One that only ran out stays, so a
-      // payment just after its end still counts.
+      // payment just after its end still counts, and the till still asks the api about it.
       memory.open = null;
+    }
+    if ((memory.open?.id ?? null) !== openBefore) {
+      // Another open charge (or none) can start or end the asks: the till is told.
+      settledChanged();
     }
   }, [busy, charge, session, state, tillSession]);
 
@@ -923,22 +903,8 @@ function usePosTillState(): PosTillState {
   }, [session]);
 
   useEffect(() => {
-    // A held late-minute payment asks the api once (not on a timer) which charge it paid.
-    // The wallet callback drew the number. Ask for its load while that number is still
-    // waiting. A load already scheduled in this commit claims it itself. A payment that
-    // was already held when this till mounted is claimed by that mount's own load.
-    if (!lateHeld || session === null || settledFor(session).late.length === 0) {
-      return;
-    }
-    if (latePending.current !== null) {
-      quietReload.current = state !== null;
-      setReload((n) => n + 1);
-    }
-  }, [lateHeld, session, state]);
-
-  useEffect(() => {
-    // Paid at once on its amount and time alone: one read (not on a timer) shows whether another
-    // device cancelled that charge and made a newer one of that amount, which then takes it.
+    // A payment names a charge no read listed: one read (not on a timer) shows whether another tab
+    // or device opened the charge it pays. Quiet once the till has an answer.
     const settled = settledFor(session);
     if (session !== null && settled.recheck) {
       settled.recheck = false;
@@ -947,25 +913,92 @@ function usePosTillState(): PosTillState {
     }
   }, [session, settledVersion, state]);
 
+  // A Lightning payment that names no charge could be the open charge's: only the api, which
+  // knows the invoices it handed out for the charge, can say so. Until a read shows the charge
+  // paid (or cancelled, or gone before its end) the till asks it, at once and then
+  // {@link PAY_POLL_MS} after each ask settled, at most until {@link POS_LATE_PAID_MS} after that
+  // payment: one ask at a time for a payment, as every pay poll does. Each ask is a read of its own, ordered with
+  // the till's other reads by `applyRead`: none of them cuts another off, and a failed ask is quiet.
+  // The payment that makes the till ask: a newer one starts the asks again, at once. Its first
+  // ask does not wait for an ask of the payment before that may still be on its way; both answers
+  // are ordered by `applyRead`, and the newer read wins.
+  const askingSince = session === null ? null : askingFor(memory, Date.now());
   useEffect(() => {
-    // A confirmation a newer open charge hid is over: it does not come back once that charge ends.
-    // Not while a late payment is still held. The read taken after it may pay that open charge,
-    // and then both confirmations are still due.
-    if (lateHeld) {
+    if (askingSince === null || session === null) {
       return;
     }
+    let alive = true;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const ask = async (): Promise<void> => {
+      const mine = generation.current;
+      const seq = startRead(reads);
+      try {
+        const next = await fetchPosState(session);
+        // Applied also after a newer payment started the asks again: `applyRead` keeps the newest
+        // answer. Not for another session.
+        if (useAuthStore.getState().session === session) {
+          // A paid charge stays paid: the api's paid status in this answer counts even when a read
+          // started later already answered, which `applyRead` then keeps on screen.
+          let applied = false;
+          whenCurrent(generation, mine, () => {
+            applyRead(reads, seq, () => {
+              applied = true;
+              setTill({ state: next, session });
+              if (readFailed.current) {
+                readFailed.current = false;
+                setErrorState(null);
+              }
+            });
+          });
+          if (!applied) {
+            // A newer read overtook this answer: it counts only the payments already tied to a
+            // charge it shows paid, and ties nothing. An applied answer is tied and counted by the
+            // arming effect.
+            confirmAsked(settledFor(session), next, false);
+          }
+        }
+      } catch {
+        // Quiet: the next ask follows.
+      }
+      if (alive && asksApi(settledFor(session), Date.now())) {
+        timer = setTimeout(() => {
+          if (alive && asksApi(settledFor(session), Date.now())) {
+            void ask();
+          }
+        }, PAY_POLL_MS);
+      }
+    };
+    void ask();
+    return () => {
+      alive = false;
+      clearTimeout(timer);
+    };
+  }, [askingSince, session]);
+
+  useEffect(() => {
+    // A confirmation a newer open charge hid is over: it does not come back once that charge ends.
     for (const id of hiddenPaidIds.split(' ')) {
       if (id !== '') {
         settledFor(session).closed.add(id);
       }
     }
-  }, [hiddenPaidIds, lateHeld, session]);
+  }, [hiddenPaidIds, session]);
 
+  // Charges the unnamed pin already reported: each read returns a new charge object, and the pin
+  // reports each charge once, as the wallet tells each payment once.
+  const unnamedPinned = useRef(new Set<string>());
   useEffect(() => {
-    if (charge !== null && visualPin() === POS_RECEIVED_VISUAL_PIN) {
-      // Through the wallet listener, as if this tab's wallet had received the charge amount.
+    const pin = visualPin();
+    if (
+      charge !== null &&
+      pin === POS_UNNAMED_VISUAL_PIN &&
+      !unnamedPinned.current.has(charge.id)
+    ) {
+      unnamedPinned.current.add(charge.id);
+      // Through the wallet listener, as if this tab's wallet had received the charge amount over
+      // Lightning from a payment that names no charge (the sticker QR, a grant, another member).
       announceReceivedForE2e({
-        id: `pos-received-${charge.id}`,
+        id: `pos-received-unnamed-${charge.id}`,
         direction: 'received',
         amountSats: charge.amountSats,
         feesSats: 0,
@@ -974,6 +1007,21 @@ function usePosTillState(): PosTillState {
         method: 'lightning',
         senderComment: null,
         info: {},
+      });
+    }
+    if (charge !== null && pin === POS_RECEIVED_VISUAL_PIN) {
+      // Through the wallet listener, as if this tab's wallet had received the charge's Spark
+      // invoice, which names the charge.
+      announceReceivedForE2e({
+        id: `pos-received-${charge.id}`,
+        direction: 'received',
+        amountSats: charge.amountSats,
+        feesSats: 0,
+        timestamp: Date.now(),
+        status: 'completed',
+        method: 'spark',
+        senderComment: null,
+        info: { purpose: 'shop', chargeId: charge.id },
       });
     }
   }, [charge, session]);
@@ -1103,10 +1151,9 @@ function usePosTillState(): PosTillState {
     setBusy(true);
     const mine = ++generation.current;
     showError(null);
-    // While the create is on its way the charge before takes no payment at once: one that pays it
-    // is held until a read after the create shows whether the new charge took it; any other is kept
-    // and tried on the new charge once it is read (it pays it if `pays`). A failed create gives the
-    // late minute back and tries the kept payments on the charge before.
+    // While the create is on its way no charge is open: a payment that names the charge before still
+    // pays it; any other is kept and tried on the new charge once it is read (it pays it if `pays`).
+    // A failed create makes the charge before open again and tries the kept payments on it.
     const creating = settledFor(session);
     const before = creating.open;
     creating.open = null;
@@ -1125,6 +1172,7 @@ function usePosTillState(): PosTillState {
       let known: Set<string> | null;
       // The history of that read: the new charge goes on top of it, not of an older answer.
       let freshHistory: PosCharge[] | null = null;
+      let freshReceived: PosState['received'] | null = null;
       const seqBefore = startRead(reads);
       try {
         const fresh = await fetchPosState(session);
@@ -1145,6 +1193,7 @@ function usePosTillState(): PosTillState {
         }
         known = new Set(tillCharges(fresh).map((row) => row.id));
         freshHistory = fresh.history;
+        freshReceived = fresh.received;
       } catch {
         known = null;
       }
@@ -1153,7 +1202,12 @@ function usePosTillState(): PosTillState {
         whenCurrent(generation, mine, () => {
           /* v8 ignore next -- the form is only shown once state.history is an array */
           const history = freshHistory ?? state?.history ?? [];
-          setTill({ state: { charge: created, history: [created, ...history] }, session });
+          /* v8 ignore next -- the form is only shown once state.received is an array */
+          const received = freshReceived ?? state?.received ?? [];
+          setTill({
+            state: { charge: created, history: [created, ...history], received },
+            session,
+          });
           setAmount('');
         });
       } catch (err) {
@@ -1163,8 +1217,9 @@ function usePosTillState(): PosTillState {
           err instanceof WalletRequiredError ||
           err instanceof CannotReceiveError ||
           POS_CREATE_REFUSALS.has(message);
-        // Whether the read after a lost answer shows a newer charge (open or paid): the receiving
-        // address then went to it, so a payment of this amount is not the charge before's.
+        // Whether the read after a lost answer, or after an already-open refusal, shows a newer charge
+        // (open or paid): the receiving address then went to it, so a payment of this amount is not
+        // the charge before's.
         let newer = false;
         if (!refused) {
           // The answer may be lost although the charge was made (and even paid): read the till once.
@@ -1175,11 +1230,7 @@ function usePosTillState(): PosTillState {
             // (the api's clock may lag) and after the one before. Any other charge the read finds is
             // set as the till's answer, and the error shows.
             const found = next.charge;
-            newer =
-              found !== null &&
-              (before === null ||
-                (found.id !== before.id &&
-                  Date.parse(found.createdAt) > Date.parse(before.createdAt)));
+            newer = isNewerCharge(found, before);
             const made =
               found !== null &&
               known !== null &&
@@ -1222,6 +1273,7 @@ function usePosTillState(): PosTillState {
           try {
             const seq = startRead(reads);
             const next = await fetchPosState(session);
+            newer = isNewerCharge(next.charge, before);
             whenCurrent(generation, mine, () => {
               applyRead(reads, seq, () => {
                 setTill({ state: next, session });
@@ -1314,7 +1366,7 @@ function usePosTillState(): PosTillState {
       }
       // The cancel went through. Drop the charge now. Reads already in flight
       // stay below the floor, so they cannot put that charge back. The floor is
-      // not an answer: the late-minute read this cancel overtook still settles.
+      // not an answer.
       wentThrough = true;
       whenCurrent(generation, mine, () => {
         setTill((prev) =>
@@ -1378,6 +1430,7 @@ function usePosTillState(): PosTillState {
     paid,
     paidByWallet: paid !== null && walletPaid.has(paid.id),
     history,
+    received: state?.received ?? [],
     remaining,
     chargeFigure,
     paidFigure,
@@ -1406,6 +1459,10 @@ function usePosTillState(): PosTillState {
       quietReload.current = state !== null;
       setReload((n) => n + 1);
     },
+    readAgain: () => {
+      quietReload.current = state !== null;
+      setReload((n) => n + 1);
+    },
   };
 }
 
@@ -1413,29 +1470,38 @@ function usePosTillState(): PosTillState {
  * Signed-in till QR. With no charge, **Set an amount** opens `/pos/amount`.
  * With a charge, this page shows the countdown, bitcoin, the currency figure
  * stored with the charge when it was typed in a currency, and Cancel.
- * It never asks the api on a timer: the moment this tab's wallet reports a
- * payment that pays the charge ({@link onPaymentReceived}: its amount, or
- * that amount after the fee, made from the second of its creation to its
- * end; one made in the minute after its end is held until one read of the
- * api shows which charge it paid), the charge is paid, and
- * {@link PosPaidOverlay} fills the screen with **Paid**, bitcoin, and the
- * currency figure stored with the charge when there is one.
- * The till reads the api only on open, right before each create, on **Try again**
+ * The moment this tab's wallet reports a payment that names the open charge
+ * (its Spark invoice, memo `pos:<id>`) with its amount, the charge is paid,
+ * and {@link PosPaidOverlay} fills the screen with **Paid**, bitcoin, and the
+ * currency figure stored with the charge when there is one. A payment that
+ * names no charge never pays one, whatever its amount and time: the till does
+ * not know the payment hashes of the BOLT11 invoices the api handed out for
+ * the charge, so a Lightning payment of the charge is confirmed when a read of
+ * the api returns the charge `paid`.
+ * The till reads the api on open, right before each create, on **Try again**
  * after a failed load,
- * when the session or the language changes, when a charge runs out, when the tab becomes visible again, after
+ * when the session or the language changes, when a charge runs out, when the tab becomes visible again,
+ * after every read of this tab's wallet (a received payment, each wallet sync, and the five-minute
+ * wallet refresh; such a read fails quietly once the till shows an answer), after
  * Cancel, once after a create or cancel whose answer was lost, once after a
- * create the api refuses because a payment is already open, once when a
- * payment pays the open charge only in its late minute, once after a
- * payment that names no charge pays the open charge or no charge it knows,
- * or names a charge no read listed (whether another device's charge takes
- * it), and when the
- * confirmation is closed. A paid charge
+ * create the api refuses because a payment is already open, once after a
+ * payment that names a charge no read listed, and when the
+ * confirmation is closed. While a Lightning payment that names no charge could
+ * be the open charge's (its amount, made from the second the charge was
+ * created to one minute after its end), it asks the api at once and then
+ * `PAY_POLL_MS` after each ask settled, one ask at a time for a payment, until a read shows
+ * the charge paid, cancelled or gone before its end,
+ * and at most until one minute after that payment (a newer such payment
+ * starts the asks again at once). Such a payment is tied to that charge; once
+ * any read shows that charge paid, also after a create or Cancel, it counts as
+ * paid by this tab's wallet, and the payment counts for no other charge. A paid charge
  * the api returns also opens the confirmation. A lost create the api already
  * shows paid is remembered for the session and still confirmed here when a
  * later read fails or no longer returns it; it is not a payment this tab's
  * wallet saw. Under the till, once it has
  * loaded, {@link PosHistory} lists the past charges, a charge the wallet saw
- * paid already as paid. An
+ * paid already as paid, together with the payments the api lists as received
+ * without a charge. An
  * account whose wallet is not verified sees **Set up your wallet first.**
  * (to `/wallet`), or the inline setup note once the background wallet setup
  * gave up; while that setup is due or gave up, the address and its QR stay
@@ -1460,6 +1526,20 @@ export function PosTill(): ReactElement {
   // for, so a confirmation closed before the first read is still recorded.
   const session = useAuthStore((state) => state.session);
   const paidFor = till.stateSession ?? session;
+  // A payment that reached the wallet without a charge shows in History once the api lists it:
+  // read the till again on every wallet read, as the /wallet payment list does.
+  const syncCount = useWalletStore((state) => state.syncCount);
+  const readSync = useRef(syncCount);
+  // The latest till's read; only a new wallet read asks for it, not every render.
+  const readAgain = useRef(till.readAgain);
+  readAgain.current = till.readAgain;
+  useEffect(() => {
+    if (readSync.current === syncCount) {
+      return;
+    }
+    readSync.current = syncCount;
+    readAgain.current();
+  }, [syncCount]);
   useEffect(() => {
     if (paidId !== null && paidFor !== null && !paidSeen.has(paidId)) {
       paidSeen.add(paidId);
@@ -1552,7 +1632,11 @@ export function PosTill(): ReactElement {
         </p>
       ) : null}
       {till.state !== null ? (
-        <PosHistory history={till.history} openChargeId={till.charge?.id ?? null} />
+        <PosHistory
+          history={till.history}
+          received={till.received}
+          openChargeId={till.charge?.id ?? null}
+        />
       ) : null}
     </Card>
   );

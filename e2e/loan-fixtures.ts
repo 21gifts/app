@@ -189,6 +189,14 @@ export const loanCollecting: MyLoan = {
   next: null,
 };
 
+/** A manually closed loan that never reached its funding goal. */
+export const loanClosedUnderfunded: MyLoan = {
+  ...loanCollecting,
+  messageId: 'loan-closed-underfunded',
+  text: 'Closed after enough was collected for the most important tools.',
+  closedAt: '2026-10-03T10:00:00.000Z',
+};
+
 /** A manually closed, partially repaid BTC loan. */
 export const loanClosedPartial: MyLoan = {
   ...loanA,

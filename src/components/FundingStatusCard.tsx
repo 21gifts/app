@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { type ReactElement } from 'react';
+import { FundingWithdrawControl } from '@/components/FundingWithdrawControl';
 import { useTranslations } from '@/components/LocaleProvider';
 import { ButtonLink } from '@/components/ui';
 import { formatForumTimeFromMs } from '@/lib/forum-time';
@@ -16,7 +17,10 @@ import { useAuthStore } from '@/stores/auth-store';
  * (missing or `null` is treated as `none`): for `none`/`rejected` the
  * daily-gift sentence, About link, and Apply link to `/grants/apply`
  * (applications are open to every verified member). Then open application,
- * one-day trial, or admitted with the participation sentence.
+ * one-day trial, or admitted with the participation sentence. Under those
+ * three status texts {@link FundingWithdrawControl} offers the quiet way out
+ * (**Withdraw my application** or **Leave the grant**); `none` and `rejected`
+ * do not show it.
  *
  * @returns The grant section, or `null` without a session or account.
  */
@@ -54,9 +58,19 @@ export function FundingStatusCard(): ReactElement | null {
 
   let body: ReactElement;
   if (funding.status === 'pending') {
-    body = <p className="text-center text-sm text-app-muted">{t('funding.pending')}</p>;
+    body = (
+      <>
+        <p className="text-center text-sm text-app-muted">{t('funding.pending')}</p>
+        <FundingWithdrawControl status="pending" />
+      </>
+    );
   } else if (funding.status === 'trial') {
-    body = <p className="text-center text-sm text-app-muted">{t('funding.trial')}</p>;
+    body = (
+      <>
+        <p className="text-center text-sm text-app-muted">{t('funding.trial')}</p>
+        <FundingWithdrawControl status="trial" />
+      </>
+    );
   } else if (funding.status === 'admitted') {
     const admittedAt = funding.admittedAt;
     const reviewerName = (funding.reviewedByName ?? '').trim();
@@ -75,6 +89,7 @@ export function FundingStatusCard(): ReactElement | null {
                   date: formatForumTimeFromMs(admittedAt, locale),
                 })}
         </p>
+        <FundingWithdrawControl status="admitted" />
       </>
     );
   } else {

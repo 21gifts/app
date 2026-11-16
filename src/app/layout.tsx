@@ -5,6 +5,7 @@ import type { ReactElement, ReactNode } from 'react';
 import { Suspense } from 'react';
 import { AppHeightSync } from '@/components/AppHeightSync';
 import { DiagnosticsListener } from '@/components/DiagnosticsListener';
+import { FondDepositSync } from '@/components/FondDepositSync';
 import { FondPayoutSync } from '@/components/FondPayoutSync';
 import { InteractionLog } from '@/components/InteractionLog';
 import { ScrollSurfaceGuard } from '@/components/ScrollSurfaceGuard';
@@ -173,6 +174,7 @@ export default async function RootLayout({
                 <PushOpenListener />
                 <WalletSync />
                 <FondPayoutSync />
+                <FondDepositSync />
                 <InteractionLog />
                 <Suspense fallback={null}>
                   <RememberWalletReturn />

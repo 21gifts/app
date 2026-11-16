@@ -25,6 +25,8 @@ import {
   ledgerWith,
   loanA,
   loanB,
+  loanClosedUnderfunded,
+  loanCollecting,
   productionPhpLoans,
   loanWith,
   myLoans,
@@ -939,6 +941,52 @@ const WALLET_STATS_DEFAULT = {
       totalBtc: '0.00089096',
       walletCount: 61,
       fundedWalletCount: 32,
+    },
+  ],
+};
+
+/** Wallet series for `/stats/wallet`. The day before release is dropped by the chart. */
+const WALLET_USAGE_SERIES = {
+  walletCount: 80,
+  fundedWalletCount: 48,
+  totalSats: 500000,
+  totalBtc: '0.00500000',
+  asOf: '2026-11-12T08:00:00.000Z',
+  balanceOverTime: [
+    {
+      day: '2026-11-08',
+      totalSats: 1000,
+      totalBtc: '0.00001000',
+      walletCount: 10,
+      fundedWalletCount: 4,
+    },
+    {
+      day: '2026-11-09',
+      totalSats: 200000,
+      totalBtc: '0.00200000',
+      walletCount: 40,
+      fundedWalletCount: 20,
+    },
+    {
+      day: '2026-11-10',
+      totalSats: 300000,
+      totalBtc: '0.00300000',
+      walletCount: 55,
+      fundedWalletCount: 30,
+    },
+    {
+      day: '2026-11-11',
+      totalSats: 400000,
+      totalBtc: '0.00400000',
+      walletCount: 70,
+      fundedWalletCount: 40,
+    },
+    {
+      day: '2026-11-12',
+      totalSats: 500000,
+      totalBtc: '0.00500000',
+      walletCount: 80,
+      fundedWalletCount: 48,
     },
   ],
 };
@@ -3921,6 +3969,230 @@ test.describe('screen baselines', () => {
     await shotScreen(page, 'state-wallet-loans-open');
   });
 
+  test('state /wallet loans-collecting', async ({ page }) => {
+    await seedLoanMember(page);
+    await seedLoanData(page, [loanCollecting], {});
+    await page.goto('/wallet?visual=balance-ready');
+    const card = page.getByRole('region', { name: 'Your loan' });
+    await expect(card).toContainText('Not fully funded yet.');
+    await expect(card.getByRole('link', { name: 'Pay early or end collecting' })).toHaveAttribute(
+      'href',
+      '/loans/repay',
+    );
+    await shotScreen(page, 'state-wallet-loans-collecting');
+  });
+
+  test('state /wallet loans-collecting-open', async ({ page }) => {
+    await seedLoanMember(page);
+    await seedLoanData(page, [loanCollecting], {});
+    await page.goto('/wallet?visual=balance-ready');
+    await page.getByRole('button', { name: 'Show loan' }).click();
+    await expect(page.getByRole('link', { name: loanCollecting.text })).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Pay early or end collecting' })).toBeVisible();
+    await shotScreen(page, 'state-wallet-loans-collecting-open');
+  });
+
+  test('state /wallet loans-collecting-sunday', async ({ page }) => {
+    await seedLoanMember(page);
+    await seedLoanData(page, [loanCollecting], {}, true);
+    await page.goto('/wallet?visual=balance-ready');
+    await expect(page.getByText('No repayments on Sundays')).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Pay early or end collecting' })).toHaveCount(0);
+    await shotScreen(page, 'state-wallet-loans-collecting-sunday');
+  });
+
+  test('state /wallet loans-collecting-sunday-open', async ({ page }) => {
+    await seedLoanMember(page);
+    await seedLoanData(page, [loanCollecting], {}, true);
+    await page.goto('/wallet?visual=balance-ready');
+    await page.getByRole('button', { name: 'Show loan' }).click();
+    await expect(page.getByRole('link', { name: loanCollecting.text })).toBeVisible();
+    await expect(page.getByText('No repayments on Sundays')).toBeVisible();
+    await shotScreen(page, 'state-wallet-loans-collecting-sunday-open');
+  });
+
+  test('state /wallet loans-closed-underfunded', async ({ page }) => {
+    await seedLoanMember(page);
+    await seedLoanData(page, [loanClosedUnderfunded], {});
+    await page.goto('/wallet?visual=balance-ready');
+    const card = page.getByRole('region', { name: 'Your loan' });
+    await expect(card.getByText('Not fully funded yet.')).toBeVisible();
+    await expect(card.getByRole('link', { name: 'Repay your loan' })).toHaveAttribute(
+      'href',
+      '/loans/repay',
+    );
+    await shotScreen(page, 'state-wallet-loans-closed-underfunded');
+  });
+
+  test('state /wallet loans-closed-underfunded-open', async ({ page }) => {
+    await seedLoanMember(page);
+    await seedLoanData(page, [loanClosedUnderfunded], {});
+    await page.goto('/wallet?visual=balance-ready');
+    await expect(page.getByText('Not fully funded yet.')).toBeVisible();
+    await page.getByRole('button', { name: 'Show loan' }).click();
+    await expect(page.getByRole('link', { name: loanClosedUnderfunded.text })).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Repay your loan' })).toBeVisible();
+    await shotScreen(page, 'state-wallet-loans-closed-underfunded-open');
+  });
+
+  test('state /wallet loans-closed-underfunded-sunday', async ({ page }) => {
+    await seedLoanMember(page);
+    await seedLoanData(page, [loanClosedUnderfunded], {}, true);
+    await page.goto('/wallet?visual=balance-ready');
+    const card = page.getByRole('region', { name: 'Your loan' });
+    await expect(card.getByText('Not fully funded yet.')).toBeVisible();
+    await expect(card.getByText('No repayments on Sundays')).toBeVisible();
+    await expect(card.getByRole('link', { name: 'Repay your loan' })).toHaveCount(0);
+    await shotScreen(page, 'state-wallet-loans-closed-underfunded-sunday');
+  });
+
+  test('state /wallet loans-closed-underfunded-sunday-open', async ({ page }) => {
+    await seedLoanMember(page);
+    await seedLoanData(page, [loanClosedUnderfunded], {}, true);
+    await page.goto('/wallet?visual=balance-ready');
+    await expect(page.getByText('Not fully funded yet.')).toBeVisible();
+    await page.getByRole('button', { name: 'Show loan' }).click();
+    await expect(page.getByRole('link', { name: loanClosedUnderfunded.text })).toBeVisible();
+    await expect(page.getByText('No repayments on Sundays')).toBeVisible();
+    await shotScreen(page, 'state-wallet-loans-closed-underfunded-sunday-open');
+  });
+
+  test('state /wallet loans-due-no-rate', async ({ page }) => {
+    const noRateLoan = loanWith(loanB, {
+      totalSats: null,
+      maxSats: null,
+      due: {
+        payableSats: null,
+        payablePeople: 1,
+        payableAmount: '30.00',
+      },
+    });
+    await seedLoanMember(page);
+    await seedLoanData(page, [noRateLoan], {});
+    await page.goto('/wallet?visual=balance-ready');
+    await expect(page.getByText('₱30.00', { exact: true })).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Repayment details' })).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Send' })).toHaveCount(0);
+    await shotScreen(page, 'state-wallet-loans-due-no-rate');
+  });
+
+  test('state /wallet loans-due-no-rate-open', async ({ page }) => {
+    const noRateLoan = loanWith(loanB, {
+      totalSats: null,
+      maxSats: null,
+      due: {
+        payableSats: null,
+        payablePeople: 1,
+        payableAmount: '30.00',
+      },
+    });
+    await seedLoanMember(page);
+    await seedLoanData(page, [noRateLoan], {});
+    await page.goto('/wallet?visual=balance-ready');
+    await page.getByRole('button', { name: 'Show loan' }).click();
+    await expect(page.getByRole('link', { name: noRateLoan.text })).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Repayment details' })).toBeVisible();
+    await shotScreen(page, 'state-wallet-loans-due-no-rate-open');
+  });
+
+  test('state /wallet loans-waiting-no-rate', async ({ page }) => {
+    const noRateLoan = loanWith(loanB, {
+      totalSats: null,
+      maxSats: null,
+      due: {
+        payableSats: 0,
+        payablePeople: 0,
+        waitingSats: null,
+        waitingPeople: 1,
+        waitingAmount: '12.00',
+        payableAmount: null,
+      },
+      next: null,
+    });
+    await seedLoanMember(page);
+    await seedLoanData(page, [noRateLoan], {});
+    await page.goto('/wallet?visual=balance-ready');
+    const card = page.getByRole('region', { name: 'Your loan' });
+    await expect(card.getByText('Nothing to send now')).toBeVisible();
+    await expect(
+      card.getByText('₱12.00 is waiting for a lender to set up their wallet', { exact: true }),
+    ).toBeVisible();
+    await expect(card.getByRole('link', { name: 'Send' })).toHaveCount(0);
+    await shotScreen(page, 'state-wallet-loans-waiting-no-rate');
+  });
+
+  test('state /wallet loans-waiting-no-rate-open', async ({ page }) => {
+    const noRateLoan = loanWith(loanB, {
+      totalSats: null,
+      maxSats: null,
+      due: {
+        payableSats: 0,
+        payablePeople: 0,
+        waitingSats: null,
+        waitingPeople: 1,
+        waitingAmount: '12.00',
+        payableAmount: null,
+      },
+      next: null,
+    });
+    await seedLoanMember(page);
+    await seedLoanData(page, [noRateLoan], {});
+    await page.goto('/wallet?visual=balance-ready');
+    await page.getByRole('button', { name: 'Show loan' }).click();
+    await expect(page.getByRole('link', { name: noRateLoan.text })).toBeVisible();
+    await expect(
+      page.getByText('₱12.00 is waiting for a lender to set up their wallet', { exact: true }),
+    ).toBeVisible();
+    await shotScreen(page, 'state-wallet-loans-waiting-no-rate-open');
+  });
+
+  test('state /wallet loans-next-no-rate', async ({ page }) => {
+    const noRateLoan = loanWith(loanB, {
+      totalSats: null,
+      maxSats: null,
+      due: {
+        payableSats: 0,
+        payablePeople: 0,
+        waitingSats: 0,
+        waitingPeople: 0,
+        payableAmount: null,
+        waitingAmount: null,
+      },
+      next: { dueOn: '2026-01-12', sats: null, amount: '30.00' },
+    });
+    await seedLoanMember(page);
+    await seedLoanData(page, [noRateLoan], {});
+    await page.goto('/wallet?visual=balance-ready');
+    const card = page.getByRole('region', { name: 'Your loan' });
+    await expect(card.getByText('Nothing due today')).toBeVisible();
+    await expect(card.getByText('Next: Monday, January 12, ₱30.00', { exact: true })).toBeVisible();
+    await expect(card.getByRole('link', { name: 'Send' })).toHaveCount(0);
+    await shotScreen(page, 'state-wallet-loans-next-no-rate');
+  });
+
+  test('state /wallet loans-next-no-rate-open', async ({ page }) => {
+    const noRateLoan = loanWith(loanB, {
+      totalSats: null,
+      maxSats: null,
+      due: {
+        payableSats: 0,
+        payablePeople: 0,
+        waitingSats: 0,
+        waitingPeople: 0,
+        payableAmount: null,
+        waitingAmount: null,
+      },
+      next: { dueOn: '2026-01-12', sats: null, amount: '30.00' },
+    });
+    await seedLoanMember(page);
+    await seedLoanData(page, [noRateLoan], {});
+    await page.goto('/wallet?visual=balance-ready');
+    await page.getByRole('button', { name: 'Show loan' }).click();
+    await expect(page.getByRole('link', { name: noRateLoan.text })).toBeVisible();
+    await expect(page.getByText('Next: Monday, January 12, ₱30.00', { exact: true })).toBeVisible();
+    await shotScreen(page, 'state-wallet-loans-next-no-rate-open');
+  });
+
   test('state /wallet loans-multi', async ({ page }) => {
     await seedLoanMember(page);
     await seedLoanData(page, productionPhpLoans, {});
@@ -4968,6 +5240,106 @@ test.describe('screen baselines', () => {
       '/members/acc_ada',
     );
     await shotScreen(page, 'state-wallet-payment-heart-open');
+  });
+
+  test('state-wallet-payment-received-member-unknown', async ({ page }) => {
+    await stubWalletSetupAccount(page, { sparkWalletVerified: true });
+    await fulfillRateDay(page);
+    await page.goto(
+      '/wallet/payment?id=ab12ce00-1545-4000-8000-000000000014&visual=received-member-unknown',
+    );
+    await expect(page.getByText('Wallet transfer')).toBeVisible();
+    await expect(page.getByText('alice@21.gifts')).toHaveCount(0);
+    await expect(page.getByText('From', { exact: true })).toHaveCount(0);
+    await shotScreen(page, 'state-wallet-payment-received-member-unknown');
+  });
+
+  test('state-wallet-payment-received-member-unknown-open', async ({ page }) => {
+    await stubWalletSetupAccount(page, { sparkWalletVerified: true });
+    await fulfillRateDay(page);
+    await page.goto(
+      '/wallet/payment?id=ab12ce00-1545-4000-8000-000000000014&visual=received-member-unknown',
+    );
+    await page.getByRole('button', { name: 'Details' }).click();
+    await expect(page.getByText('Payment request')).toBeVisible();
+    await expect(page.getByText(/^spark1/)).toBeVisible();
+    await expect(page.getByText('Payment ID')).toBeVisible();
+    await shotScreen(page, 'state-wallet-payment-received-member-unknown-open');
+  });
+
+  test('state-wallet-payment-sent-member-unknown', async ({ page }) => {
+    await stubWalletSetupAccount(page, { sparkWalletVerified: true });
+    await fulfillRateDay(page);
+    await page.goto(
+      '/wallet/payment?id=ab12ce00-1545-4000-8000-000000000015&visual=sent-member-unknown',
+    );
+    await expect(page.getByText('Wallet transfer')).toBeVisible();
+    await expect(page.getByText('bob@21.gifts')).toHaveCount(0);
+    await expect(page.getByText('To', { exact: true })).toHaveCount(0);
+    await shotScreen(page, 'state-wallet-payment-sent-member-unknown');
+  });
+
+  test('state-wallet-payment-sent-member-unknown-open', async ({ page }) => {
+    await stubWalletSetupAccount(page, { sparkWalletVerified: true });
+    await fulfillRateDay(page);
+    await page.goto(
+      '/wallet/payment?id=ab12ce00-1545-4000-8000-000000000015&visual=sent-member-unknown',
+    );
+    await page.getByRole('button', { name: 'Details' }).click();
+    await expect(page.getByText('Payment request')).toBeVisible();
+    await expect(page.getByText(/^spark1/)).toBeVisible();
+    await expect(page.getByText('Payment ID')).toBeVisible();
+    await shotScreen(page, 'state-wallet-payment-sent-member-unknown-open');
+  });
+
+  test('state-wallet-payment-received-from-member', async ({ page }) => {
+    await stubWalletSetupAccount(page, { sparkWalletVerified: true });
+    await fulfillRateDay(page);
+    await page.goto(
+      '/wallet/payment?id=ab12ce00-1545-4000-8000-000000000014&visual=received-from-member',
+    );
+    await expect(page.getByRole('link', { name: 'alice@21.gifts' })).toHaveAttribute(
+      'href',
+      '/members/acc_e2e',
+    );
+    await shotScreen(page, 'state-wallet-payment-received-from-member');
+  });
+
+  test('state-wallet-payment-received-from-member-open', async ({ page }) => {
+    await stubWalletSetupAccount(page, { sparkWalletVerified: true });
+    await fulfillRateDay(page);
+    await page.goto(
+      '/wallet/payment?id=ab12ce00-1545-4000-8000-000000000014&visual=received-from-member',
+    );
+    await page.getByRole('button', { name: 'Details' }).click();
+    await expect(page.getByText('Payment request')).toHaveCount(0);
+    await expect(page.getByText('Payment ID')).toBeVisible();
+    await shotScreen(page, 'state-wallet-payment-received-from-member-open');
+  });
+
+  test('state-wallet-payment-sent-to-member', async ({ page }) => {
+    await stubWalletSetupAccount(page, { sparkWalletVerified: true });
+    await fulfillRateDay(page);
+    await page.goto(
+      '/wallet/payment?id=ab12ce00-1545-4000-8000-000000000015&visual=sent-to-member',
+    );
+    await expect(page.getByRole('link', { name: 'bob@21.gifts' })).toHaveAttribute(
+      'href',
+      '/members/acc_bob',
+    );
+    await shotScreen(page, 'state-wallet-payment-sent-to-member');
+  });
+
+  test('state-wallet-payment-sent-to-member-open', async ({ page }) => {
+    await stubWalletSetupAccount(page, { sparkWalletVerified: true });
+    await fulfillRateDay(page);
+    await page.goto(
+      '/wallet/payment?id=ab12ce00-1545-4000-8000-000000000015&visual=sent-to-member',
+    );
+    await page.getByRole('button', { name: 'Details' }).click();
+    await expect(page.getByText('Payment request')).toHaveCount(0);
+    await expect(page.getByText('Payment ID')).toBeVisible();
+    await shotScreen(page, 'state-wallet-payment-sent-to-member-open');
   });
 
   test('state-wallet-payment-heart-pending', async ({ page }) => {
@@ -6891,6 +7263,32 @@ test.describe('loans repay screens', () => {
       row.dayIndex === 4 ? { ...row, status: 'paid' as const, dueSats: null } : row,
     ),
   });
+  const payMoreNoRateLoan = loanWith(repaidLoanB, {
+    totalSats: null,
+    maxSats: null,
+    maxAmount: null,
+    due: {
+      payableSats: null,
+      payablePeople: 1,
+      waitingSats: null,
+      waitingPeople: 1,
+      waitingShares: 1,
+      payableAmount: '18.00',
+      waitingAmount: '12.00',
+    },
+    next: { dueOn: '2026-10-08', sats: null, amount: '30.00' },
+  });
+  const payMoreNoRateLedger = ledgerWith(ledgerB, {
+    givers: ledgerB.givers.map((giver) => ({
+      ...giver,
+      canReceive: giver.accountId !== 'acc_farid',
+    })),
+    waitingShares: 1,
+    repayments: ledgerB.repayments.map((row) => ({
+      ...row,
+      waiting: row.status === 'due' && row.accountId === 'acc_farid',
+    })),
+  });
   const collectingLoan = loanWith(loanA, {
     sats: 18_000,
     fundedAt: null,
@@ -7666,11 +8064,20 @@ test.describe('loans repay screens', () => {
 
   test('state /loans/repay pay-more-no-rate', async ({ page }) => {
     await loanShot(page, {
-      loans: [{ ...repaidLoanB, maxSats: null, maxAmount: null }],
+      loans: [payMoreNoRateLoan],
+      ledgers: { 'loan-b': payMoreNoRateLedger },
       visual: 'repay-ready',
       text: 'No PHP exchange rate is available now',
       spotRates: { USD: '100000.00' },
     });
+    const dueAmount = page
+      .getByText('Due today', { exact: true })
+      .locator('..')
+      .getByText('₱18.00', { exact: true });
+    await expect(dueAmount).toHaveText('₱18.00');
+    await expect(dueAmount).not.toContainText('₿');
+    await expect(page.getByText(/₱12\.00 waits for a lender/)).toBeVisible();
+    await expect(page.getByRole('button', { name: /^Send / })).toHaveCount(0);
     await expect(page.getByLabel('Amount (PHP)')).toBeVisible();
     await expect(page.getByRole('group', { name: 'Bitcoin or fiat' })).toHaveCount(0);
     await expect(page.getByText('No exchange rate yet')).toBeVisible();
@@ -7818,6 +8225,18 @@ test.describe('loans repay screens', () => {
     await shotScreen(page, 'state-loans-repay-pay-more-waiting');
   });
 
+  test('state /loans/repay pay-more-all-waiting', async ({ page }) => {
+    await loanShot(page, {
+      loans: [paidLoan],
+      visual: 'repay-pay-more-all-waiting',
+      text: 'Waiting for Carla to set up their wallet',
+    });
+    await expect(page.getByLabel('Amount (₿)')).toBeEnabled();
+    await expect(page.getByRole('button', { name: 'Pay this amount' })).toBeDisabled();
+    await expect(page.getByLabel('Amount (₿)')).toHaveValue('');
+    await shotScreen(page, 'state-loans-repay-pay-more-all-waiting');
+  });
+
   test('state /loans/repay pay-more-unconfirmed', async ({ page }) => {
     await loanShot(page, {
       loans: [paidLoan],
@@ -7878,6 +8297,62 @@ test.describe('loans repay screens', () => {
     await page.getByRole('button', { name: 'Copy' }).click();
     await expect(page.getByRole('button', { name: 'Copied' })).toBeVisible();
     await shotScreen(page, 'state-loans-repay-pay-more-shortfall-copied');
+  });
+
+  test('state /loans/repay pay-more-shortfall-waiting', async ({ page }) => {
+    await seedLoanMember(page);
+    await seedLoanData(page, [loanWith(loanA, { maxSats: 23_000 })], {
+      'loan-a': ledgerA,
+    });
+    await page.route('**/messages/loan-a/repayment', async (route) => {
+      if (route.request().method() !== 'POST') {
+        await route.fallback();
+        return;
+      }
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          amountSats: 22_000,
+          amount: null,
+          bills: [
+            {
+              dayIndex: 12,
+              recipientAccountId: 'acc_bruno',
+              name: 'Bruno',
+              username: 'bruno',
+              amountSats: 22_000,
+              amount: null,
+              pr: 'lnbc22000nprepay',
+              sparkInvoice: 'spark-prepay-22000',
+            },
+          ],
+          waiting: [
+            {
+              dayIndex: 13,
+              recipientAccountId: 'acc_carla',
+              name: 'Carla',
+              username: 'carla',
+              amountSats: 200,
+              amount: null,
+            },
+          ],
+        }),
+      });
+    });
+    await page.goto('/loans/repay?visual=repay-e2e-payment');
+    const amount = page.getByLabel('Amount (₿)');
+    await amount.fill('22200');
+    await expect(page.getByText('$22.20')).toBeVisible();
+    await page.getByRole('button', { name: 'Pay this amount' }).click();
+    await expect(page.getByText('Waiting for Carla to set up their wallet')).toBeVisible();
+    await expect(
+      page.getByText("Your wallet has ₿21'000 · $21.00. Still missing ₿1'000 · $1.00."),
+    ).toBeVisible();
+    await expect(amount).toHaveValue('22200');
+    await expect(page.getByRole('button', { name: 'Top up your wallet' })).toBeVisible();
+    await topAtRest(amount);
+    await shotScreen(page, 'state-loans-repay-pay-more-shortfall-waiting');
   });
 
   test('state /loans/repay collecting-pay-confirm', async ({ page }) => {
@@ -13168,6 +13643,92 @@ test.describe('onboarding screens', () => {
     await shotScreen(page, 'state-profile-posts-open');
   });
 
+  test('state /profile posts-open-repay-collecting', async ({ page }) => {
+    await seedProfilePage(page);
+    await page.route(/\/messages\/[^/]+\/repayment$/, async (route) => {
+      await route.fulfill({ status: 404, contentType: 'application/json', body: '{}' });
+    });
+    await fulfillRateDay(page);
+    await page.clock.install({ time: LOAN_CLOCK });
+    await page.route(/\/forum\/members\/acc_e2e\/posts$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [
+            {
+              id: '44444444-4444-4444-8444-444444444444',
+              accountId: 'acc_e2e',
+              name: 'Ada',
+              text: 'Need help with a train ticket',
+              createdAt: '2026-08-02T10:00:00.000Z',
+              sats: 10500,
+              goalSats: 21000,
+              goalRepayable: true,
+              goalTermDays: 30,
+              payable: true,
+              hasPhoto: false,
+              hasVideo: false,
+              videoContentType: null,
+              role: 'basis',
+              replyCount: 0,
+            },
+          ],
+        }),
+      });
+    });
+    await openProfile(page);
+    await page.getByRole('button', { name: '14 posts' }).click();
+    const repay = page.getByRole('link', { name: 'Pay early or end collecting' });
+    await expect(repay).toHaveAttribute('href', '/loans/repay');
+    await repay.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-profile-posts-open-repay-collecting');
+  });
+
+  test('state /profile posts-open-repay-closed', async ({ page }) => {
+    await seedProfilePage(page);
+    await page.route(/\/messages\/[^/]+\/repayment$/, async (route) => {
+      await route.fulfill({ status: 404, contentType: 'application/json', body: '{}' });
+    });
+    await fulfillRateDay(page);
+    await page.clock.install({ time: LOAN_CLOCK });
+    await page.route(/\/forum\/members\/acc_e2e\/posts$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [
+            {
+              id: '44444444-4444-4444-8444-444444444444',
+              accountId: 'acc_e2e',
+              name: 'Ada',
+              text: 'Need help with a train ticket',
+              createdAt: '2026-08-02T10:00:00.000Z',
+              sats: 10500,
+              goalSats: 21000,
+              goalRepayable: true,
+              goalTermDays: 30,
+              goalClosedAt: '2026-08-03T10:00:00.000Z',
+              payable: true,
+              hasPhoto: false,
+              hasVideo: false,
+              videoContentType: null,
+              role: 'basis',
+              replyCount: 0,
+            },
+          ],
+        }),
+      });
+    });
+    await openProfile(page);
+    await page.getByRole('button', { name: '14 posts' }).click();
+    const repay = page.getByRole('link', { name: 'Repay your loan' });
+    await expect(page.getByText('50%')).toBeVisible();
+    await expect(repay).toHaveAttribute('href', '/loans/repay');
+    await repay.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-profile-posts-open-repay-closed');
+  });
+
   /** Posts open on `/profile`, Ada's note expanded, reaction field ready. */
   async function openProfileReaction(page: Page): Promise<Locator> {
     await seedProfilePage(page);
@@ -14324,6 +14885,101 @@ test.describe('onboarding screens', () => {
     await expect(page.getByText('No payments yet.')).toHaveCount(0);
     await history.scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-pos-history');
+  });
+
+  test('state /pos received', async ({ page }) => {
+    await fulfillRateDay(page);
+    await page.addInitScript(() => {
+      const fixed = Date.parse('2026-09-20T12:10:00.000Z');
+      Date.now = () => fixed;
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          name: 'Ada',
+          location: null,
+          username: 'alice',
+          lightningAddress: null,
+          sparkWalletVerified: true,
+          rulesAgreedAt: 1_700_000_001,
+          viewKey: 'a'.repeat(64),
+          aboutMe: null,
+          setup: null,
+          missing: [],
+        }),
+      });
+    });
+    await page.route(/\/pos\/charge$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          charge: null,
+          history: [
+            {
+              id: 'pos-paid',
+              amountSats: 2_100,
+              status: 'paid',
+              createdAt: '2026-09-20T12:00:00.000Z',
+              expiresAt: '2026-09-20T12:05:00.000Z',
+              paidAt: '2026-09-20T12:00:40.000Z',
+            },
+            {
+              id: 'pos-expired',
+              amountSats: 500,
+              status: 'expired',
+              createdAt: '2026-09-19T08:30:00.000Z',
+              expiresAt: '2026-09-19T08:35:00.000Z',
+              paidAt: null,
+            },
+            {
+              id: 'pos-cancelled',
+              amountSats: 42,
+              status: 'cancelled',
+              createdAt: '2026-09-18T17:45:00.000Z',
+              expiresAt: '2026-09-18T17:50:00.000Z',
+              paidAt: null,
+            },
+          ],
+          // Synthetic transfer ids: two payments that reached the wallet without a charge.
+          received: [
+            {
+              id: '0a1b2c3d-0000-4000-8000-000000000002',
+              amountSats: 1_000,
+              receivedAt: '2026-09-20T12:06:00.000Z',
+              kind: 'lightning',
+            },
+            {
+              id: '0a1b2c3d-0000-4000-8000-000000000001',
+              amountSats: 250,
+              receivedAt: '2026-09-19T10:15:00.000Z',
+              kind: 'spark',
+            },
+          ],
+        }),
+      });
+    });
+    await page.goto('/pos');
+    await expect(page.getByRole('link', { name: 'Set an amount' })).toBeVisible();
+    const history = page.getByRole('region', { name: 'History' });
+    const rows = history.getByRole('listitem');
+    await expect(rows).toHaveCount(5);
+    await expect(rows.nth(0)).toContainText('Received');
+    await expect(rows.nth(0)).toContainText("₿1'000 · $1.00");
+    await expect(rows.nth(0)).toContainText('Instant payment');
+    await expect(rows.nth(1)).toContainText('Paid ✓ 12:00 PM');
+    await expect(rows.nth(2)).toContainText('Received');
+    await expect(rows.nth(2)).toContainText('Wallet transfer');
+    await expect(rows.nth(2)).toContainText('Sep 19, 2026, 10:15 AM');
+    await expect(rows.nth(3)).toContainText('Expired');
+    await expect(rows.nth(4)).toContainText('Cancelled');
+    await expect(page.getByRole('alertdialog', { name: 'Paid' })).toHaveCount(0);
+    await history.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-pos-received');
   });
 
   test('pos loading', async ({ page }) => {
@@ -17355,6 +18011,182 @@ test.describe('onboarding screens', () => {
     await expect(repay).toBeVisible();
     await repay.scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-members-posts-open-repay-today');
+  });
+
+  test('state /members posts-open-repay-closed', async ({ page }) => {
+    const memberId = '11111111-1111-4111-8111-111111111111';
+    await page.route(/\/messages\/[^/]+\/repayment$/, async (route) => {
+      await route.fulfill({ status: 404, contentType: 'application/json', body: '{}' });
+    });
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          id: memberId,
+          name: 'Ada',
+          username: 'alice',
+          lightningAddress: 'alice@walletofsatoshi.com',
+          rulesAgreedAt: 1_700_000_001,
+          setup: null,
+          missing: [],
+        }),
+      });
+    });
+    await page.route(`**/forum/members/${memberId}`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          id: memberId,
+          name: 'Ada',
+          username: 'alice',
+          lightningAddress: 'alice@walletofsatoshi.com',
+          role: 'basis',
+          location: null,
+          createdAt: '2026-01-15T12:00:00.000Z',
+          aboutMe: null,
+          profileMessage: null,
+          postCount: 1,
+          replyCount: 0,
+        }),
+      });
+    });
+    await page.route(`**/forum/members/${memberId}/posts`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [
+            {
+              id: '44444444-4444-4444-8444-444444444444',
+              accountId: memberId,
+              name: 'Ada',
+              text: 'Need help with a train ticket',
+              createdAt: '2026-08-02T10:00:00.000Z',
+              sats: 10500,
+              goalSats: 21000,
+              goalRepayable: true,
+              goalTermDays: 30,
+              goalClosedAt: '2026-08-03T10:00:00.000Z',
+              payable: true,
+              hasPhoto: false,
+              hasVideo: false,
+              videoContentType: null,
+              role: 'basis',
+              replyCount: 0,
+            },
+          ],
+        }),
+      });
+    });
+    await fulfillRateDay(page);
+    await page.clock.install({ time: LOAN_CLOCK });
+    await page.route(`**/forum/members/${memberId}/activity`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(EMPTY_ACTIVITY),
+      });
+    });
+    await page.goto(`/members/${memberId}`);
+    await page.getByRole('button', { name: '1 post' }).click();
+    await expect(page.getByText('50%')).toBeVisible();
+    const repay = page.getByRole('link', { name: 'Repay your loan' });
+    await expect(repay).toHaveAttribute('href', '/loans/repay');
+    await repay.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-members-posts-open-repay-closed');
+  });
+
+  test('state /members posts-open-repay-collecting', async ({ page }) => {
+    const memberId = '11111111-1111-4111-8111-111111111111';
+    await page.route(/\/messages\/[^/]+\/repayment$/, async (route) => {
+      await route.fulfill({ status: 404, contentType: 'application/json', body: '{}' });
+    });
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          id: memberId,
+          name: 'Ada',
+          username: 'alice',
+          lightningAddress: 'alice@walletofsatoshi.com',
+          rulesAgreedAt: 1_700_000_001,
+          setup: null,
+          missing: [],
+        }),
+      });
+    });
+    await page.route(`**/forum/members/${memberId}`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          id: memberId,
+          name: 'Ada',
+          username: 'alice',
+          lightningAddress: 'alice@walletofsatoshi.com',
+          role: 'basis',
+          location: null,
+          createdAt: '2026-01-15T12:00:00.000Z',
+          aboutMe: null,
+          profileMessage: null,
+          postCount: 1,
+          replyCount: 0,
+        }),
+      });
+    });
+    await page.route(`**/forum/members/${memberId}/posts`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [
+            {
+              id: '44444444-4444-4444-8444-444444444444',
+              accountId: memberId,
+              name: 'Ada',
+              text: 'Need help with a train ticket',
+              createdAt: '2026-08-02T10:00:00.000Z',
+              sats: 10500,
+              goalSats: 21000,
+              goalRepayable: true,
+              goalTermDays: 30,
+              payable: true,
+              hasPhoto: false,
+              hasVideo: false,
+              videoContentType: null,
+              role: 'basis',
+              replyCount: 0,
+            },
+          ],
+        }),
+      });
+    });
+    await fulfillRateDay(page);
+    await page.clock.install({ time: LOAN_CLOCK });
+    await page.route(`**/forum/members/${memberId}/activity`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(EMPTY_ACTIVITY),
+      });
+    });
+    await page.goto(`/members/${memberId}`);
+    await page.getByRole('button', { name: '1 post' }).click();
+    const repay = page.getByRole('link', { name: 'Pay early or end collecting' });
+    await expect(repay).toHaveAttribute('href', '/loans/repay');
+    await repay.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-members-posts-open-repay-collecting');
   });
 
   test('state /members posts-open-photos', async ({ page }) => {
@@ -25802,6 +26634,79 @@ test.describe('onboarding screens', () => {
     await shotScreen(page, 'state-view-replies-open-hearts-role');
   });
 
+  async function openViewRepay(page: Page, closed: boolean): Promise<void> {
+    await seedProfilePage(page);
+    await page.route(/\/messages\/[^/]+\/repayment$/, async (route) => {
+      await route.fulfill({ status: 404, contentType: 'application/json', body: '{}' });
+    });
+    await page.route(new RegExp(`/view-key/${E2E_ACCOUNT.viewKey}$`), async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          id: 'acc_e2e',
+          name: 'Ada',
+          location: null,
+          username: 'alice',
+          role: 'basis',
+          lightningAddress: 'member@21.gifts',
+          lightningAddressVerified: true,
+          createdAt: 1,
+          hasPasskey: true,
+          aboutMe: null,
+        }),
+      });
+    });
+    await page.route(/\/forum\/members\/acc_e2e\/posts$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [
+            {
+              id: '44444444-4444-4444-8444-444444444444',
+              accountId: 'acc_e2e',
+              name: 'Ada',
+              text: 'Need help with a train ticket',
+              createdAt: '2026-08-02T10:00:00.000Z',
+              sats: 10500,
+              goalSats: 21000,
+              goalRepayable: true,
+              goalTermDays: 30,
+              ...(closed ? { goalClosedAt: '2026-08-03T10:00:00.000Z' } : {}),
+              payable: true,
+              hasPhoto: false,
+              hasVideo: false,
+              videoContentType: null,
+              role: 'basis',
+              replyCount: 0,
+            },
+          ],
+        }),
+      });
+    });
+    await fulfillRateDay(page);
+    await page.clock.install({ time: LOAN_CLOCK });
+    await page.goto(`/view/${E2E_ACCOUNT.viewKey}`);
+    await page.getByRole('button', { name: '14 posts' }).click();
+    const repay = page.getByRole('link', {
+      name: closed ? 'Repay your loan' : 'Pay early or end collecting',
+    });
+    await expect(repay).toHaveAttribute('href', '/loans/repay');
+    await repay.scrollIntoViewIfNeeded();
+  }
+
+  test('state /view/[viewKey] repay-collecting', async ({ page }) => {
+    await openViewRepay(page, false);
+    await shotScreen(page, 'state-view-repay-collecting');
+  });
+
+  test('state /view/[viewKey] repay-closed', async ({ page }) => {
+    await openViewRepay(page, true);
+    await expect(page.getByText('50%')).toBeVisible();
+    await shotScreen(page, 'state-view-repay-closed');
+  });
+
   test('state /view images', async ({ page }) => {
     // state-view-images
     await page.route(new RegExp(`/view-key/${E2E_ACCOUNT.viewKey}$`), async (route) => {
@@ -28288,6 +29193,7 @@ test.describe('profile funding states', () => {
     await expect(
       page.getByText('Your application is open. A moderator will review your posts.'),
     ).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Withdraw my application' })).toBeVisible();
     await shotScreen(page, 'state-profile-funding-pending');
   });
 
@@ -28305,6 +29211,7 @@ test.describe('profile funding states', () => {
     await expect(
       page.getByText('You are on a one-day trial. Review repeats tomorrow.'),
     ).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Leave the grant' })).toBeVisible();
     await shotScreen(page, 'state-profile-funding-trial');
   });
 
@@ -28321,6 +29228,7 @@ test.describe('profile funding states', () => {
     await page.goto('/grants');
     await expect(page.getByText('You are admitted to daily 21.gifts grant payouts.')).toBeVisible();
     await expect(page.getByText(/Takes part in the 21.gifts funding program since/)).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Leave the grant' })).toBeVisible();
     await shotScreen(page, 'state-profile-funding-admitted');
   });
 
@@ -28343,6 +29251,119 @@ test.describe('profile funding states', () => {
     await expect(revealed).toBeVisible();
     await revealed.scrollIntoViewIfNeeded();
     await shotScreen(page, 'state-profile-funding-program-open', false);
+  });
+
+  /**
+   * Opens the withdraw question of a grant card in `status`, with the same today's payout
+   * line as that idle funding state, and answers POST /funding/withdraw with `answer`.
+   */
+  async function openWithdraw(
+    page: Page,
+    status: 'pending' | 'trial' | 'admitted',
+    answer: 'never' | 'unavailable' = 'never',
+  ): Promise<void> {
+    await seedFundingProfile(page, {
+      funding: {
+        status,
+        trialUtcDate: status === 'trial' ? '2026-09-20' : null,
+        admittedAt: status === 'admitted' ? Date.parse('2026-08-28T12:00:00.000Z') : null,
+        reviewedByName: status === 'admitted' ? 'Ada' : null,
+        payoutToday:
+          status === 'pending'
+            ? { state: 'blocked', reason: 'admission' }
+            : status === 'trial'
+              ? { state: 'due', reason: 'payments_paused' }
+              : { state: 'blocked', reason: 'wallet' },
+      },
+    });
+    await page.route(/\/funding\/withdraw$/, async (route) => {
+      if (answer === 'never') {
+        return;
+      }
+      await route.fulfill({
+        status: 503,
+        contentType: 'application/json',
+        body: JSON.stringify({ error: 'Funding is unavailable' }),
+      });
+    });
+    await page.goto('/grants');
+    const action = status === 'pending' ? 'Withdraw my application' : 'Leave the grant';
+    await page.getByRole('button', { name: action }).click();
+  }
+
+  test('state /grants withdraw-confirm', async ({ page }) => {
+    await openWithdraw(page, 'admitted');
+    const question = page.getByRole('group', { name: 'Leave the grant?' });
+    await expect(
+      question.getByText(
+        'Your daily payout stops today. Your place becomes free for someone else. You can apply again later, but a place is not guaranteed.',
+      ),
+    ).toBeVisible();
+    await question.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-grants-withdraw-confirm');
+  });
+
+  test('state /grants withdraw-confirm-trial', async ({ page }) => {
+    await openWithdraw(page, 'trial');
+    await expect(
+      page.getByText('You are on a one-day trial. Review repeats tomorrow.'),
+    ).toBeVisible();
+    await expect(page.getByRole('group', { name: 'Leave the grant?' })).toBeVisible();
+    await shotScreen(page, 'state-grants-withdraw-confirm-trial');
+  });
+
+  test('state /grants withdraw-confirm-pending', async ({ page }) => {
+    await openWithdraw(page, 'pending');
+    await expect(
+      page
+        .getByRole('group', { name: 'Withdraw your application?' })
+        .getByText('A moderator will no longer review it. You can apply again later.'),
+    ).toBeVisible();
+    await shotScreen(page, 'state-grants-withdraw-confirm-pending');
+  });
+
+  test('state /grants withdraw-busy', async ({ page }) => {
+    await openWithdraw(page, 'admitted', 'never');
+    const question = page.getByRole('group', { name: 'Leave the grant?' });
+    const confirm = question.getByRole('button', { name: 'Leave the grant' });
+    await confirm.click();
+    await expect(confirm).toBeDisabled();
+    await expect(question.getByRole('button', { name: 'Cancel' })).toBeDisabled();
+    await question.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-grants-withdraw-busy');
+  });
+
+  test('state /grants withdraw-error', async ({ page }) => {
+    await openWithdraw(page, 'admitted', 'unavailable');
+    const question = page.getByRole('group', { name: 'Leave the grant?' });
+    await question.getByRole('button', { name: 'Leave the grant' }).click();
+    await expect(question.getByRole('alert')).toHaveText(
+      'Could not leave the grant. Please try again.',
+    );
+    await expect(question.getByRole('button', { name: 'Leave the grant' })).toBeEnabled();
+    await question.scrollIntoViewIfNeeded();
+    await shotScreen(page, 'state-grants-withdraw-error');
+  });
+
+  test('state /grants withdraw-busy-pending', async ({ page }) => {
+    await openWithdraw(page, 'pending', 'never');
+    const question = page.getByRole('group', { name: 'Withdraw your application?' });
+    const confirm = question.getByRole('button', { name: 'Withdraw my application' });
+    await confirm.click();
+    await expect(confirm).toBeDisabled();
+    await expect(question.getByRole('button', { name: 'Cancel' })).toBeDisabled();
+    await shotScreen(page, 'state-grants-withdraw-busy-pending');
+  });
+
+  test('state /grants withdraw-error-pending', async ({ page }) => {
+    await openWithdraw(page, 'pending', 'unavailable');
+    const question = page.getByRole('group', { name: 'Withdraw your application?' });
+    await question.getByRole('button', { name: 'Withdraw my application' }).click();
+    await expect(question.getByRole('alert')).toHaveText(
+      'Could not withdraw your application. Please try again.',
+    );
+    await expect(question.getByRole('button', { name: 'Withdraw my application' })).toBeEnabled();
+    await shotScreen(page, 'state-grants-withdraw-error-pending');
   });
 
   test('state /grants open-applications', async ({ page }) => {
@@ -29938,6 +30959,88 @@ test.describe('welcome forum variants', () => {
     await shotScreen(page, 'state-welcome-repay-today');
   });
 
+  test('state /welcome repay-collecting', async ({ page }) => {
+    await page.route(/\/messages\/[^/]+\/repayment$/, async (route) => {
+      await route.fulfill({ status: 404, contentType: 'application/json', body: '{}' });
+    });
+    await seedAda(page);
+    await fulfillRateDay(page);
+    await page.clock.install({ time: LOAN_CLOCK });
+    await page.route(/\/messages(?:\?|$)/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [
+            {
+              id: 'm-goal-credit',
+              accountId: 'acc_e2e',
+              name: 'Ada',
+              text: 'Need help with a train ticket',
+              createdAt: '2026-08-28T12:00:00.000Z',
+              sats: 10500,
+              goalSats: 21000,
+              goalRepayable: true,
+              goalTermDays: 30,
+              payable: true,
+              hasPhoto: false,
+              role: 'basis',
+            },
+          ],
+        }),
+      });
+    });
+    await page.goto('/welcome');
+    await chooseForumView(page, 'All');
+    await expect(page.getByRole('link', { name: 'Pay early or end collecting' })).toHaveAttribute(
+      'href',
+      '/loans/repay',
+    );
+    await shotScreen(page, 'state-welcome-repay-collecting');
+  });
+
+  test('state /welcome repay-closed', async ({ page }) => {
+    await page.route(/\/messages\/[^/]+\/repayment$/, async (route) => {
+      await route.fulfill({ status: 404, contentType: 'application/json', body: '{}' });
+    });
+    await seedAda(page);
+    await fulfillRateDay(page);
+    await page.clock.install({ time: LOAN_CLOCK });
+    await page.route(/\/messages(?:\?|$)/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [
+            {
+              id: 'm-goal-credit',
+              accountId: 'acc_e2e',
+              name: 'Ada',
+              text: 'Need help with a train ticket',
+              createdAt: '2026-08-28T12:00:00.000Z',
+              sats: 10500,
+              goalSats: 21000,
+              goalRepayable: true,
+              goalTermDays: 30,
+              goalClosedAt: '2026-08-29T10:00:00.000Z',
+              payable: true,
+              hasPhoto: false,
+              role: 'basis',
+            },
+          ],
+        }),
+      });
+    });
+    await page.goto('/welcome');
+    await chooseForumView(page, 'All');
+    await expect(page.getByText('50%')).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Repay your loan' })).toHaveAttribute(
+      'href',
+      '/loans/repay',
+    );
+    await shotScreen(page, 'state-welcome-repay-closed');
+  });
+
   /** Signed-in Ada and Maria's loan that still collects (or is full), with an empty thread. */
   async function seedLoanCard(
     page: Page,
@@ -30145,6 +31248,7 @@ test.describe('welcome forum variants', () => {
     const collecting = loanWith(loanA, {
       sats: 18_000,
       fundedAt: null,
+      closedAt: null,
       daysDue: 0,
       daysPaid: 0,
       repaidSats: 0,
@@ -30161,6 +31265,10 @@ test.describe('welcome forum variants', () => {
     await openWelcomeLoans(page, myLoans([collecting]));
     await expect(page.getByRole('region', { name: 'Your loan' })).toContainText(
       'Not fully funded yet.',
+    );
+    await expect(page.getByRole('link', { name: 'Pay early or end collecting' })).toHaveAttribute(
+      'href',
+      '/loans/repay',
     );
     await shotScreen(page, 'state-welcome-loans-collecting');
   });
@@ -30169,6 +31277,7 @@ test.describe('welcome forum variants', () => {
     const collecting = loanWith(loanA, {
       sats: 18_000,
       fundedAt: null,
+      closedAt: null,
       daysDue: 0,
       daysPaid: 0,
       repaidSats: 0,
@@ -30186,9 +31295,190 @@ test.describe('welcome forum variants', () => {
     await expect(page.getByRole('region', { name: 'Your loan' })).toContainText(
       'Not fully funded yet.',
     );
+    await expect(page.getByRole('link', { name: 'Pay early or end collecting' })).toHaveAttribute(
+      'href',
+      '/loans/repay',
+    );
     await page.getByRole('button', { name: 'Show loan' }).click();
     await expect(page.getByRole('link', { name: loanA.text })).toBeVisible();
     await shotScreen(page, 'state-welcome-loans-collecting-open');
+  });
+
+  test('state /welcome loans-collecting-sunday', async ({ page }) => {
+    await openWelcomeLoans(page, myLoans([loanCollecting], true));
+    await expect(page.getByText('No repayments on Sundays')).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Pay early or end collecting' })).toHaveCount(0);
+    await shotScreen(page, 'state-welcome-loans-collecting-sunday');
+  });
+
+  test('state /welcome loans-collecting-sunday-open', async ({ page }) => {
+    await openWelcomeLoans(page, myLoans([loanCollecting], true));
+    await page.getByRole('button', { name: 'Show loan' }).click();
+    await expect(page.getByRole('link', { name: loanCollecting.text })).toBeVisible();
+    await expect(page.getByText('No repayments on Sundays')).toBeVisible();
+    await shotScreen(page, 'state-welcome-loans-collecting-sunday-open');
+  });
+
+  test('state /welcome loans-closed-underfunded', async ({ page }) => {
+    await openWelcomeLoans(page, myLoans([loanClosedUnderfunded]));
+    const card = page.getByRole('region', { name: 'Your loan' });
+    await expect(card.getByText('Not fully funded yet.')).toBeVisible();
+    await expect(card.getByRole('link', { name: 'Repay your loan' })).toHaveAttribute(
+      'href',
+      '/loans/repay',
+    );
+    await shotScreen(page, 'state-welcome-loans-closed-underfunded');
+  });
+
+  test('state /welcome loans-closed-underfunded-open', async ({ page }) => {
+    await openWelcomeLoans(page, myLoans([loanClosedUnderfunded]));
+    await expect(page.getByText('Not fully funded yet.')).toBeVisible();
+    await page.getByRole('button', { name: 'Show loan' }).click();
+    await expect(page.getByRole('link', { name: loanClosedUnderfunded.text })).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Repay your loan' })).toBeVisible();
+    await shotScreen(page, 'state-welcome-loans-closed-underfunded-open');
+  });
+
+  test('state /welcome loans-closed-underfunded-sunday', async ({ page }) => {
+    await openWelcomeLoans(page, myLoans([loanClosedUnderfunded], true));
+    const card = page.getByRole('region', { name: 'Your loan' });
+    await expect(card.getByText('Not fully funded yet.')).toBeVisible();
+    await expect(card.getByText('No repayments on Sundays')).toBeVisible();
+    await expect(card.getByRole('link', { name: 'Repay your loan' })).toHaveCount(0);
+    await shotScreen(page, 'state-welcome-loans-closed-underfunded-sunday');
+  });
+
+  test('state /welcome loans-closed-underfunded-sunday-open', async ({ page }) => {
+    await openWelcomeLoans(page, myLoans([loanClosedUnderfunded], true));
+    await expect(page.getByText('Not fully funded yet.')).toBeVisible();
+    await page.getByRole('button', { name: 'Show loan' }).click();
+    await expect(page.getByRole('link', { name: loanClosedUnderfunded.text })).toBeVisible();
+    await expect(page.getByText('No repayments on Sundays')).toBeVisible();
+    await shotScreen(page, 'state-welcome-loans-closed-underfunded-sunday-open');
+  });
+
+  test('state /welcome loans-due-no-rate', async ({ page }) => {
+    const noRateLoan = loanWith(loanB, {
+      totalSats: null,
+      maxSats: null,
+      due: {
+        payableSats: null,
+        payablePeople: 1,
+        payableAmount: '30.00',
+      },
+    });
+    await openWelcomeLoans(page, myLoans([noRateLoan]));
+    await expect(page.getByText('₱30.00', { exact: true })).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Repayment details' })).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Send' })).toHaveCount(0);
+    await shotScreen(page, 'state-welcome-loans-due-no-rate');
+  });
+
+  test('state /welcome loans-due-no-rate-open', async ({ page }) => {
+    const noRateLoan = loanWith(loanB, {
+      totalSats: null,
+      maxSats: null,
+      due: {
+        payableSats: null,
+        payablePeople: 1,
+        payableAmount: '30.00',
+      },
+    });
+    await openWelcomeLoans(page, myLoans([noRateLoan]));
+    await page.getByRole('button', { name: 'Show loan' }).click();
+    await expect(page.getByRole('link', { name: noRateLoan.text })).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Repayment details' })).toBeVisible();
+    await shotScreen(page, 'state-welcome-loans-due-no-rate-open');
+  });
+
+  test('state /welcome loans-waiting-no-rate', async ({ page }) => {
+    const noRateLoan = loanWith(loanB, {
+      totalSats: null,
+      maxSats: null,
+      due: {
+        payableSats: 0,
+        payablePeople: 0,
+        waitingSats: null,
+        waitingPeople: 1,
+        waitingAmount: '12.00',
+        payableAmount: null,
+      },
+      next: null,
+    });
+    await openWelcomeLoans(page, myLoans([noRateLoan]));
+    const card = page.getByRole('region', { name: 'Your loan' });
+    await expect(card.getByText('Nothing to send now')).toBeVisible();
+    await expect(
+      card.getByText('₱12.00 is waiting for a lender to set up their wallet', { exact: true }),
+    ).toBeVisible();
+    await expect(card.getByRole('link', { name: 'Send' })).toHaveCount(0);
+    await shotScreen(page, 'state-welcome-loans-waiting-no-rate');
+  });
+
+  test('state /welcome loans-waiting-no-rate-open', async ({ page }) => {
+    const noRateLoan = loanWith(loanB, {
+      totalSats: null,
+      maxSats: null,
+      due: {
+        payableSats: 0,
+        payablePeople: 0,
+        waitingSats: null,
+        waitingPeople: 1,
+        waitingAmount: '12.00',
+        payableAmount: null,
+      },
+      next: null,
+    });
+    await openWelcomeLoans(page, myLoans([noRateLoan]));
+    await page.getByRole('button', { name: 'Show loan' }).click();
+    await expect(page.getByRole('link', { name: noRateLoan.text })).toBeVisible();
+    await expect(
+      page.getByText('₱12.00 is waiting for a lender to set up their wallet', { exact: true }),
+    ).toBeVisible();
+    await shotScreen(page, 'state-welcome-loans-waiting-no-rate-open');
+  });
+
+  test('state /welcome loans-next-no-rate', async ({ page }) => {
+    const noRateLoan = loanWith(loanB, {
+      totalSats: null,
+      maxSats: null,
+      due: {
+        payableSats: 0,
+        payablePeople: 0,
+        waitingSats: 0,
+        waitingPeople: 0,
+        payableAmount: null,
+        waitingAmount: null,
+      },
+      next: { dueOn: '2026-01-12', sats: null, amount: '30.00' },
+    });
+    await openWelcomeLoans(page, myLoans([noRateLoan]));
+    const card = page.getByRole('region', { name: 'Your loan' });
+    await expect(card.getByText('Nothing due today')).toBeVisible();
+    await expect(card.getByText('Next: Monday, January 12, ₱30.00', { exact: true })).toBeVisible();
+    await expect(card.getByRole('link', { name: 'Send' })).toHaveCount(0);
+    await shotScreen(page, 'state-welcome-loans-next-no-rate');
+  });
+
+  test('state /welcome loans-next-no-rate-open', async ({ page }) => {
+    const noRateLoan = loanWith(loanB, {
+      totalSats: null,
+      maxSats: null,
+      due: {
+        payableSats: 0,
+        payablePeople: 0,
+        waitingSats: 0,
+        waitingPeople: 0,
+        payableAmount: null,
+        waitingAmount: null,
+      },
+      next: { dueOn: '2026-01-12', sats: null, amount: '30.00' },
+    });
+    await openWelcomeLoans(page, myLoans([noRateLoan]));
+    await page.getByRole('button', { name: 'Show loan' }).click();
+    await expect(page.getByRole('link', { name: noRateLoan.text })).toBeVisible();
+    await expect(page.getByText('Next: Monday, January 12, ₱30.00', { exact: true })).toBeVisible();
+    await shotScreen(page, 'state-welcome-loans-next-no-rate-open');
   });
 
   test('state /welcome loans-due', async ({ page }) => {
@@ -34929,6 +36219,58 @@ test.describe('shops screens', () => {
     await expect(page.getByText('+1', { exact: true })).toBeVisible();
     await shotScreen(page, 'state-shops-heart-paid');
   });
+
+  async function openShopsRepay(page: Page, closed: boolean): Promise<void> {
+    await seedAda(page);
+    await page.route(/\/messages\/[^/]+\/repayment$/, async (route) => {
+      await route.fulfill({ status: 404, contentType: 'application/json', body: '{}' });
+    });
+    await fulfillRateDay(page);
+    await page.clock.install({ time: LOAN_CLOCK });
+    await page.route(/\/messages(?:\?|$)/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          messages: [
+            {
+              id: 'm-shop',
+              accountId: 'acc_e2e',
+              name: 'Ada',
+              text: 'Cafe Luna\n\n#21GiftsShop',
+              createdAt: '2026-08-28T12:00:00.000Z',
+              sats: 10500,
+              goalSats: 21000,
+              goalRepayable: true,
+              goalTermDays: 30,
+              ...(closed ? { goalClosedAt: '2026-08-29T10:00:00.000Z' } : {}),
+              payable: true,
+              hasPhoto: false,
+              role: 'basis',
+            },
+          ],
+        }),
+      });
+    });
+    await page.goto('/shops#post');
+    const repay = page.getByRole('link', {
+      name: closed ? 'Repay your loan' : 'Pay early or end collecting',
+    });
+    await expect(repay).toHaveAttribute('href', '/loans/repay');
+    await repay.scrollIntoViewIfNeeded();
+  }
+
+  test('state /shops repay-collecting', async ({ page }) => {
+    await openShopsRepay(page, false);
+    await shotScreen(page, 'state-shops-repay-collecting');
+  });
+
+  test('state /shops repay-closed', async ({ page }) => {
+    await openShopsRepay(page, true);
+    await expect(page.getByText('50%')).toBeVisible();
+    await shotScreen(page, 'state-shops-repay-closed');
+  });
+
   test('shops list no pin', async ({ page }) => {
     await seedAda(page);
     await page.route(
@@ -41305,6 +42647,10 @@ test.describe('moderate screens', () => {
       'href',
       '/moderate/payouts',
     );
+    await expect(page.getByRole('link', { name: 'Show activity per shop' })).toHaveAttribute(
+      'href',
+      '/moderate/shops',
+    );
     await expect(page.getByText('12%')).toHaveCount(0);
     await shotScreen(page, 'screen-moderate');
   });
@@ -41451,6 +42797,94 @@ test.describe('moderate screens', () => {
       page.getByText('Could not load the payout table. Please try again.'),
     ).toBeVisible();
     await shotScreen(page, 'state-moderate-payouts-error');
+  });
+
+  test('moderate shops', async ({ page }) => {
+    await seedAda(page, 'founder');
+    await page.route('**/shops/activity/shops', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          windowDays: 30,
+          today: '2026-09-26',
+          shops: [
+            {
+              noteId: 'note_bakery',
+              name: 'Bakery',
+              npub: null,
+              accountId: 'acc_bake',
+              username: null,
+              activeDays: 0,
+              lastChargeDay: null,
+            },
+            {
+              noteId: 'note_kiosk',
+              name: 'Kiosk',
+              npub: 'npub1kiosk',
+              accountId: 'acc_kiosk',
+              username: 'kiosktill',
+              activeDays: 0,
+              lastChargeDay: '2026-07-14',
+            },
+            {
+              noteId: 'note_cafe',
+              name: 'Corner Café',
+              npub: 'npub1corner',
+              accountId: 'acc_till',
+              username: 'cornertill',
+              activeDays: 12,
+              lastChargeDay: '2026-09-25',
+            },
+          ],
+        }),
+      });
+    });
+    await page.goto('/moderate/shops');
+    await expect(page.getByRole('heading', { name: 'Activity per shop' })).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Corner Café' })).toBeVisible();
+    await expect(page.getByText('Inactive', { exact: true })).toHaveCount(2);
+    await shotScreen(page, 'screen-moderate-shops');
+  });
+
+  test('moderate shops empty', async ({ page }) => {
+    await seedAda(page, 'founder');
+    await page.route('**/shops/activity/shops', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ windowDays: 30, today: '2026-09-26', shops: [] }),
+      });
+    });
+    await page.goto('/moderate/shops');
+    await expect(page.getByText('No shops yet.')).toBeVisible();
+    await shotScreen(page, 'state-moderate-shops-empty');
+  });
+
+  test('moderate shops forbidden', async ({ page }) => {
+    await seedAda(page, 'basis');
+    await page.goto('/moderate/shops');
+    await expect(page.getByText('This page is for moderators.')).toBeVisible();
+    await shotScreen(page, 'state-moderate-shops-forbidden');
+  });
+
+  test('moderate shops loading', async ({ page }) => {
+    await seedAda(page, 'founder');
+    await page.route('**/shops/activity/shops', () => new Promise(() => undefined));
+    await page.goto('/moderate/shops');
+    await expect(page.getByRole('heading', { name: 'Activity per shop' })).toBeVisible();
+    await expect(page.locator('p.text-center', { hasText: 'Loading…' })).toBeVisible();
+    await shotScreen(page, 'state-moderate-shops-loading');
+  });
+
+  test('moderate shops error', async ({ page }) => {
+    await seedAda(page, 'founder');
+    await page.route('**/shops/activity/shops', async (route) => {
+      await route.fulfill({ status: 503, contentType: 'application/json', body: '{}' });
+    });
+    await page.goto('/moderate/shops');
+    await expect(page.getByText('Could not load shop activity. Please try again.')).toBeVisible();
+    await shotScreen(page, 'state-moderate-shops-error');
   });
 });
 
@@ -43166,6 +44600,105 @@ test.describe('stats variant baselines', () => {
     await page.goto('/stats');
     await expect(page.getByRole('button', { name: 'Try again' })).toBeVisible();
     await shotScreen(page, 'state-stats-error');
+  });
+
+  test('stats wallet', async ({ page }) => {
+    await stubWalletStats(page, WALLET_USAGE_SERIES);
+    await fulfillSpot(page);
+    await page.goto('/stats/wallet');
+    await expect(page.getByRole('heading', { name: 'Payments per day by purpose' })).toBeVisible();
+    await expect(page.getByText("$1'875.09", { exact: true })).toBeVisible();
+    await shotScreen(page, 'screen-stats-wallet');
+  });
+
+  test('stats wallet day', async ({ page }) => {
+    await stubWalletStats(page, WALLET_USAGE_SERIES);
+    await fulfillSpot(page);
+    await page.goto('/stats/wallet');
+    await expect(page.getByText("$1'875.09", { exact: true })).toBeVisible();
+    await page.getByRole('combobox', { name: 'Day' }).click();
+    await page.getByRole('option', { name: '2026-11-10', exact: true }).click();
+    await expect(
+      page
+        .getByRole('img', { name: 'Tondo fund' })
+        .locator('[data-flow="Balance at start of day"]'),
+    ).toBeVisible();
+    await shotScreen(page, 'state-stats-wallet-day');
+  });
+
+  test('stats wallet day open', async ({ page }) => {
+    await stubWalletStats(page, WALLET_USAGE_SERIES);
+    await fulfillSpot(page);
+    await page.goto('/stats/wallet');
+    await expect(page.getByText("$1'875.09", { exact: true })).toBeVisible();
+    const day = page.getByRole('combobox', { name: 'Day' });
+    // The pill sits low on a long page. Centering it keeps the open list
+    // below the pill instead of pinning it to the window.
+    await day.evaluate((node) => {
+      node.scrollIntoView({ block: 'center', inline: 'nearest' });
+    });
+    await day.click();
+    await expect(page.getByRole('option', { name: '2026-11-10', exact: true })).toBeVisible();
+    await expect(page.getByRole('option', { name: 'All days', exact: true })).toBeVisible();
+    await shotScreen(page, 'state-stats-wallet-day-open');
+  });
+
+  test('stats wallet count', async ({ page }) => {
+    await stubWalletStats(page, WALLET_USAGE_SERIES);
+    await fulfillSpot(page);
+    await page.goto('/stats/wallet');
+    await expect(page.getByText("$1'875.09", { exact: true })).toBeVisible();
+    await page
+      .getByRole('group', { name: 'Flow metric' })
+      .getByRole('button', { name: 'Count' })
+      .click();
+    await expect(page.locator('[data-flow="Balance at end of day"]')).toHaveCount(0);
+    await shotScreen(page, 'state-stats-wallet-count');
+  });
+
+  test('stats wallet error', async ({ page }) => {
+    await page.route('**/wallets/usage', async (route) => {
+      await route.fulfill({ status: 503, contentType: 'application/json', body: '{}' });
+    });
+    await page.goto('/stats/wallet');
+    await expect(page.getByText('Could not load wallet usage. Please try again.')).toBeVisible();
+    await shotScreen(page, 'state-stats-wallet-error');
+  });
+
+  test('stats wallet loading', async ({ page }) => {
+    await page.route('**/wallets/usage', () => new Promise(() => undefined));
+    await page.goto('/stats/wallet');
+    await expect(page.getByText('Loading…')).toBeVisible();
+    await shotScreen(page, 'state-stats-wallet-loading');
+  });
+
+  test('stats wallet method', async ({ page }) => {
+    await stubWalletStats(page, WALLET_USAGE_SERIES);
+    await fulfillSpot(page);
+    await page.goto('/stats/wallet');
+    await expect(page.getByText("$1'875.09", { exact: true })).toBeVisible();
+    await page.getByText('How these numbers are made').click();
+    await expect(page.locator('details')).toHaveJSProperty('open', true);
+    await shotScreen(page, 'state-stats-wallet-method');
+  });
+
+  test('stats wallet no-rate', async ({ page }) => {
+    await stubWalletStats(page, WALLET_USAGE_SERIES);
+    await fulfillSpot(page, {});
+    const spot = page.waitForResponse('**/fx/spot');
+    await page.goto('/stats/wallet');
+    await spot;
+    await expect(page.getByText("₿1'875'089", { exact: true })).toBeVisible();
+    await expect(page.getByText("$1'875.09", { exact: true })).toHaveCount(0);
+    await shotScreen(page, 'state-stats-wallet-no-rate');
+  });
+
+  test('stats wallet no-wallets', async ({ page }) => {
+    await fulfillSpot(page);
+    await page.goto('/stats/wallet');
+    await expect(page.getByText("$1'875.09", { exact: true })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Wallets per day' })).toHaveCount(0);
+    await shotScreen(page, 'state-stats-wallet-no-wallets');
   });
 
   test('stats day empty', async ({ page }) => {
@@ -47017,7 +48550,80 @@ test.describe('fonds screen', () => {
     await expect(page.getByText('$210.00')).toBeVisible();
     await expect(page.getByText('$0.21')).toBeVisible();
     await expect(page.getByText('3 grant payouts paid (3.00 USD)')).toBeVisible();
+    await expect(page.getByText('tondo-fond@21.gifts')).toBeVisible();
     await shotScreen(page, 'screen-fonds-username');
+  });
+
+  test('state /fonds/[username] deposit-onchain', async ({ page }) => {
+    await fulfillSpot(page);
+    await page.goto('/fonds/tondo-fond');
+    await expect(page.getByRole('heading', { name: 'tondo-fond' })).toBeVisible();
+    await page
+      .getByRole('group', { name: 'Deposit method' })
+      .getByRole('button', { name: 'On-chain deposit' })
+      .click();
+    await expect(
+      page.getByText(
+        'On-chain deposits need confirmations on the Bitcoin network, usually 3, before they show in the balance.',
+      ),
+    ).toBeVisible();
+    await expect(page.getByRole('img', { name: 'Bitcoin address QR code' })).toBeVisible();
+    await shotScreen(page, 'state-fonds-deposit-onchain');
+  });
+
+  test('state /fonds/[username] deposit-lightning-only', async ({ page }) => {
+    await fulfillSpot(page);
+    await page.route('**/fonds/tondo-fond/summary', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          username: 'tondo-fond',
+          receivedSats: 210_000,
+          paidOutSats: 21_000,
+          feesSats: 210,
+          balanceSats: 189_000,
+          balanceSyncedAt: '2026-11-11T10:00:00.000Z',
+          payoutsPaid: 3,
+          payoutsPaidUsd: '3.00',
+        }),
+      });
+    });
+    await page.goto('/fonds/tondo-fond');
+    await expect(page.getByText('tondo-fond@21.gifts')).toBeVisible();
+    await expect(page.getByRole('group', { name: 'Deposit method' })).toHaveCount(0);
+    await shotScreen(page, 'state-fonds-deposit-lightning-only');
+  });
+
+  test('state /fonds/[username] deposit-lightning-copied', async ({ page, context }) => {
+    await context.grantPermissions(['clipboard-read', 'clipboard-write']);
+    await page.clock.install();
+    await fulfillSpot(page);
+    await page.goto('/fonds/tondo-fond');
+    await expect(page.getByText('tondo-fond@21.gifts')).toBeVisible();
+    const now = await page.evaluate(() => Date.now());
+    await page.clock.pauseAt(now + 1_000);
+    await page.getByRole('button', { name: 'Copy' }).click();
+    await expect(page.getByRole('button', { name: 'Copied' })).toBeVisible();
+    await shotScreen(page, 'state-fonds-deposit-lightning-copied');
+  });
+
+  test('state /fonds/[username] deposit-onchain-copied', async ({ page, context }) => {
+    await context.grantPermissions(['clipboard-read', 'clipboard-write']);
+    await page.clock.install();
+    await fulfillSpot(page);
+    await page.goto('/fonds/tondo-fond');
+    await expect(page.getByRole('heading', { name: 'tondo-fond' })).toBeVisible();
+    await page
+      .getByRole('group', { name: 'Deposit method' })
+      .getByRole('button', { name: 'On-chain deposit' })
+      .click();
+    await expect(page.getByRole('img', { name: 'Bitcoin address QR code' })).toBeVisible();
+    const now = await page.evaluate(() => Date.now());
+    await page.clock.pauseAt(now + 1_000);
+    await page.getByRole('button', { name: 'Copy' }).click();
+    await expect(page.getByRole('button', { name: 'Copied' })).toBeVisible();
+    await shotScreen(page, 'state-fonds-deposit-onchain-copied');
   });
 
   test('state /fonds/[username] role-hint', async ({ page }) => {
@@ -47028,6 +48634,7 @@ test.describe('fonds screen', () => {
     await expect(
       page.getByText('This account pays the daily gifts from the 21.gifts fund.'),
     ).toBeVisible();
+    await expect(page.getByText('tondo-fond@21.gifts')).toBeVisible();
     await shotScreen(page, 'state-fonds-role-hint');
   });
 
@@ -47051,6 +48658,7 @@ test.describe('fonds screen', () => {
     });
     await page.goto('/fonds/tondo-fond');
     await expect(page.getByText('not reported yet')).toBeVisible();
+    await expect(page.getByText('tondo-fond@21.gifts')).toBeVisible();
     await shotScreen(page, 'state-fonds-balance-null');
   });
 

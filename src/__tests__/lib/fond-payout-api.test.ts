@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { afterEach, describe, expect, it, vi, type Mock } from 'vitest';
-import { fetchFondPayouts, postFondPayoutInvoice } from '@/lib/api';
+import { fetchFondPayouts, postFondPayoutInvoice, putFondDepositAddress } from '@/lib/api';
 
 const PAYOUTS = {
   payouts: [{ id: 'row-1', kind: 'daily', status: 'owed', utcDay: '2026-11-10' }],
@@ -142,6 +142,47 @@ describe('postFondPayoutInvoice', () => {
       paymentHash: INVOICE.paymentHash,
     });
     await expect(postFondPayoutInvoice('sess', 'row-1')).resolves.toEqual({
+      ok: false,
+      status: 200,
+      error: null,
+    });
+  });
+});
+
+describe('putFondDepositAddress', () => {
+  const ADDRESS = 'bc1p5cyxnuxmeuwuvkwfem96lqzszd02n6xdcjrs20cac6yqjjwudpxqkedrcr';
+
+  it('puts the address as JSON with Bearer auth and returns the stored address', async () => {
+    const fetchMock = stubFetch(200, { address: ADDRESS });
+    await expect(putFondDepositAddress('sess', ADDRESS)).resolves.toEqual({
+      ok: true,
+      address: ADDRESS,
+    });
+    expect(fetchMock).toHaveBeenCalledWith('/fond/deposit-address', {
+      method: 'PUT',
+      headers: { Authorization: 'Bearer sess', 'Content-Type': 'application/json' },
+      body: JSON.stringify({ address: ADDRESS }),
+    });
+  });
+
+  it.each([
+    [400, 'Invalid address'],
+    [401, 'Unauthorized'],
+    [403, 'Fond only'],
+    [404, 'Not found'],
+    [503, 'Unavailable'],
+  ])('returns the %i status and error text', async (status, error) => {
+    stubFetch(status, { error });
+    await expect(putFondDepositAddress('sess', ADDRESS)).resolves.toEqual({
+      ok: false,
+      status,
+      error,
+    });
+  });
+
+  it('returns a failure for a success body that fails the schema', async () => {
+    stubFetch(200, { address: '' });
+    await expect(putFondDepositAddress('sess', ADDRESS)).resolves.toEqual({
       ok: false,
       status: 200,
       error: null,

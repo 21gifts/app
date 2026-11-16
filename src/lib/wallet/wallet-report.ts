@@ -37,6 +37,16 @@ let running: Promise<void> | null = null;
 let again = false;
 
 /**
+ * Waits for the current report and any report already queued behind it, without
+ * requesting another report.
+ *
+ * @returns A promise that resolves when the report finishes, or immediately if none is running.
+ */
+export function walletReportSettled(): Promise<void> {
+  return running ?? Promise.resolve();
+}
+
+/**
  * Forgets every cursor, so the next report starts from the full history.
  */
 function forget(): void {
