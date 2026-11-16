@@ -1095,9 +1095,9 @@
     "fil": "Utang A na may maling sats value na 12.5. Minamarkahan ng AmountEntry na invalid ang field, ipinapakita sa ilalim ang Maglagay ng buong halagang ₿ na higit sa zero., at hindi aktibo ang Bayaran ang halagang ito. Lumalabas din ang parehong nakarehistrong invalid na state at currency-specific na error kapag binura ang na-edit na halaga; tahimik ang hindi pa nagalaw na empty field."
   },
   "/loans/repay:pay-more-no-rate": {
-    "de": "Ein PHP-Kredit ohne aktuellen Kurs. AmountEntry bleibt ohne Schalter in der festen PHP-Krediteinheit und zeigt Noch kein Wechselkurs. Mehr zurückzahlen erklärt zusätzlich den fehlenden PHP-Kurs; Maximum und Betrag zahlen sind deaktiviert.",
-    "es": "Un préstamo en PHP sin tipo de cambio actual. AmountEntry permanece sin selector en la unidad fija PHP del préstamo y muestra Aún no hay tipo de cambio. Pagar más también explica la falta del tipo PHP; Máximo y Pagar este importe están desactivados.",
-    "fil": "PHP loan na walang kasalukuyang rate. Nananatili ang AmountEntry sa fixed na PHP loan unit nang walang switch at nakikita ang Wala pang exchange rate. Ipinapaliwanag din ng Magbayad pa ang nawawalang PHP rate; hindi aktibo ang Max at Bayaran ang halagang ito."
+    "de": "Ein PHP-Kredit ohne aktuellen Umrechnungskurs, daher sind totalSats, beide fälligen Sat-Summen, next.sats und maxSats null. Unbekannte Sat-Werte für fällig, wartend, nächste Zahlung, Gesamtbetrag und Maximum werden ohne Bitcoin angezeigt. Der Bildschirm zeigt weiterhin die kombinierten gespeicherten Fiat-Beträge: ₱18.00 fällig, ₱12.00 wartend und Nächste Zahlung: morgen, ₱30.00 an 1 Person, ohne Bitcoin-Figur bei diesen Beträgen und ohne Senden. Bereits zurückgezahlte Beträge behalten ihre gespeicherten Sats, daher lautet der Fortschritt ₿6'000 · ₱120.00 von ₱300.00 zurückgezahlt. AmountEntry bleibt in der festen PHP-Kreditwährung ohne Umschalter und zeigt Noch kein Wechselkurs. Pay more erklärt außerdem Kein PHP-Wechselkurs verfügbar, daher ist die Zahlung deaktiviert. Max und Diesen Betrag zahlen sind deaktiviert.",
+    "es": "Un préstamo PHP sin tipo de cambio actual, así que totalSats, ambos totales de sats vencidos, next.sats y maxSats son null. Las cifras de sats desconocidas para vencido, en espera, siguiente, total y máximo se muestran sin bitcoin. La pantalla sigue mostrando los importes fiat almacenados combinados: ₱18.00 vencidos, ₱12.00 en espera y Siguiente: mañana, ₱30.00 para 1 persona, sin ninguna cifra en bitcoin en esos importes ni Enviar. Los importes ya devueltos conservan sus sats almacenados, así que el progreso dice Devuelto ₿6'000 · ₱120.00 de ₱300.00. AmountEntry permanece en la unidad fija PHP del préstamo sin selector y muestra Aún no hay tipo de cambio. Pagar más también explica No hay tipo de cambio PHP disponible ahora, así que pagar más está desactivado. Max y Pagar este importe están desactivados.",
+    "fil": "Isang PHP loan na walang kasalukuyang conversion rate, kaya null ang totalSats, ang dalawang due sat total, next.sats, at maxSats. Ipinapakita nang walang bitcoin ang hindi alam na sat figure para sa due, waiting, susunod, total, at maximum. Ipinapakita pa rin ng screen ang pinagsamang naka-imbak na fiat: ₱18.00 na due, ₱12.00 na waiting, at Susunod: bukas, ₱30.00 sa 1 tao, na walang bitcoin figure sa mga halagang iyon at walang Ipadala. Pinapanatili ng mga naibalik nang halaga ang naka-imbak na sats, kaya Nabayaran ang ₿6'000 · ₱120.00 sa ₱300.00 ang progreso. Nananatili ang AmountEntry sa fixed PHP loan unit na walang switch at ipinapakita ang Wala pang exchange rate. Ipinaliwanag din ng Pay more ang Walang available na PHP exchange rate ngayon, kaya naka-disable ang pagbabayad. Naka-disable ang Max at Bayaran ang halagang ito."
   },
   "/loans/repay:pay-more-no-maximum": {
     "de": "Ein BTC-Kredit ohne derzeit verfügbares Rückzahlungsmaximum. AmountEntry bleibt in der festen ₿-Krediteinheit und zeigt die BTC-spezifische Erklärung, dass aktuell kein Maximum verfügbar ist; es wird ausdrücklich kein fehlender Wechselkurs gemeldet. Maximum und Betrag zahlen sind deaktiviert.",
@@ -1174,6 +1174,11 @@
     "es": "El pago libre espera después del envío. La línea atenuada Esperando a que Carla configure su wallet con ₿200 · $0.20 permanece junto al estado activo de este préstamo; la caja de vencimiento conserva su propio estado.",
     "fil": "Naghihintay ang libreng repayment pagkatapos ipadala. Nananatili sa active status ng utang na ito ang muted na Hinihintay na i-set up ni Carla ang wallet niya na may ₿200 · $0.20; nananatili ang sariling estado ng due box."
   },
+  "/loans/repay:pay-more-all-waiting": {
+    "de": "Das Ergebnis der freien Rückzahlung enthält nur eine wartende Empfängerin, keine zahlbare Rechnung und hat nichts gesendet. Der Lauf kehrt in den Leerlauf ohne zahlbaren Betrag zurück (phase: 'idle'): Wartet, bis Carla die Wallet eingerichtet hat und ₿200 · $0.20 bleiben sichtbar; das geleerte Betragsfeld, Maximum und der deaktivierte Knopf Betrag zahlen sind für eine neue Eingabe bereit. Nur dieses reine Warteergebnis leert das Feld; bei einem Fehlbetrag bleibt der eingegebene Betrag stehen. Es erscheint keine Erfolgsmeldung für eine Rückzahlung.",
+    "es": "El resultado del pago libre solo contiene una destinataria en espera, ninguna factura pagable y no envió nada. La ejecución vuelve al estado inactivo sin nada pagable (phase: 'idle'): Esperando a que Carla configure su wallet y ₿200 · $0.20 siguen visibles; el campo vaciado, Máximo y Pagar este importe desactivado están listos para otra entrada. Solo este resultado totalmente en espera vacía el campo; si falta saldo, se conserva el importe enviado. No aparece ningún mensaje de éxito de devolución.",
+    "fil": "Puro naghihintay na recipient ang resulta ng libreng repayment, walang mababayarang bill, at walang ipinadala. Bumabalik ang run sa idle na walang mababayaran (phase: 'idle'): nananatili ang Hinihintay na i-set up ni Carla ang wallet niya at ₿200 · $0.20; handa para sa bagong input ang nalinis na field, Max, at disabled na Bayaran ang halagang ito. Tanging ang all-waiting result na ito ang naglilinis ng field; kapag kulang ang balance, nananatili ang isinumiteng halaga. Walang lumalabas na success message ng repayment."
+  },
   "/loans/repay:pay-more-unconfirmed": {
     "de": "Die freie Rückzahlung ist nach dem Senden noch nicht bestätigt. Im passenden Mehr-zurückzahlen-Bereich steht Diese Zahlung ist noch nicht bestätigt. Prüfen Sie Ihr Guthaben später erneut.; festes Feld und Maximum bleiben sichtbar.",
     "es": "El pago libre aún no está confirmado después de enviarse. El bloque Pagar más correspondiente muestra Este pago aún no está confirmado. Vuelve a revisar tu saldo más tarde.; el campo de unidad fija y Máximo siguen visibles.",
@@ -1198,6 +1203,11 @@
     "de": "Der geöffnete Fehlbetrag der freien Rückzahlung, nachdem Adas Adresse kopiert wurde. Die Adresskontrolle zeigt Kopiert, genau ein Open-CryptoPay-QR bleibt sichtbar und Ihre Aufladung wird erwartet… steht weiter darunter; die Fälligkeitskarte behält ihren Senden-Zustand.",
     "es": "La falta abierta del pago libre después de copiar la dirección de Ada. El control de la dirección muestra Copiado, exactamente un QR de Open CryptoPay sigue visible y Esperando tu recarga… permanece debajo; la caja de vencimiento conserva su estado Enviar.",
     "fil": "Ang bukas na kakulangan sa libreng repayment matapos kopyahin ang address ni Ada. Nakalagay sa address control ang Nakopya, nananatiling nakikita ang eksaktong isang Open CryptoPay QR, at nasa ibaba pa rin ang Hinihintay ang pagdagdag mo…; nananatili ang Send state ng due box."
+  },
+  "/loans/repay:pay-more-shortfall-waiting": {
+    "de": "Ein gemischtes Ergebnis der freien Rückzahlung enthält zahlbare Rechnungen und einen wartenden Anteil. Das übermittelte feste Betragsfeld behält 22200 über seinem Live-Zähler $22.20, während Wartet, bis Carla die Wallet eingerichtet hat mit ₿200 · $0.20 unter dem passenden Kredit erscheint. Die Wallet hat ₿21'000 · $21.00, daher nennt der Fehlbetrag Es fehlen noch ₿1'000 · $1.00 und bietet Wallet aufladen; der Betrag bleibt stehen, weil das Ergebnis nicht reines Warten war.",
+    "es": "Un resultado mixto del pago libre contiene facturas pagables y una parte en espera. El campo fijo enviado conserva 22200 sobre su contador en vivo $22.20, mientras Esperando a que Carla configure su wallet con ₿200 · $0.20 aparece bajo el préstamo correspondiente. La wallet tiene ₿21'000 · $21.00, así que la falta muestra Aún faltan ₿1'000 · $1.00 y ofrece Recargar tu wallet; el importe no se borra porque el resultado no fue totalmente en espera.",
+    "fil": "May mababayarang bill at waiting share ang mixed na resulta ng libreng repayment. Nananatili sa isinumiteng fixed field ang 22200 sa ibabaw ng live counter nitong $22.20 habang lumalabas sa katugmang loan ang Hinihintay na i-set up ni Carla ang wallet niya na may ₿200 · $0.20. May ₿21'000 · $21.00 ang wallet, kaya Kulang pa ng ₿1'000 · $1.00 ang shortfall at may Dagdagan ang laman ng wallet mo; hindi nalilinis ang halaga dahil hindi all-waiting ang resulta."
   },
   "/loans/repay:collecting-pay-confirm": {
     "de": "Ein noch sammelnder Kredit nach Maximum und Betrag zahlen. Hinter dem Dialog behält AmountEntry die feste ₿-Einheit und den Live-Gegenwert. Zahlen und Sammeln beenden? erklärt die endgültige Folge. Aktionen: ₿18'000 · $18.00 zahlen und Sammeln beenden, Abbrechen und Schließen.",
@@ -1968,6 +1978,16 @@
     "de": "Identitätskarte des angemeldeten Mitglieds; Beiträge ist gedrückt. Der aufgeführte Beitrag ist ihr eigener, vollständig finanzierter Kredit (accountId entspricht dem angemeldeten Konto, sats gleich goalSats). Der Kreditblock zeigt Vollständig finanziert bei 100 %, ohne Leihen. Kredit zurückzahlen ist ein Link auf /loans/repay. Rückzahlungsliste ist ebenfalls ein Link. Die Tagesliste steht nicht auf der Karte.",
     "es": "Tarjeta de identidad del miembro con sesión iniciada; Publicaciones está pulsado. La publicación listada es su propio préstamo totalmente financiado (accountId coincide con la cuenta iniciada, sats igual a goalSats). El bloque del préstamo dice Totalmente financiado al 100%, sin Prestar. Devolver tu préstamo es un enlace a /loans/repay. Lista de devolución también es un enlace. La lista por días no está en la tarjeta.",
     "fil": "Kard ng pagkakakilanlan ng naka-log-in na miyembro; pinindot ang Mga post. Ang nakalistang post ay ang sarili niyang utang na buo na ang pondo (tugma ang accountId sa naka-log-in na account, katumbas ng sats ang goalSats). Buo na ang pondo ang nakasulat sa bloke ng pautang sa 100%, walang Magpahiram. Ang Bayaran ang iyong utang ay ugnay sa /loans/repay. Ugnay rin ang Listahan ng ibabalik. Wala sa kard ang listahan ng bawat araw."
+  },
+  "/members/[accountId]:posts-open-repay-collecting": {
+    "de": "Identitätskarte des angemeldeten Mitglieds; Beiträge ist gedrückt. Der aufgeführte eigene Kredit sammelt bei 50 % weiter und hat kein goalClosedAt. Es gibt kein Leihen. Früh zurückzahlen oder Sammeln beenden verlinkt auf /loans/repay; Rückzahlungsliste bleibt ein Link.",
+    "es": "Tarjeta de identidad del miembro con sesión iniciada; Publicaciones está pulsado. Su propio préstamo sigue recaudando al 50 % y no tiene goalClosedAt. No hay Prestar. Pagar antes o finalizar la recaudación enlaza a /loans/repay; Lista de devolución sigue siendo un enlace.",
+    "fil": "Kard ng naka-log-in na miyembro; pinindot ang Mga post. Nangongolekta pa sa 50% ang sarili niyang utang at wala itong goalClosedAt. Walang Magpahiram. Ang Magbayad nang maaga o tapusin ang pangongolekta ay link sa /loans/repay; link pa rin ang Listahan ng ibabalik."
+  },
+  "/members/[accountId]:posts-open-repay-closed": {
+    "de": "Identitätskarte des angemeldeten Mitglieds; Beiträge ist gedrückt. Der eigene Kredit ist bei 50 % manuell geschlossen und hat goalClosedAt. Es gibt kein Leihen. Kredit zurückzahlen verlinkt auf /loans/repay; Rückzahlungsliste bleibt ein Link.",
+    "es": "Tarjeta de identidad del miembro con sesión iniciada; Publicaciones está pulsado. Su propio préstamo está cerrado manualmente al 50 % y tiene goalClosedAt. No hay Prestar. Devolver tu préstamo enlaza a /loans/repay; Lista de devolución sigue siendo un enlace.",
+    "fil": "Kard ng naka-log-in na miyembro; pinindot ang Mga post. Manwal na isinara sa 50% ang sarili niyang utang at may goalClosedAt. Walang Magpahiram. Ang Bayaran ang iyong utang ay link sa /loans/repay; link pa rin ang Listahan ng ibabalik."
   },
   "/members/[accountId]:posts-truncated": {
     "de": "Identitätskarte; Beitragsanzahl 3 gedrückt; ein aufgeführter Beitrag; gedämpft Die neuesten 1 von 3 werden angezeigt.; keine angepinnte Profilnotiz-Karte.",
@@ -3959,6 +3979,16 @@
     "es": "14 publicaciones está pulsado y el listado muestra Second post from Ada. Aguja Second post from Ada.",
     "fil": "Nakapindot ang 14 na post at ipinapakita ng feed ang Second post from Ada. Karayom Second post from Ada."
   },
+  "/profile:posts-open-repay-collecting": {
+    "de": "14 Beiträge ist gedrückt und der Feed zeigt Adas eigenen Kredit bei 50 %, noch ohne goalClosedAt. Es gibt kein Leihen. Früh zurückzahlen oder Sammeln beenden verlinkt auf /loans/repay; Rückzahlungsliste bleibt ein Link.",
+    "es": "14 publicaciones está pulsado y el listado muestra el préstamo propio de Ada al 50 %, todavía sin goalClosedAt. No hay Prestar. Pagar antes o finalizar la recaudación enlaza a /loans/repay; Lista de devolución sigue siendo un enlace.",
+    "fil": "Nakapindot ang 14 na post at ipinapakita ng feed ang sariling utang ni Ada sa 50%, wala pang goalClosedAt. Walang Magpahiram. Ang Magbayad nang maaga o tapusin ang pangongolekta ay link sa /loans/repay; link pa rin ang Listahan ng ibabalik."
+  },
+  "/profile:posts-open-repay-closed": {
+    "de": "14 Beiträge ist gedrückt und der Feed zeigt Adas eigenen, bei 50 % manuell geschlossenen Kredit mit goalClosedAt. Es gibt kein Leihen. Kredit zurückzahlen verlinkt auf /loans/repay; Rückzahlungsliste bleibt ein Link.",
+    "es": "14 publicaciones está pulsado y el listado muestra el préstamo propio de Ada, cerrado manualmente al 50 % y con goalClosedAt. No hay Prestar. Devolver tu préstamo enlaza a /loans/repay; Lista de devolución sigue siendo un enlace.",
+    "fil": "Nakapindot ang 14 na post at ipinapakita ng feed ang sariling utang ni Ada na manwal na isinara sa 50% at may goalClosedAt. Walang Magpahiram. Ang Bayaran ang iyong utang ay link sa /loans/repay; link pa rin ang Listahan ng ibabalik."
+  },
   "/profile:receive": {
     "de": "Gefilterte Empfangsserie mit drei UTC-Tagen (einschließlich eines Lückentags mit Null) und Empfangen-Summe ₿1'500. Das Diagramm zeigt Tagmarken wie 2026-06-01; Gegeben bleibt flach bei null mit sichtbarer Legende. Darunter fällt Schuld von ₿100'000 über ₿60'000 auf ₿-20'000, und Guthaben steigt von ₿20'000 auf ₿120'000 und fällt dann auf ₿-30'000. Beide Linien sind gezeichnet, und die Achse zeigt ₿-30'000.",
     "es": "Serie de recepción filtrada con tres días UTC (incluido un día de hueco en cero) y total recibido ₿1'500. El gráfico muestra marcas de día como 2026-06-01; Donado se mantiene plano en cero con una leyenda visible. Debajo, Deuda baja de ₿100'000 por ₿60'000 hasta ₿-20'000, y Crédito sube de ₿20'000 a ₿120'000 y luego baja a ₿-30'000. Se dibujan ambas líneas, y el eje muestra ₿-30'000.",
@@ -5204,6 +5234,16 @@
     "es": "La misma publicación de Cafe Luna tras abrir ?visual=heart-paid y pulsar Enviar un corazón. El corazón relleno y el +1 que muestra cada toque se mantienen para la captura.",
     "fil": "Parehong post ng Cafe Luna pagkatapos buksan ang ?visual=heart-paid at pindutin ang Magpadala ng puso. Nananatili para sa kuha ang punong puso at ang +1 na ipinapakita ng bawat pindot."
   },
+  "/shops:repay-collecting": {
+    "de": "Die eigene Shop-Notiz eines angemeldeten Mitglieds ist ein Kredit, der noch bei 50 % sammelt (accountId entspricht dem angemeldeten Konto, goalClosedAt fehlt). Auf ihrer eigenen Notiz gibt es kein Leihen. Früh zurückzahlen oder Sammeln beenden ist ein klarer Link zu /loans/repay; Rückzahlungsliste bleibt ein Link.",
+    "es": "La nota de tienda propia de un miembro con sesión es un préstamo que aún recauda al 50 % (accountId coincide con la cuenta iniciada, goalClosedAt no está). En su propia nota no hay Prestar. Pagar antes o finalizar la recaudación es un enlace claro a /loans/repay; Lista de devolución sigue siendo un enlace.",
+    "fil": "Ang sariling tala ng shop ng naka-sign in na miyembro ay utang na nangongolekta pa sa 50% (tugma ang accountId sa naka-log-in na account, wala ang goalClosedAt). Walang Magpahiram sa sarili niyang tala. Malinaw na link sa /loans/repay ang Magbayad nang maaga o tapusin ang pangongolekta; link pa rin ang Listahan ng ibabalik."
+  },
+  "/shops:repay-closed": {
+    "de": "Die eigene Shop-Notiz ist ein Kredit, der bei 50 % manuell geschlossen wurde (goalClosedAt ist vorhanden). Es gibt kein Leihen, und das Sammeln ist beendet; Kredit zurückzahlen verlinkt auf /loans/repay, und Rückzahlungsliste bleibt ein Link.",
+    "es": "La nota de tienda propia es un préstamo cerrado manualmente al 50 % (goalClosedAt está presente). No hay Prestar y la recaudación ha terminado; Devolver tu préstamo enlaza a /loans/repay, y Lista de devolución sigue siendo un enlace.",
+    "fil": "Ang sariling tala ng shop ay utang na manwal na isinara sa 50% (may goalClosedAt). Walang Magpahiram at tapos na ang pangongolekta; link sa /loans/repay ang Bayaran ang iyong utang, at link pa rin ang Listahan ng ibabalik."
+  },
   "/shops:list-empty": {
     "de": "Liste ist ausgewählt und es gibt keine Shops. Leerer Text Noch keine Shops — fügen Sie den ersten hinzu. Der Eingabebereich ist weg.",
     "es": "Lista está seleccionada y no hay tiendas. Texto vacío Aún no hay tiendas — añade la primera. El cuadro de redacción desapareció.",
@@ -6154,6 +6194,16 @@
     "es": "En el perfil abierto mediante la clave de vista se ve la lista Corazones bajo la respuesta. La pastilla Moderador de la fila de Grace está pulsada y debajo aparece Esta persona ayuda a mantener el salón en orden. Los importes y las horas siguen visibles.",
     "fil": "Sa profile na binuksan gamit ang view key, nakikita ang listahang Mga puso sa ilalim ng sagot. Nakapindot ang pill na Moderator sa hilera ni Grace, at nasa ibaba ang Tumutulong ang taong ito na panatilihing maayos ang living room. Nakikita pa rin ang mga halaga at oras."
   },
+  "/view/[viewKey]:repay-collecting": {
+    "de": "Ein angemeldetes Mitglied öffnet sein eigenes Profil über den View-Key und drückt 14 Beiträge. Der eigene Kredit sammelt noch bei 50 % (accountId entspricht dem angemeldeten Konto, goalClosedAt fehlt). Auf der eigenen Notiz gibt es kein Leihen. Früh zurückzahlen oder Sammeln beenden ist ein klarer Link zu /loans/repay; Rückzahlungsliste bleibt ein Link.",
+    "es": "Un miembro con sesión abre su propio perfil mediante la clave de vista y pulsa 14 publicaciones. Su préstamo propio aún recauda al 50 % (accountId coincide con la cuenta iniciada, goalClosedAt no está). En su propia nota no hay Prestar. Pagar antes o finalizar la recaudación es un enlace claro a /loans/repay; Lista de devolución sigue siendo un enlace.",
+    "fil": "Binuksan ng naka-sign in na miyembro ang sariling profile sa view key at pinindot ang 14 na post. Nangongolekta pa sa 50% ang sarili niyang utang (tugma ang accountId sa naka-log-in na account, wala ang goalClosedAt). Walang Magpahiram sa sariling tala. Malinaw na link sa /loans/repay ang Magbayad nang maaga o tapusin ang pangongolekta; link pa rin ang Listahan ng ibabalik."
+  },
+  "/view/[viewKey]:repay-closed": {
+    "de": "Das eigene Profil wurde über den View-Key geöffnet; Beiträge sind ausgewählt. Der eigene Kredit ist bei 50 % manuell geschlossen (goalClosedAt ist vorhanden). Es gibt kein Leihen, und das Sammeln ist beendet; Kredit zurückzahlen verlinkt auf /loans/repay, und Rückzahlungsliste bleibt ein Link.",
+    "es": "El perfil propio se abrió mediante la clave de vista; publicaciones está seleccionado. El préstamo propio está cerrado manualmente al 50 % (goalClosedAt está presente). No hay Prestar y la recaudación ha terminado; Devolver tu préstamo enlaza a /loans/repay, y Lista de devolución sigue siendo un enlace.",
+    "fil": "Binuksan ang sariling profile sa view key; napili ang mga post. Manwal na isinara sa 50% ang sariling utang (may goalClosedAt). Walang Magpahiram at tapos na ang pangongolekta; link sa /loans/repay ang Bayaran ang iyong utang, at link pa rin ang Listahan ng ibabalik."
+  },
   "/view/[viewKey]:error": {
     "de": "Das Laden des Profils ist fehlgeschlagen. Text Profil konnte nicht geladen werden. Bitte versuchen Sie es erneut. und Erneut versuchen.",
     "es": "Falló la obtención del perfil. Texto No se pudo cargar este perfil. Inténtalo de nuevo. e Intentar de nuevo.",
@@ -6613,6 +6663,76 @@
     "de": "Dieselbe bereite Wallet nach Kredit anzeigen. Die offene Anzeige heißt Kredit ausblenden und zeigt den verlinkten Text I need a small loan to buy a second-hand sewing machine for my repair stall. mit 100 %. Guthaben ₿21'000 · $21.00, Heute fällig ₿800 · $0.80, ₿200 · $0.20 wartet, bis eine kreditgebende Person ihre Wallet eingerichtet hat, und Senden bleiben unverändert.",
     "es": "La misma wallet lista después de Ver préstamo. El control abierto dice Ocultar préstamo y muestra el texto enlazado I need a small loan to buy a second-hand sewing machine for my repair stall. con 100 %. Saldo ₿21'000 · $21.00, Vence hoy ₿800 · $0.80, ₿200 · $0.20 espera a que un prestamista configure su wallet y Enviar no cambian.",
     "fil": "Ang parehong handang wallet pagkatapos pindutin ang Ipakita ang utang. Ang bukas na kontrol ay Itago ang utang at ipinapakita ang nakaugnay na tekstong I need a small loan to buy a second-hand sewing machine for my repair stall. na may 100%. Hindi nagbabago ang Balanse ₿21'000 · $21.00, Bayaran ngayon ₿800 · $0.80, ₿200 · $0.20 ang naghihintay na i-set up ng isang nagpautang ang wallet niya, at Ipadala."
+  },
+  "/wallet:loans-collecting": {
+    "de": "Bereite Wallet mit einem Kredit, der noch sammelt. Die neutrale Karte Ihr Kredit zeigt Noch nicht vollständig finanziert., den 27-%-Balken und die klare Zeile Früh zurückzahlen oder Sammeln beenden als Link zu /loans/repay. Es gibt keine Fälligkeitszeile und Kredit anzeigen ist geschlossen.",
+    "es": "Wallet lista con un préstamo que aún recauda. La tarjeta neutral Tu préstamo muestra Aún no está totalmente financiado., la barra al 27 % y la fila clara Pagar antes o finalizar la recaudación como enlace a /loans/repay. No hay fila de vencimiento y Ver préstamo está cerrado.",
+    "fil": "Handang wallet na may utang na nangongolekta pa. Ipinapakita ng neutral na kard na Ang iyong utang ang Hindi pa buo ang pondo., ang 27% na bar, at ang malinaw na hilerang Magbayad nang maaga o tapusin ang pangongolekta bilang link sa /loans/repay. Walang due row at sarado ang Ipakita ang utang."
+  },
+  "/wallet:loans-collecting-open": {
+    "de": "Derselbe sammelnde Kredit nach Kredit anzeigen. Früh zurückzahlen oder Sammeln beenden bleibt sichtbar; die offene Liste verlinkt den Kredittext und der Schalter lautet Kredit ausblenden.",
+    "es": "El mismo préstamo que recauda después de Ver préstamo. Pagar antes o finalizar la recaudación sigue visible; la lista abierta enlaza el texto del préstamo y el control dice Ocultar préstamo.",
+    "fil": "Ang parehong nangongolektang utang pagkatapos ng Ipakita ang utang. Nananatiling nakikita ang Magbayad nang maaga o tapusin ang pangongolekta; naka-link ang teksto ng utang sa bukas na listahan at Itago ang utang na ang toggle."
+  },
+  "/wallet:loans-collecting-sunday": {
+    "de": "Die geschlossene Karte eines nur sammelnden Kredits am Sonntag. Noch nicht vollständig finanziert. und der Finanzierungsbalken bleiben; der Aktionsbereich sagt Sonntags keine Rückzahlungen und Früh zurückzahlen oder Sammeln beenden fehlt.",
+    "es": "La tarjeta cerrada de un préstamo que solo recauda en domingo. Aún no está totalmente financiado. y la barra permanecen; el panel dice Los domingos no hay devoluciones y se omite Pagar antes o finalizar la recaudación.",
+    "fil": "Ang saradong kard ng utang na nangongolekta lang tuwing Linggo. Nananatili ang Hindi pa buo ang pondo. at funding bar; sinasabi ng panel na Walang pagbabayad tuwing Linggo at wala ang Magbayad nang maaga o tapusin ang pangongolekta."
+  },
+  "/wallet:loans-collecting-sunday-open": {
+    "de": "Dieselbe Sonntagskarte nach Kredit anzeigen. Der verlinkte Kredittext und Kredit ausblenden sind sichtbar; Sonntags keine Rückzahlungen bleibt und die Sammelaktion fehlt weiterhin.",
+    "es": "La misma tarjeta dominical tras Ver préstamo. Se ven el texto enlazado y Ocultar préstamo; Los domingos no hay devoluciones permanece y la acción de recaudación sigue ausente.",
+    "fil": "Ang parehong Sunday card pagkatapos ng Ipakita ang utang. Nakikita ang naka-link na teksto at Itago ang utang; nananatili ang Walang pagbabayad tuwing Linggo at wala pa rin ang collecting action."
+  },
+  "/wallet:loans-closed-underfunded": {
+    "de": "Ein manuell geschlossener Kredit, der sein Ziel nicht erreicht hat, an einem Wochentag mit geschlossener Kredit-Anzeige. Die neutrale Karte Ihr Kredit sagt Noch nicht vollständig finanziert. und der teilweise Finanzierungsbalken bleibt; anders als ein noch sammelnder Kredit zeigt er den gewöhnlichen Einstieg Kredit zurückzahlen zu /loans/repay.",
+    "es": "Un préstamo cerrado manualmente sin alcanzar su objetivo, mostrado entre semana con Ver préstamo cerrado. La tarjeta neutral Tu préstamo dice Aún no está totalmente financiado. y conserva la barra de financiación parcial; a diferencia de un préstamo que aún recauda, muestra el acceso normal Devolver tu préstamo a /loans/repay.",
+    "fil": "Manwal na isinara ang utang bago maabot ang goal, ipinapakita sa weekday na sarado ang Ipakita ang utang. Sinasabi ng neutral na kard na Ang iyong utang ang Hindi pa buo ang pondo. at nananatili ang partial funding bar; hindi gaya ng nangongolekta pa, ipinapakita ang karaniwang Bayaran ang iyong utang na entry papuntang /loans/repay."
+  },
+  "/wallet:loans-closed-underfunded-open": {
+    "de": "Derselbe manuell geschlossene, unterfinanzierte Wochentagskredit nach Kredit anzeigen. Noch nicht vollständig finanziert. und der teilweise Finanzierungsbalken bleiben; der verlinkte Kredittext und Kredit ausblenden sind sichtbar, und Kredit zurückzahlen bleibt verfügbar.",
+    "es": "El mismo préstamo cerrado manualmente y sin financiación completa entre semana tras Ver préstamo. Aún no está totalmente financiado. y la barra parcial se mantienen; se ven el texto enlazado y Ocultar préstamo, y Devolver tu préstamo sigue disponible.",
+    "fil": "Ang parehong manwal na isinara at kulang sa pondong weekday loan pagkatapos ng Ipakita ang utang. Nananatili ang Hindi pa buo ang pondo. at ang partial funding bar; nakikita ang naka-link na teksto at Itago ang utang, at available pa rin ang Bayaran ang iyong utang."
+  },
+  "/wallet:loans-closed-underfunded-sunday": {
+    "de": "Derselbe manuell geschlossene, unterfinanzierte Kredit am Sonntag mit geschlossener Kredit-Anzeige. Noch nicht vollständig finanziert. und der teilweise Finanzierungsbalken bleiben; Sonntags keine Rückzahlungen ersetzt den gewöhnlichen Einstieg Kredit zurückzahlen.",
+    "es": "El mismo préstamo cerrado manualmente y sin financiación completa en domingo con Ver préstamo cerrado. Aún no está totalmente financiado. y la barra parcial se mantienen; Los domingos no hay devoluciones sustituye el acceso normal Devolver tu préstamo.",
+    "fil": "Ang parehong manwal na isinara at kulang sa pondong utang tuwing Linggo na sarado ang Ipakita ang utang. Nananatili ang Hindi pa buo ang pondo. at ang partial funding bar; pinapalitan ng Walang pagbabayad tuwing Linggo ang karaniwang Bayaran ang iyong utang na entry."
+  },
+  "/wallet:loans-closed-underfunded-sunday-open": {
+    "de": "Dieselbe Sonntagskarte nach Kredit anzeigen. Noch nicht vollständig finanziert. bleibt über dem teilweisen Finanzierungsbalken; der verlinkte Kredittext und Kredit ausblenden sind sichtbar, Sonntags keine Rückzahlungen bleibt und der Rückzahlungseinstieg fehlt.",
+    "es": "La misma tarjeta dominical tras Ver préstamo. Aún no está totalmente financiado. permanece sobre la barra parcial; se ven el texto enlazado y Ocultar préstamo, Los domingos no hay devoluciones permanece y no hay acceso de devolución.",
+    "fil": "Ang parehong Sunday card pagkatapos ng Ipakita ang utang. Nananatili ang Hindi pa buo ang pondo. sa itaas ng partial funding bar; nakikita ang naka-link na teksto at Itago ang utang, nananatili ang Walang pagbabayad tuwing Linggo, at walang repayment entry."
+  },
+  "/wallet:loans-due-no-rate": {
+    "de": "Der geschlossene finanzierte PHP-Kredit hat einen gespeicherten fälligen Betrag, aber keine Satoshi-Bepreisung. Heute fällig zeigt ₱30.00 ohne Bitcoin; der nur als Icon gezeigte Link Rückzahlungsdetails ersetzt Senden.",
+    "es": "El préstamo PHP financiado y cerrado tiene un importe vencido guardado pero sin precio en satoshis. Vence hoy muestra ₱30.00 sin bitcoin; el enlace de solo icono Detalles de devolución sustituye a Enviar.",
+    "fil": "May naka-imbak na due amount ang saradong funded PHP loan pero walang sats price. Ipinapakita ng Bayaran ngayon ang ₱30.00 nang walang bitcoin; pinapalitan ng icon-only na Mga detalye ng pagbabayad ang Ipadala."
+  },
+  "/wallet:loans-due-no-rate-open": {
+    "de": "Derselbe Kredit ohne Kurs nach Kredit anzeigen. Verlinkter Kredittext und Kredit ausblenden erscheinen; ₱30.00 und der nur als Icon gezeigte Link Rückzahlungsdetails bleiben, ohne Senden.",
+    "es": "El mismo préstamo sin tipo tras Ver préstamo. Aparecen el texto enlazado y Ocultar préstamo; ₱30.00 y el enlace de solo icono Detalles de devolución permanecen, sin Enviar.",
+    "fil": "Ang parehong no-rate loan pagkatapos ng Ipakita ang utang. Lumalabas ang naka-link na teksto at Itago ang utang; nananatili ang ₱30.00 at icon-only na Mga detalye ng pagbabayad, walang Ipadala."
+  },
+  "/wallet:loans-waiting-no-rate": {
+    "de": "Der geschlossene finanzierte PHP-Kredit hat einen gespeicherten wartenden Betrag, aber keine Satoshi-Bepreisung. Nach Vollständig finanziert. steht gedämpft Jetzt ist nichts zu senden ohne Häkchen und darunter ₱12.00 wartet, bis eine kreditgebende Person ihre Wallet eingerichtet hat, ohne Bitcoin. Der nur als Icon gezeigte Link Rückzahlungsdetails ist da; es gibt kein Senden und keine nächste Zeile.",
+    "es": "El préstamo PHP financiado y cerrado tiene un importe en espera guardado pero sin precio en satoshis. Tras Totalmente financiado. aparece No hay nada que enviar ahora atenuado sin la marca de verificación y debajo ₱12.00 espera a que un prestamista configure su wallet, sin bitcoin. El enlace de solo icono Detalles de devolución está presente; no hay Enviar ni línea siguiente.",
+    "fil": "May naka-imbak na waiting amount ang saradong funded PHP loan pero walang sats price. Pagkatapos ng Buo na ang pondo. ay ang mahinang Walang ipapadala ngayon nang walang tsek, at sa ibaba ang ₱12.00 ang naghihintay na i-set up ng isang nagpautang ang wallet niya, nang walang bitcoin. Nandiyan ang icon-only na Mga detalye ng pagbabayad; walang Ipadala at walang susunod na linya."
+  },
+  "/wallet:loans-waiting-no-rate-open": {
+    "de": "Derselbe Kredit ohne Kurs nach Kredit anzeigen. Verlinkter Kredittext und Kredit ausblenden erscheinen; Jetzt ist nichts zu senden und ₱12.00 wartet, bis eine kreditgebende Person ihre Wallet eingerichtet hat, bleiben ohne Bitcoin, ohne Senden.",
+    "es": "El mismo préstamo sin tipo tras Ver préstamo. Aparecen el texto enlazado y Ocultar préstamo; No hay nada que enviar ahora y ₱12.00 espera a que un prestamista configure su wallet se mantienen sin bitcoin, sin Enviar.",
+    "fil": "Ang parehong no-rate loan pagkatapos ng Ipakita ang utang. Lumalabas ang naka-link na teksto at Itago ang utang; nananatili ang Walang ipapadala ngayon at ₱12.00 ang naghihintay na i-set up ng isang nagpautang ang wallet niya, nang walang bitcoin at walang Ipadala."
+  },
+  "/wallet:loans-next-no-rate": {
+    "de": "Der geschlossene finanzierte PHP-Kredit hat nichts Fälliges und einen gespeicherten nächsten Betrag, aber keine Satoshi-Bepreisung. Nach Vollständig finanziert. stehen das grüne Häkchen Heute ist nichts fällig und Nächste Zahlung: Montag, 12. Januar, ₱30.00 ohne Bitcoin. Der nur als Icon gezeigte Link Rückzahlungsdetails ist da; es gibt kein Senden.",
+    "es": "El préstamo PHP financiado y cerrado no tiene nada vencido y tiene un importe siguiente guardado pero sin precio en satoshis. Tras Totalmente financiado. aparecen la marca verde con No vence nada hoy y Siguiente: lunes, 12 de enero, ₱30.00 sin bitcoin. El enlace de solo icono Detalles de devolución está presente; no hay Enviar.",
+    "fil": "Walang due ang saradong funded PHP loan at may naka-imbak na susunod na halaga pero walang sats price. Pagkatapos ng Buo na ang pondo. ay ang berdeng tsek na Walang babayaran ngayon at Susunod: Lunes, Enero 12, ₱30.00 nang walang bitcoin. Nandiyan ang icon-only na Mga detalye ng pagbabayad; walang Ipadala."
+  },
+  "/wallet:loans-next-no-rate-open": {
+    "de": "Derselbe Kredit mit nächstem Betrag ohne Kurs nach Kredit anzeigen. Verlinkter Kredittext und Kredit ausblenden erscheinen; Heute ist nichts fällig und Nächste Zahlung: Montag, 12. Januar, ₱30.00 bleiben ohne Bitcoin, ohne Senden.",
+    "es": "El mismo préstamo con importe siguiente sin tipo tras Ver préstamo. Aparecen el texto enlazado y Ocultar préstamo; No vence nada hoy y Siguiente: lunes, 12 de enero, ₱30.00 permanecen sin bitcoin, sin Enviar.",
+    "fil": "Ang parehong loan na may susunod na halaga ngunit walang rate pagkatapos ng Ipakita ang utang. Lumalabas ang naka-link na teksto at Itago ang utang; nananatili ang Walang babayaran ngayon at Susunod: Lunes, Enero 12, ₱30.00 nang walang bitcoin at walang Ipadala."
   },
   "/wallet:loans-multi": {
     "de": "Die bereite Wallet zeigt Guthaben ₿21'000 · $21.00 und den gemeldeten Produktionsfall: Ihre Kredite (2), 1 von 2 vollständig finanziert. und kein gemeinsamer Balken. Jeder Kredit hat seinen nicht verlinkten, gekürzten Text über seinem eigenen ForumGoalBar: Der finanzierte Lieferrad-Kredit behält ₱10’000.00 als Ziel und ₱10’000.98 als eingefrorenen gesammelten Betrag; der sammelnde Schulbücher-Kredit behält ₱15’000.00 als Ziel und ₱480.28 als eingefrorenen gesammelten Betrag. Weder Balken noch Karte zeigen den Spot der summierten Ziel-Sats (₱27’051.19). Die Karte zeigt Heute ist nichts fällig, Nächste Zahlung: Montag, 16. November, ₱199.99 · ₿3'857 und kein Senden. Kredite anzeigen ist geschlossen.",
@@ -7735,14 +7855,74 @@
     "fil": "Ang hulíng kard pagkatapos pindutin ang Ipakita ang utang. Nananatili ang Buo na ang pondo., Hiling ₿30'000 · $30.00 na may 100%, ang danger outline, Huli ka nang 2 araw sa pula, ₿3'000 · $3.00, at Ipadala. Pagkatapos ay ipinapakita nito ang naka-link na teksto ng utang na Kailangan ko ng maliit na utang para makabili ng second-hand na makinang panahi para sa puwesto kong pangkumpuni. na may 100%; Itago ang utang na ngayon ang toggle."
   },
   "/welcome:loans-collecting": {
-    "de": "Unter Willkommen, Ada zeigt die neutrale Karte Ihr Kredit: Noch nicht vollständig finanziert. und einen ForumGoalBar mit Anfragen ₿30'000 · $30.00 und 60 %. Es gibt keine Fälligkeitszeile; Kredit anzeigen ist geschlossen.",
-    "es": "Bajo Hola, Ada, la tarjeta neutral Tu préstamo muestra Aún no está totalmente financiado. y un ForumGoalBar con Pedir ₿30'000 · $30.00 y 60 %. No hay fila de vencimiento; Ver préstamo está cerrado.",
-    "fil": "Sa ilalim ng Welcome, Ada, ipinapakita ng neutral na kard na Ang iyong utang ang Hindi pa buo ang pondo. at isang ForumGoalBar na may Hiling ₿30'000 · $30.00 at 60%. Walang hilera ng bayaran; sarado ang Ipakita ang utang."
+    "de": "Unter Willkommen, Ada zeigt die neutrale Karte Ihr Kredit: Noch nicht vollständig finanziert., einen ForumGoalBar mit Anfragen ₿30'000 · $30.00 und 60 % sowie Früh zurückzahlen oder Sammeln beenden als Link zu /loans/repay. Es gibt keine Fälligkeitszeile; Kredit anzeigen ist geschlossen.",
+    "es": "Bajo Hola, Ada, la tarjeta neutral Tu préstamo muestra Aún no está totalmente financiado., un ForumGoalBar con Pedir ₿30'000 · $30.00 y 60 %, y Pagar antes o finalizar la recaudación como enlace a /loans/repay. No hay fila de vencimiento; Ver préstamo está cerrado.",
+    "fil": "Sa ilalim ng Welcome, Ada, ipinapakita ng neutral na kard na Ang iyong utang ang Hindi pa buo ang pondo., isang ForumGoalBar na may Hiling ₿30'000 · $30.00 at 60%, at Magbayad nang maaga o tapusin ang pangongolekta bilang link sa /loans/repay. Walang hilera ng bayaran; sarado ang Ipakita ang utang."
   },
   "/welcome:loans-collecting-open": {
-    "de": "Die sammelnde Karte nach Kredit anzeigen. Sie behält Noch nicht vollständig finanziert. und Anfragen ₿30'000 · $30.00 mit 60 %. Danach zeigt sie den verlinkten Kredittext Ich brauche einen kleinen Kredit, um eine gebrauchte Nähmaschine für meinen Reparaturstand zu kaufen. mit 60 %; der Schalter lautet nun Kredit ausblenden. Es gibt keine Fälligkeitszeile.",
-    "es": "La tarjeta de recaudación después de pulsar Ver préstamo. Conserva Aún no está totalmente financiado. y Pedir ₿30'000 · $30.00 con 60 %. Después muestra el texto enlazado del préstamo Necesito un pequeño préstamo para comprar una máquina de coser de segunda mano para mi puesto de reparaciones. con 60 %; el control ahora dice Ocultar préstamo. No hay fila de vencimiento.",
-    "fil": "Ang nangangalap na kard pagkatapos pindutin ang Ipakita ang utang. Nananatili ang Hindi pa buo ang pondo. at Hiling ₿30'000 · $30.00 na may 60%. Pagkatapos ay ipinapakita nito ang naka-link na teksto ng utang na Kailangan ko ng maliit na utang para makabili ng second-hand na makinang panahi para sa puwesto kong pangkumpuni. na may 60%; Itago ang utang na ngayon ang toggle. Walang hilera ng bayaran."
+    "de": "Die sammelnde Karte nach Kredit anzeigen. Sie behält Noch nicht vollständig finanziert., Anfragen ₿30'000 · $30.00 mit 60 % und Früh zurückzahlen oder Sammeln beenden. Danach zeigt sie den verlinkten Kredittext Ich brauche einen kleinen Kredit, um eine gebrauchte Nähmaschine für meinen Reparaturstand zu kaufen. mit 60 %; der Schalter lautet nun Kredit ausblenden. Es gibt keine Fälligkeitszeile.",
+    "es": "La tarjeta de recaudación después de pulsar Ver préstamo. Conserva Aún no está totalmente financiado., Pedir ₿30'000 · $30.00 con 60 % y Pagar antes o finalizar la recaudación. Después muestra el texto enlazado del préstamo Necesito un pequeño préstamo para comprar una máquina de coser de segunda mano para mi puesto de reparaciones. con 60 %; el control ahora dice Ocultar préstamo. No hay fila de vencimiento.",
+    "fil": "Ang nangangalap na kard pagkatapos pindutin ang Ipakita ang utang. Nananatili ang Hindi pa buo ang pondo., Hiling ₿30'000 · $30.00 na may 60%, at Magbayad nang maaga o tapusin ang pangongolekta. Pagkatapos ay ipinapakita nito ang naka-link na teksto ng utang na Kailangan ko ng maliit na utang para makabili ng second-hand na makinang panahi para sa puwesto kong pangkumpuni. na may 60%; Itago ang utang na ngayon ang toggle. Walang hilera ng bayaran."
+  },
+  "/welcome:loans-collecting-sunday": {
+    "de": "Die geschlossene Karte eines nur sammelnden Kredits am Sonntag behält Noch nicht vollständig finanziert. und den Finanzierungsbalken, ersetzt die Sammelaktion durch Sonntags keine Rückzahlungen und zeigt kein Früh zurückzahlen oder Sammeln beenden.",
+    "es": "La tarjeta cerrada de un préstamo que solo recauda en domingo conserva Aún no está totalmente financiado. y la barra, sustituye la acción por Los domingos no hay devoluciones y no muestra Pagar antes o finalizar la recaudación.",
+    "fil": "Nananatili sa saradong Sunday collecting card ang Hindi pa buo ang pondo. at funding bar, pinapalitan ang action ng Walang pagbabayad tuwing Linggo, at hindi ipinapakita ang Magbayad nang maaga o tapusin ang pangongolekta."
+  },
+  "/welcome:loans-collecting-sunday-open": {
+    "de": "Dieselbe Sonntagskarte nach Kredit anzeigen. Verlinkter Kredittext und Kredit ausblenden sind sichtbar; Sonntags keine Rückzahlungen bleibt und die Sammelaktion fehlt.",
+    "es": "La misma tarjeta dominical tras Ver préstamo. Se ven el texto enlazado y Ocultar préstamo; Los domingos no hay devoluciones permanece y falta la acción de recaudación.",
+    "fil": "Ang parehong Sunday card pagkatapos ng Ipakita ang utang. Nakikita ang naka-link na teksto at Itago ang utang; nananatili ang Walang pagbabayad tuwing Linggo at wala ang collecting action."
+  },
+  "/welcome:loans-closed-underfunded": {
+    "de": "Ein manuell geschlossener Kredit, der sein Ziel nicht erreicht hat, an einem Wochentag mit geschlossener Kredit-Anzeige. Die neutrale Karte Ihr Kredit sagt Noch nicht vollständig finanziert. und der teilweise Finanzierungsbalken bleibt; anders als ein noch sammelnder Kredit zeigt er den gewöhnlichen Einstieg Kredit zurückzahlen zu /loans/repay.",
+    "es": "Un préstamo cerrado manualmente sin alcanzar su objetivo, mostrado entre semana con Ver préstamo cerrado. La tarjeta neutral Tu préstamo dice Aún no está totalmente financiado. y conserva la barra de financiación parcial; a diferencia de un préstamo que aún recauda, muestra el acceso normal Devolver tu préstamo a /loans/repay.",
+    "fil": "Manwal na isinara ang utang bago maabot ang goal, ipinapakita sa weekday na sarado ang Ipakita ang utang. Sinasabi ng neutral na kard na Ang iyong utang ang Hindi pa buo ang pondo. at nananatili ang partial funding bar; hindi gaya ng nangongolekta pa, ipinapakita ang karaniwang Bayaran ang iyong utang na entry papuntang /loans/repay."
+  },
+  "/welcome:loans-closed-underfunded-open": {
+    "de": "Derselbe manuell geschlossene, unterfinanzierte Wochentagskredit nach Kredit anzeigen. Noch nicht vollständig finanziert. und der teilweise Finanzierungsbalken bleiben; der verlinkte Kredittext und Kredit ausblenden sind sichtbar, und Kredit zurückzahlen bleibt verfügbar.",
+    "es": "El mismo préstamo cerrado manualmente y sin financiación completa entre semana tras Ver préstamo. Aún no está totalmente financiado. y la barra parcial se mantienen; se ven el texto enlazado y Ocultar préstamo, y Devolver tu préstamo sigue disponible.",
+    "fil": "Ang parehong manwal na isinara at kulang sa pondong weekday loan pagkatapos ng Ipakita ang utang. Nananatili ang Hindi pa buo ang pondo. at ang partial funding bar; nakikita ang naka-link na teksto at Itago ang utang, at available pa rin ang Bayaran ang iyong utang."
+  },
+  "/welcome:loans-closed-underfunded-sunday": {
+    "de": "Derselbe manuell geschlossene, unterfinanzierte Kredit am Sonntag mit geschlossener Kredit-Anzeige. Noch nicht vollständig finanziert. und der teilweise Finanzierungsbalken bleiben; Sonntags keine Rückzahlungen ersetzt den gewöhnlichen Einstieg Kredit zurückzahlen.",
+    "es": "El mismo préstamo cerrado manualmente y sin financiación completa en domingo con Ver préstamo cerrado. Aún no está totalmente financiado. y la barra parcial se mantienen; Los domingos no hay devoluciones sustituye el acceso normal Devolver tu préstamo.",
+    "fil": "Ang parehong manwal na isinara at kulang sa pondong utang tuwing Linggo na sarado ang Ipakita ang utang. Nananatili ang Hindi pa buo ang pondo. at ang partial funding bar; pinapalitan ng Walang pagbabayad tuwing Linggo ang karaniwang Bayaran ang iyong utang na entry."
+  },
+  "/welcome:loans-closed-underfunded-sunday-open": {
+    "de": "Dieselbe Sonntagskarte nach Kredit anzeigen. Noch nicht vollständig finanziert. bleibt über dem teilweisen Finanzierungsbalken; der verlinkte Kredittext und Kredit ausblenden sind sichtbar, Sonntags keine Rückzahlungen bleibt und der Rückzahlungseinstieg fehlt.",
+    "es": "La misma tarjeta dominical tras Ver préstamo. Aún no está totalmente financiado. permanece sobre la barra parcial; se ven el texto enlazado y Ocultar préstamo, Los domingos no hay devoluciones permanece y no hay acceso de devolución.",
+    "fil": "Ang parehong Sunday card pagkatapos ng Ipakita ang utang. Nananatili ang Hindi pa buo ang pondo. sa itaas ng partial funding bar; nakikita ang naka-link na teksto at Itago ang utang, nananatili ang Walang pagbabayad tuwing Linggo, at walang repayment entry."
+  },
+  "/welcome:loans-due-no-rate": {
+    "de": "Der geschlossene finanzierte PHP-Kredit hat einen gespeicherten fälligen Betrag, aber keine Satoshi-Bepreisung. Heute fällig zeigt ₱30.00 ohne Bitcoin; der nur als Icon gezeigte Link Rückzahlungsdetails ersetzt Senden.",
+    "es": "El préstamo PHP financiado y cerrado tiene un importe vencido guardado pero sin precio en satoshis. Vence hoy muestra ₱30.00 sin bitcoin; el enlace de solo icono Detalles de devolución sustituye a Enviar.",
+    "fil": "May naka-imbak na due amount ang saradong funded PHP loan pero walang sats price. Ipinapakita ng Bayaran ngayon ang ₱30.00 nang walang bitcoin; pinapalitan ng icon-only na Mga detalye ng pagbabayad ang Ipadala."
+  },
+  "/welcome:loans-due-no-rate-open": {
+    "de": "Derselbe Kredit ohne Kurs nach Kredit anzeigen. Verlinkter Kredittext und Kredit ausblenden erscheinen; ₱30.00 und der nur als Icon gezeigte Link Rückzahlungsdetails bleiben, ohne Senden.",
+    "es": "El mismo préstamo sin tipo tras Ver préstamo. Aparecen el texto enlazado y Ocultar préstamo; ₱30.00 y el enlace de solo icono Detalles de devolución permanecen, sin Enviar.",
+    "fil": "Ang parehong no-rate loan pagkatapos ng Ipakita ang utang. Lumalabas ang naka-link na teksto at Itago ang utang; nananatili ang ₱30.00 at icon-only na Mga detalye ng pagbabayad, walang Ipadala."
+  },
+  "/welcome:loans-waiting-no-rate": {
+    "de": "Der geschlossene finanzierte PHP-Kredit hat einen gespeicherten wartenden Betrag, aber keine Satoshi-Bepreisung. Nach Vollständig finanziert. steht gedämpft Jetzt ist nichts zu senden ohne Häkchen und darunter ₱12.00 wartet, bis eine kreditgebende Person ihre Wallet eingerichtet hat, ohne Bitcoin. Der nur als Icon gezeigte Link Rückzahlungsdetails ist da; es gibt kein Senden und keine nächste Zeile.",
+    "es": "El préstamo PHP financiado y cerrado tiene un importe en espera guardado pero sin precio en satoshis. Tras Totalmente financiado. aparece No hay nada que enviar ahora atenuado sin la marca de verificación y debajo ₱12.00 espera a que un prestamista configure su wallet, sin bitcoin. El enlace de solo icono Detalles de devolución está presente; no hay Enviar ni línea siguiente.",
+    "fil": "May naka-imbak na waiting amount ang saradong funded PHP loan pero walang sats price. Pagkatapos ng Buo na ang pondo. ay ang mahinang Walang ipapadala ngayon nang walang tsek, at sa ibaba ang ₱12.00 ang naghihintay na i-set up ng isang nagpautang ang wallet niya, nang walang bitcoin. Nandiyan ang icon-only na Mga detalye ng pagbabayad; walang Ipadala at walang susunod na linya."
+  },
+  "/welcome:loans-waiting-no-rate-open": {
+    "de": "Derselbe Kredit ohne Kurs nach Kredit anzeigen. Verlinkter Kredittext und Kredit ausblenden erscheinen; Jetzt ist nichts zu senden und ₱12.00 wartet, bis eine kreditgebende Person ihre Wallet eingerichtet hat, bleiben ohne Bitcoin, ohne Senden.",
+    "es": "El mismo préstamo sin tipo tras Ver préstamo. Aparecen el texto enlazado y Ocultar préstamo; No hay nada que enviar ahora y ₱12.00 espera a que un prestamista configure su wallet se mantienen sin bitcoin, sin Enviar.",
+    "fil": "Ang parehong no-rate loan pagkatapos ng Ipakita ang utang. Lumalabas ang naka-link na teksto at Itago ang utang; nananatili ang Walang ipapadala ngayon at ₱12.00 ang naghihintay na i-set up ng isang nagpautang ang wallet niya, nang walang bitcoin at walang Ipadala."
+  },
+  "/welcome:loans-next-no-rate": {
+    "de": "Der geschlossene finanzierte PHP-Kredit hat nichts Fälliges und einen gespeicherten nächsten Betrag, aber keine Satoshi-Bepreisung. Nach Vollständig finanziert. stehen das grüne Häkchen Heute ist nichts fällig und Nächste Zahlung: Montag, 12. Januar, ₱30.00 ohne Bitcoin. Der nur als Icon gezeigte Link Rückzahlungsdetails ist da; es gibt kein Senden.",
+    "es": "El préstamo PHP financiado y cerrado no tiene nada vencido y tiene un importe siguiente guardado pero sin precio en satoshis. Tras Totalmente financiado. aparecen la marca verde con No vence nada hoy y Siguiente: lunes, 12 de enero, ₱30.00 sin bitcoin. El enlace de solo icono Detalles de devolución está presente; no hay Enviar.",
+    "fil": "Walang due ang saradong funded PHP loan at may naka-imbak na susunod na halaga pero walang sats price. Pagkatapos ng Buo na ang pondo. ay ang berdeng tsek na Walang babayaran ngayon at Susunod: Lunes, Enero 12, ₱30.00 nang walang bitcoin. Nandiyan ang icon-only na Mga detalye ng pagbabayad; walang Ipadala."
+  },
+  "/welcome:loans-next-no-rate-open": {
+    "de": "Derselbe Kredit mit nächstem Betrag ohne Kurs nach Kredit anzeigen. Verlinkter Kredittext und Kredit ausblenden erscheinen; Heute ist nichts fällig und Nächste Zahlung: Montag, 12. Januar, ₱30.00 bleiben ohne Bitcoin, ohne Senden.",
+    "es": "El mismo préstamo con importe siguiente sin tipo tras Ver préstamo. Aparecen el texto enlazado y Ocultar préstamo; No vence nada hoy y Siguiente: lunes, 12 de enero, ₱30.00 permanecen sin bitcoin, sin Enviar.",
+    "fil": "Ang parehong loan na may susunod na halaga ngunit walang rate pagkatapos ng Ipakita ang utang. Lumalabas ang naka-link na teksto at Itago ang utang; nananatili ang Walang babayaran ngayon at Susunod: Lunes, Enero 12, ₱30.00 nang walang bitcoin at walang Ipadala."
   },
   "/welcome:loans-due": {
     "de": "Unter Willkommen, Ada sagt die geschlossene neutrale Karte Ihr Kredit und Vollständig finanziert., zeigt Anfragen ₿30'000 · $30.00 mit 100 %, Heute fällig, ₿1'000 · $1.00 und Senden. Kredit anzeigen bleibt geschlossen.",
@@ -8188,6 +8368,16 @@
     "de": "Bei Alle: Adas eigener vollständig finanzierter Kredit (accountId entspricht dem angemeldeten Konto, sats gleich goalSats). Der Kreditblock zeigt Vollständig finanziert unter einem vollen orangen Balken bei 100 %; der Feed liest das Rückzahlungsbuch nicht und sagt daher nicht, wie viel zurückgezahlt ist. Auf einem vollen Kredit und auf der eigenen Notiz gibt es kein Leihen. Kredit zurückzahlen ist ein Link auf /loans/repay. Rückzahlungsliste ist ebenfalls ein Link. Die Tagesliste steht nicht auf der Karte.",
     "es": "En Todos: el préstamo propio de Ada totalmente financiado (accountId coincide con la cuenta iniciada, sats igual a goalSats). El bloque del préstamo dice Totalmente financiado bajo una barra naranja llena al 100%; el feed no lee el registro de devolución, así que no dice cuánto se ha devuelto. No hay Prestar en un préstamo lleno ni en la nota propia. Devolver tu préstamo es un enlace a /loans/repay. Lista de devolución también es un enlace. La lista por días no está en la tarjeta.",
     "fil": "Sa Lahat: ang sariling utang ni Ada na buo na ang pondo (tugma ang accountId sa naka-log-in na account, katumbas ng sats ang goalSats). Buo na ang pondo ang nakasulat sa bloke ng pautang sa ilalim ng punong kahel na bar sa 100%; hindi binabasa ng feed ang talaan ng pagbabayad, kaya hindi nito sinasabi kung magkano na ang naibalik. Walang Magpahiram sa punong pautang o sa sariling tala. Ang Bayaran ang iyong utang ay ugnay sa /loans/repay. Ugnay rin ang Listahan ng ibabalik. Wala sa kard ang listahan ng bawat araw."
+  },
+  "/welcome:repay-collecting": {
+    "de": "Bei Alle: Adas eigener Kredit sammelt noch bei 50 %. Auf ihrer eigenen Notiz gibt es kein Leihen; stattdessen führt Früh zurückzahlen oder Sammeln beenden klar zu /loans/repay. Rückzahlungsliste bleibt ebenfalls ein Link.",
+    "es": "En Todos: el préstamo propio de Ada aún recauda al 50 %. En su propia nota no hay Prestar; en su lugar, Pagar antes o finalizar la recaudación lleva claramente a /loans/repay. Lista de devolución también sigue siendo un enlace.",
+    "fil": "Sa Lahat: nangongolekta pa sa 50% ang sariling utang ni Ada. Walang Magpahiram sa sarili niyang tala; sa halip, malinaw na papunta sa /loans/repay ang Magbayad nang maaga o tapusin ang pangongolekta. Link pa rin ang Listahan ng ibabalik."
+  },
+  "/welcome:repay-closed": {
+    "de": "Bei Alle: Adas eigener Kredit ist bei 50 % manuell geschlossen und hat goalClosedAt. Es gibt kein Leihen; Kredit zurückzahlen verlinkt auf /loans/repay. Rückzahlungsliste bleibt ein Link.",
+    "es": "En Todos: el préstamo propio de Ada está cerrado manualmente al 50 % y tiene goalClosedAt. No hay Prestar; Devolver tu préstamo enlaza a /loans/repay. Lista de devolución sigue siendo un enlace.",
+    "fil": "Sa Lahat: manwal na isinara sa 50% ang sariling utang ni Ada at may goalClosedAt. Walang Magpahiram; link sa /loans/repay ang Bayaran ang iyong utang. Link pa rin ang Listahan ng ibabalik."
   },
   "/welcome:reply-copy": {
     "de": "Angemeldet /welcome im Standardfilter; Ada-Notiz aufklappen, um die Antwort zu zeigen.\n\n- Auslöser: Klick auf Link zu dieser Antwort kopieren an einer verschachtelten Antwort. - Ergebnis: Das Steuerelement setzt data-copied an der eigenen Schaltfläche dieser Antwort, nachdem der eigene Ursprungs-Permalink /l/<8 hex> (erste Gruppe dieser Antwort-id) in die Zwischenablage geschrieben wurde — die eigene Kopieren-Schaltfläche der Notiz bleibt unberührt. - Umfang: Jede Antwortzeile hat dieses Steuerelement, unabhängig davon, ob Geschenk oder Moderator-Löschen auf dieser Zeile auch sichtbar sind.",

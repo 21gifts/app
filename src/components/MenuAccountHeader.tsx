@@ -262,7 +262,7 @@ export function MenuAccountHeader({
         )}
         {balance}
       </div>
-      {loanSummary?.payable === true ? (
+      {loanSummary?.payable === true && loanSummary.payableSats !== null ? (
         <div className="flex items-center justify-between gap-3 rounded-lg bg-app-card px-3 py-2">
           <div className="min-w-0">
             <p

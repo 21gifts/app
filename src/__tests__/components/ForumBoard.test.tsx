@@ -4175,7 +4175,7 @@ describe('ForumBoard', () => {
     expect(screen.getByRole('status').textContent).toContain('not paid back');
   });
 
-  it("shows the loan repayment link only for the viewer's own funded live credit", () => {
+  it("shows funded and collecting repayment links only for the viewer's own live credit", () => {
     const funded = {
       ...SAMPLE,
       accountId: 'acc-ada',
@@ -4213,9 +4213,12 @@ describe('ForumBoard', () => {
     rerender(board({ ...funded, accountId: 'acc-bob' }));
     expect(screen.queryByRole('link', { name: 'Repay your loan' })).toBeNull();
     rerender(board({ ...funded, sats: 20999 }));
-    expect(screen.queryByRole('link', { name: 'Repay your loan' })).toBeNull();
+    expect(screen.getByRole('link', { name: 'Pay early or end collecting' })).toBeTruthy();
+    rerender(board({ ...funded, sats: 20999, goalClosedAt: '2026-10-03T10:00:00.000Z' }));
+    expect(screen.getByRole('link', { name: 'Repay your loan' })).toBeTruthy();
     rerender(board({ ...funded, deletedAt: '2026-08-29T15:00:00.000Z' }));
     expect(screen.queryByRole('link', { name: 'Repay your loan' })).toBeNull();
+    expect(screen.queryByRole('link', { name: 'Pay early or end collecting' })).toBeNull();
   });
 
   it('shows a #Shop pill on a top-level shop note and hides the raw hashtag', () => {

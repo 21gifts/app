@@ -18,7 +18,7 @@ import {
   type RepaymentWaiting,
 } from '@/lib/api';
 import { creditSmallestUnits } from '@/lib/credit-plan';
-import { parseLoanAmount } from '@/lib/loan-repay';
+import { isCollecting, parseLoanAmount } from '@/lib/loan-repay';
 import { MissingRequirementsError } from '@/lib/missing-requirements';
 import { visualPin } from '@/lib/visual-pin';
 import { reportPaymentFailure } from '@/lib/wallet/payment-failure';
@@ -75,6 +75,11 @@ export interface LoanRepayResult {
   sentNames: string[];
   /** Waiting recipients returned by the latest free-amount prepay request. */
   prepayWaiting: RepaymentWaiting[];
+  /**
+   * True when the latest free-amount prepay had no bills (every share is waiting) and
+   * its run returned to idle. False for every other outcome.
+   */
+  prepayAllWaiting: boolean;
   /** Message id whose latest free-amount request returned `prepayWaiting`. */
   prepayMessageId: string | null;
   /** Sum of prepared fees of the bills that went out (0 when none). */
@@ -183,8 +188,8 @@ function actionErrorOf(error: unknown, messageId: string): LoanRepayActionError 
 function prepayResponseMatches(prepay: LoanPrepay, loan: MyLoan, amountText: string): boolean {
   const rows = [...prepay.bills, ...prepay.waiting];
   const responseSats = BigInt(prepay.amountSats);
-  const distributedSats = rows.reduce((sum, row) => sum + BigInt(row.amountSats), 0n);
-  if (distributedSats !== responseSats) {
+  const billedSats = prepay.bills.reduce((sum, row) => sum + BigInt(row.amountSats), 0n);
+  if (billedSats !== responseSats) {
     return false;
   }
   const requested = parseLoanAmount(amountText, loan.goalCurrency);
@@ -192,7 +197,8 @@ function prepayResponseMatches(prepay: LoanPrepay, loan: MyLoan, amountText: str
     return false;
   }
   if (loan.goalCurrency === 'BTC') {
-    return requested.units === responseSats;
+    const allocatedSats = rows.reduce((sum, row) => sum + BigInt(row.amountSats), 0n);
+    return requested.units === allocatedSats;
   }
   let distributedCents = 0n;
   for (const row of rows) {
@@ -277,6 +283,7 @@ type PinnedLoanRepay = Pick<
   | 'sentAmounts'
   | 'sentNames'
   | 'prepayWaiting'
+  | 'prepayAllWaiting'
   | 'prepayMessageId'
   | 'feeSats'
   | 'missingSats'
@@ -291,6 +298,7 @@ const PIN_BASE = {
   sentAmounts: [] as { code: MyLoan['goalCurrency']; amount: string | null }[],
   sentNames: [] as string[],
   prepayWaiting: [] as RepaymentWaiting[],
+  prepayAllWaiting: false,
   prepayMessageId: null,
   feeSats: 0,
   missingSats: null,
@@ -517,6 +525,24 @@ const PINNED_RESULTS: Record<string, PinnedLoanRepay> = {
     ],
     prepayMessageId: 'loan-a',
   },
+  'repay-pay-more-all-waiting': {
+    ...PIN_BASE,
+    phase: 'idle',
+    balanceSats: 21_000,
+    activeAction: { kind: 'prepay', messageId: 'loan-a' },
+    prepayAllWaiting: true,
+    prepayWaiting: [
+      {
+        dayIndex: 12,
+        recipientAccountId: 'acc_carla',
+        name: 'Carla',
+        username: 'carla',
+        amountSats: 200,
+        amount: null,
+      },
+    ],
+    prepayMessageId: 'loan-a',
+  },
   'repay-pay-more-unconfirmed': {
     ...PIN_BASE,
     phase: 'unconfirmed',
@@ -657,6 +683,7 @@ export function useLoanRepay(options: {
   >([]);
   const [sentNames, setSentNames] = useState<string[]>([]);
   const [prepayWaiting, setPrepayWaiting] = useState<RepaymentWaiting[]>([]);
+  const [prepayAllWaiting, setPrepayAllWaiting] = useState(false);
   const [prepayMessageId, setPrepayMessageId] = useState<string | null>(null);
   const [feeSats, setFeeSats] = useState(0);
   const [missingSats, setMissingSats] = useState<number | null>(null);
@@ -706,6 +733,7 @@ export function useLoanRepay(options: {
     setSentAmounts([]);
     setSentNames([]);
     setPrepayWaiting([]);
+    setPrepayAllWaiting(false);
     setPrepayMessageId(null);
     setFeeSats(0);
     missingBalance.current = undefined;
@@ -791,6 +819,7 @@ export function useLoanRepay(options: {
       setSentAmounts([]);
       setSentNames([]);
       setPrepayWaiting([]);
+      setPrepayAllWaiting(false);
       setPrepayMessageId(null);
       setFeeSats(0);
       missingBalance.current = undefined;
@@ -832,6 +861,7 @@ export function useLoanRepay(options: {
       void (async (): Promise<void> => {
         const currencyByMessage = new Map(loans.map((loan) => [loan.messageId, loan.goalCurrency]));
         const perLoan: Array<{ messageId: string; bills: readonly RepaymentBill[] }> = [];
+        let allWaiting = false;
         try {
           if (prepayRequest !== undefined) {
             const prepay = await prepayLoan(
@@ -847,10 +877,11 @@ export function useLoanRepay(options: {
             }
             setPrepayWaiting(prepay.waiting);
             setPrepayMessageId(prepayRequest.messageId);
+            allWaiting = prepay.bills.length === 0;
             perLoan.push({ messageId: prepayRequest.messageId, bills: prepay.bills });
           } else {
             for (const loan of loans) {
-              if (loan.due.payableSats <= 0) {
+              if (loan.due.payableSats === null || loan.due.payableSats <= 0) {
                 continue;
               }
               const due = await postRepaymentDue(session, loan.messageId);
@@ -901,7 +932,8 @@ export function useLoanRepay(options: {
           }
           if (ordered.length === 0) {
             setTopUpOpen(false);
-            setPaymentPhase('repaid');
+            setPrepayAllWaiting(allWaiting);
+            setPaymentPhase('idle');
             return;
           }
           setPaymentPhase('idle');
@@ -1228,19 +1260,14 @@ export function useLoanRepay(options: {
   const closeCollecting = useCallback(
     (loan: MyLoan): void => {
       const session = useAuthStore.getState().session;
-      if (
-        pinned ||
-        session === null ||
-        loan.fundedAt !== null ||
-        (loan.closedAt !== null && loan.closedAt !== undefined) ||
-        actionPending.current
-      ) {
+      if (pinned || session === null || !isCollecting(loan) || actionPending.current) {
         return;
       }
       const run = ++generation.current;
       clearSettlement();
       setPaymentPhase('preparing');
       setActiveAction({ kind: 'close', messageId: loan.messageId });
+      setPrepayAllWaiting(false);
       setErrorKey(null);
       setActionError(null);
       void (async (): Promise<void> => {
@@ -1290,6 +1317,7 @@ export function useLoanRepay(options: {
     sentAmounts,
     sentNames,
     prepayWaiting,
+    prepayAllWaiting,
     prepayMessageId,
     feeSats,
     missingSats,

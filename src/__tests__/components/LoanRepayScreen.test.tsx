@@ -129,6 +129,7 @@ function repay(overrides: Partial<LoanRepayResult> = {}): LoanRepayResult {
     sentAmounts: [],
     sentNames: [],
     prepayWaiting: [],
+    prepayAllWaiting: false,
     prepayMessageId: null,
     feeSats: 0,
     missingSats: null,
@@ -291,6 +292,92 @@ describe('LoanRepayScreen', () => {
     expect(screen.queryByText(/\$1\.00/)).toBeNull();
   });
 
+  it('omits bitcoin plan and progress figures when a BTC loan total is null', () => {
+    show({
+      sundayRest: false,
+      loans: [
+        loan({
+          totalSats: null,
+          due: { ...loan().due, payableSats: 0, payablePeople: 0 },
+          next: null,
+        }),
+      ],
+    });
+    const list = screen.getByRole('region', { name: 'Your loan' });
+    expect(within(list).getByText('$30.00 · 30 days')).toBeTruthy();
+    expect(within(list).getByText("Repaid ₿11'000 · $11.00 of $30.00")).toBeTruthy();
+    expect(within(list).queryByRole('img')).toBeNull();
+    expect(screen.queryByText(/null/)).toBeNull();
+    expect(screen.queryByText(/₿0\b/)).toBeNull();
+  });
+
+  it('falls back to the goal amount when a BTC loan total and stored fiat are null', () => {
+    show({
+      sundayRest: false,
+      loans: [
+        loan({
+          totalSats: null,
+          goalAmountUsd: null,
+          goalAmountChf: null,
+          goalAmountEur: null,
+          goalAmountPhp: null,
+          due: { ...loan().due, payableSats: 0, payablePeople: 0 },
+          next: null,
+        }),
+      ],
+    });
+    const list = screen.getByRole('region', { name: 'Your loan' });
+    expect(within(list).getByText('30000 · 30 days')).toBeTruthy();
+    expect(within(list).getByText("Repaid ₿11'000 · $11.00 of 30000")).toBeTruthy();
+    expect(screen.queryByText(/null/)).toBeNull();
+    expect(screen.queryByText(/₿0\b/)).toBeNull();
+  });
+
+  it('renders a fiat loan whose unpaid sat figures are null from its stored amounts', async () => {
+    const noRate = loan({
+      goalCurrency: 'PHP',
+      goalAmount: '300.00',
+      totalSats: null,
+      maxSats: null,
+      maxAmount: '180.00',
+      due: {
+        ...loan().due,
+        payableSats: null,
+        payablePeople: 1,
+        payableAmount: '30.00',
+        waitingSats: null,
+        waitingPeople: 1,
+        waitingAmount: '15.00',
+      },
+      next: { dueOn: '2026-10-11', sats: null, amount: '30.00' },
+    });
+    vi.mocked(getRepayment).mockResolvedValue(
+      ledger({
+        currency: 'PHP',
+        repayments: [
+          { ...ledger().repayments[0]!, amount: '10.00', dueSats: null },
+          { ...ledger().repayments[1]!, amount: '10.00', dueSats: null },
+        ],
+      }),
+    );
+
+    show({ sundayRest: false, loans: [noRate] });
+
+    expect(screen.getByText('₱30.00')).toBeTruthy();
+    expect(screen.getByText(/₱15\.00 waits for a lender/)).toBeTruthy();
+    expect(await screen.findByText(/Next: tomorrow, ₱30\.00 to 1 person/)).toBeTruthy();
+    expect(screen.queryByRole('button', { name: /^Send / })).toBeNull();
+    expect(screen.getByText('₱300.00 · 30 days · ₱10.00 per day')).toBeTruthy();
+    expect(screen.getByText(/No PHP exchange rate is available now/)).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Max' })).toHaveProperty('disabled', true);
+    expect(screen.getByRole('button', { name: 'Pay this amount' })).toHaveProperty(
+      'disabled',
+      true,
+    );
+    await waitFor(() => expect(getRepayment).toHaveBeenCalledWith('loan-1'));
+    expect(screen.queryByRole('img', { name: /Repaid/ })).toBeNull();
+  });
+
   it('omits the secondary member-fiat line when the loan uses that fiat', async () => {
     const usdLoan = loan({
       goalCurrency: 'USD',
@@ -306,6 +393,24 @@ describe('LoanRepayScreen', () => {
     show({ sundayRest: false, loans: [usdLoan] });
     expect(screen.getByText('$30.00 · 30 days · $1.00 per day')).toBeTruthy();
     expect(screen.getByRole('button', { name: "Send $1.00 · ₿1'000" })).toBeTruthy();
+  });
+
+  it('keeps the big amount fiat-only for a priced fiat loan', () => {
+    show({
+      sundayRest: false,
+      loans: [
+        loan({
+          goalCurrency: 'PHP',
+          goalAmount: '900.00',
+          due: { ...loan().due, payableSats: 1_000, payableAmount: '30.00' },
+        }),
+      ],
+    });
+    const bigAmount = screen.getByText('₱30.00');
+    expect(bigAmount.className).toContain('text-3xl');
+    expect(bigAmount.textContent).not.toContain('₿');
+    expect(screen.queryByText("₱30.00 · ₿1'000")).toBeNull();
+    expect(screen.getByRole('button', { name: "Send ₱30.00 · ₿1'000" })).toBeTruthy();
   });
 
   it('names the last day when the loan currency does not divide evenly', () => {
@@ -408,6 +513,307 @@ describe('LoanRepayScreen', () => {
     );
     expect(screen.getByText("₱30.00 + $3.00 · ₿1'000")).toBeTruthy();
     expect(screen.getByRole('button', { name: "Send ₱30.00 + $3.00 · ₿1'000" })).toBeTruthy();
+  });
+
+  it('keeps the develop due line when every payable loan has known sats', () => {
+    show(
+      {
+        sundayRest: false,
+        loans: [
+          loan({
+            messageId: 'priced',
+            goalCurrency: 'PHP',
+            goalAmount: '900.00',
+            due: { ...loan().due, payableSats: 1_000, payableAmount: '30.00' },
+          }),
+          loan({
+            messageId: 'priced-two',
+            goalCurrency: 'PHP',
+            goalAmount: '450.00',
+            due: {
+              ...loan().due,
+              payableSats: 500,
+              payableAmount: '15.00',
+            },
+          }),
+        ],
+      },
+      repay(),
+    );
+    expect(screen.getByText('₱45.00')).toBeTruthy();
+    expect(screen.getByRole('button', { name: "Send ₱45.00 · ₿1'500" })).toBeTruthy();
+  });
+
+  it('shows only the fiat total and no Send when one payable sibling has no rate', () => {
+    show(
+      {
+        sundayRest: false,
+        loans: [
+          loan({
+            messageId: 'priced',
+            goalCurrency: 'PHP',
+            goalAmount: '900.00',
+            due: { ...loan().due, payableSats: 1_000, payableAmount: '30.00' },
+          }),
+          loan({
+            messageId: 'unpriced',
+            goalCurrency: 'PHP',
+            goalAmount: '450.00',
+            totalSats: null,
+            maxSats: null,
+            due: {
+              ...loan().due,
+              payableSats: null,
+              payablePeople: 1,
+              payableAmount: '15.00',
+            },
+          }),
+        ],
+      },
+      repay(),
+    );
+    expect(screen.getByText('₱45.00')).toBeTruthy();
+    expect(screen.queryByText("₿1'500")).toBeNull();
+    expect(screen.queryByText("₿1'000")).toBeNull();
+    expect(screen.queryByRole('button', { name: /^Send / })).toBeNull();
+  });
+
+  it('shows only the stored waiting total when one waiting sibling has no rate', () => {
+    show({
+      sundayRest: false,
+      loans: [
+        loan({
+          messageId: 'priced',
+          goalCurrency: 'PHP',
+          goalAmount: '900.00',
+          due: {
+            ...loan().due,
+            payableSats: 1_000,
+            payableAmount: '30.00',
+            waitingSats: 200,
+            waitingPeople: 1,
+            waitingAmount: '6.00',
+          },
+        }),
+        loan({
+          messageId: 'unpriced',
+          goalCurrency: 'PHP',
+          goalAmount: '450.00',
+          totalSats: null,
+          maxSats: null,
+          due: {
+            ...loan().due,
+            payableSats: 0,
+            payablePeople: 0,
+            payableAmount: null,
+            waitingSats: null,
+            waitingPeople: 2,
+            waitingAmount: '3.00',
+          },
+        }),
+      ],
+    });
+    expect(screen.getByText(/^₱9\.00 waits for 3 lenders/)).toBeTruthy();
+    expect(screen.queryByText(/₿200/)).toBeNull();
+  });
+
+  it('omits the due amount line when a BTC and an unpriced loan share the part', () => {
+    show({
+      sundayRest: false,
+      loans: [
+        loan(),
+        loan({
+          messageId: 'unpriced',
+          goalCurrency: 'PHP',
+          goalAmount: '450.00',
+          totalSats: null,
+          maxSats: null,
+          due: {
+            ...loan().due,
+            payableSats: null,
+            payablePeople: 1,
+            payableAmount: '15.00',
+          },
+        }),
+      ],
+    });
+    expect(screen.getByText('Due today')).toBeTruthy();
+    expect(screen.queryByText("₿1'000")).toBeNull();
+    expect(screen.queryByText('₱15.00')).toBeNull();
+    expect(screen.queryByRole('button', { name: /^Send / })).toBeNull();
+  });
+
+  it('shows combined fiat-only payable and waiting parts beside known zeroes', () => {
+    show({
+      sundayRest: false,
+      loans: [
+        loan({
+          messageId: 'unpriced',
+          goalCurrency: 'PHP',
+          goalAmount: '450.00',
+          totalSats: null,
+          maxSats: null,
+          due: {
+            ...loan().due,
+            payableSats: null,
+            payablePeople: 1,
+            payableAmount: '30.00',
+            waitingSats: null,
+            waitingPeople: 1,
+            waitingAmount: '15.00',
+          },
+        }),
+        loan({
+          messageId: 'known-zero',
+          due: {
+            ...loan().due,
+            payableSats: 0,
+            payablePeople: 0,
+            waitingSats: 0,
+            waitingPeople: 0,
+          },
+        }),
+      ],
+    });
+    expect(screen.getByText('₱30.00')).toBeTruthy();
+    expect(screen.getByText(/₱15\.00 waits for a lender/)).toBeTruthy();
+    expect(screen.queryByText(/₿0/)).toBeNull();
+    expect(screen.queryByRole('button', { name: /^Send / })).toBeNull();
+  });
+
+  it('omits unavailable aggregate amounts instead of rendering null', () => {
+    show(
+      {
+        sundayRest: false,
+        loans: [
+          loan({
+            goalCurrency: 'PHP',
+            goalAmount: '900.00',
+            totalSats: null,
+            maxSats: null,
+            due: {
+              ...loan().due,
+              payableSats: null,
+              payablePeople: 1,
+              payableAmount: null,
+              waitingSats: null,
+              waitingPeople: 1,
+              waitingAmount: null,
+            },
+            next: { dueOn: '2026-10-11', sats: null, amount: null },
+          }),
+        ],
+      },
+      repay(),
+    );
+    expect(screen.getByText('Due today')).toBeTruthy();
+    expect(screen.queryByText(/null/)).toBeNull();
+    expect(screen.queryByText(/waits for/)).toBeNull();
+    expect(screen.queryByText(/^Next:/)).toBeNull();
+    expect(screen.queryByRole('button', { name: /^Send/ })).toBeNull();
+  });
+
+  it('omits the next line when an unpriced part has no stored fiat amount', () => {
+    show(
+      {
+        sundayRest: false,
+        loans: [
+          loan({
+            goalCurrency: 'PHP',
+            goalAmount: '900.00',
+            totalSats: null,
+            maxSats: null,
+            due: {
+              ...loan().due,
+              payableSats: 0,
+              payablePeople: 0,
+            },
+            next: { dueOn: '2026-10-11', sats: null, amount: null },
+          }),
+        ],
+      },
+      repay(),
+    );
+    expect(screen.queryByText(/^Next:/)).toBeNull();
+    expect(screen.queryByText(/null/)).toBeNull();
+  });
+
+  it('omits the next line when a funded loan has no next sats or stored fiat amount', () => {
+    show(
+      {
+        sundayRest: false,
+        loans: [
+          loan({
+            messageId: 'unpriced-next',
+            due: { ...loan().due, payableSats: 0, payablePeople: 0 },
+            next: { dueOn: '2026-10-11', sats: null, amount: null },
+          }),
+          loan({
+            messageId: 'priced-next',
+            due: { ...loan().due, payableSats: 0, payablePeople: 0 },
+            next: { dueOn: '2026-10-11', sats: 1_000, amount: null },
+          }),
+        ],
+      },
+      repay(),
+    );
+    expect(screen.queryByText(/^Next:/)).toBeNull();
+    expect(screen.queryByText(/null/)).toBeNull();
+  });
+
+  it('shows the later priced next day after an undisplayable earlier entry', () => {
+    const clearDue = { ...loan().due, payableSats: 0, payablePeople: 0 };
+    vi.mocked(getRepayment).mockResolvedValue(null);
+    show(
+      {
+        sundayRest: false,
+        loans: [
+          loan({
+            messageId: 'unpriced-next',
+            goalCurrency: 'PHP',
+            goalAmount: '900.00',
+            due: clearDue,
+            next: { dueOn: '2026-10-11', sats: null, amount: null },
+          }),
+          loan({
+            messageId: 'priced-next',
+            due: clearDue,
+            next: { dueOn: '2026-10-12', sats: 1_000, amount: null },
+          }),
+        ],
+      },
+      repay(),
+    );
+    expect(screen.getByText("Next: Monday, October 12, ₿1'000 · $1.00")).toBeTruthy();
+    expect(screen.queryByText(/October 11/)).toBeNull();
+  });
+
+  it('shows the develop all-waiting wording without a fiat label', () => {
+    show(
+      {
+        sundayRest: false,
+        loans: [
+          loan({
+            goalCurrency: 'PHP',
+            goalAmount: '900.00',
+            totalSats: null,
+            maxSats: null,
+            due: {
+              ...loan().due,
+              payableSats: 0,
+              payablePeople: 0,
+              waitingSats: null,
+              waitingPeople: 1,
+              waitingAmount: null,
+            },
+          }),
+        ],
+      },
+      repay(),
+    );
+    expect(screen.getByText(/^Your lender hasn't set up their wallet yet\./)).toBeTruthy();
+    expect(screen.queryByText(/null/)).toBeNull();
+    expect(screen.queryByRole('button', { name: /^Send / })).toBeNull();
   });
 
   it('keeps a foreign-currency ledger amount out of the list, send-now link, and share map', async () => {
@@ -812,6 +1218,89 @@ describe('LoanRepayScreen', () => {
     show({ sundayRest: false, loans: [loan()] });
     fireEvent.click(screen.getByRole('button', { name: 'Who gets paid' }));
     const alert = await screen.findByRole('alert');
+    expect(alert.textContent).toBe('Could not load who gets paid for this loan.');
+    expect(alert.className).toContain('text-app-danger');
+  });
+
+  it('shows an error line for an unpriced fiat payable share without a repayment list', async () => {
+    vi.mocked(getRepayment).mockResolvedValue(null);
+    show({
+      sundayRest: false,
+      loans: [
+        loan({
+          goalCurrency: 'PHP',
+          goalAmount: '900.00',
+          due: {
+            ...loan().due,
+            payableSats: null,
+            payablePeople: 1,
+            payableAmount: '30.00',
+            waitingSats: null,
+            waitingPeople: 0,
+            waitingAmount: null,
+          },
+        }),
+      ],
+    });
+    const whoButton = screen.getByRole('button', { name: 'Who gets paid' });
+    fireEvent.click(whoButton);
+    const whoList = document.getElementById(whoButton.getAttribute('aria-controls')!);
+    expect(whoList).not.toBeNull();
+    const alert = await within(whoList!).findByRole('alert');
+    expect(alert.textContent).toBe('Could not load who gets paid for this loan.');
+    expect(alert.className).toContain('text-app-danger');
+  });
+
+  it('shows an error line for an unpriced fiat waiting share without a repayment list', async () => {
+    vi.mocked(getRepayment).mockResolvedValue(null);
+    show({
+      sundayRest: false,
+      loans: [
+        loan({
+          goalCurrency: 'PHP',
+          goalAmount: '900.00',
+          due: {
+            ...loan().due,
+            payableSats: null,
+            payablePeople: 0,
+            payableAmount: null,
+            waitingSats: null,
+            waitingPeople: 1,
+            waitingAmount: '15.00',
+          },
+        }),
+      ],
+    });
+    const whoButton = screen.getByRole('button', { name: 'Who gets paid' });
+    fireEvent.click(whoButton);
+    const whoList = document.getElementById(whoButton.getAttribute('aria-controls')!);
+    expect(whoList).not.toBeNull();
+    const alert = await within(whoList!).findByRole('alert');
+    expect(alert.textContent).toBe('Could not load who gets paid for this loan.');
+    expect(alert.className).toContain('text-app-danger');
+  });
+
+  it('shows an error line for a priced waiting share without a repayment list', async () => {
+    vi.mocked(getRepayment).mockResolvedValue(null);
+    show({
+      sundayRest: false,
+      loans: [
+        loan({
+          due: {
+            ...loan().due,
+            payableSats: 0,
+            payablePeople: 0,
+            waitingSats: 500,
+            waitingPeople: 1,
+          },
+        }),
+      ],
+    });
+    const whoButton = screen.getByRole('button', { name: 'Who gets paid' });
+    fireEvent.click(whoButton);
+    const whoList = document.getElementById(whoButton.getAttribute('aria-controls')!);
+    expect(whoList).not.toBeNull();
+    const alert = await within(whoList!).findByRole('alert');
     expect(alert.textContent).toBe('Could not load who gets paid for this loan.');
     expect(alert.className).toContain('text-app-danger');
   });
@@ -1424,6 +1913,47 @@ describe('LoanRepayScreen', () => {
     expect(screen.getByText(/waits for 2 lenders/)).toBeTruthy();
   });
 
+  it('shows priced waiting sats even when no lender is waiting', () => {
+    show({
+      sundayRest: false,
+      loans: [
+        loan({
+          due: {
+            ...loan().due,
+            payableSats: 0,
+            payablePeople: 0,
+            waitingSats: 200,
+            waitingPeople: 0,
+          },
+        }),
+      ],
+    });
+    expect(screen.getByText(/Your lenders haven't set up their wallets yet/)).toBeTruthy();
+    expect(screen.queryByText('Nothing due today')).toBeNull();
+  });
+
+  it('shows nothing due when a known zero waiting part has waiting people', () => {
+    show({
+      sundayRest: false,
+      loans: [
+        loan({
+          due: {
+            ...loan().due,
+            payableSats: 0,
+            payablePeople: 0,
+            waitingSats: 0,
+            waitingPeople: 1,
+          },
+        }),
+      ],
+    });
+    expect(screen.getByText('Nothing due today')).toBeTruthy();
+    expect(screen.queryByText(/waits for/)).toBeNull();
+    expect(screen.queryByText(/hasn't set up/)).toBeNull();
+    expect(screen.queryByText(/waits until/)).toBeNull();
+    expect(screen.queryByText(/₿0/)).toBeNull();
+  });
+
   it.each([
     ['unavailable', 'Your 21.gifts wallet is not available here'],
     ['connecting', 'Checking your wallet…'],
@@ -1582,7 +2112,7 @@ describe('LoanRepayScreen', () => {
     expect(screen.getByText("Next: tomorrow, ₱30.00 + $1.00 · ₿2'000")).toBeTruthy();
   });
 
-  it('counts next recipients only for loans included in the next summary', async () => {
+  it('shows only the stored fiat next total when one same-day loan has no rate', async () => {
     let resolveFirst: (value: RepaymentLedger | null) => void = () => undefined;
     let resolveSecond: (value: RepaymentLedger | null) => void = () => undefined;
     vi.mocked(getRepayment).mockImplementation(
@@ -1627,8 +2157,97 @@ describe('LoanRepayScreen', () => {
       );
       await Promise.resolve();
     });
-    expect(screen.getByText('Next: tomorrow, ₱2.00 · ₿40 to 1 person')).toBeTruthy();
-    expect(screen.queryByText('Next: tomorrow, ₱2.00 · ₿40 to 2 people')).toBeNull();
+    expect(await screen.findByText('Next: tomorrow, ₱5.00 to 2 people')).toBeTruthy();
+    expect(screen.queryByText(/₿40/)).toBeNull();
+    expect(screen.queryByText(/null/)).toBeNull();
+  });
+
+  it('omits a same-day zero-sat loan from the unpriced next summary', async () => {
+    vi.mocked(getRepayment).mockImplementation((id) =>
+      Promise.resolve(
+        ledger({
+          repayments: [
+            {
+              ...ledger().repayments[1]!,
+              accountId: id === 'php-next-unpriced' ? 'giver-1' : 'giver-2',
+            },
+          ],
+        }),
+      ),
+    );
+    const clearDue = { ...loan().due, payableSats: 0, payablePeople: 0 };
+    show({
+      sundayRest: false,
+      loans: [
+        loan({
+          messageId: 'php-next-unpriced',
+          goalCurrency: 'PHP',
+          due: clearDue,
+          next: { dueOn: '2026-10-11', amount: '3.00', sats: null },
+        }),
+        loan({
+          messageId: 'php-next-zero',
+          goalCurrency: 'PHP',
+          due: clearDue,
+          next: { dueOn: '2026-10-11', amount: '0.00', sats: 0 },
+        }),
+      ],
+    });
+    expect(await screen.findByText('Next: tomorrow, ₱3.00 to 1 person')).toBeTruthy();
+    expect(screen.queryByText(/₿0/)).toBeNull();
+  });
+
+  it('omits a same-day unpriced loan whose stored fiat amount is zero', async () => {
+    vi.mocked(getRepayment).mockImplementation((id) =>
+      Promise.resolve(
+        ledger({
+          repayments: [
+            {
+              ...ledger().repayments[1]!,
+              accountId: id === 'php-next-unpriced' ? 'giver-1' : 'giver-2',
+            },
+          ],
+        }),
+      ),
+    );
+    const clearDue = { ...loan().due, payableSats: 0, payablePeople: 0 };
+    show({
+      sundayRest: false,
+      loans: [
+        loan({
+          messageId: 'php-next-unpriced',
+          goalCurrency: 'PHP',
+          due: clearDue,
+          next: { dueOn: '2026-10-11', amount: '3.00', sats: null },
+        }),
+        loan({
+          messageId: 'php-next-zero-fiat',
+          goalCurrency: 'PHP',
+          due: clearDue,
+          next: { dueOn: '2026-10-11', amount: '0.00', sats: null },
+        }),
+      ],
+    });
+    expect(await screen.findByText('Next: tomorrow, ₱3.00 to 1 person')).toBeTruthy();
+    expect(screen.queryByText(/Next: tomorrow, ₱3\.00 to 2 people/)).toBeNull();
+  });
+
+  it('omits the next aggregate when its only priced loan has zero sats', () => {
+    vi.mocked(getRepayment).mockResolvedValue(null);
+    const clearDue = { ...loan().due, payableSats: 0, payablePeople: 0 };
+    show({
+      sundayRest: false,
+      loans: [
+        loan({
+          goalCurrency: 'PHP',
+          due: clearDue,
+          next: { dueOn: '2026-10-11', amount: '3.00', sats: 0 },
+        }),
+      ],
+    });
+    expect(screen.getByText('Nothing due today')).toBeTruthy();
+    expect(screen.queryByText(/^Next:/)).toBeNull();
+    expect(screen.queryByText(/₿0/)).toBeNull();
   });
 
   it('shows tomorrow and later next lines for several recipients', async () => {
@@ -1716,6 +2335,29 @@ describe('LoanRepayScreen', () => {
     expect(screen.getByText('Fee ₿2 · $0.00')).toBeTruthy();
     expect(screen.getByText(/₿200 · \$0\.20 waits until/)).toBeTruthy();
     expect(screen.getByText(/Next: Tuesday, October 13/)).toBeTruthy();
+    cleanup();
+    show(
+      {
+        sundayRest: false,
+        loans: [
+          loan({
+            due: {
+              ...loan().due,
+              payableSats: 0,
+              payablePeople: 0,
+              waitingSats: null,
+              waitingPeople: 1,
+              waitingAmount: null,
+            },
+            next: null,
+          }),
+        ],
+      },
+      repay({ phase: 'repaid', sentSats: 1_000 }),
+    );
+    expect(screen.getByText(/Repaid ₿1'000/)).toBeTruthy();
+    expect(screen.queryByText(/waits until/)).toBeNull();
+    expect(screen.queryByText(/null/)).toBeNull();
   });
 
   it('does not replace a zero sent amount for a pinned success and omits empty follow-ups', () => {
@@ -1781,6 +2423,34 @@ describe('LoanRepayScreen', () => {
     );
     expect(screen.getByText('Still due today')).toBeTruthy();
     expect(screen.getByText('Sent ₿500 · $0.50 to Bruno')).toBeTruthy();
+  });
+
+  it('shows partial success when an unpriced payable loan remains', () => {
+    show(
+      {
+        sundayRest: false,
+        loans: [
+          loan({
+            goalCurrency: 'PHP',
+            goalAmount: '450.00',
+            totalSats: null,
+            maxSats: null,
+            due: {
+              ...loan().due,
+              payableSats: null,
+              payablePeople: 1,
+              payableAmount: '15.00',
+            },
+          }),
+        ],
+      },
+      repay({ phase: 'repaid', sentSats: 1_000, sentNames: ['Bruno'] }),
+    );
+    expect(screen.getByText('Still due today')).toBeTruthy();
+    expect(screen.getByText('₱15.00')).toBeTruthy();
+    expect(screen.getByText("Sent ₿1'000 · $1.00 to Bruno")).toBeTruthy();
+    expect(screen.queryByText(/Repaid ₿1'000/)).toBeNull();
+    expect(screen.queryByRole('button', { name: /^Send / })).toBeNull();
   });
 
   it('shows the stored sent amounts for a fiat repayment and partial send', () => {
@@ -1888,6 +2558,47 @@ describe('LoanRepayScreen', () => {
     vi.mocked(useLoanRepay).mockReturnValue(repay({ phase: 'repaid', sentSats: 0, pinned: true }));
     view.rerender(<LoanRepayScreen />);
     expect(screen.getByText('That was your last payment')).toBeTruthy();
+  });
+
+  it('keeps every current loan as context for a final due payment', () => {
+    const finalLoan = loan({ due: { ...loan().due, lastPayment: true } });
+    const zeroDueLoan = loan({
+      messageId: 'loan-2',
+      text: 'A second fully priced loan',
+      due: { ...loan().due, payableSats: 0, payablePeople: 0, lastPayment: false },
+    });
+    const data = { sundayRest: false, loans: [finalLoan, zeroDueLoan] };
+    const reload = vi.fn().mockResolvedValue(data);
+    const state = repay();
+    vi.mocked(useMyLoans).mockReturnValue({ loans: data, reload });
+    vi.mocked(useLoanRepay).mockReturnValue(state);
+    const view = renderWithLocale(<LoanRepayScreen />);
+
+    fireEvent.click(screen.getByRole('button', { name: /^Send ₿/ }));
+    expect(state.pay).toHaveBeenCalledWith([finalLoan], undefined, expect.any(Map));
+
+    vi.mocked(useMyLoans).mockReturnValue({
+      loans: {
+        sundayRest: false,
+        loans: [
+          loan({
+            due: {
+              ...finalLoan.due,
+              payableSats: 0,
+              payablePeople: 0,
+            },
+          }),
+          zeroDueLoan,
+        ],
+      },
+      reload,
+    });
+    vi.mocked(useLoanRepay).mockReturnValue(repay({ phase: 'repaid', sentSats: 1_000 }));
+    view.rerender(<LoanRepayScreen />);
+    expect(screen.queryByText('That was your last payment')).toBeNull();
+    expect(
+      screen.getByText(/last payment for “A sewing machine for my repair stall”/),
+    ).toBeTruthy();
   });
 
   it('keeps a final prepayment success when the refreshed loan list is empty', () => {
@@ -2095,6 +2806,36 @@ describe('LoanRepayScreen', () => {
     expect(screen.getAllByText('Waiting for Carla to set up their wallet')).toHaveLength(1);
     expect(screen.getByText('₱2.50 · ₿200')).toBeTruthy();
     expect(screen.queryByText('$2.50')).toBeNull();
+  });
+
+  it('keeps an all-waiting prepay result idle and ready for another amount', () => {
+    show(
+      { sundayRest: false, loans: [loan()] },
+      repay({
+        phase: 'idle',
+        activeAction: { kind: 'prepay', messageId: 'loan-1' },
+        prepayMessageId: 'loan-1',
+        prepayAllWaiting: true,
+        prepayWaiting: [
+          {
+            dayIndex: 12,
+            recipientAccountId: 'giver-waiting',
+            name: 'Carla',
+            username: 'carla',
+            amountSats: 200,
+            amount: null,
+          },
+        ],
+      }),
+    );
+
+    expect(screen.getByText('Waiting for Carla to set up their wallet')).toBeTruthy();
+    expect(screen.getByText('₿200 · $0.20')).toBeTruthy();
+    expect(screen.getByLabelText('Amount (₿)')).toHaveProperty('disabled', false);
+    expect(screen.getByRole('button', { name: 'Pay this amount' })).toHaveProperty(
+      'disabled',
+      true,
+    );
   });
 
   it('keeps prepay sending and shortfall state out of the due box', () => {

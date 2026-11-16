@@ -12,6 +12,7 @@ import {
   checkLoanAmount,
   definedFiatAmounts,
   definedFiatSum,
+  displayableNextAmount,
   isCollecting,
   loanMaxInput,
   loanMaxUnits,
@@ -16661,6 +16662,30 @@ test('Function: summarizeLoans — the production PHP pair keeps its next amount
   await openLoanUi(page, '/welcome', myLoans(productionPhpLoans), false);
   const card = page.getByRole('region', { name: 'Your loans (2)' });
   await expect(card).toContainText("Next: Monday, November 16, ₱199.99 · ₿3'857");
+});
+
+test('Function: displayableNextAmount — a stored fiat next amount stays visible without sats', async ({
+  page,
+}) => {
+  expect(displayableNextAmount(1, 'PHP', null)).toBe(true);
+  expect(displayableNextAmount(null, 'PHP', '199.99')).toBe(true);
+  expect(displayableNextAmount(null, 'BTC', '199.99')).toBe(false);
+  expect(displayableNextAmount(null, 'PHP', '0.00')).toBe(false);
+  const fiatOnly = loanWith(loanB, {
+    due: {
+      payableSats: 0,
+      payablePeople: 0,
+      waitingSats: 0,
+      waitingPeople: 0,
+      payableAmount: null,
+      waitingAmount: null,
+    },
+    next: { dueOn: '2026-11-16', sats: null, amount: '199.99' },
+  });
+  await openLoanUi(page, '/welcome', myLoans([fiatOnly]), false);
+  await expect(
+    page.getByRole('region', { name: 'Your loan' }).getByText('Next: Monday, November 16, ₱199.99'),
+  ).toBeVisible();
 });
 
 test('Function: parseLoanAmount — BTC sats and fiat cents stay integer based', async ({ page }) => {

@@ -23,8 +23,10 @@ import {
   definedFiatAmounts,
   definedDueLabel,
   definedFiatSum,
+  displayableNextAmount,
   dueShares,
   fittingPrefix,
+  isCollecting,
   summarizeLoans,
   validatedRepaymentPayment,
   type DueShare,
@@ -195,11 +197,7 @@ export function LoanRepayScreen(): ReactElement {
     return converted === null ? bitcoin : `${bitcoin} · ${converted}`;
   };
   const holding = money;
-  const wholeLoanText = (item: MyLoan): string => {
-    const bitcoin = bitcoinText(item.totalSats);
-    if (isFiatCode(item.goalCurrency)) {
-      return exactStoredFiat(item.goalAmount, item.goalCurrency, numberFormat);
-    }
+  const storedFiatText = (item: MyLoan): string | null => {
     const figure = committedFiatFigure(
       {
         amountCurrency: null,
@@ -211,10 +209,18 @@ export function LoanRepayScreen(): ReactElement {
       },
       fiat,
     );
-    if (figure === null) {
-      return money(item.totalSats);
+    return figure === null ? null : formatFiatDisplay(figure.amount, figure.code, numberFormat);
+  };
+  const wholeLoanText = (item: MyLoan): string => {
+    if (isFiatCode(item.goalCurrency)) {
+      return exactStoredFiat(item.goalAmount, item.goalCurrency, numberFormat);
     }
-    return `${bitcoin} · ${formatFiatDisplay(figure.amount, figure.code, numberFormat)}`;
+    const totalSats = item.totalSats ?? 0;
+    const stored = storedFiatText(item);
+    if (item.totalSats === null) {
+      return stored ?? item.goalAmount;
+    }
+    return stored === null ? money(totalSats) : `${bitcoinText(totalSats)} · ${stored}`;
   };
   const completedPrepayTargetMissing =
     repay.phase === 'repaid' &&
@@ -244,6 +250,8 @@ export function LoanRepayScreen(): ReactElement {
   const ledgersMissing = ledgers.some((ledger) => ledger === null);
   const payable = summary.payableSats;
   const waiting = summary.waitingSats;
+  const hasPayable = payable === null || payable > 0;
+  const hasWaiting = waiting === null ? summary.waitingPeople > 0 : waiting > 0;
   const payablePeople = ledgersMissing
     ? loans.loans.reduce((sum, loan) => sum + loan.due.payablePeople, 0)
     : new Set(shares.filter((share) => !share.waiting).map((share) => share.accountId)).size;
@@ -258,10 +266,14 @@ export function LoanRepayScreen(): ReactElement {
     ).format(new Date(`${dueOn}T12:00:00`));
   const nextPeople = new Set(
     loans.loans.flatMap((loan, index) => {
+      const next = summary.next;
+      if (next === null || loan.next === null || loan.next.dueOn !== next.dueOn) {
+        return [];
+      }
       if (
-        loan.next === null ||
-        loan.next.sats === null ||
-        loan.next.dueOn !== summary.next?.dueOn
+        next.sats === null
+          ? !displayableNextAmount(loan.next.sats, loan.goalCurrency, loan.next.amount)
+          : loan.next.sats === null || loan.next.sats <= 0
       ) {
         return [];
       }
@@ -282,9 +294,14 @@ export function LoanRepayScreen(): ReactElement {
     tomorrow.setDate(tomorrow.getDate() + 1);
     const nextIsTomorrow = summary.next.dueOn === localDay(tomorrow);
     const amount =
-      summary.next.amount === null
-        ? money(summary.next.sats)
-        : `${summary.next.amount} · ${bitcoinText(summary.next.sats)}`;
+      summary.next.sats === null
+        ? summary.next.amount
+        : summary.next.amount === null
+          ? money(summary.next.sats)
+          : `${summary.next.amount} · ${bitcoinText(summary.next.sats)}`;
+    if (amount === null) {
+      return null;
+    }
     const variables = {
       amount,
       count: nextPeople,
@@ -305,18 +322,28 @@ export function LoanRepayScreen(): ReactElement {
   const definedPayableLabel = definedDueLabel(loans.loans, 'payable', numberFormat);
   const definedWaiting = definedDueLabel(loans.loans, 'waiting', numberFormat);
   const waitingLabel =
-    definedWaiting === null ? money(waiting) : `${definedWaiting} · ${bitcoinText(waiting)}`;
+    waiting === 0
+      ? null
+      : waiting === null
+        ? definedWaiting
+        : definedWaiting === null
+          ? money(waiting)
+          : `${definedWaiting} · ${bitcoinText(waiting)}`;
   const payableCurrencies = new Set(
-    loans.loans.filter((loan) => loan.due.payableSats > 0).map((loan) => loan.goalCurrency),
+    loans.loans
+      .filter((loan) => loan.due.payableSats !== null && loan.due.payableSats > 0)
+      .map((loan) => loan.goalCurrency),
   );
   const singlePayableFiat = payableCurrencies.size === 1 && !payableCurrencies.has('BTC');
-  const bigAmount =
-    definedPayableLabel === null
-      ? formatBitcoin(payable, numberFormat)
-      : singlePayableFiat
-        ? definedPayableLabel
-        : `${definedPayableLabel} · ${bitcoinText(payable)}`;
-  const smallAmount = definedPayableLabel !== null ? null : fiatOnly(payable);
+  const bigAmount: string | null =
+    payable === null
+      ? definedPayableLabel
+      : definedPayableLabel === null
+        ? formatBitcoin(payable, numberFormat)
+        : singlePayableFiat
+          ? definedPayableLabel
+          : `${definedPayableLabel} · ${bitcoinText(payable)}`;
+  const smallAmount = payable === null || definedPayableLabel !== null ? null : fiatOnly(payable);
 
   const rowAmount = (share: DueShare): string => {
     // `dueShares` creates every share from this exact loan array and preserves its index.
@@ -354,11 +381,11 @@ export function LoanRepayScreen(): ReactElement {
     repay.sentSats > 0 &&
     (repay.phase === 'idle' ||
       repay.phase === 'failed' ||
-      (repay.phase === 'repaid' && payable > 0));
+      (repay.phase === 'repaid' && hasPayable));
   const showRepaid =
     dueRun &&
     ((repay.pinned && repay.phase === 'repaid') ||
-      (repay.phase === 'repaid' && repay.sentSats > 0 && payable === 0));
+      (repay.phase === 'repaid' && repay.sentSats > 0 && !hasPayable));
   const paidSource = paidLoans.length > 0 ? paidLoans : loans.loans;
   const prepayTargetId =
     repay.activeAction?.kind === 'prepay' ? repay.activeAction.messageId : null;
@@ -407,7 +434,7 @@ export function LoanRepayScreen(): ReactElement {
             ) : null}
           </>
         )}
-        {summary.waitingSats > 0 ? (
+        {waitingLabel !== null && hasWaiting ? (
           <p className="mt-2 text-sm tabular-nums lining-nums text-app-muted">
             {t('loans.waitsLater', { amount: waitingLabel })}
           </p>
@@ -428,7 +455,9 @@ export function LoanRepayScreen(): ReactElement {
     keptByLoan.set(share.messageId, kept + 1);
     return true;
   });
-  const payableLoans = loans.loans.filter((loan) => loan.due.payableSats > 0);
+  const payableLoans = loans.loans.filter(
+    (loan) => loan.due.payableSats !== null && loan.due.payableSats > 0,
+  );
   const payableLoanAmounts = payableLoans.map((loan) => ({
     code: loan.goalCurrency,
     amount: loan.due.payableAmount,
@@ -447,7 +476,7 @@ export function LoanRepayScreen(): ReactElement {
   const fullSendFromShares = payableWithinDue.length > 0 && payableSharesMatchLoans;
   const fullSendSats = fullSendFromShares
     ? payableWithinDue.reduce((sum, share) => sum + (share.sats as number), 0)
-    : payable;
+    : (payable ?? 0);
   const fullSendAmounts = fullSendFromShares
     ? payableWithinDue.map((share) => ({
         code: loans.loans[share.loanIndex]!.goalCurrency,
@@ -470,6 +499,7 @@ export function LoanRepayScreen(): ReactElement {
   const dueMissingSats =
     dueRun && repay.missingSats !== null && repay.missingSats > 0 ? repay.missingSats : null;
   const hasMissingSats = dueMissingSats !== null;
+  const payRun = payable !== null && payable > 0 ? payable : null;
   const otherActionBusy =
     repay.activeAction !== null &&
     repay.activeAction.kind !== 'due' &&
@@ -479,11 +509,11 @@ export function LoanRepayScreen(): ReactElement {
     setSendingSats(onlyShares === undefined ? fullSendSats : fittingSats);
     const amounts = onlyShares === undefined ? fullSendAmounts : fittingAmounts;
     setSendingAmounts(amounts);
-    repay.pay(loans.loans, onlyShares, shareAmounts);
+    repay.pay(payableLoans, onlyShares, shareAmounts);
   };
 
   const idleControls =
-    balanceSats === null ? null : balanceSats >= payable && !hasMissingSats ? (
+    payRun === null || balanceSats === null ? null : balanceSats >= payRun && !hasMissingSats ? (
       <>
         <p className="text-center text-xs tabular-nums lining-nums text-app-muted">
           {t('loans.fromWallet', { amount: holding(balanceSats) })}
@@ -504,7 +534,7 @@ export function LoanRepayScreen(): ReactElement {
           <p className="mt-1 text-sm tabular-nums lining-nums text-app-muted">
             {t('loans.shortDetail', {
               balance: holding(balanceSats),
-              missing: holding(dueMissingSats ?? Math.max(0, payable - balanceSats)),
+              missing: holding(dueMissingSats ?? Math.max(0, payRun - balanceSats)),
             })}
           </p>
           {!dueOwnsTopUp || !repay.topUpOpen ? (
@@ -548,6 +578,16 @@ export function LoanRepayScreen(): ReactElement {
       </>
     );
 
+  const sendingStatus =
+    payRun === null ? null : (
+      <p role="status" className="flex items-center justify-center gap-2 text-sm text-app-muted">
+        <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" />
+        {t('loans.sending', {
+          amount: fiatPayLabel(activeSendingAmounts, sendingSats ?? payRun),
+        })}
+      </p>
+    );
+
   let payArea: ReactElement | null;
   switch (repay.phase) {
     case 'unavailable':
@@ -571,16 +611,7 @@ export function LoanRepayScreen(): ReactElement {
     case 'preparing':
     case 'sending':
     case 'waiting':
-      payArea = dueRun ? (
-        <p role="status" className="flex items-center justify-center gap-2 text-sm text-app-muted">
-          <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" />
-          {t('loans.sending', {
-            amount: fiatPayLabel(activeSendingAmounts, sendingSats ?? payable),
-          })}
-        </p>
-      ) : (
-        idleControls
-      );
+      payArea = dueRun ? sendingStatus : idleControls;
       break;
     case 'unconfirmed':
       payArea = dueRun ? (
@@ -634,7 +665,7 @@ export function LoanRepayScreen(): ReactElement {
                 ? t('loans.dueLast')
                 : t('loans.dueToday')}
       </p>
-      {payable === 0 ? null : (
+      {payable === 0 || bigAmount === null ? null : (
         <>
           <p className="mt-1 text-3xl font-semibold tabular-nums lining-nums text-app-fg">
             {bigAmount}
@@ -650,9 +681,9 @@ export function LoanRepayScreen(): ReactElement {
           </p>
         </>
       )}
-      {waiting > 0 ? (
+      {hasWaiting && (waitingLabel !== null || payable === null || payable === 0) ? (
         <p className="mt-3 rounded-xl bg-app-card px-3 py-2 text-sm text-app-muted">
-          {payable > 0
+          {waitingLabel !== null && (payable === null || payable > 0)
             ? t(summary.waitingPeople === 1 ? 'loans.waitsOne' : 'loans.waitsMany', {
                 amount: waitingLabel,
                 count: summary.waitingPeople,
@@ -678,10 +709,14 @@ export function LoanRepayScreen(): ReactElement {
           {loans.loans.map((loan, loanIndex) => {
             const rows = shares.filter((share) => share.loanIndex === loanIndex);
             const ledger = ledgerById[loan.messageId];
+            const payableDue =
+              loan.due.payableSats === null ? loan.due.payablePeople > 0 : loan.due.payableSats > 0;
+            const waitingDue =
+              loan.due.waitingSats === null ? loan.due.waitingPeople > 0 : loan.due.waitingSats > 0;
             const showLedgerGap =
               rows.length === 0 &&
               loan.fundedAt !== null &&
-              loan.due.payableSats + loan.due.waitingSats > 0 &&
+              (payableDue || waitingDue) &&
               (ledger === undefined || ledger === null);
             if (rows.length === 0 && !showLedgerGap) {
               return null;
@@ -750,7 +785,10 @@ export function LoanRepayScreen(): ReactElement {
           })}
         </p>
       ) : null}
-      {payable > 0 ? <div className="mt-4 flex flex-col gap-3">{payArea}</div> : null}
+      {payable === null && nextLine() !== null ? (
+        <p className="mt-2 text-sm tabular-nums lining-nums text-app-muted">{nextLine()}</p>
+      ) : null}
+      {hasPayable ? <div className="mt-4 flex flex-col gap-3">{payArea}</div> : null}
     </div>
   );
 
@@ -762,7 +800,7 @@ export function LoanRepayScreen(): ReactElement {
     </div>
   ) : successBox !== null ? (
     successBox
-  ) : payable === 0 && waiting === 0 ? (
+  ) : payable === 0 && !hasWaiting ? (
     <div className="w-full rounded-2xl border border-app-success/50 bg-app-card-muted p-4">
       <p className="flex items-center gap-2 font-semibold text-app-success">
         <Check aria-hidden="true" className="h-5 w-5" />
@@ -789,9 +827,10 @@ export function LoanRepayScreen(): ReactElement {
             {t(loans.loans.length === 1 ? 'loans.listOne' : 'loans.listMany')}
           </h2>
           {loans.loans.map((loan) => {
+            const btcTotal = loan.goalCurrency === 'BTC' ? loan.totalSats : null;
             const split =
               loan.goalCurrency === 'BTC'
-                ? splitCreditPlan(BigInt(loan.totalSats), loan.termDays)
+                ? splitCreditPlan(btcTotal === null ? 0n : BigInt(btcTotal), loan.termDays)
                 : splitCreditPlan(creditSmallestUnits(loan.goalAmount, false) ?? 0n, loan.termDays);
             const planTotal =
               loan.goalCurrency === 'BTC'
@@ -807,6 +846,20 @@ export function LoanRepayScreen(): ReactElement {
                   );
             const planPerDay = planSlice('perDay');
             const uneven = (split?.remainder ?? 0n) !== 0n;
+            const planText =
+              loan.goalCurrency === 'BTC' && btcTotal === null
+                ? `${planTotal} · ${t('forum.creditTermDayCount', { days: loan.termDays })}`
+                : uneven
+                  ? `${planTotal} · ${t('forum.creditPlanLast', {
+                      amount: planPerDay,
+                      earlier: loan.termDays - 1,
+                      last: planSlice('last'),
+                    })}`
+                  : t('loans.plan', {
+                      total: planTotal,
+                      days: loan.termDays,
+                      perDay: planPerDay,
+                    });
             const ledger = ledgerById[loan.messageId] ?? null;
             let definedRepaid: string | null = null;
             if (
@@ -853,27 +906,19 @@ export function LoanRepayScreen(): ReactElement {
               total: wholeLoanText(loan),
             });
             const repaidPercent =
-              loan.totalSats === 0 ? 0 : Math.min(100, (loan.repaidSats / loan.totalSats) * 100);
+              loan.totalSats === null
+                ? null
+                : loan.totalSats === 0
+                  ? 0
+                  : Math.min(100, (loan.repaidSats / loan.totalSats) * 100);
             return (
               <article
                 key={loan.messageId}
                 className={loans.loans.length > 1 ? 'rounded-xl border border-app-border p-3' : ''}
               >
                 <p className="line-clamp-2 font-medium text-app-fg">{loan.text}</p>
-                <p className="mt-1 text-sm tabular-nums lining-nums text-app-muted">
-                  {uneven
-                    ? `${planTotal} · ${t('forum.creditPlanLast', {
-                        amount: planPerDay,
-                        earlier: loan.termDays - 1,
-                        last: planSlice('last'),
-                      })}`
-                    : t('loans.plan', {
-                        total: planTotal,
-                        days: loan.termDays,
-                        perDay: planPerDay,
-                      })}
-                </p>
-                {loan.fundedAt === null ? (
+                <p className="mt-1 text-sm tabular-nums lining-nums text-app-muted">{planText}</p>
+                {isCollecting(loan) ? (
                   <p className="mt-2 text-sm text-app-muted">{t('welcome.loanCollecting')}</p>
                 ) : (
                   <>
@@ -886,22 +931,24 @@ export function LoanRepayScreen(): ReactElement {
                         })}
                       </span>
                     </div>
-                    <svg
-                      viewBox="0 0 100 8"
-                      preserveAspectRatio="none"
-                      role="img"
-                      aria-label={repaidText}
-                      className="h-2 w-full"
-                    >
-                      <rect x="0" y="0" width="100" height="8" className="fill-app-border" />
-                      <rect
-                        x="0"
-                        y="0"
-                        width={repaidPercent}
-                        height="8"
-                        className="fill-app-success"
-                      />
-                    </svg>
+                    {repaidPercent === null ? null : (
+                      <svg
+                        viewBox="0 0 100 8"
+                        preserveAspectRatio="none"
+                        role="img"
+                        aria-label={repaidText}
+                        className="h-2 w-full"
+                      >
+                        <rect x="0" y="0" width="100" height="8" className="fill-app-border" />
+                        <rect
+                          x="0"
+                          y="0"
+                          width={repaidPercent}
+                          height="8"
+                          className="fill-app-success"
+                        />
+                      </svg>
+                    )}
                   </>
                 )}
                 <Link
@@ -919,16 +966,20 @@ export function LoanRepayScreen(): ReactElement {
                   prepayWaiting={
                     repay.prepayMessageId === loan.messageId ? repay.prepayWaiting : []
                   }
+                  prepayAllWaiting={
+                    repay.prepayMessageId === loan.messageId && repay.prepayAllWaiting
+                  }
                   balanceSats={repay.balanceSats}
                   missingSats={repay.missingSats}
                   showShortfall={
+                    payable === null ||
                     payable === 0 ||
                     (repay.activeAction?.kind === 'prepay' &&
                       repay.activeAction.messageId === loan.messageId)
                   }
                   sundayRest={loans.sundayRest}
                   rateDay={rateDay}
-                  showWalletStatus={payable === 0}
+                  showWalletStatus={payable === null || payable === 0}
                   topUpOpen={
                     repay.topUpOpen && activeTopUpOwner === prepayTopUpOwner(loan.messageId)
                   }
