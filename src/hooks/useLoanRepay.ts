@@ -21,6 +21,7 @@ import { creditSmallestUnits } from '@/lib/credit-plan';
 import { isCollecting, parseLoanAmount } from '@/lib/loan-repay';
 import { MissingRequirementsError } from '@/lib/missing-requirements';
 import { visualPin } from '@/lib/visual-pin';
+import { payInvoiceSparkFirst } from '@/lib/wallet/invoice-pay';
 import { reportPaymentFailure } from '@/lib/wallet/payment-failure';
 import { canUnlockWallet } from '@/lib/wallet/wallet-phrase';
 import { needsWalletSetup } from '@/lib/wallet/wallet-setup';
@@ -234,11 +235,6 @@ function orderBills(
         left.billIndex - right.billIndex,
     )
     .map(({ loanIndex: _loanIndex, billIndex: _billIndex, ...bill }) => bill);
-}
-
-/** Spark invoice, or the payment request when the api did not issue one. */
-function invoiceInput(bill: Pick<RepaymentBill, 'sparkInvoice' | 'pr'>): string {
-  return bill.sparkInvoice ?? bill.pr;
 }
 
 /** Share identity that stays stable when `/due` rotates the invoice. */
@@ -972,9 +968,12 @@ export function useLoanRepay(options: {
         let insufficient = false;
         let insufficientFeeSats = 0;
         for (const bill of bills) {
-          const result = await payFromWallet({
-            type: 'input',
-            input: invoiceInput(bill),
+          const result = await payInvoiceSparkFirst(payFromWallet, bill, (failure) => {
+            if (active()) {
+              reportPaymentFailure({ ...failure, amountSats: bill.amountSats }, 'repay', {
+                session,
+              });
+            }
           });
           if (!active()) {
             return;

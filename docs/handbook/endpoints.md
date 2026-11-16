@@ -1266,7 +1266,7 @@
 
 ## Endpoint: POST /fond/payouts/[id]/invoice
 
-- **Purpose:** Same-origin Bearer proxy of api `POST /fond/payouts/:id/invoice`. The api converts the row's stored USD amount at the current spot and returns `{ id, bolt11, paymentHash, sparkInvoice }`; the app pays `sparkInvoice ?? bolt11` once and sends no proof.
+- **Purpose:** Same-origin Bearer proxy of api `POST /fond/payouts/:id/invoice`. The api converts the row's stored USD amount at the current spot and returns `{ id, bolt11, paymentHash, sparkInvoice }`; the app pays `sparkInvoice`, or `bolt11` without one or after the wallet refused it at prepare, once and sends no proof.
 - **Auth:** Bearer session of the Fond account. The api answers 403 `Fond only` for another session.
 - **Returns:** Upstream 200 `{ id, bolt11, paymentHash, sparkInvoice }`, with `sparkInvoice` a string or null. After the payment, the api detects the send by payment hash, BOLT11, or Spark invoice string and settles the row itself.
 - **Errors:** Upstream 404 for an unknown or malformed id, 409 in progress / not payable / amount below one sat, 401, 403, 503, or 502 when unreachable.

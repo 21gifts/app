@@ -1309,7 +1309,7 @@ describe('useLoanRepay send and settlement', () => {
 
 describe('useLoanRepay failure report', () => {
   it('reports a failed prepare under repay and the session', async () => {
-    const prepareFailure = failure('prepare', 'sdk_error');
+    const prepareFailure = failure('prepare', 'network');
     vi.mocked(postRepaymentDue).mockResolvedValue({ bills: [bill('Bruno')], waiting: [] });
     vi.mocked(payFromWallet).mockResolvedValue({ kind: 'failed', failure: prepareFailure });
     const { result } = renderHook(() =>
@@ -1323,6 +1323,51 @@ describe('useLoanRepay failure report', () => {
       'repay',
       { session: 'token' },
     );
+  });
+
+  it('repays over Lightning and reports the refusal when the wallet refuses the Spark invoice', async () => {
+    const refusal = failure('prepare', 'sdk_error');
+    const due = bill('Bruno');
+    vi.mocked(postRepaymentDue).mockResolvedValue({ bills: [due], waiting: [] });
+    vi.mocked(payFromWallet).mockImplementation(async (request) =>
+      request.type === 'input' && request.input === due.sparkInvoice
+        ? { kind: 'failed', failure: refusal }
+        : confirmed(500, async () => ({ kind: 'paid' }), 3),
+    );
+    const { result } = renderHook(() =>
+      useLoanRepay({ reload: vi.fn(async () => body([loan()])) }),
+    );
+    act(() => result.current.pay([loan()]));
+    await waitFor(() => expect(payFromWallet).toHaveBeenCalledTimes(2));
+    expect(vi.mocked(payFromWallet).mock.calls).toEqual([
+      [{ type: 'input', input: due.sparkInvoice }],
+      [{ type: 'input', input: due.pr }],
+    ]);
+    await waitFor(() => expect(result.current.phase).not.toBe('failed'));
+    expect(reportPaymentFailure).toHaveBeenCalledWith({ ...refusal, amountSats: 500 }, 'repay', {
+      session: 'token',
+    });
+  });
+
+  it('does not report a refused Spark invoice that resolves after unmount', async () => {
+    let refuse!: (result: WalletPayResult) => void;
+    vi.mocked(postRepaymentDue).mockResolvedValue({ bills: [bill('Bruno')], waiting: [] });
+    vi.mocked(payFromWallet).mockReturnValueOnce(
+      new Promise<WalletPayResult>((resolve) => {
+        refuse = resolve;
+      }),
+    );
+    vi.mocked(payFromWallet).mockResolvedValue(confirmed(500));
+    const { result, unmount } = renderHook(() =>
+      useLoanRepay({ reload: vi.fn(async () => body([loan()])) }),
+    );
+    act(() => result.current.pay([loan()]));
+    await waitFor(() => expect(payFromWallet).toHaveBeenCalledTimes(1));
+    unmount();
+    await act(async () => {
+      refuse({ kind: 'failed', failure: failure('prepare', 'sdk_error') });
+    });
+    expect(reportPaymentFailure).not.toHaveBeenCalled();
   });
 
   it('reports an insufficient prepare', async () => {

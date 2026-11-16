@@ -56,6 +56,8 @@ const FAILED: PaymentFailure = {
   amountSats: null,
   feeSats: null,
 };
+/** A prepare that stopped on the network, which has no Lightning fallback. */
+const DOWN: PaymentFailure = { ...FAILED, reason: 'network' };
 /** A balance too low for amount and fee. */
 const LOW: PaymentFailure = { ...FAILED, reason: 'insufficient', amountSats: 21, feeSats: 0 };
 /** A send the app stopped waiting for. */
@@ -120,6 +122,56 @@ describe('useWalletPay path choice', () => {
     renderHook(() => useWalletPay(SPARK, PR, 21, 'gift'));
     await act(async () => undefined);
     expect(payFromWallet).toHaveBeenCalledWith({ type: 'input', input: SPARK });
+  });
+
+  it('pays the payment request with its fee when the wallet refuses the sparkInvoice', async () => {
+    vi.mocked(payFromWallet).mockImplementation(async (request) =>
+      request.type === 'input' && request.input === SPARK
+        ? { kind: 'failed', failure: FAILED }
+        : { ...confirmWith(async () => ({ kind: 'paid' }), 2), method: 'lightning' },
+    );
+    const { result } = renderHook(() => useWalletPay(SPARK, PR, 21, 'gift'));
+    await act(async () => undefined);
+    expect(vi.mocked(payFromWallet).mock.calls).toEqual([
+      [{ type: 'input', input: SPARK }],
+      [{ type: 'input', input: PR }],
+    ]);
+    expect(result.current.view).toBe('confirm');
+    expect(result.current.feeSats).toBe(2);
+    expect(reportPaymentFailure).toHaveBeenCalledTimes(1);
+    expect(reportPaymentFailure).toHaveBeenCalledWith({ ...FAILED, amountSats: 21 }, 'gift', {
+      session: 'token',
+    });
+  });
+
+  it('stays on the sparkInvoice when its prepare stops for another reason', async () => {
+    vi.mocked(payFromWallet).mockResolvedValue({ kind: 'failed', failure: DOWN });
+    const { result } = renderHook(() => useWalletPay(SPARK, PR, 21, 'gift'));
+    await act(async () => undefined);
+    expect(payFromWallet).toHaveBeenCalledTimes(1);
+    expect(result.current.view).toBe('failed');
+  });
+
+  it('does not report the refused sparkInvoice of a sheet that moved on meanwhile', async () => {
+    let refuse: (value: WalletPayResult) => void = () => undefined;
+    vi.mocked(payFromWallet).mockImplementationOnce(
+      () =>
+        new Promise<WalletPayResult>((resolve) => {
+          refuse = resolve;
+        }),
+    );
+    vi.mocked(payFromWallet).mockResolvedValue(confirmWith(async () => ({ kind: 'paid' })));
+    const { rerender } = renderHook(({ value }) => useWalletPay(value, PR, 21, 'gift'), {
+      initialProps: { value: SPARK },
+    });
+    await act(async () => undefined);
+    await act(async () => {
+      rerender({ value: 'spark1other' });
+    });
+    await act(async () => {
+      refuse({ kind: 'failed', failure: FAILED });
+    });
+    expect(reportPaymentFailure).not.toHaveBeenCalled();
   });
 
   it('is unavailable when the wallet is not configured', () => {
@@ -749,7 +801,7 @@ describe('useWalletPay sending', () => {
           }),
       ),
     );
-    vi.mocked(payFromWallet).mockResolvedValueOnce({ kind: 'failed', failure: FAILED });
+    vi.mocked(payFromWallet).mockResolvedValueOnce({ kind: 'failed', failure: DOWN });
     const { result, rerender } = renderHook(({ value }) => useWalletPay(value, PR, 21, 'gift'), {
       initialProps: { value: SPARK },
     });
@@ -851,7 +903,7 @@ describe('useWalletPay visual pins', () => {
 
 describe('useWalletPay retry', () => {
   it('prepares again after a failed prepare without reconnecting', async () => {
-    vi.mocked(payFromWallet).mockResolvedValueOnce({ kind: 'failed', failure: FAILED });
+    vi.mocked(payFromWallet).mockResolvedValueOnce({ kind: 'failed', failure: DOWN });
     vi.mocked(payFromWallet).mockResolvedValueOnce(confirmWith(async () => ({ kind: 'paid' }), 2));
     const { result } = renderHook(() => useWalletPay(SPARK, PR, 21, 'gift'));
     await act(async () => undefined);
@@ -1048,12 +1100,12 @@ describe('useWalletPay gift record', () => {
 
 describe('useWalletPay failure report', () => {
   it('reports a failed prepare under the flow, the sheet amount, and the session', async () => {
-    vi.mocked(payFromWallet).mockResolvedValue({ kind: 'failed', failure: FAILED });
+    vi.mocked(payFromWallet).mockResolvedValue({ kind: 'failed', failure: DOWN });
     const { result } = renderHook(() => useWalletPay(SPARK, PR, 21, 'repay'));
     await act(async () => undefined);
     expect(result.current.view).toBe('failed');
     expect(reportPaymentFailure).toHaveBeenCalledTimes(1);
-    expect(reportPaymentFailure).toHaveBeenCalledWith({ ...FAILED, amountSats: 21 }, 'repay', {
+    expect(reportPaymentFailure).toHaveBeenCalledWith({ ...DOWN, amountSats: 21 }, 'repay', {
       session: 'token',
     });
   });

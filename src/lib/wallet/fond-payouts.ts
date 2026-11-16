@@ -1,6 +1,7 @@
 import type { FondPayout, FondPayoutInvoice } from '@/lib/api-types';
 import type { FondPayoutFailure } from '@/lib/api';
 import { getE2eNow } from '@/lib/config';
+import { payInvoiceSparkFirst } from '@/lib/wallet/invoice-pay';
 import { reportPaymentFailure, type PaymentFailure } from '@/lib/wallet/payment-failure';
 import type { WalletPayResult, WalletSendResult } from '@/lib/wallet/wallet-service';
 import type {
@@ -19,6 +20,12 @@ const e2eSends: WalletPayment[] = [];
 /** The Playwright Fond wallet's static deposit address (a BIP-86 mainnet test vector). */
 const FOND_E2E_DEPOSIT_ADDRESS = 'bc1p5cyxnuxmeuwuvkwfem96lqzszd02n6xdcjrs20cac6yqjjwudpxqkedrcr';
 
+/**
+ * The Spark invoice the Playwright Fond wallet refuses at prepare, as the SDK
+ * refuses one it cannot pay, so a test can reach the Lightning fallback.
+ */
+export const FOND_E2E_REFUSED_SPARK_INVOICE = 'spark1e2erefused';
+
 /** The one open deposit the Playwright Fond wallet holds; a claim records its ceiling. */
 const e2eDeposit: WalletDeposit = {
   txid: 'cd'.repeat(32),
@@ -30,9 +37,11 @@ const e2eDeposit: WalletDeposit = {
 
 /**
  * The fake Fond wallet for a Playwright build: a prepare that pays the input it
- * is given and records it as a completed send, a fixed deposit address, and one
- * open deposit whose claim records the fee ceiling. Returns `null` in every
- * other build, so production and unit tests keep the real wallet functions.
+ * is given, records it as a completed send, and posts it to `/e2e/wallet-send`
+ * for the test to read; a prepare of {@link FOND_E2E_REFUSED_SPARK_INVOICE}
+ * that fails as an SDK refusal; a fixed deposit address; and one open deposit
+ * whose claim records the fee ceiling. Returns `null` in every other build, so
+ * production and unit tests keep the real wallet functions.
  *
  * @returns The Playwright wallet fakes, or `null` outside a Playwright build.
  */
@@ -61,6 +70,18 @@ export function fondE2eWallet(): {
         };
       }
       const invoice = request.input;
+      if (invoice === FOND_E2E_REFUSED_SPARK_INVOICE) {
+        return {
+          kind: 'failed',
+          failure: {
+            stage: 'prepare',
+            reason: 'sdk_error',
+            method: 'spark',
+            amountSats: null,
+            feeSats: null,
+          },
+        };
+      }
       return {
         kind: 'confirm',
         amountSats: 21,
@@ -78,6 +99,11 @@ export function fondE2eWallet(): {
             senderComment: null,
             info: { invoice },
           });
+          void fetch('/e2e/wallet-send', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ input: invoice }),
+          }).catch(() => undefined);
           return { kind: 'paid' };
         },
       };
@@ -147,7 +173,7 @@ interface PayoutTarget {
   id: string;
   /** Payment hash of the invoice. */
   paymentHash: string;
-  /** BOLT11 to pay when the Spark invoice is absent. */
+  /** BOLT11 to pay when the Spark invoice is absent or the wallet refuses it. */
   bolt11: string;
   /** Fee-free Spark invoice to pay when the api returned one. */
   sparkInvoice: string | null;
@@ -288,7 +314,9 @@ type RowOutcome = 'paid' | 'insufficient' | 'cancelled' | 'skipped';
 /**
  * Pays one invoice once through the in-app wallet.
  *
- * Only a `confirm` prepare proceeds to `send`. No balance stops the whole tick
+ * The Spark invoice is prepared first; one the wallet refuses at prepare is
+ * reported and the BOLT11 is prepared instead (`payInvoiceSparkFirst`). Only a
+ * `confirm` prepare proceeds to `send`. No balance stops the whole tick
  * (`insufficient`); every other outcome skips the row.
  *
  * @param deps - Tick collaborators.
@@ -301,10 +329,13 @@ async function payInvoice(deps: FondPayoutTickDeps, target: PayoutTarget): Promi
   }
   let prepared: WalletPayResult;
   try {
-    prepared = await deps.payFromWallet({
-      type: 'input',
-      input: target.sparkInvoice ?? target.bolt11,
-    });
+    prepared = await payInvoiceSparkFirst(
+      deps.payFromWallet,
+      { sparkInvoice: target.sparkInvoice, pr: target.bolt11 },
+      (failure) => {
+        reportFondPayoutFailure(deps.session, failure);
+      },
+    );
   } catch (error) {
     reportFondPayoutFailure(deps.session, thrownFailure('prepare', error));
     return 'skipped';

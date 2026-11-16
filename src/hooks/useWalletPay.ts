@@ -3,7 +3,12 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useWalletSetup } from '@/hooks/useWalletSetup';
 import { visualPin } from '@/lib/visual-pin';
-import { reportPaymentFailure, type PayFlow } from '@/lib/wallet/payment-failure';
+import { payInvoiceSparkFirst } from '@/lib/wallet/invoice-pay';
+import {
+  reportPaymentFailure,
+  type PayFlow,
+  type PaymentFailure,
+} from '@/lib/wallet/payment-failure';
 import { canUnlockWallet } from '@/lib/wallet/wallet-phrase';
 import { needsWalletSetup } from '@/lib/wallet/wallet-setup';
 import {
@@ -139,7 +144,10 @@ function visualView(): WalletPayView | null {
 
 /**
  * Runs the in-app wallet payment of one invoice. The wallet pays
- * `sparkInvoice` when the api issued one, otherwise the payment request `pr`.
+ * `sparkInvoice` when the api issued one, otherwise the payment request `pr`
+ * (`payInvoiceSparkFirst`): a Spark invoice the wallet refuses at prepare is
+ * reported under `flow` and `pr` is prepared instead, so the sheet still pays
+ * over Lightning.
  * The view is `unavailable` when the wallet is not configured or the member
  * cannot hold it. A signed-in member's wallet is open in this tab
  * (`OnboardingGate` shows the login otherwise), so there is no unlock step:
@@ -212,7 +220,7 @@ export function useWalletPay(
         timer.current = null;
       }
     };
-  }, [input, amountSats]);
+  }, [input, pr, amountSats]);
 
   const sendPrepared = useCallback(
     (send: () => Promise<WalletSendResult>, run: number, sats: number, payFlow: PayFlow): void => {
@@ -276,7 +284,13 @@ export function useWalletPay(
     const balanceBefore = useWalletStore.getState().balanceSats;
     const session = useAuthStore.getState().session;
     setPhase('preparing');
-    void payFromWallet({ type: 'input', input }).then((result) => {
+    const reportSparkFailure = (failure: PaymentFailure): void => {
+      if (run === generation.current) {
+        reportPaymentFailure({ ...failure, amountSats }, flow, { session });
+      }
+    };
+    const preparing = payInvoiceSparkFirst(payFromWallet, { sparkInvoice, pr }, reportSparkFailure);
+    void preparing.then((result) => {
       if (run !== generation.current) {
         return;
       }
@@ -309,7 +323,7 @@ export function useWalletPay(
         }
       }
     });
-  }, [canPay, status, phase, input, amountSats, flow]);
+  }, [canPay, status, phase, input, sparkInvoice, pr, amountSats, flow]);
 
   useEffect(() => {
     if (phase !== 'insufficient' || balanceSats === null) {

@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi, type Mocked } from 'vi
 import type { FondPayoutFailure } from '@/lib/api';
 import type { FondPayout } from '@/lib/api-types';
 import {
+  FOND_E2E_REFUSED_SPARK_INVOICE,
   runFondPayoutTick,
   type FondPayoutTickDeps,
   type FondPayoutTickResult,
@@ -19,9 +20,10 @@ const BOLT_A = 'lnbc-row-a';
 const BOLT_B = 'lnbc-row-b';
 const SPARK_A = 'spark-row-a';
 const SPARK_B = 'spark-row-b';
+/** A failure without a Lightning fallback, so every row outcome is the wallet's first answer. */
 const FAILURE: PaymentFailure = {
   stage: 'prepare',
-  reason: 'sdk_error',
+  reason: 'network',
   method: 'lightning',
   amountSats: null,
   feeSats: null,
@@ -213,6 +215,7 @@ describe('fondE2eWallet', () => {
     if (prepared.kind !== 'confirm') {
       return;
     }
+    const posted = vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(null));
     await expect(prepared.send()).resolves.toEqual({ kind: 'paid' });
     await expect(wallet.listWalletPayments({ offset: 0, limit: 100 })).resolves.toEqual([
       expect.objectContaining({
@@ -221,6 +224,49 @@ describe('fondE2eWallet', () => {
         info: { invoice: SPARK_A },
       }),
     ]);
+    expect(posted).toHaveBeenCalledWith('/e2e/wallet-send', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ input: SPARK_A }),
+    });
+    posted.mockRestore();
+  });
+
+  it('still records the send when the test does not answer its post', async () => {
+    process.env.NEXT_PUBLIC_E2E_NOW = '2026-01-07T12:00:00.000Z';
+    const wallet = e2eWallet();
+    if (wallet === null) {
+      throw new Error('expected the Playwright wallet');
+    }
+    const posted = vi.spyOn(globalThis, 'fetch').mockRejectedValue(new TypeError('offline'));
+    const prepared = await wallet.payFromWallet({ type: 'input', input: BOLT_A });
+    if (prepared.kind !== 'confirm') {
+      throw new Error('expected a confirmation');
+    }
+    await expect(prepared.send()).resolves.toEqual({ kind: 'paid' });
+    await Promise.resolve();
+    expect(posted).toHaveBeenCalledTimes(1);
+    posted.mockRestore();
+  });
+
+  it('refuses the fixture Spark invoice at prepare as the SDK does', async () => {
+    process.env.NEXT_PUBLIC_E2E_NOW = '2026-01-07T12:00:00.000Z';
+    const wallet = e2eWallet();
+    if (wallet === null) {
+      throw new Error('expected the Playwright wallet');
+    }
+    await expect(
+      wallet.payFromWallet({ type: 'input', input: FOND_E2E_REFUSED_SPARK_INVOICE }),
+    ).resolves.toEqual({
+      kind: 'failed',
+      failure: {
+        stage: 'prepare',
+        reason: 'sdk_error',
+        method: 'spark',
+        amountSats: null,
+        feeSats: null,
+      },
+    });
   });
 
   it('refuses a request that is not a pasted invoice', async () => {
@@ -355,6 +401,31 @@ describe('runFondPayoutTick rows', () => {
     });
     await expect(tick(deps)).resolves.toEqual({ paid: 1, skipped: 0, stop: null });
     expect(deps.payFromWallet).toHaveBeenCalledWith({ type: 'input', input: BOLT_A });
+  });
+
+  it('pays the BOLT11 once and reports the refusal when the wallet refuses the Spark invoice', async () => {
+    const refusal: PaymentFailure = { ...FAILURE, reason: 'sdk_error', method: 'spark' };
+    const deps = depsFor([OWED]);
+    vi.mocked(deps.payFromWallet).mockImplementation(async (request) =>
+      request.type === 'input' && request.input === SPARK_A
+        ? { kind: 'failed', failure: refusal }
+        : confirmResult(async () => ({ kind: 'paid' })),
+    );
+    await expect(tick(deps)).resolves.toEqual({ paid: 1, skipped: 0, stop: null });
+    expect(deps.payFromWallet.mock.calls).toEqual([
+      [{ type: 'input', input: SPARK_A }],
+      [{ type: 'input', input: BOLT_A }],
+    ]);
+    expect(report).toHaveBeenCalledTimes(1);
+    expect(report).toHaveBeenCalledWith(refusal, 'fond_payout', { session: 'sess' });
+  });
+
+  it('skips the row without Lightning when the Spark prepare stops for another reason', async () => {
+    const deps = depsFor([OWED]);
+    vi.mocked(deps.payFromWallet).mockResolvedValue({ kind: 'failed', failure: FAILURE });
+    await expect(tick(deps)).resolves.toEqual({ paid: 0, skipped: 1, stop: null });
+    expect(deps.payFromWallet).toHaveBeenCalledTimes(1);
+    expect(deps.payFromWallet).toHaveBeenCalledWith({ type: 'input', input: SPARK_A });
   });
 
   it('handles rows in list order, one at a time', async () => {
