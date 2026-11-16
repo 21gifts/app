@@ -3282,7 +3282,8 @@ export async function fetchComposeTarget(
  *   no comment). Omitted by existing callers.
  * @returns `{ pr, amountSats }` for the in-app wallet. The body may also carry
  *   `sparkInvoice`, which the in-app wallet pays instead of `pr` (`pr` when the
- *   wallet refuses it).
+ *   wallet refuses it, except for a heart, which is paid by the Spark invoice
+ *   only).
  * @throws {@link NoteDeletedError} on 404 (missing or deleted invoice target).
  * @throws {@link WalletRequiredError} or {@link CannotReceiveError} on a 400 with that `code`.
  * @throws Error with collapsed visitor copy on 400/403/429/503 (and other
