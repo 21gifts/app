@@ -324,6 +324,107 @@ test('Function: saveHeartSats — the Settings heart amount saves 21 on the acco
   await expect(page.getByText('Saved: ₿21 per heart.')).toBeVisible();
 });
 
+test('settings hides Log in at DFX while the in-app wallet is off', async ({ page }) => {
+  await signIn(page, 'cred-seed');
+  await page.goto('/settings');
+  await expect(page.getByRole('heading', { level: 1, name: 'Settings' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Log in at DFX' })).toHaveCount(0);
+});
+
+test('settings shows Log in at DFX from the idle pin without calling DFX', async ({ page }) => {
+  const urls: string[] = [];
+  page.on('request', (request) => {
+    urls.push(request.url());
+  });
+  await signIn(page, 'cred-seed');
+  await page.goto('/settings?visual=dfx-login');
+  const wallet = page.getByRole('region', { name: 'Wallet' });
+  const button = wallet.getByRole('button', { name: 'Log in at DFX' });
+  await expect(button).toBeEnabled();
+  await expect(
+    wallet.getByText(
+      'Opens DFX in a new tab, signed in with your 21.gifts wallet, so you can buy Bitcoin with a bank transfer.',
+    ),
+  ).toBeVisible();
+  await expect(page.getByText('Opening DFX…')).toHaveCount(0);
+  await expect(wallet.getByRole('alert')).toHaveCount(0);
+  expect(urls.some((url) => url.includes('api.dfx.swiss'))).toBe(false);
+});
+
+test('settings shows Log in at DFX busy from the pin without calling DFX', async ({ page }) => {
+  const urls: string[] = [];
+  page.on('request', (request) => {
+    urls.push(request.url());
+  });
+  await signIn(page, 'cred-seed');
+  await page.goto('/settings?visual=dfx-login-busy');
+  const button = page.getByRole('button', { name: 'Log in at DFX' });
+  await expect(button).toBeDisabled();
+  await expect(page.getByText('Opening DFX…')).toBeVisible();
+  await expect(page.getByRole('region', { name: 'Wallet' }).getByRole('alert')).toHaveCount(0);
+  expect(urls.some((url) => url.includes('api.dfx.swiss'))).toBe(false);
+});
+
+test('settings shows the Log in at DFX alert from the pin without calling DFX', async ({
+  page,
+}) => {
+  const urls: string[] = [];
+  page.on('request', (request) => {
+    urls.push(request.url());
+  });
+  await signIn(page, 'cred-seed');
+  await page.goto('/settings?visual=dfx-login-error');
+  await expect(page.getByRole('button', { name: 'Log in at DFX' })).toBeEnabled();
+  await expect(page.getByRole('region', { name: 'Wallet' }).getByRole('alert')).toHaveText(
+    'DFX could not be opened. Try again. If no new tab opens, allow new tabs for this site.',
+  );
+  await expect(page.getByText('Opening DFX…')).toHaveCount(0);
+  expect(urls.some((url) => url.includes('api.dfx.swiss'))).toBe(false);
+});
+
+/**
+ * Presses **Log in at DFX** while the in-app wallet is off.
+ * The row is shown by the idle pin. The press runs the real sign-in and stops
+ * when the wallet cannot open, so DFX is never asked.
+ *
+ * @param page - Page under test.
+ */
+async function pressDfxLoginWhileWalletOff(page: Page): Promise<void> {
+  const urls: string[] = [];
+  page.on('request', (request) => {
+    urls.push(request.url());
+  });
+  await page.route(/api\.dfx\.swiss/, async (route) => {
+    await route.abort();
+  });
+  await signIn(page, 'cred-seed');
+  await page.goto('/settings?visual=dfx-login');
+  const button = page.getByRole('button', { name: 'Log in at DFX' });
+  await expect(button).toBeEnabled();
+  const popupPromise = page.waitForEvent('popup', { timeout: 5_000 });
+  await button.click();
+  await expect(page.getByRole('region', { name: 'Wallet' }).getByRole('alert')).toHaveText(
+    'DFX could not be opened. Try again. If no new tab opens, allow new tabs for this site.',
+  );
+  await expect(button).toBeEnabled();
+  expect(urls.some((url) => url.includes('api.dfx.swiss'))).toBe(false);
+  expect(urls.some((url) => url.endsWith('.wasm'))).toBe(false);
+  const popup = await popupPromise;
+  await expect.poll(() => popup.isClosed()).toBe(true);
+}
+
+test('Function: dfxLoginUrl — Log in at DFX with the wallet off asks DFX for nothing', async ({
+  page,
+}) => {
+  await pressDfxLoginWhileWalletOff(page);
+});
+
+test('Function: signWithWallet — Log in at DFX with the wallet off signs nothing', async ({
+  page,
+}) => {
+  await pressDfxLoginWhileWalletOff(page);
+});
+
 test('the notifications page links to the Settings notifications section', async ({ page }) => {
   await signIn(page, 'cred-seed');
   await page.route(/\/forum\/notifications(?:\?|$)/, async (route) => {

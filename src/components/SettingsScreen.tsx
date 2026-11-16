@@ -22,6 +22,7 @@ import { useSpotRate } from '@/hooks/useSpotRate';
 import { saveAmountUnit } from '@/lib/amount-unit';
 import { accountHeartSats, type AmountUnit } from '@/lib/api-types';
 import { getAppVersion } from '@/lib/config';
+import { dfxLoginUrl } from '@/lib/dfx-login';
 import { giftsLightningAddress } from '@/lib/gifts-address';
 import { MAX_HEART_SATS, saveHeartSats } from '@/lib/heart-sats';
 import type { MessageKey } from '@/lib/messages';
@@ -32,7 +33,9 @@ import {
   type FiatCode,
   type FiatRateDay,
 } from '@/lib/stats-money';
+import { visualPin } from '@/lib/visual-pin';
 import { useAuthStore } from '@/stores/auth-store';
+import { useWalletStore } from '@/stores/wallet-store';
 
 /** Links of the About & legal section, in the marketing footer's order. */
 const ABOUT_LINKS: ReadonlyArray<{ href: string; label: MessageKey }> = [
@@ -331,10 +334,102 @@ function HeartAmountRow(): ReactElement {
 }
 
 /**
+ * **Log in at DFX** while the in-app wallet is ready, or while a Playwright
+ * pin forces the idle, busy, or error row. One press opens DFX in a new tab,
+ * already signed in on Buy. The pin only changes what is drawn; a press still
+ * runs the sign-in.
+ * Leaving the page during the wait closes the tab without navigating it.
+ *
+ * @returns The row, or `null` while the wallet is off and no pin is set.
+ */
+function DfxLoginRow(): ReactElement | null {
+  const { t } = useTranslations();
+  const status = useWalletStore((state) => state.status);
+  const pin = visualPin();
+  const pinnedBusy = pin === 'dfx-login-busy';
+  const pinnedError = pin === 'dfx-login-error';
+  const pinned = pin === 'dfx-login' || pinnedBusy || pinnedError;
+  const [busy, setBusy] = useState(false);
+  const [failed, setFailed] = useState(false);
+  const running = useRef(false);
+  const mounted = useRef(true);
+  useEffect(() => {
+    mounted.current = true;
+    return (): void => {
+      mounted.current = false;
+    };
+  }, []);
+  if (status !== 'ready' && !pinned) {
+    return null;
+  }
+  const showBusy = pinnedBusy || busy;
+  const showFailed = pinnedError || failed;
+  const openDfx = (): void => {
+    if (running.current) {
+      return;
+    }
+    // Open the tab before any await. A browser drops a tab opened later.
+    const tab = window.open('', '_blank');
+    if (tab === null) {
+      setFailed(true);
+      return;
+    }
+    tab.opener = null;
+    running.current = true;
+    setBusy(true);
+    setFailed(false);
+    void (async (): Promise<void> => {
+      try {
+        const url = await dfxLoginUrl();
+        if (!mounted.current) {
+          if (!tab.closed) tab.close();
+          return;
+        }
+        if (tab.closed) {
+          return;
+        }
+        tab.location.href = url;
+      } catch {
+        if (!mounted.current) {
+          if (!tab.closed) tab.close();
+          return;
+        }
+        if (tab.closed) {
+          return;
+        }
+        tab.close();
+        setFailed(true);
+      } finally {
+        running.current = false;
+        if (mounted.current) setBusy(false);
+      }
+    })();
+  };
+  return (
+    <div className="flex w-full flex-col items-stretch gap-3 border-t border-app-border pt-6">
+      <p className="text-center text-xs tracking-widest text-app-subtle uppercase">
+        {t('settings.dfxLogin')}
+      </p>
+      <p className="text-center text-xs text-app-muted">{t('settings.dfxLoginHint')}</p>
+      <Button type="button" size="lg" disabled={showBusy} onClick={openDfx}>
+        {t('settings.dfxLogin')}
+      </Button>
+      {showBusy ? <BusyLine label={t('settings.dfxLoginBusy')} /> : null}
+      {showFailed ? (
+        <p role="alert" className="text-center text-sm text-app-danger">
+          {t('settings.dfxLoginError')}
+        </p>
+      ) : null}
+    </div>
+  );
+}
+
+/**
  * Signed-in settings page: the member's preferences and account actions, in
  * five sections. **Wallet**:
  * the 21.gifts address with Copy (or the username form while no username is
- * set), the default amount unit, and the heart amount. **Display**: language, theme, fiat
+ * set), the default amount unit, the heart amount, and, while the in-app
+ * wallet is ready, **Log in at DFX**. **Display**: language, theme, fiat
  * currency, and number format. **Notifications**: {@link PushToggle}.
  * **Account**: {@link LogoutButton}. **About & legal**: the handbook, legal,
  * terms, rules, and contact links and the app version. Each section and the
@@ -374,6 +469,7 @@ export function SettingsScreen(): ReactElement | null {
         <AddressRow />
         <DefaultAmountRow />
         <HeartAmountRow />
+        <DfxLoginRow />
       </SettingsSection>
       <SettingsSection id="display" heading={t('settings.display')}>
         <LanguagePreferenceSwitcher />
