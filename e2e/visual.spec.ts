@@ -8459,6 +8459,103 @@ test.describe('loans repay screens', () => {
   });
 });
 
+/** Public `/loans`. Goldens are regenerated on the build host. */
+const PUBLIC_OPEN_LOANS = [
+  {
+    messageId: 'loan-ada',
+    accountId: 'acc_ada',
+    name: 'Ada',
+    currency: 'CHF',
+    outstanding: '12.50',
+    overdue: true,
+  },
+  {
+    messageId: 'loan-ben',
+    accountId: 'acc/ben',
+    name: 'Ben',
+    currency: 'BTC',
+    outstanding: 1500,
+    overdue: false,
+  },
+];
+
+async function fulfillPublicOpenLoans(page: Page, body: unknown, status: number): Promise<void> {
+  await page.route('**/loans/open', async (route) => {
+    await route.fulfill({
+      status,
+      contentType: 'application/json',
+      body: JSON.stringify(body),
+    });
+  });
+}
+
+async function seedOpenLoanAda(page: Page): Promise<void> {
+  await page.addInitScript(() => {
+    localStorage.setItem('21gifts.session', 'sess-e2e');
+  });
+  await page.route(/\/me$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        ...E2E_ACCOUNT,
+        name: 'Ada',
+        username: 'alice',
+        lightningAddress: null,
+        rulesAgreedAt: 1_700_000_001,
+        viewKey: 'a'.repeat(64),
+        setup: null,
+        missing: [],
+      }),
+    });
+  });
+}
+
+test.describe('open loans screens', () => {
+  test('screen /loans default', async ({ page }) => {
+    await fulfillSpot(page);
+    await fulfillPublicOpenLoans(page, PUBLIC_OPEN_LOANS, 200);
+    await page.goto('/loans');
+    await expect(page.getByRole('heading', { name: 'Open loans' })).toBeVisible();
+    await expect(page.getByText("₿1'500 · $1.50")).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Log in' })).toBeVisible();
+    await shotScreen(page, 'screen-loans');
+  });
+
+  test('screen /loans empty', async ({ page }) => {
+    await fulfillPublicOpenLoans(page, [], 200);
+    await page.goto('/loans');
+    await expect(page.getByText('No open loans.')).toBeVisible();
+    await shotScreen(page, 'state-loans-empty');
+  });
+
+  test('screen /loans loading', async ({ page }) => {
+    await page.route('**/loans/open', () => new Promise(() => undefined));
+    await page.goto('/loans');
+    await expect(page.getByText('Loading open loans…')).toBeVisible();
+    await shotScreen(page, 'state-loans-loading');
+  });
+
+  test('screen /loans error', async ({ page }) => {
+    await fulfillPublicOpenLoans(page, {}, 500);
+    await page.goto('/loans');
+    await expect(page.getByRole('button', { name: 'Try again' })).toBeVisible();
+    await shotScreen(page, 'state-loans-error');
+  });
+
+  test('screen /loans signed-in', async ({ page }) => {
+    await seedOpenLoanAda(page);
+    await fulfillSpot(page);
+    await fulfillPublicOpenLoans(page, PUBLIC_OPEN_LOANS, 200);
+    await page.goto('/loans');
+    await expect(page.getByRole('button', { name: 'Menu' })).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Log in' })).toHaveCount(0);
+    await expect(page.getByRole('link', { name: 'Ada' })).toBeVisible();
+    await expect(page.getByText("₿1'500 · $1.50")).toBeVisible();
+    await shotScreen(page, 'state-loans-signed-in');
+  });
+});
+
 test.describe('login variant baselines', () => {
   test('login starting', async ({ page }) => {
     let release: () => void = () => undefined;

@@ -2427,6 +2427,28 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
+  if (method === 'GET' && pathName === '/loans/open') {
+    json(res, 200, [
+      {
+        messageId: 'loan-ada',
+        accountId: 'acc_ada',
+        name: 'Ada',
+        currency: 'CHF',
+        outstanding: '12.50',
+        overdue: true,
+      },
+      {
+        messageId: 'loan-ben',
+        accountId: 'acc/ben',
+        name: 'Ben',
+        currency: 'BTC',
+        outstanding: 1500,
+        overdue: false,
+      },
+    ]);
+    return;
+  }
+
   if (method === 'GET' && pathName === '/push/vapid-public') {
     const token = bearer(req);
     if (token === null || !byToken.has(token)) {

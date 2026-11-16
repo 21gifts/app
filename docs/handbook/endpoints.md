@@ -808,6 +808,13 @@
 - **Used by:** `postLnurlPayRequest`.
 - **Auth:** Bearer.
 
+## Endpoint: GET /loans/open
+
+- **Purpose:** Same-origin proxy of api `GET /loans/open`. The body is a JSON array of open loans (`messageId`, `accountId`, `name`, `currency`, `outstanding`, `overdue`), passed through unchanged. Fiat `outstanding` is a two-decimal string in the loan currency. BTC `outstanding` is a number of sats. This is not `GET /me/loans`.
+- **Errors:** The proxy forwards the upstream status, including 503 when the api cannot price a candidate, or 502 if the api is unreachable.
+- **Used by:** `fetchOpenLoans` on `/loans`.
+- **Auth:** Public. No bearer is required. A bearer is forwarded only when the browser sent one.
+
 ## Endpoint: GET /me/loans
 
 - **Purpose:** Same-origin proxy of api `GET /me/loans`, listing the signed-in member's loans that are still collecting or being repaid plus the Sunday-rest flag. Each loan includes `closedAt`, current free-repayment `maxSats`, and fiat `maxAmount`; `due.waitingShares` counts the shares waiting for a lender's wallet, and `lenderWaiting` `{ shares, loans, sats }` counts repayments owed to the caller while the caller cannot receive. For a fiat loan without a usable rate, the api leaves exactly the currently priced unpaid sat fields `totalSats`, `due.payableSats`, `due.waitingSats`, and `next.sats` null; their stored loan-currency amounts remain available. The body is passed through unchanged.

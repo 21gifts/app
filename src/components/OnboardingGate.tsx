@@ -32,8 +32,8 @@ interface OnboardingGateProps {
   /** Visible UI when this is the correct screen. */
   children: ReactNode;
   /**
-   * Signed-out exception for the living room, `/statistics`, and
-   * `/habit-tracker`; it does not cover a held-back session.
+   * Signed-out exception for the living room, `/statistics`,
+   * `/habit-tracker`, and `/loans`; it does not cover a held-back session.
    * Other `screen="welcome"` routes (shops, inbox, notifications, trust,
    * contact, moderation) still send a signed-out visitor to `/login`.
    */
