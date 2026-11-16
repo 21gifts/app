@@ -496,25 +496,25 @@ The same Sunday collecting card after **Show loan** is pressed. The linked credi
 
 ### Variant: loans-closed-underfunded
 
-A manually closed loan that did not reach its goal, shown on a weekday with **Show loan** closed. It keeps its partial funding bar and, unlike a loan that is still collecting, shows the ordinary **Repay your loan** entry linking to `/loans/repay`.
+A manually closed loan that did not reach its goal, shown on a weekday with **Show loan** closed. The neutral **Your loan** card says **Not fully funded yet.** and keeps its partial funding bar. Unlike a loan that is still collecting, it shows the ordinary **Repay your loan** entry linking to `/loans/repay`.
 
 ![21.gifts wallet closed underfunded loan](images/wallet-loans-closed-underfunded.png)
 
 ### Variant: loans-closed-underfunded-open
 
-The same manually closed underfunded weekday card after **Show loan** is pressed. The linked credit-note text and **Hide loan** are visible, and **Repay your loan** remains available.
+The same manually closed underfunded weekday card after **Show loan** is pressed. It keeps **Not fully funded yet.**, the partial funding bar, the linked credit-note text, and **Hide loan**; **Repay your loan** remains available.
 
 ![21.gifts wallet closed underfunded loan open](images/wallet-loans-closed-underfunded-open.png)
 
 ### Variant: loans-closed-underfunded-sunday
 
-The same manually closed underfunded loan on Sunday with **Show loan** closed. Its partial funding bar remains, while **No repayments on Sundays** replaces the ordinary **Repay your loan** entry. The Sunday box is therefore present for every not-funded loan, whether collecting or manually closed.
+The same manually closed underfunded loan on Sunday with **Show loan** closed. It keeps **Not fully funded yet.** and its partial funding bar, while **No repayments on Sundays** replaces the ordinary **Repay your loan** entry. The Sunday box is therefore present for every not-funded loan, whether collecting or manually closed.
 
 ![21.gifts wallet closed underfunded loan Sunday](images/wallet-loans-closed-underfunded-sunday.png)
 
 ### Variant: loans-closed-underfunded-sunday-open
 
-The same Sunday card after **Show loan** is pressed. The linked credit-note text and **Hide loan** are visible; **No repayments on Sundays** remains and there is no repayment entry link.
+The same Sunday card after **Show loan** is pressed. **Not fully funded yet.** remains above the partial funding bar; the linked credit-note text and **Hide loan** are visible, **No repayments on Sundays** remains, and there is no repayment entry link.
 
 ![21.gifts wallet closed underfunded loan Sunday open](images/wallet-loans-closed-underfunded-sunday-open.png)
 
@@ -529,6 +529,30 @@ The collapsed funded PHP loan has a stored due amount but no satoshi price. **Du
 The same no-rate due card after **Show loan** is pressed. Its linked credit-note text and **Hide loan** appear while **₱30.00** and the icon-only repayment-details link remain; there is no **Send**.
 
 ![21.gifts wallet loan due without rate open](images/wallet-loans-due-no-rate-open.png)
+
+### Variant: loans-waiting-no-rate
+
+The collapsed funded PHP loan has a stored waiting amount but no satoshi price. **Fully funded.** is followed by the muted **Nothing to send now** without the check, then **₱12.00 is waiting for a lender to set up their wallet** without bitcoin. The icon-only **Repayment details** link is present; there is no **Send** and no next line.
+
+![21.gifts wallet loan waiting without rate](images/wallet-loans-waiting-no-rate.png)
+
+### Variant: loans-waiting-no-rate-open
+
+The same no-rate waiting card after **Show loan** is pressed. Its linked credit-note text and **Hide loan** appear while **Nothing to send now** and **₱12.00 is waiting for a lender to set up their wallet** remain without bitcoin; there is no **Send**.
+
+![21.gifts wallet loan waiting without rate open](images/wallet-loans-waiting-no-rate-open.png)
+
+### Variant: loans-next-no-rate
+
+The collapsed funded PHP loan has nothing due and a stored next amount but no satoshi price. **Fully funded.** is followed by the green-check **Nothing due today**, then **Next: Monday, January 12, ₱30.00** without bitcoin. The icon-only **Repayment details** link is present; there is no **Send**.
+
+![21.gifts wallet loan next without rate](images/wallet-loans-next-no-rate.png)
+
+### Variant: loans-next-no-rate-open
+
+The same no-rate next card after **Show loan** is pressed. Its linked credit-note text and **Hide loan** appear while **Nothing due today** and **Next: Monday, January 12, ₱30.00** remain without bitcoin; there is no **Send**.
+
+![21.gifts wallet loan next without rate open](images/wallet-loans-next-no-rate-open.png)
 
 ### Variant: loans-multi
 
@@ -3140,25 +3164,25 @@ The same Sunday collecting card after **Show loan** is pressed. The linked credi
 
 ### Variant: loans-closed-underfunded
 
-A manually closed loan that did not reach its goal, shown on a weekday with **Show loan** closed. It keeps its partial funding bar and, unlike a loan that is still collecting, shows the ordinary **Repay your loan** entry linking to `/loans/repay`.
+A manually closed loan that did not reach its goal, shown on a weekday with **Show loan** closed. The neutral **Your loan** card says **Not fully funded yet.** and keeps its partial funding bar. Unlike a loan that is still collecting, it shows the ordinary **Repay your loan** entry linking to `/loans/repay`.
 
 ![21.gifts welcome closed underfunded loan](images/welcome-loans-closed-underfunded.png)
 
 ### Variant: loans-closed-underfunded-open
 
-The same manually closed underfunded weekday card after **Show loan** is pressed. The linked credit-note text and **Hide loan** are visible, and **Repay your loan** remains available.
+The same manually closed underfunded weekday card after **Show loan** is pressed. It keeps **Not fully funded yet.**, the partial funding bar, the linked credit-note text, and **Hide loan**; **Repay your loan** remains available.
 
 ![21.gifts welcome closed underfunded loan open](images/welcome-loans-closed-underfunded-open.png)
 
 ### Variant: loans-closed-underfunded-sunday
 
-The same manually closed underfunded loan on Sunday with **Show loan** closed. Its partial funding bar remains, while **No repayments on Sundays** replaces the ordinary **Repay your loan** entry. The Sunday box is shown for the manually closed not-funded state as well as the collecting state.
+The same manually closed underfunded loan on Sunday with **Show loan** closed. It keeps **Not fully funded yet.** and its partial funding bar, while **No repayments on Sundays** replaces the ordinary **Repay your loan** entry. The Sunday box is shown for the manually closed not-funded state as well as the collecting state.
 
 ![21.gifts welcome closed underfunded loan Sunday](images/welcome-loans-closed-underfunded-sunday.png)
 
 ### Variant: loans-closed-underfunded-sunday-open
 
-The same Sunday card after **Show loan** is pressed. The linked credit-note text and **Hide loan** are visible; **No repayments on Sundays** remains and the repayment entry link stays absent.
+The same Sunday card after **Show loan** is pressed. **Not fully funded yet.** remains above the partial funding bar; the linked credit-note text and **Hide loan** are visible, **No repayments on Sundays** remains, and the repayment entry link stays absent.
 
 ![21.gifts welcome closed underfunded loan Sunday open](images/welcome-loans-closed-underfunded-sunday-open.png)
 
@@ -3269,6 +3293,30 @@ The collapsed funded PHP loan has a stored due amount but no satoshi price. **Du
 The same no-rate due card after **Show loan** is pressed. Its linked credit-note text and **Hide loan** appear while **₱30.00** and the icon-only repayment-details link remain; there is no **Send**.
 
 ![21.gifts welcome loan due without rate open](images/welcome-loans-due-no-rate-open.png)
+
+### Variant: loans-waiting-no-rate
+
+The collapsed funded PHP loan has a stored waiting amount but no satoshi price. **Fully funded.** is followed by the muted **Nothing to send now** without the check, then **₱12.00 is waiting for a lender to set up their wallet** without bitcoin. The icon-only **Repayment details** link is present; there is no **Send** and no next line.
+
+![21.gifts welcome loan waiting without rate](images/welcome-loans-waiting-no-rate.png)
+
+### Variant: loans-waiting-no-rate-open
+
+The same no-rate waiting card after **Show loan** is pressed. Its linked credit-note text and **Hide loan** appear while **Nothing to send now** and **₱12.00 is waiting for a lender to set up their wallet** remain without bitcoin; there is no **Send**.
+
+![21.gifts welcome loan waiting without rate open](images/welcome-loans-waiting-no-rate-open.png)
+
+### Variant: loans-next-no-rate
+
+The collapsed funded PHP loan has nothing due and a stored next amount but no satoshi price. **Fully funded.** is followed by the green-check **Nothing due today**, then **Next: Monday, January 12, ₱30.00** without bitcoin. The icon-only **Repayment details** link is present; there is no **Send**.
+
+![21.gifts welcome loan next without rate](images/welcome-loans-next-no-rate.png)
+
+### Variant: loans-next-no-rate-open
+
+The same no-rate next card after **Show loan** is pressed. Its linked credit-note text and **Hide loan** appear while **Nothing due today** and **Next: Monday, January 12, ₱30.00** remain without bitcoin; there is no **Send**.
+
+![21.gifts welcome loan next without rate open](images/welcome-loans-next-no-rate-open.png)
 
 ### Variant: loans-multi
 

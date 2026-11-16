@@ -55,11 +55,7 @@ export function LoansCard({ place }: LoansCardProps): ReactElement | null {
   const single = summary.count === 1;
   const title = single ? t('welcome.loanTitle') : t('welcome.loansTitle', { count: summary.count });
   const status = single
-    ? collecting
-      ? t('welcome.loanCollecting')
-      : summary.fundedCount === 1
-        ? t('welcome.loanFunded')
-        : null
+    ? t(summary.fundedCount === 1 ? 'welcome.loanFunded' : 'welcome.loanCollecting')
     : t('welcome.loansFunded', { funded: summary.fundedCount, count: summary.count });
   const money = (sats: number): string => {
     const bitcoin = formatBitcoin(sats, numberFormat);
@@ -143,7 +139,7 @@ export function LoansCard({ place }: LoansCardProps): ReactElement | null {
     >
       <div>
         <h2 className="text-sm font-semibold text-app-fg">{title}</h2>
-        {status === null ? null : <p className="mt-1 text-sm text-app-muted">{status}</p>}
+        <p className="mt-1 text-sm text-app-muted">{status}</p>
       </div>
       {single && loans.loans[0] !== undefined ? (
         renderGoalBar(loans.loans[0])

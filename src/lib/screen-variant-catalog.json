@@ -1038,6 +1038,30 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/wallet:loans-waiting-no-rate",
+    "label": "/wallet loans-waiting-no-rate",
+    "visual": "state-wallet-loans-waiting-no-rate",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/wallet:loans-waiting-no-rate-open",
+    "label": "/wallet loans-waiting-no-rate-open",
+    "visual": "state-wallet-loans-waiting-no-rate-open",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/wallet:loans-next-no-rate",
+    "label": "/wallet loans-next-no-rate",
+    "visual": "state-wallet-loans-next-no-rate",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/wallet:loans-next-no-rate-open",
+    "label": "/wallet loans-next-no-rate-open",
+    "visual": "state-wallet-loans-next-no-rate-open",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/wallet:loans-multi",
     "label": "/wallet loans-multi",
     "visual": "state-wallet-loans-multi",
@@ -3531,6 +3555,30 @@
     "id": "/welcome:loans-due-no-rate-open",
     "label": "/welcome loans-due-no-rate-open",
     "visual": "state-welcome-loans-due-no-rate-open",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:loans-waiting-no-rate",
+    "label": "/welcome loans-waiting-no-rate",
+    "visual": "state-welcome-loans-waiting-no-rate",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:loans-waiting-no-rate-open",
+    "label": "/welcome loans-waiting-no-rate-open",
+    "visual": "state-welcome-loans-waiting-no-rate-open",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:loans-next-no-rate",
+    "label": "/welcome loans-next-no-rate",
+    "visual": "state-welcome-loans-next-no-rate",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/welcome:loans-next-no-rate-open",
+    "label": "/welcome loans-next-no-rate-open",
+    "visual": "state-welcome-loans-next-no-rate-open",
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {

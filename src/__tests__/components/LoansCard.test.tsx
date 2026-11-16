@@ -340,7 +340,7 @@ describe('LoansCard', () => {
       sundayRest: true,
       loans: [loan({ fundedAt: null, closedAt: '2026-10-09T12:00:00.000Z' })],
     });
-    expect(screen.queryByText('Not fully funded yet.')).toBeNull();
+    expect(screen.getByText('Not fully funded yet.')).toBeTruthy();
     expect(screen.getByText('No repayments on Sundays')).toBeTruthy();
     expect(screen.queryByRole('link', { name: 'Pay early or end collecting' })).toBeNull();
     expect(screen.queryByRole('link', { name: 'Repay your loan' })).toBeNull();
@@ -351,11 +351,9 @@ describe('LoansCard', () => {
       sundayRest: false,
       loans: [loan({ fundedAt: null, closedAt: '2026-10-09T12:00:00.000Z' })],
     });
-    expect(screen.queryByText('Not fully funded yet.')).toBeNull();
+    expect(screen.getByText('Not fully funded yet.')).toBeTruthy();
     expect(screen.queryByText('No repayments on Sundays')).toBeNull();
     expect(screen.getByRole('link', { name: 'Repay your loan' })).toBeTruthy();
-    const header = screen.getByRole('heading', { name: 'Your loan' }).parentElement;
-    expect(header?.querySelector('p')).toBeNull();
   });
 
   it('shows an ordinary due-today row with the funded status', () => {

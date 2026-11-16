@@ -3970,6 +3970,7 @@ test.describe('screen baselines', () => {
     await seedLoanData(page, [loanClosedUnderfunded], {});
     await page.goto('/wallet?visual=balance-ready');
     const card = page.getByRole('region', { name: 'Your loan' });
+    await expect(card.getByText('Not fully funded yet.')).toBeVisible();
     await expect(card.getByRole('link', { name: 'Repay your loan' })).toHaveAttribute(
       'href',
       '/loans/repay',
@@ -3981,6 +3982,7 @@ test.describe('screen baselines', () => {
     await seedLoanMember(page);
     await seedLoanData(page, [loanClosedUnderfunded], {});
     await page.goto('/wallet?visual=balance-ready');
+    await expect(page.getByText('Not fully funded yet.')).toBeVisible();
     await page.getByRole('button', { name: 'Show loan' }).click();
     await expect(page.getByRole('link', { name: loanClosedUnderfunded.text })).toBeVisible();
     await expect(page.getByRole('link', { name: 'Repay your loan' })).toBeVisible();
@@ -3992,6 +3994,7 @@ test.describe('screen baselines', () => {
     await seedLoanData(page, [loanClosedUnderfunded], {}, true);
     await page.goto('/wallet?visual=balance-ready');
     const card = page.getByRole('region', { name: 'Your loan' });
+    await expect(card.getByText('Not fully funded yet.')).toBeVisible();
     await expect(card.getByText('No repayments on Sundays')).toBeVisible();
     await expect(card.getByRole('link', { name: 'Repay your loan' })).toHaveCount(0);
     await shotScreen(page, 'state-wallet-loans-closed-underfunded-sunday');
@@ -4001,6 +4004,7 @@ test.describe('screen baselines', () => {
     await seedLoanMember(page);
     await seedLoanData(page, [loanClosedUnderfunded], {}, true);
     await page.goto('/wallet?visual=balance-ready');
+    await expect(page.getByText('Not fully funded yet.')).toBeVisible();
     await page.getByRole('button', { name: 'Show loan' }).click();
     await expect(page.getByRole('link', { name: loanClosedUnderfunded.text })).toBeVisible();
     await expect(page.getByText('No repayments on Sundays')).toBeVisible();
@@ -4043,6 +4047,104 @@ test.describe('screen baselines', () => {
     await expect(page.getByRole('link', { name: noRateLoan.text })).toBeVisible();
     await expect(page.getByRole('link', { name: 'Repayment details' })).toBeVisible();
     await shotScreen(page, 'state-wallet-loans-due-no-rate-open');
+  });
+
+  test('state /wallet loans-waiting-no-rate', async ({ page }) => {
+    const noRateLoan = loanWith(loanB, {
+      totalSats: null,
+      maxSats: null,
+      due: {
+        payableSats: 0,
+        payablePeople: 0,
+        waitingSats: null,
+        waitingPeople: 1,
+        waitingAmount: '12.00',
+        payableAmount: null,
+      },
+      next: null,
+    });
+    await seedLoanMember(page);
+    await seedLoanData(page, [noRateLoan], {});
+    await page.goto('/wallet?visual=balance-ready');
+    const card = page.getByRole('region', { name: 'Your loan' });
+    await expect(card.getByText('Nothing to send now')).toBeVisible();
+    await expect(
+      card.getByText('₱12.00 is waiting for a lender to set up their wallet', { exact: true }),
+    ).toBeVisible();
+    await expect(card.getByRole('link', { name: 'Send' })).toHaveCount(0);
+    await shotScreen(page, 'state-wallet-loans-waiting-no-rate');
+  });
+
+  test('state /wallet loans-waiting-no-rate-open', async ({ page }) => {
+    const noRateLoan = loanWith(loanB, {
+      totalSats: null,
+      maxSats: null,
+      due: {
+        payableSats: 0,
+        payablePeople: 0,
+        waitingSats: null,
+        waitingPeople: 1,
+        waitingAmount: '12.00',
+        payableAmount: null,
+      },
+      next: null,
+    });
+    await seedLoanMember(page);
+    await seedLoanData(page, [noRateLoan], {});
+    await page.goto('/wallet?visual=balance-ready');
+    await page.getByRole('button', { name: 'Show loan' }).click();
+    await expect(page.getByRole('link', { name: noRateLoan.text })).toBeVisible();
+    await expect(
+      page.getByText('₱12.00 is waiting for a lender to set up their wallet', { exact: true }),
+    ).toBeVisible();
+    await shotScreen(page, 'state-wallet-loans-waiting-no-rate-open');
+  });
+
+  test('state /wallet loans-next-no-rate', async ({ page }) => {
+    const noRateLoan = loanWith(loanB, {
+      totalSats: null,
+      maxSats: null,
+      due: {
+        payableSats: 0,
+        payablePeople: 0,
+        waitingSats: 0,
+        waitingPeople: 0,
+        payableAmount: null,
+        waitingAmount: null,
+      },
+      next: { dueOn: '2026-01-12', sats: null, amount: '30.00' },
+    });
+    await seedLoanMember(page);
+    await seedLoanData(page, [noRateLoan], {});
+    await page.goto('/wallet?visual=balance-ready');
+    const card = page.getByRole('region', { name: 'Your loan' });
+    await expect(card.getByText('Nothing due today')).toBeVisible();
+    await expect(card.getByText('Next: Monday, January 12, ₱30.00', { exact: true })).toBeVisible();
+    await expect(card.getByRole('link', { name: 'Send' })).toHaveCount(0);
+    await shotScreen(page, 'state-wallet-loans-next-no-rate');
+  });
+
+  test('state /wallet loans-next-no-rate-open', async ({ page }) => {
+    const noRateLoan = loanWith(loanB, {
+      totalSats: null,
+      maxSats: null,
+      due: {
+        payableSats: 0,
+        payablePeople: 0,
+        waitingSats: 0,
+        waitingPeople: 0,
+        payableAmount: null,
+        waitingAmount: null,
+      },
+      next: { dueOn: '2026-01-12', sats: null, amount: '30.00' },
+    });
+    await seedLoanMember(page);
+    await seedLoanData(page, [noRateLoan], {});
+    await page.goto('/wallet?visual=balance-ready');
+    await page.getByRole('button', { name: 'Show loan' }).click();
+    await expect(page.getByRole('link', { name: noRateLoan.text })).toBeVisible();
+    await expect(page.getByText('Next: Monday, January 12, ₱30.00', { exact: true })).toBeVisible();
+    await shotScreen(page, 'state-wallet-loans-next-no-rate-open');
   });
 
   test('state /wallet loans-multi', async ({ page }) => {
@@ -30979,6 +31081,7 @@ test.describe('welcome forum variants', () => {
   test('state /welcome loans-closed-underfunded', async ({ page }) => {
     await openWelcomeLoans(page, myLoans([loanClosedUnderfunded]));
     const card = page.getByRole('region', { name: 'Your loan' });
+    await expect(card.getByText('Not fully funded yet.')).toBeVisible();
     await expect(card.getByRole('link', { name: 'Repay your loan' })).toHaveAttribute(
       'href',
       '/loans/repay',
@@ -30988,6 +31091,7 @@ test.describe('welcome forum variants', () => {
 
   test('state /welcome loans-closed-underfunded-open', async ({ page }) => {
     await openWelcomeLoans(page, myLoans([loanClosedUnderfunded]));
+    await expect(page.getByText('Not fully funded yet.')).toBeVisible();
     await page.getByRole('button', { name: 'Show loan' }).click();
     await expect(page.getByRole('link', { name: loanClosedUnderfunded.text })).toBeVisible();
     await expect(page.getByRole('link', { name: 'Repay your loan' })).toBeVisible();
@@ -30997,6 +31101,7 @@ test.describe('welcome forum variants', () => {
   test('state /welcome loans-closed-underfunded-sunday', async ({ page }) => {
     await openWelcomeLoans(page, myLoans([loanClosedUnderfunded], true));
     const card = page.getByRole('region', { name: 'Your loan' });
+    await expect(card.getByText('Not fully funded yet.')).toBeVisible();
     await expect(card.getByText('No repayments on Sundays')).toBeVisible();
     await expect(card.getByRole('link', { name: 'Repay your loan' })).toHaveCount(0);
     await shotScreen(page, 'state-welcome-loans-closed-underfunded-sunday');
@@ -31004,6 +31109,7 @@ test.describe('welcome forum variants', () => {
 
   test('state /welcome loans-closed-underfunded-sunday-open', async ({ page }) => {
     await openWelcomeLoans(page, myLoans([loanClosedUnderfunded], true));
+    await expect(page.getByText('Not fully funded yet.')).toBeVisible();
     await page.getByRole('button', { name: 'Show loan' }).click();
     await expect(page.getByRole('link', { name: loanClosedUnderfunded.text })).toBeVisible();
     await expect(page.getByText('No repayments on Sundays')).toBeVisible();
@@ -31042,6 +31148,96 @@ test.describe('welcome forum variants', () => {
     await expect(page.getByRole('link', { name: noRateLoan.text })).toBeVisible();
     await expect(page.getByRole('link', { name: 'Repayment details' })).toBeVisible();
     await shotScreen(page, 'state-welcome-loans-due-no-rate-open');
+  });
+
+  test('state /welcome loans-waiting-no-rate', async ({ page }) => {
+    const noRateLoan = loanWith(loanB, {
+      totalSats: null,
+      maxSats: null,
+      due: {
+        payableSats: 0,
+        payablePeople: 0,
+        waitingSats: null,
+        waitingPeople: 1,
+        waitingAmount: '12.00',
+        payableAmount: null,
+      },
+      next: null,
+    });
+    await openWelcomeLoans(page, myLoans([noRateLoan]));
+    const card = page.getByRole('region', { name: 'Your loan' });
+    await expect(card.getByText('Nothing to send now')).toBeVisible();
+    await expect(
+      card.getByText('₱12.00 is waiting for a lender to set up their wallet', { exact: true }),
+    ).toBeVisible();
+    await expect(card.getByRole('link', { name: 'Send' })).toHaveCount(0);
+    await shotScreen(page, 'state-welcome-loans-waiting-no-rate');
+  });
+
+  test('state /welcome loans-waiting-no-rate-open', async ({ page }) => {
+    const noRateLoan = loanWith(loanB, {
+      totalSats: null,
+      maxSats: null,
+      due: {
+        payableSats: 0,
+        payablePeople: 0,
+        waitingSats: null,
+        waitingPeople: 1,
+        waitingAmount: '12.00',
+        payableAmount: null,
+      },
+      next: null,
+    });
+    await openWelcomeLoans(page, myLoans([noRateLoan]));
+    await page.getByRole('button', { name: 'Show loan' }).click();
+    await expect(page.getByRole('link', { name: noRateLoan.text })).toBeVisible();
+    await expect(
+      page.getByText('₱12.00 is waiting for a lender to set up their wallet', { exact: true }),
+    ).toBeVisible();
+    await shotScreen(page, 'state-welcome-loans-waiting-no-rate-open');
+  });
+
+  test('state /welcome loans-next-no-rate', async ({ page }) => {
+    const noRateLoan = loanWith(loanB, {
+      totalSats: null,
+      maxSats: null,
+      due: {
+        payableSats: 0,
+        payablePeople: 0,
+        waitingSats: 0,
+        waitingPeople: 0,
+        payableAmount: null,
+        waitingAmount: null,
+      },
+      next: { dueOn: '2026-01-12', sats: null, amount: '30.00' },
+    });
+    await openWelcomeLoans(page, myLoans([noRateLoan]));
+    const card = page.getByRole('region', { name: 'Your loan' });
+    await expect(card.getByText('Nothing due today')).toBeVisible();
+    await expect(card.getByText('Next: Monday, January 12, ₱30.00', { exact: true })).toBeVisible();
+    await expect(card.getByRole('link', { name: 'Send' })).toHaveCount(0);
+    await shotScreen(page, 'state-welcome-loans-next-no-rate');
+  });
+
+  test('state /welcome loans-next-no-rate-open', async ({ page }) => {
+    const noRateLoan = loanWith(loanB, {
+      totalSats: null,
+      maxSats: null,
+      due: {
+        payableSats: 0,
+        payablePeople: 0,
+        waitingSats: 0,
+        waitingPeople: 0,
+        payableAmount: null,
+        waitingAmount: null,
+      },
+      next: { dueOn: '2026-01-12', sats: null, amount: '30.00' },
+    });
+    await openWelcomeLoans(page, myLoans([noRateLoan]));
+    await page.getByRole('button', { name: 'Show loan' }).click();
+    await expect(page.getByRole('link', { name: noRateLoan.text })).toBeVisible();
+    await expect(page.getByText('Next: Monday, January 12, ₱30.00', { exact: true })).toBeVisible();
+    await shotScreen(page, 'state-welcome-loans-next-no-rate-open');
   });
 
   test('state /welcome loans-due', async ({ page }) => {
