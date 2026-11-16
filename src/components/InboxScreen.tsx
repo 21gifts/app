@@ -210,7 +210,10 @@ export interface InboxInvoice {
   pr: string;
   /** Whole satoshis on the invoice. */
   amountSats: number;
-  /** Request the in-app wallet pays, or `null`/absent when the api issued none. */
+  /**
+   * Request the in-app wallet pays first, or `null`/absent when the api issued none; `pr`
+   * is paid without it or when the wallet refuses it.
+   */
   sparkInvoice?: string | null | undefined;
   /** Fiat the member typed. Shown as-is. Absent for a bitcoin amount. */
   figure?: { code: FiatCode; amount: string };

@@ -5521,7 +5521,8 @@ export async function fetchFondPayouts(
  * Asks the api for one payout's invoice through `POST /fond/payouts/:id/invoice`.
  *
  * The api computes the amount from its stored USD amount; the app pays the
- * returned Spark invoice when there is one and the BOLT11 otherwise, and never
+ * returned Spark invoice when there is one and the BOLT11 otherwise or when the
+ * wallet refuses the Spark invoice, and never
  * rounds an amount itself.
  *
  * @param session - Bearer session of the Fond account.
