@@ -1913,7 +1913,7 @@ describe('LoanRepayScreen', () => {
     expect(screen.getByText(/waits for 2 lenders/)).toBeTruthy();
   });
 
-  it('ignores priced waiting sats when no lender is waiting', () => {
+  it('shows priced waiting sats even when no lender is waiting', () => {
     show({
       sundayRest: false,
       loans: [
@@ -1928,9 +1928,30 @@ describe('LoanRepayScreen', () => {
         }),
       ],
     });
+    expect(screen.getByText(/Your lenders haven't set up their wallets yet/)).toBeTruthy();
+    expect(screen.queryByText('Nothing due today')).toBeNull();
+  });
+
+  it('shows nothing due when a known zero waiting part has waiting people', () => {
+    show({
+      sundayRest: false,
+      loans: [
+        loan({
+          due: {
+            ...loan().due,
+            payableSats: 0,
+            payablePeople: 0,
+            waitingSats: 0,
+            waitingPeople: 1,
+          },
+        }),
+      ],
+    });
     expect(screen.getByText('Nothing due today')).toBeTruthy();
-    expect(screen.queryByText('Nothing to send now')).toBeNull();
-    expect(screen.queryByText(/waits for 0 lenders/)).toBeNull();
+    expect(screen.queryByText(/waits for/)).toBeNull();
+    expect(screen.queryByText(/hasn't set up/)).toBeNull();
+    expect(screen.queryByText(/waits until/)).toBeNull();
+    expect(screen.queryByText(/₿0/)).toBeNull();
   });
 
   it.each([

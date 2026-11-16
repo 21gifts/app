@@ -251,7 +251,7 @@ export function LoanRepayScreen(): ReactElement {
   const payable = summary.payableSats;
   const waiting = summary.waitingSats;
   const hasPayable = payable === null || payable > 0;
-  const hasWaiting = summary.waitingPeople > 0;
+  const hasWaiting = waiting === null ? summary.waitingPeople > 0 : waiting > 0;
   const payablePeople = ledgersMissing
     ? loans.loans.reduce((sum, loan) => sum + loan.due.payablePeople, 0)
     : new Set(shares.filter((share) => !share.waiting).map((share) => share.accountId)).size;
@@ -322,11 +322,13 @@ export function LoanRepayScreen(): ReactElement {
   const definedPayableLabel = definedDueLabel(loans.loans, 'payable', numberFormat);
   const definedWaiting = definedDueLabel(loans.loans, 'waiting', numberFormat);
   const waitingLabel =
-    waiting === null
-      ? definedWaiting
-      : definedWaiting === null
-        ? money(waiting)
-        : `${definedWaiting} · ${bitcoinText(waiting)}`;
+    waiting === 0
+      ? null
+      : waiting === null
+        ? definedWaiting
+        : definedWaiting === null
+          ? money(waiting)
+          : `${definedWaiting} · ${bitcoinText(waiting)}`;
   const payableCurrencies = new Set(
     loans.loans
       .filter((loan) => loan.due.payableSats !== null && loan.due.payableSats > 0)
@@ -798,7 +800,7 @@ export function LoanRepayScreen(): ReactElement {
     </div>
   ) : successBox !== null ? (
     successBox
-  ) : payable === 0 && summary.waitingPeople === 0 ? (
+  ) : payable === 0 && !hasWaiting ? (
     <div className="w-full rounded-2xl border border-app-success/50 bg-app-card-muted p-4">
       <p className="flex items-center gap-2 font-semibold text-app-success">
         <Check aria-hidden="true" className="h-5 w-5" />
