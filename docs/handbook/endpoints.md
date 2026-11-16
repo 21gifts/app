@@ -811,7 +811,7 @@
 ## Endpoint: GET /loans/open
 
 - **Purpose:** Same-origin proxy of api `GET /loans/open`. The body is a JSON array of open loans (`messageId`, `accountId`, `name`, `currency`, `outstanding`, `overdue`), passed through unchanged. Fiat `outstanding` is a two-decimal string in the loan currency. BTC `outstanding` is a number of sats. This is not `GET /me/loans`.
-- **Errors:** The proxy forwards the upstream status, including 503 when the api cannot price a candidate, or 502 if the api is unreachable.
+- **Errors:** The proxy forwards the upstream status. The api answers 503 `{ error: 'Ask amount is unavailable' }` when a candidate's debt is unavailable and 503 `{ error: 'Messages are unavailable' }` when messages cannot be read. This proxy answers 502 `{ error: 'Upstream api unreachable' }` when the api is unreachable. Outstanding is the ledger remainder, not a spot price.
 - **Used by:** `fetchOpenLoans` on `/loans`.
 - **Auth:** Public. No bearer is required. A bearer is forwarded only when the browser sent one.
 
