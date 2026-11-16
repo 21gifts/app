@@ -50,17 +50,17 @@ function paidBackPercent(ledger: RepaymentLedger): number {
  * Loan block of a posted loan note: what is asked, how far it is, and the
  * **Lend** action while it collects.
  *
- * Collecting and funded follow the api: a loan is funded once its collected
- * sats reach the asked sats, whatever the percent label (a fiat ask shows the
- * percent in its own currency). The paid-back share includes `paidSats` and
- * `paidAmount` from partial rows. It and **Paid back** need the public ledger
- * with its funding date, which only the open note passes;
- * without it a full loan reads **Fully funded**.
+ * Collecting and funded follow {@link forumAskFunded}, which the caller passes
+ * as `funded`: a fiat ask once the collected amount in its currency reaches
+ * `goalAmount`, a BTC or legacy ask once collected sats reach `goalSats`.
+ * The paid-back share includes `paidSats` and `paidAmount` from partial rows.
+ * It and **Paid back** need the public ledger with its funding date, which
+ * only the open note passes; without it a full loan reads **Fully funded**.
  *
  * @param props - `messageId` (loan note id); `ask` (ask amount markup: defined
  *   fiat, bitcoin, visitor fiat); `collected` and `goal` (amounts with their
  *   fiat for the status line); `percent` (collected percent for the label,
- *   uncapped); `funded` (collected sats reached the asked sats);
+ *   uncapped); `funded` (from {@link forumAskFunded});
  *   `ledger` (public ledger, or `null` when it is not loaded here);
  *   `goalClosedAt` (the message's authoritative close time, which hides
  *   giving before a ledger is loaded);
@@ -99,8 +99,8 @@ export function LoanBlock({
   const paidShown = state === 'repaying' || state === 'repaid';
   const paid =
     ledger === null || !paidShown ? 0 : state === 'repaid' ? 100 : paidBackPercent(ledger);
-  // A loan still collecting never reads 100% and a funded one never less, even when the
-  // percent of a fiat ask (its own currency) and the sats that decide funding drift apart.
+  // A loan still collecting never reads 100% and a funded one never less. `funded` is
+  // {@link forumAskFunded}, so a fiat ask's own percent and this flag agree.
   const shownPercent = state === 'collecting' ? Math.min(99, percent) : Math.max(100, percent);
   const barPercent = paidShown ? paid : Math.min(100, Math.max(0, shownPercent));
   const closed =

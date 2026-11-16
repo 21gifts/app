@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   formatDefinedGoalAmount,
+  forumAskFunded,
   forumAskPercent,
   forumFiatGoalPercent,
   forumGoalPercent,
@@ -130,6 +131,94 @@ describe('formatDefinedGoalAmount', () => {
     expect(formatDefinedGoalAmount('1200', 'PHP', 'ch')).toBe("₱1'200.00");
     expect(formatDefinedGoalAmount('1200', 'USD', 'us')).toBe('$1,200.00');
     expect(formatDefinedGoalAmount('1200', 'EUR', 'de')).toBe('EUR 1.200,00');
+  });
+});
+
+describe('forumAskFunded', () => {
+  it('funds a PHP ask of 5000 once amountPhp reaches it, even short of goalSats', () => {
+    const note = {
+      sats: 96_940,
+      goalSats: 97_013,
+      goalCurrency: 'PHP' as const,
+      goalAmount: '5000',
+      amountPhp: '5000.85',
+    };
+    expect(forumAskFunded(note)).toBe(true);
+    expect(forumAskPercent(note)).toBe(100);
+  });
+
+  it('does not fund a fiat ask that reached its sats but not its fiat amount', () => {
+    const note = {
+      sats: 21_000,
+      goalSats: 21_000,
+      goalCurrency: 'USD' as const,
+      goalAmount: '20',
+      amountUsd: '10.00',
+    };
+    expect(forumAskFunded(note)).toBe(false);
+    expect(forumAskPercent(note)).toBe(50);
+  });
+
+  it('keeps the sats rule for a BTC ask and a legacy row', () => {
+    expect(
+      forumAskFunded({ sats: 21_000, goalSats: 21_000, goalCurrency: 'BTC', goalAmount: '21000' }),
+    ).toBe(true);
+    expect(forumAskFunded({ sats: 20_999, goalSats: 21_000, goalCurrency: 'BTC' })).toBe(false);
+    expect(forumAskFunded({ sats: 21_000, goalSats: 21_000 })).toBe(true);
+    expect(forumAskFunded({ sats: 20_999, goalSats: 21_000 })).toBe(false);
+  });
+
+  it('does not fund a fiat ask with a missing snapshot, a bad snapshot, or a zero goal', () => {
+    expect(
+      forumAskFunded({
+        sats: 21_000,
+        goalSats: 21_000,
+        goalCurrency: 'CHF',
+        goalAmount: '20',
+        amountChf: null,
+      }),
+    ).toBe(false);
+    expect(
+      forumAskFunded({
+        sats: 21_000,
+        goalSats: 21_000,
+        goalCurrency: 'EUR',
+        goalAmount: '20',
+      }),
+    ).toBe(false);
+    expect(
+      forumAskFunded({
+        sats: 21_000,
+        goalSats: 21_000,
+        goalCurrency: 'USD',
+        goalAmount: '20',
+        amountUsd: '10',
+      }),
+    ).toBe(false);
+    expect(
+      forumAskFunded({
+        sats: 21_000,
+        goalSats: 21_000,
+        goalCurrency: 'PHP',
+        goalAmount: '0',
+        amountPhp: '0.00',
+      }),
+    ).toBe(false);
+  });
+
+  it('falls back to the sats when the fiat amount is unusable', () => {
+    expect(
+      forumAskFunded({
+        sats: 10,
+        goalSats: 10,
+        goalCurrency: 'USD',
+        goalAmount: 'nope',
+        amountUsd: '0.00',
+      }),
+    ).toBe(true);
+    expect(
+      forumAskFunded({ sats: 5, goalSats: 10, goalCurrency: 'USD', goalAmount: 'nope' }),
+    ).toBe(false);
   });
 });
 

@@ -12,7 +12,7 @@ import { ButtonLink } from '@/components/ui';
 import { useMyLoans } from '@/hooks/useMyLoans';
 import { useSpotRate } from '@/hooks/useSpotRate';
 import type { MyLoan } from '@/lib/api';
-import { forumGoalPercent } from '@/lib/forum-goal';
+import { forumAskFunded, forumAskPercent } from '@/lib/forum-goal';
 import { definedDueLabel, isCollecting, summarizeLoans } from '@/lib/loan-repay';
 import { formatBitcoin, formatFiatDisplay, satsToFiatAmount } from '@/lib/stats-money';
 
@@ -49,14 +49,15 @@ export function LoansCard({ place }: LoansCardProps): ReactElement | null {
     return null;
   }
   const summary = summarizeLoans(loans, numberFormat);
+  const askFundedCount = loans.loans.filter((loan) => forumAskFunded(loan)).length;
   const collecting = loans.loans.some(isCollecting);
   const definedPayable = definedDueLabel(loans.loans, 'payable', numberFormat);
   const definedWaiting = definedDueLabel(loans.loans, 'waiting', numberFormat);
   const single = summary.count === 1;
   const title = single ? t('welcome.loanTitle') : t('welcome.loansTitle', { count: summary.count });
   const status = single
-    ? t(summary.fundedCount === 1 ? 'welcome.loanFunded' : 'welcome.loanCollecting')
-    : t('welcome.loansFunded', { funded: summary.fundedCount, count: summary.count });
+    ? t(askFundedCount === 1 ? 'welcome.loanFunded' : 'welcome.loanCollecting')
+    : t('welcome.loansFunded', { funded: askFundedCount, count: summary.count });
   const money = (sats: number): string => {
     const bitcoin = formatBitcoin(sats, numberFormat);
     const amount = satsToFiatAmount(sats, rateDay, fiat);
@@ -291,7 +292,7 @@ export function LoansCard({ place }: LoansCardProps): ReactElement | null {
               </Link>
               <span className="shrink-0 tabular-nums text-app-muted">
                 {t('forum.goalPercent', {
-                  percent: String(forumGoalPercent(loan.sats, loan.goalSats)),
+                  percent: String(forumAskPercent(loan)),
                 })}
               </span>
             </li>

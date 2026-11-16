@@ -10,7 +10,7 @@ import { preferredFiatSuffix } from '@/components/PreferredFiatSuffix';
 import type { RepaymentLedger } from '@/lib/api';
 import { FORUM_GOAL_AMOUNT_RE, type ForumGoalCurrency } from '@/lib/api-types';
 import { creditSmallestUnits, splitCreditPlan } from '@/lib/credit-plan';
-import { forumAskPercent, formatDefinedGoalAmount } from '@/lib/forum-goal';
+import { forumAskFunded, forumAskPercent, formatDefinedGoalAmount } from '@/lib/forum-goal';
 import {
   formatBitcoin,
   formatFiatDisplay,
@@ -216,7 +216,8 @@ export function ForumGoalBar({
   const defined = showDefinedFiat
     ? formatDefinedGoalAmount(goalAmount, goalCurrency, numberFormat)
     : '';
-  const percent = forumAskPercent({ sats, goalSats, goalCurrency, goalAmount, ...collectedByCode });
+  const askProgress = { sats, goalSats, goalCurrency, goalAmount, ...collectedByCode };
+  const percent = forumAskPercent(askProgress);
   let ratio = forumGoalRatio(sats, goalSats);
   if (
     isFiatGoalCurrency(goalCurrency) &&
@@ -303,7 +304,7 @@ export function ForumGoalBar({
           collected={collected}
           goal={goalText}
           percent={percent}
-          funded={Number.isFinite(sats) && sats >= goalSats}
+          funded={forumAskFunded(askProgress)}
           ledger={loaded !== null && loaded.messageId === messageId ? loaded.ledger : null}
           goalClosedAt={goalClosedAt}
           ledgerLink={ledgerCollapsed}

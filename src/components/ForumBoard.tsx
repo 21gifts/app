@@ -102,6 +102,7 @@ import { forumVideoSrc, type ForumVideoPayload } from '@/lib/forum-video';
 import { shortResourceUrl } from '@/lib/short-link';
 import { formatForumTime } from '@/lib/forum-time';
 import type { HeartTipView } from '@/lib/heart-tip';
+import { forumAskFunded } from '@/lib/forum-goal';
 import { isCollecting } from '@/lib/loan-repay';
 import { ForumRoleHint, ForumRoleTag, forumTaggedRole } from '@/components/ForumRoleTag';
 import { authorCannotReceive, isOwnNote } from '@/lib/roles';
@@ -1577,8 +1578,16 @@ export function ForumBoard({
               ? {
                   name: message.name,
                   days: message.goalTermDays,
-                  // Funded as the api counts it: collected sats reached the asked sats.
-                  full: message.sats >= message.goalSats,
+                  full: forumAskFunded({
+                    sats: message.sats,
+                    goalSats: message.goalSats,
+                    goalCurrency: message.goalCurrency,
+                    goalAmount: message.goalAmount,
+                    amountUsd: message.amountUsd,
+                    amountChf: message.amountChf,
+                    amountEur: message.amountEur,
+                    amountPhp: message.amountPhp,
+                  }),
                 }
               : null;
           const loanClosed = message.goalRepayable === true && message.goalClosedAt !== undefined;
@@ -1954,7 +1963,18 @@ export function ForumBoard({
                     >
                       {t(
                         isCollecting({
-                          fundedAt: message.sats >= message.goalSats ? 'funded' : null,
+                          fundedAt: forumAskFunded({
+                            sats: message.sats,
+                            goalSats: message.goalSats,
+                            goalCurrency: message.goalCurrency,
+                            goalAmount: message.goalAmount,
+                            amountUsd: message.amountUsd,
+                            amountChf: message.amountChf,
+                            amountEur: message.amountEur,
+                            amountPhp: message.amountPhp,
+                          })
+                            ? 'funded'
+                            : null,
                           ...(message.goalClosedAt === undefined
                             ? {}
                             : { closedAt: message.goalClosedAt }),
