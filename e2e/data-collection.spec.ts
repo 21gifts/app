@@ -299,6 +299,213 @@ async function routeRepayments(page: Page): Promise<{ hashes: string[] }> {
   return seen;
 }
 
+test.describe('POST /me/wallet/counterparties', () => {
+  test('Function: SENT_TO_MEMBER_PAYMENT — the pin shows the sent payment', async ({ page }) => {
+    await stubHeartLookupWallet(page);
+    await page.goto(
+      '/wallet/payment?id=ab12ce00-1545-4000-8000-000000000015&visual=sent-to-member',
+    );
+    await expect(page.getByRole('link', { name: 'bob@21.gifts' })).toBeVisible();
+  });
+
+  test('Function: SENT_TO_MEMBER_COUNTERPARTY — the pin links to Bob', async ({ page }) => {
+    await stubHeartLookupWallet(page);
+    await page.goto(
+      '/wallet/payment?id=ab12ce00-1545-4000-8000-000000000015&visual=sent-to-member',
+    );
+    await expect(page.getByRole('link', { name: 'bob@21.gifts' })).toHaveAttribute(
+      'href',
+      '/members/acc_bob',
+    );
+  });
+
+  test('Function: isSparkPaymentRequest — hides the Spark request for a known member', async ({
+    page,
+  }) => {
+    await stubHeartLookupWallet(page);
+    await page.goto(
+      '/wallet/payment?id=ab12ce00-1545-4000-8000-000000000015&visual=sent-to-member',
+    );
+    await page.getByRole('button', { name: 'Details' }).click();
+    await expect(page.getByText('Payment ID')).toBeVisible();
+    await expect(page.getByText('Payment request')).toHaveCount(0);
+  });
+
+  test('Function: RECEIVED_FROM_MEMBER_PAYMENT — the pin shows a received payment', async ({
+    page,
+  }) => {
+    await stubHeartLookupWallet(page);
+    await page.goto(
+      '/wallet/payment?id=ab12ce00-1545-4000-8000-000000000014&visual=received-from-member',
+    );
+    await expect(page.getByRole('link', { name: 'alice@21.gifts' })).toBeVisible();
+  });
+
+  test('Function: RECEIVED_FROM_MEMBER_SENDER — the pin links to Alice', async ({ page }) => {
+    await stubHeartLookupWallet(page);
+    await page.goto(
+      '/wallet/payment?id=ab12ce00-1545-4000-8000-000000000014&visual=received-from-member',
+    );
+    await expect(page.getByRole('link', { name: 'alice@21.gifts' })).toHaveAttribute(
+      'href',
+      '/members/acc_e2e',
+    );
+  });
+
+  test('Function: proxyMeWalletCounterpartiesPost — forwards counterparty lookup', async ({
+    request,
+  }) => {
+    expect(
+      (await request.post('/me/wallet/counterparties', { data: { payments: [] } })).status(),
+    ).toBe(401);
+    const token = await newMember(request);
+    const res = await request.post('/me/wallet/counterparties', {
+      headers: { authorization: `Bearer ${token}` },
+      data: {
+        payments: [{ id: '6a6c3f1f-5841-415b-b8a6-f21d3e513bae', direction: 'in' }],
+      },
+    });
+    expect(await res.json()).toEqual({
+      counterparties: [
+        { id: '6a6c3f1f-5841-415b-b8a6-f21d3e513bae', accountId: 'acc_e2e', username: 'alice' },
+      ],
+    });
+    const trimmed = await request.post('/me/wallet/counterparties', {
+      headers: { authorization: `Bearer ${token}` },
+      data: {
+        payments: [
+          { id: ' 6a6c3f1f-5841-415b-b8a6-f21d3e513bae ', direction: 'in' },
+          { id: '6a6c3f1f-5841-415b-b8a6-f21d3e513bae', direction: 'out' },
+          { id: 'not-observed-yet', direction: 'out' },
+        ],
+      },
+    });
+    expect(await trimmed.json()).toEqual({
+      counterparties: [
+        { id: '6a6c3f1f-5841-415b-b8a6-f21d3e513bae', accountId: 'acc_e2e', username: 'alice' },
+      ],
+    });
+    for (const payments of [
+      [],
+      [{ id: 'x', direction: 'sideways' }],
+      Array.from({ length: 33 }, (_, index) => ({ id: `p${index}`, direction: 'in' })),
+    ]) {
+      const invalid = await request.post('/me/wallet/counterparties', {
+        headers: { authorization: `Bearer ${token}` },
+        data: { payments },
+      });
+      expect(invalid.status()).toBe(400);
+      expect(await invalid.json()).toEqual({ error: 'Invalid counterparty lookup' });
+    }
+  });
+
+  test('Function: usePaymentCounterparty — shows the sender once a later lookup names it', async ({
+    page,
+  }) => {
+    await page.clock.install();
+    await stubHeartLookupWallet(page);
+    let lookups = 0;
+    await page.route('**/me/wallet/counterparties', async (route) => {
+      lookups += 1;
+      const body = route.request().postDataJSON() as {
+        payments: { id: string; direction: string }[];
+      };
+      await route.fulfill({
+        json: {
+          counterparties:
+            lookups < 2
+              ? []
+              : body.payments.map(({ id }) => ({ id, accountId: 'acc_e2e', username: 'alice' })),
+        },
+      });
+    });
+    await page.goto('/wallet/payment?id=6a6c3f1f-5841-415b-b8a6-f21d3e513bae&visual=history-rows');
+    await expect(page.getByText('Coffee & croissant')).toBeVisible();
+    await expect.poll(() => lookups).toBe(1);
+    await expect(page.getByText('From', { exact: true })).toHaveCount(0);
+    await expect(page.locator('dl').first()).not.toContainText('spark1');
+    await page.clock.runFor(15_000);
+    await expect(page.getByRole('link', { name: 'alice@21.gifts' })).toHaveAttribute(
+      'href',
+      '/members/acc_e2e',
+    );
+    await page.clock.runFor(300_000);
+    expect(lookups).toBe(2);
+  });
+
+  test('Function: fetchPaymentCounterparties — resolves the incoming payment', async ({ page }) => {
+    await stubHeartLookupWallet(page);
+    await page.route('**/me/wallet/counterparties', async (route) => {
+      const body = route.request().postDataJSON() as {
+        payments: { id: string; direction: string }[];
+      };
+      await route.fulfill({
+        json: {
+          counterparties: body.payments
+            .filter(({ direction }) => direction === 'in')
+            .map(({ id }) => ({ id, accountId: 'acc_e2e', username: 'alice' })),
+        },
+      });
+    });
+    await page.goto('/wallet/payment?id=6a6c3f1f-5841-415b-b8a6-f21d3e513bae&visual=history-rows');
+    await expect(page.getByRole('link', { name: 'alice@21.gifts' })).toHaveAttribute(
+      'href',
+      '/members/acc_e2e',
+    );
+  });
+
+  test('Function: walletReportSettled — allows a lookup without a wallet report', async ({
+    page,
+  }) => {
+    await stubHeartLookupWallet(page);
+    const reports: string[] = [];
+    page.on('request', (request) => {
+      if (request.url().endsWith('/me/wallet/report')) reports.push(request.url());
+    });
+    await page.route('**/me/wallet/counterparties', async (route) => {
+      const body = route.request().postDataJSON() as {
+        payments: { id: string; direction: string }[];
+      };
+      expect(body.payments).toEqual([
+        { id: '6a6c3f1f-5841-415b-b8a6-f21d3e513bae', direction: 'in' },
+      ]);
+      await route.fulfill({
+        json: {
+          counterparties: body.payments.map(({ id }) => ({
+            id,
+            accountId: 'acc_e2e',
+            username: 'alice',
+          })),
+        },
+      });
+    });
+    await page.goto('/wallet/payment?id=6a6c3f1f-5841-415b-b8a6-f21d3e513bae&visual=history-rows');
+    await expect(page.getByRole('link', { name: 'alice@21.gifts' })).toHaveAttribute(
+      'href',
+      '/members/acc_e2e',
+    );
+    expect(reports).toEqual([]);
+  });
+
+  test('Function: usePaymentCounterparty — shows no sender for an unmatched incoming payment', async ({
+    page,
+  }) => {
+    await stubHeartLookupWallet(page);
+    let lookupFulfilled!: () => void;
+    const lookup = new Promise<void>((resolve) => {
+      lookupFulfilled = resolve;
+    });
+    await page.route('**/me/wallet/counterparties', async (route) => {
+      await route.fulfill({ json: { counterparties: [] } });
+      if (route.request().method() === 'POST') lookupFulfilled();
+    });
+    await page.goto('/wallet/payment?id=6a6c3f1f-5841-415b-b8a6-f21d3e513bae&visual=history-rows');
+    await expect(page.getByText('Coffee & croissant')).toBeVisible();
+    await lookup;
+    await expect(page.getByText('From', { exact: true })).toHaveCount(0);
+  });
+});
+
 test.describe('POST /me/wallet/hearts', () => {
   test('Function: proxyMeWalletHeartsPost — 401 without a session', async ({ request }) => {
     expect((await request.post('/me/wallet/hearts', { data: { hashes: [] } })).status()).toBe(401);

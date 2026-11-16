@@ -192,9 +192,10 @@ function scaleValue(scale: BarScale, sats: number, amount: string | null): numbe
  * Formats a gift/recipient count with grouping separators (not a bitcoin amount).
  *
  * @param n - Whole count.
+ * @param style - Grouping style.
  * @returns Grouped decimal string.
  */
-function formatCount(n: number, style: NumberFormatStyle): string {
+export function formatCount(n: number, style: NumberFormatStyle): string {
   return formatGroupedNumber(n, style, 0);
 }
 
@@ -227,7 +228,7 @@ function fiatFootnote(fiat: FiatCode): string {
 /**
  * One point in an over-time money chart.
  */
-type OverTimePoint = {
+export type OverTimePoint = {
   day: string;
   value: number;
 };
@@ -238,7 +239,7 @@ type OverTimePoint = {
  * `hitX`/`hitWidth` describe the column around the point, so a caller can
  * draw a wide hit target without repeating the chart's geometry.
  */
-type OverTimePointLayout = {
+export type OverTimePointLayout = {
   point: OverTimePoint;
   index: number;
   x: number;
@@ -261,7 +262,7 @@ type OverTimePointLayout = {
  * @param renderPoint - Draws the marker for one point.
  * @returns SVG figure.
  */
-function OverTimeChart(
+export function OverTimeChart(
   points: OverTimePoint[],
   formatTick: (value: number) => string,
   ariaLabel: string,
@@ -476,6 +477,11 @@ function WalletsSummary({
       <p className="text-sm text-paper/60">
         Total of all 21.gifts wallets at the end of each UTC day, as reported by the wallets
         themselves. Fiat figures use today&apos;s spot, not the day&apos;s price.
+      </p>
+      <p>
+        <Link href="/stats/wallet" className="text-accent underline underline-offset-2">
+          See how the wallet is used
+        </Link>
       </p>
       {OverTimeChart(
         points,

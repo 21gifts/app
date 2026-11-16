@@ -846,6 +846,8 @@ describe('social recovery', () => {
     receivePayment: vi.fn(),
     prepareSendPayment: vi.fn(),
     sendPayment: vi.fn(),
+    listUnclaimedDeposits: vi.fn(),
+    claimDeposit: vi.fn(),
   };
   /** The identity key and a compact signature of the SDK's offline signer. */
   const OLD_KEY = '0281363910b0dc0015a4a25e758da30f0e28388ea5252c0e3713936f2d4ef7d3d5';
@@ -941,6 +943,84 @@ describe('social recovery', () => {
     expect(sdkRecovery.receivePayment).toHaveBeenCalledWith({
       paymentMethod: { type: 'sparkAddress' },
     });
+  });
+
+  it('receiveBitcoinAddress asks for the existing Bitcoin deposit address and returns it', async () => {
+    const address = 'bc1p5cyxnuxmeuwuvkwfem96lqzszd02n6xdcjrs20cac6yqjjwudpxqkedrcr';
+    sdkRecovery.receivePayment.mockResolvedValue({ paymentRequest: address, fee: 0n });
+    const conn = await connection();
+    await expect(conn.receiveBitcoinAddress()).resolves.toBe(address);
+    expect(sdkRecovery.receivePayment).toHaveBeenCalledWith({
+      paymentMethod: { type: 'bitcoinAddress' },
+    });
+  });
+
+  it('listUnclaimedDeposits maps open, claimed, submitted, and refunded deposits', async () => {
+    sdkRecovery.listUnclaimedDeposits.mockResolvedValue({
+      deposits: [
+        { txid: 't1', vout: 0, amountSats: 50_000, isMature: false },
+        {
+          txid: 't2',
+          vout: 1,
+          amountSats: 60_000,
+          isMature: true,
+          maxClaimFee: { type: 'fixed', amount: 2_000 },
+          claimError: { type: 'generic', message: 'x' },
+        },
+        {
+          txid: 't3',
+          vout: 2,
+          amountSats: 70_000,
+          isMature: false,
+          instantClaimStatus: { type: 'submitted', claimId: 'c' },
+          maxClaimFee: { type: 'rate', satPerVbyte: 3 },
+        },
+        {
+          txid: 't4',
+          vout: 3,
+          amountSats: 80_000,
+          isMature: true,
+          instantClaimStatus: { type: 'claimed' },
+        },
+        { txid: 't5', vout: 4, amountSats: 90_000, isMature: true, refundTxId: 'r' },
+        {
+          txid: 't6',
+          vout: 5,
+          amountSats: 10_000,
+          isMature: false,
+          instantClaimStatus: { type: 'declined' },
+        },
+      ],
+    });
+    const conn = await connection();
+    await expect(conn.listUnclaimedDeposits()).resolves.toEqual([
+      { txid: 't1', vout: 0, amountSats: 50_000, done: false, maxClaimFeeSats: null },
+      { txid: 't2', vout: 1, amountSats: 60_000, done: false, maxClaimFeeSats: 2_000 },
+      { txid: 't3', vout: 2, amountSats: 70_000, done: true, maxClaimFeeSats: null },
+      { txid: 't4', vout: 3, amountSats: 80_000, done: true, maxClaimFeeSats: null },
+      { txid: 't5', vout: 4, amountSats: 90_000, done: true, maxClaimFeeSats: null },
+      { txid: 't6', vout: 5, amountSats: 10_000, done: false, maxClaimFeeSats: null },
+    ]);
+    expect(sdkRecovery.listUnclaimedDeposits).toHaveBeenCalledWith({});
+  });
+
+  it('claimDeposit claims one deposit under a fixed fee ceiling', async () => {
+    sdkRecovery.claimDeposit.mockResolvedValue({ outcome: { type: 'submitted' } });
+    const conn = await connection();
+    await expect(conn.claimDeposit({ txid: 't1', vout: 2 }, 1_500)).resolves.toBeUndefined();
+    expect(sdkRecovery.claimDeposit).toHaveBeenCalledWith({
+      txid: 't1',
+      vout: 2,
+      maxFee: { type: 'fixed', amount: 1_500 },
+    });
+  });
+
+  it('claimDeposit passes the SDK error on', async () => {
+    sdkRecovery.claimDeposit.mockRejectedValue(new Error('maxDepositClaimFeeExceeded'));
+    const conn = await connection();
+    await expect(conn.claimDeposit({ txid: 't1', vout: 2 }, 1_500)).rejects.toThrow(
+      'maxDepositClaimFeeExceeded',
+    );
   });
 
   it('sendToSparkAddress sends exactly the amount with the idempotency key', async () => {

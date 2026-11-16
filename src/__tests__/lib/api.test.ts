@@ -31,6 +31,7 @@ import {
   FUNDING_PLACES_FULL_ERROR,
   fetchPostStats,
   fetchWalletStats,
+  fetchWalletUsage,
   fetchAboutMePhoto,
   fetchProfilePhoto,
   fetchWideBanner,
@@ -48,6 +49,7 @@ import {
   fetchFundingApplication,
   fetchFundingApplications,
   fetchFundingPayoutDays,
+  fetchShopActivityShops,
   postFundingAdmit,
   postFundingApply,
   postFundingWithdraw,
@@ -313,7 +315,10 @@ describe('fetchFondSummary', () => {
 
   it('returns the validated summary from the same-origin proxy path', async () => {
     const fetchMock = stubFetch({ ok: true, status: 200, body: summary });
-    await expect(fetchFondSummary('tondo-fond')).resolves.toEqual(summary);
+    await expect(fetchFondSummary('tondo-fond')).resolves.toEqual({
+      ...summary,
+      onchainAddress: null,
+    });
     expect(fetchMock).toHaveBeenCalledWith('/fonds/tondo-fond/summary');
   });
 
@@ -1750,6 +1755,70 @@ describe('fetchWalletStats', () => {
     stubFetch({ ok: true, status: 200, body: { ...stats, totalSats: -1 } });
     await expect(fetchWalletStats()).rejects.toThrow(
       'Could not load wallet stats. Please try again.',
+    );
+  });
+});
+
+describe('fetchWalletUsage', () => {
+  const zero = { count: 0, sats: 0 };
+  const usage = {
+    releasedAt: '2026-11-09T11:17:00.000Z',
+    asOf: null,
+    totals: {
+      paymentCount: 1,
+      volumeSats: 10,
+      feeSats: 0,
+      medianSats: 10,
+      averageSats: 2.5,
+      activeWalletCount: 1,
+      sendingWalletCount: 1,
+      topFiveSenderShare: 0,
+      heartCount: 0,
+      paidShopChargeCount: 0,
+    },
+    days: [
+      {
+        day: '2026-11-09',
+        purposes: {
+          deposit: { count: 1, sats: 10 },
+          withdrawal: zero,
+          shop_purchase: zero,
+          forum_gift: zero,
+          transfer: zero,
+          fund_deposit: zero,
+          fund_payout: zero,
+          other: zero,
+        },
+        activeWalletCount: 1,
+        sendingWalletCount: 1,
+        receivingWalletCount: 0,
+      },
+    ],
+    flows: [],
+    amountBuckets: [],
+    hours: Array.from({ length: 24 }, (_, hourUtc) => ({ hourUtc, count: 0 })),
+    forum: [],
+    shopCharges: [],
+  };
+
+  it('returns the validated usage payload', async () => {
+    const fetchMock = stubFetch({ ok: true, status: 200, body: usage });
+    await expect(fetchWalletUsage()).resolves.toEqual(usage);
+    expect(fetchMock).toHaveBeenCalledWith('/wallets/usage');
+  });
+
+  it('throws visitor copy on a non-ok response, a failed fetch, and a bad body', async () => {
+    stubFetch({ ok: false, status: 503, body: { error: 'down' } });
+    await expect(fetchWalletUsage()).rejects.toThrow(
+      'Could not load wallet usage. Please try again.',
+    );
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new TypeError('Failed to fetch')));
+    await expect(fetchWalletUsage()).rejects.toThrow(
+      'Could not load wallet usage. Please try again.',
+    );
+    stubFetch({ ok: true, status: 200, body: { releasedAt: '2026-11-09' } });
+    await expect(fetchWalletUsage()).rejects.toThrow(
+      'Could not load wallet usage. Please try again.',
     );
   });
 });
@@ -7267,6 +7336,67 @@ describe('fetchFundingPayoutDays', () => {
   it('throws visitor copy when the body fails validation', async () => {
     stubFetch({ ok: true, status: 200, body: { days: [], rows: [] } });
     await expect(fetchFundingPayoutDays('sess')).rejects.toThrow(loadError);
+  });
+});
+
+describe('fetchShopActivityShops', () => {
+  const payload = {
+    windowDays: 30,
+    today: '2026-11-14',
+    shops: [
+      {
+        noteId: 'note_a',
+        name: 'Corner Café',
+        npub: 'npub1corner',
+        accountId: 'acc_till',
+        username: 'cornertill',
+        activeDays: 4,
+        lastChargeDay: '2026-11-13',
+      },
+      {
+        noteId: 'note_b',
+        name: 'Bakery',
+        npub: null,
+        accountId: 'acc_bake',
+        username: null,
+        activeDays: 0,
+        lastChargeDay: null,
+      },
+    ],
+  };
+  const loadError = 'Could not load shop activity. Please try again.';
+
+  it('returns the validated payload and sends the bearer header', async () => {
+    const fetchMock = stubFetch({ ok: true, status: 200, body: payload });
+    await expect(fetchShopActivityShops('sess')).resolves.toEqual(payload);
+    expect(fetchMock).toHaveBeenCalledWith('/shops/activity/shops', {
+      headers: { Authorization: 'Bearer sess' },
+    });
+  });
+
+  it('throws the forbidden key on 403', async () => {
+    stubFetch({ ok: false, status: 403, body: { error: 'Forbidden' } });
+    await expect(fetchShopActivityShops('sess')).rejects.toThrow('moderate.forbidden');
+  });
+
+  it('throws visitor copy on 401', async () => {
+    stubFetch({ ok: false, status: 401, body: {} });
+    await expect(fetchShopActivityShops('sess')).rejects.toThrow(loadError);
+  });
+
+  it('throws visitor copy on 503', async () => {
+    stubFetch({ ok: false, status: 503, body: {} });
+    await expect(fetchShopActivityShops('sess')).rejects.toThrow(loadError);
+  });
+
+  it('throws visitor copy when fetch itself fails', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new TypeError('Failed to fetch')));
+    await expect(fetchShopActivityShops('sess')).rejects.toThrow(loadError);
+  });
+
+  it('throws visitor copy when the body fails validation', async () => {
+    stubFetch({ ok: true, status: 200, body: { ...payload, today: 'today' } });
+    await expect(fetchShopActivityShops('sess')).rejects.toThrow(loadError);
   });
 });
 

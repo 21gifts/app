@@ -3,6 +3,7 @@
 import { useEffect, useState, type ReactElement } from 'react';
 import { useFiatPreference } from '@/components/FiatPreferenceProvider';
 import { ForumRoleHint, ForumRoleTag } from '@/components/ForumRoleTag';
+import { FondDeposit } from '@/components/FondDeposit';
 import { useTranslations } from '@/components/LocaleProvider';
 import { useNumberFormat } from '@/components/NumberFormatProvider';
 import { Button, Card } from '@/components/ui';
@@ -55,8 +56,8 @@ function FiatLine({
  * other failure shows the retry row. The ready card shows the handle with the
  * existing Fond role pill, three KPI tiles in the `StatsDashboard` card style
  * (₿ over the visitor's preferred fiat from the current spot; the spot is
- * read, never written), and the paid grant-payout line with the stored USD
- * figure from the api.
+ * read, never written), the {@link FondDeposit} block, and the paid
+ * grant-payout line with the stored USD figure from the api.
  *
  * A new component rather than `StatsDashboard`, which is the ink marketing
  * stats page with charts and a fiat picker, and rather than
@@ -208,6 +209,7 @@ export function FondSummaryLoader({ username }: { username: string }): ReactElem
           </dd>
         </div>
       </dl>
+      <FondDeposit username={ready.username} onchainAddress={ready.onchainAddress} />
       <p className="text-center text-sm text-app-muted">
         {t('fond.payoutsPaid', { count: ready.payoutsPaid, usd: `${ready.payoutsPaidUsd} USD` })}
       </p>

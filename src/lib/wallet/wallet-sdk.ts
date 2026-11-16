@@ -604,6 +604,31 @@ export interface WalletConnection {
    */
   receiveSparkAddress(): Promise<string>;
   /**
+   * This wallet's static Bitcoin deposit address (the SDK's `receivePayment`
+   * for a Bitcoin address without `newAddress`, so the existing address).
+   *
+   * @returns The address.
+   */
+  receiveBitcoinAddress(): Promise<string>;
+  /**
+   * Lists the on-chain deposits the SDK tracks and has not finished claiming
+   * (the SDK's `listUnclaimedDeposits`).
+   *
+   * @returns The deposits.
+   */
+  listUnclaimedDeposits(): Promise<WalletDeposit[]>;
+  /**
+   * Claims one deposit with a fixed fee ceiling (the SDK's `claimDeposit`).
+   * The SDK records the ceiling on the deposit and keeps applying it to its
+   * own later claim attempts.
+   *
+   * @param deposit - Transaction id and output index of the deposit.
+   * @param maxFeeSats - Most the claim may cost, in sats.
+   * @returns Resolves once the SDK answered (settled, submitted, or deferred).
+   * @throws The SDK's error, e.g. a matured deposit whose claim costs more.
+   */
+  claimDeposit(deposit: { txid: string; vout: number }, maxFeeSats: number): Promise<void>;
+  /**
    * Sends exactly `amountSats` to a Spark address. Any other payment method is
    * refused before anything is sent. A send repeated with the same key is not
    * paid twice: the SDK answers the first payment.
@@ -621,6 +646,20 @@ export interface WalletConnection {
    * @returns Resolves when the SDK has disconnected.
    */
   disconnect(): Promise<void>;
+}
+
+/** One on-chain deposit the SDK tracks, as the app reads it. */
+export interface WalletDeposit {
+  /** Funding transaction id. */
+  txid: string;
+  /** Output index in that transaction. */
+  vout: number;
+  /** Deposited amount in sats, before the claim fee. */
+  amountSats: number;
+  /** Whether a claim is submitted or credited, or a refund was made: nothing to claim. */
+  done: boolean;
+  /** The fixed fee ceiling recorded on this deposit, or `null` when none or another kind. */
+  maxClaimFeeSats: number | null;
 }
 
 /**
@@ -1208,6 +1247,36 @@ export async function loadWalletSdk(): Promise<WalletSdk> {
         async receiveSparkAddress(): Promise<string> {
           const response = await handle.receivePayment({ paymentMethod: { type: 'sparkAddress' } });
           return response.paymentRequest;
+        },
+        async receiveBitcoinAddress(): Promise<string> {
+          const response = await handle.receivePayment({
+            paymentMethod: { type: 'bitcoinAddress' },
+          });
+          return response.paymentRequest;
+        },
+        async listUnclaimedDeposits(): Promise<WalletDeposit[]> {
+          const response = await handle.listUnclaimedDeposits({});
+          return response.deposits.map((deposit) => ({
+            txid: deposit.txid,
+            vout: deposit.vout,
+            amountSats: deposit.amountSats,
+            done:
+              deposit.instantClaimStatus?.type === 'claimed' ||
+              deposit.instantClaimStatus?.type === 'submitted' ||
+              deposit.refundTxId !== undefined,
+            maxClaimFeeSats:
+              deposit.maxClaimFee?.type === 'fixed' ? deposit.maxClaimFee.amount : null,
+          }));
+        },
+        async claimDeposit(
+          deposit: { txid: string; vout: number },
+          maxFeeSats: number,
+        ): Promise<void> {
+          await handle.claimDeposit({
+            txid: deposit.txid,
+            vout: deposit.vout,
+            maxFee: { type: 'fixed', amount: maxFeeSats },
+          });
         },
         async sendToSparkAddress(
           address: string,

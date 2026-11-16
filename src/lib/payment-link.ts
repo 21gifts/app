@@ -37,6 +37,7 @@ export function lightningHref(request: string): string {
 
 /**
  * Pause between two reads of a pay poll (ms): the forum's pay and payable
- * polls, and the payment page's status and pay-link reads.
+ * polls, the payment page's status and pay-link reads, and the till's reads
+ * while a Lightning payment that names no charge could be the open charge's.
  */
 export const PAY_POLL_MS = 2000;

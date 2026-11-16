@@ -26,11 +26,13 @@ import {
   giftStatsSchema,
   fxSpotSchema,
   shopActivitySchema,
+  shopActivityShopsSchema,
   shopListResponseSchema,
   grantContinuationSchema,
   grantPlacesSchema,
   postStatsSchema,
   walletStatsSchema,
+  walletUsageSchema,
   accountActivitySchema,
   memberProfileSchema,
   messageInvoiceSchema,
@@ -45,6 +47,7 @@ import {
   fondPayoutListSchema,
   fondSummarySchema,
   fondPayoutInvoiceSchema,
+  fondDepositAddressSchema,
   trustActionResultSchema,
   trustChainSchema,
   passkeyBeginSchema,
@@ -77,11 +80,13 @@ import {
   type GiftStats,
   type FxSpot,
   type ShopActivityDay,
+  type ShopActivityShops,
   type ShopListItem,
   type GrantContinuation,
   type GrantPlaces,
   type PostStats,
   type WalletStats,
+  type WalletUsage,
   type AccountActivity,
   type LnurlInvoice,
   type LnurlPayRequest,
@@ -1406,6 +1411,8 @@ export async function fetchFxSpot(): Promise<FxSpot> {
   }
 }
 
+const SHOP_ACTIVITY_LOAD_ERROR = 'Could not load shop activity. Please try again.';
+
 /**
  * Fetches public shop counts per UTC day. No session.
  *
@@ -1417,11 +1424,44 @@ export async function fetchShopActivity(): Promise<ShopActivityDay[]> {
   try {
     const response = await fetch('/shops/activity');
     if (!response.ok) {
-      throw new Error('Could not load shop activity. Please try again.');
+      throw new Error(SHOP_ACTIVITY_LOAD_ERROR);
     }
     return shopActivitySchema.parse(await response.json()).days;
   } catch {
-    throw new Error('Could not load shop activity. Please try again.');
+    throw new Error(SHOP_ACTIVITY_LOAD_ERROR);
+  }
+}
+
+/**
+ * Fetches the per-shop activity table for staff.
+ *
+ * Hits same-origin `GET /shops/activity/shops` (Bearer).
+ *
+ * @param sessionToken - A bearer token from a completed challenge.
+ * @returns The parsed payload (`windowDays`, `today`, `shops` in api order).
+ * @throws Error `'moderate.forbidden'` on 403.
+ * @throws Error with visitor-facing copy on 401, 503, other non-2xx, a network
+ * failure, or a body that fails {@link shopActivityShopsSchema}.
+ */
+export async function fetchShopActivityShops(sessionToken: string): Promise<ShopActivityShops> {
+  let response: Response;
+  try {
+    response = await fetch('/shops/activity/shops', {
+      headers: { Authorization: `Bearer ${sessionToken}` },
+    });
+  } catch {
+    throw new Error(SHOP_ACTIVITY_LOAD_ERROR);
+  }
+  if (response.status === 403) {
+    throw new Error('moderate.forbidden');
+  }
+  try {
+    if (!response.ok) {
+      throw new Error(SHOP_ACTIVITY_LOAD_ERROR);
+    }
+    return shopActivityShopsSchema.parse(await response.json());
+  } catch {
+    throw new Error(SHOP_ACTIVITY_LOAD_ERROR);
   }
 }
 
@@ -1537,6 +1577,27 @@ export async function fetchWalletStats(): Promise<WalletStats> {
     return walletStatsSchema.parse(await response.json());
   } catch {
     throw new Error('Could not load wallet stats. Please try again.');
+  }
+}
+
+/**
+ * Fetches aggregate wallet use since the production release.
+ *
+ * The payload has no person, account, or payment id.
+ *
+ * @returns The {@link WalletUsage} payload.
+ * @throws Error with visitor-facing copy when the api is unavailable or the
+ * body fails {@link walletUsageSchema}.
+ */
+export async function fetchWalletUsage(): Promise<WalletUsage> {
+  try {
+    const response = await fetch('/wallets/usage');
+    if (!response.ok) {
+      throw new Error('Could not load wallet usage. Please try again.');
+    }
+    return walletUsageSchema.parse(await response.json());
+  } catch {
+    throw new Error('Could not load wallet usage. Please try again.');
   }
 }
 
@@ -5378,7 +5439,7 @@ export async function postLnurlInvoice(
 }
 
 /**
- * Failure of a Fond payout call, without throwing on an HTTP status.
+ * Failure of a Fond payout or deposit-address call, without throwing on an HTTP status.
  *
  * `status` is the HTTP status of the same-origin proxy answer (also for a 2xx
  * whose body is unreadable or fails the schema, then with `error: null`), or
@@ -5393,19 +5454,19 @@ export interface FondPayoutFailure {
 }
 
 /**
- * Calls one `/fond/payouts` endpoint and reads its body without logging the
- * invoice or address.
+ * Calls one `/fond/...` endpoint of the Fond account and reads its body
+ * without logging the invoice or address.
  *
  * @param path - Same-origin path.
  * @param session - Bearer session.
- * @param init - Method, `GET` when omitted.
+ * @param init - Method (`GET` when omitted) and an optional JSON body.
  * @returns The raw response and its parsed JSON body, or a status `0` failure
  *   when the request did not answer.
  */
 async function fondPayoutRequest(
   path: string,
   session: string,
-  init: { method?: 'POST' } = {},
+  init: { method?: 'POST' | 'PUT'; json?: unknown } = {},
 ): Promise<{ response: Response; body: unknown } | FondPayoutFailure> {
   let response: Response;
   try {
@@ -5413,7 +5474,9 @@ async function fondPayoutRequest(
       ...(init.method === undefined ? {} : { method: init.method }),
       headers: {
         Authorization: `Bearer ${session}`,
+        ...(init.json === undefined ? {} : { 'Content-Type': 'application/json' }),
       },
+      ...(init.json === undefined ? {} : { body: JSON.stringify(init.json) }),
     });
   } catch {
     return { ok: false, status: 0, error: null };
@@ -5477,4 +5540,35 @@ export async function postFondPayoutInvoice(
     return { ok: false, status: result.response.status, error: null };
   }
   return { ok: true, invoice: parsed.data };
+}
+
+/**
+ * Registers the Fond wallet's on-chain deposit address through
+ * `PUT /fond/deposit-address` (Bearer). The api stores it idempotently and
+ * returns it in the public `GET /fond/summary`.
+ *
+ * Never throws on an HTTP status: `400` is an address the api refused, `403`
+ * a session that is not the Fond account, `404` an api whose Fond surface is
+ * off, and `503` an api that cannot store it now.
+ *
+ * @param session - Bearer session of the Fond account.
+ * @param address - The Fond wallet's static Bitcoin deposit address.
+ * @returns The stored address, or a {@link FondPayoutFailure}.
+ */
+export async function putFondDepositAddress(
+  session: string,
+  address: string,
+): Promise<{ ok: true; address: string } | FondPayoutFailure> {
+  const result = await fondPayoutRequest('/fond/deposit-address', session, {
+    method: 'PUT',
+    json: { address },
+  });
+  if ('ok' in result) {
+    return result;
+  }
+  const parsed = fondDepositAddressSchema.safeParse(result.body);
+  if (!parsed.success) {
+    return { ok: false, status: result.response.status, error: null };
+  }
+  return { ok: true, address: parsed.data.address };
 }

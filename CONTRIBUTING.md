@@ -82,6 +82,7 @@ app/
 │   │   │   ├── wallet/route.ts  # PUT /me/wallet (claim the in-app wallet key)
 │   │   │   ├── wallet/report/route.ts  # POST /me/wallet/report (wallet data report)
 │   │   │   ├── wallet/hearts/route.ts  # POST /me/wallet/hearts (heart payment lookup)
+│   │   │   ├── wallet/counterparties/route.ts # POST /me/wallet/counterparties (counterparty lookup)
 │   │   │   ├── events/route.ts  # POST /me/events (interaction log batch)
 │   │   │   ├── recovery-share/route.ts  # PUT /me/recovery-share (the Social Recovery share 21.gifts keeps)
 │   │   │   ├── held-shares/
@@ -168,6 +169,7 @@ app/
 │   │   │   ├── admit/route.ts                    # POST /funding/admit
 │   │   │   └── reject/route.ts                   # POST /funding/reject
 │   │   ├── fond/
+│   │   │   ├── deposit-address/route.ts  # PUT /fond/deposit-address (the Fond wallet's on-chain deposit address)
 │   │   │   └── payouts/
 │   │   │       ├── route.ts              # GET /fond/payouts (today's open Fond rows)
 │   │   │       └── [id]/invoice/route.ts # POST /fond/payouts/:id/invoice (Spark invoice or BOLT11)
@@ -285,12 +287,14 @@ app/
 │   │   ├── WalletFooterActions.tsx # Receive / Send footer buttons shared by /wallet and /welcome
 │   │   ├── WalletPanelView.tsx  # Open Receive or Send view as the page body (/wallet and over /welcome)
 │   │   ├── WalletReceive.tsx    # Receive view: address QR, 21.gifts address, Copy, Set an amount, Move Bitcoin from another wallet (hadExternalWallet)
-│   │   ├── WalletPaymentDetails.tsx # /wallet/payment one payment: amount, status, summary, technical details
+│   │   ├── WalletPaymentDetails.tsx # /wallet/payment one payment: amount, status, counterparty, summary, technical details
 │   │   ├── WalletBalance.tsx    # /wallet large balance (connecting / ready with ₿/fiat tap / error or setup note)
 │   │   ├── WalletHistory.tsx    # /wallet payments card (newest first, paged on scroll)
 │   │   ├── WalletSetupNote.tsx  # Inline wallet setup note on money screens (Try again)
 │   │   ├── WalletSync.tsx       # Root-mounted wallet phrase and background setup listeners + wallet data report triggers (renders nothing)
 │   │   ├── FondPayoutSync.tsx   # Root-mounted automatic Fond payout loop while the Fond wallet is ready (renders nothing)
+│   │   ├── FondDepositSync.tsx  # Root-mounted Fond deposit address registration and bounded deposit claims (renders nothing)
+│   │   ├── FondDeposit.tsx      # Public Fond page deposit block: Lightning / On-chain selector, address, QR, Copy
 │   │   ├── InteractionLog.tsx   # Root-mounted interaction log: screen views, flush timer (renders nothing)
 │   │   ├── WalletPay.tsx        # In-app wallet pay slot of the pay sheet (the only way to pay)
 │   │   ├── PaySheet.tsx         # Bottom sheet for the last tap of every in-app wallet payment (title, amount, pay slot, success step)
@@ -373,6 +377,7 @@ app/
 │   │   ├── useActiveSession.ts  # Session token public pages may act with (null while a login's wallet is opening)
 │   │   ├── useWalletOpen.ts     # Whether the account's wallet phrase is open in this tab
 │   │   ├── useHeartContext.ts   # Gift payment hashes resolved to the heart's forum post
+│   │   ├── usePaymentCounterparty.ts # Counterparty lookup for a payment
 │   │   ├── useWalletHistory.ts  # /wallet payment pages, reloaded on every wallet sync
 │   │   ├── useWalletSetup.ts    # Inline setup-failure state, screenshot pins, and retry
 │   │   ├── useWalletPay.ts      # In-app pay path of one invoice (prepare, confirm, send, 60 s wait)
@@ -424,12 +429,15 @@ app/
 │   │   │   ├── payment-display.ts # Payment title, message, and screen link for the list and /wallet/payment
 │   │   │   ├── payment-fixtures.ts # Synthetic SDK payments for the history-rows pin (invariants unit-tested)
 │   │   │   ├── heart-context.ts # fetchHeartPosts: gift payment hashes → POST /me/wallet/hearts
+│   │   │   ├── payment-counterparty.ts # fetchPaymentCounterparties: payments → POST /me/wallet/counterparties
 │   │   │   ├── wallet-report.ts # reportWallet: balance + unacknowledged payments → POST /me/wallet/report
 │   │   │   ├── fond-payouts.ts  # runFondPayoutTick: list → invoice → pay sparkInvoice ?? bolt11 once
+│   │   │   ├── fond-deposits.ts # registerFondDepositAddress outcome; claimFondDeposits under a bounded fee
 │   │   │   ├── payment-failure.ts # reportPaymentFailure: payment_failed event + `Payment failed` error report
 │   │   │   ├── error-cause.ts   # errorCause, CAUSE_KINDS: name, code, and cause kind of a wallet that did not open
 │   │   │   └── lnurl-relay.ts   # lnurlRelayTarget: outside address or LNURL goes through the api
 │   │   ├── gifts-address.ts     # Public username@21.gifts display handle
+│   │   ├── bitcoin-address.ts   # isMainnetBitcoinAddress shape check before an address is shown or encoded
 │   │   ├── shop-sticker.ts      # Shop-sticker SVG/PDF/PNG/JPG from the member pay QR; ?lang=Kikamba (no PDF library)
 │   │   ├── shop-sticker-artwork.ts # Generated fixed sticker artwork (outlined paths); do not edit by hand
 │   │   ├── missing-requirements.ts # MissingRequirementsError + 409 body parse
@@ -497,7 +505,7 @@ app/
 │   ├── login.spec.ts            # /login Log in + account choice + signed-in forms
 │   ├── login-gate.spec.ts       # logins_closed / app_outdated notices, X-App-Build, wiped session falls back to signed out
 │   ├── wallet.spec.ts           # /wallet recovery-phrase, balance, Send (camera), Receive, and Function titles
-│   ├── data-collection.spec.ts  # POST /me/wallet/report, /me/wallet/hearts, and /me/events proxies, interaction log in the browser
+│   ├── data-collection.spec.ts  # POST /me/wallet/report, /me/wallet/hearts, /me/wallet/counterparties, and /me/events proxies, interaction log in the browser
 │   ├── camera.ts                # Stubbed getUserMedia (black stream, QR stream, one QR per request, blocked, none) for camera specs
 │   ├── fake-webauthn.ts         # Stubbed passkey that always succeeds with PRF output (login, login gate)
 │   ├── no-prf.ts                # Stubbed passkeys without PRF output + the one no-wallet sentence
@@ -511,6 +519,7 @@ app/
 │   ├── proposals.spec.ts        # /moderate/proposals staff confirm/reject queue
 │   ├── applications.spec.ts     # /grants grant card, queue, and review; old paths redirect
 │   ├── fond-payouts.spec.ts     # /fond/payouts proxies, client calls, invoice/settle tick loop
+│   ├── fond-deposits.spec.ts    # /fond/deposit-address proxy, client call, Fond address registration and claims
 │   ├── proxy.spec.ts            # Same-origin api proxy round-trips against the stub
 │   ├── view.spec.ts             # /view/[viewKey] public profile
 │   ├── mock-api.mjs             # Local 21.gifts api protocol stub for proxies
@@ -773,6 +782,17 @@ The in-app wallet is the only wallet. A member's only address is
 `<username>@<app host>`. No screen names, links to, or opens another wallet
 app on a member's behalf, and members cannot link an external address.
 
+One exception, on one screen only: the public Fond page `/fonds/[username]`
+may also show the on-chain deposit address of the in-app wallet of the one
+configured Fond account (`FondDeposit`), as a `bitcoin:` QR and text, next to
+the Fond's `<username>@<app host>`. The api publishes it as `onchainAddress`
+after the Fond's signed-in app registered it. No other screen shows it: not a
+profile, a member or public view, the wallet, Receive, the point of sale, or
+anywhere else. For every member, and for the Fond on every other screen, the
+only address stays `<username>@<app host>`. Nothing else in this section is
+relaxed: no screen names, links to, or opens another wallet app on a member's
+behalf, and members cannot link an external address.
+
 A smartphone shows the same payment QR as a desktop for the profile,
 member, public view, and point of sale. The Shop sticker is
 shown wherever that profile QR is shown.
@@ -933,7 +953,7 @@ switch that makes a screen show fixture data or a forced state) is honoured
 **only in a Playwright build**: check `getE2eNow()` (`NEXT_PUBLIC_E2E_NOW`,
 unset in every deployed build) before reading the pin. `visualPin` does that
 for `useWallet` (including `?visual=balance-reopening`), `useWalletPay`, `useWalletSetup`, `useWalletSend`, `useWalletPanel`, `useWalletPayment`, `useRecoveryFlow`, `useSocialRecoverySetup`, `useRemainingBalance`, `useIncomingPayment`, `useLoanRepay`, the login card's
-wallet gate, `sendHeartTip`, `useHeartTip`, `useHeartContext`, `PosScreen`, `MoveFundsSheet`, the settings **Log in at DFX** row (`SettingsScreen`), `payment-display`, and `wallet-open`; `useWalletHistory`, `useWalletPhrase`, and
+wallet gate, `sendHeartTip`, `useHeartTip`, `useHeartContext`, `usePaymentCounterparty`, `PosScreen`, `MoveFundsSheet`, the settings **Log in at DFX** row (`SettingsScreen`), `payment-display`, and `wallet-open`; `useWalletHistory`, `useWalletPhrase`, and
 `PasskeyRenewNotice` check `getE2eNow()` themselves. Inline scripts that run before
 React check for the `e2e-now` meta tag, which only a Playwright build renders.
 Do not add a second mechanism. A production build must ignore every pin, and a

@@ -11106,7 +11106,7 @@ test('Function: fetchMemberSparkInvoice — POST /pay/alice/invoice issues a Spa
   expect(refused.status()).toBe(400);
 });
 
-test('Function: PosTill — an open charge turns into Paid the moment the wallet receives it, and Done returns to this till', async ({
+test('Function: PosTill — an open charge turns into Paid the moment the wallet receives its Spark invoice, and Done returns to this till', async ({
   page,
 }) => {
   await seedAdaSession(page);
@@ -11153,16 +11153,18 @@ test('Function: PosTill — an open charge turns into Paid the moment the wallet
       body: JSON.stringify({ charge, history: [charge] }),
     });
   });
-  // The pin plays this tab's wallet receiving the open amount: Paid shows without waiting for the
-  // api, and one read (not a timer) then checks the payment.
+  // The pin plays this tab's wallet receiving the open charge's Spark invoice, which names the
+  // charge: Paid shows without waiting for the api.
   await page.goto('/pos?visual=pos-received');
   const dialog = page.getByRole('alertdialog', { name: 'Paid' });
   await expect(dialog).toBeVisible();
   await expect(dialog.getByText('₿21')).toBeVisible();
-  await expect.poll(() => loads).toBe(2);
+  expect(loads).toBe(1);
   await expect(page.getByRole('button', { name: 'Cancel' })).toHaveCount(0);
   await expect(dialog.getByRole('link')).toHaveCount(0);
   await dialog.getByRole('button', { name: 'Done' }).click();
+  // Done reads the till once.
+  await expect.poll(() => loads).toBe(2);
   await expect(page).toHaveURL(/\/pos\?visual=pos-received$/);
   await expect(page.getByRole('alertdialog')).toHaveCount(0);
   await expect(page.getByRole('link', { name: 'Set an amount' })).toBeVisible();
@@ -11257,7 +11259,7 @@ test('Function: onPaymentReceived — without a wallet payment an open charge st
   expect(loads()).toBe(1);
 });
 
-test('Function: onPaymentReceived — the reported payment pays the open charge at once, before the api is asked', async ({
+test('Function: onPaymentReceived — a payment that names the open charge pays it at once, before the api is asked', async ({
   page,
 }) => {
   const loads = await routeTillWith(page, {
@@ -11268,11 +11270,86 @@ test('Function: onPaymentReceived — the reported payment pays the open charge 
     expiresAt: new Date(Date.now() + 120_000).toISOString(),
     paidAt: null,
   });
-  // The pin reports the charge amount through the wallet listener (announceReceivedForE2e).
+  // The pin reports a payment of the charge's Spark invoice through the wallet listener
+  // (announceReceivedForE2e).
   await page.goto('/pos?visual=pos-received');
   await expect(page.getByRole('alertdialog', { name: 'Paid' })).toBeVisible();
-  // Then one read checks the payment, and no more.
-  await expect.poll(() => loads()).toBe(2);
+  // The payment names the charge: no read is needed to confirm it.
+  expect(loads()).toBe(1);
+});
+
+test('Function: onPaymentReceived — a Lightning payment of the same amount that names no charge leaves the charge open', async ({
+  page,
+}) => {
+  const loads = await routeTillWith(page, {
+    id: 'pos-e2e',
+    amountSats: 21,
+    status: 'pending',
+    createdAt: new Date().toISOString(),
+    expiresAt: new Date(Date.now() + 120_000).toISOString(),
+    paidAt: null,
+  });
+  // The pin reports a Lightning payment of the open amount that names no charge (the sticker QR,
+  // a grant, another member): the api, which still shows the charge open, is asked again and again.
+  await page.goto('/pos?visual=pos-received-unnamed');
+  await expect(page.getByRole('button', { name: 'Cancel' })).toBeVisible();
+  await expect.poll(() => loads(), { timeout: 10_000 }).toBeGreaterThanOrEqual(3);
+  await expect(page.getByRole('alertdialog')).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Cancel' })).toBeVisible();
+});
+
+test('Function: onPaymentReceived — a Lightning payment that names no charge is confirmed once the api returns the charge paid', async ({
+  page,
+}) => {
+  await seedAdaSession(page);
+  await page.route(/\/me$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        id: 'acc_e2e',
+        linkingKey: null,
+        role: 'basis',
+        name: 'Ada',
+        username: 'alice',
+        location: null,
+        lightningAddress: null,
+        lightningAddressVerified: false,
+        sparkWalletVerified: true,
+        forumLawsDismissed: true,
+        createdAt: 1,
+        rulesAgreedAt: 1,
+        viewKey: 'a'.repeat(64),
+        aboutMe: null,
+        setup: null,
+        missing: [],
+      }),
+    });
+  });
+  const open = {
+    id: 'pos-e2e',
+    amountSats: 21,
+    status: 'pending',
+    createdAt: new Date().toISOString(),
+    expiresAt: new Date(Date.now() + 120_000).toISOString(),
+    paidAt: null,
+  };
+  let loads = 0;
+  await page.route(/\/pos\/charge$/, async (route) => {
+    loads += 1;
+    // The api marks the charge paid only on the third read, as its paid worker would a moment later.
+    const charge = loads < 3 ? open : { ...open, status: 'paid', paidAt: new Date().toISOString() };
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ charge, history: [charge] }),
+    });
+  });
+  await page.goto('/pos?visual=pos-received-unnamed');
+  const dialog = page.getByRole('alertdialog', { name: 'Paid' });
+  await expect(dialog).toBeVisible({ timeout: 10_000 });
+  await expect(dialog.getByText('₿21')).toBeVisible();
+  expect(loads).toBe(3);
 });
 
 test('Function: announceReceivedForE2e — the pos-received pin reports the open amount to the wallet listener', async ({
@@ -11355,6 +11432,119 @@ test('Function: PosHistory — the till list gains the charge once it is paid', 
   await expect(history.getByText(/^Paid ✓ /)).toBeVisible();
   await expect(history.getByRole('listitem')).toHaveCount(2);
   await expect(history.getByRole('listitem').first()).toContainText('₿21');
+});
+
+/** Signed-in Ada with a verified wallet and a username, as the till needs. */
+async function routeTillAccount(page: Page): Promise<void> {
+  await seedAdaSession(page);
+  await page.route(/\/me$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        id: 'acc_e2e',
+        linkingKey: null,
+        role: 'basis',
+        name: 'Ada',
+        username: 'alice',
+        location: null,
+        lightningAddress: null,
+        lightningAddressVerified: false,
+        sparkWalletVerified: true,
+        forumLawsDismissed: true,
+        createdAt: 1,
+        rulesAgreedAt: 1,
+        viewKey: 'a'.repeat(64),
+        aboutMe: null,
+        setup: null,
+        missing: [],
+      }),
+    });
+  });
+}
+
+test('Function: PosHistory — a payment received without a charge joins the list without a reload', async ({
+  page,
+}) => {
+  await routeTillAccount(page);
+  const earlier = {
+    id: 'pos-earlier',
+    amountSats: 500,
+    status: 'expired',
+    createdAt: '2026-09-19T08:30:00.000Z',
+    expiresAt: '2026-09-19T08:35:00.000Z',
+    paidAt: null,
+  };
+  const arrived = {
+    id: '0a1b2c3d-0000-4000-8000-000000000002',
+    amountSats: 2_100,
+    receivedAt: new Date().toISOString(),
+    kind: 'spark',
+  };
+  let received: unknown[] = [];
+  await page.route(/\/pos\/charge$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ charge: null, history: [earlier], received }),
+    });
+  });
+  await page.goto('/pos');
+  const history = page.getByRole('region', { name: 'History' });
+  await expect(history.getByRole('listitem')).toHaveCount(1);
+  await expect(history.getByText('Received')).toHaveCount(0);
+  received = [arrived];
+  // The till reads again without a document load (here: the tab shows again).
+  await page.evaluate(() => {
+    document.dispatchEvent(new Event('visibilitychange'));
+  });
+  await expect(history.getByRole('listitem')).toHaveCount(2);
+  const row = history.getByRole('listitem').first();
+  await expect(row.getByText('Received')).toBeVisible();
+  await expect(row).toContainText("₿2'100");
+  await expect(row.getByText('Wallet transfer')).toBeVisible();
+  await expect(row).toHaveClass(/animate-fade-in/);
+  await expect(history.getByRole('listitem').nth(1)).toContainText('Expired');
+  // Not a paid charge: no full-screen confirmation, and Set an amount stays.
+  await expect(page.getByRole('alertdialog', { name: 'Paid' })).toHaveCount(0);
+  await expect(page.getByRole('link', { name: 'Set an amount' })).toBeVisible();
+});
+
+test('Function: fetchPosState — an api without received, or with an unusable entry, keeps the till working', async ({
+  page,
+}) => {
+  await routeTillAccount(page);
+  let body: Record<string, unknown> = { charge: null, history: [] };
+  await page.route(/\/pos\/charge$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(body),
+    });
+  });
+  await page.goto('/pos');
+  await expect(page.getByText('No payments yet.')).toBeVisible();
+  body = {
+    charge: null,
+    history: [],
+    received: [
+      { id: 'r-bad', amountSats: 'many', receivedAt: 'soon', kind: 'onchain' },
+      {
+        id: 'r-ok',
+        amountSats: 42,
+        receivedAt: '2026-09-20T12:03:10.000Z',
+        kind: 'lightning',
+      },
+    ],
+  };
+  await page.evaluate(() => {
+    document.dispatchEvent(new Event('visibilitychange'));
+  });
+  const history = page.getByRole('region', { name: 'History' });
+  await expect(history.getByRole('listitem')).toHaveCount(1);
+  await expect(history.getByText('Instant payment')).toBeVisible();
+  await expect(history).toContainText('₿42');
+  await expect(page.getByText('Point of sale is unavailable.')).toHaveCount(0);
 });
 
 test('Function: PosHistory — the till lists a cancelled charge with the figure stored for it', async ({
