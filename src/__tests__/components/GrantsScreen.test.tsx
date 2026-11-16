@@ -313,7 +313,7 @@ describe('GrantsScreen', () => {
     ],
     [
       { state: 'blocked', reason: 'shop_payment' },
-      'You must spend at least half of your daily grant in 21.gifts shops today and yesterday together.',
+      'Your payments in 21.gifts shops yesterday and today must add up to at least half of your daily gift.',
       '/shops',
     ],
     [
@@ -369,7 +369,7 @@ describe('GrantsScreen', () => {
       seedShop({ shopPaymentSats: 200, shopPaymentRequiredSats: 500 });
       renderWithLocale(<GrantsScreen />);
       const sentence =
-        'You must spend at least ₿500 · $0.50 in 21.gifts shops today and yesterday together, half of your daily grant.';
+        'Your payments in 21.gifts shops yesterday and today must add up to at least ₿500 · $0.50, half of your daily gift.';
       expect(screen.getByRole('link', { name: sentence }).getAttribute('href')).toBe('/shops');
       expect(payoutParagraph().textContent).toBe(
         `${sentence} Spent so far: ₿200 · $0.20. Still missing: ₿300 · $0.30.`,
@@ -381,7 +381,7 @@ describe('GrantsScreen', () => {
       seedShop({ shopPaymentSats: 400, shopPaymentRequiredSats: 1_250 });
       renderWithLocale(<GrantsScreen />);
       const sentence =
-        "You must spend at least ₿1'250 in 21.gifts shops today and yesterday together, half of your daily grant.";
+        "Your payments in 21.gifts shops yesterday and today must add up to at least ₿1'250, half of your daily gift.";
       expect(screen.getByRole('link', { name: sentence }).getAttribute('href')).toBe('/shops');
       expect(payoutParagraph().textContent).toBe(
         `${sentence} Spent so far: ₿400. Still missing: ₿850.`,
@@ -404,7 +404,7 @@ describe('GrantsScreen', () => {
       seedShop({ shopPaymentSats: 0, shopPaymentRequiredSats: 500 });
       renderWithLocale(<GrantsScreen />, 'de');
       const sentence =
-        'Sie müssen heute und gestern zusammen mindestens ₿500 · CHF 0.40 in 21.gifts-Shops ausgeben, die Hälfte Ihrer Tagesförderung.';
+        'Ihre Zahlungen in 21.gifts-Shops von gestern und heute müssen zusammen mindestens ₿500 · CHF 0.40 ergeben, die Hälfte Ihres täglichen Geschenks.';
       expect(screen.getByRole('link', { name: sentence }).getAttribute('href')).toBe('/shops');
       const group = screen.getByRole('group', { name: 'Heutige Auszahlung' });
       expect(group.querySelector('p')?.textContent).toBe(
@@ -423,7 +423,7 @@ describe('GrantsScreen', () => {
       seedShop(extra);
       renderWithLocale(<GrantsScreen />);
       const sentence =
-        'You must spend at least half of your daily grant in 21.gifts shops today and yesterday together.';
+        'Your payments in 21.gifts shops yesterday and today must add up to at least half of your daily gift.';
       expect(screen.getByRole('link', { name: sentence }).getAttribute('href')).toBe('/shops');
       expect(payoutParagraph().textContent).toBe(sentence);
       expect(spotMock).toHaveBeenCalledWith(false);
@@ -437,7 +437,7 @@ describe('GrantsScreen', () => {
       });
       renderWithLocale(<GrantsScreen />);
       expect(payoutParagraph().textContent).toBe(
-        'You must spend at least half of your daily grant in 21.gifts shops today and yesterday together.',
+        'Your payments in 21.gifts shops yesterday and today must add up to at least half of your daily gift.',
       );
       expect(spotMock).not.toHaveBeenCalledWith(true);
     });

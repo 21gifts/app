@@ -1627,9 +1627,9 @@ const en = {
   'funding.payoutToday.wallet': 'Set up your wallet to receive payouts.',
   'funding.payoutToday.recoveryShare': 'Secure your account to receive payouts.',
   'funding.payoutToday.shopPayment':
-    'You must spend at least half of your daily grant in 21.gifts shops today and yesterday together.',
+    'Your payments in 21.gifts shops yesterday and today must add up to at least half of your daily gift.',
   'funding.payoutToday.shopPaymentAmount':
-    'You must spend at least {required} in 21.gifts shops today and yesterday together, half of your daily grant.',
+    'Your payments in 21.gifts shops yesterday and today must add up to at least {required}, half of your daily gift.',
   'funding.payoutToday.shopPaymentProgress': 'Spent so far: {paid}. Still missing: {missing}.',
   'funding.payoutToday.mediaPost': 'You must post at least one note with a photo today.',
   'funding.payoutToday.unavailable': "Today's payout status is not available.",
@@ -3571,9 +3571,9 @@ const de = {
   'funding.payoutToday.wallet': 'Richten Sie Ihre Wallet ein, um Auszahlungen zu erhalten.',
   'funding.payoutToday.recoveryShare': 'Sichern Sie Ihr Konto ab, um Auszahlungen zu erhalten.',
   'funding.payoutToday.shopPayment':
-    'Sie müssen heute und gestern zusammen mindestens die Hälfte Ihrer Tagesförderung in 21.gifts-Shops ausgeben.',
+    'Ihre Zahlungen in 21.gifts-Shops von gestern und heute müssen zusammen mindestens die Hälfte Ihres täglichen Geschenks ergeben.',
   'funding.payoutToday.shopPaymentAmount':
-    'Sie müssen heute und gestern zusammen mindestens {required} in 21.gifts-Shops ausgeben, die Hälfte Ihrer Tagesförderung.',
+    'Ihre Zahlungen in 21.gifts-Shops von gestern und heute müssen zusammen mindestens {required} ergeben, die Hälfte Ihres täglichen Geschenks.',
   'funding.payoutToday.shopPaymentProgress': 'Bisher ausgegeben: {paid}. Es fehlen noch {missing}.',
   'funding.payoutToday.mediaPost':
     'Sie müssen heute mindestens einen Beitrag mit Foto veröffentlicht haben.',
@@ -5492,11 +5492,10 @@ const es = {
   'funding.payoutToday.wallet': 'Configura tu wallet para recibir pagos.',
   'funding.payoutToday.recoveryShare': 'Protege tu cuenta para recibir pagos.',
   'funding.payoutToday.shopPayment':
-    'Debes gastar al menos la mitad de tu ayuda diaria en tiendas 21.gifts entre hoy y ayer.',
+    'Tus pagos en tiendas 21.gifts de ayer y hoy deben sumar al menos la mitad de tu regalo diario.',
   'funding.payoutToday.shopPaymentAmount':
-    'Debes gastar al menos {required} en tiendas 21.gifts entre hoy y ayer, la mitad de tu ayuda diaria.',
-  'funding.payoutToday.shopPaymentProgress':
-    'Gastado hasta ahora: {paid}. Todavía falta: {missing}.',
+    'Tus pagos en tiendas 21.gifts de ayer y hoy deben sumar al menos {required}, la mitad de tu regalo diario.',
+  'funding.payoutToday.shopPaymentProgress': 'Gastado hasta ahora: {paid}. Aún faltan {missing}.',
   'funding.payoutToday.mediaPost': 'Debes publicar al menos una nota con una foto hoy.',
   'funding.payoutToday.unavailable': 'El estado del pago de hoy no está disponible.',
   'funding.goals.link': 'Objetivos',
@@ -7418,9 +7417,9 @@ const fil = {
   'funding.payoutToday.wallet': 'I-set up ang wallet mo para makatanggap ng mga payout.',
   'funding.payoutToday.recoveryShare': 'I-secure ang account mo para makatanggap ng mga payout.',
   'funding.payoutToday.shopPayment':
-    'Kailangan mong gumastos ng hindi bababa sa kalahati ng iyong araw-araw na grant sa mga 21.gifts shop ngayong araw at kahapon nang pinagsama.',
+    'Ang mga bayad mo sa mga 21.gifts shop kahapon at ngayong araw ay dapat umabot nang hindi bababa sa kalahati ng iyong araw-araw na gift.',
   'funding.payoutToday.shopPaymentAmount':
-    'Kailangan mong gumastos ng hindi bababa sa {required}, ang kalahati ng iyong araw-araw na grant, sa mga 21.gifts shop ngayong araw at kahapon nang pinagsama.',
+    'Ang mga bayad mo sa mga 21.gifts shop kahapon at ngayong araw ay dapat umabot nang hindi bababa sa {required}, ang kalahati ng iyong araw-araw na gift.',
   'funding.payoutToday.shopPaymentProgress': 'Nagastos mo na: {paid}. Kulang pa: {missing}.',
   'funding.payoutToday.mediaPost':
     'Kailangan kang mag-post ng kahit isang nota na may larawan ngayong araw.',

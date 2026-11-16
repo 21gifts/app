@@ -151,7 +151,7 @@ test("Function: refreshOwnerAccount — today's payout shows one actionable reas
   const payout = page.getByRole('group', { name: "Today's payout" });
   await expect(payout.locator('p')).toHaveCount(1);
   const sentence =
-    'You must spend at least ₿500 · $0.50 in 21.gifts shops today and yesterday together, half of your daily grant.';
+    'Your payments in 21.gifts shops yesterday and today must add up to at least ₿500 · $0.50, half of your daily gift.';
   await expect(payout.getByRole('link', { name: sentence, exact: true })).toHaveAttribute(
     'href',
     '/shops',
@@ -178,7 +178,7 @@ test('Function: GrantsScreen — without the shop sums the payout names half the
   await page.goto('/grants');
   const payout = page.getByRole('group', { name: "Today's payout" });
   const sentence =
-    'You must spend at least half of your daily grant in 21.gifts shops today and yesterday together.';
+    'Your payments in 21.gifts shops yesterday and today must add up to at least half of your daily gift.';
   await expect(payout.getByRole('link', { name: sentence, exact: true })).toHaveAttribute(
     'href',
     '/shops',
