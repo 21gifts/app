@@ -61,11 +61,11 @@ function shopPaymentProgress(funding: OwnerFunding | null | undefined): ShopPaym
  * Those links do not fetch the daily roster. A missing account shows neither
  * the goals link nor those payment links. While today's payout is blocked by
  * the shop payment and the api sent both shop amounts, the payout line names
- * the sum to spend in shops today and yesterday together (half the daily
- * grant), what was spent so far, and what is still missing (never below
+ * the sum the shop payments of yesterday and today must reach together (half
+ * the daily gift), what was spent so far, and what is still missing (never below
  * zero), each as bitcoin with the current spot in the visitor's currency
  * beside it while a spot is available. Without both amounts it names half
- * the daily grant without a figure. Accounts at least moderator,
+ * the daily gift without a figure. Accounts at least moderator,
  * including a fond, an initiator, and a founder, see how many open grant applications
  * exist. When the count is greater than zero, a secondary link to
  * `/grants/applications` shows that count. When the count is zero, that

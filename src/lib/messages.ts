@@ -7420,7 +7420,7 @@ const fil = {
     'Ang mga bayad mo sa mga 21.gifts shop kahapon at ngayong araw ay dapat umabot nang hindi bababa sa kalahati ng iyong araw-araw na gift.',
   'funding.payoutToday.shopPaymentAmount':
     'Ang mga bayad mo sa mga 21.gifts shop kahapon at ngayong araw ay dapat umabot nang hindi bababa sa {required}, ang kalahati ng iyong araw-araw na gift.',
-  'funding.payoutToday.shopPaymentProgress': 'Nagastos mo na: {paid}. Kulang pa: {missing}.',
+  'funding.payoutToday.shopPaymentProgress': 'Nagastos mo na: {paid}. Kulang pa ng {missing}.',
   'funding.payoutToday.mediaPost':
     'Kailangan kang mag-post ng kahit isang nota na may larawan ngayong araw.',
   'funding.payoutToday.unavailable': 'Hindi available ang status ng payout ngayong araw.',
