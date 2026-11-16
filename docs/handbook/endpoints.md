@@ -796,7 +796,7 @@
 
 ## Endpoint: POST /messages/[id]/invoice
 
-- **Purpose:** Same-origin Bearer proxy of api POST `/messages/:id/invoice` (pay a forum note; optional `text` is the zap comment and is omitted when empty). Success `{ pr, amountSats, sparkInvoice? }`; `sparkInvoice` is the request the in-app wallet pays instead of `pr`, or `null`, and may be absent.
+- **Purpose:** Same-origin Bearer proxy of api POST `/messages/:id/invoice` (pay a forum note; optional `text` is the zap comment and is omitted when empty). Success `{ pr, amountSats, sparkInvoice? }`; `sparkInvoice` is the request the in-app wallet pays instead of `pr` (it pays `pr` when the wallet refuses it, except for a heart, which is paid by the Spark invoice only), or `null`, and may be absent.
 - **Errors:** Upstream 401/400/404/409/429/503, or 502 if the api is unreachable. 409 `missing_requirements` is a setup overlay, not a pay-sheet error. A heart (`heart: true`) the api cannot issue as a fee-free Spark invoice is 503 `{ error: 'HEART_UNAVAILABLE' }` with no `pr`; the proxy passes it through unchanged.
 - **Used by:** `postMessageInvoice`.
 - **Auth:** Bearer.
@@ -936,7 +936,7 @@
 
 ## Endpoint: POST /conversations/[id]/invoice
 
-- **Purpose:** Same-origin Bearer proxy of api POST `/conversations/:id/invoice` with `{ sats, text? }`. Success `{ pr, amountSats, messageId, sparkInvoice? }` for the inbox pay sheet; `sparkInvoice` is the request the in-app wallet pays instead of `pr`, or `null`, and may be absent.
+- **Purpose:** Same-origin Bearer proxy of api POST `/conversations/:id/invoice` with `{ sats, text? }`. Success `{ pr, amountSats, messageId, sparkInvoice? }` for the inbox pay sheet; `sparkInvoice` is the request the in-app wallet pays instead of `pr` (it pays `pr` when the wallet refuses it), or `null`, and may be absent.
 - **Errors:** Upstream 400/401/404/429/503, or 502 if the api is unreachable.
 - **Used by:** `postConversationInvoice` in the inbox composer.
 - **Auth:** Bearer.
@@ -1266,7 +1266,7 @@
 
 ## Endpoint: POST /fond/payouts/[id]/invoice
 
-- **Purpose:** Same-origin Bearer proxy of api `POST /fond/payouts/:id/invoice`. The api converts the row's stored USD amount at the current spot and returns `{ id, bolt11, paymentHash, sparkInvoice }`; the app pays `sparkInvoice ?? bolt11` once and sends no proof.
+- **Purpose:** Same-origin Bearer proxy of api `POST /fond/payouts/:id/invoice`. The api converts the row's stored USD amount at the current spot and returns `{ id, bolt11, paymentHash, sparkInvoice }`; the app pays `sparkInvoice`, or `bolt11` without one or after the wallet refused it at prepare, once and sends no proof.
 - **Auth:** Bearer session of the Fond account. The api answers 403 `Fond only` for another session.
 - **Returns:** Upstream 200 `{ id, bolt11, paymentHash, sparkInvoice }`, with `sparkInvoice` a string or null. After the payment, the api detects the send by payment hash, BOLT11, or Spark invoice string and settles the row itself.
 - **Errors:** Upstream 404 for an unknown or malformed id, 409 in progress / not payable / amount below one sat, 401, 403, 503, or 502 when unreachable.

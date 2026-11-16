@@ -467,7 +467,7 @@ describe('useLoanRepay preparation', () => {
   });
 
   it.each<WalletPayResult>([
-    { kind: 'failed', failure: failure('prepare', 'sdk_error') },
+    { kind: 'failed', failure: failure('prepare', 'network') },
     { kind: 'unlock', failure: failure('prepare', 'unlock') },
     { kind: 'belowMinimum', minSats: 1_000, failure: failure('prepare', 'below_minimum') },
     confirmed(501),
@@ -530,7 +530,7 @@ describe('useLoanRepay preparation', () => {
     };
     vi.mocked(payFromWallet).mockImplementation(async (request) => {
       if (request.type !== 'input') {
-        return { kind: 'failed', failure: failure('prepare', 'sdk_error') };
+        return { kind: 'failed', failure: failure('prepare', 'network') };
       }
       const { input } = request;
       return confirmed(
@@ -696,10 +696,10 @@ describe('useLoanRepay preparation', () => {
     });
     vi.mocked(payFromWallet).mockImplementation(async (request) => {
       if (request.type !== 'input') {
-        return { kind: 'failed', failure: failure('prepare', 'sdk_error') };
+        return { kind: 'failed', failure: failure('prepare', 'network') };
       }
       if (request.input === invoiceOf(laterBill)) {
-        return { kind: 'failed', failure: failure('prepare', 'sdk_error') };
+        return { kind: 'failed', failure: failure('prepare', 'network') };
       }
       return confirmed(500, send, 10);
     });
@@ -896,7 +896,7 @@ describe('useLoanRepay preparation', () => {
     });
     vi.mocked(payFromWallet).mockImplementation(async (request) => {
       if (request.type !== 'input') {
-        return { kind: 'failed', failure: failure('prepare', 'sdk_error') };
+        return { kind: 'failed', failure: failure('prepare', 'network') };
       }
       if (request.input === invoiceOf(billA)) {
         return confirmed(450, sendA);
@@ -1309,7 +1309,7 @@ describe('useLoanRepay send and settlement', () => {
 
 describe('useLoanRepay failure report', () => {
   it('reports a failed prepare under repay and the session', async () => {
-    const prepareFailure = failure('prepare', 'sdk_error');
+    const prepareFailure = failure('prepare', 'network');
     vi.mocked(postRepaymentDue).mockResolvedValue({ bills: [bill('Bruno')], waiting: [] });
     vi.mocked(payFromWallet).mockResolvedValue({ kind: 'failed', failure: prepareFailure });
     const { result } = renderHook(() =>
@@ -1323,6 +1323,51 @@ describe('useLoanRepay failure report', () => {
       'repay',
       { session: 'token' },
     );
+  });
+
+  it('repays over Lightning and reports the refusal when the wallet refuses the Spark invoice', async () => {
+    const refusal = failure('prepare', 'sdk_error');
+    const due = bill('Bruno');
+    vi.mocked(postRepaymentDue).mockResolvedValue({ bills: [due], waiting: [] });
+    vi.mocked(payFromWallet).mockImplementation(async (request) =>
+      request.type === 'input' && request.input === due.sparkInvoice
+        ? { kind: 'failed', failure: refusal }
+        : confirmed(500, async () => ({ kind: 'paid' }), 3),
+    );
+    const { result } = renderHook(() =>
+      useLoanRepay({ reload: vi.fn(async () => body([loan()])) }),
+    );
+    act(() => result.current.pay([loan()]));
+    await waitFor(() => expect(payFromWallet).toHaveBeenCalledTimes(2));
+    expect(vi.mocked(payFromWallet).mock.calls).toEqual([
+      [{ type: 'input', input: due.sparkInvoice }],
+      [{ type: 'input', input: due.pr }],
+    ]);
+    await waitFor(() => expect(result.current.phase).not.toBe('failed'));
+    expect(reportPaymentFailure).toHaveBeenCalledWith({ ...refusal, amountSats: 500 }, 'repay', {
+      session: 'token',
+    });
+  });
+
+  it('does not report a refused Spark invoice that resolves after unmount', async () => {
+    let refuse!: (result: WalletPayResult) => void;
+    vi.mocked(postRepaymentDue).mockResolvedValue({ bills: [bill('Bruno')], waiting: [] });
+    vi.mocked(payFromWallet).mockReturnValueOnce(
+      new Promise<WalletPayResult>((resolve) => {
+        refuse = resolve;
+      }),
+    );
+    vi.mocked(payFromWallet).mockResolvedValue(confirmed(500));
+    const { result, unmount } = renderHook(() =>
+      useLoanRepay({ reload: vi.fn(async () => body([loan()])) }),
+    );
+    act(() => result.current.pay([loan()]));
+    await waitFor(() => expect(payFromWallet).toHaveBeenCalledTimes(1));
+    unmount();
+    await act(async () => {
+      refuse({ kind: 'failed', failure: failure('prepare', 'sdk_error') });
+    });
+    expect(reportPaymentFailure).not.toHaveBeenCalled();
   });
 
   it('reports an insufficient prepare', async () => {
@@ -1439,7 +1484,7 @@ describe('useLoanRepay failure report', () => {
     await waitFor(() => expect(payFromWallet).toHaveBeenCalledTimes(1));
     unmount();
     await act(async () => {
-      resolvePrepare({ kind: 'failed', failure: failure('prepare', 'sdk_error') });
+      resolvePrepare({ kind: 'failed', failure: failure('prepare', 'network') });
     });
     expect(reportPaymentFailure).not.toHaveBeenCalled();
   });
@@ -1532,7 +1577,7 @@ describe('useLoanRepay already-sent invoices', () => {
     vi.mocked(payFromWallet).mockReset();
     vi.mocked(payFromWallet).mockImplementation(async (request) => {
       if (request.type !== 'input') {
-        return { kind: 'failed', failure: failure('prepare', 'sdk_error') };
+        return { kind: 'failed', failure: failure('prepare', 'network') };
       }
       expect(request.input).toBe(invoiceOf(billB));
       return confirmed(400, sendB);
@@ -1621,7 +1666,7 @@ describe('useLoanRepay already-sent invoices', () => {
     vi.mocked(payFromWallet).mockReset();
     vi.mocked(payFromWallet).mockImplementation(async (request) => {
       if (request.type !== 'input') {
-        return { kind: 'failed', failure: failure('prepare', 'sdk_error') };
+        return { kind: 'failed', failure: failure('prepare', 'network') };
       }
       expect(request.input).toBe(invoiceOf(secondBill));
       return confirmed(400, sendSecond);
@@ -1884,7 +1929,7 @@ describe('useLoanRepay already-sent invoices', () => {
     vi.mocked(postRepaymentDue).mockResolvedValue({ bills: [billA, billB], waiting: [] });
     vi.mocked(payFromWallet).mockImplementation(async (request) => {
       if (request.type !== 'input') {
-        return { kind: 'failed', failure: failure('prepare', 'sdk_error') };
+        return { kind: 'failed', failure: failure('prepare', 'network') };
       }
       if (request.input === invoiceOf(billA)) {
         return confirmed(500, sendA);
@@ -1941,7 +1986,7 @@ describe('useLoanRepay already-sent invoices', () => {
     vi.mocked(payFromWallet).mockReset();
     vi.mocked(payFromWallet).mockImplementation(async (request) => {
       if (request.type !== 'input') {
-        return { kind: 'failed', failure: failure('prepare', 'sdk_error') };
+        return { kind: 'failed', failure: failure('prepare', 'network') };
       }
       expect(request.input).toBe(invoiceOf(billB));
       return confirmed(400, sendB);
@@ -1984,7 +2029,7 @@ describe('useLoanRepay already-sent invoices', () => {
     vi.mocked(payFromWallet).mockReset();
     vi.mocked(payFromWallet).mockImplementation(async (request) => {
       if (request.type !== 'input') {
-        return { kind: 'failed', failure: failure('prepare', 'sdk_error') };
+        return { kind: 'failed', failure: failure('prepare', 'network') };
       }
       expect(request.input).toBe(invoiceOf(billD));
       return confirmed(400, sendD);
@@ -2024,7 +2069,7 @@ describe('useLoanRepay already-sent invoices', () => {
     vi.mocked(payFromWallet).mockReset();
     vi.mocked(payFromWallet).mockImplementation(async (request) => {
       if (request.type !== 'input') {
-        return { kind: 'failed', failure: failure('prepare', 'sdk_error') };
+        return { kind: 'failed', failure: failure('prepare', 'network') };
       }
       expect(request.input).toBe(invoiceOf(billB));
       return confirmed(400, sendB);

@@ -1,5 +1,6 @@
 import { expect, test, type APIRequestContext, type Page } from '@playwright/test';
 import { fetchFondPayouts, postFondPayoutInvoice } from '../src/lib/api';
+import { FOND_E2E_REFUSED_SPARK_INVOICE } from '../src/lib/wallet/fond-payouts';
 
 /** The api stub, for reading what the app sent it. */
 const MOCK_API = 'http://127.0.0.1:3001';
@@ -347,6 +348,51 @@ test('Function: runFondPayoutTick — the loop pays the BOLT11 when the api retu
   const invoiced = await fondDebug(request, session);
   // The next tick finds the completed BOLT11 send in history and issues no second invoice.
   await nextTick(page, request, session, invoiced.lists);
+  expect(await fondDebug(request, session)).toMatchObject({ invoices: 1, paid: false });
+});
+
+/**
+ * Records every invoice the Playwright Fond wallet sends in this page.
+ *
+ * @param page - The page.
+ * @returns The list the sends are pushed to, in send order.
+ */
+async function recordSends(page: Page): Promise<string[]> {
+  const sent: string[] = [];
+  await page.route('**/e2e/wallet-send', async (route) => {
+    sent.push((route.request().postDataJSON() as { input: string }).input);
+    await route.fulfill({ status: 204 });
+  });
+  return sent;
+}
+
+test('Function: payInvoiceSparkFirst — the Fond loop sends the Spark invoice, not the BOLT11', async ({
+  page,
+  request,
+}) => {
+  const sent = await recordSends(page);
+  await pauseFondClock(page);
+  const session = await seedFondPage(page, request, 'fond');
+  await openWelcome(page, 'Fond');
+  await invoiceIssued(page, request, session);
+  await expect.poll(() => sent).toEqual([SPARK_INVOICE]);
+});
+
+test('Function: payInvoiceSparkFirst — the Fond loop pays the BOLT11 once when the wallet refuses the Spark invoice', async ({
+  page,
+  request,
+}) => {
+  const sent = await recordSends(page);
+  await pauseFondClock(page);
+  const session = await seedFondPage(page, request, 'fond', FOND_E2E_REFUSED_SPARK_INVOICE);
+  await openWelcome(page, 'Fond');
+  const invoice = await invoiceIssued(page, request, session);
+  expect(invoice).toMatchObject({ bolt11: BOLT11, sparkInvoice: FOND_E2E_REFUSED_SPARK_INVOICE });
+  await expect.poll(() => sent).toEqual([BOLT11]);
+  // The next tick finds the completed BOLT11 send in history and sends nothing more.
+  const invoiced = await fondDebug(request, session);
+  await nextTick(page, request, session, invoiced.lists);
+  expect(sent).toEqual([BOLT11]);
   expect(await fondDebug(request, session)).toMatchObject({ invoices: 1, paid: false });
 });
 

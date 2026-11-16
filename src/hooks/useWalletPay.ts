@@ -3,7 +3,12 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useWalletSetup } from '@/hooks/useWalletSetup';
 import { visualPin } from '@/lib/visual-pin';
-import { reportPaymentFailure, type PayFlow } from '@/lib/wallet/payment-failure';
+import { payInvoiceSparkFirst } from '@/lib/wallet/invoice-pay';
+import {
+  reportPaymentFailure,
+  type PayFlow,
+  type PaymentFailure,
+} from '@/lib/wallet/payment-failure';
 import { canUnlockWallet } from '@/lib/wallet/wallet-phrase';
 import { needsWalletSetup } from '@/lib/wallet/wallet-setup';
 import {
@@ -89,9 +94,14 @@ export interface UseWalletPayResult {
 type Phase =
   'idle' | 'preparing' | 'confirm' | 'paying' | 'insufficient' | 'unconfirmed' | 'failed';
 
-/** The invoice and sheet amount a prepared send belongs to. */
+/**
+ * The invoice and sheet amount a prepared send belongs to: the request tried
+ * first, its Lightning payment request (paid when the wallet refuses the Spark
+ * invoice), and the amount.
+ */
 interface PreparedKey {
   input: string;
+  pr: string;
   amountSats: number;
 }
 
@@ -105,15 +115,17 @@ interface PreparedSend extends PreparedKey {
  *
  * @param key - Prepared send or its key, or `null`.
  * @param input - Current request text.
+ * @param pr - Current Lightning payment request of the same invoice.
  * @param amountSats - Current sheet amount.
  * @returns `true` only for a prepared send of this invoice and amount.
  */
 function preparedMatches<T extends PreparedKey>(
   key: T | null,
   input: string,
+  pr: string,
   amountSats: number,
 ): key is T {
-  return key !== null && key.input === input && key.amountSats === amountSats;
+  return key !== null && key.input === input && key.pr === pr && key.amountSats === amountSats;
 }
 
 const VISUAL_VIEWS: Record<string, WalletPayView> = {
@@ -139,7 +151,10 @@ function visualView(): WalletPayView | null {
 
 /**
  * Runs the in-app wallet payment of one invoice. The wallet pays
- * `sparkInvoice` when the api issued one, otherwise the payment request `pr`.
+ * `sparkInvoice` when the api issued one, otherwise the payment request `pr`
+ * (`payInvoiceSparkFirst`): a Spark invoice the wallet refuses at prepare is
+ * reported under `flow` and `pr` is prepared instead, so the sheet still pays
+ * over Lightning.
  * The view is `unavailable` when the wallet is not configured or the member
  * cannot hold it. A signed-in member's wallet is open in this tab
  * (`OnboardingGate` shows the login otherwise), so there is no unlock step:
@@ -170,7 +185,8 @@ function visualView(): WalletPayView | null {
  * `flow` and the sheet amount; a prepare whose sheet moved on meanwhile is not.
  *
  * @param sparkInvoice - Request the api issued for the in-app wallet, or `null`/`undefined`.
- * @param pr - Payment request of the same invoice, paid when there is no `sparkInvoice`.
+ * @param pr - Payment request of the same invoice, paid when there is no `sparkInvoice`
+ *   or the wallet refuses it at prepare.
  * @param amountSats - Amount the sheet shows; a prepared payment of another amount is not offered.
  * @param flow - Feature whose sheet this is, for the failure report.
  * @returns View, send state, fee, missing amount, and the pay and retry actions.
@@ -212,7 +228,7 @@ export function useWalletPay(
         timer.current = null;
       }
     };
-  }, [input, amountSats]);
+  }, [input, pr, amountSats]);
 
   const sendPrepared = useCallback(
     (send: () => Promise<WalletSendResult>, run: number, sats: number, payFlow: PayFlow): void => {
@@ -276,7 +292,13 @@ export function useWalletPay(
     const balanceBefore = useWalletStore.getState().balanceSats;
     const session = useAuthStore.getState().session;
     setPhase('preparing');
-    void payFromWallet({ type: 'input', input }).then((result) => {
+    const reportSparkFailure = (failure: PaymentFailure): void => {
+      if (run === generation.current) {
+        reportPaymentFailure({ ...failure, amountSats }, flow, { session });
+      }
+    };
+    const preparing = payInvoiceSparkFirst(payFromWallet, { sparkInvoice, pr }, reportSparkFailure);
+    void preparing.then((result) => {
       if (run !== generation.current) {
         return;
       }
@@ -294,8 +316,8 @@ export function useWalletPay(
         );
         setPhase('failed');
       } else if (result.kind === 'confirm') {
-        sendRef.current = { send: result.send, input, amountSats };
-        setPreparedFor({ input, amountSats });
+        sendRef.current = { send: result.send, input, pr, amountSats };
+        setPreparedFor({ input, pr, amountSats });
         setFeeSats(result.feeSats);
         setPhase('confirm');
       } else {
@@ -309,7 +331,7 @@ export function useWalletPay(
         }
       }
     });
-  }, [canPay, status, phase, input, amountSats, flow]);
+  }, [canPay, status, phase, input, sparkInvoice, pr, amountSats, flow]);
 
   useEffect(() => {
     if (phase !== 'insufficient' || balanceSats === null) {
@@ -367,13 +389,13 @@ export function useWalletPay(
       pinned !== null ||
       !canPay ||
       phase !== 'confirm' ||
-      !preparedMatches(prepared, input, amountSats)
+      !preparedMatches(prepared, input, pr, amountSats)
     ) {
       return;
     }
     sendRef.current = null;
     sendPrepared(prepared.send, generation.current, prepared.amountSats, flow);
-  }, [pinned, canPay, phase, input, amountSats, flow, sendPrepared]);
+  }, [pinned, canPay, phase, input, pr, amountSats, flow, sendPrepared]);
 
   const retry = useCallback((): void => {
     if (pinned !== null) {
@@ -407,7 +429,7 @@ export function useWalletPay(
   } else if (phase === 'idle') {
     view = 'preparing';
   } else if (phase === 'confirm') {
-    view = preparedMatches(preparedFor, input, amountSats) ? 'confirm' : 'preparing';
+    view = preparedMatches(preparedFor, input, pr, amountSats) ? 'confirm' : 'preparing';
   } else {
     view = phase;
   }

@@ -25,7 +25,7 @@ import type { PayFlow } from '@/lib/wallet/payment-failure';
 export interface WalletPayProps {
   /** Request the api issued for the in-app wallet, or `null`/`undefined` when it issued none. */
   sparkInvoice: string | null | undefined;
-  /** Payment request of the same invoice; the wallet pays it when there is no `sparkInvoice`. */
+  /** Payment request of the same invoice; paid without a `sparkInvoice` or when the wallet refuses it. */
   pr: string;
   /** Whole sats the sheet shows for this invoice; the wallet pays only this amount. */
   amountSats: number;
