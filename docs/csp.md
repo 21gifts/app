@@ -149,6 +149,7 @@ where a script could send data. The hosts the app is known to reach:
 | `https://cloudflare-dns.com`              | Wallet SDK: DNS lookup of `₿name@domain` addresses       | SDK      |
 | `https://<receiver domain>`               | Wallet SDK: the receiver's Lightning-address server      | SDK      |
 | `https://maps.googleapis.com`             | Map script: map data and its load check                  | run      |
+| `https://api.dfx.swiss`                   | Settings Log in at DFX: GET sign-in text, POST auth      | code     |
 
 ## How the list was built
 
