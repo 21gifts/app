@@ -178,7 +178,8 @@ function visualView(): WalletPayView | null {
  * `flow` and the sheet amount; a prepare whose sheet moved on meanwhile is not.
  *
  * @param sparkInvoice - Request the api issued for the in-app wallet, or `null`/`undefined`.
- * @param pr - Payment request of the same invoice, paid when there is no `sparkInvoice`.
+ * @param pr - Payment request of the same invoice, paid when there is no `sparkInvoice`
+ *   or the wallet refuses it at prepare.
  * @param amountSats - Amount the sheet shows; a prepared payment of another amount is not offered.
  * @param flow - Feature whose sheet this is, for the failure report.
  * @returns View, send state, fee, missing amount, and the pay and retry actions.

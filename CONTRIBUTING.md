@@ -431,8 +431,9 @@ app/
 │   │   │   ├── heart-context.ts # fetchHeartPosts: gift payment hashes → POST /me/wallet/hearts
 │   │   │   ├── payment-counterparty.ts # fetchPaymentCounterparties: payments → POST /me/wallet/counterparties
 │   │   │   ├── wallet-report.ts # reportWallet: balance + unacknowledged payments → POST /me/wallet/report
-│   │   │   ├── fond-payouts.ts  # runFondPayoutTick: list → invoice → pay sparkInvoice ?? bolt11 once
+│   │   │   ├── fond-payouts.ts  # runFondPayoutTick: list → invoice → pay sparkInvoice (bolt11 without one or when refused) once
 │   │   │   ├── fond-deposits.ts # registerFondDepositAddress outcome; claimFondDeposits under a bounded fee
+│   │   │   ├── invoice-pay.ts   # payInvoiceSparkFirst: Spark invoice first, its Lightning request when the wallet refuses it
 │   │   │   ├── payment-failure.ts # reportPaymentFailure: payment_failed event + `Payment failed` error report
 │   │   │   ├── error-cause.ts   # errorCause, CAUSE_KINDS: name, code, and cause kind of a wallet that did not open
 │   │   │   └── lnurl-relay.ts   # lnurlRelayTarget: outside address or LNURL goes through the api
@@ -802,7 +803,8 @@ A specific invoice is different. Member pay sheets — the one bottom sheet
 money reaction (`ForumReplyPayPage`), a habit comment gift, and the inbox
 (`InboxScreen`) — pay from the member's in-app wallet only
 (`WalletPay`: the `sparkInvoice` when the api issued one, otherwise the
-payment request). The wallet is open whenever the member is signed in. The
+payment request, which is also paid when the wallet refuses the Spark
+invoice). The wallet is open whenever the member is signed in. The
 slot prepares the payment, shows its fee when it is above ₿0, then offers
 **Send {amount}** (**Lend {amount}** on a loan that still collects, **Pay
 {amount} and post** for a posting fee). When the balance is too low it shows
