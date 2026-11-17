@@ -103,7 +103,6 @@ import { shortResourceUrl } from '@/lib/short-link';
 import { formatForumTime } from '@/lib/forum-time';
 import type { HeartTipView } from '@/lib/heart-tip';
 import { forumAskFunded } from '@/lib/forum-goal';
-import { isCollecting } from '@/lib/loan-repay';
 import { ForumRoleHint, ForumRoleTag, forumTaggedRole } from '@/components/ForumRoleTag';
 import { authorCannotReceive, isOwnNote } from '@/lib/roles';
 import { useFiatPreference } from '@/components/FiatPreferenceProvider';
@@ -1962,23 +1961,16 @@ export function ForumBoard({
                       onClick={stopCardToggle}
                     >
                       {t(
-                        isCollecting({
-                          fundedAt: forumAskFunded({
-                            sats: message.sats,
-                            goalSats: message.goalSats,
-                            goalCurrency: message.goalCurrency,
-                            goalAmount: message.goalAmount,
-                            amountUsd: message.amountUsd,
-                            amountChf: message.amountChf,
-                            amountEur: message.amountEur,
-                            amountPhp: message.amountPhp,
-                          })
-                            ? 'funded'
-                            : null,
-                          ...(message.goalClosedAt === undefined
-                            ? {}
-                            : { closedAt: message.goalClosedAt }),
-                        })
+                        !forumAskFunded({
+                          sats: message.sats,
+                          goalSats: message.goalSats,
+                          goalCurrency: message.goalCurrency,
+                          goalAmount: message.goalAmount,
+                          amountUsd: message.amountUsd,
+                          amountChf: message.amountChf,
+                          amountEur: message.amountEur,
+                          amountPhp: message.amountPhp,
+                        }) && message.goalClosedAt === undefined
                           ? 'forum.repayCollectingOpen'
                           : 'forum.repayOpen',
                       )}

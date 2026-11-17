@@ -13,7 +13,7 @@ import { useMyLoans } from '@/hooks/useMyLoans';
 import { useSpotRate } from '@/hooks/useSpotRate';
 import type { MyLoan } from '@/lib/api';
 import { forumAskFunded, forumAskPercent } from '@/lib/forum-goal';
-import { definedDueLabel, isCollecting, summarizeLoans } from '@/lib/loan-repay';
+import { definedDueLabel, summarizeLoans } from '@/lib/loan-repay';
 import { formatBitcoin, formatFiatDisplay, satsToFiatAmount } from '@/lib/stats-money';
 
 /** Props for {@link LoansCard}. */
@@ -35,7 +35,8 @@ function localDay(date: Date): string {
  * are a muted line of their own, never part of the amount to send.
  *
  * Status, outline, due row, and the collecting-versus-repay link follow
- * {@link forumAskFunded}. A manual close still uses `closedAt`. The repayment
+ * {@link forumAskFunded}. The link calls that helper: a loan still collects
+ * only while it is not funded and `closedAt` is null or omitted. The repayment
  * screen keeps the api `fundedAt` stamp.
  *
  * @param props - Card placement.
@@ -54,12 +55,6 @@ export function LoansCard({ place }: LoansCardProps): ReactElement | null {
   }
   const summary = summarizeLoans(loans, numberFormat);
   const askFundedCount = loans.loans.filter((loan) => forumAskFunded(loan)).length;
-  const collecting = loans.loans.some((loan) =>
-    isCollecting({
-      fundedAt: forumAskFunded(loan) ? 'funded' : null,
-      closedAt: loan.closedAt,
-    }),
-  );
   const definedPayable = definedDueLabel(loans.loans, 'payable', numberFormat);
   const definedWaiting = definedDueLabel(loans.loans, 'waiting', numberFormat);
   const single = summary.count === 1;
@@ -273,7 +268,15 @@ export function LoansCard({ place }: LoansCardProps): ReactElement | null {
           href="/loans/repay"
           className="mt-3 flex min-h-11 items-center justify-between gap-3 rounded-xl bg-app-card px-3 py-2 text-sm font-medium text-app-fg"
         >
-          {t(collecting ? 'loans.collectingOpen' : 'forum.repayOpen')}
+          {t(
+            loans.loans.some(
+              (loan) =>
+                !forumAskFunded(loan) &&
+                (loan.closedAt === null || loan.closedAt === undefined),
+            )
+              ? 'loans.collectingOpen'
+              : 'forum.repayOpen',
+          )}
           <ChevronRight aria-hidden="true" className="h-5 w-5 shrink-0 text-app-muted" />
         </Link>
       )}
