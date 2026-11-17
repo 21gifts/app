@@ -1867,6 +1867,38 @@ describe('accountSchema', () => {
     expect(accountSchema.parse({ ...account, funding }).funding).toEqual(funding);
   });
 
+  it('accepts the shop minimum and spending on both payout locations', () => {
+    const payoutToday = {
+      state: 'blocked' as const,
+      reason: 'shop_payment',
+      shopMinimumSats: 500,
+      shopSpentSats: 120,
+    };
+    const unknownMinimum = {
+      state: 'blocked' as const,
+      reason: 'shop_payment',
+      shopMinimumSats: null,
+      shopSpentSats: 0,
+    };
+    const funding = {
+      status: 'admitted' as const,
+      trialUtcDate: null,
+      admittedAt: 1,
+      reviewedByName: null,
+      payoutToday,
+    };
+    expect(accountSchema.parse({ ...account, funding }).funding).toEqual(funding);
+    expect(
+      accountSchema.parse({ ...account, grantPayoutToday: unknownMinimum }).grantPayoutToday,
+    ).toEqual(unknownMinimum);
+    expect(() =>
+      accountSchema.parse({
+        ...account,
+        grantPayoutToday: { ...payoutToday, shopMinimumSats: '500' },
+      }),
+    ).toThrow();
+  });
+
   it('accepts an unknown shop-payment requirement', () => {
     const funding = {
       status: 'none' as const,

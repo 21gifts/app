@@ -299,7 +299,22 @@ describe('GrantsScreen', () => {
     ],
     [
       { state: 'blocked', reason: 'shop_payment' },
-      'You must have made at least one purchase in a 21.gifts shop today or yesterday.',
+      'Spend at least half your daily gift in 21.gifts shops today or yesterday.',
+      '/shops',
+    ],
+    [
+      { state: 'blocked', reason: 'shop_payment', shopMinimumSats: null, shopSpentSats: 120 },
+      'Spend at least half your daily gift in 21.gifts shops today or yesterday.',
+      '/shops',
+    ],
+    [
+      { state: 'blocked', reason: 'shop_payment', shopMinimumSats: 1500, shopSpentSats: 120 },
+      "Spend at least ₿1'500 in 21.gifts shops today or yesterday (₿120 so far).",
+      '/shops',
+    ],
+    [
+      { state: 'blocked', reason: 'shop_payment', shopMinimumSats: 500 },
+      'Spend at least ₿500 in 21.gifts shops today or yesterday (₿0 so far).',
       '/shops',
     ],
     [
@@ -426,6 +441,29 @@ describe('GrantsScreen', () => {
     expect(within(group).getByText("Today's payout status is not available.")).toBeTruthy();
     expect(group.querySelectorAll('p')).toHaveLength(1);
     expect(within(group).queryByRole('link')).toBeNull();
+  });
+
+  it('names the shop minimum from the compatibility field in the locale and number format', () => {
+    useAuthStore.setState({
+      session: 'sess',
+      account: {
+        ...account,
+        role: 'basis',
+        funding: null,
+        grantPayoutToday: {
+          state: 'blocked',
+          reason: 'shop_payment',
+          shopMinimumSats: 21_000,
+          shopSpentSats: 1_234,
+        },
+      },
+    });
+    renderWithLocale(<GrantsScreen />, 'de', 'de');
+    const group = screen.getByRole('group', { name: 'Heutige Auszahlung' });
+    const link = within(group).getByRole('link', {
+      name: 'Geben Sie heute oder gestern mindestens ₿21.000 in 21.gifts-Shops aus (bisher ₿1.234).',
+    });
+    expect(link.getAttribute('href')).toBe('/shops');
   });
 
   it('reads the basis-account compatibility payout field', () => {

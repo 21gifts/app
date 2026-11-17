@@ -29374,7 +29374,12 @@ test.describe('profile funding states', () => {
         trialUtcDate: null,
         admittedAt: null,
         reviewedByName: null,
-        payoutToday: { state: 'blocked', reason: 'shop_payment' },
+        payoutToday: {
+          state: 'blocked',
+          reason: 'shop_payment',
+          shopMinimumSats: 500,
+          shopSpentSats: 120,
+        },
       },
     });
     await page.route('**/funding/applications', async (route) => {
@@ -29407,6 +29412,11 @@ test.describe('profile funding states', () => {
     await expect(
       page.getByRole('link', { name: 'Open applications (2)', exact: true }),
     ).toBeVisible();
+    await expect(
+      page.getByRole('link', {
+        name: 'Spend at least ₿500 in 21.gifts shops today or yesterday (₿120 so far).',
+      }),
+    ).toHaveAttribute('href', '/shops');
     await shotScreen(page, 'state-grants-open-applications');
   });
 

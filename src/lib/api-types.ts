@@ -12,6 +12,30 @@ export type NotificationLevel = (typeof NOTIFICATION_LEVELS)[number];
 export type AmountUnit = 'btc' | 'fiat';
 
 /**
+ * Runtime schema for today's payout on `GET /me` (`funding.payoutToday` and
+ * `grantPayoutToday` carry the same shape).
+ *
+ * `state` is `paid`, `due`, or `blocked`; `reason` is the single reason, or
+ * `null`. Only when `reason` is `shop_payment` does the api add
+ * `shopMinimumSats`, the whole sats the owner's shop purchases on the previous
+ * and the current UTC day must reach together (half the daily grant), or
+ * `null` when the api cannot compute it, and `shopSpentSats`, the whole sats
+ * already spent in those shops on those two days. Both are optional so older
+ * api bodies without them still parse.
+ */
+export const payoutTodaySchema = z.object({
+  state: z.enum(['paid', 'due', 'blocked']),
+  reason: z.string().nullable(),
+  shopMinimumSats: z.number().nullable().optional(),
+  shopSpentSats: z.number().optional(),
+});
+
+/**
+ * Today's payout on `GET /me`; see {@link payoutTodaySchema}.
+ */
+export type PayoutToday = z.infer<typeof payoutTodaySchema>;
+
+/**
  * Runtime schema for the owner `funding` object on `GET /me`.
  *
  * `status` is effective (`none` when there is no grant row). `trialUtcDate` is
@@ -29,13 +53,7 @@ export const ownerFundingSchema = z.object({
   /** Whether a qualifying shop purchase is still missing, or `null` when the read failed. */
   shopPaymentDue: z.boolean().nullable().optional(),
   /** Today's one payout state and, when present, its single reason. */
-  payoutToday: z
-    .object({
-      state: z.enum(['paid', 'due', 'blocked']),
-      reason: z.string().nullable(),
-    })
-    .nullable()
-    .optional(),
+  payoutToday: payoutTodaySchema.nullable().optional(),
 });
 
 /**
@@ -193,13 +211,7 @@ export const accountSchema = z.object({
    * when `payoutToday` is null; this field is read only when `funding` is null
    * or absent.
    */
-  grantPayoutToday: z
-    .object({
-      state: z.enum(['paid', 'due', 'blocked']),
-      reason: z.string().nullable(),
-    })
-    .nullable()
-    .optional(),
+  grantPayoutToday: payoutTodaySchema.nullable().optional(),
 });
 
 /**

@@ -148,7 +148,33 @@ test("Function: refreshOwnerAccount — today's payout shows one actionable reas
   await expect(payout.locator('p')).toHaveCount(1);
   await expect(
     payout.getByRole('link', {
-      name: 'You must have made at least one purchase in a 21.gifts shop today or yesterday.',
+      name: 'Spend at least half your daily gift in 21.gifts shops today or yesterday.',
+    }),
+  ).toHaveAttribute('href', '/shops');
+});
+
+test("Function: refreshOwnerAccount — today's payout names the shop minimum and the spending so far", async ({
+  page,
+}) => {
+  await seedAdaSession(page, 'verified', {
+    status: 'admitted',
+    trialUtcDate: null,
+    admittedAt: Date.parse('2026-08-01T12:00:00.000Z'),
+    reviewedByName: null,
+    shopPaymentDue: true,
+    payoutToday: {
+      state: 'blocked',
+      reason: 'shop_payment',
+      shopMinimumSats: 1500,
+      shopSpentSats: 300,
+    },
+  });
+  await page.goto('/grants');
+  const payout = page.getByRole('group', { name: "Today's payout" });
+  await expect(payout.locator('p')).toHaveCount(1);
+  await expect(
+    payout.getByRole('link', {
+      name: "Spend at least ₿1'500 in 21.gifts shops today or yesterday (₿300 so far).",
     }),
   ).toHaveAttribute('href', '/shops');
 });

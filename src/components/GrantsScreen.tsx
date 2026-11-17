@@ -5,11 +5,13 @@ import { useEffect, useState, type ReactElement } from 'react';
 import { FundingStatusCard } from '@/components/FundingStatusCard';
 import { GrantPlacesPanel } from '@/components/GrantPlacesPanel';
 import { useTranslations } from '@/components/LocaleProvider';
+import { useNumberFormat } from '@/components/NumberFormatProvider';
 import { Button, ButtonLink, Card } from '@/components/ui';
 import { fetchFundingApplications } from '@/lib/api';
 import { requestForumCompose } from '@/lib/forum-feed';
 import { refreshOwnerAccount } from '@/lib/owner-account-refresh';
 import { canEditDailyPayoutRoster, roleAtLeast } from '@/lib/roles';
+import { formatBitcoin } from '@/lib/stats-money';
 import { useAuthStore } from '@/stores/auth-store';
 
 /**
@@ -17,6 +19,10 @@ import { useAuthStore } from '@/stores/auth-store';
  * ({@link GrantPlacesPanel}, loaded again whenever the owner's grant status
  * changes, so a place freed by leaving the grant shows at once), the continuation-goals link,
  * the daily-payment text and amounts links, plus the staff queue for moderators.
+ *
+ * The shop-spending payout line names `shopMinimumSats` and `shopSpentSats`
+ * as ₿ amounts when the api sends a numeric minimum, and otherwise falls back
+ * to the generic half-the-daily-gift sentence.
  *
  * Renders nothing without a session. A signed-in account sees a secondary link
  * to `/grants/goals` under the grant card. A viewer at least initiator
@@ -34,6 +40,7 @@ import { useAuthStore } from '@/stores/auth-store';
  */
 export function GrantsScreen(): ReactElement | null {
   const { t } = useTranslations();
+  const { numberFormat } = useNumberFormat();
   const session = useAuthStore((state) => state.session);
   const account = useAuthStore((state) => state.account);
   const staff = session !== null && roleAtLeast(account?.role, 'moderator');
@@ -94,8 +101,10 @@ export function GrantsScreen(): ReactElement | null {
     | 'funding.payoutToday.wallet'
     | 'funding.payoutToday.recoveryShare'
     | 'funding.payoutToday.shopPayment'
+    | 'funding.payoutToday.shopMinimum'
     | 'funding.payoutToday.mediaPost'
     | 'funding.payoutToday.unavailable' = 'funding.payoutToday.unavailable';
+  let payoutVars: Record<string, string> | undefined;
   let payoutHref: string | null = null;
   let opensComposer = false;
   if (payoutToday?.state === 'paid' && payoutToday.reason === null) {
@@ -126,7 +135,16 @@ export function GrantsScreen(): ReactElement | null {
       payoutKey = 'funding.payoutToday.recoveryShare';
       payoutHref = '/settings/social-recovery';
     } else if (payoutToday.reason === 'shop_payment') {
-      payoutKey = 'funding.payoutToday.shopPayment';
+      const { shopMinimumSats, shopSpentSats } = payoutToday;
+      if (typeof shopMinimumSats === 'number') {
+        payoutKey = 'funding.payoutToday.shopMinimum';
+        payoutVars = {
+          minimum: formatBitcoin(shopMinimumSats, numberFormat),
+          spent: formatBitcoin(shopSpentSats ?? 0, numberFormat),
+        };
+      } else {
+        payoutKey = 'funding.payoutToday.shopPayment';
+      }
       payoutHref = '/shops';
     } else if (payoutToday.reason === 'media_post') {
       payoutKey = 'funding.payoutToday.mediaPost';
@@ -135,7 +153,7 @@ export function GrantsScreen(): ReactElement | null {
     }
   }
 
-  const payoutLine = t(payoutKey);
+  const payoutLine = t(payoutKey, payoutVars);
   const payoutContent =
     payoutHref === null ? (
       payoutLine

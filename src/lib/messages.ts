@@ -1627,7 +1627,9 @@ const en = {
   'funding.payoutToday.wallet': 'Set up your wallet to receive payouts.',
   'funding.payoutToday.recoveryShare': 'Secure your account to receive payouts.',
   'funding.payoutToday.shopPayment':
-    'You must have made at least one purchase in a 21.gifts shop today or yesterday.',
+    'Spend at least half your daily gift in 21.gifts shops today or yesterday.',
+  'funding.payoutToday.shopMinimum':
+    'Spend at least {minimum} in 21.gifts shops today or yesterday ({spent} so far).',
   'funding.payoutToday.mediaPost': 'You must post at least one note with a photo today.',
   'funding.payoutToday.unavailable': "Today's payout status is not available.",
   'funding.goals.link': 'Goals',
@@ -3568,7 +3570,9 @@ const de = {
   'funding.payoutToday.wallet': 'Richten Sie Ihre Wallet ein, um Auszahlungen zu erhalten.',
   'funding.payoutToday.recoveryShare': 'Sichern Sie Ihr Konto ab, um Auszahlungen zu erhalten.',
   'funding.payoutToday.shopPayment':
-    'Sie müssen heute oder gestern mindestens einen Kauf in einem 21.gifts-Shop getätigt haben.',
+    'Geben Sie heute oder gestern mindestens die Hälfte Ihres täglichen Geschenks in 21.gifts-Shops aus.',
+  'funding.payoutToday.shopMinimum':
+    'Geben Sie heute oder gestern mindestens {minimum} in 21.gifts-Shops aus (bisher {spent}).',
   'funding.payoutToday.mediaPost':
     'Sie müssen heute mindestens einen Beitrag mit Foto veröffentlicht haben.',
   'funding.payoutToday.unavailable': 'Der Status der heutigen Auszahlung ist nicht verfügbar.',
@@ -5486,7 +5490,9 @@ const es = {
   'funding.payoutToday.wallet': 'Configura tu wallet para recibir pagos.',
   'funding.payoutToday.recoveryShare': 'Protege tu cuenta para recibir pagos.',
   'funding.payoutToday.shopPayment':
-    'Debes haber hecho al menos una compra en una tienda 21.gifts hoy o ayer.',
+    'Gasta al menos la mitad de tu regalo diario en tiendas 21.gifts hoy o ayer.',
+  'funding.payoutToday.shopMinimum':
+    'Gasta al menos {minimum} en tiendas 21.gifts hoy o ayer (llevas {spent}).',
   'funding.payoutToday.mediaPost': 'Debes publicar al menos una nota con una foto hoy.',
   'funding.payoutToday.unavailable': 'El estado del pago de hoy no está disponible.',
   'funding.goals.link': 'Objetivos',
@@ -7408,7 +7414,9 @@ const fil = {
   'funding.payoutToday.wallet': 'I-set up ang wallet mo para makatanggap ng mga payout.',
   'funding.payoutToday.recoveryShare': 'I-secure ang account mo para makatanggap ng mga payout.',
   'funding.payoutToday.shopPayment':
-    'Kailangan na nakabili ka nang kahit isang beses sa isang 21.gifts shop ngayong araw o kahapon.',
+    'Gumastos ng kahit kalahati ng araw-araw na gift mo sa mga 21.gifts shop ngayong araw o kahapon.',
+  'funding.payoutToday.shopMinimum':
+    'Gumastos ng kahit {minimum} sa mga 21.gifts shop ngayong araw o kahapon ({spent} pa lang sa ngayon).',
   'funding.payoutToday.mediaPost':
     'Kailangan kang mag-post ng kahit isang nota na may larawan ngayong araw.',
   'funding.payoutToday.unavailable': 'Hindi available ang status ng payout ngayong araw.',
