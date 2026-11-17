@@ -180,7 +180,9 @@ export function OpenLoansScreen(): ReactElement {
 
   return (
     <Card maxWidth="xl" surface={false}>
-      <h1 className="w-full text-center text-2xl font-semibold tracking-tight text-app-fg sm:text-3xl">
+      <h1
+        className="w-full text-center text-2xl font-semibold tracking-tight text-app-fg sm:text-3xl"
+      >
         {t('loans.openHeading')}
       </h1>
       {body}
