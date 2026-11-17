@@ -371,6 +371,14 @@ describe('LoansCard', () => {
       ],
     });
     expect(screen.getByText('Fully funded.')).toBeTruthy();
+    expect(screen.getByText('Nothing due today')).toBeTruthy();
+    expect(screen.queryByRole('link', { name: 'Pay early or end collecting' })).toBeNull();
+    expect(screen.getByRole('link', { name: 'Repayment details' }).getAttribute('href')).toBe(
+      '/loans/repay',
+    );
+    expect(screen.getByRole('region', { name: 'Your loan' }).className).toContain(
+      'border-app-success/50',
+    );
     fireEvent.click(screen.getByRole('button', { name: 'Show loan' }));
     expect(screen.getByText('100%')).toBeTruthy();
   });
@@ -390,6 +398,16 @@ describe('LoansCard', () => {
       ],
     });
     expect(screen.getByText('Not fully funded yet.')).toBeTruthy();
+    expect(
+      screen.getByRole('link', { name: 'Pay early or end collecting' }).getAttribute('href'),
+    ).toBe('/loans/repay');
+    expect(screen.queryByRole('link', { name: 'Repay your loan' })).toBeNull();
+    expect(screen.queryByRole('link', { name: 'Repayment details' })).toBeNull();
+    expect(screen.queryByText('Nothing due today')).toBeNull();
+    expect(screen.queryByText('Due today')).toBeNull();
+    const card = screen.getByRole('region', { name: 'Your loan' });
+    expect(card.className).toContain('border-app-border');
+    expect(card.className).not.toContain('border-app-success/50');
     fireEvent.click(screen.getByRole('button', { name: 'Show loan' }));
     expect(screen.getByText('99%')).toBeTruthy();
   });

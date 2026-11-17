@@ -34,6 +34,10 @@ function localDay(date: Date): string {
  * its own fiat-defined goal bar and label. Shares waiting for a lender's wallet
  * are a muted line of their own, never part of the amount to send.
  *
+ * Status, outline, due row, and the collecting-versus-repay link follow
+ * {@link forumAskFunded}. A manual close still uses `closedAt`. The repayment
+ * screen keeps the api `fundedAt` stamp.
+ *
  * @param props - Card placement.
  * @returns The loan card, or `null` while unavailable or when there are no loans.
  */
@@ -50,7 +54,12 @@ export function LoansCard({ place }: LoansCardProps): ReactElement | null {
   }
   const summary = summarizeLoans(loans, numberFormat);
   const askFundedCount = loans.loans.filter((loan) => forumAskFunded(loan)).length;
-  const collecting = loans.loans.some(isCollecting);
+  const collecting = loans.loans.some((loan) =>
+    isCollecting({
+      fundedAt: forumAskFunded(loan) ? 'funded' : null,
+      closedAt: loan.closedAt,
+    }),
+  );
   const definedPayable = definedDueLabel(loans.loans, 'payable', numberFormat);
   const definedWaiting = definedDueLabel(loans.loans, 'waiting', numberFormat);
   const single = summary.count === 1;
@@ -84,9 +93,12 @@ export function LoansCard({ place }: LoansCardProps): ReactElement | null {
   const nothingWaiting =
     summary.waitingSats === null ? summary.waitingPeople === 0 : summary.waitingSats === 0;
   const border =
-    summary.tone === 'danger'
+    askFundedCount > 0 && summary.behindDays > 0
       ? 'border-app-danger/50'
-      : summary.tone === 'success'
+      : askFundedCount > 0 &&
+          !summary.sundayRest &&
+          summary.payableSats === 0 &&
+          summary.waitingSats === 0
         ? 'border-app-success/50'
         : 'border-app-border';
   const nextLine = (): string | null => {
@@ -155,7 +167,7 @@ export function LoansCard({ place }: LoansCardProps): ReactElement | null {
           ))}
         </div>
       )}
-      {summary.fundedCount > 0 ? (
+      {askFundedCount > 0 ? (
         <div className="mt-3 rounded-xl bg-app-card px-3 py-2">
           {summary.sundayRest ? (
             <p className="font-semibold text-app-fg">{t('loans.sundayRest')}</p>
