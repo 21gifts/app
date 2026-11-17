@@ -124,9 +124,7 @@ test('a closed below-goal loan hides every contribution action on its initial ca
   expect(ledgerReads).toEqual([]);
 });
 
-test('Function: forumAskPercent — a fiat loan shows its own percent while its sats decide lending', async ({
-  page,
-}) => {
+test('Function: forumAskPercent — a fiat loan shows its own percent', async ({ page }) => {
   await signIn(page);
   await fulfillSpot(page);
   const fiatLoan = { ...COLLECTING, goalCurrency: 'USD', goalAmount: '20' };
@@ -139,11 +137,34 @@ test('Function: forumAskPercent — a fiat loan shows its own percent while its 
   await expect(blocks).toHaveCount(2);
   await expect(blocks.first()).toHaveAttribute('data-loan-block', 'collecting');
   await expect(blocks.first().getByText('50%')).toBeVisible();
-  await expect(blocks.nth(1)).toHaveAttribute('data-loan-block', 'funded');
-  await expect(blocks.nth(1).getByText('Fully funded', { exact: true })).toBeVisible();
-  await expect(blocks.nth(1).getByRole('button', { name: 'Lend' })).toHaveCount(0);
+  await expect(blocks.nth(1)).toHaveAttribute('data-loan-block', 'collecting');
+  await expect(blocks.nth(1).getByText('50%')).toBeVisible();
+  await expect(blocks.nth(1).getByText('Fully funded', { exact: true })).toHaveCount(0);
   await blocks.first().getByRole('button', { name: 'Lend' }).click();
   await expect(page.getByLabel('Amount to lend')).toBeFocused();
+});
+
+test('Function: forumAskFunded — a fiat loan is funded when its currency reaches the goal', async ({
+  page,
+}) => {
+  await signIn(page);
+  await fulfillSpot(page);
+  await feedOf(page, [
+    {
+      ...COLLECTING,
+      goalCurrency: 'PHP',
+      goalAmount: '5000',
+      goalSats: 97_013,
+      sats: 96_940,
+      amountPhp: '5000.85',
+    },
+  ]);
+  await openAll(page);
+  const block = page.getByRole('region', { name: 'Loan request' });
+  await expect(block).toHaveAttribute('data-loan-block', 'funded');
+  await expect(block.getByText('100%', { exact: true })).toBeVisible();
+  await expect(block.getByText('Fully funded', { exact: true })).toBeVisible();
+  await expect(block.getByRole('button', { name: 'Lend' })).toHaveCount(0);
 });
 
 test('Lend opens the money reaction and puts the focus in its amount field', async ({ page }) => {

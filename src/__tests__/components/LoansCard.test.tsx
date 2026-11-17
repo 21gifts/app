@@ -338,7 +338,7 @@ describe('LoansCard', () => {
   it('shows Sunday rest for a manually closed underfunded loan', () => {
     show({
       sundayRest: true,
-      loans: [loan({ fundedAt: null, closedAt: '2026-10-09T12:00:00.000Z' })],
+      loans: [loan({ sats: 12_000, fundedAt: null, closedAt: '2026-10-09T12:00:00.000Z' })],
     });
     expect(screen.getByText('Not fully funded yet.')).toBeTruthy();
     expect(screen.getByText('No repayments on Sundays')).toBeTruthy();
@@ -349,11 +349,67 @@ describe('LoansCard', () => {
   it('uses ordinary repayment wording for a manually closed underfunded loan on a weekday', () => {
     show({
       sundayRest: false,
-      loans: [loan({ fundedAt: null, closedAt: '2026-10-09T12:00:00.000Z' })],
+      loans: [loan({ sats: 12_000, fundedAt: null, closedAt: '2026-10-09T12:00:00.000Z' })],
     });
     expect(screen.getByText('Not fully funded yet.')).toBeTruthy();
     expect(screen.queryByText('No repayments on Sundays')).toBeNull();
     expect(screen.getByRole('link', { name: 'Repay your loan' })).toBeTruthy();
+  });
+
+  it('counts a fiat loan as funded once its own currency reaches the goal', () => {
+    show({
+      sundayRest: false,
+      loans: [
+        phpLoan({
+          goalAmount: '5000',
+          goalAmountPhp: '5000.00',
+          amountPhp: '5000.85',
+          goalSats: 97_013,
+          sats: 96_940,
+          fundedAt: null,
+        }),
+      ],
+    });
+    expect(screen.getByText('Fully funded.')).toBeTruthy();
+    expect(screen.getByText('Nothing due today')).toBeTruthy();
+    expect(screen.queryByRole('link', { name: 'Pay early or end collecting' })).toBeNull();
+    expect(screen.getByRole('link', { name: 'Repayment details' }).getAttribute('href')).toBe(
+      '/loans/repay',
+    );
+    expect(screen.getByRole('region', { name: 'Your loan' }).className).toContain(
+      'border-app-success/50',
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Show loan' }));
+    expect(screen.getByText('100%')).toBeTruthy();
+  });
+
+  it('does not count a fiat loan whose sats are full while its own currency is short', () => {
+    show({
+      sundayRest: false,
+      loans: [
+        phpLoan({
+          goalAmount: '5000',
+          goalAmountPhp: '5000.00',
+          amountPhp: '4999.99',
+          goalSats: 97_013,
+          sats: 97_013,
+          fundedAt: '2026-10-10T00:00:00.000Z',
+        }),
+      ],
+    });
+    expect(screen.getByText('Not fully funded yet.')).toBeTruthy();
+    expect(
+      screen.getByRole('link', { name: 'Pay early or end collecting' }).getAttribute('href'),
+    ).toBe('/loans/repay');
+    expect(screen.queryByRole('link', { name: 'Repay your loan' })).toBeNull();
+    expect(screen.queryByRole('link', { name: 'Repayment details' })).toBeNull();
+    expect(screen.queryByText('Nothing due today')).toBeNull();
+    expect(screen.queryByText('Due today')).toBeNull();
+    const card = screen.getByRole('region', { name: 'Your loan' });
+    expect(card.className).toContain('border-app-border');
+    expect(card.className).not.toContain('border-app-success/50');
+    fireEvent.click(screen.getByRole('button', { name: 'Show loan' }));
+    expect(screen.getByText('99%')).toBeTruthy();
   });
 
   it('shows an ordinary due-today row with the funded status', () => {

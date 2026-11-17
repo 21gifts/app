@@ -117,26 +117,62 @@ const COLLECTED_BY_CODE = {
 } as const;
 
 /**
- * Integer percent of a note's Ask, in the unit it was defined in. Uncapped.
- *
- * A fiat Ask (USD, CHF, EUR, or PHP with a usable `goalAmount`) uses
- * {@link forumFiatGoalPercent} of the payment snapshot in that code; every
- * other Ask uses {@link forumGoalPercent} of the sats.
+ * Fiat definition of an Ask: USD, CHF, EUR, or PHP with a usable `goalAmount`.
+ * BTC, a legacy row, and an unusable amount are not this.
  *
  * @param note - Collected sats, goal, definition, and payment snapshots.
- * @returns Floored percent for the label and the bar. Whether a loan is funded follows the sats
- *   (`sats >= goalSats`), not this percent.
+ * @returns The snapshot in the definition code and the typed amount, or `null`.
  */
-export function forumAskPercent(note: ForumAskProgress): number {
+function definedFiatAsk(
+  note: ForumAskProgress,
+): { collected: string | null | undefined; goalAmount: string } | null {
   const code = note.goalCurrency;
   if (
     (code === 'USD' || code === 'CHF' || code === 'EUR' || code === 'PHP') &&
     typeof note.goalAmount === 'string' &&
     GOAL_AMOUNT_RE.test(note.goalAmount)
   ) {
-    return forumFiatGoalPercent(note[COLLECTED_BY_CODE[code]], note.goalAmount);
+    return { collected: note[COLLECTED_BY_CODE[code]], goalAmount: note.goalAmount };
+  }
+  return null;
+}
+
+/**
+ * Integer percent of a note's Ask, in the unit it was defined in. Uncapped.
+ *
+ * A fiat Ask (USD, CHF, EUR, or PHP with a usable `goalAmount`) uses
+ * {@link forumFiatGoalPercent} of the payment snapshot in that code; every
+ * other Ask uses {@link forumGoalPercent} of the sats. {@link forumAskFunded}
+ * is that same percent reaching 100.
+ *
+ * @param note - Collected sats, goal, definition, and payment snapshots.
+ * @returns Floored percent for the label and the bar.
+ */
+export function forumAskPercent(note: ForumAskProgress): number {
+  const fiat = definedFiatAsk(note);
+  if (fiat !== null) {
+    return forumFiatGoalPercent(fiat.collected, fiat.goalAmount);
   }
   return forumGoalPercent(note.sats, note.goalSats);
+}
+
+/**
+ * Whether an Ask has reached its goal.
+ *
+ * A fiat Ask is funded when {@link forumFiatGoalPercent} of the payment
+ * snapshot in its currency is at least 100: the collected amount covers
+ * `goalAmount`, even when `sats` are still short of `goalSats`. A missing or
+ * unusable snapshot does not cover it. A BTC Ask and a legacy row (no
+ * `goalCurrency`, or an unusable `goalAmount`) are funded when
+ * {@link forumGoalPercent} of the sats is at least 100 (collected sats cover a
+ * positive `goalSats`). The label that uses {@link forumAskPercent} is therefore
+ * at least 100% exactly when this returns true.
+ *
+ * @param note - Collected sats, goal, definition, and payment snapshots.
+ * @returns `true` when the Ask is funded.
+ */
+export function forumAskFunded(note: ForumAskProgress): boolean {
+  return forumAskPercent(note) >= 100;
 }
 
 function groupIntegerDigits(digits: string, grouping: string): string {

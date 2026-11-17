@@ -12,8 +12,8 @@ import { ButtonLink } from '@/components/ui';
 import { useMyLoans } from '@/hooks/useMyLoans';
 import { useSpotRate } from '@/hooks/useSpotRate';
 import type { MyLoan } from '@/lib/api';
-import { forumGoalPercent } from '@/lib/forum-goal';
-import { definedDueLabel, isCollecting, summarizeLoans } from '@/lib/loan-repay';
+import { forumAskFunded, forumAskPercent } from '@/lib/forum-goal';
+import { definedDueLabel, summarizeLoans } from '@/lib/loan-repay';
 import { formatBitcoin, formatFiatDisplay, satsToFiatAmount } from '@/lib/stats-money';
 
 /** Props for {@link LoansCard}. */
@@ -34,6 +34,11 @@ function localDay(date: Date): string {
  * its own fiat-defined goal bar and label. Shares waiting for a lender's wallet
  * are a muted line of their own, never part of the amount to send.
  *
+ * Status, outline, due row, and the collecting-versus-repay link follow
+ * {@link forumAskFunded}. The link calls that helper: a loan still collects
+ * only while it is not funded and `closedAt` is null or omitted. The repayment
+ * screen keeps the api `fundedAt` stamp.
+ *
  * @param props - Card placement.
  * @returns The loan card, or `null` while unavailable or when there are no loans.
  */
@@ -49,14 +54,14 @@ export function LoansCard({ place }: LoansCardProps): ReactElement | null {
     return null;
   }
   const summary = summarizeLoans(loans, numberFormat);
-  const collecting = loans.loans.some(isCollecting);
+  const askFundedCount = loans.loans.filter((loan) => forumAskFunded(loan)).length;
   const definedPayable = definedDueLabel(loans.loans, 'payable', numberFormat);
   const definedWaiting = definedDueLabel(loans.loans, 'waiting', numberFormat);
   const single = summary.count === 1;
   const title = single ? t('welcome.loanTitle') : t('welcome.loansTitle', { count: summary.count });
   const status = single
-    ? t(summary.fundedCount === 1 ? 'welcome.loanFunded' : 'welcome.loanCollecting')
-    : t('welcome.loansFunded', { funded: summary.fundedCount, count: summary.count });
+    ? t(askFundedCount === 1 ? 'welcome.loanFunded' : 'welcome.loanCollecting')
+    : t('welcome.loansFunded', { funded: askFundedCount, count: summary.count });
   const money = (sats: number): string => {
     const bitcoin = formatBitcoin(sats, numberFormat);
     const amount = satsToFiatAmount(sats, rateDay, fiat);
@@ -83,9 +88,12 @@ export function LoansCard({ place }: LoansCardProps): ReactElement | null {
   const nothingWaiting =
     summary.waitingSats === null ? summary.waitingPeople === 0 : summary.waitingSats === 0;
   const border =
-    summary.tone === 'danger'
+    askFundedCount > 0 && summary.behindDays > 0
       ? 'border-app-danger/50'
-      : summary.tone === 'success'
+      : askFundedCount > 0 &&
+          !summary.sundayRest &&
+          summary.payableSats === 0 &&
+          summary.waitingSats === 0
         ? 'border-app-success/50'
         : 'border-app-border';
   const nextLine = (): string | null => {
@@ -154,7 +162,7 @@ export function LoansCard({ place }: LoansCardProps): ReactElement | null {
           ))}
         </div>
       )}
-      {summary.fundedCount > 0 ? (
+      {askFundedCount > 0 ? (
         <div className="mt-3 rounded-xl bg-app-card px-3 py-2">
           {summary.sundayRest ? (
             <p className="font-semibold text-app-fg">{t('loans.sundayRest')}</p>
@@ -260,7 +268,15 @@ export function LoansCard({ place }: LoansCardProps): ReactElement | null {
           href="/loans/repay"
           className="mt-3 flex min-h-11 items-center justify-between gap-3 rounded-xl bg-app-card px-3 py-2 text-sm font-medium text-app-fg"
         >
-          {t(collecting ? 'loans.collectingOpen' : 'forum.repayOpen')}
+          {t(
+            loans.loans.some(
+              (loan) =>
+                !forumAskFunded(loan) &&
+                (loan.closedAt === null || loan.closedAt === undefined),
+            )
+              ? 'loans.collectingOpen'
+              : 'forum.repayOpen',
+          )}
           <ChevronRight aria-hidden="true" className="h-5 w-5 shrink-0 text-app-muted" />
         </Link>
       )}
@@ -291,7 +307,7 @@ export function LoansCard({ place }: LoansCardProps): ReactElement | null {
               </Link>
               <span className="shrink-0 tabular-nums text-app-muted">
                 {t('forum.goalPercent', {
-                  percent: String(forumGoalPercent(loan.sats, loan.goalSats)),
+                  percent: String(forumAskPercent(loan)),
                 })}
               </span>
             </li>

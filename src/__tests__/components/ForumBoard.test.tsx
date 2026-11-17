@@ -4214,6 +4214,27 @@ describe('ForumBoard', () => {
     expect(screen.queryByRole('link', { name: 'Repay your loan' })).toBeNull();
     rerender(board({ ...funded, sats: 20999 }));
     expect(screen.getByRole('link', { name: 'Pay early or end collecting' })).toBeTruthy();
+    rerender(
+      board({
+        ...funded,
+        goalCurrency: 'USD',
+        goalAmount: '20',
+        sats: 21_000,
+        amountUsd: '10.00',
+      }),
+    );
+    expect(screen.getByRole('link', { name: 'Pay early or end collecting' })).toBeTruthy();
+    rerender(
+      board({
+        ...funded,
+        goalCurrency: 'PHP',
+        goalAmount: '5000',
+        goalSats: 97_013,
+        sats: 96_940,
+        amountPhp: '5000.85',
+      }),
+    );
+    expect(screen.getByRole('link', { name: 'Repay your loan' })).toBeTruthy();
     rerender(board({ ...funded, sats: 20999, goalClosedAt: '2026-10-03T10:00:00.000Z' }));
     expect(screen.getByRole('link', { name: 'Repay your loan' })).toBeTruthy();
     rerender(board({ ...funded, deletedAt: '2026-08-29T15:00:00.000Z' }));
@@ -10945,7 +10966,7 @@ describe('ForumBoard loan block', () => {
     expect(screen.queryByLabelText('Amount to lend')).toBeNull();
   });
 
-  it('lets the sats, not the fiat percent, decide between lending and a gift', () => {
+  it('lets the fiat amount, not the sats, decide between lending and a gift', () => {
     const fiatLoan = {
       ...LOAN,
       goalCurrency: 'USD' as const,
@@ -10958,8 +10979,10 @@ describe('ForumBoard loan block', () => {
         replies: [],
       }),
     );
-    expect(screen.getByLabelText('Amount')).toBe(document.getElementById('forum-reply-amount'));
-    expect(screen.queryByRole('button', { name: 'Lend' })).toBeNull();
+    expect(screen.getByLabelText('Amount to lend')).toBe(
+      document.getElementById('forum-reply-amount'),
+    );
+    expect(screen.getByRole('button', { name: 'Lend' })).toBeTruthy();
     view.rerender(
       board({
         messages: [{ ...fiatLoan, sats: 5_000, amountUsd: '25.00' }],
@@ -10967,10 +10990,11 @@ describe('ForumBoard loan block', () => {
         replies: [],
       }),
     );
-    expect(screen.getByLabelText('Amount to lend')).toBe(
-      document.getElementById('forum-reply-amount'),
-    );
-    expect(screen.getByRole('button', { name: 'Lend' })).toBeTruthy();
+    expect(screen.getByLabelText('Amount')).toBe(document.getElementById('forum-reply-amount'));
+    expect(screen.queryByRole('button', { name: 'Lend' })).toBeNull();
+    expect(
+      screen.getByText('This loan is already fully funded. What you send now is a gift to Maria.'),
+    ).toBeTruthy();
   });
 
   it('words the reaction pay page of a loan as lending', () => {

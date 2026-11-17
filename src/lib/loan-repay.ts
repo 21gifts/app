@@ -197,8 +197,9 @@ export interface LoansSummary {
    */
   next: { dueOn: string; sats: number | null; amount: string | null } | null;
   /**
-   * Card outline: 'danger' when fundedCount \> 0 and behindDays \> 0; 'success' when fundedCount \> 0,
-   * !sundayRest, and nobody is payable or waiting; otherwise 'neutral'.
+   * Outline from api `fundedAt`: 'danger' when fundedCount \> 0 and behindDays \> 0; 'success' when
+   * fundedCount \> 0, not Sunday, and nobody is payable or waiting; otherwise 'neutral'.
+   * `LoansCard` does not read this; its outline follows `forumAskFunded`.
    */
   tone: 'danger' | 'success' | 'neutral';
   /** The Menu row and the card's Send show: !sundayRest && a known positive payable sum. */
