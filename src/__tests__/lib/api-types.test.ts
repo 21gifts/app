@@ -1878,6 +1878,46 @@ describe('accountSchema', () => {
     expect(accountSchema.parse({ ...account, funding }).funding).toEqual(funding);
   });
 
+  describe('shop payment sums', () => {
+    const base = {
+      status: 'trial' as const,
+      trialUtcDate: '2026-11-16',
+      admittedAt: null,
+      reviewedByName: null,
+      shopPaymentDue: true,
+      payoutToday: { state: 'blocked' as const, reason: 'shop_payment' },
+    };
+
+    it('accepts whole sats paid and required, including zero paid', () => {
+      const funding = { ...base, shopPaymentSats: 0, shopPaymentRequiredSats: 500 };
+      expect(accountSchema.parse({ ...account, funding }).funding).toEqual(funding);
+    });
+
+    it('accepts null for either sum', () => {
+      const funding = { ...base, shopPaymentSats: null, shopPaymentRequiredSats: null };
+      expect(accountSchema.parse({ ...account, funding }).funding).toEqual(funding);
+    });
+
+    it('leaves both sums undefined when an older api omits them', () => {
+      const parsed = accountSchema.parse({ ...account, funding: base }).funding;
+      expect(parsed?.shopPaymentSats).toBeUndefined();
+      expect(parsed?.shopPaymentRequiredSats).toBeUndefined();
+    });
+
+    it.each([
+      ['shopPaymentSats', -1],
+      ['shopPaymentSats', 1.5],
+      ['shopPaymentSats', '200'],
+      ['shopPaymentRequiredSats', -1],
+      ['shopPaymentRequiredSats', 0.5],
+      ['shopPaymentRequiredSats', '500'],
+    ])('rejects %s = %o', (field, value) => {
+      expect(() =>
+        accountSchema.parse({ ...account, funding: { ...base, [field]: value } }),
+      ).toThrow();
+    });
+  });
+
   it('accepts the wallet viewer key and top-level basis payout compatibility field', () => {
     const walletViewerPublicKey = `02${'a'.repeat(64)}`;
     const grantPayoutToday = { state: 'due' as const, reason: null };

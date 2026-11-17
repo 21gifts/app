@@ -1,8 +1,10 @@
 import { act, cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { GrantsScreen } from '@/components/GrantsScreen';
-import type { Account, FundingApplication } from '@/lib/api-types';
+import { useSpotRate } from '@/hooks/useSpotRate';
+import type { Account, FundingApplication, OwnerFunding } from '@/lib/api-types';
 import { consumePendingForumCompose, consumeSkipIntroduceOverlay } from '@/lib/forum-feed';
+import type { FiatRateDay } from '@/lib/stats-money';
 import { useAuthStore } from '@/stores/auth-store';
 import { renderWithLocale } from '@/__tests__/render-with-locale';
 
@@ -33,10 +35,21 @@ vi.mock('@/lib/api', () => ({
   fetchMe: vi.fn(),
 }));
 
+vi.mock('@/hooks/useSpotRate', () => ({ useSpotRate: vi.fn() }));
+
 import { fetchFundingApplications, fetchMe } from '@/lib/api';
 
 const listMock = vi.mocked(fetchFundingApplications);
 const meMock = vi.mocked(fetchMe);
+const spotMock = vi.mocked(useSpotRate);
+
+const RATE_DAY: FiatRateDay = {
+  sats: 100_000_000,
+  usd: '100000.00',
+  chf: '80000.00',
+  eur: '90000.00',
+  php: '5600000.00',
+};
 
 const account: Account = {
   id: 'acc_1',
@@ -82,6 +95,7 @@ beforeEach(() => {
   consumeSkipIntroduceOverlay();
   listMock.mockResolvedValue([]);
   meMock.mockImplementation(() => new Promise<Account | null>(() => undefined));
+  spotMock.mockReturnValue(null);
   useAuthStore.setState({ session: 'sess', account });
 });
 
@@ -299,7 +313,7 @@ describe('GrantsScreen', () => {
     ],
     [
       { state: 'blocked', reason: 'shop_payment' },
-      'You must have made at least one purchase in a 21.gifts shop today or yesterday.',
+      'Your payments in 21.gifts shops yesterday and today must add up to at least half of your daily gift.',
       '/shops',
     ],
     [
@@ -321,6 +335,150 @@ describe('GrantsScreen', () => {
     expect(group.querySelectorAll('p')).toHaveLength(1);
     const link = within(group).queryByRole('link');
     expect(link?.getAttribute('href') ?? null).toBe(href);
+  });
+
+  describe('shop payment block', () => {
+    const SHOP_BLOCKED = { state: 'blocked', reason: 'shop_payment' } as const;
+
+    function seedShop(
+      extra: Partial<Pick<OwnerFunding, 'shopPaymentSats' | 'shopPaymentRequiredSats'>>,
+    ): void {
+      useAuthStore.setState({
+        session: 'sess',
+        account: {
+          ...account,
+          funding: {
+            ...account.funding!,
+            shopPaymentDue: true,
+            payoutToday: SHOP_BLOCKED,
+            ...extra,
+          },
+        },
+      });
+    }
+
+    function payoutParagraph(): HTMLElement {
+      const group = screen.getByRole('group', { name: "Today's payout" });
+      const paragraphs = group.querySelectorAll('p');
+      expect(paragraphs).toHaveLength(1);
+      return paragraphs[0]!;
+    }
+
+    it('names the sum, what was spent, and what is missing with the spot beside each', () => {
+      spotMock.mockReturnValue(RATE_DAY);
+      seedShop({ shopPaymentSats: 200, shopPaymentRequiredSats: 500 });
+      renderWithLocale(<GrantsScreen />);
+      const sentence =
+        'Your payments in 21.gifts shops yesterday and today must add up to at least ₿500 · $0.50, half of your daily gift.';
+      expect(screen.getByRole('link', { name: sentence }).getAttribute('href')).toBe('/shops');
+      expect(payoutParagraph().textContent).toBe(
+        `${sentence} Spent so far: ₿200 · $0.20. Still missing: ₿300 · $0.30.`,
+      );
+      expect(spotMock).toHaveBeenCalledWith(true);
+    });
+
+    it('shows bitcoin alone while the spot is not available', () => {
+      seedShop({ shopPaymentSats: 400, shopPaymentRequiredSats: 1_250 });
+      renderWithLocale(<GrantsScreen />);
+      const sentence =
+        "Your payments in 21.gifts shops yesterday and today must add up to at least ₿1'250, half of your daily gift.";
+      expect(screen.getByRole('link', { name: sentence }).getAttribute('href')).toBe('/shops');
+      expect(payoutParagraph().textContent).toBe(
+        `${sentence} Spent so far: ₿400. Still missing: ₿850.`,
+      );
+      expect(spotMock).toHaveBeenCalledWith(true);
+    });
+
+    it.each([
+      [500, 500],
+      [600, 500],
+    ])('shows nothing missing once %i sats reach the %i required', (paid, required) => {
+      spotMock.mockReturnValue(RATE_DAY);
+      seedShop({ shopPaymentSats: paid, shopPaymentRequiredSats: required });
+      renderWithLocale(<GrantsScreen />);
+      expect(payoutParagraph().textContent).toContain('Still missing: ₿0 · $0.00.');
+    });
+
+    it('uses the visitor currency and catalog of the UI language', () => {
+      spotMock.mockReturnValue(RATE_DAY);
+      seedShop({ shopPaymentSats: 0, shopPaymentRequiredSats: 500 });
+      renderWithLocale(<GrantsScreen />, 'de');
+      const sentence =
+        'Ihre Zahlungen in 21.gifts-Shops von gestern und heute müssen zusammen mindestens ₿500 · CHF 0.40 ergeben, die Hälfte Ihres täglichen Geschenks.';
+      expect(screen.getByRole('link', { name: sentence }).getAttribute('href')).toBe('/shops');
+      const group = screen.getByRole('group', { name: 'Heutige Auszahlung' });
+      expect(group.querySelector('p')?.textContent).toBe(
+        `${sentence} Bisher ausgegeben: ₿0 · CHF 0.00. Es fehlen noch ₿500 · CHF 0.40.`,
+      );
+    });
+
+    it.each([
+      [{}],
+      [{ shopPaymentSats: null, shopPaymentRequiredSats: null }],
+      [{ shopPaymentSats: 200, shopPaymentRequiredSats: null }],
+      [{ shopPaymentSats: null, shopPaymentRequiredSats: 500 }],
+      [{ shopPaymentRequiredSats: 500 }],
+    ])('names half the daily grant without a figure for %o', (extra) => {
+      spotMock.mockReturnValue(RATE_DAY);
+      seedShop(extra);
+      renderWithLocale(<GrantsScreen />);
+      const sentence =
+        'Your payments in 21.gifts shops yesterday and today must add up to at least half of your daily gift.';
+      expect(screen.getByRole('link', { name: sentence }).getAttribute('href')).toBe('/shops');
+      expect(payoutParagraph().textContent).toBe(sentence);
+      expect(spotMock).toHaveBeenCalledWith(false);
+      expect(spotMock).not.toHaveBeenCalledWith(true);
+    });
+
+    it('names half the daily grant for a basis account blocked by the shop payment', () => {
+      useAuthStore.setState({
+        session: 'sess',
+        account: { ...account, role: 'basis', funding: null, grantPayoutToday: SHOP_BLOCKED },
+      });
+      renderWithLocale(<GrantsScreen />);
+      expect(payoutParagraph().textContent).toBe(
+        'Your payments in 21.gifts shops yesterday and today must add up to at least half of your daily gift.',
+      );
+      expect(spotMock).not.toHaveBeenCalledWith(true);
+    });
+
+    it('ignores shop amounts while another reason blocks the payout', () => {
+      useAuthStore.setState({
+        session: 'sess',
+        account: {
+          ...account,
+          funding: {
+            ...account.funding!,
+            payoutToday: { state: 'blocked', reason: 'wallet' },
+            shopPaymentSats: 200,
+            shopPaymentRequiredSats: 500,
+          },
+        },
+      });
+      renderWithLocale(<GrantsScreen />);
+      expect(payoutParagraph().textContent).toBe('Set up your wallet to receive payouts.');
+      expect(spotMock).not.toHaveBeenCalledWith(true);
+    });
+
+    it('shows the amounts once the owner refresh brings them', async () => {
+      spotMock.mockReturnValue(RATE_DAY);
+      seedShop({});
+      meMock.mockResolvedValueOnce({
+        ...account,
+        funding: {
+          ...account.funding!,
+          shopPaymentDue: true,
+          payoutToday: SHOP_BLOCKED,
+          shopPaymentSats: 100,
+          shopPaymentRequiredSats: 500,
+        },
+      });
+      renderWithLocale(<GrantsScreen />);
+      expect(
+        await screen.findByText('Spent so far: ₿100 · $0.10. Still missing: ₿400 · $0.40.'),
+      ).toBeTruthy();
+      expect(spotMock).toHaveBeenLastCalledWith(true);
+    });
   });
 
   it('shows the pending admission sentence without an apply link', () => {

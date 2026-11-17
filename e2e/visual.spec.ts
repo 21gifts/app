@@ -29367,6 +29367,7 @@ test.describe('profile funding states', () => {
   });
 
   test('state /grants open-applications', async ({ page }) => {
+    await fulfillSpot(page);
     await seedFundingProfile(page, {
       role: 'moderator',
       funding: {
@@ -29374,6 +29375,9 @@ test.describe('profile funding states', () => {
         trialUtcDate: null,
         admittedAt: null,
         reviewedByName: null,
+        shopPaymentDue: true,
+        shopPaymentSats: 200,
+        shopPaymentRequiredSats: 500,
         payoutToday: { state: 'blocked', reason: 'shop_payment' },
       },
     });
@@ -29406,6 +29410,11 @@ test.describe('profile funding states', () => {
     await page.goto('/grants');
     await expect(
       page.getByRole('link', { name: 'Open applications (2)', exact: true }),
+    ).toBeVisible();
+    await expect(
+      page
+        .getByRole('group', { name: "Today's payout" })
+        .getByText('Spent so far: ₿200 · $0.20. Still missing: ₿300 · $0.30.'),
     ).toBeVisible();
     await shotScreen(page, 'state-grants-open-applications');
   });
