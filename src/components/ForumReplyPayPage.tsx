@@ -16,7 +16,8 @@ import type { FiatRateDay } from '@/lib/stats-money';
  * closed it.
  *
  * The pay slot pays from the member's in-app wallet (`sparkInvoice` when the
- * api issued one, otherwise `pr`). It shows no invoice QR.
+ * api issued one, otherwise `pr`, which is also paid when the wallet refuses
+ * the Spark invoice). It shows no invoice QR.
  *
  * The sheet reads **Send to Ana** and its button **Send ₿500**; on a loan that still
  * collects **Lend to Ana** and **Lend ₿500**. Without a name it reads **Send**.

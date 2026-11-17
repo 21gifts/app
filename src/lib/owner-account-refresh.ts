@@ -34,6 +34,8 @@ function mergeOwnerFields(current: Account, owner: Account): Account {
       ...current.funding,
       payoutToday: owner.funding.payoutToday,
       shopPaymentDue: owner.funding.shopPaymentDue,
+      shopPaymentSats: owner.funding.shopPaymentSats,
+      shopPaymentRequiredSats: owner.funding.shopPaymentRequiredSats,
     },
   };
 }
@@ -44,7 +46,8 @@ function mergeOwnerFields(current: Account, owner: Account): Account {
  * answer drops the answer. Every applied answer merges only owner-only viewer
  * and payout fields into the account currently in the store. A missing local
  * funding object takes the answer's whole funding object; when both exist,
- * only `payoutToday` and `shopPaymentDue` are copied; a null or missing answer
+ * only `payoutToday`, `shopPaymentDue`, `shopPaymentSats`, and
+ * `shopPaymentRequiredSats` are copied; a null or missing answer
  * funding object leaves the local one unchanged. All locally writable fields
  * therefore survive requests that overlap local changes.
  *
@@ -74,7 +77,7 @@ export function refreshOwnerAccount(sessionToken: string): void {
  * Drops every owner refresh still in flight, after the caller stored a newer
  * owner payout itself (a funding answer or a whole account from `GET /me`).
  * Without it, a `GET /me` started earlier, for example when `/grants` opened,
- * could still copy its older `payoutToday` and `shopPaymentDue` onto that
+ * could still copy its older `payoutToday` and shop payment fields onto that
  * newer funding. A refresh started after this call applies as usual.
  */
 export function discardOwnerRefreshes(): void {

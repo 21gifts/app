@@ -26,8 +26,29 @@ export const ownerFundingSchema = z.object({
   reviewedByName: z.string().nullable(),
   /** True when the owner should see the stopped-daily-payout notice. Optional so older payloads still parse. */
   dailyPayoutStoppedNotice: z.boolean().optional(),
-  /** Whether a qualifying shop purchase is still missing, or `null` when the read failed. */
+  /**
+   * For a member in the grant program today: true while the owner's
+   * qualifying shop payments today and yesterday UTC are below
+   * `shopPaymentRequiredSats` (also true, failing closed, without a stored
+   * price or on a roster skip), false once they reach it. False outside the
+   * program, `null` when a read failed.
+   */
   shopPaymentDue: z.boolean().nullable().optional(),
+  /**
+   * Whole sats of the member's qualifying shop payments on the payout UTC day
+   * and the day before, together. `null` when the member is not in the grant
+   * program today or the read failed. Optional so older payloads still parse;
+   * missing means `null`.
+   */
+  shopPaymentSats: z.number().int().nonnegative().nullable().optional(),
+  /**
+   * Whole sats those shop payments must reach: half the daily grant, rounded
+   * up, at least 1. `null` when the member is not in the grant program, the
+   * server has no usable stored BTC price, the daily roster decides a skip,
+   * or a read failed. Optional so older
+   * payloads still parse; missing means `null`.
+   */
+  shopPaymentRequiredSats: z.number().int().nonnegative().nullable().optional(),
   /** Today's one payout state and, when present, its single reason. */
   payoutToday: z
     .object({
@@ -1508,8 +1529,10 @@ export const messageInvoiceSchema = z.object({
   pr: z.string().min(1),
   amountSats: z.number().int().positive(),
   /**
-   * Request the member's in-app wallet pays instead of `pr`, or `null` when the
-   * api issued none. Optional so bodies from an api without it still parse.
+   * Request the member's in-app wallet pays instead of `pr` (`pr` when the wallet
+   * refuses it, except for a heart, which is paid by the Spark invoice only), or
+   * `null` when the api issued none. Optional so bodies from an api without it
+   * still parse.
    */
   sparkInvoice: z.string().min(1).nullable().optional(),
 });
@@ -1710,8 +1733,8 @@ export const conversationInvoiceSchema = z.object({
   amountSats: z.number().int().positive(),
   messageId: z.string().min(1),
   /**
-   * Request the member's in-app wallet pays instead of `pr`, or `null` when the
-   * api issued none. Optional so bodies from an api without it still parse.
+   * Request the member's in-app wallet pays instead of `pr` (`pr` when the wallet
+   * refuses it), or `null` when the api issued none. Optional so bodies from an api without it still parse.
    */
   sparkInvoice: z.string().min(1).nullable().optional(),
 });

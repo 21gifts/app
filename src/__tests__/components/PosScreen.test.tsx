@@ -4926,7 +4926,10 @@ describe('PosScreen', () => {
         createdAt: new Date(Date.now() - 200_000).toISOString(),
         expiresAt: new Date(Date.now() - 10_000).toISOString(),
       };
-      const paidA = { ...ended, status: 'paid', paidAt: new Date().toISOString() };
+      // The payment, made now. The api marks the first charge paid in that same second: a payment
+      // made after a charge's `paidAt` is not the one that paid it.
+      const at = Date.now();
+      const paidA = { ...ended, status: 'paid', paidAt: new Date(at).toISOString() };
       // Another device's charge of the same amount, made before the payment.
       const b = { ...OPEN, id: 'c-b', createdAt: new Date(Date.now() - 5_000).toISOString() };
       let phase: 'open' | 'paid' = 'open';
@@ -4947,7 +4950,7 @@ describe('PosScreen', () => {
       await waitFor(() => {
         expect(reads).toBe(2);
       });
-      receive(21);
+      receive(21, 0, at);
       await waitFor(() => {
         expect(reads).toBe(3);
       });

@@ -35,7 +35,10 @@ export interface ForumPayInvoice {
   pr: string;
   /** Whole sats the payer confirmed. */
   amountSats: number;
-  /** Request the in-app wallet pays, or `null`/absent when the api issued none. */
+  /**
+   * Request the in-app wallet pays first, or `null`/absent when the api issued none; `pr`
+   * is paid without it or when the wallet refuses it.
+   */
   sparkInvoice?: string | null | undefined;
   /** True for the posting fee of a new post or reply: paying it also posts that text. */
   postsOnPay?: boolean;
