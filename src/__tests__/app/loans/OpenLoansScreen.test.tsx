@@ -83,9 +83,7 @@ describe('OpenLoansScreen', () => {
       'Ben',
       'Cara',
     ]);
-    expect(screen.getByRole('link', { name: 'Ada' }).getAttribute('href')).toBe(
-      '/members/acc_ada',
-    );
+    expect(screen.getByRole('link', { name: 'Ada' }).getAttribute('href')).toBe('/members/acc_ada');
     expect(screen.getByRole('link', { name: 'Ben' }).getAttribute('href')).toBe(
       '/members/acc%2Fben',
     );

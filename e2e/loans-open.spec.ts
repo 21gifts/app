@@ -64,10 +64,7 @@ test('screen /loans default', async ({ page }) => {
   await fulfillOpenLoans(page, OPEN_LOANS, 200);
   await page.goto('/loans');
   await expect(page.getByRole('heading', { name: 'Open loans' })).toBeVisible();
-  await expect(page.getByRole('link', { name: 'Ada' })).toHaveAttribute(
-    'href',
-    '/members/acc_ada',
-  );
+  await expect(page.getByRole('link', { name: 'Ada' })).toHaveAttribute('href', '/members/acc_ada');
   await expect(page.getByRole('link', { name: 'Ben' })).toHaveAttribute(
     'href',
     '/members/acc%2Fben',
@@ -100,9 +97,7 @@ test('screen /loans loading', async ({ page }) => {
 test('screen /loans error', async ({ page }) => {
   await fulfillOpenLoans(page, {}, 500);
   await page.goto('/loans');
-  await expect(page.getByRole('alert')).toHaveText(
-    'Could not load open loans. Please try again.',
-  );
+  await expect(page.getByRole('alert')).toHaveText('Could not load open loans. Please try again.');
   await expect(page.getByRole('button', { name: 'Try again' })).toBeVisible();
 });
 

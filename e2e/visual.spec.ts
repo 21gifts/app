@@ -8459,7 +8459,7 @@ test.describe('loans repay screens', () => {
   });
 });
 
-/** Public `/loans`. Goldens are regenerated on the build host. */
+/** Public `/loans` overview states: default, empty, loading, error, signed-in. */
 const PUBLIC_OPEN_LOANS = [
   {
     messageId: 'loan-ada',
