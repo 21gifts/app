@@ -866,6 +866,11 @@ undeclared deviation and is rejected.
   `v8 ignore` annotation that names a concrete reason — never to silence the gate.
 - Playwright tests live in `e2e/` and run against the mock api on :3001 plus
   the production standalone server on :3000 (`npm run e2e` builds and starts both).
+- Outside CI, Playwright reuses whatever server already listens on :3000 or
+  :3001 (`reuseExistingServer` in `playwright.config.ts`), even one from
+  another checkout or another run. Before a local run, check that both ports
+  are free (`lsof -nP -iTCP:3000 -iTCP:3001 -sTCP:LISTEN`) and wait until they
+  are. Never end server processes you did not start (no `pkill -f next-server`).
 
 ### E2E (hard requirement)
 
