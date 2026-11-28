@@ -15,6 +15,7 @@ import { Button, Card } from '@/components/ui';
 import type { UseWalletResult } from '@/hooks/useWallet';
 import { useWalletPanel } from '@/hooks/useWalletPanel';
 import { useReceiveLink } from '@/components/OpenReceive';
+import { useSendLink } from '@/hooks/useSendLink';
 import type { UseWalletPhraseResult } from '@/hooks/useWalletPhrase';
 import type { UseWalletSendResult } from '@/hooks/useWalletSend';
 import { useAuthStore } from '@/stores/auth-store';
@@ -49,7 +50,10 @@ export type WalletScreenViewProps = UseWalletPhraseResult & {
  * is in flight), then returns from Send or Receive to home. The 12 words and
  * recovery errors render only on `/wallet/phrase`. While the account has no
  * recovery phrase yet (no `passkeyCredentialId`), home adds a small **Back up
- * your wallet** link to **Account security** (`/security`).
+ * your wallet** link to **Account security** (`/security`). `?receive=1`
+ * opens Receive (`useReceiveLink`), and `?send=<username>` opens Send with
+ * that member's address already read (`useSendLink`, the public Fond page's
+ * **Send from your wallet**).
  *
  * @param props - Phrase state, surface, and optional wallet balance and send state.
  * @returns The card, and the one-step Back registered through `AppShellTopLeft`.
@@ -78,6 +82,7 @@ export function WalletScreenView({
   const panel = useWalletPanel({ send });
   const shown = panel.shown;
   useReceiveLink(panel.openReceive);
+  useSendLink(panel.openSend, send);
   const stepBack = (): boolean => {
     if (surface === 'phrase') {
       if (showGrid) {

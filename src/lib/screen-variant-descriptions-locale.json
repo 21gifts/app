@@ -9144,6 +9144,11 @@
     "es": "Con Depósito on-chain pulsado se pulsó el icono de copiar bajo el código QR: la dirección bc1p5cyxnuxmeuwuvkwfem96lqzszd02n6xdcjrs20cac6yqjjwudpxqkedrcr está copiada sin prefijo y el icono muestra durante dos segundos una marca verde con el nombre Copiado.",
     "fil": "Habang naka-press ang On-chain na deposito, pinindot ang icon ng kopya sa ilalim ng QR code: nakopya ang address na bc1p5cyxnuxmeuwuvkwfem96lqzszd02n6xdcjrs20cac6yqjjwudpxqkedrcr nang walang prefix at nagpapakita ang icon ng berdeng tsek na may pangalang Nakopya sa loob ng dalawang segundo."
   },
+  "/fonds/[username]:deposit-send": {
+    "de": "Ein angemeldetes Mitglied, dessen Wallet bereit ist, öffnet die Fond-Seite. Unter Diesen Fond aufladen steht zusätzlich die volle Schaltfläche Aus Ihrer Wallet senden; darunter folgen wie gewohnt die Auswahl Sofortzahlung | On-chain-Einzahlung, die Adresse tondo-fond@21.gifts, ihr QR-Code und das Kopier-Symbol. Die Schaltfläche öffnet den Senden-Ablauf der Wallet mit der Adresse des Fonds.",
+    "es": "Un miembro con sesión iniciada y la wallet lista abre la página del Fondo. Bajo Recargar este Fondo aparece además el botón ancho Enviar desde tu wallet; debajo siguen como siempre el selector Pago instantáneo | Depósito on-chain, la dirección tondo-fond@21.gifts, su código QR y el icono de copiar. El botón abre el envío de la wallet con la dirección del Fondo.",
+    "fil": "Binuksan ng naka-sign in na miyembro na handa ang wallet ang pahina ng Fond. Sa ilalim ng I-top up ang Fond na ito ay may dagdag na malapad na button na Magpadala mula sa wallet mo; sa ilalim nito, gaya ng dati, ang pagpipiliang Instant na bayad | On-chain na deposito, ang address na tondo-fond@21.gifts, ang QR code nito, at ang icon ng kopya. Binubuksan ng button ang pagpapadala ng wallet gamit ang address ng Fond."
+  },
   "/fonds/[username]:balance-null": {
     "de": "Dieselbe Fond-Seite, solange die Api noch keinen Wallet-Kontostand gemeldet hat (balanceSats und balanceSyncedAt sind null). Die Kachel Kontostand zeigt einen Gedankenstrich und noch nicht gemeldet; die anderen Kacheln behalten ihre Beträge.",
     "es": "La misma página del Fondo mientras la api aún no informa un saldo de wallet (balanceSats y balanceSyncedAt son null). La tarjeta Saldo muestra un guion y aún sin datos; las otras tarjetas mantienen sus cifras.",

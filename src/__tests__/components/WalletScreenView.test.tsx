@@ -727,6 +727,7 @@ function idleSend(extra: Partial<UseWalletSendResult> = {}): UseWalletSendResult
     comment: '',
     setComment: vi.fn(),
     submitInput: vi.fn(),
+    sendTo: vi.fn(),
     submitAmount: vi.fn(),
     setSpeed: vi.fn(),
     confirm: vi.fn(),
@@ -780,6 +781,16 @@ function rerenderEntry(
 }
 
 describe('WalletScreenView Send', () => {
+  it('opens Send for ?send=<username> and reads that member address at once', () => {
+    window.history.replaceState(null, '', '/wallet?send=tondo-fond');
+    const send = idleSend();
+    renderEntry('ready', send);
+    expect(send.sendTo).toHaveBeenCalledWith('tondo-fond@21.gifts');
+    expect(screen.getByRole('region', { name: 'Send Bitcoin' })).toBeTruthy();
+    expect(window.location.search).toBe('');
+    window.history.replaceState(null, '', '/');
+  });
+
   it('Back closes the manual sheet first, then returns home', () => {
     const send = idleSend();
     renderEntry('ready', send);

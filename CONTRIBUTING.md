@@ -294,7 +294,8 @@ app/
 │   │   ├── WalletSync.tsx       # Root-mounted wallet phrase and background setup listeners + wallet data report triggers (renders nothing)
 │   │   ├── FondPayoutSync.tsx   # Root-mounted automatic Fond payout loop while the Fond wallet is ready (renders nothing)
 │   │   ├── FondDepositSync.tsx  # Root-mounted Fond deposit address registration and bounded deposit claims (renders nothing)
-│   │   ├── FondDeposit.tsx      # Public Fond page deposit block: Lightning / On-chain selector, address, QR, Copy
+│   │   ├── FondDeposit.tsx      # Public Fond page deposit block: Send from your wallet (signed in), Lightning / On-chain selector, address, QR, Copy
+│   │   ├── FondSendButton.tsx   # Fond page Send from your wallet: link to /wallet?send=<username> for a signed-in member with a ready wallet (not the Fond itself)
 │   │   ├── InteractionLog.tsx   # Root-mounted interaction log: screen views, flush timer (renders nothing)
 │   │   ├── WalletPay.tsx        # In-app wallet pay slot of the pay sheet (the only way to pay)
 │   │   ├── PaySheet.tsx         # Bottom sheet for the last tap of every in-app wallet payment (title, amount, pay slot, success step)
@@ -389,6 +390,7 @@ app/
 │   │   ├── useRemainingBalance.ts # Previous wallet page steps: open, balance, Transfer, remove
 │   │   ├── useWalletSend.ts     # Wallet send flow steps
 │   │   ├── useWalletPanel.ts    # Receive / Send view over a page, its Back steps, scroll restore (/wallet, /welcome)
+│   │   ├── useSendLink.ts       # /wallet?send=<username>: open Send with that member's address already read (Fond page)
 │   │   ├── useWalletPayment.ts  # One payment by id for /wallet/payment, re-read after each sync
 │   │   ├── useIncomingPayment.ts # The payment that arrived last while the app is open, for a hold time
 │   │   └── useCopied.ts         # Clipboard copy with a two-second Copied state

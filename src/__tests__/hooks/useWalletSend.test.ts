@@ -267,6 +267,65 @@ describe('useWalletSend input', () => {
   });
 });
 
+describe('useWalletSend sendTo', () => {
+  const FOND: WalletTarget = { ...LNURL, recipient: 'tondo-fond@21.gifts' };
+
+  it('reads a given address at once, like a pasted one, and opens its amount step', async () => {
+    target(FOND);
+    const { result } = renderHook(() => useWalletSend());
+    await act(async () => {
+      result.current.sendTo('tondo-fond@21.gifts');
+    });
+    expect(result.current.text).toBe('tondo-fond@21.gifts');
+    expect(fetchShopChargeInvoice).toHaveBeenCalledWith('tondo-fond');
+    expect(parseWalletInput).toHaveBeenCalledWith('tondo-fond@21.gifts');
+    expect(result.current.state).toMatchObject({
+      step: 'amount',
+      target: { type: 'lnurl', member: 'tondo-fond', recipient: 'tondo-fond@21.gifts' },
+      amountError: false,
+    });
+  });
+
+  it('does nothing while a read runs or a step is open', async () => {
+    vi.mocked(parseWalletInput).mockReturnValue(new Promise(() => undefined));
+    const { result } = renderHook(() => useWalletSend());
+    await act(async () => {
+      result.current.sendTo('tondo-fond@21.gifts');
+    });
+    expect(result.current.busy).toBe(true);
+    act(() => {
+      result.current.sendTo('other@21.gifts');
+    });
+    expect(result.current.text).toBe('tondo-fond@21.gifts');
+    expect(parseWalletInput).toHaveBeenCalledTimes(1);
+
+    vi.mocked(parseWalletInput).mockReset();
+    target(FOND);
+    const second = renderHook(() => useWalletSend()).result;
+    await act(async () => {
+      second.current.sendTo('tondo-fond@21.gifts');
+    });
+    expect(second.current.state.step).toBe('amount');
+    act(() => {
+      second.current.sendTo('other@21.gifts');
+    });
+    expect(second.current.text).toBe('tondo-fond@21.gifts');
+    expect(parseWalletInput).toHaveBeenCalledTimes(1);
+  });
+
+  it('does nothing under a visual pin', () => {
+    window.history.replaceState({}, '', '/wallet?visual=send-input');
+    process.env.NEXT_PUBLIC_E2E_NOW = '2026-01-07T12:00:00.000Z';
+    const { result } = renderHook(() => useWalletSend());
+    act(() => {
+      result.current.sendTo('tondo-fond@21.gifts');
+    });
+    expect(result.current.text).toBe('');
+    expect(fetchShopChargeInvoice).not.toHaveBeenCalled();
+    expect(parseWalletInput).not.toHaveBeenCalled();
+  });
+});
+
 describe('useWalletSend amount', () => {
   it('asks an LNURL receiver for an amount within bounds and a trimmed, capped comment', async () => {
     target(LNURL);

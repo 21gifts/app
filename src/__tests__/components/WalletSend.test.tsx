@@ -72,6 +72,7 @@ function sendWith(
     comment: '',
     setComment: vi.fn(),
     submitInput: vi.fn(),
+    sendTo: vi.fn(),
     submitAmount: vi.fn(),
     setSpeed: vi.fn(),
     confirm: vi.fn(),

@@ -12944,6 +12944,13 @@ export const SCREEN_VARIANTS = [
   },
   {
     route: '/fonds/[username]',
+    id: 'deposit-send',
+    image: 'fonds-deposit-send.png',
+    visual: 'state-fonds-deposit-send',
+    needle: 'state /fonds/[username] deposit-send',
+  },
+  {
+    route: '/fonds/[username]',
     id: 'balance-null',
     image: 'fonds-balance-null.png',
     visual: 'state-fonds-balance-null',
