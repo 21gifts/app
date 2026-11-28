@@ -475,7 +475,7 @@ describe('ForumGoalBar on a posted loan', () => {
     expect(screen.queryByText(/₿12'500/)).toBeNull();
   });
 
-  it('reads a fiat loan as funded once its sats are full, whatever its percent', () => {
+  it('keeps a fiat loan collecting when its sats are full but the fiat snapshot is short', () => {
     noFetch();
     renderWithLocale(
       <ForumGoalBar
@@ -485,6 +485,27 @@ describe('ForumGoalBar on a posted loan', () => {
         goalCurrency="CHF"
         goalAmount="20"
         amountChf="10.00"
+        goalRepayable
+        messageId="m1"
+        ledgerCollapsed
+        onLend={vi.fn()}
+      />,
+    );
+    expect(screen.getByText('50%')).toBeTruthy();
+    expect(screen.queryByText('Fully funded')).toBeNull();
+    expect(screen.getByRole('button', { name: 'Lend' })).toBeTruthy();
+  });
+
+  it('reads a fiat loan as funded once its own currency reaches the goal', () => {
+    noFetch();
+    renderWithLocale(
+      <ForumGoalBar
+        sats={96_940}
+        goalSats={97_013}
+        rateDay={RATE_DAY}
+        goalCurrency="PHP"
+        goalAmount="5000"
+        amountPhp="5000.85"
         goalRepayable
         messageId="m1"
         ledgerCollapsed
