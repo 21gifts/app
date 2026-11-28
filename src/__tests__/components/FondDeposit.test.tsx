@@ -9,6 +9,12 @@ vi.mock('@/components/QrCode', () => ({
   ),
 }));
 
+vi.mock('@/components/FondSendButton', () => ({
+  FondSendButton: ({ username }: { username: string }) => (
+    <p data-testid="fond-send" data-username={username} />
+  ),
+}));
+
 const ADDRESS = 'bc1p5cyxnuxmeuwuvkwfem96lqzszd02n6xdcjrs20cac6yqjjwudpxqkedrcr';
 
 afterEach(() => {
@@ -34,6 +40,14 @@ describe('FondDeposit', () => {
     expect(screen.queryByText('To add Bitcoin, send it to your address:')).toBeNull();
     expect(screen.getByRole('img', { name: 'Open CryptoPay QR code' })).toBeTruthy();
     expect(screen.queryByText(ADDRESS)).toBeNull();
+  });
+
+  it('puts Send from your wallet for the Fond handle right under the heading', () => {
+    renderWithLocale(<FondDeposit username="tondo-fond" onchainAddress={ADDRESS} />);
+    const slot = screen.getByTestId('fond-send');
+    expect(slot.getAttribute('data-username')).toBe('tondo-fond');
+    const heading = screen.getByRole('heading', { name: 'Top up this Fond' });
+    expect(heading.nextElementSibling).toBe(slot);
   });
 
   it('switches to On-chain: BIP21 QR without an amount, the address, and the confirmations line', async () => {

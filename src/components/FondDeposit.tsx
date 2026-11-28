@@ -2,6 +2,7 @@
 
 import { useState, type ReactElement } from 'react';
 import { Check, Copy } from 'lucide-react';
+import { FondSendButton } from '@/components/FondSendButton';
 import { useTranslations } from '@/components/LocaleProvider';
 import { QrCode } from '@/components/QrCode';
 import { WalletOwnAddress } from '@/components/WalletOwnAddress';
@@ -30,6 +31,10 @@ export interface FondDepositProps {
  * summary carries an address that passes {@link isMainnetBitcoinAddress};
  * otherwise the block is Instant payment alone and nothing else is encoded.
  *
+ * Under the heading, a signed-in member whose wallet is ready (not the Fond
+ * account itself) also gets **Send from your wallet** ({@link FondSendButton}),
+ * which opens the existing Send flow for the Fond's address.
+ *
  * @param props - Fond handle and the summary's on-chain address.
  * @returns The deposit section.
  */
@@ -47,6 +52,7 @@ export function FondDeposit({ username, onchainAddress }: FondDepositProps): Rea
       <h2 id="fond-deposit-title" className="text-lg font-semibold text-app-fg">
         {t('fond.depositTitle')}
       </h2>
+      <FondSendButton username={username} />
       {onchain === null ? null : (
         <SegmentedControl
           tone="neutral"

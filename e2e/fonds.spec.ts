@@ -1,4 +1,5 @@
-import { expect, test } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
+import { stubCamera } from './camera';
 import { fulfillSpot } from './fx-spot';
 
 const FOND_USERNAME = 'tondo-fond';
@@ -17,6 +18,104 @@ const SUMMARY = {
   payoutsPaid: 3,
   payoutsPaidUsd: '3.00',
 };
+
+/**
+ * Signs in a member whose wallet counts as open in a Playwright build.
+ *
+ * @param page - The page to sign in.
+ * @param username - The member's handle.
+ */
+async function signIn(page: Page, username: string): Promise<void> {
+  await page.addInitScript(() => {
+    localStorage.setItem('21gifts.session', 'sess-e2e');
+  });
+  await page.route(/\/me$/, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        id: 'acc_e2e',
+        linkingKey: `02${'a'.repeat(62)}`,
+        role: 'basis',
+        name: 'Ada',
+        username,
+        location: null,
+        lightningAddress: null,
+        lightningAddressVerified: false,
+        forumLawsDismissed: false,
+        createdAt: 1_700_000_000,
+        rulesAgreedAt: 1,
+        viewKey: 'a'.repeat(64),
+        aboutMe: null,
+        aboutMeHasPhoto: false,
+        setup: null,
+        missing: [],
+        walletRequired: true,
+        walletBackupSeenAt: 1,
+        passkeyCredentialId: 'AQIDBAUGBwgJCgsMDQ4PEA',
+      }),
+    });
+  });
+}
+
+test('Function: FondSendButton — signed out, the Fond page shows no Send from your wallet', async ({
+  page,
+}) => {
+  await fulfillSpot(page);
+  await page.goto(`/fonds/${FOND_USERNAME}?visual=balance-ready`);
+  await expect(page.getByText('tondo-fond@21.gifts')).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Send from your wallet' })).toHaveCount(0);
+});
+
+test('Function: FondSendButton — signed in without a ready wallet, the page stays as it is', async ({
+  page,
+}) => {
+  await fulfillSpot(page);
+  await signIn(page, 'ada');
+  // No wallet key in a Playwright build: the wallet is not available, so no Send.
+  await page.goto(`/fonds/${FOND_USERNAME}`);
+  await expect(page.getByText('tondo-fond@21.gifts')).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Send from your wallet' })).toHaveCount(0);
+});
+
+test('Function: FondSendButton — the Fond account itself gets no Send from your wallet', async ({
+  page,
+}) => {
+  await fulfillSpot(page);
+  await signIn(page, FOND_USERNAME);
+  await page.goto(`/fonds/${FOND_USERNAME}?visual=balance-ready`);
+  await expect(page.getByText('tondo-fond@21.gifts')).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Send from your wallet' })).toHaveCount(0);
+});
+
+test('Function: useSendLink — signed in with a ready wallet, Send from your wallet opens the Send flow for the Fond', async ({
+  page,
+}) => {
+  await fulfillSpot(page);
+  await signIn(page, 'ada');
+  await stubCamera(page, { kind: 'blank' });
+  await page.route(`**/pay/${FOND_USERNAME}`, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ charge: null }),
+    });
+  });
+  // `balance-ready` pins the wallet as ready on the Fond page (Playwright builds only).
+  await page.goto(`/fonds/${FOND_USERNAME}?visual=balance-ready`);
+  const send = page.getByRole('link', { name: 'Send from your wallet' });
+  await expect(send).toBeVisible();
+  await expect(send).toHaveAttribute('href', `/wallet?send=${FOND_USERNAME}`);
+  await send.click();
+  await expect(page).toHaveURL(/\/wallet$/);
+  const region = page.getByRole('region', { name: 'Send Bitcoin' });
+  await expect(region).toBeVisible();
+  // The Playwright build has no wallet key, so the read of the Fond address ends in the
+  // send flow's own alert instead of the amount step.
+  await expect(region.getByRole('alert')).toHaveText(
+    'Your 21.gifts wallet is not available here, so this cannot be paid.',
+  );
+});
 
 test('e2e:check dynamic path token for /fonds/[username]', async ({ page, request }) => {
   await page.goto('/fonds/[username]');

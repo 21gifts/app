@@ -48679,6 +48679,36 @@ test.describe('fonds screen', () => {
     await shotScreen(page, 'state-fonds-deposit-onchain-copied');
   });
 
+  test('state /fonds/[username] deposit-send', async ({ page }) => {
+    await fulfillSpot(page);
+    await page.addInitScript(() => {
+      localStorage.setItem('21gifts.session', 'sess-e2e');
+    });
+    await page.route(/\/me$/, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...E2E_ACCOUNT,
+          name: 'Ada',
+          username: 'ada',
+          rulesAgreedAt: 1,
+          setup: null,
+          missing: [],
+          walletRequired: true,
+          walletBackupSeenAt: 1,
+          passkeyCredentialId: 'cred-seed',
+        }),
+      });
+    });
+    // `balance-ready` pins the wallet as ready (Playwright builds only).
+    await page.goto('/fonds/tondo-fond?visual=balance-ready');
+    await expect(page.getByRole('heading', { name: 'tondo-fond' })).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Send from your wallet' })).toBeVisible();
+    await expect(page.getByText('tondo-fond@21.gifts')).toBeVisible();
+    await shotScreen(page, 'state-fonds-deposit-send');
+  });
+
   test('state /fonds/[username] role-hint', async ({ page }) => {
     await fulfillSpot(page);
     await page.goto('/fonds/tondo-fond');

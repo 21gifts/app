@@ -204,6 +204,15 @@ export interface UseWalletSendResult {
   /** Reads the pasted text and moves to amount, confirm, or an alert. */
   submitInput: () => void;
   /**
+   * Puts `value` into the field and reads it at once, as if it had been
+   * pasted and submitted (a send opened for a known receiver, such as the
+   * Fond's address from the public Fond page). Does nothing while a step is
+   * open or a read runs, or under a visual pin.
+   *
+   * @param value - Address or payment request to pay.
+   */
+  sendTo: (value: string) => void;
+  /**
    * Prepares the payment for the entered amount.
    *
    * @param sats - Whole sats from the amount field, or `null` when it cannot be read.
@@ -606,7 +615,10 @@ interface HeldWalletStep {
  * read that waits for the wallet, `send-confirm-opening` and
  * `send-confirm-wallet-error` the `quote` step; `send-confirm-opens` shows
  * the confirm fixture {@link WALLET_SEND_PIN_OPEN_MS} after it opened, and so
- * does **Try again** under `send-confirm-wallet-error`.
+ * does **Try again** under `send-confirm-wallet-error`. `sendTo` puts a
+ * known receiver into the field and reads it at once, exactly like
+ * **Continue** on the input step (`/wallet?send=<username>`, opened by the
+ * public Fond page's **Send from your wallet**, see `useSendLink`).
  *
  * @returns The current step, drafts, and actions.
  */
@@ -1069,186 +1081,193 @@ export function useWalletSend(): UseWalletSendResult {
     [payAmount],
   );
 
-  const submitInput = useCallback((): void => {
-    if (inert) {
-      setPinBusy(pin === 'send-input-busy');
-      return;
-    }
-    if (busy || state.step !== 'input') {
-      return;
-    }
-    const run = generation.current;
-    setBusy(true);
-    const relay = lnurlRelayTarget(text, window.location.hostname);
-    if (relay !== null) {
-      const request =
-        session === null
-          ? Promise.reject(new LnurlRelayError('failed'))
-          : postLnurlPayRequest(session, relay);
-      void request
-        .then(
-          (payRequest) => {
-            if (run !== generation.current) {
+  /** Reads `value` the way **Continue** on the input step reads the field. */
+  const submitText = useCallback(
+    (value: string): void => {
+      if (inert) {
+        setPinBusy(pin === 'send-input-busy');
+        return;
+      }
+      if (busy || state.step !== 'input') {
+        return;
+      }
+      const run = generation.current;
+      setBusy(true);
+      const relay = lnurlRelayTarget(value, window.location.hostname);
+      if (relay !== null) {
+        const request =
+          session === null
+            ? Promise.reject(new LnurlRelayError('failed'))
+            : postLnurlPayRequest(session, relay);
+        void request
+          .then(
+            (payRequest) => {
+              if (run !== generation.current) {
+                return;
+              }
+              const minSats = Math.max(1, Math.ceil(payRequest.minSendableMsat / 1000));
+              const maxSats = Math.floor(payRequest.maxSendableMsat / 1000);
+              if (minSats > maxSats) {
+                setBusy(false);
+                setState({ step: 'input', error: 'unsupported' });
+                return;
+              }
+              askAmount({
+                type: 'relay',
+                target: payRequest.target,
+                minSats,
+                maxSats,
+                commentMaxLength: payRequest.commentAllowed,
+                recipient: payRequest.target.includes('@')
+                  ? payRequest.target
+                  : recipientOf(value, payRequest.domain),
+              });
+            },
+            (error: unknown) => {
+              if (run !== generation.current) {
+                return;
+              }
+              setBusy(false);
+              setState({ step: 'input', error: relayInputError(error) });
+            },
+          )
+          .catch(() => {
+            failRun(run, 'unreadable');
+          });
+        return;
+      }
+      // `flow` is `pos` for the fallback of an open shop charge, so its failure is reported as the charge.
+      const readWithWallet = (member: OwnShop | null, flow: PayFlow = 'send'): void => {
+        // The run of this read: a shop charge's fallback can start it after a re-quote bumped it.
+        const read = generation.current;
+        const again = (): void => {
+          readWithWallet(member, flow);
+        };
+        if (holdForWallet(read, again) !== 'ready') {
+          return;
+        }
+        const epoch = walletEpoch.current;
+        void parseWalletInput(value)
+          .then((parsed) => {
+            if (read !== generation.current) {
               return;
             }
-            const minSats = Math.max(1, Math.ceil(payRequest.minSendableMsat / 1000));
-            const maxSats = Math.floor(payRequest.maxSendableMsat / 1000);
-            if (minSats > maxSats) {
+            // The wallet closed meanwhile, so this answer is from a closed connection.
+            if (epoch !== walletEpoch.current || !walletCanSend()) {
+              again();
+              return;
+            }
+            if (parsed.kind !== 'target') {
+              setBusy(false);
+              setState({
+                step: 'input',
+                error:
+                  parsed.kind === 'unreachable'
+                    ? 'unreachable'
+                    : parsed.kind === 'unlock'
+                      ? 'failed'
+                      : 'invalid',
+              });
+              return;
+            }
+            const target = parsed.target;
+            if (target.type === 'unsupported') {
               setBusy(false);
               setState({ step: 'input', error: 'unsupported' });
               return;
             }
-            askAmount({
-              type: 'relay',
-              target: payRequest.target,
-              minSats,
-              maxSats,
-              commentMaxLength: payRequest.commentAllowed,
-              recipient: payRequest.target.includes('@')
-                ? payRequest.target
-                : recipientOf(text, payRequest.domain),
-            });
-          },
-          (error: unknown) => {
-            if (run !== generation.current) {
+            if (target.type === 'onchain') {
+              if (target.amountSats !== null) {
+                prepare(
+                  { type: 'input', input: target.address, amountSats: target.amountSats },
+                  target.recipient,
+                  target.amountSats,
+                  { onchainTarget: { ...target, amountSats: null }, flow },
+                );
+                return;
+              }
+              setBusy(false);
+              setComment('');
+              setState({ step: 'amount', target, amountError: false });
               return;
             }
-            setBusy(false);
-            setState({ step: 'input', error: relayInputError(error) });
-          },
-        )
-        .catch(() => {
-          failRun(run, 'unreadable');
-        });
-      return;
-    }
-    // `flow` is `pos` for the fallback of an open shop charge, so its failure is reported as the charge.
-    const readWithWallet = (member: OwnShop | null, flow: PayFlow = 'send'): void => {
-      // The run of this read: a shop charge's fallback can start it after a re-quote bumped it.
-      const read = generation.current;
-      const again = (): void => {
-        readWithWallet(member, flow);
-      };
-      if (holdForWallet(read, again) !== 'ready') {
-        return;
-      }
-      const epoch = walletEpoch.current;
-      void parseWalletInput(text)
-        .then((parsed) => {
-          if (read !== generation.current) {
-            return;
-          }
-          // The wallet closed meanwhile, so this answer is from a closed connection.
-          if (epoch !== walletEpoch.current || !walletCanSend()) {
-            again();
-            return;
-          }
-          if (parsed.kind !== 'target') {
-            setBusy(false);
-            setState({
-              step: 'input',
-              error:
-                parsed.kind === 'unreachable'
-                  ? 'unreachable'
-                  : parsed.kind === 'unlock'
-                    ? 'failed'
-                    : 'invalid',
-            });
-            return;
-          }
-          const target = parsed.target;
-          if (target.type === 'unsupported') {
-            setBusy(false);
-            setState({ step: 'input', error: 'unsupported' });
-            return;
-          }
-          if (target.type === 'onchain') {
-            if (target.amountSats !== null) {
+            if (target.type === 'lnurl') {
+              askAmount(
+                {
+                  ...target,
+                  ...(member === null
+                    ? { recipient: recipientOf(value, target.recipient) }
+                    : { recipient: member.address, member: member.name }),
+                },
+                flow,
+              );
+              return;
+            }
+            if (target.amountSats !== null && target.amountSats > 0) {
               prepare(
-                { type: 'input', input: target.address, amountSats: target.amountSats },
+                {
+                  type: 'input',
+                  input: target.input,
+                  ...(target.amountFromUri === true ? { amountSats: target.amountSats } : {}),
+                },
                 target.recipient,
                 target.amountSats,
-                { onchainTarget: { ...target, amountSats: null }, flow },
+                { flow },
               );
               return;
             }
             setBusy(false);
             setComment('');
             setState({ step: 'amount', target, amountError: false });
+          })
+          .catch(() => {
+            failRun(read, 'unreadable');
+          });
+      };
+      const shop = ownShop(value, window.location.hostname);
+      if (shop === null) {
+        readWithWallet(null);
+        return;
+      }
+      void fetchShopChargeInvoice(shop.name)
+        .then((charge) => {
+          if (run !== generation.current) {
             return;
           }
-          if (target.type === 'lnurl') {
-            askAmount(
-              {
-                ...target,
-                ...(member === null
-                  ? { recipient: recipientOf(text, target.recipient) }
-                  : { recipient: member.address, member: member.name }),
-              },
-              flow,
-            );
+          if (charge.kind !== 'invoice') {
+            readWithWallet(charge.kind === 'none' ? shop : null);
             return;
           }
-          if (target.amountSats !== null && target.amountSats > 0) {
-            prepare(
-              {
-                type: 'input',
-                input: target.input,
-                ...(target.amountFromUri === true ? { amountSats: target.amountSats } : {}),
-              },
-              target.recipient,
-              target.amountSats,
-              { flow },
-            );
-            return;
-          }
-          setBusy(false);
-          setComment('');
-          setState({ step: 'amount', target, amountError: false });
+          prepare({ type: 'input', input: charge.sparkInvoice }, shop.address, charge.amountSats, {
+            expectedSats: charge.amountSats,
+            fallback: () => {
+              readWithWallet(null, 'pos');
+            },
+            flow: 'pos',
+            chargeFigure: committedFiatFigure(charge, fiat),
+          });
         })
         .catch(() => {
-          failRun(read, 'unreadable');
+          failRun(run, 'unreadable');
         });
-    };
-    const shop = ownShop(text, window.location.hostname);
-    if (shop === null) {
-      readWithWallet(null);
-      return;
-    }
-    void fetchShopChargeInvoice(shop.name)
-      .then((charge) => {
-        if (run !== generation.current) {
-          return;
-        }
-        if (charge.kind !== 'invoice') {
-          readWithWallet(charge.kind === 'none' ? shop : null);
-          return;
-        }
-        prepare({ type: 'input', input: charge.sparkInvoice }, shop.address, charge.amountSats, {
-          expectedSats: charge.amountSats,
-          fallback: () => {
-            readWithWallet(null, 'pos');
-          },
-          flow: 'pos',
-          chargeFigure: committedFiatFigure(charge, fiat),
-        });
-      })
-      .catch(() => {
-        failRun(run, 'unreadable');
-      });
-  }, [
-    pin,
-    inert,
-    busy,
-    state.step,
-    text,
-    session,
-    prepare,
-    askAmount,
-    failRun,
-    holdForWallet,
-    fiat,
-  ]);
+    },
+    [pin, inert, busy, state.step, session, prepare, askAmount, failRun, holdForWallet, fiat],
+  );
+
+  const submitInput = useCallback((): void => {
+    submitText(text);
+  }, [submitText, text]);
+
+  const sendTo = useCallback(
+    (value: string): void => {
+      if (inert || busy || state.step !== 'input') {
+        return;
+      }
+      setTextState(value);
+      submitText(value);
+    },
+    [inert, busy, state.step, submitText],
+  );
 
   const submitAmount = useCallback(
     (sats: number | null, figure?: ChargeFigure): void => {
@@ -1449,6 +1468,7 @@ export function useWalletSend(): UseWalletSendResult {
     comment,
     setComment,
     submitInput,
+    sendTo,
     submitAmount,
     setSpeed,
     confirm,
