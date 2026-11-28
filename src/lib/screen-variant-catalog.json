@@ -1416,6 +1416,36 @@
     "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
   },
   {
+    "id": "/loans:default",
+    "label": "/loans default",
+    "visual": "screen-loans",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/loans:empty",
+    "label": "/loans empty",
+    "visual": "state-loans-empty",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/loans:loading",
+    "label": "/loans loading",
+    "visual": "state-loans-loading",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/loans:error",
+    "label": "/loans error",
+    "visual": "state-loans-error",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
+    "id": "/loans:signed-in",
+    "label": "/loans signed-in",
+    "visual": "state-loans-signed-in",
+    "combos": ["desktop-light", "desktop-dark", "mobile-light", "mobile-dark"]
+  },
+  {
     "id": "/loans/repay:default",
     "label": "/loans/repay default",
     "visual": "screen-loans-repay",

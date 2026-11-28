@@ -1519,6 +1519,31 @@
     "es": "El estado predeterminado con Quién recibe el pago abierto: Bruno ₿500 · $0.50, Carla ₿300 · $0.30 y Diego ₿200 · $0.20. El total sigue en ₿1'000 · $1.00 y el control Enviar permanece visible.",
     "fil": "Ang default na estado na bukas ang Sino ang babayaran: Bruno ₿500 · $0.50, Carla ₿300 · $0.30, at Diego ₿200 · $0.20. Nananatiling ₿1'000 · $1.00 ang kabuuan at nakikita pa ang Ipadala."
   },
+  "/loans:default": {
+    "de": "Abgemeldete Liste. Überschrift Offene Kredite. Ada verlinkt auf ihr Profil, CHF 12.50, Ja, Zeile eingefärbt. Ben verlinkt auf sein Profil, ₿1'500 · $1.50, Nein. Kopfzeile Anmelden. Kein Menü.",
+    "es": "Lista sin sesión. Encabezado Préstamos abiertos. Ada enlaza a su perfil, CHF 12.50, Sí, fila tintada. Ben enlaza a su perfil, ₿1'500 · $1.50, No. Cabecera Iniciar sesión. Sin Menú.",
+    "fil": "Listahan nang naka-sign out. Heading Mga bukas na utang. Naka-link si Ada sa profile niya, CHF 12.50, Oo, may tint ang hilera. Naka-link si Ben sa profile niya, ₿1'500 · $1.50, Hindi. Header Mag-log in. Walang Menu."
+  },
+  "/loans:empty": {
+    "de": "Abgemeldete Seite. Überschrift Offene Kredite und Keine offenen Kredite. Keine Tabelle.",
+    "es": "Página sin sesión. Encabezado Préstamos abiertos y No hay préstamos abiertos. Sin tabla.",
+    "fil": "Pahina nang naka-sign out. Heading Mga bukas na utang at Walang bukas na utang. Walang talahanayan."
+  },
+  "/loans:error": {
+    "de": "Abgemeldete Seite. Offene Kredite konnten nicht geladen werden. Bitte versuchen Sie es erneut. und Erneut versuchen.",
+    "es": "Página sin sesión. No se pudieron cargar los préstamos abiertos. Inténtalo de nuevo. e Intentar de nuevo.",
+    "fil": "Pahina nang naka-sign out. Hindi ma-load ang mga bukas na utang. Subukan ulit. at Subukan ulit."
+  },
+  "/loans:loading": {
+    "de": "Abgemeldete Seite. Überschrift Offene Kredite und Offene Kredite werden geladen… während GET /loans/open noch läuft.",
+    "es": "Página sin sesión. Encabezado Préstamos abiertos y Cargando los préstamos abiertos… mientras GET /loans/open sigue en curso.",
+    "fil": "Pahina nang naka-sign out. Heading Mga bukas na utang at Nilo-load ang mga bukas na utang… habang tumatakbo ang GET /loans/open."
+  },
+  "/loans:signed-in": {
+    "de": "Adas Sitzung. Menü steht oben rechts und Anmelden fehlt. Dieselben Zeilen von Ada und Ben stehen auf der Seite, einschließlich ₿1'500 · $1.50.",
+    "es": "Sesión de Ada. Menú está arriba a la derecha e Iniciar sesión no está. Las mismas filas de Ada y Ben están en la página, incluido ₿1'500 · $1.50.",
+    "fil": "Session ni Ada. Nasa kanang itaas ang Menu at wala ang Mag-log in. Parehong hilera nina Ada at Ben ang nasa pahina, kasama ang ₿1'500 · $1.50."
+  },
   "/login:android-version": {
     "de": "Ein neues Konto eröffnen öffnet das Namensformular auch auf Android unter 9. Nach dem Absenden eines gültigen Namens und dem Schließen der Erstellungszeremonie lautet die Meldung genau Installiert ist Android 8.1.0. Für die Anmeldung braucht es mindestens Android 9. Schaltfläche Erneut versuchen. Die gedämpfte Statuszeile wird dann nicht zusätzlich gezeigt. Es wird kein Konto angelegt.",
     "es": "Abrir una cuenta nueva abre el formulario de nombre incluso en Android por debajo de 9. Tras enviar un nombre válido y descartar la ceremonia de creación, la alerta dice exactamente Este dispositivo tiene Android 8.1.0. Para iniciar sesión hace falta como mínimo Android 9. Botón Intentar de nuevo. La línea de estado atenuada no se muestra también entonces. No se crea ninguna cuenta.",

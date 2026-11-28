@@ -50,6 +50,7 @@ const PUBLIC_PAGES = [
   '/handbook/functions',
   '/handbook/screens',
   '/legal',
+  '/loans',
   '/login',
   '/pl',
   '/recover',
